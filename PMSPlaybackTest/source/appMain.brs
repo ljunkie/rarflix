@@ -1,6 +1,6 @@
 ' ********************************************************************
 ' **  Modification of the Sample PlayVideo App to test playback, 
-' **  transcoding, etc of PMS feed content
+' **  transcoding, etc of PMS fed content
 ' ********************************************************************
 
 Sub Main()
