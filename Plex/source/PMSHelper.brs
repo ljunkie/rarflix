@@ -2,10 +2,20 @@
 '* Helper and command methods used by the PMS object but not instance methods
 '* 
 
-'* Constructs an image based on a PMS url with the specific width and height
-Function TranscodedImage(serverUrl, imageUrl, width, height) As String
-	encodedUrl = HttpEncode(serverUrl+imageUrl)
+'* Constructs an image based on a PMS url with the specific width and height. Takes
+'* into account relative URLs, so relative to the query URL, and absolute URLs, so
+'* relative to the server URL
+Function TranscodedImage(serverUrl, queryUrl, imagePath, width, height) As String
+	imageUrl = ""
+	if left(imagePath, 1) = "/" then
+		imageUrl = serverUrl+imagePath
+	else
+		imageUrl = queryUrl+"/"+imagePath
+	endif
+	'print "Image URL:";imageUrl
+	encodedUrl = HttpEncode(imageUrl)
 	image = serverUrl + "/photo/:/transcode?url="+encodedUrl+"&width="+width+"&height="+height
+	'print "Final Image URL:";image
 	return image
 End Function
 
@@ -40,13 +50,14 @@ Function TranscodingVideoUrl(serverUrl As String, videoUrl As String) As String
     
     location = serverUrl + videoUrl
     print "Location:";location
-	myurl = "/video/:/transcode/segmented/start.m3u8?identifier=com.plexapp.plugins.library&ratingKey=97007888&offset=0&quality=7&url="+HttpEncode(location)+"&3g=0&httpCookies=&userAgent="
+    'myurl = "/video/:/transcode/segmented/start.m3u8?identifier=com.plexapp.plugins.library&ratingKey=97007888&offset=0&quality=7&url="+HttpEncode(location)+"&3g=0&httpCookies=&userAgent="
+	myurl = "/video/:/transcode/segmented/start.m3u8?identifier=com.plexapp.plugins.library&ratingKey=97007888&offset=0&minQuality=5&maxQuality=10&url="+HttpEncode(location)+"&3g=0&httpCookies=&userAgent="
 	publicKey = "KQMIY6GATPC63AIMC4R2"
 	time = LinuxTime().tostr()
 	msg = myurl+"@"+time
 	finalMsg = HMACHash(msg)
 	finalUrl = serverUrl + myurl+"&X-Plex-Access-Key=" + publicKey + "&X-Plex-Access-Time=" + time + "&X-Plex-Access-Code=" + HttpEncode(finalMsg)
-	'print "Final URL";finalUrl
+	print "Final URL";finalUrl
     return finalUrl
 End Function
 

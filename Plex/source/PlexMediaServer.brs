@@ -30,30 +30,26 @@ Function librarySections(displayName) As Object
     
     sections = CreateObject("roArray", 10, true)
     for each directory in xml.Directory
-    
-    	section = CreateObject("roAssociativeArray")
-    	section.Server = m
-    	section.SectionType = directory@type
-    	section.Key = directory@key
-    	if displayName
-    		section.Title = directory@title + " ("+m.name+")"
-    		section.ShortDescriptionLine1 = directory@title + " ("+m.name+")"
-    	else
-    		section.Title = directory@title
-    		section.ShortDescriptionLine1 = directory@title
-    	endif
-    	
-    	sectionType = directory@type
-        if sectionType = "movie" then
-    		section.SDPosterURL = "pkg:/images/clapperboard-icon.png"
-    		section.HDPosterURL = "pkg:/images/clapperboard-icon.png"
+		sectionType = directory@type
+		if sectionType = "movie" OR sectionType = "show" then
+			section = CreateObject("roAssociativeArray")
+    		section.Server = m
+			section.SectionType = sectionType
+			section.Key = directory@key
+			if displayName
+				section.Title = directory@title + " ("+m.name+")"
+				section.ShortDescriptionLine1 = directory@title + " ("+m.name+")"
+			else
+				section.Title = directory@title
+				section.ShortDescriptionLine1 = directory@title
+			endif
+			art = directory@art
+			'flat-category artwork dimensions
+			section.SDPosterURL = TranscodedImage(m.serverUrl, queryUrl, art, "224", "158")
+			section.HDPosterURL = TranscodedImage(m.serverUrl, queryUrl, art, "304", "237")
+
     		sections.Push(section)
-    	elseif sectionType = "show" then
-    		section.SDPosterURL = "pkg:/images/leco.jpg"
-    		section.HDPosterURL = "pkg:/images/leco.jpg"
-    		sections.Push(section)
-    	    
-        endIf
+		endIf
     next
     return sections
 End Function
@@ -75,14 +71,34 @@ Function librarySectionContent(key) As Object
     	video.Title = videoItem@title
     	video.ShortDescriptionLine1 = videoItem@title
     	video.ShortDescriptionLine2 = videoItem@tagline
-    	video.SDPosterURL = TranscodedImage(m.serverUrl, videoItem@thumb, "158", "204")
-    	video.HDPosterURL = TranscodedImage(m.serverUrl, videoItem@thumb, "214", "306")
+    	video.StarRating = videoItem@rating
+    	video.Rating = videoItem@contentRating
+    	video.Length = Int(Val(videoItem@duration)/1000)
+    	video.Description = videoItem@summary
+    	video.Director = []
+    	for each directorItem in xml.Video.Director
+    		video.Director.Push(directorItem@tag)
+    	next
+    	video.Actors = []
+    	for each roleItem in xml.Video.Role
+    		video.Actors.Push(roleItem@tag)
+    	next
+    	video.Categories = []
+    	for each genreItem in xml.Video.Genre
+    		video.Categories.Push(genreItem@tag)
+    	next
+    	' arced-portrait image dimensions
+    	video.SDPosterURL = TranscodedImage(m.serverUrl, queryUrl, videoItem@thumb, "158", "204")
+    	video.HDPosterURL = TranscodedImage(m.serverUrl, queryUrl, videoItem@thumb, "214", "306")
     	video.Key = videoItem@key
     	
     	'* TODO: deal with alternate media and multiple parts. 
     	'* We either let the user choose or come up with an algorithm to pick the best alternate
     	'* media, direct streaming, transcoding (with or without direct copy) and quality (network)
     	video.videoKey = videoItem.Media.Part@key
+    	video.isHD = True        'Depends on media selected
+    	video.HDBranded = True
+    	video.Watched = True     'Depends on view count
     	videos.Push(video)
     next
 	return videos

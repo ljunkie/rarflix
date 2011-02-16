@@ -16,8 +16,7 @@ Function preShowMovieSectionScreen(breadA=invalid, breadB=invalid) As Object
         screen.SetBreadcrumbText(breadA, breadB)
     end if
 
-    'screen.SetListStyle("arced-portrait")
-    screen.SetListStyle("rounded-rect-16x9-generic")
+    screen.SetListStyle("arced-portrait")
     screen.setAdDisplayMode("scale-to-fill")
     return screen
 
