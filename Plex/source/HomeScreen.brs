@@ -25,18 +25,25 @@ End Function
 Function showHomeScreen(screen, servers) As Integer
 
     if validateParam(screen, "roPosterScreen", "showHomeScreen") = false return -1
-	
-	displayName = servers.Count() > 1
+	retrieving = CreateObject("roOneLineDialog")
+	retrieving.SetTitle("Retrieving from Plex Media Server ...")
+	retrieving.ShowBusyAnimation()
+	retrieving.Show()
+	displayServerName = servers.count() > 1
 	sectionList = CreateObject("roArray", 10, true)
 	for each server in servers
-    	sections = server.GetLibrarySections(displayName)
+    	sections = server.GetContent("", "/library/sections")
     	for each section in sections
+    		if displayServerName then
+    			section.Title = section.Title + " ("+server.name+")"
+    			section.ShortDescriptionLine1 = section.ShortDescriptionLine1 + " ("+server.name+")"
+    		endif
     		sectionList.Push(section)
     	end for
 	end for
     screen.SetContentList(sectionList)
     screen.Show()
-
+	retrieving.Close()
     while true
         msg = wait(0, screen.GetMessagePort())
         if type(msg) = "roPosterScreenEvent" then
@@ -47,10 +54,7 @@ Function showHomeScreen(screen, servers) As Integer
                 print "list item selected | index = "; msg.GetIndex()
                 section = sectionList[msg.GetIndex()]
                 print "section selected ";section.server.name
-                if section.SectionType = "movie"
-                	print "movie section"
-                	displayMovieSection(section)
-                endif
+                displaySection(section)
             else if msg.isScreenClosed() then
                 return -1
             end if
@@ -61,9 +65,9 @@ Function showHomeScreen(screen, servers) As Integer
 
 End Function
 
-Function displayMovieSection(section As Object) As Dynamic
+Function displaySection(section As Object) As Dynamic
     if validateParam(section, "roAssociativeArray", "displayMovieSection") = false return -1
-    screen = preShowMovieSectionScreen(section.Title, "")
-    showMovieSectionScreen(screen, section)
+    screen = preShowPosterScreen(section.Title, "")
+    showPosterScreen(screen, section)
     return 0
 End Function

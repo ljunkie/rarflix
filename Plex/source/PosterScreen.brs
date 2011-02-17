@@ -1,13 +1,9 @@
-'* Displays the content of a movie section
-'*
-'* Probably not the best way: general solution needed that allows hierarchy desending but
-'* figure that out once I've got my head around the Roku screen model
+'* Displays the content in a poster screen. Can be any content type.
 
+Function preShowPosterScreen(breadA=invalid, breadB=invalid) As Object
 
-Function preShowMovieSectionScreen(breadA=invalid, breadB=invalid) As Object
-
-    if validateParam(breadA, "roString", "preShowMovieSectionScreen", true) = false return -1
-    if validateParam(breadA, "roString", "preShowMovieSectionScreen", true) = false return -1
+    if validateParam(breadA, "roString", "preShowPosterScreen", true) = false return -1
+    if validateParam(breadA, "roString", "preShowPosterScreen", true) = false return -1
 
     port=CreateObject("roMessagePort")
     screen = CreateObject("roPosterScreen")
@@ -15,7 +11,6 @@ Function preShowMovieSectionScreen(breadA=invalid, breadB=invalid) As Object
     if breadA<>invalid and breadB<>invalid then
         screen.SetBreadcrumbText(breadA, breadB)
     end if
-
     screen.SetListStyle("arced-portrait")
     screen.setAdDisplayMode("scale-to-fill")
     return screen
@@ -23,14 +18,22 @@ Function preShowMovieSectionScreen(breadA=invalid, breadB=invalid) As Object
 End Function
 
 
-Function showMovieSectionScreen(screen, section) As Integer
+Function showPosterScreen(screen, content) As Integer
 
-    if validateParam(screen, "roPosterScreen", "showMovieSectionScreen") = false return -1
+    if validateParam(screen, "roPosterScreen", "showPosterScreen") = false return -1
+    if validateParam(content, "roAssociativeArray", "showPosterScreen") = false return -1
+	print "show poster screen for key ";
 	
-	server = section.Server
-	sectionContent = server.GetLibrarySectionContent(section.Key)
-    screen.SetContentList(sectionContent)
+	retrieving = CreateObject("roOneLineDialog")
+	content.keyretrieving = CreateObject("roOneLineDialog")
+	retrieving.SetTitle("Retrieving from Plex Media Server ...")
+	retrieving.ShowBusyAnimation()
+	retrieving.Show()
+	server = content.server
+	content = server.GetContent(content.sourceUrl, content.key)
+    screen.SetContentList(content)
     screen.Show()
+	retrieving.Close()
 
     while true
         msg = wait(0, screen.GetMessagePort())
@@ -38,11 +41,17 @@ Function showMovieSectionScreen(screen, section) As Integer
             print "showHomeScreen | msg = "; msg.GetMessage() " | index = "; msg.GetIndex()
             if msg.isListFocused() then
                 print "list focused | index = "; msg.GetIndex(); " | category = "; m.curCategory
+                ' TODO: Change content after fetching from server
             else if msg.isListItemSelected() then
+                selected = content[msg.GetIndex()]
+                contentType = selected.ContentType
                 print "list item selected | index = "; msg.GetIndex()
-                print "Key:"+sectionContent[msg.GetIndex()].Key
-                video = sectionContent[msg.GetIndex()]
-                PlayVideo(video)
+                print "item type = "; contentType
+                if contentType = "movie" OR contentType = "episode" then
+                	playVideo(selected)
+                elseif contentType = "Directory" then
+                	showNextPosterScreen(selected)
+                endif
             else if msg.isScreenClosed() then
                 return -1
             end if
@@ -53,11 +62,18 @@ Function showMovieSectionScreen(screen, section) As Integer
 
 End Function
 
+Function showNextPosterScreen(selected As Object) As Dynamic
+    if validateParam(selected, "roAssociativeArray", "showNextPosterScreen") = false return -1
+    screen = preShowPosterScreen(selected.Title, "")
+    showPosterScreen(screen, selected)
+    return 0
+End Function
+
 Function playVideo(videoData) 
-	print "Displaying video: ";videoData.Key
+	print "Displaying video: ";videoData.MediaKey
 	
 	server = videoData.Server
-	video = server.VideoScreen(videoData.videoKey, videoData.title)
+	video = server.VideoScreen(videoData.MediaKey, videoData.title)
 	video.show()
     
     lastSavedPos   = 0
