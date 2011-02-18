@@ -47,7 +47,7 @@ Function showPosterScreen(screen, content) As Integer
                 contentType = selected.ContentType
                 print "list item selected | index = "; msg.GetIndex()
                 print "item type = "; contentType
-                if contentType = "movie" OR contentType = "episode" then
+                if contentType = "movie" OR contentType = "episode" OR contentType = "clip" then
                 	playVideo(selected)
                 elseif contentType = "Directory" then
                 	showNextPosterScreen(selected)

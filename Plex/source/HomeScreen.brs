@@ -40,6 +40,18 @@ Function showHomeScreen(screen, servers) As Integer
     		endif
     		sectionList.Push(section)
     	end for
+    	
+    	topLevel = server.GetContent("", "")
+    	for each section in topLevel
+    	    if section.Title = "video" OR section.Title = "music" then
+    		    if displayServerName then
+    			    section.Title = section.Title + " ("+server.name+")"
+    			    section.ShortDescriptionLine1 = section.ShortDescriptionLine1 + " ("+server.name+")"
+    		    endif
+    		    sectionList.Push(section)
+    	    endif
+    	end for
+    	
 	end for
     screen.SetContentList(sectionList)
     screen.Show()

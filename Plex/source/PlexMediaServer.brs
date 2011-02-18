@@ -23,7 +23,7 @@ Function directoryContent(sourceUrl, key) As Object
     response = httpRequest.GetToStringWithRetry()
     xml=CreateObject("roXMLElement")
     if not xml.Parse(response) then
-         print "Can't parse feed"
+         print "Can't parse feed:";response
         return invalid
     endif
     content = CreateObject("roArray", 10, true)
@@ -39,13 +39,13 @@ Function directoryContent(sourceUrl, key) As Object
 		directory.ShortDescriptionLine1 = directoryItem@title
 		thumb = directoryItem@thumb
 		if thumb <> invalid then
-			directory.SDPosterURL = TranscodedImage(m.serverUrl, queryUrl, thumb, "256", "256")
-			directory.HDPosterURL = TranscodedImage(m.serverUrl, queryUrl, thumb, "512", "512")
+			directory.SDPosterURL = TranscodedImage(m.serverUrl, queryUrl, thumb, "158", "204")
+			directory.HDPosterURL = TranscodedImage(m.serverUrl, queryUrl, thumb, "214", "306")
 		else
 			art = directoryItem@art
 			if art <> invalid then
-				directory.SDPosterURL = TranscodedImage(m.serverUrl, queryUrl, art, "256", "256")
-				directory.HDPosterURL = TranscodedImage(m.serverUrl, queryUrl, art, "512", "512")
+				directory.SDPosterURL = TranscodedImage(m.serverUrl, queryUrl, art, "158", "204")
+				directory.HDPosterURL = TranscodedImage(m.serverUrl, queryUrl, art, "214", "306")
 			endif
 		endif
 		
@@ -78,6 +78,9 @@ Function directoryContent(sourceUrl, key) As Object
     	
     	'* TODO: need a way to choose between media options and concat parts
     	video.mediaKey = videoItem.Media.Part@Key
+    	if video.mediaKey = invalid then
+    		video.mediaKey = videoItem@key
+        endif
 		content.Push(video)
     next
     for each trackItem in xml.Track
@@ -131,7 +134,13 @@ Function FullUrl(serverUrl, sourceUrl, key) As String
     print "SourceURL:";sourceUrl
     print "Key:";key
 	finalUrl = ""
-	if left(key, 1) = "/" then
+	if left(key, 4) = "http" then
+	    finalUrl = key
+	else if key = "" AND sourceUrl = "" then
+	    finalUrl = serverUrl
+    else if key = "" AND serverUrl = "" then
+        finalUrl = sourceUrl
+	else if left(key, 1) = "/" then
 		finalUrl = serverUrl+key
 	else
 		finalUrl = sourceUrl+"/"+key
