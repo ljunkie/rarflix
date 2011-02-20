@@ -14,9 +14,18 @@ Sub Main()
         print "unexpected error in preShowHomeScreen"
         return
     end if
-
+	'retrieving = CreateObject("roOneLineDialog")
+	'retrieving.SetTitle("Finding Plex Media Servers ...")
+	'retrieving.ShowBusyAnimation()
+	'retrieving.Show()
     servers = DiscoverPlexMediaServers()
-    showHomeScreen(screen, servers)
+	'retrieving.Close()
+    if servers.count() > 0 then
+    	showHomeScreen(screen, servers)
+    else
+        '* TODO: user friendly can't find PMS message
+    	
+    endif
 
 End Sub
 

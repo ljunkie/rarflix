@@ -25,14 +25,14 @@ End Function
 Function showHomeScreen(screen, servers) As Integer
 
     if validateParam(screen, "roPosterScreen", "showHomeScreen") = false return -1
-	retrieving = CreateObject("roOneLineDialog")
-	retrieving.SetTitle("Retrieving from Plex Media Server ...")
-	retrieving.ShowBusyAnimation()
-	retrieving.Show()
+	'retrieving = CreateObject("roOneLineDialog")
+	'retrieving.SetTitle("Retrieving from Plex Media Server ...")
+	'retrieving.ShowBusyAnimation()
+	'retrieving.Show()
 	displayServerName = servers.count() > 1
 	sectionList = CreateObject("roArray", 10, true)
 	for each server in servers
-    	sections = server.GetContent("", "/library/sections")
+    	sections = server.GetHomePageContent()
     	for each section in sections
     		if displayServerName then
     			section.Title = section.Title + " ("+server.name+")"
@@ -41,21 +41,10 @@ Function showHomeScreen(screen, servers) As Integer
     		sectionList.Push(section)
     	end for
     	
-    	topLevel = server.GetContent("", "")
-    	for each section in topLevel
-    	    if section.Title = "video" OR section.Title = "music" then
-    		    if displayServerName then
-    			    section.Title = section.Title + " ("+server.name+")"
-    			    section.ShortDescriptionLine1 = section.ShortDescriptionLine1 + " ("+server.name+")"
-    		    endif
-    		    sectionList.Push(section)
-    	    endif
-    	end for
-    	
 	end for
     screen.SetContentList(sectionList)
     screen.Show()
-	retrieving.Close()
+	'retrieving.Close()
     while true
         msg = wait(0, screen.GetMessagePort())
         if type(msg) = "roPosterScreenEvent" then
@@ -65,7 +54,7 @@ Function showHomeScreen(screen, servers) As Integer
             else if msg.isListItemSelected() then
                 print "list item selected | index = "; msg.GetIndex()
                 section = sectionList[msg.GetIndex()]
-                print "section selected ";section.server.name
+                print "section selected ";section.Title
                 displaySection(section)
             else if msg.isScreenClosed() then
                 return -1
@@ -78,8 +67,9 @@ Function showHomeScreen(screen, servers) As Integer
 End Function
 
 Function displaySection(section As Object) As Dynamic
-    if validateParam(section, "roAssociativeArray", "displayMovieSection") = false return -1
-    screen = preShowPosterScreen(section.Title, "")
+    if validateParam(section, "roAssociativeArray", "displaySection") = false return -1
+    screen = preShowPosterScreen(section, section.Title, "")
     showPosterScreen(screen, section)
     return 0
 End Function
+
