@@ -30,14 +30,16 @@ Function homePageContent() As Object
 	for each section in librarySections
 		content.Push(section)
 	next
-	
+	'* TODO: only add this if we actually have any valid apps?
 	appsSection = CreateObject("roAssociativeArray")
 	appsSection.server = m
     appsSection.sourceUrl = ""
-	appsSection.ContentType = "Directory"
+	appsSection.ContentType = "series"
 	appsSection.Key = "apps"
 	appsSection.Title = "Apps"
 	appsSection.ShortDescriptionLine1 = "Apps"
+	appsSection.SDPosterURL = "file://pkg:/images/plex.png"
+	appsSection.HDPosterURL = "file://pkg:/images/plex.png"
 	content.Push(appsSection)
 	return content
 End Function
@@ -47,17 +49,22 @@ Function xmlContent(sourceUrl, key) As Object
 	xmlResult = CreateObject("roAssociativeArray")
 	xmlResult.server = m
 	if key = "apps" then
-		xmlResult.xml = invalid
+		'* Fake a minimal server response with a new viewgroup
+		xml=CreateObject("roXMLElement")
+		xml.Parse("<MediaContainer viewgroup='apps'/>")
+		xmlResult.xml = xml
 		xmlResult.sourceUrl = invalid
 	else
 		queryUrl = FullUrl(m.serverUrl, sourceUrl, key)
-		print "Server Query URL:";queryUrl
+		
+		print "Fetching content from server at query URL:";queryUrl
 		httpRequest = NewHttp(queryUrl)
 		response = httpRequest.GetToStringWithRetry()
 		xml=CreateObject("roXMLElement")
 		if not xml.Parse(response) then
 			print "Can't parse feed:";response
 		endif
+			
 		xmlResult.xml = xml
 		xmlResult.sourceUrl = queryUrl
 	endif
@@ -66,7 +73,7 @@ End Function
 
 Function listNames(parsedXml) As Object
 	content = CreateObject("roArray", 10, true)
-	if parsedXml.xml = invalid then
+	if parsedXml.xml@viewGroup = "apps" then
 		content.Push("Video Apps")
 		content.Push("Audio Apps")
 		content.Push("Photo Apps")
@@ -84,7 +91,7 @@ End Function
 
 Function listKeys(parsedXml) As Object
 	content = CreateObject("roArray", 10, true)
-	if parsedXml.xml = invalid then
+	if parsedXml.xml@viewGroup = "apps" then
 		content.Push("/video")
 		content.Push("/music")
 		content.Push("/photos")
@@ -110,12 +117,10 @@ Function directoryContent(parsedXml) As Object
 	next
 	for each videoItem in parsedXml.xml.Video
 		video = m.ConstructVideoMetadata(parsedXml.xml, videoItem, parsedXml.sourceUrl)
-		video.sourceUrl = parsedXml.sourceUrl
 		content.Push(video)
 	next
 	for each trackItem in parsedXml.xml.Track
 		track = m.ConstructTrackMetadata(parsedXml.xml, trackItem, parsedXml.sourceUrl)
-		track.sourceUrl = parsedXml.sourceUrl
 		content.Push(track)
 	next
 	print "Found a content list with elements";content.count()
@@ -126,7 +131,10 @@ Function ConstructDirectoryMetadata(xml, directoryItem, sourceUrl) As Object
 	directory = CreateObject("roAssociativeArray")
 	directory.server = m
 	directory.sourceUrl = sourceUrl
-	directory.ContentType = "Directory"
+	directory.ContentType = directoryItem@type
+	if directory.ContentType = "show" then
+		directory.ContentType = "series"
+	endif
 	directory.Key = directoryItem@key
 	directory.Title = directoryItem@title
 	directory.Description = directoryItem@summary
@@ -137,15 +145,20 @@ Function ConstructDirectoryMetadata(xml, directoryItem, sourceUrl) As Object
 	if directory.ShortDescriptionLine1 = invalid then
 		directory.ShortDescriptionLine1 = directoryItem@name
 	endif
+	
+	sizes = ImageSizes(xml@viewGroup, directory.ContentType)
 	thumb = directoryItem@thumb
 	if thumb <> invalid then
-		directory.SDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, thumb, "158", "204")
-		directory.HDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, thumb, "214", "306")
+		directory.SDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, thumb, sizes.sdWidth, sizes.sdHeight)
+		directory.HDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, thumb, sizes.hdWidth, sizes.hdHeight)
 	else
 		art = directoryItem@art
+		if art = invalid then
+			art = xml@art
+		endif
 		if art <> invalid then
-			directory.SDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, art, "158", "204")
-			directory.HDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, art, "214", "306")
+			directory.SDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, art, sizes.sdWidth, sizes.sdHeight)
+			directory.HDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, art, sizes.hdWidth, sizes.hdHeight)
 		endif
 	endif
 	return directory
@@ -168,20 +181,19 @@ Function ConstructVideoMetadata(xml, videoItem, sourceUrl) As Object
 	endif
 	video.Description = videoItem@summary
 	
+	sizes = ImageSizes(xml@viewGroup, video.ContentType)
 	thumb = videoItem@thumb
-	'* these dimensions appear to slow down navigation. Maybe need to make it type specific
-	'* and agree with the Roku dimensions
 	if thumb <> invalid then
-		video.SDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, thumb, "158", "204")
-		video.HDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, thumb, "214", "306")
+		video.SDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, thumb, sizes.sdWidth, sizes.sdHeight)
+		video.HDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, thumb, sizes.hdWidth, sizes.hdHeight)
 	else
 		art = videoItem@art
 		if art = invalid then
 			art = xml@art
 		endif
 		if art <> invalid then
-			video.SDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, art, "158", "204")
-			video.HDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, art, "214", "306")	
+			video.SDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, art, sizes.sdWidth, sizes.sdHeight)
+			video.HDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, art, sizes.hdWidth, sizes.hdHeight)	
 		endif
 	endif
 	
@@ -191,6 +203,36 @@ Function ConstructVideoMetadata(xml, videoItem, sourceUrl) As Object
 		video.mediaKey = videoItem@key
 	endif
 	return video
+End Function
+		
+'* This logic reflects that in the PosterScreen.SetListStyle
+'* Not using the standard sizes appears to slow navigation down
+Function ImageSizes(viewGroup, contentType) As Object
+	'* arced-square size	
+	sdWidth = "223"
+	sdHeight = "200"
+	hdWidth = "300"
+	hdHeight = "300"
+	
+	if viewGroup = "movie" OR viewGroup = "show" OR viewGroup = "season" OR viewGroup = "episode" or contentType="clip" then
+	'* arced-portrait sizes
+		sdWidth = "158"
+		sdHeight = "204"
+		hdWidth = "214"
+		hdHeight = "306"
+	elseif contentType = "episode" AND viewGroup = "episode" then
+		'* flat-episodic sizes
+		sdWidth = "166"
+		sdHeight = "112"
+		hdWidth = "224"
+		hdHeight = "168"
+	endif
+	sizes = CreateObject("roAssociativeArray")
+	sizes.sdWidth = sdWidth
+	sizes.sdHeight = sdHeight
+	sizes.hdWidth = hdWidth
+	sizes.hdHeight = hdHeight
+	return sizes
 End Function
 		
 Function ConstructTrackMetadata(xml, trackItem, sourceUrl) As Object

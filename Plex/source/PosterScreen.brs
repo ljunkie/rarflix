@@ -11,7 +11,7 @@ Function preShowPosterScreen(section, breadA=invalid, breadB=invalid) As Object
         screen.SetBreadcrumbText(breadA, breadB)
     end if
     screen.SetListStyle("arced-portrait")
-    screen.setAdDisplayMode("scale-to-fill")
+    screen.setListDisplayMode("zoom-to-fill")
     return screen
 
 End Function
@@ -22,11 +22,10 @@ Function showPosterScreen(screen, content) As Integer
     if validateParam(screen, "roPosterScreen", "showPosterScreen") = false return -1
     if validateParam(content, "roAssociativeArray", "showPosterScreen") = false return -1
 	print "show poster screen for key ";content.key
-	
-	'retrieving = CreateObject("roOneLineDialog")
-	'retrieving.SetTitle("Retrieving from Plex Media Server ...")
-	'retrieving.ShowBusyAnimation()
-	'retrieving.Show()
+	'* Showing the screen before setting content results in the backgroud 'retrieving ...'
+	'* screen which I prefer over the dialog box and seems to be the common approach used 
+	'* by other Roku apps.
+	screen.Show()
 	server = content.server
 	contentKey = content.key
 	currentTitle = content.Title
@@ -37,10 +36,11 @@ Function showPosterScreen(screen, content) As Integer
 	keys = server.GetListKeys(queryResponse)
 	contentType = invalid
 	if names.Count() > 0 then
-	    focusedItem = 0
+	    focusedList = 0
 		screen.SetListNames(names)
-		screen.SetFocusedListItem(focusedItem)
-		contentKey = keys[focusedItem]
+		screen.SetFocusedList(focusedList)
+		screen.SetFocusedListItem(0)
+		contentKey = keys[focusedList]
 		subSectionResponse = server.GetQueryResponse(queryResponse.sourceUrl, contentKey)
 		contentList = server.GetContent(subSectionResponse)
 		if contentList.Count() > 0 then
@@ -56,18 +56,23 @@ Function showPosterScreen(screen, content) As Integer
     	screen.SetContentList(contentList)
     endif
     SetListStyle(screen, viewGroup, contentType)
-    screen.Show()
+    'screen.Show()
 	'retrieving.Close()
 
     while true
         msg = wait(0, screen.GetMessagePort())
         if type(msg) = "roPosterScreenEvent" then
+        	'* The list focused even changes content of the screen. While 'correct'
+        	'* it does make navigation a little slow. Maybe change on selection would
+        	'* be better. Or is there a way to say 'focused for >500ms' to detect 
+        	'* scroll pauses
             if msg.isListFocused() then
                 if names.Count() > 0 then
+					screen.SetContentList(invalid)
                 	focusedItem = msg.GetIndex()
                 	key = keys[focusedItem]
-                	print "Focused key:";key
-					screen.SetFocusedListItem(focusedItem)
+                	'print "Focused key:";key
+					screen.SetFocusedListItem(0)
 					newXmlResponse = server.GetQueryResponse(queryResponse.sourceUrl, key)
 					contentList = server.GetContent(newXmlResponse)
 					contentType = invalid
@@ -80,11 +85,14 @@ Function showPosterScreen(screen, content) As Integer
             else if msg.isListItemSelected() then
                 selected = contentList[msg.GetIndex()]
                 contentType = selected.ContentType
+                print "Content Type:";contentType
                 if contentType = "movie" OR contentType = "episode" OR contentType = "clip" then
                 	playVideo(selected)
-                elseif contentType = "Directory" then
+                else
                 	showNextPosterScreen(currentTitle, selected)
                 endif
+            else if msg.isListItemInfo() then
+            	print "list item info"
             else if msg.isScreenClosed() then
                 return -1
             end if
@@ -97,12 +105,12 @@ End Function
 
 Function SetListStyle(screen, viewGroup, contentType)
     print "View group:";viewGroup
-    print "View group:";contentType
+    print "Content type:";contentType
 	listStyle = "arced-square"
-    
+    '* TODO: map/set implementation using contains?
     if viewGroup = "episode" AND contentType = "episode" then
     	listStyle = "flat-episodic"
-    else if viewGroup = "movie" OR viewGroup = "show" OR viewGroup = "season" OR viewGroup = "episode" then
+    else if viewGroup = "movie" OR viewGroup = "show" OR viewGroup = "season" OR viewGroup = "episode" OR contentType = "clip"then
     	listStyle = "arced-portrait"
     endif
     screen.SetListStyle(listStyle)

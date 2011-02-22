@@ -16,7 +16,7 @@ Function preShowHomeScreen(breadA=invalid, breadB=invalid) As Object
     end if
 
     screen.SetListStyle("flat-category")
-    screen.setAdDisplayMode("scale-to-fit")
+    screen.setListDisplayMode("zoom-to-fill")
     return screen
 
 End Function
