@@ -20,6 +20,7 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
 	pms.ConstructDirectoryMetadata = ConstructDirectoryMetadata
 	pms.ConstructVideoMetadata = ConstructVideoMetadata
 	pms.ConstructTrackMetadata = ConstructTrackMetadata
+	pms.DetailedVideoMetadata = videoMetadata
 	return pms
 End Function
 
@@ -42,6 +43,84 @@ Function homePageContent() As Object
 	appsSection.HDPosterURL = "file://pkg:/images/plex.png"
 	content.Push(appsSection)
 	return content
+End Function
+
+'* Detailed video meta-data for springboard screen
+Function videoMetadata(sourceUrl, key) As Object
+	xmlResponse = m.GetQueryResponse(sourceUrl, key)
+	videoItem = xmlResponse.xml.Video[0]
+	video = CreateObject("roAssociativeArray")
+	video.server = m
+	video.sourceUrl = sourceUrl
+	video.ContentType = videoItem@type
+	video.Title = videoItem@title
+	video.Key = videoItem@key
+	video.ShortDescriptionLine1 = videoItem@title
+	video.ShortDescriptionLine2 = videoItem@tagline
+	video.Description = videoItem@summary
+	video.Rating = videoItem@contentRating
+	video.ReleaseDate = videoItem@originallyAvailableAt
+	if video.ContentType = "episode" then
+		video.EpisodeNumber = videoItem@index
+	endif
+	length = videoItem@duration
+	if length <> invalid then
+		video.Length = int(val(length)/1000)
+	endif
+	rating = videoItem@rating
+	if rating <> invalid then
+		video.StarRating = int(val(rating)*10)
+	endif
+	video.Actors = CreateObject("roArray", 15, true)
+	for each Actor in videoItem.Role
+		video.Actors.Push(Actor@tag)
+	next
+	video.Director = CreateObject("roArray", 3, true)
+	for each Director in videoItem.Director
+		video.Director.Push(Director@tag)
+	next
+	video.Categories = CreateObject("roArray", 15, true)
+	for each Category in videoItem.Genre
+		video.Categories.Push(Category@tag)
+	next
+	
+	sizes = ImageSizes("movie", video.ContentType)
+	thumb = videoItem@thumb
+	if thumb <> invalid then
+		video.SDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, thumb, sizes.sdWidth, sizes.sdHeight)
+		video.HDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, thumb, sizes.hdWidth, sizes.hdHeight)
+	else
+		art = videoItem@art
+		if art = invalid then
+			art = xml@art
+		endif
+		if art <> invalid then
+			video.SDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, art, sizes.sdWidth, sizes.sdHeight)
+			video.HDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, art, sizes.hdWidth, sizes.hdHeight)	
+		endif
+	endif
+	
+	video.IsHD = False
+	video.HDBranded = False
+	video.media = CreateObject("roArray", 5, true)
+	for each MediaItem in videoItem.Media
+		media = CreateObject("roAssociativeArray")
+		media.audioCodec = MediaItem@audioCodec
+		media.videoCodec = MediaItem@videoCodec
+		media.videoResolution = MediaItem@videoResolution
+		if media.videoResolution = "1080" OR media.videoResolution = "720" then
+			video.IsHD = True
+			video.HDBranded = True
+		endif
+		media.container = MediaItem@container
+		media.parts = CreateObject("roArray", 3, true)
+		for each MediaPart in MediaItem.Part
+			part = MediaPart@key
+			media.parts.Push(part)
+		next
+		video.media.Push(media)
+	next
+	return video
 End Function
 
 Function xmlContent(sourceUrl, key) As Object
@@ -196,15 +275,10 @@ Function ConstructVideoMetadata(xml, videoItem, sourceUrl) As Object
 			video.HDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, art, sizes.hdWidth, sizes.hdHeight)	
 		endif
 	endif
-	
-	'* TODO: need a way to choose between media options and concat parts
-	video.mediaKey = videoItem.Media.Part@Key
-	if video.mediaKey = invalid then
-		video.mediaKey = videoItem@key
-	endif
 	return video
 End Function
-		
+
+
 '* This logic reflects that in the PosterScreen.SetListStyle
 '* Not using the standard sizes appears to slow navigation down
 Function ImageSizes(viewGroup, contentType) As Object
@@ -213,8 +287,7 @@ Function ImageSizes(viewGroup, contentType) As Object
 	sdHeight = "200"
 	hdWidth = "300"
 	hdHeight = "300"
-	
-	if viewGroup = "movie" OR viewGroup = "show" OR viewGroup = "season" OR viewGroup = "episode" or contentType="clip" then
+	if viewGroup = "movie" OR viewGroup = "show" OR viewGroup = "season" OR viewGroup = "episode" OR contentType="clip" then
 	'* arced-portrait sizes
 		sdWidth = "158"
 		sdHeight = "204"

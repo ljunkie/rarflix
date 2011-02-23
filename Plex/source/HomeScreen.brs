@@ -68,7 +68,7 @@ End Function
 
 Function displaySection(section As Object) As Dynamic
     if validateParam(section, "roAssociativeArray", "displaySection") = false return -1
-    screen = preShowPosterScreen(section, section.Title, "")
+    screen = preShowPosterScreen(section.Title, "")
     showPosterScreen(screen, section)
     return 0
 End Function
