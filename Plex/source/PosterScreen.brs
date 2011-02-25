@@ -84,8 +84,10 @@ Function showPosterScreen(screen, content) As Integer
             else if msg.isListItemSelected() then
                 selected = contentList[msg.GetIndex()]
                 contentType = selected.ContentType
-                if contentType = "movie" OR contentType = "episode" OR contentType = "clip" then
+                if contentType = "movie" OR contentType = "episode" then
                 	displaySpringboardScreen(currentTitle, contentList, msg.GetIndex())
+                else if contentType = "clip" then
+                	playVideo(server, selected.title, selected.key)
                 else
                 	showNextPosterScreen(currentTitle, selected)
                 endif
