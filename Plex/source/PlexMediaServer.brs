@@ -307,7 +307,7 @@ Function ImageSizes(viewGroup, contentType) As Object
 	sizes.hdHeight = hdHeight
 	return sizes
 End Function
-		
+'* TODO: this is not fully developed
 Function ConstructTrackMetadata(xml, trackItem, sourceUrl) As Object
 	track = CreateObject("roAssociativeArray")
 	track.server = m
@@ -388,7 +388,7 @@ End Function
 Function StartTranscodingSession(videoUrl) As String
 	cookiesRequest = CreateObject("roUrlTransfer")
 	cookiesRequest.SetUrl(videoUrl)
-	capabilities = "protocols=http-streaming-video;http-streaming-video-720p;http-streaming-video-1080p;videoDecoders=h264{profile:high&resolution:1080&level:40};audioDecoders=aac"
+	capabilities = "protocols=http-streaming-video;http-streaming-video-720p;videoDecoders=h264{profile:high&resolution:1080&level:40};audioDecoders=aac"
 	cookiesRequest.AddHeader("X-Plex-Client-Capabilities", capabilities)
 	cookiesHead = cookiesRequest.Head()
 	cookieHeader = cookiesHead.GetResponseHeaders()["set-cookie"]
@@ -413,7 +413,13 @@ Function TranscodingVideoUrl(serverUrl As String, videoUrl As String) As String
     
     location = serverUrl + videoUrl
     print "Location:";location
-    '* Question here about how the quality is handled by Roku for q>6
+    '* Question here about how the quality is handled by Roku for q>6 (playback baulked at q>6). 
+    '* More recent testing: it now appears to work fine with 7,8 and 9 but baulks at 10. It also
+    '* appears to be able to handle the bitrate at q=9,, even though it's way over spec.
+    '* Only difference (other than PMS) was wireless vs wired. Maybe Roku can detect upper end of network bandwidth
+    '* capabilities and rejects streams above that?
+    '*
+    '* Put min and max and let Roku choose? Shouldn't (yeah, right) bounce after initial selection as we're on local network
     '* 
     myurl = "/video/:/transcode/segmented/start.m3u8?identifier=com.plexapp.plugins.library&ratingKey=97007888&offset=0&quality=7&url="+HttpEncode(location)+"&3g=0&httpCookies=&userAgent="
 	'myurl = "/video/:/transcode/segmented/start.m3u8?identifier=com.plexapp.plugins.library&ratingKey=97007888&offset=0&minQuality=1&maxQuality=7&url="+HttpEncode(location)+"&3g=0&httpCookies=&userAgent="
