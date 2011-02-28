@@ -1,31 +1,23 @@
 
-'* TODO: this assumes one part media. Implement multi-part at some point.
-'* TODO: currently always transcodes. Check direct stream codecs first.
-Function playVideo(server, title, videoKey) 
-	print "Displaying video: ";videoKey
+Function playVideo(server, metadata, mediaData, seekValue) 
+	print "Displaying video: ";metadata.title
+	seconds = int(seekValue/1000)
 	
-	video = server.VideoScreen(videoKey, title)
+	video = server.VideoScreen(metadata, mediaData, seconds)
+	video.SetPositionNotificationPeriod(5)
+    server.Scrobble(metadata.ratingKey, metadata.mediaContainerIdentifier)
 	video.show()
     
-    lastSavedPos   = 0
-    statusInterval = 10 'position must change by more than this number of seconds before saving
-
+    lastPosition = 0
     while true
         msg = wait(0, video.GetMessagePort())
         if type(msg) = "roVideoScreenEvent"
-            if msg.isScreenClosed() then 'ScreenClosed event
+            if msg.isScreenClosed() then
+            	server.SetProgress(metadata.ratingKey, metadata.mediaContainerIdentifier, 1000*lastPosition)
                 server.StopVideo()
                 exit while
             else if msg.isPlaybackPosition() then
-                nowpos = msg.GetIndex()
-                if nowpos > 10000
-                    
-                end if
-                if nowpos > 0
-                    if abs(nowpos - lastSavedPos) > statusInterval
-                        lastSavedPos = nowpos
-                    end if
-                end if
+                lastPosition = msg.GetIndex()
             else if msg.isRequestFailed()
                 print "play failed: "; msg.GetMessage()
             else

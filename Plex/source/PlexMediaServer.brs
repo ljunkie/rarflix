@@ -21,7 +21,44 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
 	pms.ConstructVideoMetadata = ConstructVideoMetadata
 	pms.ConstructTrackMetadata = ConstructTrackMetadata
 	pms.DetailedVideoMetadata = videoMetadata
+	pms.SetProgress = progress
+	pms.Scrobble = scrobble
+	pms.Unscrobble = unscrobble
+	pms.Rate = rate
+	pms.ExecuteCommand = issueCommand
 	return pms
+End Function
+
+Function progress(key, identifier, time)
+	commandUrl = "/:/progress?key="+key+"&identifier="+identifier+"&time="+time.tostr()
+	print "Command URL:"+commandUrl
+	m.ExecuteCommand(commandUrl)
+End Function
+
+Function scrobble(key, identifier)
+	commandUrl = "/:/scrobble?key="+key+"&identifier="+identifier
+	print "Command URL:"+commandUrl
+	m.ExecuteCommand(commandUrl)
+End Function
+
+Function unscrobble(key, identifier)
+	commandUrl = "/:/unscrobble?key="+key+"&identifier="+identifier
+	print "Command URL:"+commandUrl
+	m.ExecuteCommand(commandUrl)
+End Function
+
+Function rate(key, identifier, rating)
+	commandUrl = "/:/rate?key="+key+"&identifier="+identifier+"&rating="+rating
+	print "Command URL:"+commandUrl
+	m.ExecuteCommand(commandUrl)
+End Function
+
+Function issueCommand(commandPath)
+	commandUrl = m.serverUrl + commandPath
+	print "Executing command with full command URL:";commandUrl
+	request = CreateObject("roUrlTransfer")
+	request.SetUrl(commandUrl)
+	request.GetToString()
 End Function
 
 Function homePageContent() As Object
@@ -51,7 +88,9 @@ Function videoMetadata(sourceUrl, key) As Object
 	videoItem = xmlResponse.xml.Video[0]
 	video = CreateObject("roAssociativeArray")
 	video.server = m
+	video.mediaContainerIdentifier = xmlResponse.xml@identifier
 	video.sourceUrl = sourceUrl
+	video.ratingKey = videoItem@ratingKey
 	video.ContentType = videoItem@type
 	video.Title = videoItem@title
 	video.Key = videoItem@key
@@ -60,6 +99,7 @@ Function videoMetadata(sourceUrl, key) As Object
 	video.Description = videoItem@summary
 	video.Rating = videoItem@contentRating
 	video.ReleaseDate = videoItem@originallyAvailableAt
+	video.viewOffset = videoItem@viewOffset
 	if video.ContentType = "episode" then
 		video.EpisodeNumber = videoItem@index
 	endif
@@ -105,6 +145,7 @@ Function videoMetadata(sourceUrl, key) As Object
 	video.media = CreateObject("roArray", 5, true)
 	for each MediaItem in videoItem.Media
 		media = CreateObject("roAssociativeArray")
+		media.identifier = MediaItem@id
 		media.audioCodec = MediaItem@audioCodec
 		media.videoCodec = MediaItem@videoCodec
 		media.videoResolution = MediaItem@videoResolution
@@ -247,6 +288,7 @@ Function ConstructVideoMetadata(xml, videoItem, sourceUrl) As Object
 	video = CreateObject("roAssociativeArray")
 	video.server = m
 	video.sourceUrl = sourceUrl
+	video.ratingKey = videoItem@ratingKey
 	video.ContentType = videoItem@type
 	video.Title = videoItem@title
 	video.Key = videoItem@key
@@ -328,13 +370,16 @@ Function ConstructTrackMetadata(xml, trackItem, sourceUrl) As Object
 End Function
 		
 
-'* Currently assumes transcoding but could encapsulate finding a direct stream
-Function constructVideoScreen(videoKey as String, title as String) As Object
-    print "Constructing video screen for ";videoKey
+'* TODO: this assumes one part media. Implement multi-part at some point.
+'* TODO: currently always transcodes. Check direct stream codecs first.
+Function constructVideoScreen(metadata, mediaData, StartTime As Integer) As Object
+	mediaKey = mediaData.parts[0]
+    print "Constructing video screen for ";mediaKey
     p = CreateObject("roMessagePort")
     video = CreateObject("roVideoScreen")
     video.setMessagePort(p)
-    videoclip = ConstructVideoClip(m.serverUrl, videoKey, title)
+    videoclip = ConstructVideoClip(m.serverUrl, mediaKey, metadata.title)
+    videoclip.PlayStart = StartTime
     video.SetContent(videoclip)
     m.Cookie = StartTranscodingSession(videoclip.StreamUrls[0])
 	video.AddHeader("Cookie", m.Cookie)
@@ -415,14 +460,17 @@ Function TranscodingVideoUrl(serverUrl As String, videoUrl As String) As String
     print "Location:";location
     '* Question here about how the quality is handled by Roku for q>6 (playback baulked at q>6). 
     '* More recent testing: it now appears to work fine with 7,8 and 9 but baulks at 10. It also
-    '* appears to be able to handle the bitrate at q=9,, even though it's way over spec.
+    '* appears to be able to handle the bitrate at q=9, even though it's way over spec.
+    '*
+    '* Take that back. 1080p no transcoding at q=9 is not good.
+    '*
     '* Only difference (other than PMS) was wireless vs wired. Maybe Roku can detect upper end of network bandwidth
     '* capabilities and rejects streams above that?
     '*
     '* Put min and max and let Roku choose? Shouldn't (yeah, right) bounce after initial selection as we're on local network
     '* 
-    myurl = "/video/:/transcode/segmented/start.m3u8?identifier=com.plexapp.plugins.library&ratingKey=97007888&offset=0&quality=7&url="+HttpEncode(location)+"&3g=0&httpCookies=&userAgent="
-	'myurl = "/video/:/transcode/segmented/start.m3u8?identifier=com.plexapp.plugins.library&ratingKey=97007888&offset=0&minQuality=1&maxQuality=7&url="+HttpEncode(location)+"&3g=0&httpCookies=&userAgent="
+    myurl = "/video/:/transcode/segmented/start.m3u8?identifier=com.plexapp.plugins.library&ratingKey=97007888&offset=0&quality=8&url="+HttpEncode(location)+"&3g=0&httpCookies=&userAgent="
+	'myurl = "/video/:/transcode/segmented/start.m3u8?identifier=com.plexapp.plugins.library&ratingKey=97007888&offset=0&minQuality=5&maxQuality=8&url="+HttpEncode(location)+"&3g=0&httpCookies=&userAgent="
 	publicKey = "KQMIY6GATPC63AIMC4R2"
 	time = LinuxTime().tostr()
 	msg = myurl+"@"+time
