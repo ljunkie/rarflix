@@ -26,3 +26,26 @@ Function playVideo(server, metadata, mediaData, seekValue)
         end if
     end while
 End Function
+
+Function playPluginVideo(server, metadata) 
+	print "Displaying video: ";metadata
+	video = server.PluginVideoScreen(metadata)
+	video.show()
+    
+    lastPosition = 0
+    while true
+        msg = wait(0, video.GetMessagePort())
+        if type(msg) = "roVideoScreenEvent"
+            if msg.isScreenClosed() then
+                server.StopVideo()
+                exit while
+            else if msg.isPlaybackPosition() then
+                lastPosition = msg.GetIndex()
+            else if msg.isRequestFailed()
+                print "play failed: "; msg.GetMessage()
+            else
+                print "Unknown event: "; msg.GetType(); " msg: "; msg.GetMessage()
+            endif
+        end if
+    end while
+End Function

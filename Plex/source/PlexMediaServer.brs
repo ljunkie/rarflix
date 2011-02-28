@@ -15,6 +15,7 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
 	pms.GetListNames = listNames
 	pms.GetListKeys = listKeys
 	pms.VideoScreen = constructVideoScreen
+	pms.PluginVideoScreen = constructPluginVideoScreen
 	pms.StopVideo = stopTranscode
 	pms.GetQueryResponse = xmlContent
 	pms.ConstructDirectoryMetadata = ConstructDirectoryMetadata
@@ -31,31 +32,27 @@ End Function
 
 Function progress(key, identifier, time)
 	commandUrl = "/:/progress?key="+key+"&identifier="+identifier+"&time="+time.tostr()
-	print "Command URL:"+commandUrl
 	m.ExecuteCommand(commandUrl)
 End Function
 
 Function scrobble(key, identifier)
 	commandUrl = "/:/scrobble?key="+key+"&identifier="+identifier
-	print "Command URL:"+commandUrl
 	m.ExecuteCommand(commandUrl)
 End Function
 
 Function unscrobble(key, identifier)
 	commandUrl = "/:/unscrobble?key="+key+"&identifier="+identifier
-	print "Command URL:"+commandUrl
 	m.ExecuteCommand(commandUrl)
 End Function
 
 Function rate(key, identifier, rating)
 	commandUrl = "/:/rate?key="+key+"&identifier="+identifier+"&rating="+rating
-	print "Command URL:"+commandUrl
 	m.ExecuteCommand(commandUrl)
 End Function
 
 Function issueCommand(commandPath)
 	commandUrl = m.serverUrl + commandPath
-	print "Executing command with full command URL:";commandUrl
+	'print "Executing command with full command URL:";commandUrl
 	request = CreateObject("roUrlTransfer")
 	request.SetUrl(commandUrl)
 	request.GetToString()
@@ -254,6 +251,8 @@ Function ConstructDirectoryMetadata(xml, directoryItem, sourceUrl) As Object
 	directory.ContentType = directoryItem@type
 	if directory.ContentType = "show" then
 		directory.ContentType = "series"
+	else if directory.ContentType = invalid then
+		directory.ContentType = "appClip"
 	endif
 	directory.Key = directoryItem@key
 	directory.Title = directoryItem@title
@@ -290,6 +289,10 @@ Function ConstructVideoMetadata(xml, videoItem, sourceUrl) As Object
 	video.sourceUrl = sourceUrl
 	video.ratingKey = videoItem@ratingKey
 	video.ContentType = videoItem@type
+	if video.ContentType = invalid then
+		'* treat video items with no content type as clips
+		video.ContentType = "clip" 
+	endif
 	video.Title = videoItem@title
 	video.Key = videoItem@key
 	video.ShortDescriptionLine1 = videoItem@title
@@ -299,6 +302,9 @@ Function ConstructVideoMetadata(xml, videoItem, sourceUrl) As Object
 		if video.ShortDescriptionLine2 = invalid then
 			video.ShortDescriptionLine2 = "Episode "+videoItem@index
 		endif
+	endif
+	if xml@viewGroup = "Details" then
+		video.ShortDescriptionLine2 = videoItem@summary
 	endif
 	video.Description = videoItem@summary
 	
@@ -329,7 +335,7 @@ Function ImageSizes(viewGroup, contentType) As Object
 	sdHeight = "200"
 	hdWidth = "300"
 	hdHeight = "300"
-	if viewGroup = "movie" OR viewGroup = "show" OR viewGroup = "season" OR viewGroup = "episode" OR contentType="clip" then
+	if viewGroup = "movie" OR viewGroup = "show" OR viewGroup = "season" OR viewGroup = "episode" then
 	'* arced-portrait sizes
 		sdWidth = "158"
 		sdHeight = "204"
@@ -341,6 +347,13 @@ Function ImageSizes(viewGroup, contentType) As Object
 		sdHeight = "112"
 		hdWidth = "224"
 		hdHeight = "168"
+	elseif viewGroup = "Details" then
+		'* arced-square sizes
+		sdWidth = "223"
+		sdHeight = "200"
+		hdWidth = "300"
+		hdHeight = "300"
+	
 	endif
 	sizes = CreateObject("roAssociativeArray")
 	sizes.sdWidth = sdWidth
@@ -349,7 +362,8 @@ Function ImageSizes(viewGroup, contentType) As Object
 	sizes.hdHeight = hdHeight
 	return sizes
 End Function
-'* TODO: this is not fully developed
+
+'* TODO: music is not fully developed
 Function ConstructTrackMetadata(xml, trackItem, sourceUrl) As Object
 	track = CreateObject("roAssociativeArray")
 	track.server = m
@@ -369,6 +383,17 @@ Function ConstructTrackMetadata(xml, trackItem, sourceUrl) As Object
 	return track
 End Function
 		
+Function constructPluginVideoScreen(metadata) As Object
+    print "Constructing video screen for ";metadata.key
+    p = CreateObject("roMessagePort")
+    video = CreateObject("roVideoScreen")
+    video.setMessagePort(p)
+    videoclip = ConstructVideoClip(m.serverUrl, metadata.key, metadata.sourceUrl, metadata.title)
+    video.SetContent(videoclip)
+    m.Cookie = StartTranscodingSession(videoclip.StreamUrls[0])
+	video.AddHeader("Cookie", m.Cookie)
+	return video
+End Function
 
 '* TODO: this assumes one part media. Implement multi-part at some point.
 '* TODO: currently always transcodes. Check direct stream codecs first.
@@ -378,7 +403,7 @@ Function constructVideoScreen(metadata, mediaData, StartTime As Integer) As Obje
     p = CreateObject("roMessagePort")
     video = CreateObject("roVideoScreen")
     video.setMessagePort(p)
-    videoclip = ConstructVideoClip(m.serverUrl, mediaKey, metadata.title)
+    videoclip = ConstructVideoClip(m.serverUrl, mediaKey, metadata.sourceUrl, metadata.title)
     videoclip.PlayStart = StartTime
     video.SetContent(videoclip)
     m.Cookie = StartTranscodingSession(videoclip.StreamUrls[0])
@@ -441,10 +466,10 @@ Function StartTranscodingSession(videoUrl) As String
 End Function
 
 '* Roku video clip definition as an array
-Function ConstructVideoClip(serverUrl as String, videoUrl as String, title as String) As Object
+Function ConstructVideoClip(serverUrl as String, videoUrl as String, sourceUrl As String, title as String) As Object
 	videoclip = CreateObject("roAssociativeArray")
     videoclip.StreamBitrates = [0]
-    videoclip.StreamUrls = [TranscodingVideoUrl(serverUrl, videoUrl)]
+    videoclip.StreamUrls = [TranscodingVideoUrl(serverUrl, videoUrl, sourceUrl)]
     videoclip.StreamQualities = ["HD"]
     videoclip.StreamFormat = "hls"
     videoclip.Title = title
@@ -454,9 +479,16 @@ End Function
 '*
 '* Construct the Plex transcoding URL. 
 '*
-Function TranscodingVideoUrl(serverUrl As String, videoUrl As String) As String
-    
-    location = serverUrl + videoUrl
+Function TranscodingVideoUrl(serverUrl As String, videoUrl As String, sourceUrl As String) As String
+    print "Constructing transcoding video URL for "+videoUrl
+    '* Deal with absolute, full then relative URLs
+    if left(videoUrl, 1) = "/" then
+    	location = serverUrl + videoUrl 
+    else if left(videoUrl, 7) = "http://"
+    	location = videoUrl
+    else
+    	location = sourceUrl + "/" + videoUrl
+    endif
     print "Location:";location
     '* Question here about how the quality is handled by Roku for q>6 (playback baulked at q>6). 
     '* More recent testing: it now appears to work fine with 7,8 and 9 but baulks at 10. It also
@@ -476,7 +508,7 @@ Function TranscodingVideoUrl(serverUrl As String, videoUrl As String) As String
 	msg = myurl+"@"+time
 	finalMsg = HMACHash(msg)
 	finalUrl = serverUrl + myurl+"&X-Plex-Access-Key=" + publicKey + "&X-Plex-Access-Time=" + time + "&X-Plex-Access-Code=" + HttpEncode(finalMsg)
-	print "Final URL";finalUrl
+	print "Final URL:";finalUrl
     return finalUrl
 End Function
 

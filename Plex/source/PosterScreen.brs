@@ -10,8 +10,8 @@ Function preShowPosterScreen(breadA=invalid, breadB=invalid) As Object
     if breadA<>invalid and breadB<>invalid then
         screen.SetBreadcrumbText(breadA, breadB)
     end if
-    screen.SetListStyle("arced-portrait")
-    screen.setListDisplayMode("zoom-to-fill")
+    screen.SetListStyle("arced-square")
+    screen.setListDisplayMode("scale-to-fit")
     return screen
 
 End Function
@@ -84,10 +84,11 @@ Function showPosterScreen(screen, content) As Integer
             else if msg.isListItemSelected() then
                 selected = contentList[msg.GetIndex()]
                 contentType = selected.ContentType
+                print "Content type in poster screen:";contentType
                 if contentType = "movie" OR contentType = "episode" then
                 	displaySpringboardScreen(currentTitle, contentList, msg.GetIndex())
                 else if contentType = "clip" then
-                	playVideo(server, selected.title, selected.key, 0)
+        			playPluginVideo(server, selected)
                 else
                 	showNextPosterScreen(currentTitle, selected)
                 endif
@@ -107,13 +108,18 @@ Function SetListStyle(screen, viewGroup, contentType)
     print "View group:";viewGroup
     print "Content type:";contentType
 	listStyle = "arced-square"
-    
+    displayMode = "scale-to-fit"
     if viewGroup = "episode" AND contentType = "episode" then
     	listStyle = "flat-episodic"
-    else if viewGroup = "movie" OR viewGroup = "show" OR viewGroup = "season" OR viewGroup = "episode" OR contentType = "clip"then
+    	displayMode = "zoom-to-fill"
+    else if viewGroup = "Details" then
+    	listStyle = "arced-square"
+    	displayMode = "scale-to-fit"
+    else if viewGroup = "movie" OR viewGroup = "show" OR viewGroup = "season" OR viewGroup = "episode" then
     	listStyle = "arced-portrait"
     endif
     screen.SetListStyle(listStyle)
+    screen.SetListDisplayMode(displayMode)
 End Function
 
 Function showNextPosterScreen(currentTitle, selected As Object) As Dynamic
