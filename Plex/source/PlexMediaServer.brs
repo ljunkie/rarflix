@@ -27,7 +27,20 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
 	pms.Unscrobble = unscrobble
 	pms.Rate = rate
 	pms.ExecuteCommand = issueCommand
+	pms.UpdateStreamSelection = updateStreamSelection
 	return pms
+End Function
+
+'* This needs a HTTP PUT command that does not exist in the Roku API
+Function updateStreamSelection(partId, audioStreamId, subtitleStreamId)
+	subtitle = invalid
+	if subtitleStreamId <> invalid then
+		subtitle = subtitleStreamId.tostr()
+	endif
+	commandUrl = m.serverUrl + "/library/parts/"+partId.tostr()+"?audioStreamID="+audioStreamId.tostr()+"&subtitleStreamID="+subtitle
+	request = CreateObject("roUrlTransfer")
+	request.SetUrl(commandUrl)
+	request.GetToString()
 End Function
 
 Function progress(key, identifier, time)
@@ -52,7 +65,7 @@ End Function
 
 Function issueCommand(commandPath)
 	commandUrl = m.serverUrl + commandPath
-	'print "Executing command with full command URL:";commandUrl
+	print "Executing command with full command URL:";commandUrl
 	request = CreateObject("roUrlTransfer")
 	request.SetUrl(commandUrl)
 	request.GetToString()
@@ -97,6 +110,8 @@ Function videoMetadata(sourceUrl, key) As Object
 	video.Rating = videoItem@contentRating
 	video.ReleaseDate = videoItem@originallyAvailableAt
 	video.viewOffset = videoItem@viewOffset
+	video.viewCount = videoItem@viewCount
+	
 	if video.ContentType = "episode" then
 		video.EpisodeNumber = videoItem@index
 	endif
@@ -150,10 +165,30 @@ Function videoMetadata(sourceUrl, key) As Object
 			video.IsHD = True
 			video.HDBranded = True
 		endif
+		if media.videoResolution = "1080" then
+			video.FullHD = true
+			frameRate = MediaItem@videoFrameRate
+			if frameRate = "24p" then
+				video.FrameRate = 24
+			else if frameRate = "NTSC"
+				video.FrameRate = 30
+			endif
+		endif
 		media.container = MediaItem@container
 		media.parts = CreateObject("roArray", 3, true)
 		for each MediaPart in MediaItem.Part
-			part = MediaPart@key
+			part = CreateObject("roAssociativeArray")
+			part.key = MediaPart@key
+			part.streams = CreateObject("roArray", 5, true)
+			for each StreamItem in MediaPart.Stream
+				stream = CreateObject("roAssociativeArray")
+				stream.id = StreamItem@id
+				stream.streamType = StreamItem@streamType
+				stream.codec = StreamItem@codec
+				stream.language = StreamItem@language
+				stream.selected = StreamItem@selected
+				part.streams.Push(stream)
+			next
 			media.parts.Push(part)
 		next
 		video.media.Push(media)
@@ -398,7 +433,8 @@ End Function
 '* TODO: this assumes one part media. Implement multi-part at some point.
 '* TODO: currently always transcodes. Check direct stream codecs first.
 Function constructVideoScreen(metadata, mediaData, StartTime As Integer) As Object
-	mediaKey = mediaData.parts[0]
+	mediaPart = mediaData.parts[0]
+	mediaKey = mediaPart.key
     print "Constructing video screen for ";mediaKey
     p = CreateObject("roMessagePort")
     video = CreateObject("roVideoScreen")
@@ -467,10 +503,16 @@ End Function
 
 '* Roku video clip definition as an array
 Function ConstructVideoClip(serverUrl as String, videoUrl as String, sourceUrl As String, title as String) As Object
+	deviceInfo = CreateObject("roDeviceInfo")
+	quality = "SD"
+	if deviceInfo.GetDisplayType() = "HDTV" then
+		quality = "HD"
+	endif
+	print "Setting stream quality:";quality
 	videoclip = CreateObject("roAssociativeArray")
     videoclip.StreamBitrates = [0]
     videoclip.StreamUrls = [TranscodingVideoUrl(serverUrl, videoUrl, sourceUrl)]
-    videoclip.StreamQualities = ["HD"]
+    videoclip.StreamQualities = [quality]
     videoclip.StreamFormat = "hls"
     videoclip.Title = title
     return videoclip

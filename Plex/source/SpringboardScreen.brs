@@ -28,14 +28,16 @@ Function showSpringboardScreen(screen, contentList, index) As Integer
         else if msg.isButtonPressed() then
         	buttonCommand = metaDataArray[str(msg.getIndex())]
         	print "Button command:";buttonCommand
-			startTime = 0
-			if buttonCommand = "resume" then
-				startTime = int(val(metadata.viewOffset))
-			endif
-        	mediaData = metaDataArray.media
-        	playVideo(server, metadata, mediaData, startTime)
-        	'* Refresh play data after playing
-        	Populate(screen, contentList, index)
+        	if buttonCommand = "play" OR buttonCommand = "resume" then
+				startTime = 0
+				if buttonCommand = "resume" then
+					startTime = int(val(metadata.viewOffset))
+				endif
+        		mediaData = metaDataArray.media
+        		playVideo(server, metadata, mediaData, startTime)
+        		'* Refresh play data after playing
+        		Populate(screen, contentList, index)
+        	endif
         else if msg.isRemoteKeyPressed() then
         	'* index=4 -> left ; index=5 -> right
 			if msg.getIndex() = 4 then
@@ -76,7 +78,7 @@ Function Populate(screen, contentList, index) As Object
 	buttonCount = 0
 	
 	'* Buttons for play and resume of preferred media item.
-	'* TODO: add ability to turn subtitles on/off, pick one and pick audio stram
+	'* TODO: add ability to turn subtitles on/off, pick one and pick audio stream
 	'* 
 	media = PickMediaItem(metadata.media)
 	metaDataArray.media = media
@@ -84,13 +86,23 @@ Function Populate(screen, contentList, index) As Object
 	metaDataArray[str(buttonCount)] = "play"
 	buttonCount = buttonCount + 1
 	if metadata.viewOffset <> invalid then
-	
 		intervalInSeconds = fix(val(metadata.viewOffset)/(1000))	
 		resumeTitle = "Resume from "+TimeDisplay(intervalInSeconds)
 		screen.AddButton(buttonCount, resumeTitle)
 		metaDataArray[str(buttonCount)] = "resume"
 		buttonCount = buttonCount + 1
 	endif
+	'* Again, how to deal with multiple parts?
+	mediaPart = media.parts[0]
+	subtitleStreams = []
+	audioStreams = []
+	for each Stream in mediaPart.streams
+		if Stream.streamType = "2" then
+			audioStreams.Push(Stream)
+		else if Stream.streamType = "3" then
+			subtitleStreams.Push(Stream)
+		endif
+	next
 	screen.PrefetchPoster(metadata.SDPosterURL, metadata.HDPosterURL)
 	screen.Show()
 	retrieving.Close()

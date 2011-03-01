@@ -31,31 +31,27 @@ Function showPosterScreen(screen, content) As Integer
 	currentTitle = content.Title
 	
 	queryResponse = server.GetQueryResponse(content.sourceUrl, contentKey)
-    viewGroup = queryResponse.xml@viewGroup
+    'viewGroup = queryResponse.xml@viewGroup
 	names = server.GetListNames(queryResponse)
 	keys = server.GetListKeys(queryResponse)
-	contentType = invalid
+	'contentType = invalid
 	if names.Count() > 0 then
 	    focusedList = 0
 		screen.SetListNames(names)
 		screen.SetFocusedList(focusedList)
 		screen.SetFocusedListItem(0)
 		contentKey = keys[focusedList]
-		subSectionResponse = server.GetQueryResponse(queryResponse.sourceUrl, contentKey)
-		contentList = server.GetContent(subSectionResponse)
-		if contentList.Count() > 0 then
-			contentType = contentList[0].ContentType
-		endif
-    	screen.SetContentList(contentList)
-    	viewGroup = subSectionResponse.xml@viewGroup
+		contentList = PopulateContentList(server, screen, queryResponse.sourceUrl, contentKey)
 	else
 		contentList = server.GetContent(queryResponse)
+		contentType = invalid
 		if contentList.Count() > 0 then
 			contentType = contentList[0].ContentType
 		endif
     	screen.SetContentList(contentList)
+		viewGroup = queryResponse.xml@viewGroup
+    	SetListStyle(screen, viewGroup, contentType)
     endif
-    SetListStyle(screen, viewGroup, contentType)
     screen.Show()
 
     while true
@@ -72,14 +68,7 @@ Function showPosterScreen(screen, content) As Integer
                 	key = keys[focusedItem]
                 	'print "Focused key:";key
 					screen.SetFocusedListItem(0)
-					newXmlResponse = server.GetQueryResponse(queryResponse.sourceUrl, key)
-					contentList = server.GetContent(newXmlResponse)
-					contentType = invalid
-					if contentList.Count() > 0 then
-						contentType = contentList[0].ContentType
-					endif
-    				SetListStyle(screen, newXmlResponse.xml@viewGroup, contentType)
-    				screen.SetContentList(contentList)
+					contentList = PopulateContentList(server, screen, queryResponse.sourceUrl, key)
                 endif
             else if msg.isListItemSelected() then
                 selected = contentList[msg.GetIndex()]
@@ -99,9 +88,20 @@ Function showPosterScreen(screen, content) As Integer
             end if
         end If
     end while
-
     return 0
+End Function
 
+Function PopulateContentList(server, screen, sourceUrl, contentKey) As Object
+	subSectionResponse = server.GetQueryResponse(sourceUrl, contentKey)
+	contentList = server.GetContent(subSectionResponse)
+	contentType = invalid
+	if contentList.Count() > 0 then
+		contentType = contentList[0].ContentType
+	endif
+    screen.SetContentList(contentList)
+    viewGroup = subSectionResponse.xml@viewGroup
+    SetListStyle(screen, viewGroup, contentType)
+    return contentList
 End Function
 
 Function SetListStyle(screen, viewGroup, contentType)
