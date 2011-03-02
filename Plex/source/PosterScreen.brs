@@ -31,18 +31,24 @@ Function showPosterScreen(screen, content) As Integer
 	currentTitle = content.Title
 	
 	queryResponse = server.GetQueryResponse(content.sourceUrl, contentKey)
-    'viewGroup = queryResponse.xml@viewGroup
 	names = server.GetListNames(queryResponse)
 	keys = server.GetListKeys(queryResponse)
-	'contentType = invalid
+	
+	middlePoint = 5
+	paginationStart = 0
+	currentFocus = middlePoint
+	contentKey = invalid
+	paginationMode = invalid
 	if names.Count() > 0 then
+		paginationMode = true
 	    focusedList = 0
 		screen.SetListNames(names)
 		screen.SetFocusedList(focusedList)
-		screen.SetFocusedListItem(0)
 		contentKey = keys[focusedList]
-		contentList = PopulateContentList(server, screen, queryResponse.sourceUrl, contentKey)
+		contentList = PopulateContentList(server, screen, queryResponse.sourceUrl, contentKey, paginationStart)
+		screen.SetFocusedListItem(currentFocus)
 	else
+		paginationMode = false
 		contentList = server.GetContent(queryResponse)
 		contentType = invalid
 		if contentList.Count() > 0 then
@@ -57,18 +63,17 @@ Function showPosterScreen(screen, content) As Integer
     while true
         msg = wait(0, screen.GetMessagePort())
         if type(msg) = "roPosterScreenEvent" then
-        	'* The list focused even changes content of the screen. While 'correct'
-        	'* it does make navigation a little slow. Maybe change on selection would
-        	'* be better. Or is there a way to say 'focused for >500ms' to detect 
-        	'* scroll pauses
+        	'* Focus change on the filter bar causes content change
             if msg.isListFocused() then
                 if names.Count() > 0 then
+					paginationMode = true
 					screen.SetContentList(invalid)
                 	focusedItem = msg.GetIndex()
-                	key = keys[focusedItem]
+                	contentKey = keys[focusedItem]
                 	'print "Focused key:";key
-					screen.SetFocusedListItem(0)
-					contentList = PopulateContentList(server, screen, queryResponse.sourceUrl, key)
+                	paginationStart = 0
+					contentList = PopulateContentList(server, screen, queryResponse.sourceUrl, contentKey, paginationStart)
+					screen.SetFocusedListItem(currentFocus)
                 endif
             else if msg.isListItemSelected() then
                 selected = contentList[msg.GetIndex()]
@@ -81,6 +86,33 @@ Function showPosterScreen(screen, content) As Integer
                 else
                 	showNextPosterScreen(currentTitle, selected)
                 endif
+        '* List item focus change causes content scolling via page reload
+            else if msg.isListItemFocused() then
+            	if paginationMode then
+					focused = msg.GetIndex()
+					difference = focused - currentFocus
+					if focused < middlePoint then
+						currentFocus = focused
+					endif
+					if focused >= middlePoint then
+						currentFocus = middlePoint
+					endif
+					print "Focused:";focused
+					print "Diff:";difference
+					print "Current focus:";currentFocus
+					if difference > 0 then
+						paginationStart = paginationStart + 1
+						screen.SetFocusedListItem(currentFocus)
+						contentList = PopulateContentList(server, screen, queryResponse.sourceUrl, contentKey, paginationStart)
+					else if difference < 0 then
+						paginationStart = paginationStart - 1
+						if paginationStart < 0 then
+							paginationStart = 0
+						endif
+						screen.SetFocusedListItem(currentFocus)
+						contentList = PopulateContentList(server, screen, queryResponse.sourceUrl, contentKey, paginationStart)
+					endif
+				endif
             else if msg.isListItemInfo() then
             	print "list item info"
             else if msg.isScreenClosed() then
@@ -91,8 +123,8 @@ Function showPosterScreen(screen, content) As Integer
     return 0
 End Function
 
-Function PopulateContentList(server, screen, sourceUrl, contentKey) As Object
-	subSectionResponse = server.GetQueryResponse(sourceUrl, contentKey)
+Function PopulateContentList(server, screen, sourceUrl, contentKey, start) As Object
+	subSectionResponse = server.GetPaginatedQueryResponse(sourceUrl, contentKey, start, 11)
 	contentList = server.GetContent(subSectionResponse)
 	contentType = invalid
 	if contentList.Count() > 0 then

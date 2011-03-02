@@ -18,6 +18,7 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
 	pms.PluginVideoScreen = constructPluginVideoScreen
 	pms.StopVideo = stopTranscode
 	pms.GetQueryResponse = xmlContent
+	pms.GetPaginatedQueryResponse = paginatedXmlContent
 	pms.ConstructDirectoryMetadata = ConstructDirectoryMetadata
 	pms.ConstructVideoMetadata = ConstructVideoMetadata
 	pms.ConstructTrackMetadata = ConstructTrackMetadata
@@ -27,20 +28,39 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
 	pms.Unscrobble = unscrobble
 	pms.Rate = rate
 	pms.ExecuteCommand = issueCommand
+	pms.ExecutePostCommand = issuePostCommand
 	pms.UpdateStreamSelection = updateStreamSelection
 	return pms
 End Function
 
-'* This needs a HTTP PUT command that does not exist in the Roku API
+'* This needs a HTTP PUT command that does not exist in the Roku API but it's faked with a POST
 Function updateStreamSelection(partId, audioStreamId, subtitleStreamId)
 	subtitle = invalid
 	if subtitleStreamId <> invalid then
 		subtitle = subtitleStreamId.tostr()
 	endif
-	commandUrl = m.serverUrl + "/library/parts/"+partId.tostr()+"?audioStreamID="+audioStreamId.tostr()+"&subtitleStreamID="+subtitle
+	commandUrl = "/library/parts/"+partId.tostr()+"?audioStreamID="+audioStreamId.tostr()+"&subtitleStreamID="+subtitle
+	m.ExecutePostCommand(commandUrl)
+End Function
+
+Function updateAudioStreamSelection(partId, audioStreamId)
+	commandUrl = "/library/parts/"+partId.tostr()+"?audioStreamID="+audioStreamId.tostr()
+	m.ExecutePostCommand(commandUrl)
+End Function
+
+Function updateSubtitleStreamSelection(partId, subtitleStreamId)
+	subtitle = invalid
+	if subtitleStreamId <> invalid then
+		subtitle = subtitleStreamId.tostr()
+	endif
+	commandUrl = "/library/parts/"+partId.tostr()+"?subtitleStreamID="+subtitle
+	m.ExecutePostCommand(commandUrl)
+End Function
+
+Function issuePostCommand(commandUrl)
 	request = CreateObject("roUrlTransfer")
 	request.SetUrl(commandUrl)
-	request.GetToString()
+	request.PostFromString("")
 End Function
 
 Function progress(key, identifier, time)
@@ -196,6 +216,35 @@ Function videoMetadata(sourceUrl, key) As Object
 	return video
 End Function
 
+Function paginatedXmlContent(sourceUrl, key, start, size) As Object
+
+	xmlResult = CreateObject("roAssociativeArray")
+	xmlResult.server = m
+	if key = "apps" then
+		'* Fake a minimal server response with a new viewgroup
+		xml=CreateObject("roXMLElement")
+		xml.Parse("<MediaContainer viewgroup='apps'/>")
+		xmlResult.xml = xml
+		xmlResult.sourceUrl = invalid
+	else
+	
+		queryUrl = FullUrl(m.serverUrl, sourceUrl, key)
+		print "Fetching content from server at query URL:";queryUrl
+		httpRequest = NewHttp(queryUrl)
+		httpRequest.Http.AddHeader("X-Plex-Container-Start", start.tostr())
+		httpRequest.Http.AddHeader("X-Plex-Container-Size", size.tostr())
+		response = httpRequest.GetToStringWithRetry()
+		xml=CreateObject("roXMLElement")
+		if not xml.Parse(response) then
+			print "Can't parse feed:";response
+		endif
+			
+		xmlResult.xml = xml
+		xmlResult.sourceUrl = queryUrl
+	endif
+	return xmlResult
+End Function
+
 Function xmlContent(sourceUrl, key) As Object
 
 	xmlResult = CreateObject("roAssociativeArray")
@@ -208,7 +257,6 @@ Function xmlContent(sourceUrl, key) As Object
 		xmlResult.sourceUrl = invalid
 	else
 		queryUrl = FullUrl(m.serverUrl, sourceUrl, key)
-		
 		print "Fetching content from server at query URL:";queryUrl
 		httpRequest = NewHttp(queryUrl)
 		response = httpRequest.GetToStringWithRetry()
@@ -459,9 +507,9 @@ End Function
 '* source URL, and absolute URLs, so
 '* relative to the server URL
 Function FullUrl(serverUrl, sourceUrl, key) As String
-    'print "ServerURL:";serverUrl
-    'print "SourceURL:";sourceUrl
-    'print "Key:";key
+    print "ServerURL:";serverUrl
+    print "SourceURL:";sourceUrl
+    print "Key:";key
 	finalUrl = ""
 	if left(key, 4) = "http" then
 	    finalUrl = key

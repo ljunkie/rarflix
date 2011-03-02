@@ -7,7 +7,7 @@
 Function MockDiscoverPlexMediaServers() As Object
 	list = CreateObject("roList")
     list.AddTail(newPlexMediaServer("http://192.168.1.3:32400", "iMac"))
-  'list.AddTail(newPlexMediaServer("http://dn-1.com:32400", "dn-1"))
+    'list.AddTail(newPlexMediaServer("http://dn-1.com:32400", "dn-1"))
     return list
 End Function
 
