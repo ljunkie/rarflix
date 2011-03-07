@@ -29,35 +29,29 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
 	pms.Rate = rate
 	pms.ExecuteCommand = issueCommand
 	pms.ExecutePostCommand = issuePostCommand
-	pms.UpdateStreamSelection = updateStreamSelection
+	pms.UpdateAudioStreamSelection = updateAudioStreamSelection
+	pms.UpdateSubtitleStreamSelection = updateSubtitleStreamSelection
 	return pms
 End Function
 
 '* This needs a HTTP PUT command that does not exist in the Roku API but it's faked with a POST
-Function updateStreamSelection(partId, audioStreamId, subtitleStreamId)
+Function updateAudioStreamSelection(partId As String, audioStreamId As String)
+	commandUrl = "/library/parts/"+partId+"?audioStreamID="+audioStreamId
+	m.ExecutePostCommand(commandUrl)
+End Function
+
+Function updateSubtitleStreamSelection(partId As String, subtitleStreamId As String)
 	subtitle = invalid
 	if subtitleStreamId <> invalid then
-		subtitle = subtitleStreamId.tostr()
+		subtitle = subtitleStreamId
 	endif
-	commandUrl = "/library/parts/"+partId.tostr()+"?audioStreamID="+audioStreamId.tostr()+"&subtitleStreamID="+subtitle
+	commandUrl = "/library/parts/"+partId+"?subtitleStreamID="+subtitle
 	m.ExecutePostCommand(commandUrl)
 End Function
 
-Function updateAudioStreamSelection(partId, audioStreamId)
-	commandUrl = "/library/parts/"+partId.tostr()+"?audioStreamID="+audioStreamId.tostr()
-	m.ExecutePostCommand(commandUrl)
-End Function
-
-Function updateSubtitleStreamSelection(partId, subtitleStreamId)
-	subtitle = invalid
-	if subtitleStreamId <> invalid then
-		subtitle = subtitleStreamId.tostr()
-	endif
-	commandUrl = "/library/parts/"+partId.tostr()+"?subtitleStreamID="+subtitle
-	m.ExecutePostCommand(commandUrl)
-End Function
-
-Function issuePostCommand(commandUrl)
+Function issuePostCommand(commandPath)
+	commandUrl = m.serverUrl + commandPath
+	print "Executing POST command with full command URL:";commandUrl
 	request = CreateObject("roUrlTransfer")
 	request.SetUrl(commandUrl)
 	request.PostFromString("")
@@ -198,6 +192,7 @@ Function videoMetadata(sourceUrl, key) As Object
 		media.parts = CreateObject("roArray", 3, true)
 		for each MediaPart in MediaItem.Part
 			part = CreateObject("roAssociativeArray")
+			part.id = MediaPart@id
 			part.key = MediaPart@key
 			part.streams = CreateObject("roArray", 5, true)
 			for each StreamItem in MediaPart.Stream
@@ -207,10 +202,13 @@ Function videoMetadata(sourceUrl, key) As Object
 				stream.codec = StreamItem@codec
 				stream.language = StreamItem@language
 				stream.selected = StreamItem@selected
+				stream.channels = StreamItem@channels
 				part.streams.Push(stream)
 			next
 			media.parts.Push(part)
 		next
+		'* TODO: deal with multiple parts correctly
+		media.preferredPart = media.parts[0]
 		video.media.Push(media)
 	next
 	return video
@@ -471,7 +469,7 @@ Function constructPluginVideoScreen(metadata) As Object
     p = CreateObject("roMessagePort")
     video = CreateObject("roVideoScreen")
     video.setMessagePort(p)
-    videoclip = ConstructVideoClip(m.serverUrl, metadata.key, metadata.sourceUrl, metadata.title)
+    videoclip = ConstructVideoClip(m.serverUrl, metadata.key, metadata.sourceUrl, "", "", metadata.title)
     video.SetContent(videoclip)
     m.Cookie = StartTranscodingSession(videoclip.StreamUrls[0])
 	video.AddHeader("Cookie", m.Cookie)
@@ -481,13 +479,13 @@ End Function
 '* TODO: this assumes one part media. Implement multi-part at some point.
 '* TODO: currently always transcodes. Check direct stream codecs first.
 Function constructVideoScreen(metadata, mediaData, StartTime As Integer) As Object
-	mediaPart = mediaData.parts[0]
+	mediaPart = mediaData.preferredPart
 	mediaKey = mediaPart.key
     print "Constructing video screen for ";mediaKey
     p = CreateObject("roMessagePort")
     video = CreateObject("roVideoScreen")
     video.setMessagePort(p)
-    videoclip = ConstructVideoClip(m.serverUrl, mediaKey, metadata.sourceUrl, metadata.title)
+    videoclip = ConstructVideoClip(m.serverUrl, mediaKey, metadata.sourceUrl, metadata.ratingKey, metadata.key, metadata.title)
     videoclip.PlayStart = StartTime
     video.SetContent(videoclip)
     m.Cookie = StartTranscodingSession(videoclip.StreamUrls[0])
@@ -507,9 +505,9 @@ End Function
 '* source URL, and absolute URLs, so
 '* relative to the server URL
 Function FullUrl(serverUrl, sourceUrl, key) As String
-    print "ServerURL:";serverUrl
-    print "SourceURL:";sourceUrl
-    print "Key:";key
+    'print "ServerURL:";serverUrl
+    'print "SourceURL:";sourceUrl
+    'print "Key:";key
 	finalUrl = ""
 	if left(key, 4) = "http" then
 	    finalUrl = key
@@ -550,7 +548,7 @@ Function StartTranscodingSession(videoUrl) As String
 End Function
 
 '* Roku video clip definition as an array
-Function ConstructVideoClip(serverUrl as String, videoUrl as String, sourceUrl As String, title as String) As Object
+Function ConstructVideoClip(serverUrl as String, videoUrl as String, sourceUrl As String, ratingKey As String, key As String, title as String) As Object
 	deviceInfo = CreateObject("roDeviceInfo")
 	quality = "SD"
 	if deviceInfo.GetDisplayType() = "HDTV" then
@@ -559,7 +557,7 @@ Function ConstructVideoClip(serverUrl as String, videoUrl as String, sourceUrl A
 	print "Setting stream quality:";quality
 	videoclip = CreateObject("roAssociativeArray")
     videoclip.StreamBitrates = [0]
-    videoclip.StreamUrls = [TranscodingVideoUrl(serverUrl, videoUrl, sourceUrl)]
+    videoclip.StreamUrls = [TranscodingVideoUrl(serverUrl, videoUrl, sourceUrl, ratingKey, key)]
     videoclip.StreamQualities = [quality]
     videoclip.StreamFormat = "hls"
     videoclip.Title = title
@@ -569,9 +567,9 @@ End Function
 '*
 '* Construct the Plex transcoding URL. 
 '*
-Function TranscodingVideoUrl(serverUrl As String, videoUrl As String, sourceUrl As String) As String
+Function TranscodingVideoUrl(serverUrl As String, videoUrl As String, sourceUrl As String, ratingKey As String, key As String) As String
     print "Constructing transcoding video URL for "+videoUrl
-    '* Deal with absolute, full then relative URLs
+    '* Deal with absolute, full then relative URLs - TODO DRY:move to own function
     if left(videoUrl, 1) = "/" then
     	location = serverUrl + videoUrl 
     else if left(videoUrl, 7) = "http://"
@@ -580,6 +578,16 @@ Function TranscodingVideoUrl(serverUrl As String, videoUrl As String, sourceUrl 
     	location = sourceUrl + "/" + videoUrl
     endif
     print "Location:";location
+    if left(key, 1) = "/" then
+    	fullKey = serverUrl + key 
+    else if left(key, 7) = "http://"
+    	fullKey = key
+    else
+    	fullKey = sourceUrl + "/" + key
+    endif
+    print "Full key:";fullKey
+    
+    
     '* Question here about how the quality is handled by Roku for q>6 (playback baulked at q>6). 
     '* More recent testing: it now appears to work fine with 7,8 and 9 but baulks at 10. It also
     '* appears to be able to handle the bitrate at q=9, even though it's way over spec.
@@ -591,7 +599,7 @@ Function TranscodingVideoUrl(serverUrl As String, videoUrl As String, sourceUrl 
     '*
     '* Put min and max and let Roku choose? Shouldn't (yeah, right) bounce after initial selection as we're on local network
     '* 
-    myurl = "/video/:/transcode/segmented/start.m3u8?identifier=com.plexapp.plugins.library&ratingKey=97007888&offset=0&quality=8&url="+HttpEncode(location)+"&3g=0&httpCookies=&userAgent="
+    myurl = "/video/:/transcode/segmented/start.m3u8?identifier=com.plexapp.plugins.library&ratingKey="+ratingKey+"&key="++HttpEncode(fullKey)+"&offset=0&quality=8&url="+HttpEncode(location)+"&3g=0&httpCookies=&userAgent="
 	'myurl = "/video/:/transcode/segmented/start.m3u8?identifier=com.plexapp.plugins.library&ratingKey=97007888&offset=0&minQuality=5&maxQuality=8&url="+HttpEncode(location)+"&3g=0&httpCookies=&userAgent="
 	publicKey = "KQMIY6GATPC63AIMC4R2"
 	time = LinuxTime().tostr()

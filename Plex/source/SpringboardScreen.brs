@@ -19,24 +19,40 @@ End Function
 Function showSpringboardScreen(screen, contentList, index) As Integer
 	server = contentList[index].server
 	metaDataArray = Populate(screen, contentList, index)
-	metadata = metaDataArray.metadata
 	
     while true
         msg = wait(0, screen.GetMessagePort())
         if msg.isScreenClosed() then 
         	return -1
         else if msg.isButtonPressed() then
-        	buttonCommand = metaDataArray[str(msg.getIndex())]
+        	buttonCommand = metaDataArray.buttonCommands[str(msg.getIndex())]
         	print "Button command:";buttonCommand
         	if buttonCommand = "play" OR buttonCommand = "resume" then
 				startTime = 0
 				if buttonCommand = "resume" then
-					startTime = int(val(metadata.viewOffset))
+					startTime = int(val(metaDataArray.metadata.viewOffset))
 				endif
-        		mediaData = metaDataArray.media
-        		playVideo(server, metadata, mediaData, startTime)
+        		playVideo(server, metaDataArray.metadata, metaDataArray.media, startTime)
         		'* Refresh play data after playing
-        		Populate(screen, contentList, index)
+        		metaDataArray = Populate(screen, contentList, index)
+        	else if buttonCommand = "audioStreamSelectionButtons" then
+        		metaDataArray.buttonCommands = AddAudioStreamButtons(screen, metaDataArray.media)
+        	else if buttonCommand = "subtitleStreamSelectionButtons" then
+        		metaDataArray.buttonCommands = AddSubtitleStreamButtons(screen, metaDataArray.media)
+        	else if buttonCommand = "selectSubtitle" then
+        		subtitleId = metaDataArray.buttonCommands[str(msg.getIndex())+"_id"]
+        		print "Media part "+metaDataArray.media.preferredPart.id
+        		print "Selected subtitle "+subtitleId
+        		server.UpdateSubtitleStreamSelection(metaDataArray.media.preferredPart.id, subtitleId)
+        		metaDataArray = Populate(screen, contentList, index)
+        		metaDataArray.buttonCommands = AddButtons(screen, metaDataArray.metadata, metaDataArray.media)
+        	else if buttonCommand = "selectAudioStream" then
+        		audioStreamId = metaDataArray.buttonCommands[str(msg.getIndex())+"_id"]
+        		print "Media part "+metaDataArray.media.preferredPart.id
+        		print "Selected audio stream "+audioStreamId
+        		server.UpdateAudioStreamSelection(metaDataArray.media.preferredPart.id, audioStreamId)
+        		metaDataArray = Populate(screen, contentList, index)
+        		metaDataArray.buttonCommands = AddButtons(screen, metaDataArray.metadata, metaDataArray.media)
         	endif
         else if msg.isRemoteKeyPressed() then
         	'* index=4 -> left ; index=5 -> right
@@ -74,26 +90,111 @@ Function Populate(screen, contentList, index) As Object
 	screen.AllowNavLeft(true)
 	screen.AllowNavRight(true)
 	screen.setContent(metadata)
+	media = PickMediaItem(metadata.media)
+	metaDataArray.media = media
+	metaDataArray.buttonCommands = AddButtons(screen, metadata, media)
+	screen.PrefetchPoster(metadata.SDPosterURL, metadata.HDPosterURL)
+	screen.Show()
+	retrieving.Close()
+	return metaDataArray
+End Function
+
+'* TODO: deal with srt subtitles - another URL on the video clip array
+Function AddSubtitleStreamButtons(screen, media) As Object
+
+	screen.ClearButtons()
+	buttonCount = 0
+	mediaPart = media.preferredPart
+	selected = false
+	for each Stream in mediaPart.streams
+		if Stream.streamType = "3" AND Stream.codec <> "srt" AND Stream.selected <> invalid then
+			selected = true
+		endif
+	next
+	
+	buttonCommands = CreateObject("roAssociativeArray")
+	noSelectionTitle = "No Subtitles"
+	if not selected then
+		noSelectionTitle = "> "+noSelectionTitle
+	endif
+	screen.AddButton(buttonCount, noSelectionTitle)
+	buttonCommands[str(buttonCount)] = "selectSubtitle"
+	buttonCommands[str(buttonCount)+"_id"] = ""
+	buttonCount = buttonCount + 1	
+	for each Stream in mediaPart.streams
+		if Stream.streamType = "3" AND Stream.codec <> "srt" then
+			buttonTitle = Stream.Language
+			if Stream.selected <> invalid then
+				buttonTitle = "> " + buttonTitle
+			endif
+			screen.AddButton(buttonCount, buttonTitle)
+			buttonCommands[str(buttonCount)] = "selectSubtitle"
+			buttonCommands[str(buttonCount)+"_id"] = Stream.Id
+			buttonCount = buttonCount + 1	
+		endif
+	next
+	return buttonCommands
+End Function
+
+Function AddAudioStreamButtons(screen, media) As Object
+
 	screen.ClearButtons()
 	buttonCount = 0
 	
-	'* Buttons for play and resume of preferred media item.
-	'* TODO: add ability to turn subtitles on/off, pick one and pick audio stream
-	'* 
-	media = PickMediaItem(metadata.media)
-	metaDataArray.media = media
+	buttonCommands = CreateObject("roAssociativeArray")
+	mediaPart = media.preferredPart
+	for each Stream in mediaPart.streams
+		if Stream.streamType = "2" then
+			buttonTitle = Stream.Language
+			subtitle = invalid
+			if Stream.Codec <> invalid then
+				if Stream.Codec = "dca" then
+					subtitle = "DTS"
+				else 
+					subtitle = ucase(Stream.Codec)
+				endif
+			endif
+			if Stream.Channels <> invalid then
+				if Stream.Channels = "2" then
+					subtitle = subtitle + " Stereo"
+				else if Stream.Channels = "6" then
+					subtitle = subtitle + " 5.1"
+				else if Stream.Channels = "8" then
+					subtitle = subtitle + " 7.1"
+				endif
+			endif
+			if subtitle <> invalid then
+				buttonTitle = buttonTitle + " ("+subtitle+")"
+			endif
+			if Stream.selected <> invalid then
+				buttonTitle = "> " + buttonTitle
+			endif
+			screen.AddButton(buttonCount, buttonTitle)
+			buttonCommands[str(buttonCount)] = "selectAudioStream"
+			buttonCommands[str(buttonCount)+"_id"] = Stream.Id
+			buttonCount = buttonCount + 1	
+		endif
+	next
+	return buttonCommands
+End Function
+
+Function AddButtons(screen, metadata, media) As Object
+
+	buttonCommands = CreateObject("roAssociativeArray")
+	screen.ClearButtons()
+	buttonCount = 0
 	screen.AddButton(buttonCount, "Play")
-	metaDataArray[str(buttonCount)] = "play"
+	buttonCommands[str(buttonCount)] = "play"
 	buttonCount = buttonCount + 1
 	if metadata.viewOffset <> invalid then
 		intervalInSeconds = fix(val(metadata.viewOffset)/(1000))	
 		resumeTitle = "Resume from "+TimeDisplay(intervalInSeconds)
 		screen.AddButton(buttonCount, resumeTitle)
-		metaDataArray[str(buttonCount)] = "resume"
+		buttonCommands[str(buttonCount)] = "resume"
 		buttonCount = buttonCount + 1
 	endif
-	'* Again, how to deal with multiple parts?
-	mediaPart = media.parts[0]
+	
+	mediaPart = media.preferredPart
 	subtitleStreams = []
 	audioStreams = []
 	for each Stream in mediaPart.streams
@@ -103,10 +204,19 @@ Function Populate(screen, contentList, index) As Object
 			subtitleStreams.Push(Stream)
 		endif
 	next
-	screen.PrefetchPoster(metadata.SDPosterURL, metadata.HDPosterURL)
-	screen.Show()
-	retrieving.Close()
-	return metaDataArray
+	print "Found audio streams:";audioStreams.Count()
+	print "Found subtitle streams:";subtitleStreams.Count()
+	if audioStreams.Count() > 1 then
+		screen.AddButton(buttonCount, "Select audio stream")
+		buttonCommands[str(buttonCount)] = "audioStreamSelectionButtons"
+		buttonCount = buttonCount + 1
+	endif
+	if subtitleStreams.Count() > 0 then
+		screen.AddButton(buttonCount, "Select subtitles")
+		buttonCommands[str(buttonCount)] = "subtitleStreamSelectionButtons"
+		buttonCount = buttonCount + 1
+	endif
+	return buttonCommands
 End Function
 
 Function TimeDisplay(intervalInSeconds) As String
