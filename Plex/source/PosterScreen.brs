@@ -38,9 +38,8 @@ Function showPosterScreen(screen, content) As Integer
 	paginationStart = 0
 	currentFocus = middlePoint
 	contentKey = invalid
-	paginationMode = invalid
-	if names.Count() > 0 then
-		paginationMode = true
+	paginationMode = names.Count() > 0
+	if paginationMode then
 	    focusedList = 0
 		screen.SetListNames(names)
 		screen.SetFocusedList(focusedList)
@@ -48,7 +47,6 @@ Function showPosterScreen(screen, content) As Integer
 		contentList = PopulateContentList(server, screen, queryResponse.sourceUrl, contentKey, paginationStart)
 		screen.SetFocusedListItem(currentFocus)
 	else
-		paginationMode = false
 		contentList = server.GetContent(queryResponse)
 		contentType = invalid
 		if contentList.Count() > 0 then
@@ -65,8 +63,8 @@ Function showPosterScreen(screen, content) As Integer
         if type(msg) = "roPosterScreenEvent" then
         	'* Focus change on the filter bar causes content change
             if msg.isListFocused() then
+				paginationMode = names.Count() > 0
                 if names.Count() > 0 then
-					paginationMode = true
 					screen.SetContentList(invalid)
                 	focusedItem = msg.GetIndex()
                 	contentKey = keys[focusedItem]
