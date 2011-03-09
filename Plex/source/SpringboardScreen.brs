@@ -107,7 +107,7 @@ Function AddSubtitleStreamButtons(screen, media) As Object
 	mediaPart = media.preferredPart
 	selected = false
 	for each Stream in mediaPart.streams
-		if Stream.streamType = "3" AND Stream.codec <> "srt" AND Stream.selected <> invalid then
+		if Stream.streamType = "3" AND Stream.selected <> invalid then
 			selected = true
 		endif
 	next
@@ -122,7 +122,7 @@ Function AddSubtitleStreamButtons(screen, media) As Object
 	buttonCommands[str(buttonCount)+"_id"] = ""
 	buttonCount = buttonCount + 1	
 	for each Stream in mediaPart.streams
-		if Stream.streamType = "3" AND Stream.codec <> "srt" then
+		if Stream.streamType = "3" then
 			buttonTitle = Stream.Language
 			if Stream.selected <> invalid then
 				buttonTitle = "> " + buttonTitle
