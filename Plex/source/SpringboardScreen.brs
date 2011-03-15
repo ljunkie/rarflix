@@ -99,7 +99,6 @@ Function Populate(screen, contentList, index) As Object
 	return metaDataArray
 End Function
 
-'* TODO: deal with srt subtitles - another URL on the video clip array
 Function AddSubtitleStreamButtons(screen, media) As Object
 
 	screen.ClearButtons()
