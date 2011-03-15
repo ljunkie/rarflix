@@ -36,7 +36,6 @@ Function showPosterScreen(screen, content) As Integer
 	
 	middlePoint = 5
 	paginationStart = 0
-	currentFocus = middlePoint
 	contentKey = invalid
 	paginationMode = names.Count() > 0
 	if paginationMode then
@@ -44,8 +43,10 @@ Function showPosterScreen(screen, content) As Integer
 		screen.SetListNames(names)
 		screen.SetFocusedList(focusedList)
 		contentKey = keys[focusedList]
-		contentList = PopulateContentList(server, screen, queryResponse.sourceUrl, contentKey, paginationStart)
-		screen.SetFocusedListItem(currentFocus)
+		contentListArray = PopulateContentList(server, screen, queryResponse.sourceUrl, contentKey, paginationStart, invalid)
+		contentList = contentListArray[0]
+		totalSize = contentListArray[1] 
+		screen.SetFocusedListItem(middlePoint)
 	else
 		contentList = server.GetContent(queryResponse)
 		contentType = invalid
@@ -70,8 +71,10 @@ Function showPosterScreen(screen, content) As Integer
                 	contentKey = keys[focusedItem]
                 	'print "Focused key:";key
                 	paginationStart = 0
-					contentList = PopulateContentList(server, screen, queryResponse.sourceUrl, contentKey, paginationStart)
-					screen.SetFocusedListItem(currentFocus)
+					contentListArray = PopulateContentList(server, screen, queryResponse.sourceUrl, contentKey, paginationStart, totalSize)
+					contentList = contentListArray[0]
+					totalSize = contentListArray[1] 
+					screen.SetFocusedListItem(middlePoint)
                 endif
             else if msg.isListItemSelected() then
                 selected = contentList[msg.GetIndex()]
@@ -84,31 +87,29 @@ Function showPosterScreen(screen, content) As Integer
                 else
                 	showNextPosterScreen(currentTitle, selected)
                 endif
-        '* List item focus change causes content scolling via page reload
+                
+        '* Scrolling pagination allowing navigation of large libraries.
+        '* 
+        '* Roku model has a fixed content list containing all the content and navigates by scrolling
+        '* through that list by changing the focus point. I've reversed that model by having a
+        '* fixed focus point (5) in the middle of a small fixed content list (N=11) and when
+        '* focus is moved the content is reloaded from a paginated PMS query.
+        '* 
             else if msg.isListItemFocused() then
-            	if paginationMode then
+                print "List item focused. Length:";contentList.Count()
+            	if paginationMode AND contentList.Count() = 11 then
 					focused = msg.GetIndex()
-					difference = focused - currentFocus
-					if focused < middlePoint then
-						currentFocus = focused
-					endif
-					if focused >= middlePoint then
-						currentFocus = middlePoint
-					endif
-					print "Focused:";focused
-					print "Diff:";difference
-					print "Current focus:";currentFocus
-					if difference > 0 then
-						paginationStart = paginationStart + 1
-						screen.SetFocusedListItem(currentFocus)
-						contentList = PopulateContentList(server, screen, queryResponse.sourceUrl, contentKey, paginationStart)
-					else if difference < 0 then
-						paginationStart = paginationStart - 1
-						if paginationStart < 0 then
-							paginationStart = 0
-						endif
-						screen.SetFocusedListItem(currentFocus)
-						contentList = PopulateContentList(server, screen, queryResponse.sourceUrl, contentKey, paginationStart)
+					difference = focused - middlePoint
+					if difference <> 0 then
+						'print "Old pagination start:";paginationStart
+						'print "Total size:";totalSize
+						paginationStart = PaginationStartPoint(totalSize, paginationStart, difference)
+						'print "New pagination start:";paginationStart
+						'print "Difference:";difference
+						screen.SetFocusedListItem(middlePoint)
+						contentListArray = PopulateContentList(server, screen, queryResponse.sourceUrl, contentKey, paginationStart, totalSize)
+					    contentList = contentListArray[0]
+					    totalSize = contentListArray[1] 
 					endif
 				endif
             else if msg.isListItemInfo() then
@@ -121,17 +122,59 @@ Function showPosterScreen(screen, content) As Integer
     return 0
 End Function
 
-Function PopulateContentList(server, screen, sourceUrl, contentKey, start) As Object
-	subSectionResponse = server.GetPaginatedQueryResponse(sourceUrl, contentKey, start, 11)
-	contentList = server.GetContent(subSectionResponse)
+'* Calculates new start point which is effectively a modular arithmatic with modulus=size
+Function PaginationStartPoint(size, currentStartPoint, difference) As Integer
+	newStartPoint = currentStartPoint + difference
+	if newStartPoint < 0 then
+		newStartPoint = size + newStartPoint
+	else if newStartPoint = size then
+		newStartPoint = 0
+	endif
+	return newStartPoint
+End Function
+
+Function PopulateContentList(server, screen, sourceUrl, contentKey, start, totalSize) As Object
+	pageSize = 11
+	'* If we straddle the totalSize boundry split pagination into 2 queries across
+	'* the boundry then merge the results to get wrap around
+	if totalSize <> invalid AND start + pageSize > totalSize then
+		contentList = CreateObject("roArray", pageSize, true)
+		firstStart = start
+		firstSize = totalSize - start
+		firstResponse = server.GetPaginatedQueryResponse(sourceUrl, contentKey, firstStart, firstSize)
+    	viewGroup = firstResponse.xml@viewGroup
+    	newTotalSize = firstResponse.xml@totalSize
+		firstContentList = server.GetContent(firstResponse)
+		for each entry in firstContentList
+			contentList.Push(entry)
+		next
+		secondStart = 0
+		secondSize = pageSize - firstSize
+		secondResponse = server.GetPaginatedQueryResponse(sourceUrl, contentKey, secondStart, secondSize)
+		secondContentList = server.GetContent(secondResponse)
+		for each entry in secondContentList
+			contentList.Push(entry)
+		next
+	else
+		subSectionResponse = server.GetPaginatedQueryResponse(sourceUrl, contentKey, start, pageSize)
+    	viewGroup = subSectionResponse.xml@viewGroup
+    	newTotalSize = subSectionResponse.xml@totalSize
+		contentList = server.GetContent(subSectionResponse)
+	endif
+	
 	contentType = invalid
 	if contentList.Count() > 0 then
 		contentType = contentList[0].ContentType
 	endif
     screen.SetContentList(contentList)
-    viewGroup = subSectionResponse.xml@viewGroup
     SetListStyle(screen, viewGroup, contentType)
-    return contentList
+    
+    contentArray = []
+    contentArray.Push(contentList)
+    if newTotalSize <> invalid then
+    	contentArray.Push(strtoi(newTotalSize))
+    endif
+    return contentArray
 End Function
 
 Function SetListStyle(screen, viewGroup, contentType)

@@ -225,22 +225,27 @@ Function paginatedXmlContent(sourceUrl, key, start, size) As Object
 		xmlResult.xml = xml
 		xmlResult.sourceUrl = invalid
 	else
-	
-		queryUrl = FullUrl(m.serverUrl, sourceUrl, key)
-		print "Fetching content from server at query URL:";queryUrl
-		httpRequest = NewHttp(queryUrl)
-		httpRequest.Http.AddHeader("X-Plex-Container-Start", start.tostr())
-		httpRequest.Http.AddHeader("X-Plex-Container-Size", size.tostr())
-		response = httpRequest.GetToStringWithRetry()
-		xml=CreateObject("roXMLElement")
-		if not xml.Parse(response) then
-			print "Can't parse feed:";response
-		endif
-			
-		xmlResult.xml = xml
-		xmlResult.sourceUrl = queryUrl
+			queryUrl = FullUrl(m.serverUrl, sourceUrl, key)
+			response = paginatedQuery(queryUrl, start, size)
+			xml=CreateObject("roXMLElement")
+			if not xml.Parse(response) then
+				print "Can't parse feed:";response
+			endif
+			xmlResult.xml = xml
+			xmlResult.sourceUrl = queryUrl
 	endif
 	return xmlResult
+End Function
+
+Function paginatedQuery(queryUrl, start, size) As Object
+	print "Fetching content from server at query URL:";queryUrl
+	print "Pagination start:";start.tostr()
+	print "Pagination size:";size.tostr()
+	httpRequest = NewHttp(queryUrl)
+	httpRequest.Http.AddHeader("X-Plex-Container-Start", start.tostr())
+	httpRequest.Http.AddHeader("X-Plex-Container-Size", size.tostr())
+	response = httpRequest.GetToStringWithRetry()
+	return response
 End Function
 
 Function xmlContent(sourceUrl, key) As Object
@@ -306,7 +311,7 @@ Function listKeys(parsedXml) As Object
 End Function
 		
 Function directoryContent(parsedXml) As Object
-	content = CreateObject("roArray", 10, true)
+	content = CreateObject("roArray", 11, true)
 	for each directoryItem in parsedXml.xml.Directory
 		if directoryItem@search = invalid then
 			directory = m.ConstructDirectoryMetadata(parsedXml.xml, directoryItem, parsedXml.sourceUrl)
