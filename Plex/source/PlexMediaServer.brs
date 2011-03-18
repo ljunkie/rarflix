@@ -98,8 +98,8 @@ Function homePageContent() As Object
     appsSection.sourceUrl = ""
 	appsSection.ContentType = "series"
 	appsSection.Key = "apps"
-	appsSection.Title = "Apps"
-	appsSection.ShortDescriptionLine1 = "Apps"
+	appsSection.Title = "Channels"
+	appsSection.ShortDescriptionLine1 = "Channels"
 	appsSection.SDPosterURL = "file://pkg:/images/plex.png"
 	appsSection.HDPosterURL = "file://pkg:/images/plex.png"
 	content.Push(appsSection)
@@ -207,7 +207,8 @@ Function videoMetadata(sourceUrl, key) As Object
 			next
 			media.parts.Push(part)
 		next
-		'* TODO: deal with multiple parts correctly
+		'* TODO: deal with multiple parts correctly. Not sure how audio etc selection works
+		'* TODO: with multi-part
 		media.preferredPart = media.parts[0]
 		video.media.Push(media)
 	next
@@ -277,9 +278,9 @@ End Function
 Function listNames(parsedXml) As Object
 	content = CreateObject("roArray", 10, true)
 	if parsedXml.xml@viewGroup = "apps" then
-		content.Push("Video Apps")
-		content.Push("Audio Apps")
-		content.Push("Photo Apps")
+		content.Push("Video")
+		content.Push("Audio")
+		content.Push("Photo")
 	else
 		sectionViewGroup = parsedXml.xml@viewGroup
 		if sectionViewGroup = "secondary" then
