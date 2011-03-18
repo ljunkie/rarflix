@@ -25,10 +25,6 @@ End Function
 Function showHomeScreen(screen, servers) As Integer
 
     if validateParam(screen, "roPosterScreen", "showHomeScreen") = false return -1
-	'retrieving = CreateObject("roOneLineDialog")
-	'retrieving.SetTitle("Retrieving from Plex Media Server ...")
-	'retrieving.ShowBusyAnimation()
-	'retrieving.Show()
 	displayServerName = servers.count() > 1
 	sectionList = CreateObject("roArray", 10, true)
 	for each server in servers
@@ -44,7 +40,6 @@ Function showHomeScreen(screen, servers) As Integer
 	end for
     screen.SetContentList(sectionList)
     screen.Show()
-	'retrieving.Close()
     while true
         msg = wait(0, screen.GetMessagePort())
         if type(msg) = "roPosterScreenEvent" then
