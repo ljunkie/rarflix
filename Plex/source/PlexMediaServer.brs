@@ -212,7 +212,18 @@ Function videoMetadata(sourceUrl, key) As Object
 		media.preferredPart = media.parts[0]
 		video.media.Push(media)
 	next
+	'* Which, of potentially many, media items to use
+	video.preferredMediaItem = PickMediaItem(video.media)
 	return video
+End Function
+
+'* Logic for choosing which Media item to use from the collection of possibles.
+Function PickMediaItem(mediaItems) As Object
+	if mediaItems.count()  = 0 then
+		return mediaItems[0]
+	else
+		return mediaItems[0]
+	endif
 End Function
 
 Function paginatedXmlContent(sourceUrl, key, start, size) As Object

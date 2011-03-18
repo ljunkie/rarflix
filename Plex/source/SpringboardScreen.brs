@@ -90,9 +90,8 @@ Function Populate(screen, contentList, index) As Object
 	screen.AllowNavLeft(true)
 	screen.AllowNavRight(true)
 	screen.setContent(metadata)
-	media = PickMediaItem(metadata.media)
-	metaDataArray.media = media
-	metaDataArray.buttonCommands = AddButtons(screen, metadata, media)
+	metaDataArray.media = metadata.preferredMediaItem
+	metaDataArray.buttonCommands = AddButtons(screen, metadata, metadata.preferredMediaItem)
 	screen.PrefetchPoster(metadata.SDPosterURL, metadata.HDPosterURL)
 	screen.Show()
 	retrieving.Close()
@@ -238,11 +237,3 @@ Function TimeDisplay(intervalInSeconds) As String
 	return hoursStr+":"+minsStr+":"+secsStr
 End Function
 
-'* Logic for choosing which Media item to use from the list of possibles
-Function PickMediaItem(mediaItems) As Object
-	if mediaItems.count()  = 0 then
-		return mediaItems[0]
-	else
-		return mediaItems[0]
-	endif
-End Function
