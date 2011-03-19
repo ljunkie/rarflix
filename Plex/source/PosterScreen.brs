@@ -86,6 +86,8 @@ Function showPosterScreen(screen, content) As Integer
         			playPluginVideo(server, selected)
         		else if contentType = "album" then
         		    playAlbum(server, selected)
+        		else if selected.viewGroup <> invalid AND selected.viewGroup = "Store:Info" then
+        			ChannelInfo(selected)
                 else
                 	showNextPosterScreen(currentTitle, selected)
                 endif
@@ -126,6 +128,49 @@ Function showPosterScreen(screen, content) As Integer
         end If
     end while
     return 0
+End Function
+
+Function ChannelInfo(channel) 
+
+    print "Store info for:";channel
+    port = CreateObject("roMessagePort") 
+	dialog = CreateObject("roMessageDialog") 
+	dialog.SetMessagePort(port)
+	dialog.SetMenuTopLeft(true)
+	dialog.EnableBackButton(true)
+	dialog.SetTitle(channel.title) 
+	dialog.SetText(channel.description) 
+	queryResponse = channel.server.GetQueryResponse(channel.sourceUrl, channel.key)
+	content = channel.server.GetContent(queryResponse)
+	buttonCommands = CreateObject("roAssociativeArray")
+	buttonCount = 0
+	for each item in content
+		buttonTitle = item.title
+		dialog.AddButton(buttonCount, buttonTitle)
+		buttonCommands[str(buttonCount)+"_key"] = item.key
+		buttonCount = buttonCount + 1
+	next
+	dialog.Show()
+	while true 
+		msg = wait(0, dialog.GetMessagePort()) 
+		if type(msg) = "roMessageDialogEvent"
+			if msg.isScreenClosed() then
+				dialog.close()
+				exit while
+			else if msg.isButtonPressed() then
+				print "Button pressed:";msg.getIndex()
+				commandKey = buttonCommands[str(msg.getIndex())+"_key"]
+				print "Command Key:"+commandKey
+				dialog.close()
+				retrieving = CreateObject("roOneLineDialog")
+				retrieving.SetTitle("Please wait ...")
+				retrieving.ShowBusyAnimation()
+				retrieving.Show()
+				commandResponse = channel.server.GetQueryResponse(channel.sourceUrl, commandKey)
+				retrieving.Close()
+			end if 
+		end if
+	end while
 End Function
 
 '* Calculates new start point which is effectively a modular arithmatic with modulus=size

@@ -127,6 +127,7 @@ Function SelectSubtitleStream(server, media)
 		msg = wait(0, dialog.GetMessagePort()) 
 		if type(msg) = "roMessageDialogEvent"
 			if msg.isScreenClosed() then
+				dialog.close()
 				exit while
 			else if msg.isButtonPressed() then
 				print "Button pressed:";msg.getIndex()
@@ -187,6 +188,7 @@ Function SelectAudioStream(server, media)
 		msg = wait(0, dialog.GetMessagePort()) 
 		if type(msg) = "roMessageDialogEvent"
 			if msg.isScreenClosed() then
+				dialog.close()
 				exit while
 			else if msg.isButtonPressed() then
 				print "Button pressed:";msg.getIndex()
@@ -198,48 +200,6 @@ Function SelectAudioStream(server, media)
 			end if 
 		end if
 	end while
-End Function
-
-Function AddAudioStreamButtons(screen, media) As Object
-
-	screen.ClearButtons()
-	buttonCount = 0
-	
-	buttonCommands = CreateObject("roAssociativeArray")
-	mediaPart = media.preferredPart
-	for each Stream in mediaPart.streams
-		if Stream.streamType = "2" then
-			buttonTitle = Stream.Language
-			subtitle = invalid
-			if Stream.Codec <> invalid then
-				if Stream.Codec = "dca" then
-					subtitle = "DTS"
-				else 
-					subtitle = ucase(Stream.Codec)
-				endif
-			endif
-			if Stream.Channels <> invalid then
-				if Stream.Channels = "2" then
-					subtitle = subtitle + " Stereo"
-				else if Stream.Channels = "6" then
-					subtitle = subtitle + " 5.1"
-				else if Stream.Channels = "8" then
-					subtitle = subtitle + " 7.1"
-				endif
-			endif
-			if subtitle <> invalid then
-				buttonTitle = buttonTitle + " ("+subtitle+")"
-			endif
-			if Stream.selected <> invalid then
-				buttonTitle = "> " + buttonTitle
-			endif
-			screen.AddButton(buttonCount, buttonTitle)
-			buttonCommands[str(buttonCount)] = "selectAudioStream"
-			buttonCommands[str(buttonCount)+"_id"] = Stream.Id
-			buttonCount = buttonCount + 1	
-		endif
-	next
-	return buttonCommands
 End Function
 
 Function AddButtons(screen, metadata, media) As Object

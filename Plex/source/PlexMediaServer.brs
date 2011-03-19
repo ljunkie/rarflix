@@ -116,6 +116,7 @@ Function videoMetadata(sourceUrl, key) As Object
 	videoItem = xmlResponse.xml.Video[0]
 	video = CreateObject("roAssociativeArray")
 	video.server = m
+	video.viewGroup = xmlResponse.xml@viewGroup
 	video.mediaContainerIdentifier = xmlResponse.xml@identifier
 	video.sourceUrl = sourceUrl
 	video.ratingKey = videoItem@ratingKey
@@ -351,6 +352,7 @@ End Function
 Function ConstructDirectoryMetadata(xml, directoryItem, sourceUrl) As Object	
 	directory = CreateObject("roAssociativeArray")
 	directory.server = m
+	directory.viewGroup = xml@viewGroup
 	directory.sourceUrl = sourceUrl
 	directory.type  = directoryItem@type
 	directory.ContentType = directoryItem@type
@@ -369,6 +371,7 @@ Function ConstructDirectoryMetadata(xml, directoryItem, sourceUrl) As Object
 	if directory.ShortDescriptionLine1 = invalid then
 		directory.ShortDescriptionLine1 = directoryItem@name
 	endif
+	directory.ShortDescriptionLine2 = directoryItem@summary
 	
 	sizes = ImageSizes(xml@viewGroup, directory.ContentType)
 	thumb = directoryItem@thumb
