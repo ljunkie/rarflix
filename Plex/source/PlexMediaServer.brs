@@ -14,6 +14,7 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
 	pms.GetHomePageContent = homePageContent
 	pms.GetListNames = listNames
 	pms.GetListKeys = listKeys
+	pms.AudioPlayer = constructAudioPlayer
 	pms.VideoScreen = constructVideoScreen
 	pms.PluginVideoScreen = constructPluginVideoScreen
 	pms.StopVideo = stopTranscode
@@ -90,7 +91,10 @@ Function homePageContent() As Object
 	librarySections = m.GetContent(xml)
 	content = CreateObject("roArray", librarySections.Count() + 1, true)
 	for each section in librarySections
-		content.Push(section)
+		'* Exclude music for now until transcode to mp3 is available
+		if section.type = "movie" OR section.type = "show" then
+			content.Push(section)
+		endif
 	next
 	'* TODO: only add this if we actually have any valid apps?
 	appsSection = CreateObject("roAssociativeArray")
@@ -290,8 +294,9 @@ Function listNames(parsedXml) As Object
 	content = CreateObject("roArray", 10, true)
 	if parsedXml.xml@viewGroup = "apps" then
 		content.Push("Video")
-		content.Push("Audio")
-		content.Push("Photo")
+		content.Push("Channel Directory")
+		'content.Push("Audio")
+		'content.Push("Photo")
 	else
 		sectionViewGroup = parsedXml.xml@viewGroup
 		if sectionViewGroup = "secondary" then
@@ -308,8 +313,9 @@ Function listKeys(parsedXml) As Object
 	content = CreateObject("roArray", 10, true)
 	if parsedXml.xml@viewGroup = "apps" then
 		content.Push("/video")
-		content.Push("/music")
-		content.Push("/photos")
+		content.Push("/system/channeldirectory")
+		'content.Push("/music")
+		'content.Push("/photos")
 	else
 		sectionViewGroup = parsedXml.xml@viewGroup
 		if sectionViewGroup = "secondary" then
@@ -346,6 +352,7 @@ Function ConstructDirectoryMetadata(xml, directoryItem, sourceUrl) As Object
 	directory = CreateObject("roAssociativeArray")
 	directory.server = m
 	directory.sourceUrl = sourceUrl
+	directory.type  = directoryItem@type
 	directory.ContentType = directoryItem@type
 	if directory.ContentType = "show" then
 		directory.ContentType = "series"
@@ -479,6 +486,29 @@ Function ConstructTrackMetadata(xml, trackItem, sourceUrl) As Object
 		'video.SDPosterURL = TranscodedImage(m.serverUrl, queryUrl, thumb, "158", "204")
 		'video.HDPosterURL = TranscodedImage(m.serverUrl, queryUrl, thumb, "214", "306")
 	return track
+End Function
+		
+'* While this plays audio it does not do anything visual. we need that also (poster screen)
+'* Leave until PMS can transcode to mp3
+Function constructAudioPlayer(metadata) As Object
+    print "Constructing audio player for ";metadata.key
+    p = CreateObject("roMessagePort")
+    audio = CreateObject("roAudioPlayer")
+    audio.setMessagePort(p)
+    playlist = ConstructPlaylist()
+    audio.setcontentlist(playlist)
+    return audio
+End Function
+
+Function ConstructPlaylist() As Object
+	playlist = []
+	song = CreateObject("roAssociativeArray") 
+	song.contenttype = "audio"
+	song.url = "http://www.theflute.co.uk/media/BachCPE_SonataAmin_1.wma" 
+    song.Title = "Test"
+    song.streamformat = "wma"
+	playlist.push(song)
+	return playlist
 End Function
 		
 Function constructPluginVideoScreen(metadata) As Object

@@ -84,6 +84,8 @@ Function showPosterScreen(screen, content) As Integer
                 	displaySpringboardScreen(currentTitle, contentList, msg.GetIndex())
                 else if contentType = "clip" then
         			playPluginVideo(server, selected)
+        		else if contentType = "album" then
+        		    playAlbum(server, selected)
                 else
                 	showNextPosterScreen(currentTitle, selected)
                 endif
@@ -94,6 +96,10 @@ Function showPosterScreen(screen, content) As Integer
         '* through that list by changing the focus point. I've reversed that model by having a
         '* fixed focus point (5) in the middle of a small fixed content list (N=11) and when
         '* focus is moved the content is reloaded from a paginated PMS query.
+        '*
+        '* This involves more PMS calls but with smaller result list. Also, since the real bottle
+        '* neck appears to be the XML parsing, some caching of parsed results could also be
+        '* performed to speed things up.
         '* 
             else if msg.isListItemFocused() then
                 print "List item focused. Length:";contentList.Count()
