@@ -107,11 +107,11 @@ Function showPosterScreen(screen, content) As Integer
 					focused = msg.GetIndex()
 					difference = focused - middlePoint
 					if difference <> 0 then
+						'print "Difference:";difference
 						'print "Old pagination start:";paginationStart
 						'print "Total size:";totalSize
 						paginationStart = PaginationStartPoint(totalSize, paginationStart, difference)
 						'print "New pagination start:";paginationStart
-						'print "Difference:";difference
 						screen.SetFocusedListItem(middlePoint)
 						contentListArray = PopulateContentList(server, screen, queryResponse.sourceUrl, contentKey, paginationStart, totalSize)
 					    contentList = contentListArray[0]

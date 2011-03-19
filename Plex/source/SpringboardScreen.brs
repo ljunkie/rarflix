@@ -35,24 +35,12 @@ Function showSpringboardScreen(screen, contentList, index) As Integer
         		playVideo(server, metaDataArray.metadata, metaDataArray.media, startTime)
         		'* Refresh play data after playing
         		metaDataArray = Populate(screen, contentList, index)
-        	else if buttonCommand = "audioStreamSelectionButtons" then
-        		metaDataArray.buttonCommands = AddAudioStreamButtons(screen, metaDataArray.media)
-        	else if buttonCommand = "subtitleStreamSelectionButtons" then
-        		metaDataArray.buttonCommands = AddSubtitleStreamButtons(screen, metaDataArray.media)
-        	else if buttonCommand = "selectSubtitle" then
-        		subtitleId = metaDataArray.buttonCommands[str(msg.getIndex())+"_id"]
-        		print "Media part "+metaDataArray.media.preferredPart.id
-        		print "Selected subtitle "+subtitleId
-        		server.UpdateSubtitleStreamSelection(metaDataArray.media.preferredPart.id, subtitleId)
+        	else if buttonCommand = "audioStreamSelection" then
+        		SelectAudioStream(server, metaDataArray.media)
         		metaDataArray = Populate(screen, contentList, index)
-        		metaDataArray.buttonCommands = AddButtons(screen, metaDataArray.metadata, metaDataArray.media)
-        	else if buttonCommand = "selectAudioStream" then
-        		audioStreamId = metaDataArray.buttonCommands[str(msg.getIndex())+"_id"]
-        		print "Media part "+metaDataArray.media.preferredPart.id
-        		print "Selected audio stream "+audioStreamId
-        		server.UpdateAudioStreamSelection(metaDataArray.media.preferredPart.id, audioStreamId)
+        	else if buttonCommand = "subtitleStreamSelection" then
+        		SelectSubtitleStream(server, metaDataArray.media)
         		metaDataArray = Populate(screen, contentList, index)
-        		metaDataArray.buttonCommands = AddButtons(screen, metaDataArray.metadata, metaDataArray.media)
         	endif
         else if msg.isRemoteKeyPressed() then
         	'* index=4 -> left ; index=5 -> right
@@ -98,10 +86,14 @@ Function Populate(screen, contentList, index) As Object
 	return metaDataArray
 End Function
 
-Function AddSubtitleStreamButtons(screen, media) As Object
-
-	screen.ClearButtons()
-	buttonCount = 0
+'* Show a dialog allowing user to select from all available subtitle streams
+Function SelectSubtitleStream(server, media) 
+	port = CreateObject("roMessagePort") 
+	dialog = CreateObject("roMessageDialog") 
+	dialog.SetMessagePort(port)
+	dialog.SetMenuTopLeft(true)
+	dialog.EnableBackButton(true)
+	dialog.SetTitle("Select Subtitle") 
 	mediaPart = media.preferredPart
 	selected = false
 	for each Stream in mediaPart.streams
@@ -109,29 +101,103 @@ Function AddSubtitleStreamButtons(screen, media) As Object
 			selected = true
 		endif
 	next
-	
-	buttonCommands = CreateObject("roAssociativeArray")
 	noSelectionTitle = "No Subtitles"
 	if not selected then
 		noSelectionTitle = "> "+noSelectionTitle
 	endif
-	screen.AddButton(buttonCount, noSelectionTitle)
-	buttonCommands[str(buttonCount)] = "selectSubtitle"
+	
+	buttonCommands = CreateObject("roAssociativeArray")
+	buttonCount = 0
+	dialog.AddButton(buttonCount, noSelectionTitle)
 	buttonCommands[str(buttonCount)+"_id"] = ""
-	buttonCount = buttonCount + 1	
+	buttonCount = buttonCount + 1
 	for each Stream in mediaPart.streams
 		if Stream.streamType = "3" then
 			buttonTitle = Stream.Language
 			if Stream.selected <> invalid then
 				buttonTitle = "> " + buttonTitle
 			endif
-			screen.AddButton(buttonCount, buttonTitle)
-			buttonCommands[str(buttonCount)] = "selectSubtitle"
+			dialog.AddButton(buttonCount, buttonTitle)
 			buttonCommands[str(buttonCount)+"_id"] = Stream.Id
 			buttonCount = buttonCount + 1	
 		endif
 	next
-	return buttonCommands
+	dialog.Show()
+	while true 
+		msg = wait(0, dialog.GetMessagePort()) 
+		if type(msg) = "roMessageDialogEvent"
+			if msg.isScreenClosed() then
+				exit while
+			else if msg.isButtonPressed() then
+				print "Button pressed:";msg.getIndex()
+        		streamId = buttonCommands[str(msg.getIndex())+"_id"]
+        		print "Media part "+media.preferredPart.id
+        		print "Selected subtitle "+streamId
+        		server.UpdateSubtitleStreamSelection(media.preferredPart.id, streamId)
+				dialog.close()
+			end if 
+		end if
+	end while
+End Function
+
+'* Show a dialog allowing user to select from all available subtitle streams
+Function SelectAudioStream(server, media) 
+	port = CreateObject("roMessagePort") 
+	dialog = CreateObject("roMessageDialog") 
+	dialog.SetMessagePort(port)
+	dialog.SetMenuTopLeft(true)
+	dialog.EnableBackButton(true)
+	dialog.SetTitle("Select Audio Stream") 
+	mediaPart = media.preferredPart
+	buttonCommands = CreateObject("roAssociativeArray")
+	buttonCount = 0
+	for each Stream in mediaPart.streams
+		if Stream.streamType = "2" then
+			buttonTitle = Stream.Language
+			subtitle = invalid
+			if Stream.Codec <> invalid then
+				if Stream.Codec = "dca" then
+					subtitle = "DTS"
+				else 
+					subtitle = ucase(Stream.Codec)
+				endif
+			endif
+			if Stream.Channels <> invalid then
+				if Stream.Channels = "2" then
+					subtitle = subtitle + " Stereo"
+				else if Stream.Channels = "6" then
+					subtitle = subtitle + " 5.1"
+				else if Stream.Channels = "8" then
+					subtitle = subtitle + " 7.1"
+				endif
+			endif
+			if subtitle <> invalid then
+				buttonTitle = buttonTitle + " ("+subtitle+")"
+			endif
+			if Stream.selected <> invalid then
+				buttonTitle = "> " + buttonTitle
+			endif
+			dialog.AddButton(buttonCount, buttonTitle)
+			buttonCommands[str(buttonCount)+"_id"] = Stream.Id
+			buttonCount = buttonCount + 1	
+		endif
+	next
+	dialog.Show()
+	while true 
+		msg = wait(0, dialog.GetMessagePort()) 
+		if type(msg) = "roMessageDialogEvent"
+			if msg.isScreenClosed() then
+				exit while
+			else if msg.isButtonPressed() then
+				print "Button pressed:";msg.getIndex()
+        		streamId = buttonCommands[str(msg.getIndex())+"_id"]
+        		print "Media part "+media.preferredPart.id
+        		print "Selected audio stream "+streamId
+        		server.UpdateAudioStreamSelection(media.preferredPart.id, streamId)
+				dialog.close()
+			end if 
+		end if
+	end while
 End Function
 
 Function AddAudioStreamButtons(screen, media) As Object
@@ -206,12 +272,12 @@ Function AddButtons(screen, metadata, media) As Object
 	print "Found subtitle streams:";subtitleStreams.Count()
 	if audioStreams.Count() > 1 then
 		screen.AddButton(buttonCount, "Select audio stream")
-		buttonCommands[str(buttonCount)] = "audioStreamSelectionButtons"
+		buttonCommands[str(buttonCount)] = "audioStreamSelection"
 		buttonCount = buttonCount + 1
 	endif
 	if subtitleStreams.Count() > 0 then
 		screen.AddButton(buttonCount, "Select subtitles")
-		buttonCommands[str(buttonCount)] = "subtitleStreamSelectionButtons"
+		buttonCommands[str(buttonCount)] = "subtitleStreamSelection"
 		buttonCount = buttonCount + 1
 	endif
 	return buttonCommands
