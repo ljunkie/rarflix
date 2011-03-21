@@ -32,7 +32,61 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
 	pms.ExecutePostCommand = issuePostCommand
 	pms.UpdateAudioStreamSelection = updateAudioStreamSelection
 	pms.UpdateSubtitleStreamSelection = updateSubtitleStreamSelection
+	pms.Search = search
 	return pms
+End Function
+
+Function search(query) As Object
+	searchResults = CreateObject("roAssociativeArray")
+	searchResults.names = []
+	searchResults.content = []
+	movies = []
+	shows = []
+	episodes = []
+	xmlResult = m.GetQueryResponse("", "/search?query="+HttpEncode(query))
+	for each directoryItem in xmlResult.xml.Directory
+		if directoryItem@type = "show" then
+			directory = m.ConstructDirectoryMetadata(xmlResult.xml, directoryItem, xmlResult.sourceUrl)
+			shows.Push(directory)
+		endif
+	next
+	for each videoItem in xmlResult.xml.Video
+		video = m.ConstructVideoMetadata(xmlResult.xml, videoItem, xmlResult.sourceUrl)
+		if videoItem@type = "movie" then
+			movies.Push(video)
+		else if videoItem@type = "episode" then
+			episodes.Push(video)
+		end if
+	next
+	if movies.Count() > 0  then
+		searchResults.names.Push("Movies")
+		searchResults.content.Push(movies)
+	end if	
+	if shows.Count() > 0  then
+		searchResults.names.Push("TV Shows")
+		searchResults.content.Push(shows)
+	end if	
+	if episodes.Count() > 0  then
+		searchResults.names.Push("TV Episodes")
+		searchResults.content.Push(episodes)
+	end if
+	videoClips = []
+	'*
+	'* This works, in that search returns results, but I can't get the resultant clips to play.
+	'* Comment out for now until I figure out the issue
+	'*
+	'videoSurfResult = m.GetQueryResponse("", "/system/services/search?identifier=com.plexapp.search.videosurf&query="+HttpEncode(query))
+	'for each videoItem in videoSurfResult.xml.Video
+	'	video = m.ConstructVideoMetadata(videoSurfResult.xml, videoItem, videoSurfResult.sourceUrl)
+	'	if videoItem@type = "clip" then
+	'		videoClips.Push(video)
+	'	end if
+	'next
+	if videoClips.Count() > 0 then
+		searchResults.names.Push("Video Clips")
+		searchResults.content.Push(videoClips)
+	end if
+	return searchResults
 End Function
 
 '* This needs a HTTP PUT command that does not exist in the Roku API but it's faked with a POST
@@ -96,6 +150,7 @@ Function homePageContent() As Object
 			content.Push(section)
 		endif
 	next
+	
 	'* TODO: only add this if we actually have any valid apps?
 	appsSection = CreateObject("roAssociativeArray")
 	appsSection.server = m
@@ -107,6 +162,18 @@ Function homePageContent() As Object
 	appsSection.SDPosterURL = "file://pkg:/images/plex.png"
 	appsSection.HDPosterURL = "file://pkg:/images/plex.png"
 	content.Push(appsSection)
+	
+	searchSection = CreateObject("roAssociativeArray")
+	searchSection.server = m
+    searchSection.sourceUrl = ""
+	searchSection.ContentType = "series"
+	searchSection.Key = "globalsearch"
+	searchSection.Title = "Search"
+	searchSection.ShortDescriptionLine1 = "Search"
+	searchSection.SDPosterURL = "file://pkg:/images/search.jpg"
+	searchSection.HDPosterURL = "file://pkg:/images/search.jpg"
+	content.Push(searchSection)
+	
 	return content
 End Function
 
@@ -124,7 +191,18 @@ Function videoMetadata(sourceUrl, key) As Object
 	video.Title = videoItem@title
 	video.Key = videoItem@key
 	video.ShortDescriptionLine1 = videoItem@title
-	video.ShortDescriptionLine2 = videoItem@tagline
+	if videoItem@tagline <> invalid then
+		video.ShortDescriptionLine2 = videoItem@tagline
+	end if
+	if xmlResponse.xml@viewGroup = "episode" then
+		video.ShortDescriptionLine2 = videoItem@grandparentTitle
+		if video.ShortDescriptionLine2 = invalid then
+			video.ShortDescriptionLine2 = "Episode "+videoItem@index
+		endif
+	endif
+	if xmlResponse.xml@viewGroup = "Details" then
+		video.ShortDescriptionLine2 = videoItem@summary
+	endif
 	video.Description = videoItem@summary
 	video.Rating = videoItem@contentRating
 	video.ReleaseDate = videoItem@originallyAvailableAt
@@ -173,9 +251,20 @@ Function videoMetadata(sourceUrl, key) As Object
 	
 	video.IsHD = False
 	video.HDBranded = False
-	video.media = CreateObject("roArray", 5, true)
+	video.media = ParseVideoMedia(video, videoItem)
+	'* Which, of potentially many, media items to use
+	video.preferredMediaItem = PickMediaItem(video.media)
+	return video
+End Function
+
+Function ParseVideoMedia(video, videoItem) As Object
+    mediaArray = CreateObject("roArray", 5, true)
 	for each MediaItem in videoItem.Media
 		media = CreateObject("roAssociativeArray")
+		media.indirect = false
+		if MediaItem@indirect <> invalid AND MediaItem@indirect = "1" then
+			media.indirect = true
+		end if
 		media.identifier = MediaItem@id
 		media.audioCodec = MediaItem@audioCodec
 		media.videoCodec = MediaItem@videoCodec
@@ -215,11 +304,9 @@ Function videoMetadata(sourceUrl, key) As Object
 		'* TODO: deal with multiple parts correctly. Not sure how audio etc selection works
 		'* TODO: with multi-part
 		media.preferredPart = media.parts[0]
-		video.media.Push(media)
+		mediaArray.Push(media)
 	next
-	'* Which, of potentially many, media items to use
-	video.preferredMediaItem = PickMediaItem(video.media)
-	return video
+	return mediaArray
 End Function
 
 '* Logic for choosing which Media item to use from the collection of possibles.
@@ -404,7 +491,15 @@ Function ConstructVideoMetadata(xml, videoItem, sourceUrl) As Object
 	video.Title = videoItem@title
 	video.Key = videoItem@key
 	video.ShortDescriptionLine1 = videoItem@title
-	video.ShortDescriptionLine2 = videoItem@tagline
+	video.releaseDate = videoItem@originallyAvailableAt
+	video.Description = videoItem@summary
+	
+	if videoItem@tagline <> invalid then
+		video.ShortDescriptionLine2 = videoItem@tagline
+	end if
+	if videoItem@sourceTitle <> invalid then
+		video.ShortDescriptionLine2 = videoItem@sourceTitle
+	end if
 	if xml@viewGroup = "episode" then
 		video.ShortDescriptionLine2 = videoItem@grandparentTitle
 		if video.ShortDescriptionLine2 = invalid then
@@ -414,7 +509,6 @@ Function ConstructVideoMetadata(xml, videoItem, sourceUrl) As Object
 	if xml@viewGroup = "Details" then
 		video.ShortDescriptionLine2 = videoItem@summary
 	endif
-	video.Description = videoItem@summary
 	
 	sizes = ImageSizes(xml@viewGroup, video.ContentType)
 	thumb = videoItem@thumb
@@ -431,6 +525,11 @@ Function ConstructVideoMetadata(xml, videoItem, sourceUrl) As Object
 			video.HDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, art, sizes.hdWidth, sizes.hdHeight)	
 		endif
 	endif
+	video.IsHD = False
+	video.HDBranded = False
+	video.media = ParseVideoMedia(video, videoItem)
+	'* Which, of potentially many, media items to use
+	video.preferredMediaItem = PickMediaItem(video.media)
 	return video
 End Function
 
@@ -513,13 +612,42 @@ Function ConstructPlaylist() As Object
 	playlist.push(song)
 	return playlist
 End Function
+
+'* TODO: Recursive for multiple indirects
+Function IndirectMediaKey(server, originalKey) As String
+	queryUrl = FullUrl(server.serverUrl, "", originalKey)
+	print "Fetching content from server at query URL:";queryUrl
+	httpRequest = NewHttp(queryUrl)
+	response = httpRequest.GetToStringWithRetry()
+	xml=CreateObject("roXMLElement")
+	if not xml.Parse(response) then
+			print "Can't parse feed:";response
+			return originalKey
+	endif
+    return xml.Video.Media.Part[0]@key
+End Function
 		
 Function constructPluginVideoScreen(metadata) As Object
-    print "Constructing video screen for ";metadata.key
+    print "Constructing plugin video screen for ";metadata.key
+    'printAA(metadata)
+    if metadata.preferredMediaItem = invalid then
+        print "No preferred part"
+    	videoclip = ConstructVideoClip(m.serverUrl, metadata.key, metadata.sourceUrl, "", "", metadata.title)
+    else
+    	mediaItem = metadata.preferredMediaItem
+    	mediaPart = mediaItem.preferredPart
+		mediaKey = mediaPart.key
+		sourceUrl = metadata.sourceUrl
+    	if mediaItem.indirect then
+			mediaKey = IndirectMediaKey(m, mediaKey)
+    	end if
+        print "Using preferred part ";mediaKey
+    	videoclip = ConstructVideoClip(m.serverUrl, mediaKey, sourceUrl, "", "", metadata.title)
+    end if
+    
     p = CreateObject("roMessagePort")
     video = CreateObject("roVideoScreen")
     video.setMessagePort(p)
-    videoclip = ConstructVideoClip(m.serverUrl, metadata.key, metadata.sourceUrl, "", "", metadata.title)
     video.SetContent(videoclip)
     m.Cookie = StartTranscodingSession(videoclip.StreamUrls[0])
 	video.AddHeader("Cookie", m.Cookie)
@@ -628,13 +756,16 @@ Function TranscodingVideoUrl(serverUrl As String, videoUrl As String, sourceUrl 
     	location = sourceUrl + "/" + videoUrl
     endif
     print "Location:";location
-    if left(key, 1) = "/" then
+    if len(key) = 0 then
+    	fullKey = ""
+    else if left(key, 1) = "/" then
     	fullKey = serverUrl + key 
     else if left(key, 7) = "http://"
     	fullKey = key
     else
     	fullKey = sourceUrl + "/" + key
     endif
+    print "Original key:";key
     print "Full key:";fullKey
     
     

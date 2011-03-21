@@ -63,8 +63,43 @@ End Function
 
 Function displaySection(section As Object) As Dynamic
     if validateParam(section, "roAssociativeArray", "displaySection") = false return -1
-    screen = preShowPosterScreen(section.Title, "")
-    showPosterScreen(screen, section)
+    
+    if section.key = "globalsearch" then
+    	queryString = getQueryString()
+    	if len(queryString) > 0 then
+    		showSearchGridScreen(section.server, queryString)
+    	end if
+    else
+    	screen = preShowPosterScreen(section.Title, "")
+    	showPosterScreen(screen, section)
+    endif
     return 0
 End Function
 
+Function getQueryString() As String
+	queryString = ""
+	
+	searchHistory = CreateObject("roSearchHistory")
+	port = CreateObject("roMessagePort") 
+	searchScreen = CreateObject("roSearchScreen") 
+	searchScreen.SetMessagePort(port)
+	searchScreen.SetSearchTerms(searchHistory.GetAsArray())
+	searchScreen.show()
+	done = false
+	while done = false
+		msg = wait(0, searchScreen.getMessagePort())
+		if type(msg) = "roSearchScreenEvent" then
+			if msg.isFullResult() then
+				queryString = msg.getMessage()
+				if len(queryString) > 0 then
+					searchHistory.Push(queryString)
+				end if
+				done = true
+			else if msg.isScreenClosed() then
+				done = true
+			end if
+		end if
+	end while
+	print "Query string:";queryString
+	return queryString
+End Function
