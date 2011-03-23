@@ -45,8 +45,8 @@ Function showHomeScreen(screen, servers) As Integer
 	prefs.Key = "prefs"
 	prefs.Title = "Preferences"
 	prefs.ShortDescriptionLine1 = "Preferences"
-	prefs.SDPosterURL = "file://pkg:/images/search.jpg"
-	prefs.HDPosterURL = "file://pkg:/images/search.jpg"
+	prefs.SDPosterURL = "file://pkg:/images/prefs.png"
+	prefs.HDPosterURL = "file://pkg:/images/prefs.png"
 	sectionList.Push(prefs)
 	
 	
