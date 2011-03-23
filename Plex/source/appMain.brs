@@ -5,6 +5,8 @@
 
 Sub Main()
 
+    screenFacade = CreateObject("roPosterScreen")
+    screenFacade.show()
     'initialize theme attributes like titles, logos and overhang color
     initTheme()
 
@@ -29,6 +31,9 @@ Sub Main()
     	
     endif
 
+    'exit the app gently so that the screen doesn't flash to black
+    screenFacade.showMessage("")
+    sleep(25)
 End Sub
 
 
