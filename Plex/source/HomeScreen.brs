@@ -36,8 +36,20 @@ Function showHomeScreen(screen, servers) As Integer
     		endif
     		sectionList.Push(section)
     	end for
-    	
 	end for
+	
+	prefs = CreateObject("roAssociativeArray")
+	prefs.server = m
+    prefs.sourceUrl = ""
+	prefs.ContentType = "series"
+	prefs.Key = "prefs"
+	prefs.Title = "Preferences"
+	prefs.ShortDescriptionLine1 = "Preferences"
+	prefs.SDPosterURL = "file://pkg:/images/search.jpg"
+	prefs.HDPosterURL = "file://pkg:/images/search.jpg"
+	sectionList.Push(prefs)
+	
+	
     screen.SetContentList(sectionList)
     screen.Show()
     while true
@@ -69,12 +81,65 @@ Function displaySection(section As Object) As Dynamic
     	if len(queryString) > 0 then
     		showSearchGridScreen(section.server, queryString)
     	end if
+    else if section.key = "prefs" then
+    	ChangePreferences()
     else
     	screen = preShowPosterScreen(section.Title, "")
     	showPosterScreen(screen, section)
     	'showGridScreen(section)
     endif
     return 0
+End Function
+
+'* One depth preference dialog for now. If we add more preferences make this multi-depth.
+Function ChangePreferences()
+	port = CreateObject("roMessagePort") 
+	dialog = CreateObject("roMessageDialog") 
+	dialog.SetMessagePort(port)
+	dialog.SetMenuTopLeft(true)
+	dialog.EnableBackButton(true)
+	dialog.SetTitle("Preferences") 
+	dialog.setText("Choose quality setting. Higher settings produce better video quality but require more network bandwidth.")
+	buttonCommands = CreateObject("roAssociativeArray")
+	qualities = CreateObject("roArray", 6 , true)
+	
+	qualities.Push("720 kbps, 320p") 'Q=4
+	qualities.Push("1.5 Mbps, 480p") 'Q=5
+	qualities.Push("2.0 Mbps, 720p") 'Q=6
+	qualities.Push("3.0 Mbps, 720p") 'Q=7
+	qualities.Push("4.0 Mbps, 720p") 'Q=8
+	'qualities.Push("8.0 Mbps, 1080p") 'Q=9
+	
+	if not(RegExists("quality", "preferences")) then
+		RegWrite("quality", "7", "preferences")
+	end if
+	current = RegRead("quality", "preferences")
+	
+	buttonCount = 4
+	for each quality in qualities
+		title = quality
+		if current = buttonCount.tostr() then
+			title = "> "+title
+		end if
+		dialog.AddButton(buttonCount, title)
+		buttonCount = buttonCount + 1
+	next
+	
+	dialog.Show()
+	while true 
+		msg = wait(0, dialog.GetMessagePort()) 
+		if type(msg) = "roMessageDialogEvent"
+			if msg.isScreenClosed() then
+				dialog.close()
+				exit while
+			else if msg.isButtonPressed() then
+        		quality = msg.getIndex().tostr()
+        		print "Set selected quality to ";quality
+        		RegWrite("quality", quality, "preferences")
+				dialog.close()
+			end if 
+		end if
+	end while
 End Function
 
 Function getQueryString() As String

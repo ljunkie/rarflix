@@ -191,7 +191,6 @@ Function SelectAudioStream(server, media)
 				dialog.close()
 				exit while
 			else if msg.isButtonPressed() then
-				print "Button pressed:";msg.getIndex()
         		streamId = buttonCommands[str(msg.getIndex())+"_id"]
         		print "Media part "+media.preferredPart.id
         		print "Selected audio stream "+streamId

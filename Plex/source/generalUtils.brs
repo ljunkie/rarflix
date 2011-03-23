@@ -28,6 +28,12 @@ Function RegDelete(key, section=invalid)
     sec.Flush()
 End Function
 
+Function RegExists(key, section=invalid)
+    if section = invalid then section = "Default"
+    sec = CreateObject("roRegistrySection", section)
+    return sec.Exists(key)
+End Function
+
 
 '******************************************************
 'Insertion Sort

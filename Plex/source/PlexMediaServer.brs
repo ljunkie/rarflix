@@ -744,6 +744,19 @@ End Function
 
 '*
 '* Construct the Plex transcoding URL. 
+
+    '* Question here about how the quality is handled by Roku for q>6 (playback baulked at q>6). 
+    '* More recent testing: it now appears to work fine with 7,8 and 9 but baulks at 10. It also
+    '* appears to be able to handle the bitrate at q=9, even though it's way over spec.
+    '*
+    '* Take that back. 1080p no transcoding at q=9 is not good.
+    '*
+    '* Only difference (other than PMS) was wireless vs wired. Maybe Roku can detect upper end of network bandwidth
+    '* capabilities and rejects streams above that?
+    '*
+    '* Put min and max and let Roku choose? Shouldn't (yeah, right) bounce after initial selection as we're on local network
+    '* 
+    
 '*
 Function TranscodingVideoUrl(serverUrl As String, videoUrl As String, sourceUrl As String, ratingKey As String, key As String) As String
     print "Constructing transcoding video URL for "+videoUrl
@@ -768,20 +781,17 @@ Function TranscodingVideoUrl(serverUrl As String, videoUrl As String, sourceUrl 
     print "Original key:";key
     print "Full key:";fullKey
     
+    '* Let the user choose. OK if things play alright.
+	if not(RegExists("quality", "preferences")) then
+		RegWrite("quality", "7", "preferences")
+	end if
+	currentQuality = RegRead("quality", "preferences")
     
-    '* Question here about how the quality is handled by Roku for q>6 (playback baulked at q>6). 
-    '* More recent testing: it now appears to work fine with 7,8 and 9 but baulks at 10. It also
-    '* appears to be able to handle the bitrate at q=9, even though it's way over spec.
-    '*
-    '* Take that back. 1080p no transcoding at q=9 is not good.
-    '*
-    '* Only difference (other than PMS) was wireless vs wired. Maybe Roku can detect upper end of network bandwidth
-    '* capabilities and rejects streams above that?
-    '*
-    '* Put min and max and let Roku choose? Shouldn't (yeah, right) bounce after initial selection as we're on local network
-    '* 
-    myurl = "/video/:/transcode/segmented/start.m3u8?identifier=com.plexapp.plugins.library&ratingKey="+ratingKey+"&key="++HttpEncode(fullKey)+"&offset=0&quality=8&url="+HttpEncode(location)+"&3g=0&httpCookies=&userAgent="
+    myurl = "/video/:/transcode/segmented/start.m3u8?identifier=com.plexapp.plugins.library&ratingKey="+ratingKey+"&key="+HttpEncode(fullKey)+"&offset=0&quality="+currentQuality+"&url="+HttpEncode(location)+"&3g=0&httpCookies=&userAgent="
+    	
+    '* This would be auto quality if we want to enable it
 	'myurl = "/video/:/transcode/segmented/start.m3u8?identifier=com.plexapp.plugins.library&ratingKey=97007888&offset=0&minQuality=5&maxQuality=8&url="+HttpEncode(location)+"&3g=0&httpCookies=&userAgent="
+	
 	publicKey = "KQMIY6GATPC63AIMC4R2"
 	time = LinuxTime().tostr()
 	msg = myurl+"@"+time
