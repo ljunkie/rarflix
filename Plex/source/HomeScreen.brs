@@ -72,6 +72,7 @@ Function displaySection(section As Object) As Dynamic
     else
     	screen = preShowPosterScreen(section.Title, "")
     	showPosterScreen(screen, section)
+    	'showGridScreen(section)
     endif
     return 0
 End Function

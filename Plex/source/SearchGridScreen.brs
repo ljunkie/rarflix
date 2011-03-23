@@ -34,10 +34,13 @@ Function showSearchGridScreen(server, query) As Integer
                 contentType = contentSelected.ContentType
                 print "Content type in search grid screen:";contentType
                 if contentType = "movie" OR contentType = "episode" then
+                	grid.close()
                 	displaySpringboardScreen("Search Results", searchResults.content[row], selection)
                 else if contentType = "series" then
+                	grid.close()
                 	showNextPosterScreen("Search Results", contentSelected)
                 else if contentType = "clip" then
+                	grid.close()
         			playPluginVideo(server, contentSelected)
                 end if
             else if msg.isScreenClosed() then
