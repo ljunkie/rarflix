@@ -26,14 +26,14 @@ Sub Main()
 	retrieving.Close()
     if servers.count() > 0 then
     	showHomeScreen(screen, servers)
+    
+    	screenFacade.showMessage("")
+    	sleep(25)
     else
-        '* TODO: user friendly can't find PMS message
-    	
+    	screenFacade.showMessage("Unable to find any Plex Media Servers")
+    	sleep(5000)
     endif
 
-    'exit the app gently so that the screen doesn't flash to black
-    screenFacade.showMessage("")
-    sleep(25)
 End Sub
 
 

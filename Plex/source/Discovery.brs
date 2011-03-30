@@ -21,14 +21,19 @@ Function DiscoverPlexMediaServers() As Object
     print "Looking on network interface ";interface
   	ip = ipArray.Lookup(interface)
   	serversResponse = ScanNetwork(ip)
-    xml=CreateObject("roXMLElement")
-    if xml.Parse(serversResponse) then
-  	    for each server in xml.Server
-    	    list.AddTail(newPlexMediaServer("http://" + server@address + ":32400", server@name))
-	    end for
+  	if serversResponse <> invalid then
+    	xml=CreateObject("roXMLElement")
+    	if xml.Parse(serversResponse) then
+  	    	for each server in xml.Server
+  	    	    print "Found server ";server@address
+  	    	    if server@address <> invalid then
+    	    		list.AddTail(newPlexMediaServer("http://" + server@address + ":32400", server@name))
+    	    	end if
+	    	end for
+		endif
 	endif
   next
-   return list
+  return list
 End Function
 
 Function ScanNetwork(ip) As Object
@@ -52,16 +57,21 @@ Function ScanNetwork(ip) As Object
     xferArray[x].AsyncGetToString()
   End For
   serversResponse = invalid
+  responseCount = 0
   while true
     event = wait(1, mp)
     if type(event) = "roUrlEvent"
        respCode = event.GetResponseCode()
+       responseCount = responseCount + 1
        if respCode = 200 then
           serversResponse = event.GetString()
           print serversResponse
           if inStr(0, serversResponse, "address=")
             exit while
           endif
+       endif
+       if responseCount >= xferArray.Count() then
+       		exit while
        endif
     endif
   end while
