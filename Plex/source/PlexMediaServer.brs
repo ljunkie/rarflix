@@ -711,15 +711,12 @@ Function TranscodedImage(serverUrl, queryUrl, imagePath, width, height) As Strin
 	return image
 End Function
 
-
 '* Starts a transcoding session by issuing a HEAD request and captures
 '* the resultant session ID from the cookie that can then be used to
 '* access and stop the transcoding
 Function StartTranscodingSession(videoUrl) As String
 	cookiesRequest = CreateObject("roUrlTransfer")
 	cookiesRequest.SetUrl(videoUrl)
-	capabilities = "protocols=http-streaming-video;http-streaming-video-720p;videoDecoders=h264{profile:high&resolution:1080&level:40};audioDecoders=aac"
-	cookiesRequest.AddHeader("X-Plex-Client-Capabilities", capabilities)
 	cookiesHead = cookiesRequest.Head()
 	cookieHeader = cookiesHead.GetResponseHeaders()["set-cookie"]
 	return cookieHeader
@@ -744,19 +741,6 @@ End Function
 
 '*
 '* Construct the Plex transcoding URL. 
-
-    '* Question here about how the quality is handled by Roku for q>6 (playback baulked at q>6). 
-    '* More recent testing: it now appears to work fine with 7,8 and 9 but baulks at 10. It also
-    '* appears to be able to handle the bitrate at q=9, even though it's way over spec.
-    '*
-    '* Take that back. 1080p no transcoding at q=9 is not good.
-    '*
-    '* Only difference (other than PMS) was wireless vs wired. Maybe Roku can detect upper end of network bandwidth
-    '* capabilities and rejects streams above that?
-    '*
-    '* Put min and max and let Roku choose? Shouldn't (yeah, right) bounce after initial selection as we're on local network
-    '* 
-    
 '*
 Function TranscodingVideoUrl(serverUrl As String, videoUrl As String, sourceUrl As String, ratingKey As String, key As String) As String
     print "Constructing transcoding video URL for "+videoUrl
@@ -796,9 +780,16 @@ Function TranscodingVideoUrl(serverUrl As String, videoUrl As String, sourceUrl 
 	time = LinuxTime().tostr()
 	msg = myurl+"@"+time
 	finalMsg = HMACHash(msg)
-	finalUrl = serverUrl + myurl+"&X-Plex-Access-Key=" + publicKey + "&X-Plex-Access-Time=" + time + "&X-Plex-Access-Code=" + HttpEncode(finalMsg)
+	finalUrl = serverUrl + myurl+"&X-Plex-Access-Key=" + publicKey + "&X-Plex-Access-Time=" + time + "&X-Plex-Access-Code=" + HttpEncode(finalMsg) + "&X-Plex-Client-Capabilities=" + HttpEncode(Capabilities())
 	print "Final URL:";finalUrl
     return finalUrl
+End Function
+
+
+Function Capabilities() As String
+	protocols = "protocols=http-live-streaming,http-mp4-streaming,http-mp4-video,http-mp4-video-720p,http-streaming-video,http-streaming-video-720p"
+	decoders = "videoDecoders=h264{profile:high&resolution:1080&level:51};audioDecoders=aac"
+	return protocols+";"+decoders
 End Function
 
 '*
