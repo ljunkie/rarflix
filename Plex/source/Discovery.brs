@@ -16,6 +16,12 @@ Function DiscoverPlexMediaServers() As Object
   list = CreateObject("roList")
   di = CreateObject("roDeviceInfo")
   
+  Dim minVersion[4]
+  minVersion.Push(0)
+  minVersion.Push(9)
+  minVersion.Push(2)
+  minVersion.Push(4)
+  
   ipArray = di.GetIPAddrs()
   for each interface in ipArray
     print "Looking on network interface ";interface
@@ -27,13 +33,37 @@ Function DiscoverPlexMediaServers() As Object
   	    	for each server in xml.Server
   	    	    print "Found server ";server@address
   	    	    if server@address <> invalid then
-    	    		list.AddTail(newPlexMediaServer("http://" + server@address + ":32400", server@name))
+  	    	    	versionStr = server@version
+  	    	    	versionHighEnough = ServerVersionCompare(versionStr, minVersion)
+  	    	    	if versionHighEnough then
+  	    	    		print "Accepting server with version:";versionStr
+    	    			list.AddTail(newPlexMediaServer("http://" + server@address + ":32400", server@name))
+    	    		else
+    	    			print "Rejecting server with version:";versionStr
+    	    		end if
     	    	end if
 	    	end for
 		endif
 	endif
   next
   return list
+End Function
+
+Function ServerVersionCompare(versionStr, minVersion) As Boolean
+	index = instr(1, versionStr, "-")
+	tokens = strTokenize(left(versionStr, index-1), ".")
+	count = 0
+	for each token in tokens
+		value = val(token)
+		minValue = minVersion[count]
+		count = count + 1
+		if value < minValue then
+			return false
+		else if value > minValue then
+			return true
+		end if
+	end for
+	return true
 End Function
 
 Function ScanNetwork(ip) As Object
