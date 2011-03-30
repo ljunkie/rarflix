@@ -765,17 +765,16 @@ Function TranscodingVideoUrl(serverUrl As String, videoUrl As String, sourceUrl 
     print "Original key:";key
     print "Full key:";fullKey
     
-    '* Let the user choose. OK if things play alright.
 	if not(RegExists("quality", "preferences")) then
 		RegWrite("quality", "7", "preferences")
 	end if
+	baseUrl = "/video/:/transcode/segmented/start.m3u8?identifier=com.plexapp.plugins.library&ratingKey="+ratingKey+"&key="+HttpEncode(fullKey)+"&offset=0"
 	currentQuality = RegRead("quality", "preferences")
-    
-    myurl = "/video/:/transcode/segmented/start.m3u8?identifier=com.plexapp.plugins.library&ratingKey="+ratingKey+"&key="+HttpEncode(fullKey)+"&offset=0&quality="+currentQuality+"&url="+HttpEncode(location)+"&3g=0&httpCookies=&userAgent="
-    	
-    '* This would be auto quality if we want to enable it
-	'myurl = "/video/:/transcode/segmented/start.m3u8?identifier=com.plexapp.plugins.library&ratingKey=97007888&offset=0&minQuality=5&maxQuality=8&url="+HttpEncode(location)+"&3g=0&httpCookies=&userAgent="
-	
+    if currentQuality = "Auto" then
+    	myurl = baseUrl+"&minQuality=4&maxQuality=8&url="+HttpEncode(location)+"&3g=0&httpCookies=&userAgent="
+    else
+    	myurl = baseUrl+"&quality="+currentQuality+"&url="+HttpEncode(location)+"&3g=0&httpCookies=&userAgent="
+    end if
 	publicKey = "KQMIY6GATPC63AIMC4R2"
 	time = LinuxTime().tostr()
 	msg = myurl+"@"+time
@@ -788,7 +787,7 @@ End Function
 
 Function Capabilities() As String
 	protocols = "protocols=http-live-streaming,http-mp4-streaming,http-mp4-video,http-mp4-video-720p,http-streaming-video,http-streaming-video-720p"
-	decoders = "videoDecoders=h264{profile:high&resolution:1080&level:51};audioDecoders=aac"
+	decoders = "videoDecoders=h264{profile:high&resolution:1080&level:40};audioDecoders=aac"
 	return protocols+";"+decoders
 End Function
 
