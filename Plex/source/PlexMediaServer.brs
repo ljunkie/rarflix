@@ -613,8 +613,7 @@ Function ConstructPlaylist() As Object
 	return playlist
 End Function
 
-'* TODO: Recursive for multiple indirects
-Function IndirectMediaKey(server, originalKey) As String
+Function IndirectMediaXml(server, originalKey) As Object
 	queryUrl = FullUrl(server.serverUrl, "", originalKey)
 	print "Fetching content from server at query URL:";queryUrl
 	httpRequest = NewHttp(queryUrl)
@@ -624,7 +623,7 @@ Function IndirectMediaKey(server, originalKey) As String
 			print "Can't parse feed:";response
 			return originalKey
 	endif
-    return xml.Video.Media.Part[0]@key
+    return xml
 End Function
 		
 Function constructPluginVideoScreen(metadata) As Object
@@ -632,17 +631,21 @@ Function constructPluginVideoScreen(metadata) As Object
     'printAA(metadata)
     if metadata.preferredMediaItem = invalid then
         print "No preferred part"
-    	videoclip = ConstructVideoClip(m.serverUrl, metadata.key, metadata.sourceUrl, "", "", metadata.title)
+    	videoclip = ConstructVideoClip(m.serverUrl, metadata.key, metadata.sourceUrl, "", "", metadata.title, "", "")
     else
     	mediaItem = metadata.preferredMediaItem
     	mediaPart = mediaItem.preferredPart
 		mediaKey = mediaPart.key
 		sourceUrl = metadata.sourceUrl
     	if mediaItem.indirect then
-			mediaKey = IndirectMediaKey(m, mediaKey)
+			mediaKeyXml = IndirectMediaXml(m, mediaKey)
+			mediaKey = mediaKeyXml.Video.Media.Part[0]@key
+			httpCookies = mediaKeyXml@httpCookies
+			videoclip = ConstructVideoClip(m.serverUrl, mediaKey, sourceUrl, "", "", metadata.title, httpCookies, "")
+		else
+			videoclip = ConstructVideoClip(m.serverUrl, mediaKey, sourceUrl, "", "", metadata.title, "", "")
     	end if
         print "Using preferred part ";mediaKey
-    	videoclip = ConstructVideoClip(m.serverUrl, mediaKey, sourceUrl, "", "", metadata.title)
     end if
     
     p = CreateObject("roMessagePort")
@@ -663,7 +666,7 @@ Function constructVideoScreen(metadata, mediaData, StartTime As Integer) As Obje
     p = CreateObject("roMessagePort")
     video = CreateObject("roVideoScreen")
     video.setMessagePort(p)
-    videoclip = ConstructVideoClip(m.serverUrl, mediaKey, metadata.sourceUrl, metadata.ratingKey, metadata.key, metadata.title)
+    videoclip = ConstructVideoClip(m.serverUrl, mediaKey, metadata.sourceUrl, metadata.ratingKey, metadata.key, metadata.title, "", "")
     videoclip.PlayStart = StartTime
     video.SetContent(videoclip)
     m.Cookie = StartTranscodingSession(videoclip.StreamUrls[0])
@@ -723,7 +726,7 @@ Function StartTranscodingSession(videoUrl) As String
 End Function
 
 '* Roku video clip definition as an array
-Function ConstructVideoClip(serverUrl as String, videoUrl as String, sourceUrl As String, ratingKey As String, key As String, title as String) As Object
+Function ConstructVideoClip(serverUrl as String, videoUrl as String, sourceUrl As String, ratingKey As String, key As String, title as String, httpCookies as String, userAgent as String) As Object
 	deviceInfo = CreateObject("roDeviceInfo")
 	quality = "SD"
 	if deviceInfo.GetDisplayType() = "HDTV" then
@@ -732,36 +735,51 @@ Function ConstructVideoClip(serverUrl as String, videoUrl as String, sourceUrl A
 	print "Setting stream quality:";quality
 	videoclip = CreateObject("roAssociativeArray")
     videoclip.StreamBitrates = [0]
-    videoclip.StreamUrls = [TranscodingVideoUrl(serverUrl, videoUrl, sourceUrl, ratingKey, key)]
+    videoclip.StreamUrls = [TranscodingVideoUrl(serverUrl, videoUrl, sourceUrl, ratingKey, key, httpCookies, userAgent)]
     videoclip.StreamQualities = [quality]
     videoclip.StreamFormat = "hls"
     videoclip.Title = title
     return videoclip
 End Function
 
+'* Deal with absolute, full then relative URLs
+Function ResolveUrl(serverUrl As String, sourceUrl As String, uri As String) As String
+	if left(uri, 1) = "/" then
+    	return serverUrl + uri 
+    else if left(uri, 7) = "http://"
+    	return uri
+    else
+    	return sourceUrl + "/" + uri
+    endif
+End Function
+
 '*
 '* Construct the Plex transcoding URL. 
 '*
-Function TranscodingVideoUrl(serverUrl As String, videoUrl As String, sourceUrl As String, ratingKey As String, key As String) As String
+Function TranscodingVideoUrl(serverUrl As String, videoUrl As String, sourceUrl As String, ratingKey As String, key As String, httpCookies As String, userAgent As String) As String
     print "Constructing transcoding video URL for "+videoUrl
     '* Deal with absolute, full then relative URLs - TODO DRY:move to own function
-    if left(videoUrl, 1) = "/" then
-    	location = serverUrl + videoUrl 
-    else if left(videoUrl, 7) = "http://"
-    	location = videoUrl
-    else
-    	location = sourceUrl + "/" + videoUrl
-    endif
+    'if left(videoUrl, 1) = "/" then
+    '	location = serverUrl + videoUrl 
+    'else if left(videoUrl, 7) = "http://"
+    '	location = videoUrl
+    'else
+    '	location = sourceUrl + "/" + videoUrl
+    'endif
+    location = ResolveUrl(serverUrl, sourceUrl, videoUrl)
     print "Location:";location
     if len(key) = 0 then
     	fullKey = ""
-    else if left(key, 1) = "/" then
-    	fullKey = serverUrl + key 
-    else if left(key, 7) = "http://"
-    	fullKey = key
     else
-    	fullKey = sourceUrl + "/" + key
-    endif
+    	fullKey = ResolveUrl(serverUrl, sourceUrl, key)
+    end if
+    'else if left(key, 1) = "/" then
+    '	fullKey = serverUrl + key 
+    'else if left(key, 7) = "http://"
+    '	fullKey = key
+    'else
+    '	fullKey = sourceUrl + "/" + key
+    'endif
     print "Original key:";key
     print "Full key:";fullKey
     
@@ -771,10 +789,11 @@ Function TranscodingVideoUrl(serverUrl As String, videoUrl As String, sourceUrl 
 	baseUrl = "/video/:/transcode/segmented/start.m3u8?identifier=com.plexapp.plugins.library&ratingKey="+ratingKey+"&key="+HttpEncode(fullKey)+"&offset=0"
 	currentQuality = RegRead("quality", "preferences")
     if currentQuality = "Auto" then
-    	myurl = baseUrl+"&minQuality=4&maxQuality=8&url="+HttpEncode(location)+"&3g=0&httpCookies=&userAgent="
+    	myurl = baseUrl+"&minQuality=4&maxQuality=8"
     else
-    	myurl = baseUrl+"&quality="+currentQuality+"&url="+HttpEncode(location)+"&3g=0&httpCookies=&userAgent="
+    	myurl = baseUrl+"&quality="+currentQuality
     end if
+    myurl = myurl + "&url="+HttpEncode(location)+"&3g=0&httpCookies="+HttpEncode(httpCookies)+"&userAgent="+HttpEncode(userAgent)
 	publicKey = "KQMIY6GATPC63AIMC4R2"
 	time = LinuxTime().tostr()
 	msg = myurl+"@"+time
