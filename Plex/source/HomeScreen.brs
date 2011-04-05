@@ -79,7 +79,9 @@ Function displaySection(section As Object) As Dynamic
     if section.key = "globalsearch" then
     	queryString = getQueryString()
     	if len(queryString) > 0 then
-    		showSearchGridScreen(section.server, queryString)
+    		screen = preShowSearchPosterScreen(section.Title, "")
+    		showSearchPosterScreen(screen, section.server, queryString)
+    		'showSearchGridScreen(section.server, queryString)
     	end if
     else if section.key = "prefs" then
     	ChangePreferences()

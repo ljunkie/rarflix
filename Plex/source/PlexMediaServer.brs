@@ -75,13 +75,13 @@ Function search(query) As Object
 	'* This works, in that search returns results, but I can't get the resultant clips to play.
 	'* Comment out for now until I figure out the issue
 	'*
-	'videoSurfResult = m.GetQueryResponse("", "/system/services/search?identifier=com.plexapp.search.videosurf&query="+HttpEncode(query))
-	'for each videoItem in videoSurfResult.xml.Video
-	'	video = m.ConstructVideoMetadata(videoSurfResult.xml, videoItem, videoSurfResult.sourceUrl)
-	'	if videoItem@type = "clip" then
-	'		videoClips.Push(video)
-	'	end if
-	'next
+	videoSurfResult = m.GetQueryResponse("", "/system/services/search?identifier=com.plexapp.search.videosurf&query="+HttpEncode(query))
+	for each videoItem in videoSurfResult.xml.Video
+		video = m.ConstructVideoMetadata(videoSurfResult.xml, videoItem, videoSurfResult.sourceUrl)
+		if videoItem@type = "clip" then
+			videoClips.Push(video)
+		end if
+	next
 	if videoClips.Count() > 0 then
 		searchResults.names.Push("Video Clips")
 		searchResults.content.Push(videoClips)
@@ -494,11 +494,11 @@ Function ConstructVideoMetadata(xml, videoItem, sourceUrl) As Object
 	video.releaseDate = videoItem@originallyAvailableAt
 	video.Description = videoItem@summary
 	
-	if videoItem@tagline <> invalid then
-		video.ShortDescriptionLine2 = videoItem@tagline
-	end if
 	if videoItem@sourceTitle <> invalid then
 		video.ShortDescriptionLine2 = videoItem@sourceTitle
+	end if
+	if videoItem@tagline <> invalid then
+		video.ShortDescriptionLine2 = videoItem@tagline
 	end if
 	if xml@viewGroup = "episode" then
 		video.ShortDescriptionLine2 = videoItem@grandparentTitle
