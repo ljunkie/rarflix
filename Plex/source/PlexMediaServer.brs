@@ -14,16 +14,12 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
 	pms.GetHomePageContent = homePageContent
 	pms.GetListNames = listNames
 	pms.GetListKeys = listKeys
-	pms.AudioPlayer = constructAudioPlayer
 	pms.VideoScreen = constructVideoScreen
 	pms.PluginVideoScreen = constructPluginVideoScreen
 	pms.StopVideo = stopTranscode
 	pms.GetQueryResponse = xmlContent
 	pms.GetPaginatedQueryResponse = paginatedXmlContent
-	pms.ConstructDirectoryMetadata = ConstructDirectoryMetadata
-	pms.ConstructVideoMetadata = ConstructVideoMetadata
-	pms.ConstructTrackMetadata = ConstructTrackMetadata
-	pms.DetailedVideoMetadata = videoMetadata
+	pms.DetailedVideoMetadata = detailedVideoMetadata
 	pms.SetProgress = progress
 	pms.Scrobble = scrobble
 	pms.Unscrobble = unscrobble
@@ -33,6 +29,7 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
 	pms.UpdateAudioStreamSelection = updateAudioStreamSelection
 	pms.UpdateSubtitleStreamSelection = updateSubtitleStreamSelection
 	pms.Search = search
+	pms.TranscodedImage = TranscodedImage
 	return pms
 End Function
 
@@ -46,12 +43,12 @@ Function search(query) As Object
 	xmlResult = m.GetQueryResponse("", "/search?query="+HttpEncode(query))
 	for each directoryItem in xmlResult.xml.Directory
 		if directoryItem@type = "show" then
-			directory = m.ConstructDirectoryMetadata(xmlResult.xml, directoryItem, xmlResult.sourceUrl)
+			directory = newDirectoryMetadata(m, xmlResult.sourceUrl, xmlResult.xml, directoryItem)
 			shows.Push(directory)
 		endif
 	next
 	for each videoItem in xmlResult.xml.Video
-		video = m.ConstructVideoMetadata(xmlResult.xml, videoItem, xmlResult.sourceUrl)
+		video = newVideoMetadata(m, xmlResult.sourceUrl, xmlResult.xml, videoItem)
 		if videoItem@type = "movie" then
 			movies.Push(video)
 		else if videoItem@type = "episode" then
@@ -71,13 +68,9 @@ Function search(query) As Object
 		searchResults.content.Push(episodes)
 	end if
 	videoClips = []
-	'*
-	'* This works, in that search returns results, but I can't get the resultant clips to play.
-	'* Comment out for now until I figure out the issue
-	'*
 	videoSurfResult = m.GetQueryResponse("", "/system/services/search?identifier=com.plexapp.search.videosurf&query="+HttpEncode(query))
 	for each videoItem in videoSurfResult.xml.Video
-		video = m.ConstructVideoMetadata(videoSurfResult.xml, videoItem, videoSurfResult.sourceUrl)
+		video = newVideoMetadata(m, videoSurfResult.sourceUrl, videoSurfResult.xml, videoItem)
 		if videoItem@type = "clip" then
 			videoClips.Push(video)
 		end if
@@ -178,144 +171,12 @@ Function homePageContent() As Object
 End Function
 
 '* Detailed video meta-data for springboard screen
-Function videoMetadata(sourceUrl, key) As Object
+Function detailedVideoMetadata(sourceUrl, key) As Object
 	xmlResponse = m.GetQueryResponse(sourceUrl, key)
 	videoItem = xmlResponse.xml.Video[0]
-	video = CreateObject("roAssociativeArray")
-	video.server = m
-	video.viewGroup = xmlResponse.xml@viewGroup
-	video.mediaContainerIdentifier = xmlResponse.xml@identifier
-	video.sourceUrl = sourceUrl
-	video.ratingKey = videoItem@ratingKey
-	video.ContentType = videoItem@type
-	video.Title = videoItem@title
-	video.Key = videoItem@key
-	video.ShortDescriptionLine1 = videoItem@title
-	if videoItem@tagline <> invalid then
-		video.ShortDescriptionLine2 = videoItem@tagline
-	end if
-	if xmlResponse.xml@viewGroup = "episode" then
-		video.ShortDescriptionLine2 = videoItem@grandparentTitle
-		if video.ShortDescriptionLine2 = invalid then
-			video.ShortDescriptionLine2 = "Episode "+videoItem@index
-		endif
-	endif
-	if xmlResponse.xml@viewGroup = "Details" then
-		video.ShortDescriptionLine2 = videoItem@summary
-	endif
-	video.Description = videoItem@summary
-	video.Rating = videoItem@contentRating
-	video.ReleaseDate = videoItem@originallyAvailableAt
-	video.viewOffset = videoItem@viewOffset
-	video.viewCount = videoItem@viewCount
 	
-	if video.ContentType = "episode" then
-		video.EpisodeNumber = videoItem@index
-	endif
-	length = videoItem@duration
-	if length <> invalid then
-		video.Length = int(val(length)/1000)
-	endif
-	rating = videoItem@rating
-	if rating <> invalid then
-		video.StarRating = int(val(rating)*10)
-	endif
-	video.Actors = CreateObject("roArray", 15, true)
-	for each Actor in videoItem.Role
-		video.Actors.Push(Actor@tag)
-	next
-	video.Director = CreateObject("roArray", 3, true)
-	for each Director in videoItem.Director
-		video.Director.Push(Director@tag)
-	next
-	video.Categories = CreateObject("roArray", 15, true)
-	for each Category in videoItem.Genre
-		video.Categories.Push(Category@tag)
-	next
-	
-	sizes = ImageSizes("movie", video.ContentType)
-	thumb = videoItem@thumb
-	if thumb <> invalid then
-		video.SDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, thumb, sizes.sdWidth, sizes.sdHeight)
-		video.HDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, thumb, sizes.hdWidth, sizes.hdHeight)
-	else
-		art = videoItem@art
-		if art = invalid then
-			art = xml@art
-		endif
-		if art <> invalid then
-			video.SDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, art, sizes.sdWidth, sizes.sdHeight)
-			video.HDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, art, sizes.hdWidth, sizes.hdHeight)	
-		endif
-	endif
-	
-	video.IsHD = False
-	video.HDBranded = False
-	video.media = ParseVideoMedia(video, videoItem)
-	'* Which, of potentially many, media items to use
-	video.preferredMediaItem = PickMediaItem(video.media)
+	video = newDetailedVideoMetadata(m, sourceUrl, xmlResponse.xml, videoItem)
 	return video
-End Function
-
-Function ParseVideoMedia(video, videoItem) As Object
-    mediaArray = CreateObject("roArray", 5, true)
-	for each MediaItem in videoItem.Media
-		media = CreateObject("roAssociativeArray")
-		media.indirect = false
-		if MediaItem@indirect <> invalid AND MediaItem@indirect = "1" then
-			media.indirect = true
-		end if
-		media.identifier = MediaItem@id
-		media.audioCodec = MediaItem@audioCodec
-		media.videoCodec = MediaItem@videoCodec
-		media.videoResolution = MediaItem@videoResolution
-		if media.videoResolution = "1080" OR media.videoResolution = "720" then
-			video.IsHD = True
-			video.HDBranded = True
-		endif
-		if media.videoResolution = "1080" then
-			video.FullHD = true
-			frameRate = MediaItem@videoFrameRate
-			if frameRate = "24p" then
-				video.FrameRate = 24
-			else if frameRate = "NTSC"
-				video.FrameRate = 30
-			endif
-		endif
-		media.container = MediaItem@container
-		media.parts = CreateObject("roArray", 3, true)
-		for each MediaPart in MediaItem.Part
-			part = CreateObject("roAssociativeArray")
-			part.id = MediaPart@id
-			part.key = MediaPart@key
-			part.streams = CreateObject("roArray", 5, true)
-			for each StreamItem in MediaPart.Stream
-				stream = CreateObject("roAssociativeArray")
-				stream.id = StreamItem@id
-				stream.streamType = StreamItem@streamType
-				stream.codec = StreamItem@codec
-				stream.language = StreamItem@language
-				stream.selected = StreamItem@selected
-				stream.channels = StreamItem@channels
-				part.streams.Push(stream)
-			next
-			media.parts.Push(part)
-		next
-		'* TODO: deal with multiple parts correctly. Not sure how audio etc selection works
-		'* TODO: with multi-part
-		media.preferredPart = media.parts[0]
-		mediaArray.Push(media)
-	next
-	return mediaArray
-End Function
-
-'* Logic for choosing which Media item to use from the collection of possibles.
-Function PickMediaItem(mediaItems) As Object
-	if mediaItems.count()  = 0 then
-		return mediaItems[0]
-	else
-		return mediaItems[0]
-	endif
 End Function
 
 Function paginatedXmlContent(sourceUrl, key, start, size) As Object
@@ -420,197 +281,16 @@ Function directoryContent(parsedXml) As Object
 	content = CreateObject("roArray", 11, true)
 	for each directoryItem in parsedXml.xml.Directory
 		if directoryItem@search = invalid then
-			directory = m.ConstructDirectoryMetadata(parsedXml.xml, directoryItem, parsedXml.sourceUrl)
+			directory = newDirectoryMetadata(m, parsedXml.sourceUrl, parsedXml.xml, directoryItem)
 			content.Push(directory)
 		endif
 	next
 	for each videoItem in parsedXml.xml.Video
-		video = m.ConstructVideoMetadata(parsedXml.xml, videoItem, parsedXml.sourceUrl)
+		video = newVideoMetadata(m, parsedXml.sourceUrl, parsedXml.xml, videoItem)
 		content.Push(video)
-	next
-	for each trackItem in parsedXml.xml.Track
-		track = m.ConstructTrackMetadata(parsedXml.xml, trackItem, parsedXml.sourceUrl)
-		content.Push(track)
 	next
 	print "Found a content list with elements";content.count()
 	return content
-End Function
-
-Function ConstructDirectoryMetadata(xml, directoryItem, sourceUrl) As Object	
-	directory = CreateObject("roAssociativeArray")
-	directory.server = m
-	directory.viewGroup = xml@viewGroup
-	directory.sourceUrl = sourceUrl
-	directory.type  = directoryItem@type
-	directory.ContentType = directoryItem@type
-	if directory.ContentType = "show" then
-		directory.ContentType = "series"
-	else if directory.ContentType = invalid then
-		directory.ContentType = "appClip"
-	endif
-	directory.Key = directoryItem@key
-	directory.Title = directoryItem@title
-	directory.Description = directoryItem@summary
-	if directory.Title = invalid then
-		directory.Title = directoryItem@name
-	endif
-	directory.ShortDescriptionLine1 = directoryItem@title
-	if directory.ShortDescriptionLine1 = invalid then
-		directory.ShortDescriptionLine1 = directoryItem@name
-	endif
-	directory.ShortDescriptionLine2 = directoryItem@summary
-	
-	sizes = ImageSizes(xml@viewGroup, directory.ContentType)
-	thumb = directoryItem@thumb
-	if thumb <> invalid then
-		directory.SDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, thumb, sizes.sdWidth, sizes.sdHeight)
-		directory.HDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, thumb, sizes.hdWidth, sizes.hdHeight)
-	else
-		art = directoryItem@art
-		if art = invalid then
-			art = xml@art
-		endif
-		if art <> invalid then
-			directory.SDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, art, sizes.sdWidth, sizes.sdHeight)
-			directory.HDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, art, sizes.hdWidth, sizes.hdHeight)
-		endif
-	endif
-	return directory
-End Function
-		
-Function ConstructVideoMetadata(xml, videoItem, sourceUrl) As Object
-	video = CreateObject("roAssociativeArray")
-	video.server = m
-	video.sourceUrl = sourceUrl
-	video.ratingKey = videoItem@ratingKey
-	video.ContentType = videoItem@type
-	if video.ContentType = invalid then
-		'* treat video items with no content type as clips
-		video.ContentType = "clip" 
-	endif
-	video.Title = videoItem@title
-	video.Key = videoItem@key
-	video.ShortDescriptionLine1 = videoItem@title
-	video.releaseDate = videoItem@originallyAvailableAt
-	video.Description = videoItem@summary
-	
-	if videoItem@sourceTitle <> invalid then
-		video.ShortDescriptionLine2 = videoItem@sourceTitle
-	end if
-	if videoItem@tagline <> invalid then
-		video.ShortDescriptionLine2 = videoItem@tagline
-	end if
-	if xml@viewGroup = "episode" then
-		video.ShortDescriptionLine2 = videoItem@grandparentTitle
-		if video.ShortDescriptionLine2 = invalid then
-			video.ShortDescriptionLine2 = "Episode "+videoItem@index
-		endif
-	endif
-	if xml@viewGroup = "Details" then
-		video.ShortDescriptionLine2 = videoItem@summary
-	endif
-	
-	sizes = ImageSizes(xml@viewGroup, video.ContentType)
-	thumb = videoItem@thumb
-	if thumb <> invalid then
-		video.SDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, thumb, sizes.sdWidth, sizes.sdHeight)
-		video.HDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, thumb, sizes.hdWidth, sizes.hdHeight)
-	else
-		art = videoItem@art
-		if art = invalid then
-			art = xml@art
-		endif
-		if art <> invalid then
-			video.SDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, art, sizes.sdWidth, sizes.sdHeight)
-			video.HDPosterURL = TranscodedImage(m.serverUrl, sourceUrl, art, sizes.hdWidth, sizes.hdHeight)	
-		endif
-	endif
-	video.IsHD = False
-	video.HDBranded = False
-	video.media = ParseVideoMedia(video, videoItem)
-	'* Which, of potentially many, media items to use
-	video.preferredMediaItem = PickMediaItem(video.media)
-	return video
-End Function
-
-
-'* This logic reflects that in the PosterScreen.SetListStyle
-'* Not using the standard sizes appears to slow navigation down
-Function ImageSizes(viewGroup, contentType) As Object
-	'* arced-square size	
-	sdWidth = "223"
-	sdHeight = "200"
-	hdWidth = "300"
-	hdHeight = "300"
-	if viewGroup = "movie" OR viewGroup = "show" OR viewGroup = "season" OR viewGroup = "episode" then
-	'* arced-portrait sizes
-		sdWidth = "158"
-		sdHeight = "204"
-		hdWidth = "214"
-		hdHeight = "306"
-	elseif contentType = "episode" AND viewGroup = "episode" then
-		'* flat-episodic sizes
-		sdWidth = "166"
-		sdHeight = "112"
-		hdWidth = "224"
-		hdHeight = "168"
-	elseif viewGroup = "Details" then
-		'* arced-square sizes
-		sdWidth = "223"
-		sdHeight = "200"
-		hdWidth = "300"
-		hdHeight = "300"
-	
-	endif
-	sizes = CreateObject("roAssociativeArray")
-	sizes.sdWidth = sdWidth
-	sizes.sdHeight = sdHeight
-	sizes.hdWidth = hdWidth
-	sizes.hdHeight = hdHeight
-	return sizes
-End Function
-
-'* TODO: music is not fully developed
-Function ConstructTrackMetadata(xml, trackItem, sourceUrl) As Object
-	track = CreateObject("roAssociativeArray")
-	track.server = m
-	track.sourceUrl = sourceUrl
-	track.ContentType = trackItem@type
-	track.Title = trackItem@title
-	track.Key = trackItem@key
-	track.ShortDescriptionLine1 = trackItem@title
-		'* TODO: need a way to choose between media options and concat parts
-	track.mediaKey = trackItem.Media.Part@Key
-		
-		'* Use parent
-		'track.ShortDescriptionLine2 = trackItem@tagline
-		'thumb = videoItem@thumb
-		'video.SDPosterURL = TranscodedImage(m.serverUrl, queryUrl, thumb, "158", "204")
-		'video.HDPosterURL = TranscodedImage(m.serverUrl, queryUrl, thumb, "214", "306")
-	return track
-End Function
-		
-'* While this plays audio it does not do anything visual. we need that also (poster screen)
-'* Leave until PMS can transcode to mp3
-Function constructAudioPlayer(metadata) As Object
-    print "Constructing audio player for ";metadata.key
-    p = CreateObject("roMessagePort")
-    audio = CreateObject("roAudioPlayer")
-    audio.setMessagePort(p)
-    playlist = ConstructPlaylist()
-    audio.setcontentlist(playlist)
-    return audio
-End Function
-
-Function ConstructPlaylist() As Object
-	playlist = []
-	song = CreateObject("roAssociativeArray") 
-	song.contenttype = "audio"
-	song.url = "http://www.theflute.co.uk/media/BachCPE_SonataAmin_1.wma" 
-    song.Title = "Test"
-    song.streamformat = "wma"
-	playlist.push(song)
-	return playlist
 End Function
 
 Function IndirectMediaXml(server, originalKey) As Object
@@ -658,7 +338,6 @@ Function constructPluginVideoScreen(metadata) As Object
 End Function
 
 '* TODO: this assumes one part media. Implement multi-part at some point.
-'* TODO: currently always transcodes. Check direct stream codecs first.
 Function constructVideoScreen(metadata, mediaData, StartTime As Integer) As Object
 	mediaPart = mediaData.preferredPart
 	mediaKey = mediaPart.key
@@ -706,10 +385,10 @@ Function FullUrl(serverUrl, sourceUrl, key) As String
 End Function
 
 '* Constructs an image based on a PMS url with the specific width and height. 
-Function TranscodedImage(serverUrl, queryUrl, imagePath, width, height) As String
-	imageUrl = FullUrl(serverUrl, queryUrl, imagePath)
+Function TranscodedImage(queryUrl, imagePath, width, height) As String
+	imageUrl = FullUrl(m.serverUrl, queryUrl, imagePath)
 	encodedUrl = HttpEncode(imageUrl)
-	image = serverUrl + "/photo/:/transcode?url="+encodedUrl+"&width="+width+"&height="+height
+	image = m.serverUrl + "/photo/:/transcode?url="+encodedUrl+"&width="+width+"&height="+height
 	'print "Final Image URL:";image
 	return image
 End Function
@@ -758,14 +437,6 @@ End Function
 '*
 Function TranscodingVideoUrl(serverUrl As String, videoUrl As String, sourceUrl As String, ratingKey As String, key As String, httpCookies As String, userAgent As String) As String
     print "Constructing transcoding video URL for "+videoUrl
-    '* Deal with absolute, full then relative URLs - TODO DRY:move to own function
-    'if left(videoUrl, 1) = "/" then
-    '	location = serverUrl + videoUrl 
-    'else if left(videoUrl, 7) = "http://"
-    '	location = videoUrl
-    'else
-    '	location = sourceUrl + "/" + videoUrl
-    'endif
     location = ResolveUrl(serverUrl, sourceUrl, videoUrl)
     print "Location:";location
     if len(key) = 0 then
@@ -773,13 +444,6 @@ Function TranscodingVideoUrl(serverUrl As String, videoUrl As String, sourceUrl 
     else
     	fullKey = ResolveUrl(serverUrl, sourceUrl, key)
     end if
-    'else if left(key, 1) = "/" then
-    '	fullKey = serverUrl + key 
-    'else if left(key, 7) = "http://"
-    '	fullKey = key
-    'else
-    '	fullKey = sourceUrl + "/" + key
-    'endif
     print "Original key:";key
     print "Full key:";fullKey
     
