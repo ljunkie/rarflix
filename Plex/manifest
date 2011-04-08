@@ -1,7 +1,7 @@
 title=Plex
 subtitle=Browse and play content from Plex Media Servers
-mm_icon_focus_hd=pkg:/images/Plex.png
-mm_icon_side_hd=pkg:/images/Plex.png
-mm_icon_focus_sd=pkg:/images/Plex.png
-mm_icon_side_sd=pkg:/images/Plex.png
+mm_icon_focus_hd=pkg:/images/plex.jpg
+mm_icon_side_hd=pkg:/images/plex.jpg
+mm_icon_focus_sd=pkg:/images/plex.jpg
+mm_icon_side_sd=pkg:/images/plex.jpg
 

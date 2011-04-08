@@ -152,8 +152,8 @@ Function homePageContent() As Object
 	appsSection.Key = "apps"
 	appsSection.Title = "Channels"
 	appsSection.ShortDescriptionLine1 = "Channels"
-	appsSection.SDPosterURL = "file://pkg:/images/plex.png"
-	appsSection.HDPosterURL = "file://pkg:/images/plex.png"
+	appsSection.SDPosterURL = "file://pkg:/images/plex.jpg"
+	appsSection.HDPosterURL = "file://pkg:/images/plex.jpg"
 	content.Push(appsSection)
 	
 	searchSection = CreateObject("roAssociativeArray")
@@ -163,8 +163,8 @@ Function homePageContent() As Object
 	searchSection.Key = "globalsearch"
 	searchSection.Title = "Search"
 	searchSection.ShortDescriptionLine1 = "Search"
-	searchSection.SDPosterURL = "file://pkg:/images/search.jpg"
-	searchSection.HDPosterURL = "file://pkg:/images/search.jpg"
+	searchSection.SDPosterURL = "file://pkg:/images/icon-search.jpg"
+	searchSection.HDPosterURL = "file://pkg:/images/icon-search.jpg"
 	content.Push(searchSection)
 	
 	return content
