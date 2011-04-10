@@ -52,8 +52,8 @@ Sub initTheme()
 
     theme.OverhangOffsetSD_X = "72"
     theme.OverhangOffsetSD_Y = "31"
-    theme.OverhangSliceSD = "pkg:/images/Overhang_Background_SD.png"
-    theme.OverhangLogoSD  = "pkg:/images/Overhang_Logo_SD.png"
+    theme.OverhangSliceSD = "pkg:/images/Background_SD.jpg"
+    theme.OverhangLogoSD  = "pkg:/images/logo_final_SD.png"
 
     theme.OverhangOffsetHD_X = "125"
     theme.OverhangOffsetHD_Y = "35"
