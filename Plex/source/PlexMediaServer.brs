@@ -360,6 +360,7 @@ Function stopTranscode()
     content = stopTransfer.GetToString()
 End Function
 
+'* TODO: two issues with next two functions i) DRY ii) does not pass on query parameters
 
 '* Constructs a Full URL taking into account relative/absolute. Relative to the 
 '* source URL, and absolute URLs, so
@@ -383,6 +384,18 @@ Function FullUrl(serverUrl, sourceUrl, key) As String
     'print "FinalURL:";finalUrl
 	return finalUrl
 End Function
+
+'* Deal with absolute, full then relative URLs
+Function ResolveUrl(serverUrl As String, sourceUrl As String, uri As String) As String
+	if left(uri, 1) = "/" then
+    	return serverUrl + uri 
+    else if left(uri, 7) = "http://"
+    	return uri
+    else
+    	return sourceUrl + "/" + uri
+    endif
+End Function
+
 
 '* Constructs an image based on a PMS url with the specific width and height. 
 Function TranscodedImage(queryUrl, imagePath, width, height) As String
@@ -419,17 +432,6 @@ Function ConstructVideoClip(serverUrl as String, videoUrl as String, sourceUrl A
     videoclip.StreamFormat = "hls"
     videoclip.Title = title
     return videoclip
-End Function
-
-'* Deal with absolute, full then relative URLs
-Function ResolveUrl(serverUrl As String, sourceUrl As String, uri As String) As String
-	if left(uri, 1) = "/" then
-    	return serverUrl + uri 
-    else if left(uri, 7) = "http://"
-    	return uri
-    else
-    	return sourceUrl + "/" + uri
-    endif
 End Function
 
 '*
