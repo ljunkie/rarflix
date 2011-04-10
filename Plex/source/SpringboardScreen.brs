@@ -49,13 +49,13 @@ Function showSpringboardScreen(screen, contentList, index) As Integer
 				if index < 0 then
 					index = contentList.Count()-1
 				endif
-				Populate(screen, contentList, index)
+				metaDataArray = Populate(screen, contentList, index)
 			else if msg.getIndex() = 5 then
 				index = index + 1
 				if index > contentList.Count()-1 then
 					index = 0
 				endif
-				Populate(screen, contentList, index)
+				metaDataArray = Populate(screen, contentList, index)
 			endif
         endif
     end while
