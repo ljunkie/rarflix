@@ -47,7 +47,7 @@ Function ConstructRokuVideoMetadata(server, sourceUrl, xmlContainer, videoItemXm
 			video.ShortDescriptionLine2 = "Episode "+videoItemXml@index
 		endif
 	endif
-	if xmlContainer@viewGroup = "Details" then
+	if xmlContainer@viewGroup = "Details" OR xmlContainer@viewGroup = "InfoList" then
 		video.ShortDescriptionLine2 = videoItemXml@summary
 	endif
 	
