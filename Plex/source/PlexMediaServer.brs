@@ -360,40 +360,59 @@ Function stopTranscode()
     content = stopTransfer.GetToString()
 End Function
 
-'* TODO: two issues with next two functions i) DRY ii) does not pass on query parameters
-
 '* Constructs a Full URL taking into account relative/absolute. Relative to the 
 '* source URL, and absolute URLs, so
 '* relative to the server URL
 Function FullUrl(serverUrl, sourceUrl, key) As String
-    'print "ServerURL:";serverUrl
-    'print "SourceURL:";sourceUrl
-    'print "Key:";key
+	print "Full URL"
+    print "ServerURL:";serverUrl
+    print "SourceURL:";sourceUrl
+    print "Key:";key
 	finalUrl = ""
 	if left(key, 4) = "http" then
-	    finalUrl = key
-	else if key = "" AND sourceUrl = "" then
-	    finalUrl = serverUrl
-    else if key = "" AND serverUrl = "" then
-        finalUrl = sourceUrl
-	else if left(key, 1) = "/" then
-		finalUrl = serverUrl+key
+		return key
 	else
-		finalUrl = sourceUrl+"/"+key
-	endif
-    'print "FinalURL:";finalUrl
+		keyTokens = CreateObject("roArray", 2, true)
+		if key <> Invalid then
+			keyTokens = strTokenize(key, "?")
+		else
+			keyTokens.Push("")
+		endif
+		sourceUrlTokens = CreateObject("roArray", 2, true)
+		if sourceUrl <> Invalid then
+			sourceUrlTokens = strTokenize(sourceUrl, "?")
+		else
+			sourceUrlTokens.Push("")
+		endif
+	
+		if keyTokens[0] = "" AND sourceUrlTokens[0] = "" then
+	    	finalUrl = serverUrl
+    	else if keyTokens[0] = "" AND serverUrl = "" then
+        	finalUrl = sourceUrlTokens[0]
+		else if left(keyTokens[0], 1) = "/" then
+			finalUrl = serverUrl+keyTokens[0]
+		else
+			finalUrl = sourceUrlTokens[0]+"/"+keyTokens[0]
+		endif
+		if keyTokens.Count() = 2 OR sourceUrlTokens.Count() =2 then
+	    	finalUrl = finalUrl + "?"
+	    	if keyTokens.Count() = 2 then
+	    		finalUrl = finalUrl + keyTokens[1]
+	    		if sourceUrlTokens.Count() = 2 then
+	    			finalUrl = finalUrl + "&"
+	    		endif
+	    	endif
+	    	if sourceUrlTokens.Count() = 2 then
+	    		finalUrl = finalUrl + sourceUrlTokens[1]
+	    	endif
+		endif
+    endif
+    print "FinalURL:";finalUrl
 	return finalUrl
 End Function
 
-'* Deal with absolute, full then relative URLs
 Function ResolveUrl(serverUrl As String, sourceUrl As String, uri As String) As String
-	if left(uri, 1) = "/" then
-    	return serverUrl + uri 
-    else if left(uri, 7) = "http://"
-    	return uri
-    else
-    	return sourceUrl + "/" + uri
-    endif
+    return FullUrl(serverUrl, sourceUrl, uri)
 End Function
 
 
