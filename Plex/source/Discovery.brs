@@ -20,7 +20,7 @@ Function DiscoverPlexMediaServers() As Object
   minVersion.Push(0)
   minVersion.Push(9)
   minVersion.Push(2)
-  minVersion.Push(4)
+  minVersion.Push(7)
   
   ipArray = di.GetIPAddrs()
   for each interface in ipArray
