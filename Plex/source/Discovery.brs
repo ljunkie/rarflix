@@ -29,15 +29,30 @@ Function DiscoverPlexMediaServers() As Object
   	serversResponse = ScanNetwork(ip)
   	if serversResponse <> invalid then
     	xml=CreateObject("roXMLElement")
-    	if xml.Parse(serversResponse) then
+    	if xml.Parse(serversResponse[0]) then
   	    	for each server in xml.Server
-  	    	    print "Found server ";server@address
-  	    	    if server@address <> invalid then
+  	    	    print "Found server ";server@host
+  	    	    if server@address <> invalid OR server@host <> invalid then
   	    	    	versionStr = server@version
   	    	    	versionHighEnough = ServerVersionCompare(versionStr, minVersion)
   	    	    	if versionHighEnough then
   	    	    		print "Accepting server with version:";versionStr
-    	    			list.AddTail(newPlexMediaServer("http://" + server@address + ":32400", server@name))
+  	    	    		address = server@address
+  	    	    		if address = invalid then
+  	    	    			hostName = server@host
+  	    	    			serverAddress = serversResponse[1]
+  	    	    			resolveService = "http://"+serverAddress + ":32400/servers/resolve?name=" + hostName
+  	    	    			print "Resolve URL:";resolveService
+  	    	    			resolveRequest = NewHttp(resolveService)
+							resolveResponse = resolveRequest.GetToStringWithRetry()
+							resolveResponseXml = CreateObject("roXMLElement")
+							resolveResponseXml.Parse(resolveResponse)
+							address = resolveResponseXml.Address[0]@address
+							print "Resolved address:";address
+  	    	    		end if
+  	    	    		if address <> invalid then
+    	    				list.AddTail(newPlexMediaServer("http://" + address + ":32400", server@name))
+    	    			endif
     	    		else
     	    			print "Rejecting server with version:";versionStr
     	    		end if
@@ -87,6 +102,7 @@ Function ScanNetwork(ip) As Object
     xferArray[x].AsyncGetToString()
   End For
   serversResponse = invalid
+  serverAddress = invalid
   responseCount = 0
   while true
     event = wait(1, mp)
@@ -95,8 +111,9 @@ Function ScanNetwork(ip) As Object
        responseCount = responseCount + 1
        if respCode = 200 then
           serversResponse = event.GetString()
+          serverAddress = event.GetTargetIpAddress()
           print serversResponse
-          if inStr(0, serversResponse, "address=")
+          if inStr(0, serversResponse, "address=") OR inStr(0, serversResponse, "host=")
             exit while
           endif
        endif
@@ -105,5 +122,8 @@ Function ScanNetwork(ip) As Object
        endif
     endif
   end while
-  return serversResponse
+  Dim response[2]
+  response.Push(serversResponse)
+  response.Push(serverAddress)
+  return response
 End Function
