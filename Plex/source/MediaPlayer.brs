@@ -5,7 +5,8 @@ Function playVideo(server, metadata, mediaData, seekValue)
 	
 	video = server.VideoScreen(metadata, mediaData, seconds)
 	video.SetPositionNotificationPeriod(5)
-    server.Scrobble(metadata.ratingKey, metadata.mediaContainerIdentifier)
+	' Scrobble shouldn't happen here. Figure out where.
+    'server.Scrobble(metadata.ratingKey, metadata.mediaContainerIdentifier)
 	video.show()
     
     lastPosition = 0
@@ -18,6 +19,8 @@ Function playVideo(server, metadata, mediaData, seekValue)
                 exit while
             else if msg.isPlaybackPosition() then
                 lastPosition = msg.GetIndex()
+                print "Progress"; lastPosition
+            	server.SetProgress(metadata.ratingKey, metadata.mediaContainerIdentifier, 1000*lastPosition)
             else if msg.isRequestFailed()
                 print "play failed: "; msg.GetMessage()
             else
