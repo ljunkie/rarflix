@@ -47,8 +47,10 @@ Function DiscoverPlexMediaServers() As Object
 							resolveResponse = resolveRequest.GetToStringWithRetry()
 							resolveResponseXml = CreateObject("roXMLElement")
 							resolveResponseXml.Parse(resolveResponse)
-							address = resolveResponseXml.Address[0]@address
-							print "Resolved address:";address
+							if resolveResponseXml <> invalid AND resolveResponseXml.Address.Count() > 0 then
+								address = resolveResponseXml.Address[0]@address
+								print "Resolved address:";address
+							end if
   	    	    		end if
   	    	    		if address <> invalid then
     	    				list.AddTail(newPlexMediaServer("http://" + address + ":32400", server@name))
