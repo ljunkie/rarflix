@@ -111,7 +111,7 @@ Function ChangePreferences()
 	qualities.Push("2.0 Mbps, 720p") 'N=4, Q=6
 	qualities.Push("3.0 Mbps, 720p") 'N=5, Q=7
 	qualities.Push("4.0 Mbps, 720p") 'N=6, Q=8
-	'qualities.Push("8.0 Mbps, 1080p") 'N=7, Q=9
+	qualities.Push("8.0 Mbps, 1080p") 'N=7, Q=9
 	
 	if not(RegExists("quality", "preferences")) then
 		RegWrite("quality", "7", "preferences")
