@@ -4,6 +4,41 @@
 '**  Copyright (c) 2009 Roku Inc. All Rights Reserved.
 '**********************************************************
 
+REM ******************************************************
+REM Url Query builder
+REM so this is a quick and dirty name/value encoder/accumulator
+REM ******************************************************
+
+Function NewHttp(url As String) as Object
+	print "Creating new http transfer object for ";url
+    obj = CreateObject("roAssociativeArray")
+    obj.Http                        = CreateURLTransferObject(url)
+    obj.FirstParam                  = true
+    obj.AddParam                    = http_add_param
+    obj.AddRawQuery                 = http_add_raw_query
+    obj.GetToStringWithRetry        = http_get_to_string_with_retry
+    obj.PrepareUrlForQuery          = http_prepare_url_for_query
+    obj.GetToStringWithTimeout      = http_get_to_string_with_timeout
+    obj.PostFromStringWithTimeout   = http_post_from_string_with_timeout
+
+    if Instr(1, url, "?") > 0 then obj.FirstParam = false
+
+    return obj
+End Function
+
+Function CreateURLTransferObject(url As String) as Object
+	print "Creating URL transfer object for ";url
+    obj = CreateObject("roUrlTransfer")
+    obj.SetPort(CreateObject("roMessagePort"))
+    obj.SetUrl(url)
+    obj.AddHeader("Content-Type", "application/x-www-form-urlencoded")
+	obj.AddHeader("X-Plex-Version", "0.9") '* Correct ?
+	obj.AddHeader("X-Plex-Language", "en") '* Anyway to get this from the platform ?
+	obj.AddHeader("X-Plex-Client-Platform", "Roku")
+    obj.EnableEncodings(true)
+    return obj
+End Function
+
 
 REM ******************************************************
 REM Constucts a URL Transfer object 2

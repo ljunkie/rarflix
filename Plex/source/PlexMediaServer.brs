@@ -209,7 +209,7 @@ Function paginatedQuery(queryUrl, start, size) As Object
 	httpRequest = NewHttp(queryUrl)
 	httpRequest.Http.AddHeader("X-Plex-Container-Start", start.tostr())
 	httpRequest.Http.AddHeader("X-Plex-Container-Size", size.tostr())
-	response = httpRequest.GetToStringWithRetry()
+	response = httpRequest.GetToStringWithTimeout(60000)
 	return response
 End Function
 
@@ -227,7 +227,7 @@ Function xmlContent(sourceUrl, key) As Object
 		queryUrl = FullUrl(m.serverUrl, sourceUrl, key)
 		print "Fetching content from server at query URL:";queryUrl
 		httpRequest = NewHttp(queryUrl)
-		response = httpRequest.GetToStringWithRetry()
+		response = httpRequest.GetToStringWithTimeout(60000)
 		xml=CreateObject("roXMLElement")
 		if not xml.Parse(response) then
 			print "Can't parse feed:";response
@@ -297,7 +297,7 @@ Function IndirectMediaXml(server, originalKey) As Object
 	queryUrl = FullUrl(server.serverUrl, "", originalKey)
 	print "Fetching content from server at query URL:";queryUrl
 	httpRequest = NewHttp(queryUrl)
-	response = httpRequest.GetToStringWithRetry()
+	response = httpRequest.GetToStringWithTimeout(60000)
 	xml=CreateObject("roXMLElement")
 	if not xml.Parse(response) then
 			print "Can't parse feed:";response
@@ -364,10 +364,10 @@ End Function
 '* source URL, and absolute URLs, so
 '* relative to the server URL
 Function FullUrl(serverUrl, sourceUrl, key) As String
-	print "Full URL"
-    print "ServerURL:";serverUrl
-    print "SourceURL:";sourceUrl
-    print "Key:";key
+	'print "Full URL"
+    'print "ServerURL:";serverUrl
+    'print "SourceURL:";sourceUrl
+    'print "Key:";key
 	finalUrl = ""
 	if left(key, 4) = "http" then
 		return key
@@ -407,7 +407,7 @@ Function FullUrl(serverUrl, sourceUrl, key) As String
 	    	endif
 		endif
     endif
-    print "FinalURL:";finalUrl
+    'print "FinalURL:";finalUrl
 	return finalUrl
 End Function
 
@@ -519,42 +519,5 @@ Function LinuxTime() As Integer
 	return time.asSeconds()
 End Function
 
-
-REM ******************************************************
-REM Constucts a URL Transfer object
-REM ******************************************************
-
-Function CreateURLTransferObject(url As String) as Object
-    obj = CreateObject("roUrlTransfer")
-    obj.SetPort(CreateObject("roMessagePort"))
-    obj.SetUrl(url)
-    obj.AddHeader("Content-Type", "application/x-www-form-urlencoded")
-	obj.AddHeader("X-Plex-Version", "0.9") '* Correct ?
-	obj.AddHeader("X-Plex-Language", "en") '* Anyway to get this from the platform ?
-	obj.AddHeader("X-Plex-Client-Platform", "Roku")
-    obj.EnableEncodings(true)
-    return obj
-End Function
-
-REM ******************************************************
-REM Url Query builder
-REM so this is a quick and dirty name/value encoder/accumulator
-REM ******************************************************
-
-Function NewHttp(url As String) as Object
-    obj = CreateObject("roAssociativeArray")
-    obj.Http                        = CreateURLTransferObject(url)
-    obj.FirstParam                  = true
-    obj.AddParam                    = http_add_param
-    obj.AddRawQuery                 = http_add_raw_query
-    obj.GetToStringWithRetry        = http_get_to_string_with_retry
-    obj.PrepareUrlForQuery          = http_prepare_url_for_query
-    obj.GetToStringWithTimeout      = http_get_to_string_with_timeout
-    obj.PostFromStringWithTimeout   = http_post_from_string_with_timeout
-
-    if Instr(1, url, "?") > 0 then obj.FirstParam = false
-
-    return obj
-End Function
 
 
