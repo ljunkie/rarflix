@@ -67,6 +67,7 @@ Function DiscoverPlexMediaServers() As Object
 End Function
 
 Function ServerVersionCompare(versionStr, minVersion) As Boolean
+	versionStr = strReplace(versionStr,"v","")
 	index = instr(1, versionStr, "-")
 	tokens = strTokenize(left(versionStr, index-1), ".")
 	count = 0
