@@ -123,7 +123,7 @@ Function NewServer()
 	keyb.SetMaxLength(80)
 	keyb.AddButton(1, "Done") 
 	keyb.AddButton(2, "Back")
-	keyb.setText("dn-1.com")
+	keyb.setText("")
 	keyb.Show()
 	while true 
 		msg = wait(0, keyb.GetMessagePort()) 
