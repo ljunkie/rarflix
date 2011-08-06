@@ -16,6 +16,20 @@ Function DiscoverPlexMediaServers() As Object
   list = CreateObject("roList")
   di = CreateObject("roDeviceInfo")
   
+  'Add manuals 
+  if RegExists("manual", "servers") then 
+   	  mlist = RegRead("manual", "servers")
+	  rExp = CreateObject("roRegex","\s+","")
+	  mserv = rExp.Split(mlist)      
+	  print mlist
+	  print mserv
+	  for each s in mserv:  
+ 	  	list.AddTail(newPlexMediaServer("http://" + s + ":32400", s))                  	
+	  end for                   
+   end if
+
+
+
   Dim minVersion[4]
   minVersion.Push(0)
   minVersion.Push(9)

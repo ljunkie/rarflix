@@ -26,7 +26,9 @@ Function showHomeScreen(screen, servers) As Integer
 
     if validateParam(screen, "roPosterScreen", "showHomeScreen") = false return -1
 	displayServerName = servers.count() > 1
-	sectionList = CreateObject("roArray", 10, true)
+	sectionList = CreateObject("roArray", 10, true)  
+	
+	
 	for each server in servers
     	sections = server.GetHomePageContent()
     	for each section in sections
@@ -38,6 +40,20 @@ Function showHomeScreen(screen, servers) As Integer
     	end for
 	end for
 	
+	
+	'** Add Server    
+	addServer = CreateObject("roAssociativeArray")
+	addServer.server = m
+    addServer.sourceUrl = ""
+	addServer.ContentType = "series"
+	addServer.Key = "addServer"
+	addServer.Title = "Add Server"
+	addServer.ShortDescriptionLine1 = "Add Server"
+	addServer.SDPosterURL = "file://pkg:/images/prefs.jpg"
+	addServer.HDPosterURL = "file://pkg:/images/prefs.jpg"
+	sectionList.Push(addServer)     
+	
+	'** Prefs
 	prefs = CreateObject("roAssociativeArray")
 	prefs.server = m
     prefs.sourceUrl = ""
@@ -84,7 +100,11 @@ Function displaySection(section As Object) As Dynamic
     		'showSearchGridScreen(section.server, queryString)
     	end if
     else if section.key = "prefs" then
-    	ChangePreferences()
+    	ChangePreferences()     
+    else if section.key = "addServer" then
+	     if NewServer() = "1" then
+			Main()
+		 end if
     else
     	screen = preShowPosterScreen(section.Title, "")
     	showPosterScreen(screen, section)
@@ -92,6 +112,52 @@ Function displaySection(section As Object) As Dynamic
     endif
     return 0
 End Function
+       
+
+'* One depth preference dialog for now. If we add more preferences make this multi-depth.
+Function NewServer()
+	port = CreateObject("roMessagePort") 
+	keyb = CreateObject("roKeyboardScreen")    
+	keyb.SetMessagePort(port)
+    keyb.SetDisplayText("Enter Host Name or IP")
+	keyb.SetMaxLength(80)
+	keyb.AddButton(1, "Done") 
+	keyb.AddButton(2, "Back")
+	keyb.setText("dn-1.com")
+	keyb.Show()
+	while true 
+		msg = wait(0, keyb.GetMessagePort()) 
+		if type(msg) = "roKeyboardScreenEvent"
+			if msg.isScreenClosed() then
+			   	return ""
+			else if msg.isButtonPressed() then
+				if msg.getIndex() = 1 then
+					host = keyb.GetText()
+					print "host" ; host 
+					                    
+					man_hosts = ""
+					if RegExists("manual", "servers") then
+						man_hosts = RegRead("manual", "servers")
+						print man_hosts
+						man_hosts = man_hosts + " "
+						print man_hosts
+					end if
+					man_hosts = man_hosts + host
+					RegWrite("manual", man_hosts, "servers")
+					keyb.close()
+					return "1"
+					
+				else
+					keyb.close()
+					return ""
+       			end if
+        		'print "Set selected quality to ";quality
+        		'RegWrite("quality", quality, "preferences")
+			end if 
+		end if
+	end while
+End Function
+
 
 '* One depth preference dialog for now. If we add more preferences make this multi-depth.
 Function ChangePreferences()
