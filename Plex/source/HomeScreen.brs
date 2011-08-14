@@ -23,12 +23,10 @@ End Function
 
 
 Function showHomeScreen(screen, servers) As Integer
-
+	print "About to show home screen"
     if validateParam(screen, "roPosterScreen", "showHomeScreen") = false return -1
 	displayServerName = servers.count() > 1
 	sectionList = CreateObject("roArray", 10, true)  
-	
-	
 	for each server in servers
     	sections = server.GetHomePageContent()
     	for each section in sections
@@ -39,19 +37,6 @@ Function showHomeScreen(screen, servers) As Integer
     		sectionList.Push(section)
     	end for
 	end for
-	
-	
-	'** Add Server    
-	addServer = CreateObject("roAssociativeArray")
-	addServer.server = m
-    addServer.sourceUrl = ""
-	addServer.ContentType = "series"
-	addServer.Key = "addServer"
-	addServer.Title = "Add Server"
-	addServer.ShortDescriptionLine1 = "Add Server"
-	addServer.SDPosterURL = "file://pkg:/images/prefs.jpg"
-	addServer.HDPosterURL = "file://pkg:/images/prefs.jpg"
-	sectionList.Push(addServer)     
 	
 	'** Prefs
 	prefs = CreateObject("roAssociativeArray")
@@ -78,7 +63,7 @@ Function showHomeScreen(screen, servers) As Integer
                 print "list item selected | index = "; msg.GetIndex()
                 section = sectionList[msg.GetIndex()]
                 print "section selected ";section.Title
-                displaySection(section)
+                displaySection(section, screen)
             else if msg.isScreenClosed() then
                 return -1
             end if
@@ -89,7 +74,7 @@ Function showHomeScreen(screen, servers) As Integer
 
 End Function
 
-Function displaySection(section As Object) As Dynamic
+Function displaySection(section As Object, homeScreen As Object) As Dynamic
     if validateParam(section, "roAssociativeArray", "displaySection") = false return -1
     
     if section.key = "globalsearch" then
@@ -100,11 +85,7 @@ Function displaySection(section As Object) As Dynamic
     		'showSearchGridScreen(section.server, queryString)
     	end if
     else if section.key = "prefs" then
-    	ChangePreferences()     
-    else if section.key = "addServer" then
-	     if NewServer() = "1" then
-			Main()
-		 end if
+    	Preferences(homeScreen)  
     else
     	screen = preShowPosterScreen(section.Title, "")
     	showPosterScreen(screen, section)
@@ -112,61 +93,131 @@ Function displaySection(section As Object) As Dynamic
     endif
     return 0
 End Function
-       
 
-'* One depth preference dialog for now. If we add more preferences make this multi-depth.
-Function NewServer()
+Function Preferences(homeScreen)
+
 	port = CreateObject("roMessagePort") 
-	keyb = CreateObject("roKeyboardScreen")    
-	keyb.SetMessagePort(port)
-    keyb.SetDisplayText("Enter Host Name or IP")
-	keyb.SetMaxLength(80)
-	keyb.AddButton(1, "Done") 
-	keyb.AddButton(2, "Back")
-	keyb.setText("")
-	keyb.Show()
+	dialog = CreateObject("roMessageDialog") 
+	dialog.SetMessagePort(port)
+	dialog.SetMenuTopLeft(true)
+	dialog.EnableBackButton(true)
+	dialog.SetTitle("Preferences")
+	dialog.AddButton(1, "Plex Media Servers")
+	dialog.AddButton(2, "Quality")
+	dialog.AddButton(3, "Close Preferences")
+	dialog.Show()
 	while true 
-		msg = wait(0, keyb.GetMessagePort()) 
-		if type(msg) = "roKeyboardScreenEvent"
+		msg = wait(0, dialog.GetMessagePort()) 
+		if type(msg) = "roMessageDialogEvent"
 			if msg.isScreenClosed() then
-			   	return ""
+				dialog.close()
+				exit while
 			else if msg.isButtonPressed() then
 				if msg.getIndex() = 1 then
-					host = keyb.GetText()
-					print "host" ; host 
-					                    
-					man_hosts = ""
-					if RegExists("manual", "servers") then
-						man_hosts = RegRead("manual", "servers")
-						print man_hosts
-						man_hosts = man_hosts + " "
-						print man_hosts
-					end if
-					man_hosts = man_hosts + host
-					RegWrite("manual", man_hosts, "servers")
-					keyb.close()
-					return "1"
-					
-				else
-					keyb.close()
-					return ""
-       			end if
-        		'print "Set selected quality to ";quality
-        		'RegWrite("quality", quality, "preferences")
+					ConfigureMediaServers()
+        			dialog.close()
+        			  
+    				homeScreen.Close()
+    				screen=preShowHomeScreen("", "")
+    				showHomeScreen(screen, PlexMediaServers())
+				else if msg.getIndex() = 2 then
+        			ConfigureQuality()
+        		else if msg.getIndex() = 3 then
+        			dialog.close()
+        		end if
+				
 			end if 
 		end if
 	end while
 End Function
 
 
-'* One depth preference dialog for now. If we add more preferences make this multi-depth.
-Function ChangePreferences()
+Function ConfigureMediaServers()
 	port = CreateObject("roMessagePort") 
 	dialog = CreateObject("roMessageDialog") 
 	dialog.SetMessagePort(port)
 	dialog.SetMenuTopLeft(true)
 	dialog.EnableBackButton(true)
-	dialog.SetTitle("Preferences") 
+	dialog.SetTitle("Plex Media Servers") 
+	dialog.setText("Manage Plex Media Servers")
+	
+	dialog.AddButton(1, "Add server manually")
+	dialog.AddButton(2, "Discover servers")
+	dialog.AddButton(3, "Remove all servers")
+	buttonCount = 4
+	for each server in PlexMediaServers()
+		title = "Remove "+server.name + " ("+server.serverUrl+")"
+		dialog.AddButton(buttonCount, title)
+		buttonCount = buttonCount + 1
+	next
+	
+	dialog.Show()
+	while true 
+		msg = wait(0, dialog.GetMessagePort()) 
+		if type(msg) = "roMessageDialogEvent"
+			if msg.isScreenClosed() then
+				print "Manage servers closed event"
+				dialog.close()
+				exit while
+			else if msg.isButtonPressed() then
+				if msg.getIndex() = 1 then
+					address = AddServerManually()
+					print "Returned from add server manually:";address
+					if address <> invalid then
+						AddUnnamedServer(address)
+					end if
+					
+					' Not sure why this is needed here. It appears that exiting the keyboard
+					' dialog removes all dialogs then locks up screen. Redrawing the home screen
+					' works around it.
+    				screen=preShowHomeScreen("", "")
+    				showHomeScreen(screen, PlexMediaServers())
+				else if msg.getIndex() = 2 then
+        			DiscoverPlexMediaServers()
+        		else if msg.getIndex() = 3 then
+        			RemoveAllServers()
+        		else
+        			RemoveServer(msg.getIndex()-4)
+        		end if
+        		dialog.close()
+			end if 
+		end if
+	end while
+End Function
+
+Function AddServerManually()
+	port = CreateObject("roMessagePort") 
+	keyb = CreateObject("roKeyboardScreen")    
+	keyb.SetMessagePort(port)
+    keyb.SetDisplayText("Enter Host Name or IP without http:// or :32400")
+	keyb.SetMaxLength(80)
+	keyb.AddButton(1, "Done") 
+	keyb.AddButton(2, "Close")
+	keyb.setText("")
+	keyb.Show()
+	while true 
+		msg = wait(0, keyb.GetMessagePort()) 
+		if type(msg) = "roKeyboardScreenEvent"
+			if msg.isScreenClosed() then
+				print "Exiting keyboard dialog screen"
+			   	return invalid
+			else if msg.isButtonPressed() then
+				if msg.getIndex() = 1 then
+					return keyb.GetText()
+       			end if
+       			return invalid
+			end if 
+		end if
+	end while
+End Function
+
+Function ConfigureQuality()
+	port = CreateObject("roMessagePort") 
+	dialog = CreateObject("roMessageDialog") 
+	dialog.SetMessagePort(port)
+	dialog.SetMenuTopLeft(true)
+	dialog.EnableBackButton(true)
+	dialog.SetTitle("Quality Settings") 
 	dialog.setText("Choose quality setting. Higher settings produce better video quality but require more network bandwidth.")
 	buttonCommands = CreateObject("roAssociativeArray")
 	qualities = CreateObject("roArray", 6 , true)

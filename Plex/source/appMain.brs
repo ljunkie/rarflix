@@ -4,7 +4,9 @@
 ' ********************************************************************
 
 Sub Main()
-
+	' Development statements
+	' RemoveAllServers()
+	' AddServer("iMac", "http://192.168.1.3:32400")
     screenFacade = CreateObject("roPosterScreen")
     screenFacade.show()
     'initialize theme attributes like titles, logos and overhang color
@@ -16,24 +18,8 @@ Sub Main()
         print "unexpected error in preShowHomeScreen"
         return
     end if
-	' TODO: move this to home screen to enable rescan when home screen visited. Too slow though?
-	retrieving = CreateObject("roOneLineDialog")
-	retrieving.SetTitle("Finding Plex Media Servers ...")
-	retrieving.ShowBusyAnimation()
-	retrieving.Show()
-    'servers = MockDiscoverPlexMediaServers()
-    servers = DiscoverPlexMediaServers()
-	retrieving.Close()
-    if servers.count() > 0 then
-    	showHomeScreen(screen, servers)
-    
-    	screenFacade.showMessage("")
-    	sleep(25)
-    else
-    	screenFacade.showMessage("Unable to find any Plex Media Servers")
-    	sleep(5000)
-    endif
-
+    servers = PlexMediaServers()
+    showHomeScreen(screen, servers)
 End Sub
 
 
