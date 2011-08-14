@@ -50,7 +50,6 @@ Function ConstructRokuVideoMetadata(server, sourceUrl, xmlContainer, videoItemXm
 	if xmlContainer@viewGroup = "Details" OR xmlContainer@viewGroup = "InfoList" then
 		video.ShortDescriptionLine2 = videoItemXml@summary
 	endif
-	
 	if detailed then
 		video.Rating = videoItemXml@contentRating
 		video.ReleaseDate = videoItemXml@originallyAvailableAt
@@ -84,8 +83,8 @@ Function ConstructRokuVideoMetadata(server, sourceUrl, xmlContainer, videoItemXm
 		for each MediaItem in videoItemXml.Media
 			videoResolution = MediaItem@videoResolution
 			if videoResolution = "1080" OR videoResolution = "720" then
-				video.IsHD = True
-				video.HDBranded = True
+				video.IsHD = true
+				video.HDBranded = true
 			endif
 			if videoResolution = "1080" then
 				video.FullHD = true

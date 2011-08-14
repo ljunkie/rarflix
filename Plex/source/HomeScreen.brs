@@ -100,7 +100,7 @@ Function Preferences(homeScreen)
 	dialog = CreateObject("roMessageDialog") 
 	dialog.SetMessagePort(port)
 	dialog.SetMenuTopLeft(true)
-	dialog.EnableBackButton(true)
+	dialog.EnableBackButton(false)
 	dialog.SetTitle("Preferences")
 	dialog.AddButton(1, "Plex Media Servers")
 	dialog.AddButton(2, "Quality")
@@ -137,14 +137,17 @@ Function ConfigureMediaServers()
 	dialog = CreateObject("roMessageDialog") 
 	dialog.SetMessagePort(port)
 	dialog.SetMenuTopLeft(true)
-	dialog.EnableBackButton(true)
+	dialog.EnableBackButton(false)
 	dialog.SetTitle("Plex Media Servers") 
 	dialog.setText("Manage Plex Media Servers")
 	
-	dialog.AddButton(1, "Add server manually")
-	dialog.AddButton(2, "Discover servers")
-	dialog.AddButton(3, "Remove all servers")
-	buttonCount = 4
+	dialog.AddButton(1, "Close manage servers dialog")
+	dialog.AddButton(2, "Add server manually")
+	dialog.AddButton(3, "Discover servers")
+	dialog.AddButton(4, "Remove all servers")
+	
+	fixedSections = 4
+	buttonCount = fixedSections + 1
 	for each server in PlexMediaServers()
 		title = "Remove "+server.name + " ("+server.serverUrl+")"
 		dialog.AddButton(buttonCount, title)
@@ -161,6 +164,8 @@ Function ConfigureMediaServers()
 				exit while
 			else if msg.isButtonPressed() then
 				if msg.getIndex() = 1 then
+					print "Closing dialog"
+				else if msg.getIndex() = 2 then
 					address = AddServerManually()
 					print "Returned from add server manually:";address
 					if address <> invalid then
@@ -172,12 +177,12 @@ Function ConfigureMediaServers()
 					' works around it.
     				screen=preShowHomeScreen("", "")
     				showHomeScreen(screen, PlexMediaServers())
-				else if msg.getIndex() = 2 then
+				else if msg.getIndex() = 3 then
         			DiscoverPlexMediaServers()
-        		else if msg.getIndex() = 3 then
+        		else if msg.getIndex() = 4 then
         			RemoveAllServers()
         		else
-        			RemoveServer(msg.getIndex()-4)
+        			RemoveServer(msg.getIndex()-(fixedSections+1))
         		end if
         		dialog.close()
 			end if 
@@ -216,7 +221,7 @@ Function ConfigureQuality()
 	dialog = CreateObject("roMessageDialog") 
 	dialog.SetMessagePort(port)
 	dialog.SetMenuTopLeft(true)
-	dialog.EnableBackButton(true)
+	dialog.EnableBackButton(false)
 	dialog.SetTitle("Quality Settings") 
 	dialog.setText("Choose quality setting. Higher settings produce better video quality but require more network bandwidth.")
 	buttonCommands = CreateObject("roAssociativeArray")
