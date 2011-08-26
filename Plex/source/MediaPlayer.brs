@@ -19,7 +19,7 @@ Function playVideo(server, metadata, mediaData, seekValue)
                 exit while
             else if msg.isPlaybackPosition() then
                 lastPosition = msg.GetIndex()
-                print "Progress"; lastPosition
+                print "Progress -> "; lastPosition
             	server.SetProgress(metadata.ratingKey, metadata.mediaContainerIdentifier, 1000*lastPosition)
             else if msg.isRequestFailed()
                 print "play failed: "; msg.GetMessage()
