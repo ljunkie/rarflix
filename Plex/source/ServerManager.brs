@@ -96,7 +96,7 @@ Function Discover() As Object
     print "Looking on network interface ";interface
   	ip = ipArray.Lookup(interface)
   	serversResponse = ScanNetwork(ip)
-  	if serversResponse <> invalid then
+  	if serversResponse <> invalid AND serversResponse[0] <> invalid then
     	xml=CreateObject("roXMLElement")
     	if xml.Parse(serversResponse[0]) then
   	    	for each server in xml.Server
