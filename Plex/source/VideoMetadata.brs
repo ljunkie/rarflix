@@ -62,6 +62,7 @@ Function ConstructRokuVideoMetadata(server, sourceUrl, xmlContainer, videoItemXm
 		length = videoItemXml@duration
 		if length <> invalid then
 			video.Length = int(val(length)/1000)
+			video.RawLength = val(length)
 		endif
 		rating = videoItemXml@rating
 		if rating <> invalid then

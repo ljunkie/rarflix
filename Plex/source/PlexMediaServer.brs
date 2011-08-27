@@ -17,6 +17,7 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
 	pms.VideoScreen = constructVideoScreen
 	pms.PluginVideoScreen = constructPluginVideoScreen
 	pms.StopVideo = stopTranscode
+	pms.PingTranscode = pingTranscode
 	pms.GetQueryResponse = xmlContent
 	pms.GetPaginatedQueryResponse = paginatedXmlContent
 	pms.DetailedVideoMetadata = detailedVideoMetadata
@@ -358,6 +359,13 @@ Function stopTranscode()
     stopTransfer.SetUrl(m.serverUrl + "/video/:/transcode/segmented/stop")
     stopTransfer.AddHeader("Cookie", m.Cookie) 
     content = stopTransfer.GetToString()
+End Function
+
+Function pingTranscode()
+	pingTransfer = CreateObject("roUrlTransfer")
+    pingTransfer.SetUrl(m.serverUrl + "/video/:/transcode/segmented/ping")
+    pingTransfer.AddHeader("Cookie", m.Cookie) 
+    content = pingTransfer.GetToString()
 End Function
 
 '* Constructs a Full URL taking into account relative/absolute. Relative to the 
