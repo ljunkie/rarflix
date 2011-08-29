@@ -1,6 +1,6 @@
 
 Function playVideo(server, metadata, mediaData, seekValue) 
-	print "Displaying video: ";metadata.title
+	print "MediaPlayer::playVideo: Displaying video: ";metadata.title
 	seconds = int(seekValue/1000)
 	
 	video = server.VideoScreen(metadata, mediaData, seconds)
@@ -8,59 +8,69 @@ Function playVideo(server, metadata, mediaData, seekValue)
 	video.show()
     scrobbleThreshold = 0.90
     lastPosition = 0
+    played = false
     while true
-        msg = wait(0, video.GetMessagePort())
+    	' Time out after 10 seconds causing invalid event allowing ping to be sent during 
+    	' long running periods with no video events (e.g. user pause). Note that this timeout
+    	' has to be bigger than the SetPositionNotificationPeriod above to allow actual
+    	' video screen isPlaybackPosition events to be generated and reacted to
+        msg = wait(10000, video.GetMessagePort())
+        print "MediaPlayer::playVideo: Reacting to video screen event message -> ";msg
+        server.PingTranscode()
         if type(msg) = "roVideoScreenEvent"
             if msg.isScreenClosed() then
-                print "Video Stop at -> "; lastPosition
-            	server.SetProgress(metadata.ratingKey, metadata.mediaContainerIdentifier, 1000*lastPosition)
+                print "MediaPlayer::playVideo::VideoScreenEvent::isScreenClosed: position -> "; lastPosition
+                if played then
+            		print "MediaPlayer::playVideo::VideoScreenEvent::isScreenClosed: scrobbling media -> ";metadata.ratingKey
+                	server.Scrobble(metadata.ratingKey, metadata.mediaContainerIdentifier)
+                else
+            		server.SetProgress(metadata.ratingKey, metadata.mediaContainerIdentifier, 1000*lastPosition)
+            	end if
                 server.StopVideo()
                 exit while
             else if msg.isPlaybackPosition() then
                 lastPosition = msg.GetIndex()
-                print "Video Progress at -> "; lastPosition
-                print "Compared to -> "; metadata.Length
                 playedFraction = lastPosition/metadata.Length
-                print "Played fraction -> "; playedFraction
-            	
+                print "MediaPlayer::playVideo::VideoScreenEvent::isPlaybackPosition: position -> "; lastPosition;" playedFraction -> "; playedFraction
             	if playedFraction > scrobbleThreshold then
-            		server.Scrobble(metadata.ratingKey, metadata.mediaContainerIdentifier)
-            	else
-            		server.SetProgress(metadata.ratingKey, metadata.mediaContainerIdentifier, 1000*lastPosition)
+            		played = true
             	end if
+            	print "MediaPlayer::playVideo::VideoScreenEvent::isPlaybackPosition: set progress -> ";1000*lastPosition
+            	server.SetProgress(metadata.ratingKey, metadata.mediaContainerIdentifier, 1000*lastPosition)
             	server.PingTranscode()
             else if msg.isRequestFailed()
-                print "play failed: "; msg.GetMessage()
+                print "MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed "; msg.GetMessage()
             else if msg.isPaused()
-                print "Video paused at -> "; lastPosition
+                print "MediaPlayer::playVideo::VideoScreenEvent::isPaused: position -> "; lastPosition
             	server.PingTranscode()
             else if msg.isPartialResult()
-                print "Video interrupted at -> "; lastPosition
                 playedFraction = lastPosition/metadata.Length
-                print "Played fraction -> "; playedFraction
+                print "MediaPlayer::playVideo::VideoScreenEvent::isPartialResult: position -> "; lastPosition;" playedFraction -> "; playedFraction
             	if playedFraction > scrobbleThreshold then
-            		server.Scrobble(metadata.ratingKey, metadata.mediaContainerIdentifier)
-            	else
-            		server.SetProgress(metadata.ratingKey, metadata.mediaContainerIdentifier, 1000*lastPosition)
+            		played = true
             	end if
                 server.StopVideo()
             else if msg.isFullResult()
-                print "Video finished at -> "; lastPosition
-    			server.Scrobble(metadata.ratingKey, metadata.mediaContainerIdentifier)
+            	print "MediaPlayer::playVideo::VideoScreenEvent::isFullResult: position -> ";lastPosition
+    			played = true
+                server.StopVideo()
             else
-                print "Unknown event: "; msg.GetType(); " msg: "; msg.GetMessage()
+                print "MediaPlayer::playVideo::VideoScreenEvent::Uncaptured event: "; msg.GetType(); " msg: "; msg.GetMessage()
             endif
         end if
     end while
 End Function
 
+'* TODO: should we scrobble and set played amount on plugin videos?
 Function playPluginVideo(server, metadata) 
-	print "Displaying plugin video: ";metadata.title
+	print "MediaPlayer::playPluginVideo: Displaying plugin video: ";metadata.title
 	video = server.PluginVideoScreen(metadata)
 	video.show()
     
     while true
-        msg = wait(0, video.GetMessagePort())
+        msg = wait(10000, video.GetMessagePort())
+        print "MediaPlayer::playPluginVideo: Reacting to video screen event message -> ";msg
+        server.PingTranscode()
         if type(msg) = "roVideoScreenEvent"
             if msg.isScreenClosed() then
                 server.StopVideo()
@@ -74,6 +84,8 @@ Function playPluginVideo(server, metadata)
             	server.PingTranscode()
             else if msg.isPartialResult()
                 print "Video interrupted at -> "; lastPosition
+                server.StopVideo()
+            else if msg.isFullResult()
                 server.StopVideo()
             else
                 print "Unknown event: "; msg.GetType(); " msg: "; msg.GetMessage()
