@@ -32,8 +32,21 @@ Function ConstructRokuVideoMetadata(server, sourceUrl, xmlContainer, videoItemXm
 	video.Key = videoItemXml@key
 	
 	video.ShortDescriptionLine1 = videoItemXml@title
-	video.releaseDate = videoItemXml@originallyAvailableAt
 	video.Description = videoItemXml@summary
+	video.ReleaseDate = videoItemXml@originallyAvailableAt
+	video.viewOffset = videoItemXml@viewOffset
+	video.viewCount = videoItemXml@viewCount
+	
+	if video.viewCount <> invalid AND val(video.viewCount) > 0 then
+		video.Watched = true
+	else
+		video.Watched = false
+	end if
+	if video.Watched then
+		video.ShortDescriptionLine1 = video.ShortDescriptionLine1 + " (Watched)"
+	else if video.viewOffset <> invalid AND val(video.viewOffset) > 0 then
+		video.ShortDescriptionLine1 = video.ShortDescriptionLine1 + " (Partially Watched)"
+	end if
 	
 	if videoItemXml@tagline <> invalid then
 		video.ShortDescriptionLine2 = videoItemXml@tagline
@@ -45,16 +58,16 @@ Function ConstructRokuVideoMetadata(server, sourceUrl, xmlContainer, videoItemXm
 		video.ShortDescriptionLine2 = videoItemXml@grandparentTitle
 		if video.ShortDescriptionLine2 = invalid then
 			video.ShortDescriptionLine2 = "Episode "+videoItemXml@index
-		endif
+		end if
+		if video.ReleaseDate <> invalid then
+			video.ShortDescriptionLine2 = video.ShortDescriptionLine2 + " - " + video.ReleaseDate
+		end if
 	endif
 	if xmlContainer@viewGroup = "Details" OR xmlContainer@viewGroup = "InfoList" then
 		video.ShortDescriptionLine2 = videoItemXml@summary
 	endif
 	if detailed then
 		video.Rating = videoItemXml@contentRating
-		video.ReleaseDate = videoItemXml@originallyAvailableAt
-		video.viewOffset = videoItemXml@viewOffset
-		video.viewCount = videoItemXml@viewCount
 		
 		if video.ContentType = "episode" then
 			video.EpisodeNumber = videoItemXml@index
@@ -98,8 +111,6 @@ Function ConstructRokuVideoMetadata(server, sourceUrl, xmlContainer, videoItemXm
 			endif
 		next
 	end if
-	
-	
 	sizes = ImageSizes(xmlContainer@viewGroup, video.ContentType)
 	thumb = videoItemXml@thumb
 	if thumb <> invalid then
@@ -115,8 +126,6 @@ Function ConstructRokuVideoMetadata(server, sourceUrl, xmlContainer, videoItemXm
 			video.HDPosterURL = server.TranscodedImage(sourceUrl, art, sizes.hdWidth, sizes.hdHeight)	
 		endif
 	endif
-	video.IsHD = False
-	video.HDBranded = False
 	return video
 End Function
 
