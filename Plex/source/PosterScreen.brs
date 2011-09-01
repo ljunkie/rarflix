@@ -56,6 +56,7 @@ Function showPosterScreen(screen, content) As Integer
     	screen.SetContentList(contentList)
 		viewGroup = queryResponse.xml@viewGroup
     	SetListStyle(screen, viewGroup, contentType)
+    	screen.SetFocusedListItem(0)
     endif
     screen.Show()
 
