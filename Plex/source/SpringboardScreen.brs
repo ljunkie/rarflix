@@ -206,9 +206,6 @@ Function AddButtons(screen, metadata, media) As Object
 	buttonCommands = CreateObject("roAssociativeArray")
 	screen.ClearButtons()
 	buttonCount = 0
-	screen.AddButton(buttonCount, "Play")
-	buttonCommands[str(buttonCount)] = "play"
-	buttonCount = buttonCount + 1
 	if metadata.viewOffset <> invalid then
 		intervalInSeconds = fix(val(metadata.viewOffset)/(1000))	
 		resumeTitle = "Resume from "+TimeDisplay(intervalInSeconds)
@@ -216,6 +213,9 @@ Function AddButtons(screen, metadata, media) As Object
 		buttonCommands[str(buttonCount)] = "resume"
 		buttonCount = buttonCount + 1
 	endif
+	screen.AddButton(buttonCount, "Play")
+	buttonCommands[str(buttonCount)] = "play"
+	buttonCount = buttonCount + 1
 	
 	mediaPart = media.preferredPart
 	subtitleStreams = []
