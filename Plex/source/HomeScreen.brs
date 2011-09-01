@@ -227,13 +227,12 @@ Function ConfigureQuality()
 	buttonCommands = CreateObject("roAssociativeArray")
 	qualities = CreateObject("roArray", 6 , true)
 	
-	qualities.Push("Auto")			 'N=1, Q=Auto
-	qualities.Push("720 kbps, 320p") 'N=2, Q=4
-	qualities.Push("1.5 Mbps, 480p") 'N=3, Q=5
-	qualities.Push("2.0 Mbps, 720p") 'N=4, Q=6
-	qualities.Push("3.0 Mbps, 720p") 'N=5, Q=7
-	qualities.Push("4.0 Mbps, 720p") 'N=6, Q=8
-	qualities.Push("8.0 Mbps, 1080p") 'N=7, Q=9
+	qualities.Push("720 kbps, 320p") 'N=1, Q=4
+	qualities.Push("1.5 Mbps, 480p") 'N=2, Q=5
+	qualities.Push("2.0 Mbps, 720p") 'N=3, Q=6
+	qualities.Push("3.0 Mbps, 720p") 'N=4, Q=7
+	qualities.Push("4.0 Mbps, 720p") 'N=5, Q=8
+	qualities.Push("8.0 Mbps, 1080p") 'N=6, Q=9
 	
 	if not(RegExists("quality", "preferences")) then
 		RegWrite("quality", "7", "preferences")
@@ -246,7 +245,7 @@ Function ConfigureQuality()
 		if current = quality then
 			title = "> "+title
 		end if
-		if current = (2 + buttonCount).tostr() then
+		if current = (3 + buttonCount).tostr() then
 			title = "> "+title
 		end if
 		dialog.AddButton(buttonCount, title)
@@ -261,11 +260,7 @@ Function ConfigureQuality()
 				dialog.close()
 				exit while
 			else if msg.isButtonPressed() then
-				if msg.getIndex() = 1 then
-					quality = "Auto"
-				else
-        			quality = (2 + msg.getIndex()).tostr()
-        		end if
+				quality = (3 + msg.getIndex()).tostr()
         		print "Set selected quality to ";quality
         		RegWrite("quality", quality, "preferences")
 				dialog.close()

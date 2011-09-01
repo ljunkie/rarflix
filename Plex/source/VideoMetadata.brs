@@ -46,6 +46,7 @@ Function ConstructRokuVideoMetadata(server, sourceUrl, xmlContainer, videoItemXm
 		video.ShortDescriptionLine1 = video.ShortDescriptionLine1 + " (Watched)"
 	else if video.viewOffset <> invalid AND val(video.viewOffset) > 0 then
 		video.ShortDescriptionLine1 = video.ShortDescriptionLine1 + " (Partially Watched)"
+		video.BookmarkPosition = int(val(video.viewOffset)/1000)
 	end if
 	
 	if videoItemXml@tagline <> invalid then
