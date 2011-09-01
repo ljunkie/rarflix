@@ -36,16 +36,31 @@ Function ConstructRokuVideoMetadata(server, sourceUrl, xmlContainer, videoItemXm
 	video.ReleaseDate = videoItemXml@originallyAvailableAt
 	video.viewOffset = videoItemXml@viewOffset
 	video.viewCount = videoItemXml@viewCount
+	length = videoItemXml@duration
+	if length <> invalid then
+		video.Length = int(val(length)/1000)
+		video.RawLength = val(length)
+	endif
 	
 	if video.viewCount <> invalid AND val(video.viewCount) > 0 then
 		video.Watched = true
 	else
 		video.Watched = false
 	end if
+	' if a video has ever been watch mark as such, else mark partially if there's a recorded
+	' offset
 	if video.Watched then
 		video.ShortDescriptionLine1 = video.ShortDescriptionLine1 + " (Watched)"
 	else if video.viewOffset <> invalid AND val(video.viewOffset) > 0 then
 		video.ShortDescriptionLine1 = video.ShortDescriptionLine1 + " (Partially Watched)"
+	end if
+	' Bookmark position represents the last watched so a video could be marked watched but
+	' have a bookmark not at the end if it was a subsequent viewing
+	video.BookmarkPosition = 0
+	if video.viewOffset <> invalid AND val(video.viewOffset) > 0 then
+		video.BookmarkPosition = int(val(video.viewOffset)/1000)
+	else if video.Watched AND length <> invalid then
+		video.BookmarkPosition = int(val(length)/1000)
 	end if
 	
 	if videoItemXml@tagline <> invalid then
@@ -71,11 +86,6 @@ Function ConstructRokuVideoMetadata(server, sourceUrl, xmlContainer, videoItemXm
 		
 		if video.ContentType = "episode" then
 			video.EpisodeNumber = videoItemXml@index
-		endif
-		length = videoItemXml@duration
-		if length <> invalid then
-			video.Length = int(val(length)/1000)
-			video.RawLength = val(length)
 		endif
 		rating = videoItemXml@rating
 		if rating <> invalid then
