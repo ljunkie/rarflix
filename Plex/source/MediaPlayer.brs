@@ -30,10 +30,14 @@ Function playVideo(server, metadata, mediaData, seekValue)
                 exit while
             else if msg.isPlaybackPosition() then
                 lastPosition = msg.GetIndex()
-                playedFraction = lastPosition/metadata.Length
-                print "MediaPlayer::playVideo::VideoScreenEvent::isPlaybackPosition: position -> "; lastPosition;" playedFraction -> "; playedFraction
-            	if playedFraction > scrobbleThreshold then
-            		played = true
+                if metadata.Length <> invalid AND metadata.Length > 0 then
+                    playedFraction = lastPosition/metadata.Length
+                    print "MediaPlayer::playVideo::VideoScreenEvent::isPlaybackPosition: position -> "; lastPosition;" playedFraction -> "; playedFraction
+            	    if playedFraction > scrobbleThreshold then
+            		    played = true
+            	    end if
+            	else
+            	    played = false
             	end if
             	print "MediaPlayer::playVideo::VideoScreenEvent::isPlaybackPosition: set progress -> ";1000*lastPosition
             	server.SetProgress(metadata.ratingKey, metadata.mediaContainerIdentifier, 1000*lastPosition)
@@ -44,10 +48,14 @@ Function playVideo(server, metadata, mediaData, seekValue)
                 print "MediaPlayer::playVideo::VideoScreenEvent::isPaused: position -> "; lastPosition
             	server.PingTranscode()
             else if msg.isPartialResult()
-                playedFraction = lastPosition/metadata.Length
-                print "MediaPlayer::playVideo::VideoScreenEvent::isPartialResult: position -> "; lastPosition;" playedFraction -> "; playedFraction
-            	if playedFraction > scrobbleThreshold then
-            		played = true
+                if metadata.Length <> invalid AND metadata.Length > 0 then
+                	playedFraction = lastPosition/metadata.Length
+                	print "MediaPlayer::playVideo::VideoScreenEvent::isPartialResult: position -> "; lastPosition;" playedFraction -> "; playedFraction
+            		if playedFraction > scrobbleThreshold then
+            			played = true
+            		end if
+            	else
+            		played = false
             	end if
                 server.StopVideo()
             else if msg.isFullResult()

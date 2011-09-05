@@ -36,6 +36,7 @@ Function ConstructRokuVideoMetadata(server, sourceUrl, xmlContainer, videoItemXm
 	video.ReleaseDate = videoItemXml@originallyAvailableAt
 	video.viewOffset = videoItemXml@viewOffset
 	video.viewCount = videoItemXml@viewCount
+	
 	length = videoItemXml@duration
 	if length <> invalid then
 		video.Length = int(val(length)/1000)
