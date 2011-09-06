@@ -36,32 +36,31 @@ Function playVideo(server, metadata, mediaData, seekValue)
             	    if playedFraction > scrobbleThreshold then
             		    played = true
             	    end if
-            	else
-            	    played = false
             	end if
             	print "MediaPlayer::playVideo::VideoScreenEvent::isPlaybackPosition: set progress -> ";1000*lastPosition
             	server.SetProgress(metadata.ratingKey, metadata.mediaContainerIdentifier, 1000*lastPosition)
             	server.PingTranscode()
-            else if msg.isRequestFailed()
+            else if msg.isRequestFailed() then
                 print "MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed "; msg.GetMessage()
-            else if msg.isPaused()
+            else if msg.isPaused() then
                 print "MediaPlayer::playVideo::VideoScreenEvent::isPaused: position -> "; lastPosition
             	server.PingTranscode()
-            else if msg.isPartialResult()
+            else if msg.isPartialResult() then
                 if metadata.Length <> invalid AND metadata.Length > 0 then
                 	playedFraction = lastPosition/metadata.Length
                 	print "MediaPlayer::playVideo::VideoScreenEvent::isPartialResult: position -> "; lastPosition;" playedFraction -> "; playedFraction
             		if playedFraction > scrobbleThreshold then
             			played = true
             		end if
-            	else
-            		played = false
             	end if
                 server.StopVideo()
-            else if msg.isFullResult()
+            else if msg.isFullResult() then
             	print "MediaPlayer::playVideo::VideoScreenEvent::isFullResult: position -> ";lastPosition
     			played = true
                 server.StopVideo()
+            else if msg.isStreamStarted() then
+            	print "MediaPlayer::playVideo::VideoScreenEvent::isStreamStarted: position -> ";lastPosition
+            	print "Message data -> ";msg.GetInfo()
             else
                 print "MediaPlayer::playVideo::VideoScreenEvent::Uncaptured event: "; msg.GetType(); " msg: "; msg.GetMessage()
             endif
