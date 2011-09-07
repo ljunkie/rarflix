@@ -10,11 +10,11 @@ Function playVideo(server, metadata, mediaData, seekValue)
     lastPosition = 0
     played = false
     while true
-    	' Time out after 10 seconds causing invalid event allowing ping to be sent during 
+    	' Time out after 60 seconds causing invalid event allowing ping to be sent during 
     	' long running periods with no video events (e.g. user pause). Note that this timeout
     	' has to be bigger than the SetPositionNotificationPeriod above to allow actual
     	' video screen isPlaybackPosition events to be generated and reacted to
-        msg = wait(10000, video.GetMessagePort())
+        msg = wait(60005, video.GetMessagePort())
         print "MediaPlayer::playVideo: Reacting to video screen event message -> ";msg
         server.PingTranscode()
         if type(msg) = "roVideoScreenEvent"
@@ -75,7 +75,7 @@ Function playPluginVideo(server, metadata)
 	video.show()
     
     while true
-        msg = wait(10000, video.GetMessagePort())
+        msg = wait(60005, video.GetMessagePort())
         print "MediaPlayer::playPluginVideo: Reacting to video screen event message -> ";msg
         server.PingTranscode()
         if type(msg) = "roVideoScreenEvent"
