@@ -113,7 +113,12 @@ Function SelectSubtitleStream(server, media)
 	buttonCount = buttonCount + 1
 	for each Stream in mediaPart.streams
 		if Stream.streamType = "3" then
-			buttonTitle = Stream.Language
+			buttonTitle = "Unknown"
+			if Stream.Language <> Invalid then
+				buttonTitle = Stream.Language
+			else if Stream.Codec <> Invalid AND Stream.Codec = "srt" then
+				buttonTitle = "External SRT"
+			endif
 			if Stream.selected <> invalid then
 				buttonTitle = "> " + buttonTitle
 			endif
