@@ -1,5 +1,4 @@
 
-
 Function preShowSpringboardScreen(section, breadA=invalid, breadB=invalid) As Object
     if validateParam(breadA, "roString", "preShowSpringboardScreen", true) = false return -1
     if validateParam(breadB, "roString", "preShowSpringboardScreen", true) = false return -1
@@ -106,28 +105,31 @@ Function SelectSubtitleStream(server, media)
 		noSelectionTitle = "> "+noSelectionTitle
 	endif
 	
-	buttonCommands = CreateObject("roAssociativeArray")
-	buttonCount = 0
-	dialog.AddButton(buttonCount, noSelectionTitle)
-	buttonCommands[str(buttonCount)+"_id"] = ""
-	buttonCount = buttonCount + 1
-	for each Stream in mediaPart.streams
-		if Stream.streamType = "3" then
-			buttonTitle = "Unknown"
-			if Stream.Language <> Invalid then
-				buttonTitle = Stream.Language
-			else if Stream.Codec <> Invalid AND Stream.Codec = "srt" then
-				buttonTitle = "External SRT"
-			endif
-			if Stream.selected <> invalid then
-				buttonTitle = "> " + buttonTitle
-			endif
-			dialog.AddButton(buttonCount, buttonTitle)
-			buttonCommands[str(buttonCount)+"_id"] = Stream.Id
-			buttonCount = buttonCount + 1	
-		endif
-	next
-	dialog.Show()
+        buttonCommands = CreateObject("roAssociativeArray")
+        buttonCount = 0
+        dialog.AddButton(buttonCount, noSelectionTitle)
+        buttonCommands[str(buttonCount)+"_id"] = ""
+        buttonCount = buttonCount + 1
+        for each Stream in mediaPart.streams
+                if Stream.streamType = "3" then
+                        buttonTitle = "Unknown"
+                        if Stream.Language <> Invalid then
+                                buttonTitle = Stream.Language
+                        endif
+                        if Stream.Language <> Invalid AND Stream.Codec <> Invalid AND Stream.Codec = "srt" then
+                                buttonTitle = Stream.Language + " (*)"
+                        else if Stream.Codec <> Invalid AND Stream.Codec = "srt" then
+                                buttonTitle = "Unknown (*)"
+                        endif
+                        if Stream.selected <> invalid then
+                                buttonTitle = "> " + buttonTitle
+                        endif
+                        dialog.AddButton(buttonCount, buttonTitle)
+                        buttonCommands[str(buttonCount)+"_id"] = Stream.Id
+                        buttonCount = buttonCount + 1   
+                endif
+        next
+        dialog.Show()
 	while true 
 		msg = wait(0, dialog.GetMessagePort()) 
 		if type(msg) = "roMessageDialogEvent"
@@ -157,38 +159,41 @@ Function SelectAudioStream(server, media)
 	mediaPart = media.preferredPart
 	buttonCommands = CreateObject("roAssociativeArray")
 	buttonCount = 0
-	for each Stream in mediaPart.streams
-		if Stream.streamType = "2" then
-			buttonTitle = Stream.Language
-			subtitle = invalid
-			if Stream.Codec <> invalid then
-				if Stream.Codec = "dca" then
-					subtitle = "DTS"
-				else 
-					subtitle = ucase(Stream.Codec)
-				endif
-			endif
-			if Stream.Channels <> invalid then
-				if Stream.Channels = "2" then
-					subtitle = subtitle + " Stereo"
-				else if Stream.Channels = "6" then
-					subtitle = subtitle + " 5.1"
-				else if Stream.Channels = "8" then
-					subtitle = subtitle + " 7.1"
-				endif
-			endif
-			if subtitle <> invalid then
-				buttonTitle = buttonTitle + " ("+subtitle+")"
-			endif
-			if Stream.selected <> invalid then
-				buttonTitle = "> " + buttonTitle
-			endif
-			dialog.AddButton(buttonCount, buttonTitle)
-			buttonCommands[str(buttonCount)+"_id"] = Stream.Id
-			buttonCount = buttonCount + 1	
-		endif
-	next
-	dialog.Show()
+        for each Stream in mediaPart.streams
+                if Stream.streamType = "2" then
+                        buttonTitle = "Unkwown"
+                        if Stream.Language <> Invalid then
+                                buttonTitle = Stream.Language
+                        endif
+                        subtitle = invalid
+                        if Stream.Codec <> invalid then
+                                if Stream.Codec = "dca" then
+                                        subtitle = "DTS"
+                                else 
+                                        subtitle = ucase(Stream.Codec)
+                                endif
+                        endif
+                        if Stream.Channels <> invalid then
+                                if Stream.Channels = "2" then
+                                        subtitle = subtitle + " Stereo"
+                                else if Stream.Channels = "6" then
+                                        subtitle = subtitle + " 5.1"
+                                else if Stream.Channels = "8" then
+                                        subtitle = subtitle + " 7.1"
+                                endif
+                        endif
+                        if subtitle <> invalid then
+                                buttonTitle = buttonTitle + " ("+subtitle+")"
+                        endif
+                        if Stream.selected <> invalid then
+                                buttonTitle = "> " + buttonTitle
+                        endif
+                        dialog.AddButton(buttonCount, buttonTitle)
+                        buttonCommands[str(buttonCount)+"_id"] = Stream.Id
+                        buttonCount = buttonCount + 1   
+                endif
+        next
+        dialog.Show()
 	while true 
 		msg = wait(0, dialog.GetMessagePort()) 
 		if type(msg) = "roMessageDialogEvent"
