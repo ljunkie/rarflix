@@ -104,7 +104,8 @@ Function Preferences(homeScreen)
 	dialog.SetTitle("Preferences")
 	dialog.AddButton(1, "Plex Media Servers")
 	dialog.AddButton(2, "Quality")
-	dialog.AddButton(3, "Close Preferences")
+	dialog.AddButton(3, "H264 Levels")
+	dialog.AddButton(4, "Close Preferences")
 	dialog.Show()
 	while true 
 		msg = wait(0, dialog.GetMessagePort()) 
@@ -120,12 +121,14 @@ Function Preferences(homeScreen)
     				homeScreen.Close()
     				screen=preShowHomeScreen("", "")
     				showHomeScreen(screen, PlexMediaServers())
+
 				else if msg.getIndex() = 2 then
         			ConfigureQuality()
-        		else if msg.getIndex() = 3 then
+				else if msg.getIndex() = 3 then
+        			H264Level()
+        			else if msg.getIndex() = 4 then
         			dialog.close()
         		end if
-				
 			end if 
 		end if
 	end while
@@ -272,6 +275,76 @@ Function ConfigureQuality()
 		end if
 	end while
 End Function
+
+Function H264Level()
+	port = CreateObject("roMessagePort") 
+	dialog = CreateObject("roMessageDialog") 
+	dialog.SetMessagePort(port)
+	dialog.SetMenuTopLeft(true)
+	dialog.EnableBackButton(false)
+	dialog.SetTitle("H264 Level") 
+	dialog.setText("Overwrite default H264 level allowed. Use at your own risk!")
+	buttonCommands = CreateObject("roAssociativeArray")
+	levels = CreateObject("roArray", 5 , true)
+	
+	levels.Push("Level 4.0 (Default)") 'N=1
+	levels.Push("Level 4.1") 'N=2
+	levels.Push("Level 4.2") 'N=3
+	levels.Push("Level 5.0") 'N=4
+	levels.Push("Level 5.1") 'N=5
+	
+	if not(RegExists("level", "preferences")) then
+		RegWrite("level", "40", "preferences")
+	end if
+
+	if RegRead("level", "preferences") = "40" then
+		current = "Level 4.0 (Default)"
+	else if RegRead("level", "preferences") = "41" then
+		current = "Level 4.1"
+	else if RegRead("level", "preferences") = "42" then
+		current = "Level 4.2"
+	else if RegRead("level", "preferences") = "50" then
+		current = "Level 5.0"
+	else if RegRead("level", "preferences") = "51" then
+		current = "Level 5.1"
+	end if
+	buttonCount = 1
+	for each level in levels
+		title = level
+		if current = level then
+			title = "> "+title
+		end if
+		dialog.AddButton(buttonCount, title)
+		buttonCount = buttonCount + 1
+	next
+	
+	dialog.Show()
+	while true 
+		msg = wait(0, dialog.GetMessagePort()) 
+		if type(msg) = "roMessageDialogEvent"
+			if msg.isScreenClosed() then
+				dialog.close()
+				exit while
+			else if msg.isButtonPressed() then
+				if msg.getIndex() = 1 then
+					level = "40"
+				else if msg.getIndex() = 2 then
+					level = "41"
+				else if msg.getIndex() = 3 then
+					level = "42"
+				else if msg.getIndex() = 4 then
+					level = "50"
+				else if msg.getIndex() = 5 then
+					level = "51"
+				end if
+        		end if
+        		print "Set selected level to ";level
+        		RegWrite("level", level, "preferences")
+				dialog.close()
+			end if 
+	end while
+End Function
+
 
 Function getQueryString() As String
 	queryString = ""
