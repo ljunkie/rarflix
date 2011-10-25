@@ -479,6 +479,11 @@ Function TranscodingVideoUrl(serverUrl As String, videoUrl As String, sourceUrl 
 	if not(RegExists("quality", "preferences")) then
 		RegWrite("quality", "7", "preferences")
 	end if
+
+	if not(RegExists("level", "preferences")) then
+		RegWrite("level", "40", "preferences")
+	end if
+	print "REG READ LEVEL"+ RegRead("level", "preferences")
 	baseUrl = "/video/:/transcode/segmented/start.m3u8?identifier=com.plexapp.plugins.library&ratingKey="+ratingKey+"&key="+HttpEncode(fullKey)+"&offset=0"
 	currentQuality = RegRead("quality", "preferences")
     if currentQuality = "Auto" then
@@ -499,7 +504,8 @@ End Function
 
 Function Capabilities() As String
 	protocols = "protocols=http-live-streaming,http-mp4-streaming,http-mp4-video,http-mp4-video-720p,http-streaming-video,http-streaming-video-720p"
-	decoders = "videoDecoders=h264{profile:high&resolution:1080&level:40};audioDecoders=aac"
+	print "REG READ LEVEL"+ RegRead("level", "preferences")
+	decoders = "videoDecoders=h264{profile:high&resolution:1080&level:"+ RegRead("level", "preferences") + "};audioDecoders=aac"
 	return protocols+";"+decoders
 End Function
 
