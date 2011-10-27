@@ -318,11 +318,11 @@ Function H264Level()
 	dialog.SetMenuTopLeft(true)
 	dialog.EnableBackButton(false)
 	dialog.SetTitle("H264 Level") 
-	dialog.setText("H264 Encoding Level. Set to Maximum to allow more media to be streamed without transcoding. If you have troubles playing some videos, set back to Default.")
+	dialog.setText("Use specific H264 level. Only 4.0 is officially supported.")
 	buttonCommands = CreateObject("roAssociativeArray")
 	levels = CreateObject("roArray", 5 , true)
 	
-	levels.Push("Level 4.0 (Default)") 'N=1
+	levels.Push("Level 4.0 (Supported)") 'N=1
 	levels.Push("Level 4.1") 'N=2
 	levels.Push("Level 4.2") 'N=3
 	levels.Push("Level 5.0") 'N=4
