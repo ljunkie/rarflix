@@ -104,7 +104,7 @@ Function Preferences(homeScreen)
 	dialog.SetTitle("Preferences")
 	dialog.AddButton(1, "Plex Media Servers")
 	dialog.AddButton(2, "Quality")
-	dialog.AddButton(3, "H264 Levels")
+	dialog.AddButton(3, "Tweaks")
 	dialog.AddButton(4, "Close Preferences")
 	dialog.Show()
 	while true 
@@ -125,7 +125,42 @@ Function Preferences(homeScreen)
 				else if msg.getIndex() = 2 then
         			ConfigureQuality()
 				else if msg.getIndex() = 3 then
+        			Tweaks(homeScreen)
+        			else if msg.getIndex() = 4 then
+        			dialog.close()
+
+        		end if
+			end if 
+		end if
+	end while
+End Function
+
+Function Tweaks(homeScreen)
+
+	port = CreateObject("roMessagePort") 
+	dialog = CreateObject("roMessageDialog") 
+	dialog.SetMessagePort(port)
+	dialog.SetMenuTopLeft(true)
+	dialog.EnableBackButton(false)
+	dialog.SetTitle("Tweaks")
+	dialog.AddButton(1, "H264 Levels")
+	dialog.AddButton(2, "Channels and Search")
+	'dialog.AddButton(3, "SRT Subtitles")
+	dialog.AddButton(4, "Close Tweaks")
+	dialog.Show()
+	while true 
+		msg = wait(0, dialog.GetMessagePort()) 
+		if type(msg) = "roMessageDialogEvent"
+			if msg.isScreenClosed() then
+				dialog.close()
+				exit while
+			else if msg.isButtonPressed() then
+				if msg.getIndex() = 1 then
         			H264Level()
+				else if msg.getIndex() = 2 then
+        			ChannelsAndSearch()
+				'else if msg.getIndex() = 3 then
+        			'SRTSubtitles()
         			else if msg.getIndex() = 4 then
         			dialog.close()
         		end if
@@ -283,7 +318,7 @@ Function H264Level()
 	dialog.SetMenuTopLeft(true)
 	dialog.EnableBackButton(false)
 	dialog.SetTitle("H264 Level") 
-	dialog.setText("Overwrite default H264 level allowed. Use at your own risk!")
+	dialog.setText("H264 Encoding Level. Set to Maximum to allow more media to be streamed without transcoding. If you have troubles playing some videos, set back to Default.")
 	buttonCommands = CreateObject("roAssociativeArray")
 	levels = CreateObject("roArray", 5 , true)
 	
@@ -345,6 +380,55 @@ Function H264Level()
 	end while
 End Function
 
+Function ChannelsAndSearch()
+	port = CreateObject("roMessagePort") 
+	dialog = CreateObject("roMessageDialog") 
+	dialog.SetMessagePort(port)
+	dialog.SetMenuTopLeft(true)
+	dialog.EnableBackButton(false)
+	dialog.SetTitle("Channels and Search") 
+	dialog.setText("Enable/Disable 'Channel' and 'Search' options showing up on the main screen.")
+	buttonCommands = CreateObject("roAssociativeArray")
+	options = CreateObject("roArray", 2 , true)
+	
+	options.Push("Enabled (Default)") 'N=1
+	options.Push("Disabled") 'N=2
+
+	if not(RegExists("ChannelsAndSearch", "preferences")) then
+		RegWrite("ChannelsAndSearch", "1", "preferences")
+	end if
+	
+	if RegRead("ChannelsAndSearch", "preferences") = "1" then
+		current = "Enabled (Default)"
+	else if RegRead("ChannelsAndSearch", "preferences") = "2" then
+		current = "Disabled"
+	end if
+	buttonCount = 1
+	for each option in options
+		title = option
+		if current = option then
+			title = "> "+title
+		end if
+		dialog.AddButton(buttonCount, title)
+		buttonCount = buttonCount + 1
+	next
+	
+	dialog.Show()
+	while true 
+		msg = wait(0, dialog.GetMessagePort()) 
+		if type(msg) = "roMessageDialogEvent"
+			if msg.isScreenClosed() then
+				dialog.close()
+				exit while
+			else if msg.isButtonPressed() then
+				option = msg.getIndex().tostr()	
+        		end if
+        		RegWrite("ChannelsAndSearch", option, "preferences")
+			screen=preShowHomeScreen("", "")
+    			showHomeScreen(screen, PlexMediaServers())
+			end if 
+	end while
+End Function
 
 Function getQueryString() As String
 	queryString = ""
