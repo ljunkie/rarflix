@@ -210,7 +210,13 @@ Function PopulateContentList(server, screen, sourceUrl, contentKey, start, total
 	else
 		subSectionResponse = server.GetPaginatedQueryResponse(sourceUrl, contentKey, start, pageSize)
     	viewGroup = subSectionResponse.xml@viewGroup
+        if viewGroup = invalid
+            viewGroup = "apps"
+        endif
     	newTotalSize = subSectionResponse.xml@totalSize
+        if newTotalSize = invalid
+    	    newTotalSize = subSectionResponse.xml@size
+        endif
 		contentList = server.GetContent(subSectionResponse)
 	endif
 	
