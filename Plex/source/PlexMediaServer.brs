@@ -145,29 +145,36 @@ Function homePageContent() As Object
 		endif
 	next
 	
-	'* TODO: only add this if we actually have any valid apps?
-	appsSection = CreateObject("roAssociativeArray")
-	appsSection.server = m
-    appsSection.sourceUrl = ""
-	appsSection.ContentType = "series"
-	appsSection.Key = "apps"
-	appsSection.Title = "Channels"
-	appsSection.ShortDescriptionLine1 = "Channels"
-	appsSection.SDPosterURL = "file://pkg:/images/plex.jpg"
-	appsSection.HDPosterURL = "file://pkg:/images/plex.jpg"
-	content.Push(appsSection)
+	if not(RegExists("ChannelsAndSearch", "preferences")) then
+		RegWrite("ChannelsAndSearch", "1", "preferences")
+	end if
 	
-	searchSection = CreateObject("roAssociativeArray")
-	searchSection.server = m
-    searchSection.sourceUrl = ""
-	searchSection.ContentType = "series"
-	searchSection.Key = "globalsearch"
-	searchSection.Title = "Search"
-	searchSection.ShortDescriptionLine1 = "Search"
-	searchSection.SDPosterURL = "file://pkg:/images/icon-search.jpg"
-	searchSection.HDPosterURL = "file://pkg:/images/icon-search.jpg"
-	content.Push(searchSection)
+	if RegRead("ChannelsAndSearch", "preferences") = "1" then
+
+		'* TODO: only add this if we actually have any valid apps?
+		appsSection = CreateObject("roAssociativeArray")
+		appsSection.server = m
+    		appsSection.sourceUrl = ""
+		appsSection.ContentType = "series"
+		appsSection.Key = "apps"
+		appsSection.Title = "Channels"
+		appsSection.ShortDescriptionLine1 = "Channels"
+		appsSection.SDPosterURL = "file://pkg:/images/plex.jpg"
+		appsSection.HDPosterURL = "file://pkg:/images/plex.jpg"
+		content.Push(appsSection)
 	
+		searchSection = CreateObject("roAssociativeArray")
+		searchSection.server = m
+    		searchSection.sourceUrl = ""
+		searchSection.ContentType = "series"
+		searchSection.Key = "globalsearch"
+		searchSection.Title = "Search"
+		searchSection.ShortDescriptionLine1 = "Search"
+		searchSection.SDPosterURL = "file://pkg:/images/icon-search.jpg"
+		searchSection.HDPosterURL = "file://pkg:/images/icon-search.jpg"
+		content.Push(searchSection)
+	
+	end if
 	return content
 End Function
 
@@ -479,6 +486,11 @@ Function TranscodingVideoUrl(serverUrl As String, videoUrl As String, sourceUrl 
 	if not(RegExists("quality", "preferences")) then
 		RegWrite("quality", "7", "preferences")
 	end if
+
+	if not(RegExists("level", "preferences")) then
+		RegWrite("level", "40", "preferences")
+	end if
+	print "REG READ LEVEL"+ RegRead("level", "preferences")
 	baseUrl = "/video/:/transcode/segmented/start.m3u8?identifier=com.plexapp.plugins.library&ratingKey="+ratingKey+"&key="+HttpEncode(fullKey)+"&offset=0"
 	currentQuality = RegRead("quality", "preferences")
     if currentQuality = "Auto" then
@@ -499,7 +511,8 @@ End Function
 
 Function Capabilities() As String
 	protocols = "protocols=http-live-streaming,http-mp4-streaming,http-mp4-video,http-mp4-video-720p,http-streaming-video,http-streaming-video-720p"
-	decoders = "videoDecoders=h264{profile:high&resolution:1080&level:40};audioDecoders=aac"
+	print "REG READ LEVEL"+ RegRead("level", "preferences")
+	decoders = "videoDecoders=h264{profile:high&resolution:1080&level:"+ RegRead("level", "preferences") + "};audioDecoders=aac"
 	return protocols+";"+decoders
 End Function
 
