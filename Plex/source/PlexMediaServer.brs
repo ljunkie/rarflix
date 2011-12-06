@@ -512,7 +512,18 @@ End Function
 Function Capabilities() As String
 	protocols = "protocols=http-live-streaming,http-mp4-streaming,http-mp4-video,http-mp4-video-720p,http-streaming-video,http-streaming-video-720p"
 	print "REG READ LEVEL"+ RegRead("level", "preferences")
-	decoders = "videoDecoders=h264{profile:high&resolution:1080&level:"+ RegRead("level", "preferences") + "};audioDecoders=aac"
+	'do checks to see if 5.1 is supported, else use stereo
+	device = CreateObject("roDeviceInfo")
+	audio = "aac"
+	version = device.GetVersion()
+    	major = Mid(version, 3, 1)
+    	minor = Mid(version, 5, 2)
+    	build = Mid(version, 8, 5)
+	print "Device Version:" + major +"." + minor +" build "+build
+	if device.HasFeature("5.1_surround_sound") and major.ToInt() >= 4 then
+		audio="ac3"
+	endif 
+	decoders = "videoDecoders=h264{profile:high&resolution:1080&level:"+ RegRead("level", "preferences") + "};audioDecoders="+audio
 	return protocols+";"+decoders
 End Function
 
