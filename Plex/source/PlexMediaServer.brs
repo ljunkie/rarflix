@@ -410,10 +410,14 @@ Function FullUrl(serverUrl, sourceUrl, key) As String
 	    	finalUrl = serverUrl
     	else if keyTokens[0] = "" AND serverUrl = "" then
         	finalUrl = sourceUrlTokens[0]
-		else if left(keyTokens[0], 1) = "/" then
+		else if keyTokens[0] <> invalid AND left(keyTokens[0], 1) = "/" then
 			finalUrl = serverUrl+keyTokens[0]
 		else
-			finalUrl = sourceUrlTokens[0]+"/"+keyTokens[0]
+            if keyTokens[0] <> invalid then
+			    finalUrl = sourceUrlTokens[0]+"/"+keyTokens[0]
+            else
+                finalUrl = sourceUrlTokens[0]+"/"
+            endif
 		endif
 		if keyTokens.Count() = 2 OR sourceUrlTokens.Count() =2 then
 	    	finalUrl = finalUrl + "?"
