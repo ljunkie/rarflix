@@ -1,4 +1,5 @@
-title=Plex
+title=PlexStorm
+version=1.5
 subtitle=Browse and play content from Plex Media Servers
 mm_icon_focus_hd=pkg:/images/plex.jpg
 mm_icon_side_hd=pkg:/images/plex.jpg
