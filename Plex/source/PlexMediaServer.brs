@@ -386,6 +386,12 @@ Function FullUrl(serverUrl, sourceUrl, key) As String
 	finalUrl = ""
 	if left(key, 4) = "http" then
 		return key
+    else if left(key, 4) = "plex" then
+        url_start = Instr(1, key, "url=") + 4
+        url_end = Instr(url_start, key, "&")
+        url = Mid(key, url_start, url_end - url_start)
+        o = CreateObject("roUrlTransfer")
+        return o.Unescape(url)
 	else
 		keyTokens = CreateObject("roArray", 2, true)
 		if key <> Invalid then
@@ -492,6 +498,9 @@ Function TranscodingVideoUrl(serverUrl As String, videoUrl As String, sourceUrl 
 	end if
 	print "REG READ LEVEL"+ RegRead("level", "preferences")
 	baseUrl = "/video/:/transcode/segmented/start.m3u8?identifier=com.plexapp.plugins.library&ratingKey="+ratingKey+"&key="+HttpEncode(fullKey)+"&offset=0"
+    if left(videoUrl, 4) = "plex" then
+        baseUrl = baseUrl + "&webkit=1"
+    end if
 	currentQuality = RegRead("quality", "preferences")
     if currentQuality = "Auto" then
     	myurl = baseUrl+"&minQuality=4&maxQuality=8"
