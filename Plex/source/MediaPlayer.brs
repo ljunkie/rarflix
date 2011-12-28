@@ -41,7 +41,9 @@ Function playVideo(server, metadata, mediaData, seekValue)
             	server.SetProgress(metadata.ratingKey, metadata.mediaContainerIdentifier, 1000*lastPosition)
             	server.PingTranscode()
             else if msg.isRequestFailed() then
-                print "MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed "; msg.GetMessage()
+                print "MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed - message = "; msg.GetMessage()
+                print "MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed - data = "; msg.GetData()
+                print "MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed - index = "; msg.GetIndex()
             else if msg.isPaused() then
                 print "MediaPlayer::playVideo::VideoScreenEvent::isPaused: position -> "; lastPosition
             	server.PingTranscode()
@@ -85,7 +87,9 @@ Function playPluginVideo(server, metadata)
             else if msg.isPlaybackPosition() then
             	server.PingTranscode()
             else if msg.isRequestFailed()
-                print "play failed: "; msg.GetMessage()
+                print "playPluginVideo::isRequestFailed: message = "; msg.GetMessage()
+                print "playPluginVideo::isRequestFailed: data = "; msg.GetData()
+                print "playPluginVideo::isRequestFailed: index = "; msg.GetIndex()
             else if msg.isPaused()
                 print "Video paused at -> "; lastPosition
             	server.PingTranscode()
@@ -118,7 +122,9 @@ Function playAlbum(server, metadata)
             else if msg.isResumed() then
             	audioplayer.resume()
 			else if msg.isRequestFailed()
-                print "play failed: "; msg.GetMessage()
+                print "playAlbum::isRequestFailed: message = "; msg.GetMessage()
+                print "playAlbum::isRequestFailed: data = "; msg.GetData()
+                print "playAlbum::isRequestFailed: index = "; msg.GetIndex()
             else
                 print "Unknown event: "; msg.GetType(); " msg: "; msg.GetMessage()
             endif
