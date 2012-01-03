@@ -35,7 +35,7 @@ Function ConstructDirectoryMetadata(server, sourceUrl, xmlContainer, directoryIt
 	
 	sizes = ImageSizes(xmlContainer@viewGroup, directory.ContentType)
 	thumb = directoryItemXml@thumb
-	if thumb <> invalid then
+	if thumb <> invalid and thumb <> "" then
 		directory.SDPosterURL = server.TranscodedImage(sourceUrl, thumb, sizes.sdWidth, sizes.sdHeight)
 		directory.HDPosterURL = server.TranscodedImage(sourceUrl, thumb, sizes.hdWidth, sizes.hdHeight)
 	else
