@@ -79,7 +79,9 @@ Function Populate(screen, contentList, index) As Object
 	screen.setContent(metadata)
 	metaDataArray.media = metadata.preferredMediaItem
 	metaDataArray.buttonCommands = AddButtons(screen, metadata, metadata.preferredMediaItem)
-	screen.PrefetchPoster(metadata.SDPosterURL, metadata.HDPosterURL)
+    if metadata <> invalid and metadata.SDPosterURL <> invalid and metadata.HDPosterURL <> invalid then
+	    screen.PrefetchPoster(metadata.SDPosterURL, metadata.HDPosterURL)
+    endif
 	screen.Show()
 	retrieving.Close()
 	return metaDataArray

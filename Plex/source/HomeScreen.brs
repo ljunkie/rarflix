@@ -101,7 +101,16 @@ Function Preferences(homeScreen)
 	dialog.SetMessagePort(port)
 	dialog.SetMenuTopLeft(true)
 	dialog.EnableBackButton(false)
-	dialog.SetTitle("Preferences")
+
+    manifest = ReadAsciiFile("pkg:/manifest")
+    lines = manifest.Tokenize(chr(10))
+    aa = {}
+    for each line in lines
+        entry = line.Tokenize("=")
+        aa.AddReplace(entry[0],entry[1])
+    end for
+
+	dialog.SetTitle("Preferences v."+aa["version"])
 	dialog.AddButton(1, "Plex Media Servers")
 	dialog.AddButton(2, "Quality")
 	dialog.AddButton(3, "Tweaks")
