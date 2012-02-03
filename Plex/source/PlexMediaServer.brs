@@ -537,7 +537,12 @@ Function Capabilities() As String
 		audio="ac3"
 	endif 
 	decoders = "videoDecoders=h264{profile:high&resolution:1080&level:"+ RegRead("level", "preferences") + "};audioDecoders="+audio
-	return protocols+";"+decoders
+	'anamorphic video causes problems, disable support for it
+	anamorphic = "playsAnamorphic=no"
+
+	capaString = protocols+";"+decoders+";"+anamorphic
+	print "Capabilities: "+capaString
+	return capaString
 End Function
 
 '*
