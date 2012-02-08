@@ -154,8 +154,9 @@ Function Tweaks(homeScreen)
 	dialog.SetTitle("Tweaks")
 	dialog.AddButton(1, "H264 Levels")
 	dialog.AddButton(2, "Channels and Search")
-	'dialog.AddButton(3, "SRT Subtitles")
-	dialog.AddButton(4, "Close Tweaks")
+	dialog.AddButton(3, "5.1 Support")
+	'dialog.AddButton(4, "SRT Subtitles")
+	dialog.AddButton(5, "Close Tweaks")
 	dialog.Show()
 	while true 
 		msg = wait(0, dialog.GetMessagePort()) 
@@ -168,9 +169,11 @@ Function Tweaks(homeScreen)
         			H264Level()
 				else if msg.getIndex() = 2 then
         			ChannelsAndSearch()
-				'else if msg.getIndex() = 3 then
+				else if msg.getIndex() = 3 then
+                    FivePointOneSupport()
+				'else if msg.getIndex() = 4 then
         			'SRTSubtitles()
-        			else if msg.getIndex() = 4 then
+        		else if msg.getIndex() = 4 then
         			dialog.close()
         		end if
 			end if 
@@ -258,6 +261,56 @@ Function AddServerManually()
 					return keyb.GetText()
        			end if
        			return invalid
+			end if 
+		end if
+	end while
+End Function
+
+Function FivePointOneSupport()
+	port = CreateObject("roMessagePort") 
+	dialog = CreateObject("roMessageDialog") 
+	dialog.SetMessagePort(port)
+	dialog.SetMenuTopLeft(true)
+	dialog.EnableBackButton(false)
+	dialog.SetTitle("5.1 Support") 
+	dialog.setText("Bear in mind that 5.1 support only works on the Roku 2 (4.x) firmware, and this setting will be ignored if that firmware is not detected.")
+
+	buttonCommands = CreateObject("roAssociativeArray")
+
+	fiveone = CreateObject("roArray", 6 , true)
+	fiveone.Push("Enabled")
+	fiveone.Push("Disabled")
+
+	if not(RegExists("fivepointone", "preferences")) then
+		RegWrite("fivepointone", "1", "preferences")
+	end if
+	current = RegRead("fivepointone", "preferences")
+
+	buttonCount = 1
+	for each value in fiveone
+		title = value
+		if current = value then
+			title = "> "+title
+		end if
+		if current = (buttonCount).tostr() then
+			title = "> "+title
+		end if
+		dialog.AddButton(buttonCount, title)
+		buttonCount = buttonCount + 1
+	next
+	
+	dialog.Show()
+	while true 
+		msg = wait(0, dialog.GetMessagePort()) 
+		if type(msg) = "roMessageDialogEvent"
+			if msg.isScreenClosed() then
+				dialog.close()
+				exit while
+			else if msg.isButtonPressed() then
+        		fiveone = (msg.getIndex()).tostr()
+        		print "Set 5.1 support to ";fiveone
+        		RegWrite("fivepointone", fiveone, "preferences")
+				dialog.close()
 			end if 
 		end if
 	end while

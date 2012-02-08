@@ -544,9 +544,20 @@ Function Capabilities() As String
    	minor = Mid(version, 5, 2)
    	build = Mid(version, 8, 5)
 	print "Device Version:" + major +"." + minor +" build "+build
+
 	if device.HasFeature("5.1_surround_sound") and major.ToInt() >= 4 then
-		audio="ac3"
-	endif 
+        if not(RegExists("fivepointone", "preferences")) then
+            RegWrite("fivepointone", "1", "preferences")
+        end if
+        fiveone = RegRead("fivepointone", "preferences")
+        print "5.1 support set to: ";fiveone
+        
+        if fiveone <> "2" then
+		    audio="ac3"
+        else
+            print "5.1 support disabled via Tweaks"
+        end if
+	end if 
 	decoders = "videoDecoders=h264{profile:high&resolution:1080&level:"+ RegRead("level", "preferences") + "};audioDecoders="+audio
 	'anamorphic video causes problems, disable support for it
 	anamorphic = "playsAnamorphic=no"
