@@ -529,9 +529,9 @@ Function Capabilities() As String
 	device = CreateObject("roDeviceInfo")
 	audio = "aac"
 	version = device.GetVersion()
-    	major = Mid(version, 3, 1)
-    	minor = Mid(version, 5, 2)
-    	build = Mid(version, 8, 5)
+   	major = Mid(version, 3, 1)
+   	minor = Mid(version, 5, 2)
+   	build = Mid(version, 8, 5)
 	print "Device Version:" + major +"." + minor +" build "+build
 	if device.HasFeature("5.1_surround_sound") and major.ToInt() >= 4 then
 		audio="ac3"
