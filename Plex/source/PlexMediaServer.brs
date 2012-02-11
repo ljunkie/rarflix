@@ -523,7 +523,11 @@ Function TranscodingVideoUrl(serverUrl As String, videoUrl As String, sourceUrl 
 End Function
 
 Function ConvertTranscodeURLToLoopback(url) As String
-    'first, strip off the http://
+    'first, if the URL doesn't include ":32400", return it as-is
+    if instr(1, url, ":32400") = 0 then
+        return url
+    end if
+    'second, strip off the http://
     url = strReplace(url, "http://", "")
     'then tokenize on the :
     tokens = strTokenize(url, ":")
