@@ -525,15 +525,27 @@ End Function
 Function ConvertTranscodeURLToLoopback(url) As String
     'first, if the URL doesn't include ":32400", return it as-is
     if instr(1, url, ":32400") = 0 then
+        print "ConvertTranscodeURLToLoopback:: remote URL: ";url
         return url
     end if
+    print "ConvertTranscodeURLToLoopback:: original URL: ";url
     'second, strip off the http://
     url = strReplace(url, "http://", "")
     'then tokenize on the :
     tokens = strTokenize(url, ":")
-    'print "tokens[0] = ";tokens[0]
-    'print "tokens[1] = ";tokens[1]
-    url = "http://127.0.0.1:"+tokens[1]
+    tokens[0] = "http://127.0.0.1"
+    x = tokens.GetIndex()
+    y = 0
+    while x <> invalid
+        if y = 0 then
+            url = x
+        else
+            url = url+":"+x
+        end if
+        y = y+1
+        x = tokens.GetIndex()
+    end while
+    print "ConvertTranscodeURLToLoopback:: processed URL: ";url
     return url
 End Function
 
