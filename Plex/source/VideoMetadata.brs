@@ -71,6 +71,9 @@ Function ConstructRokuVideoMetadata(server, sourceUrl, xmlContainer, videoItemXm
 		video.ShortDescriptionLine2 = videoItemXml@sourceTitle
 	end if
 	if xmlContainer@viewGroup = "episode" then
+        if videoItemXml@grandparentTitle <> invalid then
+            video.ShortDescriptionLine1 = videoItemXml@grandparentTitle + ": " + video.ShortDescriptionLine1
+        end if
         if videoItemXml@index <> invalid then
             video.EpisodeNumber = videoItemXml@index
             episode = "Episode "+videoItemXml@index
