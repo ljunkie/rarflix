@@ -581,7 +581,7 @@ Function Capabilities() As String
         print "5.1 support set to: ";fiveone
         
         if fiveone <> "2" then
-		    audio="ac3"
+		    audio="ac3{channels:6}"
         else
             print "5.1 support disabled via Tweaks"
         end if
