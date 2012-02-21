@@ -458,10 +458,10 @@ Function ChannelsAndSearch()
 		RegWrite("ChannelsAndSearch", "1", "preferences")
 	end if
 	
-	if RegRead("ChannelsAndSearch", "preferences") = "1" then
-		current = "Enabled (Default)"
-	else if RegRead("ChannelsAndSearch", "preferences") = "2" then
+	if RegRead("ChannelsAndSearch", "preferences") = "2" then
 		current = "Disabled"
+        else
+		current = "Enabled (Default)"
 	end if
 	buttonCount = 1
 	for each option in options
