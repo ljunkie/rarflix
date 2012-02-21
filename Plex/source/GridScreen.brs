@@ -132,7 +132,15 @@ Function loadGridContent(server, sourceUrl, key, rowIndex, startItem, count) As 
     content = server.GetContent(response)
     m.timer.PrintElapsedTime("Parsing row XML")
 
-    totalSize = strtoi(response.xml@totalSize)
+    ' If the container doesn't play nice with pagination requests then
+    ' whatever we got is the total size.
+    if response.xml@totalSize <> invalid then
+        totalSize = strtoi(response.xml@totalSize)
+    else
+        Print "Request to "; key; " didn't support pagination, returned size "; response.xml@size
+        totalSize = content.Count()
+        m.maxLoadedRow = rowIndex
+    end if
 
     ' Don't bother showing empty rows
     if totalSize <= 0 then
