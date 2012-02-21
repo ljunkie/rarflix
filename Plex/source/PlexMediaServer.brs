@@ -432,13 +432,13 @@ Function FullUrl(serverUrl, sourceUrl, key) As String
 	    	finalUrl = finalUrl + "?"
 	    	if keyTokens.Count() = 2 then
 	    		finalUrl = finalUrl + keyTokens[1]
-	    		if sourceUrlTokens.Count() = 2 then
-	    			finalUrl = finalUrl + "&"
-	    		endif
+	    		'if sourceUrlTokens.Count() = 2 then
+	    			'finalUrl = finalUrl + "&"
+	    		'endif
 	    	endif
-	    	if sourceUrlTokens.Count() = 2 then
-	    		finalUrl = finalUrl + sourceUrlTokens[1]
-	    	endif
+	    	'if sourceUrlTokens.Count() = 2 then
+	    		'finalUrl = finalUrl + sourceUrlTokens[1]
+	    	'endif
 		endif
     endif
     'print "FinalURL:";finalUrl
