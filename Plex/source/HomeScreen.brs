@@ -88,6 +88,7 @@ Function displaySection(section As Object, homeScreen As Object) As Dynamic
     	Preferences(homeScreen)  
     else
         screen = createGridScreen()
+        if section.key = "apps" then screen.SetStyle("flat-square")
         screen.Show(section)
     endif
     return 0

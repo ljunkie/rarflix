@@ -17,11 +17,13 @@ Function createGridScreen() As Object
     screen.Grid = grid
     screen.Show = showGridScreen
     screen.LoadContent = loadGridContent
+    screen.SetStyle = setGridStyle
     screen.timer = createPerformanceTimer()
     screen.port = port
     screen.selectedRow = 0
     screen.maxLoadedRow = -1
     screen.contentArray = []
+    screen.gridStyle = "Flat-Movie"
 
     screen.extraRowsToLoad = 2
     screen.initialLoadSize = 8
@@ -163,5 +165,10 @@ Function loadGridContent(server, sourceUrl, key, rowIndex, startItem, count) As 
     m.Grid.SetContentListSubset(rowIndex, m.contentArray[rowIndex], startItem, content.Count())
 
     return m.contentArray[rowIndex].Count() >= totalSize
+End Function
+
+Function setGridStyle(style as String)
+    m.gridStyle = style
+    m.Grid.SetGridStyle(style)
 End Function
 
