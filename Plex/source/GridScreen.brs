@@ -33,6 +33,9 @@ Function createGridScreen() As Object
 End Function
 
 Function showGridScreen(section) As Integer
+    facade = CreateObject("roPosterScreen")
+    facade.Show()
+
     print "Showing grid for section: "; section.key
 
     totalTimer = createPerformanceTimer()
@@ -49,10 +52,6 @@ Function showGridScreen(section) As Integer
     m.timer.PrintElapsedTime("Grid SetupLists")
     m.Grid.SetListNames(names)
     m.timer.PrintElapsedTime("Grid SetListNames")
-
-    ' Show the grid now. It'll automatically show some Retrieving... text so
-    ' we don't have to show a one line dialog.
-    m.Grid.Show()
 
     ' Only two rows and five items per row are visible on the screen, so
     ' don't load much more than we need to before initially showing the
@@ -75,6 +74,9 @@ Function showGridScreen(section) As Integer
     end for
 
     totalTimer.PrintElapsedTime("Total initial grid load")
+
+    m.Grid.Show()
+    facade.Close()
 
     ' We'll use a small timeout to continue loading data as needed. Once we've
     ' finished loading data, reset the timeout to 0 so that we don't continue
