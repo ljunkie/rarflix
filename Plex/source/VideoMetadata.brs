@@ -32,7 +32,7 @@ Function ConstructRokuVideoMetadata(server, sourceUrl, xmlContainer, videoItemXm
 	video.Key = videoItemXml@key
 	
 	video.ShortDescriptionLine1 = videoItemXml@title
-	video.Description = videoItemXml@summary
+	video.Description = truncateString(videoItemXml@summary)
 	video.ReleaseDate = videoItemXml@originallyAvailableAt
 	video.viewOffset = videoItemXml@viewOffset
 	video.viewCount = videoItemXml@viewCount

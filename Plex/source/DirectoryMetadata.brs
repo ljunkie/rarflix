@@ -20,7 +20,7 @@ Function ConstructDirectoryMetadata(server, sourceUrl, xmlContainer, directoryIt
 	endif
 	directory.Key = directoryItemXml@key
 	directory.Title = directoryItemXml@title
-	directory.Description = directoryItemXml@summary
+	directory.Description = truncateString(directoryItemXml@summary)
 	if directory.Title = invalid then
 		directory.Title = directoryItemXml@name
 	endif
@@ -28,7 +28,7 @@ Function ConstructDirectoryMetadata(server, sourceUrl, xmlContainer, directoryIt
 	if directory.ShortDescriptionLine1 = invalid then
 		directory.ShortDescriptionLine1 = directoryItemXml@name
 	endif
-	directory.ShortDescriptionLine2 = directoryItemXml@summary
+	directory.ShortDescriptionLine2 = truncateString(directoryItemXml@summary, 250, invalid)
 	'if xmlResponse.xml@viewGroup = "Details" OR xmlResponse.xml@viewGroup = "InfoList" then
 	'	video.ShortDescriptionLine2 = videoItem@summary
 	'endif

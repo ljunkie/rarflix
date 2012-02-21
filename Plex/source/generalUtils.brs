@@ -662,3 +662,17 @@ Function validateParam(param As Object, paramType As String,functionName As Stri
     print "invalid parameter of type "; type(param); " for "; paramType; " in function "; functionName
     return false
 End Function
+
+
+'******************************************************
+'Truncate long strings
+'******************************************************
+Function truncateString(s, maxLength=180 As Integer, missingValue="(No summary available)")
+    if s = invalid then
+        return missingValue
+    else if len(s) <= maxLength then
+        return s
+    else
+        return left(s, maxLength - 3) + "..."
+    end if
+End Function
