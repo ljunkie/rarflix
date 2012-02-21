@@ -15,6 +15,26 @@
 #    address of your Roku box. (e.g. export ROKU_DEV_TARGET=192.168.1.1.
 #    Set in your this variable in your shell startup (e.g. .bashrc)
 ##########################################################################  
-APPNAME = PlexBeta
-ZIP_EXCLUDE = -x .git\*
+APPNAME = Plex
+APPDEPS = manifest
+ZIP_EXCLUDE = -x .git\* -x manifest.template -x \*.swp
 include ../app.mk
+
+APPTITLE = PlexDev
+
+.PHONY: manifest beta dev rel
+
+beta: APPTITLE = PlexBeta
+beta: $(APPNAME)
+
+dev: APPTITLE = PlexDev
+dev: $(APPNAME)
+
+rel: APPTITLE = Plex
+rel: $(APPNAME)
+
+manifest:
+	echo "Creating manifest for $(APPTITLE)"
+	sed s/APPTITLE/$(APPTITLE)/ < manifest.template > manifest
+
+all: $(APPNAME)

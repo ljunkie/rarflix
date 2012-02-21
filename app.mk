@@ -21,14 +21,14 @@
 #    address of your Roku box. (e.g. export ROKU_DEV_TARGET=192.168.1.1.
 #    Set in your this variable in your shell startup (e.g. .bashrc)
 ##########################################################################  
-PKGREL = ../../packages
-ZIPREL = ../../zips
+PKGREL = ../packages
+ZIPREL = ../zips
 SOURCEREL = ..
 
 
 .PHONY: all $(APPNAME)
 
-$(APPNAME): 
+$(APPNAME): $(APPDEPS)
 	@echo "*** Creating $(APPNAME).zip ***"
 
 	@echo "  >> removing old application zip $(ZIPREL)/$(APPNAME).zip"
