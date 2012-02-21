@@ -328,8 +328,17 @@ Function constructPluginVideoScreen(metadata) As Object
     	if mediaItem.indirect then
 			mediaKeyXml = IndirectMediaXml(m, mediaKey)
 			mediaKey = mediaKeyXml.Video.Media.Part[0]@key
-			httpCookies = mediaKeyXml@httpCookies
-			videoclip = ConstructVideoClip(m.serverUrl, mediaKey, sourceUrl, "", "", metadata.title, httpCookies, "")
+            if mediaKeyXml@httpCookies <> invalid then
+			    httpCookies = mediaKeyXml@httpCookies
+            else
+                httpCookies = ""
+            end if
+            if mediaKeyXml@userAgent <> invalid then
+			    userAgent = mediaKeyXml@userAgent
+            else
+                userAgent = ""
+            end if
+			videoclip = ConstructVideoClip(m.serverUrl, mediaKey, sourceUrl, "", "", metadata.title, httpCookies, userAgent)
 		else
 			videoclip = ConstructVideoClip(m.serverUrl, mediaKey, sourceUrl, "", "", metadata.title, "", "")
     	end if
@@ -483,6 +492,9 @@ End Function
 '*
 Function TranscodingVideoUrl(serverUrl As String, videoUrl As String, sourceUrl As String, ratingKey As String, key As String, httpCookies As String, userAgent As String) As String
     print "Constructing transcoding video URL for "+videoUrl
+    if userAgent <> invalid then
+        print "User Agent: ";userAgent
+    end if
     location = ResolveUrl(serverUrl, sourceUrl, videoUrl)
     location = ConvertTranscodeURLToLoopback(location)
     print "Location:";location
