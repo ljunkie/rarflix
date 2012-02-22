@@ -2,7 +2,7 @@
 '* A grid screen backed by XML from a PMS.
 '*
 
-Function createGridScreen() As Object
+Function createGridScreen(item, viewController) As Object
     Print "######## Creating Grid Screen ########"
 
     screen = CreateObject("roAssociativeArray")
@@ -18,10 +18,15 @@ Function createGridScreen() As Object
     grid.SetGridStyle("Flat-Movie")
     grid.SetUpBehaviorAtTopRow("exit")
 
-    screen.Grid = grid
+    ' Standard properties for all our Screen types
+    screen.Item = item
+    screen.Screen = grid
+    screen.ViewController = viewController
+
     screen.Show = showGridScreen
     screen.LoadContent = loadGridContent
     screen.SetStyle = setGridStyle
+
     screen.timer = createPerformanceTimer()
     screen.port = port
     screen.selectedRow = 0
@@ -36,25 +41,36 @@ Function createGridScreen() As Object
     return screen
 End Function
 
-Function showGridScreen(section) As Integer
+Function showGridScreen() As Integer
     facade = CreateObject("roPosterScreen")
     facade.Show()
 
-    print "Showing grid for section: "; section.key
+    print "Showing grid for item: "; m.Item.key
 
     totalTimer = createPerformanceTimer()
 
-    server = section.server
-    queryResponse = server.GetQueryResponse(section.sourceUrl, section.key)
+    server = m.Item.server
+    queryResponse = server.GetQueryResponse(m.Item.sourceUrl, m.Item.key)
     m.timer.PrintElapsedTime("Initial server query")
-    names = server.GetListNames(queryResponse)
-    m.timer.PrintElapsedTime("Server GetListNames")
-    keys = server.GetListKeys(queryResponse)
-    m.timer.PrintElapsedTime("Server GetListKeys")
-	
-    m.Grid.SetupLists(names.Count()) 
+
+    ' TODO: We probably sholdn't be doing this here, but we can't just call
+    ' GetListNames and then GetListKeys. For starters, it won't work for all
+    ' view groups. But even if it did, it calls GetContent internally each
+    ' time, which means we end up parsing the XML twice.
+
+    content = server.GetContent(queryResponse)
+    names = CreateObject("roArray", 10, true)
+    keys = CreateObject("roArray", 10, true)
+    for each elem in content
+        names.Push(elem.Title)
+        keys.Push(elem.Key)
+    next
+
+    m.timer.PrintElapsedTime("Server GetContent")
+
+    m.Screen.SetupLists(names.Count()) 
     m.timer.PrintElapsedTime("Grid SetupLists")
-    m.Grid.SetListNames(names)
+    m.Screen.SetListNames(names)
     m.timer.PrintElapsedTime("Grid SetListNames")
 
     ' Only two rows and five items per row are visible on the screen, so
@@ -79,7 +95,7 @@ Function showGridScreen(section) As Integer
 
     totalTimer.PrintElapsedTime("Total initial grid load")
 
-    m.Grid.Show()
+    m.Screen.Show()
     facade.Close()
 
     ' We'll use a small timeout to continue loading data as needed. Once we've
@@ -91,20 +107,16 @@ Function showGridScreen(section) As Integer
         msg = wait(timeout, m.port)
         if type(msg) = "roGridScreenEvent" then
             if msg.isListItemSelected() then
-                row = msg.GetIndex()
-                col = msg.GetData()
-                item = m.contentArray[row][col]
-                contentType = item.ContentType
-                if contentType = "movie" OR contentType = "episode" then
-                    displaySpringboardScreen(item.title, m.contentArray[row], col)
-                else if contentType = "clip" then
-                    playPluginVideo(server, item)
-                else if item.viewGroup <> invalid AND item.viewGroup = "Store:Info" then
-                    ChannelInfo(item)
-                else 'if contentType = "series" then
-                    ' TODO(schuyler): Can we show another grid here instead of a poster?
-                    showNextPosterScreen(item.title, item)
-                endif
+                context = m.contentArray[msg.GetIndex()]
+                index = msg.GetData()
+
+                ' TODO(schuyler): How many levels of breadcrumbs do we want to
+                ' include here. For example, if I'm in a TV section and select
+                ' a series from Recently Viewed Shows, should the breadcrumbs
+                ' on the next screen be "Section - Show Name" or "Recently
+                ' Viewed Shows - Show Name"?
+
+                m.ViewController.CreateScreenForItem(context, index, [context[index].Title])
             else if msg.isListItemFocused() then
                 ' If the user is getting close to the limit of what we've
                 ' preloaded, make sure we set the timeout and kick off another
@@ -113,6 +125,7 @@ Function showGridScreen(section) As Integer
                 m.selectedRow = msg.GetIndex()
                 if m.selectedRow + m.extraRowsToLoad > m.maxLoadedRow then timeout = 5
             else if msg.isScreenClosed() then
+                m.ViewController.PopScreen(m)
                 return -1
             end if
         else if msg = invalid then
@@ -152,7 +165,7 @@ Function loadGridContent(server, sourceUrl, key, rowIndex, startItem, count) As 
 
     ' Don't bother showing empty rows
     if totalSize <= 0 then
-        m.Grid.SetListVisible(rowIndex, false)
+        m.Screen.SetListVisible(rowIndex, false)
         return true
     end if
 
@@ -166,15 +179,15 @@ Function loadGridContent(server, sourceUrl, key, rowIndex, startItem, count) As 
     ' It seems like you should be able to do this, but you have to pass in
     ' the full content list, not some other array you want to use to update
     ' the content list.
-    ' m.Grid.SetContentListSubset(rowIndex, content, startItem, content.Count())
+    ' m.Screen.SetContentListSubset(rowIndex, content, startItem, content.Count())
 
-    m.Grid.SetContentListSubset(rowIndex, m.contentArray[rowIndex], startItem, content.Count())
+    m.Screen.SetContentListSubset(rowIndex, m.contentArray[rowIndex], startItem, content.Count())
 
     return m.contentArray[rowIndex].Count() >= totalSize
 End Function
 
 Function setGridStyle(style as String)
     m.gridStyle = style
-    m.Grid.SetGridStyle(style)
+    m.Screen.SetGridStyle(style)
 End Function
 

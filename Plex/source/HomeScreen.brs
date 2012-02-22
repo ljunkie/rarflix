@@ -3,58 +3,61 @@
 '**
 '*****************************************************************
 
-Function preShowHomeScreen(breadA=invalid, breadB=invalid) As Object
-
-    if validateParam(breadA, "roString", "preShowHomeScreen", true) = false return -1
-    if validateParam(breadA, "roString", "preShowHomeScreen", true) = false return -1
-
+Function createHomeScreen() As Object
+    obj = CreateObject("roAssociativeArray")
     port=CreateObject("roMessagePort")
     screen = CreateObject("roPosterScreen")
     screen.SetMessagePort(port)
-    if breadA<>invalid and breadB<>invalid then
-        screen.SetBreadcrumbText(breadA, breadB)
-    end if
+
+    ' Standard properties for all our Screen types
+    obj.Item = invalid
+    obj.Screen = screen
+    obj.ViewController = createViewController()
+
+    obj.Show = showHomeScreen
+
+    obj.Servers = []
 
     screen.SetListStyle("flat-category")
     screen.setListDisplayMode("zoom-to-fill")
-    return screen
 
+    return obj
 End Function
 
 
-Function showHomeScreen(screen, servers) As Integer
-	print "About to show home screen"
-    if validateParam(screen, "roPosterScreen", "showHomeScreen") = false return -1
-	displayServerName = servers.count() > 1
-	sectionList = CreateObject("roArray", 10, true)  
-	for each server in servers
+Function showHomeScreen() As Integer
+    print "About to show home screen"
+    displayServerName = m.Servers.count() > 1
+    sectionList = CreateObject("roArray", 10, true)  
+    for each server in m.Servers
     	sections = server.GetHomePageContent()
     	for each section in sections
     		if displayServerName then
-    			section.Title = section.Title + " ("+server.name+")"
-    			section.ShortDescriptionLine1 = section.ShortDescriptionLine1 + " ("+server.name+")"
+                    section.ShortDescriptionLine2 = server.name
     		endif
     		sectionList.Push(section)
     	end for
-	end for
+    end for
 	
-	'** Prefs
-	prefs = CreateObject("roAssociativeArray")
-	prefs.server = m
+    '** Prefs
+    prefs = CreateObject("roAssociativeArray")
+    prefs.server = m
     prefs.sourceUrl = ""
-	prefs.ContentType = "series"
-	prefs.Key = "prefs"
-	prefs.Title = "Preferences"
-	prefs.ShortDescriptionLine1 = "Preferences"
-	prefs.SDPosterURL = "file://pkg:/images/prefs.jpg"
-	prefs.HDPosterURL = "file://pkg:/images/prefs.jpg"
-	sectionList.Push(prefs)
+    prefs.ContentType = "series"
+    prefs.Key = "prefs"
+    prefs.Title = "Preferences"
+    prefs.ShortDescriptionLine1 = "Preferences"
+    prefs.SDPosterURL = "file://pkg:/images/prefs.jpg"
+    prefs.HDPosterURL = "file://pkg:/images/prefs.jpg"
+    sectionList.Push(prefs)
 	
 	
-    screen.SetContentList(sectionList)
-    screen.Show()
+    m.Screen.SetContentList(sectionList)
+    m.Screen.Show()
+
+
     while true
-        msg = wait(0, screen.GetMessagePort())
+        msg = wait(0, m.Screen.GetMessagePort())
         if type(msg) = "roPosterScreenEvent" then
             print "showHomeScreen | msg = "; msg.GetMessage() " | index = "; msg.GetIndex()
             if msg.isListFocused() then
@@ -63,7 +66,7 @@ Function showHomeScreen(screen, servers) As Integer
                 print "list item selected | index = "; msg.GetIndex()
                 section = sectionList[msg.GetIndex()]
                 print "section selected ";section.Title
-                displaySection(section, screen)
+                displaySection(section, m)
             else if msg.isScreenClosed() then
                 return -1
             end if
@@ -85,11 +88,13 @@ Function displaySection(section As Object, homeScreen As Object) As Dynamic
     		'showSearchGridScreen(section.server, queryString)
     	end if
     else if section.key = "prefs" then
-    	Preferences(homeScreen)  
+    	Preferences(homeScreen.Screen)  
     else
-        screen = createGridScreen()
+        ' TODO: Don't muck with the contentType here
+        section.contentType = "section"
+        screen = homeScreen.ViewController.CreateScreenForItem(section, invalid, [section.server.name, section.Title], false)
         if section.key = "apps" then screen.SetStyle("flat-square")
-        screen.Show(section)
+        screen.Show()
     endif
     return 0
 End Function
