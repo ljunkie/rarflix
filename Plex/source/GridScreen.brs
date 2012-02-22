@@ -10,7 +10,11 @@ Function createGridScreen() As Object
     grid = CreateObject("roGridScreen")
 
     grid.SetMessagePort(port)
-    grid.SetDisplayMode("photo-fit")
+
+    ' If we don't know exactly what we're displaying, scale-to-fit looks the
+    ' best. Anything else makes something look horrible when the grid has
+    ' some combination of posters and video frames.
+    grid.SetDisplayMode("scale-to-fit")
     grid.SetGridStyle("Flat-Movie")
     grid.SetUpBehaviorAtTopRow("exit")
 
