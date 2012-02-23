@@ -116,7 +116,14 @@ Function showGridScreen() As Integer
                 ' on the next screen be "Section - Show Name" or "Recently
                 ' Viewed Shows - Show Name"?
 
-                m.ViewController.CreateScreenForItem(context, index, [context[index].Title])
+                item = context[index]
+                if item.ContentType = "series" then
+                    breadcrumbs = [item.Title]
+                else
+                    breadcrumbs = [names[msg.GetIndex()], item.Title]
+                end if
+
+                m.ViewController.CreateScreenForItem(context, index, breadcrumbs)
             else if msg.isListItemFocused() then
                 ' If the user is getting close to the limit of what we've
                 ' preloaded, make sure we set the timeout and kick off another

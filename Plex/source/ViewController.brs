@@ -34,7 +34,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
 
     ' TODO(schuyler): Fill all this in
     if contentType = "movie" OR contentType = "episode" then
-        ' video springboard
+        screen = createVideoSpringboardScreen(context, contextIndex, m)
     else if contentType = "clip" then
         ' playPluginVideo(item.server, item)
     else if contentType = "series" then
@@ -67,6 +67,10 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen.Screen.SetBreadcrumbEnabled(false)
         screen.NumBreadcrumbs = 0
     else
+        ' Special case for springboard screens, don't show the current title
+        ' in the breadcrumbs.
+        if type(screen.Screen) = "roSpringboardScreen" AND breadcrumbs.Count() > 0 then breadcrumbs.Pop()
+
         for each b in breadcrumbs
             m.breadcrumbs.Push(tostr(b))
         next

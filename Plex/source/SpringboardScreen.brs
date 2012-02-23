@@ -1,70 +1,84 @@
+'*
+'* Springboard screens on top of which audio/video players are used.
+'*
 
-Function preShowSpringboardScreen(section, breadA=invalid, breadB=invalid) As Object
-    if validateParam(breadA, "roString", "preShowSpringboardScreen", true) = false return -1
-    if validateParam(breadB, "roString", "preShowSpringboardScreen", true) = false return -1
-
-    port=CreateObject("roMessagePort")
+Function createBaseSpringboardScreen(context, index, viewController) As Object
+    obj = CreateObject("roAssociativeArray")
+    port = CreateObject("roMessagePort")
     screen = CreateObject("roSpringboardScreen")
     screen.SetMessagePort(port)
-    if breadA<>invalid and breadB<>invalid then
-        screen.SetBreadcrumbText(breadA, breadB)
-        screen.SetBreadcrumbEnabled(true)
-    end if
-    return screen
 
+    ' Standard properties for all our Screen types
+    obj.Item = context[index]
+    obj.Screen = screen
+    obj.ViewController = viewController
+
+    ' Some properties that allow us to move between items in whatever
+    ' container got us to this point.
+    obj.Context = context
+    obj.CurIndex = index
+    obj.AllowLeftRight = context.Count() > 1
+    obj.WrapLeftRight = obj.AllowLeftRight
+
+    obj.Show = showSpringboardScreen
+    obj.Refresh = sbRefresh
+    obj.GotoNextItem = sbGotoNextItem
+    obj.GotoPrevItem = sbGotoPrevItem
+
+    return obj
 End Function
 
+' TODO(schuyler): Separating this out on the assumption that the audio one and
+' maybe plugin one will be slightly different.
+Function createVideoSpringboardScreen(context, index, viewController) As Object
+    obj = createBaseSpringboardScreen(context, index, viewController)
+    
+    return obj
+End Function
 
-Function showSpringboardScreen(screen, contentList, index) As Integer
-    server = contentList[index].server
-    metaDataArray = Populate(screen, contentList, index)
+Function showSpringboardScreen() As Integer
+    server = m.Item.server
+    m.Refresh()
 
     while true
-        msg = wait(0, screen.GetMessagePort())
+        msg = wait(0, m.Screen.GetMessagePort())
         if msg.isScreenClosed() then
+            m.ViewController.PopScreen(m)
             return -1
         else if msg.isButtonPressed() then
-            buttonCommand = metaDataArray.buttonCommands[str(msg.getIndex())]
-            print "Button command:";buttonCommand
+            buttonCommand = m.buttonCommands[str(msg.getIndex())]
+            print "Button command: ";buttonCommand
             if buttonCommand = "play" OR buttonCommand = "resume" then
                 startTime = 0
                 if buttonCommand = "resume" then
-                    startTime = int(val(metaDataArray.metadata.viewOffset))
+                    startTime = int(val(m.metadata.viewOffset))
                 endif
-                playVideo(server, metaDataArray.metadata, metaDataArray.media, startTime)
+                playVideo(server, m.metadata, m.media, startTime)
                 '* Refresh play data after playing
-                metaDataArray = Populate(screen, contentList, index)
+                m.Refresh()
             else if buttonCommand = "audioStreamSelection" then
-                SelectAudioStream(server, metaDataArray.media)
-                metaDataArray = Populate(screen, contentList, index)
+                SelectAudioStream(server, m.media)
+                m.Refresh()
             else if buttonCommand = "subtitleStreamSelection" then
-                SelectSubtitleStream(server, metaDataArray.media)
-                metaDataArray = Populate(screen, contentList, index)
+                SelectSubtitleStream(server, m.media)
+                m.Refresh()
             else if buttonCommand = "scrobble" then
                 'scrobble key here
-                server.Scrobble(metaDataArray.metadata.ratingKey, metaDataArray.metadata.mediaContainerIdentifier)
+                server.Scrobble(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier)
                 '* Refresh play data after scrobbling
-                metaDataArray = Populate(screen, contentList, index)
+                m.Refresh()
             else if buttonCommand = "unscrobble" then
                 'unscrobble key here
-                server.Unscrobble(metaDataArray.metadata.ratingKey, metaDataArray.metadata.mediaContainerIdentifier)
+                server.Unscrobble(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier)
                 '* Refresh play data after unscrobbling
-                metaDataArray = Populate(screen, contentList, index)
+                m.Refresh()
             endif
         else if msg.isRemoteKeyPressed() then
             '* index=4 -> left ; index=5 -> right
             if msg.getIndex() = 4 then
-                index = index - 1
-                if index < 0 then
-                    index = contentList.Count()-1
-                endif
-                metaDataArray = Populate(screen, contentList, index)
+                m.GotoPrevItem()
             else if msg.getIndex() = 5 then
-                index = index + 1
-                if index > contentList.Count()-1 then
-                    index = 0
-                endif
-                metaDataArray = Populate(screen, contentList, index)
+                m.GotoNextItem()
             endif
         endif
     end while
@@ -72,29 +86,36 @@ Function showSpringboardScreen(screen, contentList, index) As Integer
     return 0
 End Function
 
-Function Populate(screen, contentList, index) As Object
+Function sbRefresh()
     retrieving = CreateObject("roOneLineDialog")
     retrieving.SetTitle("Retrieving ...")
     retrieving.ShowBusyAnimation()
     retrieving.Show()
-    content = contentList[index]
-    server = content.server
-    print "About to fetch meta-data for Content Type:";content.contentType
 
-    metaDataArray = CreateObject("roAssociativeArray")
-    metadata = server.DetailedVideoMetadata(content.sourceUrl, content.key)
-    metaDataArray.metadata = metadata
-    screen.AllowNavLeft(true)
-    screen.AllowNavRight(true)
-    screen.setContent(metadata)
-    metaDataArray.media = metadata.preferredMediaItem
-    metaDataArray.buttonCommands = AddButtons(screen, metadata, metadata.preferredMediaItem)
-    if metadata <> invalid and metadata.SDPosterURL <> invalid and metadata.HDPosterURL <> invalid then
-        screen.PrefetchPoster(metadata.SDPosterURL, metadata.HDPosterURL)
+    content = m.Item
+    server = content.server
+    print "About to fetch meta-data for Content Type: "; content.contentType
+
+    m.metadata = server.DetailedVideoMetadata(content.sourceUrl, content.key)
+
+    if m.AllowLeftRight then
+        if m.WrapLeftRight then
+            m.Screen.AllowNavLeft(true)
+            m.Screen.AllowNavRight(true)
+        else
+            m.Screen.AllowNavLeft(m.CurIndex > 0)
+            m.Screen.AllowNavRight(m.CurIndex < m.Context.Count() - 1)
+        end if
+    end if
+
+    m.Screen.setContent(m.metadata)
+    m.media = m.metadata.preferredMediaItem
+    m.buttonCommands = AddButtons(m.Screen, m.metadata, m.media)
+    if m.metadata.SDPosterURL <> invalid and m.metadata.HDPosterURL <> invalid then
+        m.Screen.PrefetchPoster(m.metadata.SDPosterURL, m.metadata.HDPosterURL)
     endif
-    screen.Show()
+    m.Screen.Show()
     retrieving.Close()
-    return metaDataArray
 End Function
 
 '* Show a dialog allowing user to select from all available subtitle streams
@@ -297,5 +318,51 @@ Function TimeDisplay(intervalInSeconds) As String
         secsStr = "0"+secsStr
     endif
     return hoursStr+":"+minsStr+":"+secsStr
+End Function
+
+Function sbGotoNextItem() As Boolean
+    if NOT m.AllowLeftRight then return false
+
+    maxIndex = m.Context.Count() - 1
+    index = m.CurIndex
+    newIndex = index
+
+    if index < maxIndex then
+        newIndex = index + 1
+    else if m.WrapLeftRight then
+        newIndex = 0
+    end if
+
+    if index <> newIndex then
+        m.CurIndex = newIndex
+        m.Item = m.Context[newIndex]
+        m.Refresh()
+        return true
+    end if
+
+    return false
+End Function
+
+Function sbGotoPrevItem() As Boolean
+    if NOT m.AllowLeftRight then return false
+
+    maxIndex = m.Context.Count() - 1
+    index = m.CurIndex
+    newIndex = index
+
+    if index > 0 then
+        newIndex = index - 1
+    else if m.WrapLeftRight then
+        newIndex = maxIndex
+    end if
+
+    if index <> newIndex then
+        m.CurIndex = newIndex
+        m.Item = m.Context[newIndex]
+        m.Refresh()
+        return true
+    end if
+
+    return false
 End Function
 
