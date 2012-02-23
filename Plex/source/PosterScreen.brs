@@ -115,7 +115,6 @@ Function showPosterScreen() As Integer
             if msg.isListFocused() then
                 focusedListItem = msg.GetIndex()
                 m.ShowList(focusedListItem)
-                m.Screen.SetFocusedListItem(0)
                 if m.contentArray[focusedListItem].loadStatus < 2 then
                     timeout = 5
                 end if
@@ -191,7 +190,7 @@ Function ChannelInfo(channel)
 	end while
 End Function
 
-Sub posterShowContentList(index)
+Sub posterShowContentList(index, focusFirstItem=true)
     status = m.contentArray[index]
     m.Screen.SetContentList(status.content)
 
@@ -206,6 +205,7 @@ Sub posterShowContentList(index)
     Print "List style is "; status.listStyle; ", "; status.listDisplayMode
 
     m.Screen.Show()
+    if focusFirstItem then m.Screen.SetFocusedListItem(0)
 End Sub
 
 Function posterLoadMoreContent(server, sourceUrl, key, index, count) As Boolean
@@ -250,7 +250,7 @@ Function posterLoadMoreContent(server, sourceUrl, key, index, count) As Boolean
 
     status.content.Append(content)
 
-    m.ShowList(index)
+    m.ShowList(index, status.loadStatus = 0)
 
     if status.content.Count() < totalSize then
         status.loadStatus = 1
