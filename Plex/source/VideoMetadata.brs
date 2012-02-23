@@ -28,7 +28,6 @@ Function ConstructRokuVideoMetadata(server, sourceUrl, xmlContainer, videoItemXm
 		'* treat video items with no content type as clips
 		video.ContentType = "clip" 
 	endif
-	video.Title = videoItemXml@title
 	video.Key = videoItemXml@key
 	
 	video.ShortDescriptionLine1 = videoItemXml@title
@@ -90,6 +89,11 @@ Function ConstructRokuVideoMetadata(server, sourceUrl, xmlContainer, videoItemXm
 			video.ShortDescriptionLine2 = video.ShortDescriptionLine2 + " - " + video.ReleaseDate
 		end if
 	endif
+
+        ' On grid screens, the title is used for the detail window, not the
+        ' short description. We just always want them to match.
+	video.Title = video.ShortDescriptionLine1
+
 	if xmlContainer@viewGroup = "Details" OR xmlContainer@viewGroup = "InfoList" then
 		video.ShortDescriptionLine2 = videoItemXml@summary
 	endif
