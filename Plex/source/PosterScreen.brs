@@ -127,7 +127,7 @@ Function showPosterScreen() As Integer
 
                 print "Content type in poster screen:";contentType
 
-                if contentType = "series" then
+                if contentType = "series" OR NOT m.FilterMode then
                     breadcrumbs = [selected.Title]
                 else
                     breadcrumbs = [names[index], selected.Title]
