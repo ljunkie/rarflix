@@ -87,10 +87,11 @@ Function showSpringboardScreen() As Integer
 End Function
 
 Function sbRefresh()
-    retrieving = CreateObject("roOneLineDialog")
-    retrieving.SetTitle("Retrieving ...")
-    retrieving.ShowBusyAnimation()
-    retrieving.Show()
+    ' Don't show any sort of facade or loading dialog. We already have the
+    ' metadata for all of our siblings, we don't have to fetch anything, and
+    ' so the new screen usually comes up immediately. The dialog with the
+    ' spinner ends up just flashing on the screen and being annoying.
+    m.Screen.SetContent(invalid)
 
     content = m.Item
     server = content.server
@@ -115,7 +116,6 @@ Function sbRefresh()
         m.Screen.PrefetchPoster(m.metadata.SDPosterURL, m.metadata.HDPosterURL)
     endif
     m.Screen.Show()
-    retrieving.Close()
 End Function
 
 '* Show a dialog allowing user to select from all available subtitle streams
