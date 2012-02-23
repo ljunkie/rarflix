@@ -588,9 +588,9 @@ Function Capabilities() As String
 	end if 
 	decoders = "videoDecoders=h264{profile:high&resolution:1080&level:"+ RegRead("level", "preferences") + "};audioDecoders="+audio
 	'anamorphic video causes problems, disable support for it
-	anamorphic = "playsAnamorphic=no"
+	'anamorphic = "playsAnamorphic=no"
 
-	capaString = protocols+";"+decoders+";"+anamorphic
+	capaString = protocols+";"+decoders '+";"+anamorphic
 	print "Capabilities: "+capaString
 	return capaString
 End Function
