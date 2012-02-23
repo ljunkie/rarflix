@@ -1,130 +1,147 @@
 '* Displays the content in a poster screen. Can be any content type.
 
-Function preShowPosterScreen(breadA=invalid, breadB=invalid) As Object
-    if validateParam(breadA, "roString", "preShowPosterScreen", true) = false return -1
-    if validateParam(breadA, "roString", "preShowPosterScreen", true) = false return -1
-
-    port=CreateObject("roMessagePort")
+Function createPosterScreen(item, viewController) As Object
+    obj = CreateObject("roAssociativeArray")
+    port = CreateObject("roMessagePort")
     screen = CreateObject("roPosterScreen")
     screen.SetMessagePort(port)
-    if breadA<>invalid and breadB<>invalid then
-        screen.SetBreadcrumbText(breadA, breadB)
-    end if
-    screen.SetListStyle("arced-square")
-    screen.setListDisplayMode("scale-to-fit")
-    return screen
 
+    ' Standard properties for all our screen types
+    obj.Item = item
+    obj.Screen = screen
+    obj.ViewController = viewController
+
+    obj.Show = showPosterScreen
+    obj.ShowList = posterShowContentList
+    obj.LoadContent = posterLoadMoreContent
+    obj.SetListStyle = posterSetListStyle
+
+    obj.UseDefaultStyles = true
+    obj.ListStyle = invalid
+    obj.ListDisplayMode = invalid
+    obj.FilterMode = invalid
+
+    obj.contentArray = []
+
+    return obj
 End Function
 
+Function showPosterScreen() As Integer
+    ' Show a facade immediately to get the background 'retrieving' instead of
+    ' using a one line dialog.
+    facade = CreateObject("roPosterScreen")
+    facade.Show()
 
-Function showPosterScreen(screen, content) As Integer
+    content = m.Item
+    server = content.server
+    contentKey = content.key
 
-    if validateParam(screen, "roPosterScreen", "showPosterScreen") = false return -1
-    if validateParam(content, "roAssociativeArray", "showPosterScreen") = false return -1
-	print "show poster screen for key ";content.key
-	'* Showing the screen before setting content results in the backgroud 'retrieving ...'
-	'* screen which I prefer over the dialog box and seems to be the common approach used 
-	'* by other Roku apps.
-	screen.Show()
-	server = content.server
-	contentKey = content.key
-	currentTitle = content.Title
-	
-	queryResponse = server.GetQueryResponse(content.sourceUrl, contentKey)
-	names = server.GetListNames(queryResponse)
-	keys = server.GetListKeys(queryResponse)
-	
-	middlePoint = 5
-	paginationStart = 0
-	contentKey = invalid
-	paginationMode = names.Count() > 0
-	if paginationMode then
-	    focusedList = 0
-		screen.SetListNames(names)
-		screen.SetFocusedList(focusedList)
-		contentKey = keys[focusedList]
-		contentListArray = PopulateContentList(server, screen, queryResponse.sourceUrl, contentKey, paginationStart, invalid)
-		contentList = contentListArray[0]
-		totalSize = contentListArray[1] 
-		screen.SetFocusedListItem(middlePoint)
-	else
-		contentList = server.GetContent(queryResponse)
-		contentType = invalid
-		if contentList.Count() > 0 then
-			contentType = contentList[0].ContentType
-		endif
-    	screen.SetContentList(contentList)
-		viewGroup = queryResponse.xml@viewGroup
-    	SetListStyle(screen, viewGroup, contentType)
-    	screen.SetFocusedListItem(0)
-    endif
-    screen.Show()
+    queryResponse = server.GetQueryResponse(content.sourceUrl, contentKey)
+    contentList = server.GetContent(queryResponse)
+
+    ' TODO(schuyler): Do this somewhere centrally, but without parsing the XML twice
+    names = CreateObject("roArray", 10, true)
+    keys = CreateObject("roArray", 10, true)
+    if m.FilterMode = invalid then m.FilterMode = queryResponse.xml@viewGroup = "secondary"
+    if m.FilterMode then
+        for each elem in contentList
+            names.Push(elem.Title)
+            keys.Push(elem.Key)
+        next
+    end if
+
+    m.FilterMode = names.Count() > 0
+
+    if m.FilterMode then
+        m.Screen.SetListNames(names)
+        m.Screen.SetFocusedList(0)
+
+        for index = 0 to keys.Count() - 1
+            status = CreateObject("roAssociativeArray")
+            status.content = []
+            status.viewGroup = invalid
+            status.contentType = invalid
+            status.listStyle = invalid
+            status.listDisplayMode = invalid
+            status.loadStatus = 0 ' 0:Not loaded, 1:Partially loaded, 2:Fully loaded
+            m.contentArray[index] = status
+        next
+    else
+        ' We already grabbed the full list, no need to bother with loading
+        ' in chunks.
+
+        status = CreateObject("roAssociativeArray")
+
+        status.viewGroup = queryResponse.xml@viewGroup
+        if contentList.Count() > 0 then
+            status.contentType = contentList[0].ContentType
+        else
+            status.contentType = invalid
+        end if
+
+        status.content = contentList
+        status.loadStatus = 2 ' Fully loaded
+
+        if m.UseDefaultStyles then
+            aa = getDefaultListStyle(status.viewGroup, status.contentType)
+            status.listStyle = aa.style
+            status.listDisplayMode = aa.display
+        else
+            status.listStyle = m.ListStyle
+            status.listDisplayMode = m.ListDisplayMode
+        end if
+
+        m.contentArray[0] = status
+    end if
+
+    focusedListItem = 0
+    m.ShowList(focusedListItem)
+    facade.Close()
+
+    ' We don't start loading a filter section until the user selects it,
+    ' and once we start loading it, we do it in chunks. While we're
+    ' loading any particular section, use a small timeout so we can
+    ' continue loading chunks.
+    if m.contentArray[0].loadStatus < 2 then
+        timeout = 5
+    else
+        timeout = 0
+    end if
 
     while true
-        msg = wait(0, screen.GetMessagePort())
+        msg = wait(timeout, m.Screen.GetMessagePort())
         if type(msg) = "roPosterScreenEvent" then
-        	'* Focus change on the filter bar causes content change
+            '* Focus change on the filter bar causes content change
             if msg.isListFocused() then
-				paginationMode = names.Count() > 0
-                if names.Count() > 0 then
-					screen.SetContentList(invalid)
-                	focusedItem = msg.GetIndex()
-                	contentKey = keys[focusedItem]
-                	'print "Focused key:";key
-                	paginationStart = 0
-					contentListArray = PopulateContentList(server, screen, queryResponse.sourceUrl, contentKey, paginationStart, totalSize)
-					contentList = contentListArray[0]
-					totalSize = contentListArray[1] 
-					screen.SetFocusedListItem(middlePoint)
-                endif
+                focusedListItem = msg.GetIndex()
+                m.ShowList(focusedListItem)
+                m.Screen.SetFocusedListItem(0)
+                if m.contentArray[focusedListItem].loadStatus < 2 then
+                    timeout = 5
+                end if
             else if msg.isListItemSelected() then
-                selected = contentList[msg.GetIndex()]
+                status = m.contentArray[focusedListItem]
+                index = msg.GetIndex()
+                selected = status.content[index]
                 contentType = selected.ContentType
+
                 print "Content type in poster screen:";contentType
-                if contentType = "movie" OR contentType = "episode" then
-                	displaySpringboardScreen(currentTitle, contentList, msg.GetIndex())
-                else if contentType = "clip" then
-        			playPluginVideo(server, selected)
-        		else if contentType = "album" then
-        		    playAlbum(server, selected)
-        		else if selected.viewGroup <> invalid AND selected.viewGroup = "Store:Info" then
-        			ChannelInfo(selected)
+
+                if contentType = "series" then
+                    breadcrumbs = [selected.Title]
                 else
-                	showNextPosterScreen(currentTitle, selected)
-                endif
-                
-        '* Scrolling pagination allowing navigation of large libraries.
-        '* 
-        '* Roku model has a fixed content list containing all the content and navigates by scrolling
-        '* through that list by changing the focus point. I've reversed that model by having a
-        '* fixed focus point (5) in the middle of a small fixed content list (N=11) and when
-        '* focus is moved the content is reloaded from a paginated PMS query.
-        '*
-        '* This involves more PMS calls but with smaller result list. Also, since the real bottle
-        '* neck appears to be the XML parsing, some caching of parsed results could also be
-        '* performed to speed things up.
-        '* 
-            else if msg.isListItemFocused() then
-                print "List item focused. Length:";contentList.Count()
-            	if paginationMode AND contentList.Count() = 11 then
-					focused = msg.GetIndex()
-					difference = focused - middlePoint
-					if difference <> 0 then
-						'print "Difference:";difference
-						'print "Old pagination start:";paginationStart
-						'print "Total size:";totalSize
-						paginationStart = PaginationStartPoint(totalSize, paginationStart, difference)
-						'print "New pagination start:";paginationStart
-						screen.SetFocusedListItem(middlePoint)
-						contentListArray = PopulateContentList(server, screen, queryResponse.sourceUrl, contentKey, paginationStart, totalSize)
-					    contentList = contentListArray[0]
-					    totalSize = contentListArray[1] 
-					endif
-				endif
-            else if msg.isListItemInfo() then
-            	print "list item info"
+                    breadcrumbs = [names[index], selected.Title]
+                end if
+
+                m.ViewController.CreateScreenForItem(status.content, index, breadcrumbs)
             else if msg.isScreenClosed() then
+                m.ViewController.PopScreen(m)
                 return -1
+            end if
+        else if msg = invalid then
+            ' An invalid event is our timeout, load some more data.
+            if m.LoadContent(server, queryResponse.sourceUrl, keys[focusedListItem], focusedListItem, 25) then
+                timeout = 0
             end if
         end If
     end while
@@ -174,95 +191,94 @@ Function ChannelInfo(channel)
 	end while
 End Function
 
-'* Calculates new start point which is effectively a modular arithmatic with modulus=size
-Function PaginationStartPoint(size, currentStartPoint, difference) As Integer
-	newStartPoint = currentStartPoint + difference
-	if newStartPoint < 0 then
-		newStartPoint = size + newStartPoint
-	else if newStartPoint = size then
-		newStartPoint = 0
-	endif
-	return newStartPoint
+Sub posterShowContentList(index)
+    status = m.contentArray[index]
+    m.Screen.SetContentList(status.content)
+
+    if status.listStyle <> invalid then
+        m.Screen.SetListStyle(status.listStyle)
+    end if
+    if status.listDisplayMode <> invalid then
+        m.Screen.SetListDisplayMode(status.listDisplayMode)
+    end if
+
+    Print "Showing screen with "; status.content.Count(); " elements"
+    Print "List style is "; status.listStyle; ", "; status.listDisplayMode
+
+    m.Screen.Show()
+End Sub
+
+Function posterLoadMoreContent(server, sourceUrl, key, index, count) As Boolean
+    status = m.contentArray[index]
+
+    if status.loadStatus = 2 then return true
+
+    startItem = status.content.Count()
+
+    response = server.GetPaginatedQueryResponse(sourceUrl, key, startItem, count)
+    content = server.GetContent(response)
+
+    ' If the container doesn't play nice with pagination requests then
+    ' whatever we got is the total size.
+    if response.xml@totalSize <> invalid then
+        totalSize = strtoi(response.xml@totalSize)
+    else
+        totalSize = content.Count()
+    end if
+
+    if totalSize <= 0 then
+        status.loadStatus = 2
+        return true
+    end if
+
+    ' If this was the first content we loaded, set up the styles
+    if status.loadStatus = 0 then
+        if m.UseDefaultStyles then
+            status.viewGroup = response.xml@viewGroup
+            if content.Count() > 0 then
+                status.contentType = content[0].ContentType
+            end if
+
+            aa = getDefaultListStyle(status.viewGroup, status.contentType)
+            status.listStyle = aa.style
+            status.listDisplayMode = aa.display
+        else
+            status.listStyle = m.ListStyle
+            status.listDisplayMode = m.ListDisplayMode
+        end if
+    end if
+
+    status.content.Append(content)
+
+    m.ShowList(index)
+
+    if status.content.Count() < totalSize then
+        status.loadStatus = 1
+        return false
+    else
+        status.loadStatus = 2
+        return true
+    end if
 End Function
 
-Function PopulateContentList(server, screen, sourceUrl, contentKey, start, totalSize) As Object
-	pageSize = 11
-	'* If we straddle the totalSize boundry split pagination into 2 queries across
-	'* the boundry then merge the results to get wrap around
-	if totalSize <> invalid AND start + pageSize > totalSize then
-		contentList = CreateObject("roArray", pageSize, true)
-		firstStart = start
-		firstSize = totalSize - start
-		firstResponse = server.GetPaginatedQueryResponse(sourceUrl, contentKey, firstStart, firstSize)
-    	viewGroup = firstResponse.xml@viewGroup
-    	newTotalSize = firstResponse.xml@totalSize
-		firstContentList = server.GetContent(firstResponse)
-		for each entry in firstContentList
-			contentList.Push(entry)
-		next
-		secondStart = 0
-		secondSize = pageSize - firstSize
-		secondResponse = server.GetPaginatedQueryResponse(sourceUrl, contentKey, secondStart, secondSize)
-		secondContentList = server.GetContent(secondResponse)
-		for each entry in secondContentList
-			contentList.Push(entry)
-		next
-	else
-		subSectionResponse = server.GetPaginatedQueryResponse(sourceUrl, contentKey, start, pageSize)
-    	viewGroup = subSectionResponse.xml@viewGroup
-        if viewGroup = invalid
-            viewGroup = "apps"
-        endif
-    	newTotalSize = subSectionResponse.xml@totalSize
-        if newTotalSize = invalid
-    	    newTotalSize = subSectionResponse.xml@size
-        endif
-		contentList = server.GetContent(subSectionResponse)
-	endif
-	
-	contentType = invalid
-	if contentList.Count() > 0 then
-		contentType = contentList[0].ContentType
-	endif
-    screen.SetContentList(contentList)
-    SetListStyle(screen, viewGroup, contentType)
-    
-    contentArray = []
-    contentArray.Push(contentList)
-    if newTotalSize <> invalid then
-    	contentArray.Push(strtoi(newTotalSize))
-    endif
-    return contentArray
-End Function
+Function getDefaultListStyle(viewGroup, contentType) As Object
+    aa = CreateObject("roAssociativeArray")
+    aa.style = "arced-square"
+    aa.display = "scale-to-fit"
 
-Function SetListStyle(screen, viewGroup, contentType)
-    print "View group:";viewGroup
-    print "Content type:";contentType
-	listStyle = "arced-square"
-    displayMode = "scale-to-fit"
     if viewGroup = "episode" AND contentType = "episode" then
-    	listStyle = "flat-episodic"
-    	displayMode = "zoom-to-fill"
-    else if viewGroup = "Details" then
-    	listStyle = "arced-square"
-    	displayMode = "scale-to-fit"
+        aa.style = "flat-episodic"
+        aa.display = "zoom-to-fill"
     else if viewGroup = "movie" OR viewGroup = "show" OR viewGroup = "season" OR viewGroup = "episode" then
-    	listStyle = "arced-portrait"
-    endif
-    screen.SetListStyle(listStyle)
-    screen.SetListDisplayMode(displayMode)
+        aa.style = "arced-portrait"
+    end if
+
+    return aa
 End Function
 
-Function showNextPosterScreen(currentTitle, selected As Object) As Dynamic
-    if validateParam(selected, "roAssociativeArray", "showNextPosterScreen") = false return -1
-    screen = preShowPosterScreen(selected.Title, currentTitle)
-    showPosterScreen(screen, selected)
-    return 0
-End Function
+Sub posterSetListStyle(style, displayMode)
+    m.ListStyle = style
+    m.ListDisplayMode = displayMode
+    m.UseDefaultStyles = false
+End Sub
 
-Function displaySpringboardScreen(currentTitle, contentList, index)
-    print "Current title:";currentTitle
-	selected = contentList[index]
-	screen = preShowSpringboardScreen(selected, currentTitle, "")
-	showSpringboardScreen(screen, contentList, index)
-End Function

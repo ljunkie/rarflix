@@ -177,11 +177,7 @@ Function loadGridContent(server, sourceUrl, key, rowIndex, startItem, count) As 
     end if
 
     ' Copy the items to our array
-    itemCount = startItem
-    for each item in content
-        m.contentArray[rowIndex][itemCount] = item
-        itemCount = itemCount + 1
-    next
+    m.contentArray[rowIndex].Append(content)
 
     ' It seems like you should be able to do this, but you have to pass in
     ' the full content list, not some other array you want to use to update

@@ -32,6 +32,12 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
 
     screen = CreateObject("roAssociativeArray")
 
+    ' NOTE: We don't support switching between them as a preference, but
+    ' the poster screen can be used anywhere the grid is used below. By
+    ' default the poster screen will try to decide whether or not to
+    ' include the filter bar that makes it more grid like, but it can
+    ' be forced by setting screen.FilterMode = true.
+
     ' TODO(schuyler): Fill all this in
     if contentType = "movie" OR contentType = "episode" then
         screen = createVideoSpringboardScreen(context, contextIndex, m)
@@ -40,11 +46,12 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if contentType = "series" then
         screen = createGridScreen(item, m)
     else if contentType = "artist" then
-        ' show a poster screen?
-        ' or we could do a grid where the rows are the albums...
+        ' TODO: Poster, poster with filters, or grid?
+        screen = createPosterScreen(item, m)
     else if contentType = "album" then
-        ' poster screen definitely works
-        ' can we try an episodic view?
+        screen = createPosterScreen(item, m)
+        ' TODO: What style looks best here, episodic?
+        screen.SetListStyle("flat-episodic", "zoom-to-fill")
     else if contentType = "audio" then ' Is it audio or track?
         ' show a springboard
     else if contentType = "section" then ' Need to actually set the content type to section somewhere, based on title2?
@@ -52,11 +59,11 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if viewGroup = "Store:Info" then
         ' ChannelInfo(item)
     else if viewGroup = "secondary" then
-        ' show a poster screen
+        screen = createPosterScreen(item, m)
     else
-        ' Show a poster screen by default?
         ' Where do we capture channel directory?
         Print "Creating a default view for contentType=";contentType;", viewGroup=";viewGroup
+        screen = createPosterScreen(item, m)
     end if
 
     ' Add the breadcrumbs to our list and set them for the current screen.
