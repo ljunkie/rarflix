@@ -388,61 +388,61 @@ End Function
 '* source URL, and absolute URLs, so
 '* relative to the server URL
 Function FullUrl(serverUrl, sourceUrl, key) As String
-	'print "Full URL"
+    'print "Full URL"
     'print "ServerURL:";serverUrl
     'print "SourceURL:";sourceUrl
     'print "Key:";key
-	finalUrl = ""
-	if left(key, 4) = "http" then
-		return key
+    finalUrl = ""
+    if left(key, 4) = "http" then
+        return key
     else if left(key, 4) = "plex" then
         url_start = Instr(1, key, "url=") + 4
         url_end = Instr(url_start, key, "&")
         url = Mid(key, url_start, url_end - url_start)
         o = CreateObject("roUrlTransfer")
         return o.Unescape(url)
-	else
-		keyTokens = CreateObject("roArray", 2, true)
-		if key <> Invalid then
-			keyTokens = strTokenize(key, "?")
-		else
-			keyTokens.Push("")
-		endif
-		sourceUrlTokens = CreateObject("roArray", 2, true)
-		if sourceUrl <> Invalid then
-			sourceUrlTokens = strTokenize(sourceUrl, "?")
-		else
-			sourceUrlTokens.Push("")
-		endif
+    else
+        keyTokens = CreateObject("roArray", 2, true)
+        if key <> Invalid then
+            keyTokens = strTokenize(key, "?")
+        else
+            keyTokens.Push("")
+        endif
+        sourceUrlTokens = CreateObject("roArray", 2, true)
+        if sourceUrl <> Invalid then
+            sourceUrlTokens = strTokenize(sourceUrl, "?")
+        else
+            sourceUrlTokens.Push("")
+        endif
 	
-		if keyTokens[0] = "" AND sourceUrlTokens[0] = "" then
-	    	finalUrl = serverUrl
+        if keyTokens[0] = "" AND sourceUrlTokens[0] = "" then
+            finalUrl = serverUrl
     	else if keyTokens[0] = "" AND serverUrl = "" then
-        	finalUrl = sourceUrlTokens[0]
-		else if keyTokens[0] <> invalid AND left(keyTokens[0], 1) = "/" then
-			finalUrl = serverUrl+keyTokens[0]
-		else
+            finalUrl = sourceUrlTokens[0]
+        else if keyTokens[0] <> invalid AND left(keyTokens[0], 1) = "/" then
+            finalUrl = serverUrl+keyTokens[0]
+        else
             if keyTokens[0] <> invalid then
-			    finalUrl = sourceUrlTokens[0]+"/"+keyTokens[0]
+                finalUrl = sourceUrlTokens[0]+"/"+keyTokens[0]
             else
                 finalUrl = sourceUrlTokens[0]+"/"
             endif
-		endif
-		if keyTokens.Count() = 2 OR sourceUrlTokens.Count() =2 then
-	    	finalUrl = finalUrl + "?"
-	    	if keyTokens.Count() = 2 then
-	    		finalUrl = finalUrl + keyTokens[1]
-	    		'if sourceUrlTokens.Count() = 2 then
-	    			'finalUrl = finalUrl + "&"
-	    		'endif
-	    	endif
-	    	'if sourceUrlTokens.Count() = 2 then
-	    		'finalUrl = finalUrl + sourceUrlTokens[1]
-	    	'endif
-		endif
+        endif
+        if keyTokens.Count() = 2 then 'OR sourceUrlTokens.Count() =2 then
+            finalUrl = finalUrl + "?"
+            if keyTokens.Count() = 2 then
+                finalUrl = finalUrl + keyTokens[1]
+                'if sourceUrlTokens.Count() = 2 then
+                    'finalUrl = finalUrl + "&"
+                'endif
+            endif
+            'if sourceUrlTokens.Count() = 2 then
+                'finalUrl = finalUrl + sourceUrlTokens[1]
+            'endif
+        endif
     endif
     'print "FinalURL:";finalUrl
-	return finalUrl
+    return finalUrl
 End Function
 
 Function ResolveUrl(serverUrl As String, sourceUrl As String, uri As String) As String
@@ -588,9 +588,9 @@ Function Capabilities() As String
 	end if 
 	decoders = "videoDecoders=h264{profile:high&resolution:1080&level:"+ RegRead("level", "preferences") + "};audioDecoders="+audio
 	'anamorphic video causes problems, disable support for it
-	anamorphic = "playsAnamorphic=no"
+	'anamorphic = "playsAnamorphic=no"
 
-	capaString = protocols+";"+decoders+";"+anamorphic
+	capaString = protocols+";"+decoders '+";"+anamorphic
 	print "Capabilities: "+capaString
 	return capaString
 End Function
