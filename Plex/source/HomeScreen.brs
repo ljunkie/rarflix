@@ -15,6 +15,7 @@ Function createHomeScreen() As Object
     obj.ViewController = createViewController()
 
     obj.Show = showHomeScreen
+    obj.Refresh = refreshHomeScreen
 
     obj.Servers = []
 
@@ -24,18 +25,17 @@ Function createHomeScreen() As Object
     return obj
 End Function
 
-
-Function showHomeScreen() As Integer
+Function refreshHomeScreen()
     print "About to show home screen"
     displayServerName = m.Servers.count() > 1
-    sectionList = CreateObject("roArray", 10, true)  
+    m.sectionList = CreateObject("roArray", 10, true)  
     for each server in m.Servers
     	sections = server.GetHomePageContent()
     	for each section in sections
     		if displayServerName then
                     section.ShortDescriptionLine2 = server.name
     		endif
-    		sectionList.Push(section)
+    		m.sectionList.Push(section)
     	end for
     end for
 	
@@ -49,12 +49,15 @@ Function showHomeScreen() As Integer
     prefs.ShortDescriptionLine1 = "Preferences"
     prefs.SDPosterURL = "file://pkg:/images/prefs.jpg"
     prefs.HDPosterURL = "file://pkg:/images/prefs.jpg"
-    sectionList.Push(prefs)
+    m.sectionList.Push(prefs)
 	
 	
-    m.Screen.SetContentList(sectionList)
+    m.Screen.SetContentList(m.sectionList)
     m.Screen.Show()
+End Function
 
+Function showHomeScreen() As Integer
+    m.Refresh()
 
     while true
         msg = wait(0, m.Screen.GetMessagePort())
@@ -64,7 +67,7 @@ Function showHomeScreen() As Integer
                 print "list focused | index = "; msg.GetIndex(); " | category = "; m.curCategory
             else if msg.isListItemSelected() then
                 print "list item selected | index = "; msg.GetIndex()
-                section = sectionList[msg.GetIndex()]
+                section = m.sectionList[msg.GetIndex()]
                 print "section selected ";section.Title
                 displaySection(section, m)
             else if msg.isScreenClosed() then
@@ -88,7 +91,7 @@ Function displaySection(section As Object, homeScreen As Object) As Dynamic
     		'showSearchGridScreen(section.server, queryString)
     	end if
     else if section.key = "prefs" then
-    	Preferences(homeScreen.Screen)  
+    	Preferences(homeScreen)
     else
         ' TODO: Don't muck with the contentType here
         section.contentType = "section"
@@ -99,7 +102,8 @@ Function displaySection(section As Object, homeScreen As Object) As Dynamic
     return 0
 End Function
 
-Function Preferences(homeScreen)
+Function Preferences(home)
+    homeScreen = home.Screen
 
 	port = CreateObject("roMessagePort") 
 	dialog = CreateObject("roMessageDialog") 
@@ -132,9 +136,7 @@ Function Preferences(homeScreen)
 					ConfigureMediaServers()
         			dialog.close()
         			  
-    				homeScreen.Close()
-    				screen=preShowHomeScreen("", "")
-    				showHomeScreen(screen, PlexMediaServers())
+                                home.Refresh()
 				else if msg.getIndex() = 2 then
         			ConfigureQuality()
 				else if msg.getIndex() = 3 then
