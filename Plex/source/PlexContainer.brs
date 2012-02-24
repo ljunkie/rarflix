@@ -56,7 +56,7 @@ Sub containerParseXml()
         else if nodeType = "track" then
             metadata = newTrackMetadata(m, n, m.ParseDetails)
         else
-            metadata = newDirectoryMetadata(m.server, m.sourceUrl, m.xml, n)
+            metadata = newDirectoryMetadata(m, n)
         end if
 
         m.metadata.Push(metadata)

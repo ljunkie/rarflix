@@ -3,27 +3,12 @@
 '*
 
 Function createBaseAudioMetadata(container, item) As Object
-    metadata = CreateObject("roAssociativeArray")
-
-    metadata.Title = item@title
-    ' Do we need to truncate this one?
-    metadata.Description = item@summary
-    metadata.ShortDescriptionLine1 = item@title
-    metadata.ShortDescriptionLine2 = truncateString(item@summary, 180, invalid)
-    metadata.Type = item@type
-    metadata.Key = item@key
+    metadata = createBaseMetadata(container, item)
 
     metadata.ratingKey = item@ratingKey
 
-    sizes = ImageSizes(container.ViewGroup, item@type)
-    art = firstOf(item@thumb, item@parentThumb, item@art, container.xml@thumb)
-    if art <> invalid then
-        metadata.SDPosterURL = container.server.TranscodedImage(container.sourceUrl, art, sizes.sdWidth, sizes.sdHeight)
-        metadata.HDPosterURL = container.server.TranscodedImage(container.sourceUrl, art, sizes.hdWidth, sizes.hdHeight)
-    end if
-
-    metadata.sourceUrl = container.sourceUrl
-    metadata.server = container.server
+    ' We never need to fetch and parse additional details for audio metadata
+    metadata.HasDetails = True
 
     return metadata
 End Function

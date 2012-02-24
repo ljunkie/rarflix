@@ -10,10 +10,7 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
 	pms = CreateObject("roAssociativeArray")
 	pms.serverUrl = pmsUrl
 	pms.name = pmsName
-	pms.GetContent = directoryContent
 	pms.GetHomePageContent = homePageContent
-	pms.GetListNames = listNames
-	pms.GetListKeys = listKeys
 	pms.VideoScreen = constructVideoScreen
 	pms.PluginVideoScreen = constructPluginVideoScreen
 	pms.StopVideo = stopTranscode
@@ -41,10 +38,11 @@ Function search(query) As Object
 	movies = []
 	shows = []
 	episodes = []
-	xmlResult = m.GetQueryResponse("", "/search?query="+HttpEncode(query))
-	for each directoryItem in xmlResult.xml.Directory
+
+        container = createPlexContainerForUrl(m, "", "/search?query="+HttpEncode(query))
+	for each directoryItem in container.xml.Directory
 		if directoryItem@type = "show" then
-			directory = newDirectoryMetadata(m, xmlResult.sourceUrl, xmlResult.xml, directoryItem)
+                        directory = newDirectoryMetadata(container, directoryItem)
 			shows.Push(directory)
 		endif
 	next
@@ -135,8 +133,8 @@ Function issueCommand(commandPath)
 End Function
 
 Function homePageContent() As Object
-	xml = m.GetQueryResponse("", "/library/sections")
-	librarySections = m.GetContent(xml)
+        container = createPlexContainer(m, "", "/library/sections")
+        librarySections = container.GetMetadata()
 	content = CreateObject("roArray", librarySections.Count() + 1, true)
 	for each section in librarySections
 		'* Exclude music for now until transcode to mp3 is available
@@ -245,60 +243,6 @@ Function xmlContent(sourceUrl, key) As Object
 		xmlResult.sourceUrl = queryUrl
 	endif
 	return xmlResult
-End Function
-
-Function listNames(parsedXml) As Object
-	content = CreateObject("roArray", 10, true)
-	if parsedXml.xml@viewGroup = "apps" then
-		content.Push("Video")
-		content.Push("Channel Directory")
-		'content.Push("Audio")
-		'content.Push("Photo")
-	else
-		sectionViewGroup = parsedXml.xml@viewGroup
-		if sectionViewGroup = "secondary" then
-			sections = m.GetContent(parsedXml)
-			for each section in sections
-				content.Push(section.title)
-			next
-		endif
-	endif
-	return content
-End Function
-
-Function listKeys(parsedXml) As Object
-	content = CreateObject("roArray", 10, true)
-	if parsedXml.xml@viewGroup = "apps" then
-		content.Push("/video")
-		content.Push("/system/channeldirectory")
-		'content.Push("/music")
-		'content.Push("/photos")
-	else
-		sectionViewGroup = parsedXml.xml@viewGroup
-		if sectionViewGroup = "secondary" then
-			sections = m.GetContent(parsedXml)
-			for each section in sections
-				content.Push(section.key)
-			next
-		endif
-	endif
-	return content
-End Function
-		
-Function directoryContent(parsedXml) As Object
-	content = CreateObject("roArray", 11, true)
-	for each directoryItem in parsedXml.xml.Directory
-		if directoryItem@search = invalid then
-			directory = newDirectoryMetadata(m, parsedXml.sourceUrl, parsedXml.xml, directoryItem)
-			content.Push(directory)
-		endif
-	next
-	for each videoItem in parsedXml.xml.Video
-		video = newVideoMetadata(m, parsedXml.sourceUrl, parsedXml.xml, videoItem)
-		content.Push(video)
-	next
-	print "Found a content list with elements";content.count()
-	return content
 End Function
 
 Function IndirectMediaXml(server, originalKey) As Object

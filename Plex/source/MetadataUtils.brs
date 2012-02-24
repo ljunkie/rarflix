@@ -34,3 +34,35 @@ Function ImageSizes(viewGroup, contentType) As Object
 	sizes.hdHeight = hdHeight
 	return sizes
 End Function
+
+Function createBaseMetadata(container, item) As Object
+    metadata = CreateObject("roAssociativeArray")
+
+    metadata.Title = firstOf(item@title, item@name)
+    metadata.Description = item@summary
+    metadata.ShortDescriptionLine1 = metadata.Title
+    metadata.ShortDescriptionLine2 = truncateString(item@summary, 250, invalid)
+    metadata.Type = item@type
+    metadata.Key = item@key
+
+    metadata.viewGroup = container.ViewGroup
+
+    sizes = ImageSizes(container.ViewGroup, item@type)                                                                                    
+    art = firstOf(item@thumb, item@parentThumb, item@art, container.xml@thumb)
+    if art <> invalid then
+        metadata.SDPosterURL = container.server.TranscodedImage(container.sourceUrl, art, sizes.sdWidth, sizes.sdHeight)
+        metadata.HDPosterURL = container.server.TranscodedImage(container.sourceUrl, art, sizes.hdWidth, sizes.hdHeight)
+    end if
+
+    metadata.sourceUrl = container.sourceUrl
+    metadata.server = container.server
+
+    metadata.HasDetails = false
+    metadata.ParseDetails = baseParseDetails
+
+    return metadata
+End Function
+
+Sub baseParseDetails()
+    m.HasDetails = true
+End Sub

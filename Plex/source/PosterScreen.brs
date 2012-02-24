@@ -154,6 +154,7 @@ Function ChannelInfo(channel)
 	dialog.SetTitle(channel.title) 
 	dialog.SetText(channel.description) 
 	queryResponse = channel.server.GetQueryResponse(channel.sourceUrl, channel.key)
+        ' TODO(schuyler): Fix this to use a PlexContainer, it's broken in the meantime
 	content = channel.server.GetContent(queryResponse)
 	buttonCommands = CreateObject("roAssociativeArray")
 	buttonCount = 0
