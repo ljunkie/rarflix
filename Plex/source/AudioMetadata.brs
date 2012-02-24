@@ -2,28 +2,38 @@
 '* Metadata objects for audio data (albums, artists, tracks)
 '*
 
-Function newArtistMetadata(container, item, detailed=true) As Object
-    artist = CreateObject("roAssociativeArray")
+Function createBaseAudioMetadata(container, item) As Object
+    metadata = CreateObject("roAssociativeArray")
 
-    artist.ContentType = "artist"
-    artist.Title = item@title
+    metadata.Title = item@title
     ' Do we need to truncate this one?
-    artist.Description = item@summary
-    artist.ShortDescriptionLine1 = item@title
-    artist.ShortDescriptionLine2 = truncateString(item@summary, 180, invalid)
-    artist.Type = item@type
-    artist.Key = item@key
+    metadata.Description = item@summary
+    metadata.ShortDescriptionLine1 = item@title
+    metadata.ShortDescriptionLine2 = truncateString(item@summary, 180, invalid)
+    metadata.Type = item@type
+    metadata.Key = item@key
 
-    artist.ratingKey = item@ratingKey
+    metadata.ratingKey = item@ratingKey
 
     sizes = ImageSizes(container.ViewGroup, item@type)
-    art = item@thumb
-    if art = invalid then art = item@art
-    if art = invalid then art = container.xml@art
+    art = firstOf(item@thumb, item@parentThumb, item@art, container.xml@art)
     if art <> invalid then
-        artist.SDPosterURL = container.server.TranscodedImage(container.sourceUrl, art, sizes.sdWidth, sizes.sdHeight)
-        artist.HDPosterURL = container.server.TranscodedImage(container.sourceUrl, art, sizes.hdWidth, sizes.hdHeight)
+        metadata.SDPosterURL = container.server.TranscodedImage(container.sourceUrl, art, sizes.sdWidth, sizes.sdHeight)
+        metadata.HDPosterURL = container.server.TranscodedImage(container.sourceUrl, art, sizes.hdWidth, sizes.hdHeight)
     end if
+
+    metadata.sourceUrl = container.sourceUrl
+    metadata.server = container.server
+
+    return metadata
+End Function
+
+Function newArtistMetadata(container, item, detailed=true) As Object
+    artist = createBaseAudioMetadata(container, item)
+
+    artist.Artist = item@title
+    artist.ContentType = "artist"
+    if artist.Type = invalid then artist.Type = "artist"
 
     if detailed then
         artist.Categories = CreateObject("roArray", 5, true)
@@ -32,8 +42,18 @@ Function newArtistMetadata(container, item, detailed=true) As Object
         next
     end if
 
-    artist.sourceUrl = container.sourceUrl
-    artist.server = container.server
-
     return artist
+End Function
+
+Function newAlbumMetadata(container, item, detailed=true) As Object
+    album = createBaseAudioMetadata(container, item)
+
+    album.ContentType = "album"
+    if album.Type = invalid then album.Type = "album"
+
+    album.Artist = firstOf(item@parentTitle, container.xml@parentTitle)
+    album.Album = item@title
+    album.ReleaseDate = firstOf(item@originallyAvailableAt, item@year)
+
+    return album
 End Function

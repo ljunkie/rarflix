@@ -676,3 +676,13 @@ Function truncateString(s, maxLength=180 As Integer, missingValue="(No summary a
         return left(s, maxLength - 3) + "..."
     end if
 End Function
+
+'******************************************************
+'Return the first valid argument
+'******************************************************
+Function firstOf(first, second, third=invalid, fourth=invalid)
+    if first <> invalid then return first
+    if second <> invalid then return second
+    if third <> invalid then return third
+    return fourth
+End Function
