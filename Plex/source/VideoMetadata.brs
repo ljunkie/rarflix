@@ -2,6 +2,8 @@
 Function newVideoMetadata(container, item, detailed=false) As Object
     video = createBaseMetadata(container, item)
 
+    if item = invalid then return video
+
     video.mediaContainerIdentifier = container.xml@identifier
     video.ratingKey = item@ratingKey
     video.ContentType = item@type
@@ -126,6 +128,7 @@ Function videoParseDetails()
                 video.FrameRate = 30
             endif
         endif
+        video.OptimizedForStreaming = MediaItem@optimizedForStreaming
     next
 
     video.media = ParseVideoMedia(videoItemXml)
