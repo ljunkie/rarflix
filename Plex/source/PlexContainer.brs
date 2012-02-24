@@ -53,6 +53,8 @@ Sub containerParseXml()
             metadata = newArtistMetadata(m, n, m.ParseDetails)
         else if nodeType = "album" then
             metadata = newAlbumMetadata(m, n, m.ParseDetails)
+        else if nodeType = "track" then
+            metadata = newTrackMetadata(m, n, m.ParseDetails)
         else
             metadata = newDirectoryMetadata(m.server, m.sourceUrl, m.xml, n)
         end if
