@@ -47,6 +47,8 @@ Sub containerParseXml()
             else
                 metadata = newDetailedVideoMetadata(m.server, m.sourceUrl, m.xml, n)
             end if
+        else if n@type = "artist" then
+            metadata = newArtistMetadata(m, n, m.ParseDetails)
         else
             metadata = newDirectoryMetadata(m.server, m.sourceUrl, m.xml, n)
         end if
