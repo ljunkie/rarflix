@@ -28,11 +28,24 @@ Function createBaseSpringboardScreen(context, index, viewController) As Object
     return obj
 End Function
 
-' TODO(schuyler): Separating this out on the assumption that the audio one and
-' maybe plugin one will be slightly different.
 Function createVideoSpringboardScreen(context, index, viewController) As Object
     obj = createBaseSpringboardScreen(context, index, viewController)
+
+    obj.AddButtons = videoAddButtons
+    obj.GetMediaDetails = videoGetMediaDetails
     
+    return obj
+End Function
+
+Function createAudioSpringboardScreen(context, index, viewController) As Object
+    obj = createBaseSpringboardScreen(context, index, viewController)
+
+    obj.Screen.SetDescriptionStyle("audio")
+    obj.Screen.SetStaticRatingEnabled(false)
+
+    obj.AddButtons = audioAddButtons
+    obj.GetMediaDetails = audioGetMediaDetails
+
     return obj
 End Function
 
@@ -93,11 +106,7 @@ Function sbRefresh()
     ' spinner ends up just flashing on the screen and being annoying.
     m.Screen.SetContent(invalid)
 
-    content = m.Item
-    server = content.server
-    print "About to fetch meta-data for Content Type: "; content.contentType
-
-    m.metadata = server.DetailedVideoMetadata(content.sourceUrl, content.key)
+    m.GetMediaDetails(m.Item)
 
     if m.AllowLeftRight then
         if m.WrapLeftRight then
@@ -110,8 +119,7 @@ Function sbRefresh()
     end if
 
     m.Screen.setContent(m.metadata)
-    m.media = m.metadata.preferredMediaItem
-    m.buttonCommands = AddButtons(m.Screen, m.metadata, m.media)
+    m.buttonCommands = m.AddButtons(m.Screen, m.metadata, m.media)
     if m.metadata.SDPosterURL <> invalid and m.metadata.HDPosterURL <> invalid then
         m.Screen.PrefetchPoster(m.metadata.SDPosterURL, m.metadata.HDPosterURL)
     endif
@@ -244,7 +252,7 @@ Function SelectAudioStream(server, media)
     end while
 End Function
 
-Function AddButtons(screen, metadata, media) As Object
+Function videoAddButtons(screen, metadata, media) As Object
     buttonCommands = CreateObject("roAssociativeArray")
     screen.ClearButtons()
     buttonCount = 0
@@ -297,6 +305,26 @@ Function AddButtons(screen, metadata, media) As Object
         buttonCommands[str(buttonCount)] = "subtitleStreamSelection"
         buttonCount = buttonCount + 1
     endif
+    return buttonCommands
+End Function
+
+Function audioAddButtons(screen, metadata, media) As Object
+    buttonCommands = CreateObject("roAssociativeArray")
+    screen.ClearButtons()
+    buttonCount = 0
+
+    screen.AddButton(buttonCount, "Play")
+    buttonCommands[str(buttonCount)] = "play"
+    buttonCount = buttonCount + 1
+
+    screen.AddButton(buttonCount, "Next Song")
+    buttonCommands[str(buttonCount)] = "next"
+    buttonCount = buttonCount + 1
+
+    screen.AddButton(buttonCount, "Previous Song")
+    buttonCommands[str(buttonCount)] = "prev"
+    buttonCount = buttonCount + 1
+
     return buttonCommands
 End Function
 
@@ -365,4 +393,17 @@ Function sbGotoPrevItem() As Boolean
 
     return false
 End Function
+
+Sub videoGetMediaDetails(content)
+    server = content.server
+    print "About to fetch meta-data for Content Type: "; content.contentType
+
+    m.metadata = server.DetailedVideoMetadata(content.sourceUrl, content.key)
+    m.media = m.metadata.preferredMediaItem
+End Sub
+
+Sub audioGetMediaDetails(content)
+    m.metadata = content
+    m.media = invalid
+End Sub
 

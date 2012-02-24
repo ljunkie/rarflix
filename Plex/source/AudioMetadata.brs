@@ -76,8 +76,8 @@ Function newTrackMetadata(container, item, detailed=true) As Object
         track.AlbumYear = container.xml@parentYear
     end if
 
-    if item@index <> invalid then track.EpisodeNumber = strtoi(item@index)
-    if item@duration <> invalid then track.Duration = strtoi(item@duration) / 1000
+    if item@index <> invalid then track.EpisodeNumber = int(val(item@index))
+    if item@duration <> invalid then track.Duration = int(val(item@duration)/1000)
     track.Length = track.Duration
 
     media = item.Media[0]
