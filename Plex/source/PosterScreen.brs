@@ -34,20 +34,16 @@ Function showPosterScreen() As Integer
 
     content = m.Item
     server = content.server
-    contentKey = content.key
 
-    queryResponse = server.GetQueryResponse(content.sourceUrl, contentKey)
-    contentList = server.GetContent(queryResponse)
+    container = createPlexContainerForUrl(server, content.sourceUrl, content.key)
 
-    ' TODO(schuyler): Do this somewhere centrally, but without parsing the XML twice
-    names = CreateObject("roArray", 10, true)
-    keys = CreateObject("roArray", 10, true)
-    if m.FilterMode = invalid then m.FilterMode = queryResponse.xml@viewGroup = "secondary"
+    if m.FilterMode = invalid then m.FilterMode = container.ViewGroup = "secondary"
     if m.FilterMode then
-        for each elem in contentList
-            names.Push(elem.Title)
-            keys.Push(elem.Key)
-        next
+        names = container.GetNames()
+        keys = container.GetKeys()
+    else
+        names = []
+        keys = []
     end if
 
     m.FilterMode = names.Count() > 0
@@ -72,14 +68,14 @@ Function showPosterScreen() As Integer
 
         status = CreateObject("roAssociativeArray")
 
-        status.viewGroup = queryResponse.xml@viewGroup
-        if contentList.Count() > 0 then
-            status.contentType = contentList[0].ContentType
+        status.viewGroup = container.ViewGroup
+        if container.Count() > 0 then
+            status.contentType = container.GetMetadata()[0].ContentType
         else
             status.contentType = invalid
         end if
 
-        status.content = contentList
+        status.content = container.GetMetadata()
         status.loadStatus = 2 ' Fully loaded
 
         if m.UseDefaultStyles then
@@ -139,7 +135,7 @@ Function showPosterScreen() As Integer
             end if
         else if msg = invalid then
             ' An invalid event is our timeout, load some more data.
-            if m.LoadContent(server, queryResponse.sourceUrl, keys[focusedListItem], focusedListItem, 25) then
+            if m.LoadContent(server, container.sourceUrl, keys[focusedListItem], focusedListItem, 25) then
                 timeout = 0
             end if
         end If
@@ -216,14 +212,14 @@ Function posterLoadMoreContent(server, sourceUrl, key, index, count) As Boolean
     startItem = status.content.Count()
 
     response = server.GetPaginatedQueryResponse(sourceUrl, key, startItem, count)
-    content = server.GetContent(response)
+    container = createPlexContainerForXml(response)
 
     ' If the container doesn't play nice with pagination requests then
     ' whatever we got is the total size.
     if response.xml@totalSize <> invalid then
         totalSize = strtoi(response.xml@totalSize)
     else
-        totalSize = content.Count()
+        totalSize = container.Count()
     end if
 
     if totalSize <= 0 then
@@ -234,9 +230,9 @@ Function posterLoadMoreContent(server, sourceUrl, key, index, count) As Boolean
     ' If this was the first content we loaded, set up the styles
     if status.loadStatus = 0 then
         if m.UseDefaultStyles then
-            status.viewGroup = response.xml@viewGroup
-            if content.Count() > 0 then
-                status.contentType = content[0].ContentType
+            status.viewGroup = container.ViewGroup
+            if container.Count() > 0 then
+                status.contentType = container.GetMetadata()[0].ContentType
             end if
 
             aa = getDefaultListStyle(status.viewGroup, status.contentType)
@@ -248,7 +244,7 @@ Function posterLoadMoreContent(server, sourceUrl, key, index, count) As Boolean
         end if
     end if
 
-    status.content.Append(content)
+    status.content.Append(container.GetMetadata())
 
     m.ShowList(index, status.loadStatus = 0)
 

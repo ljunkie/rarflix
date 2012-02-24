@@ -50,23 +50,12 @@ Function showGridScreen() As Integer
     totalTimer = createPerformanceTimer()
 
     server = m.Item.server
-    queryResponse = server.GetQueryResponse(m.Item.sourceUrl, m.Item.key)
-    m.timer.PrintElapsedTime("Initial server query")
 
-    ' TODO: We probably sholdn't be doing this here, but we can't just call
-    ' GetListNames and then GetListKeys. For starters, it won't work for all
-    ' view groups. But even if it did, it calls GetContent internally each
-    ' time, which means we end up parsing the XML twice.
+    content = createPlexContainerForUrl(server, m.Item.sourceUrl, m.Item.key)
+    names = content.GetNames()
+    keys = content.GetKeys()
 
-    content = server.GetContent(queryResponse)
-    names = CreateObject("roArray", 10, true)
-    keys = CreateObject("roArray", 10, true)
-    for each elem in content
-        names.Push(elem.Title)
-        keys.Push(elem.Key)
-    next
-
-    m.timer.PrintElapsedTime("Server GetContent")
+    m.timer.PrintElapsedTime("createPlexContainerForUrl")
 
     m.Screen.SetupLists(names.Count()) 
     m.timer.PrintElapsedTime("Grid SetupLists")
@@ -87,7 +76,7 @@ Function showGridScreen() As Integer
 
         if row <= maxRow then
             Print "Loading beginning of row "; row; ", "; keys[row]
-            m.LoadContent(server, queryResponse.sourceUrl, keys[row], row, 0, m.initialLoadSize)
+            m.LoadContent(server, content.sourceUrl, keys[row], row, 0, m.initialLoadSize)
         end if
 
         rowIndex = rowIndex + 1
@@ -140,7 +129,7 @@ Function showGridScreen() As Integer
             row = m.maxLoadedRow + 1
             if row >= keys.Count() then
                 timeout = 0
-            else if m.LoadContent(server, queryResponse.sourceUrl, keys[row], row, m.contentArray[row].Count(), m.pageSize) then
+            else if m.LoadContent(server, content.sourceUrl, keys[row], row, m.contentArray[row].Count(), m.pageSize) then
                 m.maxLoadedRow = row
                 maxNeededRow = m.selectedRow + m.extraRowsToLoad
                 if maxNeededRow >= keys.Count() then maxNeededRow = keys.Count() - 1
@@ -157,7 +146,7 @@ Function loadGridContent(server, sourceUrl, key, rowIndex, startItem, count) As 
     m.timer.Mark()
     response = server.GetPaginatedQueryResponse(sourceUrl, key, startItem, count)
     m.timer.PrintElapsedTime("Getting row XML")
-    content = server.GetContent(response)
+    content = createPlexContainerForXml(response)
     m.timer.PrintElapsedTime("Parsing row XML")
 
     ' If the container doesn't play nice with pagination requests then
@@ -177,7 +166,7 @@ Function loadGridContent(server, sourceUrl, key, rowIndex, startItem, count) As 
     end if
 
     ' Copy the items to our array
-    m.contentArray[rowIndex].Append(content)
+    m.contentArray[rowIndex].Append(content.GetMetadata())
 
     ' It seems like you should be able to do this, but you have to pass in
     ' the full content list, not some other array you want to use to update
