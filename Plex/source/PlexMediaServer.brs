@@ -17,7 +17,6 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
 	pms.PingTranscode = pingTranscode
 	pms.GetQueryResponse = xmlContent
 	pms.GetPaginatedQueryResponse = paginatedXmlContent
-	pms.DetailedVideoMetadata = detailedVideoMetadata
 	pms.SetProgress = progress
 	pms.Scrobble = scrobble
 	pms.Unscrobble = unscrobble
@@ -46,8 +45,8 @@ Function search(query) As Object
 			shows.Push(directory)
 		endif
 	next
-	for each videoItem in xmlResult.xml.Video
-		video = newVideoMetadata(m, xmlResult.sourceUrl, xmlResult.xml, videoItem)
+	for each videoItem in container.xml.Video
+                video = newVideoMetadata(container, videoItem)
 		if videoItem@type = "movie" then
 			movies.Push(video)
 		else if videoItem@type = "episode" then
@@ -67,9 +66,9 @@ Function search(query) As Object
 		searchResults.content.Push(episodes)
 	end if
 	videoClips = []
-	videoSurfResult = m.GetQueryResponse("", "/system/services/search?identifier=com.plexapp.search.videosurf&query="+HttpEncode(query))
+	videoSurfResult = createPlexContainerForUrl(m, "", "/system/services/search?identifier=com.plexapp.search.videosurf&query="+HttpEncode(query))
 	for each videoItem in videoSurfResult.xml.Video
-		video = newVideoMetadata(m, videoSurfResult.sourceUrl, videoSurfResult.xml, videoItem)
+		video = newVideoMetadata(videoSurfResult, videoItem)
 		if videoItem@type = "clip" then
 			videoClips.Push(video)
 		end if
@@ -133,7 +132,7 @@ Function issueCommand(commandPath)
 End Function
 
 Function homePageContent() As Object
-        container = createPlexContainer(m, "", "/library/sections")
+        container = createPlexContainerForUrl(m, "", "/library/sections")
         librarySections = container.GetMetadata()
 	content = CreateObject("roArray", librarySections.Count() + 1, true)
 	for each section in librarySections
@@ -174,15 +173,6 @@ Function homePageContent() As Object
 	
 	end if
 	return content
-End Function
-
-'* Detailed video meta-data for springboard screen
-Function detailedVideoMetadata(sourceUrl, key) As Object
-	xmlResponse = m.GetQueryResponse(sourceUrl, key)
-	videoItem = xmlResponse.xml.Video[0]
-	
-	video = newDetailedVideoMetadata(m, sourceUrl, xmlResponse.xml, videoItem)
-	return video
 End Function
 
 Function paginatedXmlContent(sourceUrl, key, start, size) As Object

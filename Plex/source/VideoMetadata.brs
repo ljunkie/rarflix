@@ -1,158 +1,137 @@
 
-Function newVideoMetadata(server, sourceUrl, xmlContainer, videoItemXml) As Object
-	return construct(server, sourceUrl, xmlContainer, videoItemXml, false)
-End Function
+Function newVideoMetadata(container, item, detailed=false) As Object
+    video = createBaseMetadata(container, item)
 
-Function newDetailedVideoMetadata(server, sourceUrl, xmlContainer, videoItemXml) As Object
-	return construct(server, sourceUrl, xmlContainer, videoItemXml, true)
-End Function
+    video.mediaContainerIdentifier = container.xml@identifier
+    video.ratingKey = item@ratingKey
+    video.ContentType = item@type
+    if video.ContentType = invalid then
+        '* treat video items with no content type as clips
+        video.ContentType = "clip" 
+    endif
 
-Function construct(server, sourceUrl, xmlContainer, videoItemXml, detailed) As Object
-	
-	rokuMetadata = ConstructRokuVideoMetadata(server, sourceUrl, xmlContainer, videoItemXml, detailed)
-	rokuMetadata.media = ParseVideoMedia(videoItemXml)
-	rokuMetadata.preferredMediaItem = PickMediaItem(rokuMetadata.media)
-	
-	rokuMetadata.server = server
-	rokuMetadata.sourceUrl = sourceUrl
-	return rokuMetadata
-End Function
+    video.ReleaseDate = item@originallyAvailableAt
+    video.viewOffset = item@viewOffset
+    video.viewCount = item@viewCount
 
-Function ConstructRokuVideoMetadata(server, sourceUrl, xmlContainer, videoItemXml, detailed as boolean) As Object
-	video = CreateObject("roAssociativeArray")
-	
-	video.mediaContainerIdentifier = xmlContainer@identifier
-	video.ratingKey = videoItemXml@ratingKey
-	video.ContentType = videoItemXml@type
-	if video.ContentType = invalid then
-		'* treat video items with no content type as clips
-		video.ContentType = "clip" 
-	endif
-	video.Key = videoItemXml@key
-	
-	video.ShortDescriptionLine1 = videoItemXml@title
-	video.Description = truncateString(videoItemXml@summary)
-	video.ReleaseDate = videoItemXml@originallyAvailableAt
-	video.viewOffset = videoItemXml@viewOffset
-	video.viewCount = videoItemXml@viewCount
-	
-	length = videoItemXml@duration
-	if length <> invalid then
-		video.Length = int(val(length)/1000)
-		video.RawLength = val(length)
-	endif
-	
-	if video.viewCount <> invalid AND val(video.viewCount) > 0 then
-		video.Watched = true
-	else
-		video.Watched = false
-	end if
-	' if a video has ever been watch mark as such, else mark partially if there's a recorded
-	' offset
-	if video.Watched then
-		video.ShortDescriptionLine1 = video.ShortDescriptionLine1 + " (Watched)"
-	else if video.viewOffset <> invalid AND val(video.viewOffset) > 0 then
-		video.ShortDescriptionLine1 = video.ShortDescriptionLine1 + " (Partially Watched)"
-	end if
-	' Bookmark position represents the last watched so a video could be marked watched but
-	' have a bookmark not at the end if it was a subsequent viewing
-	video.BookmarkPosition = 0
-	if video.viewOffset <> invalid AND val(video.viewOffset) > 0 then
-		video.BookmarkPosition = int(val(video.viewOffset)/1000)
-	else if video.Watched AND length <> invalid then
-		video.BookmarkPosition = int(val(length)/1000)
-	end if
-	
-	if videoItemXml@tagline <> invalid then
-		video.ShortDescriptionLine2 = videoItemXml@tagline
-	end if
-	if videoItemXml@sourceTitle <> invalid then
-		video.ShortDescriptionLine2 = videoItemXml@sourceTitle
-	end if
-	if xmlContainer@viewGroup = "episode" then
-        if videoItemXml@grandparentTitle <> invalid then
-            video.ShortDescriptionLine1 = videoItemXml@grandparentTitle + ": " + video.ShortDescriptionLine1
+    length = item@duration
+    if length <> invalid then
+        video.Length = int(val(length)/1000)
+        video.RawLength = val(length)
+    endif
+
+    video.Watched = video.viewCount <> invalid AND val(video.viewCount) > 0
+    ' if a video has ever been watch mark as such, else mark partially if there's a recorded
+    ' offset
+    if video.Watched then
+        video.ShortDescriptionLine1 = video.ShortDescriptionLine1 + " (Watched)"
+    else if video.viewOffset <> invalid AND val(video.viewOffset) > 0 then
+        video.ShortDescriptionLine1 = video.ShortDescriptionLine1 + " (Partially Watched)"
+    end if
+
+    ' Bookmark position represents the last watched so a video could be marked watched but
+    ' have a bookmark not at the end if it was a subsequent viewing
+    video.BookmarkPosition = 0
+    if video.viewOffset <> invalid AND val(video.viewOffset) > 0 then
+        video.BookmarkPosition = int(val(video.viewOffset)/1000)
+    else if video.Watched AND length <> invalid then
+        video.BookmarkPosition = int(val(length)/1000)
+    end if
+
+    video.ShortDescriptionLine2 = firstOf(item@sourceTitle, item@tagline, video.ShortDescriptionLine2)
+
+    if container.ViewGroup = "episode" then
+        if item@grandparentTitle <> invalid then
+            video.ShortDescriptionLine1 = item@grandparentTitle + ": " + video.ShortDescriptionLine1
         end if
-        if videoItemXml@index <> invalid then
-            video.EpisodeNumber = videoItemXml@index
-            episode = "Episode "+videoItemXml@index
+        if item@index <> invalid then
+            video.EpisodeNumber = item@index
+            episode = "Episode " + item@index
         else
             video.EpisodeNumber = 0
             episode = "Episode ??"
         end if
-		if videoItemXml@parentIndex <> invalid then
-			video.ShortDescriptionLine2 = "Season " + videoItemXml@parentIndex +" - "+episode
-		else
-			video.ShortDescriptionLine2 = episode
-		end if
-		if video.ReleaseDate <> invalid then
-			video.ShortDescriptionLine2 = video.ShortDescriptionLine2 + " - " + video.ReleaseDate
-		end if
-	endif
+        if item@parentIndex <> invalid then
+            video.ShortDescriptionLine2 = "Season " + item@parentIndex + " - " + episode
+        else
+            video.ShortDescriptionLine2 = episode
+        end if
+        if video.ReleaseDate <> invalid then
+            video.ShortDescriptionLine2 = video.ShortDescriptionLine2 + " - " + video.ReleaseDate
+        end if
+    end if
 
-        ' On grid screens, the title is used for the detail window, not the
-        ' short description. We just always want them to match.
-	video.Title = video.ShortDescriptionLine1
+    video.Title = video.ShortDescriptionLine1
 
-	if xmlContainer@viewGroup = "Details" OR xmlContainer@viewGroup = "InfoList" then
-		video.ShortDescriptionLine2 = videoItemXml@summary
-	endif
-	if detailed then
-		video.Rating = videoItemXml@contentRating
-		rating = videoItemXml@rating
-		if rating <> invalid then
-			video.StarRating = int(val(rating)*10)
-		endif
-		video.Actors = CreateObject("roArray", 15, true)
-		for each Actor in videoItemXml.Role
-			video.Actors.Push(Actor@tag)
-		next
-		video.Director = CreateObject("roArray", 3, true)
-		for each Director in videoItemXml.Director
-			video.Director.Push(Director@tag)
-		next
-		video.Categories = CreateObject("roArray", 15, true)
-		for each Category in videoItemXml.Genre
-			video.Categories.Push(Category@tag)
-		next
-		
-		' TODO: review the logic here. Last media item wins. Is this what we want?
-		' TODO: comment out HD for now - does it fix the SD playing regression?
-		for each MediaItem in videoItemXml.Media
-			videoResolution = MediaItem@videoResolution
-			if videoResolution = "1080" OR videoResolution = "720" then
-			'	video.IsHD = true
-				video.HDBranded = true
-			endif
-			'if videoResolution = "1080" then
-			'	video.FullHD = true
-			'endif
-			frameRate = MediaItem@videoFrameRate
-			if frameRate <> invalid then
-				if frameRate = "24p" then
-					video.FrameRate = 24
-				else if frameRate = "NTSC"
-					video.FrameRate = 30
-				endif
-			endif
-		next
-	end if
-	sizes = ImageSizes(xmlContainer@viewGroup, video.ContentType)
-	thumb = videoItemXml@thumb
-	if thumb <> invalid then
-		video.SDPosterURL = server.TranscodedImage(sourceUrl, thumb, sizes.sdWidth, sizes.sdHeight)
-		video.HDPosterURL = server.TranscodedImage(sourceUrl, thumb, sizes.hdWidth, sizes.hdHeight)
-	else
-		art = videoItemXml@art
-		if art = invalid then
-			art = xmlContainer@art
-		endif
-		if art <> invalid then
-			video.SDPosterURL = server.TranscodedImage(sourceUrl, art, sizes.sdWidth, sizes.sdHeight)
-			video.HDPosterURL = server.TranscodedImage(sourceUrl, art, sizes.hdWidth, sizes.hdHeight)	
-		endif
-	endif
-	return video
+    if container.ViewGroup = "Details" OR container.ViewGroup = "InfoList" then
+        video.ShortDescriptionLine2 = item@summary
+    endif
+
+    video.Rating = item@contentRating
+    rating = item@rating
+    if rating <> invalid then
+        video.StarRating = int(val(rating)*10)
+    endif
+
+    video.ParseDetails = videoParseDetails
+
+    if detailed then
+        ' Also sets media and preferredMediaItem
+        video.ParseDetails()
+    else
+        video.media = ParseVideoMedia(item)
+        video.preferredMediaItem = PickMediaItem(video.media)
+    end if
+
+    return video
+End Function
+
+Function videoParseDetails()
+    if m.HasDetails then return m
+
+    container = createPlexContainerForUrl(m.server, m.sourceUrl, m.Key)
+    videoItemXml = container.xml.Video[0]
+
+    video = m
+
+    video.Actors = CreateObject("roArray", 15, true)
+    for each Actor in videoItemXml.Role
+        video.Actors.Push(Actor@tag)
+    next
+    video.Director = CreateObject("roArray", 3, true)
+    for each Director in videoItemXml.Director
+        video.Director.Push(Director@tag)
+    next
+    video.Categories = CreateObject("roArray", 15, true)
+    for each Category in videoItemXml.Genre
+        video.Categories.Push(Category@tag)
+    next
+
+    ' TODO: review the logic here. Last media item wins. Is this what we want?
+    ' TODO: comment out HD for now - does it fix the SD playing regression?
+    for each MediaItem in videoItemXml.Media
+        videoResolution = MediaItem@videoResolution
+        if videoResolution = "1080" OR videoResolution = "720" then
+            '	video.IsHD = true
+            video.HDBranded = true
+        endif
+        'if videoResolution = "1080" then
+        '	video.FullHD = true
+        'endif
+        frameRate = MediaItem@videoFrameRate
+        if frameRate <> invalid then
+            if frameRate = "24p" then
+                video.FrameRate = 24
+            else if frameRate = "NTSC"
+                video.FrameRate = 30
+            endif
+        endif
+    next
+
+    video.media = ParseVideoMedia(videoItemXml)
+    video.preferredMediaItem = PickMediaItem(video.media)
+
+    return video
 End Function
 
 Function ParseVideoMedia(videoItem) As Object

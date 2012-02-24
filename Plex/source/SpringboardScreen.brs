@@ -398,7 +398,7 @@ Sub videoGetMediaDetails(content)
     server = content.server
     print "About to fetch meta-data for Content Type: "; content.contentType
 
-    m.metadata = server.DetailedVideoMetadata(content.sourceUrl, content.key)
+    m.metadata = content.ParseDetails()
     m.media = m.metadata.preferredMediaItem
 End Sub
 

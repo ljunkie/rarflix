@@ -41,14 +41,14 @@ Sub containerParseXml()
     for each n in nodes
         Print "Processing node of type "; n@type; " and view group: "; m.ViewGroup
 
-        nodeType = firstOf(n@type, m.ViewGroup)
+        if n.GetName() = "Directory" then
+            nodeType = "directory"
+        else
+            nodeType = firstOf(n@type, m.ViewGroup)
+        end if
 
         if nodeType = "movie" OR nodeType = "episode" then
-            if m.ParseDetails then
-                metadata = newVideoMetadata(m.server, m.sourceUrl, m.xml, n)
-            else
-                metadata = newDetailedVideoMetadata(m.server, m.sourceUrl, m.xml, n)
-            end if
+            metadata = newVideoMetadata(m, n, m.ParseDetails)
         else if nodeType = "artist" then
             metadata = newArtistMetadata(m, n, m.ParseDetails)
         else if nodeType = "album" then

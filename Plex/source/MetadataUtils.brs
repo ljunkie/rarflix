@@ -63,6 +63,7 @@ Function createBaseMetadata(container, item) As Object
     return metadata
 End Function
 
-Sub baseParseDetails()
+Function baseParseDetails()
     m.HasDetails = true
-End Sub
+    return m
+End Function
