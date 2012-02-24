@@ -428,7 +428,7 @@ Function FullUrl(serverUrl, sourceUrl, key) As String
                 finalUrl = sourceUrlTokens[0]+"/"
             endif
         endif
-        if keyTokens.Count() = 2 OR sourceUrlTokens.Count() =2 then
+        if keyTokens.Count() = 2 then 'OR sourceUrlTokens.Count() =2 then
             finalUrl = finalUrl + "?"
             if keyTokens.Count() = 2 then
                 finalUrl = finalUrl + keyTokens[1]
