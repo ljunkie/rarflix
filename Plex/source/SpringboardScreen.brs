@@ -259,6 +259,31 @@ Function AddButtons(screen, metadata, media) As Object
     buttonCommands[str(buttonCount)] = "play"
     buttonCount = buttonCount + 1
 
+    print "Media = ";media
+    print "metadata.optimizedForStreaming = ";metadata.optimizedForStreaming
+
+    if media.container <> invalid AND media.videocodec <> invalid AND media.audiocodec <> invalid AND metadata.optimizedforstreaming <> invalid then
+        dsp = 0
+        ' MP4 files
+        if media.container = "mov" then
+            if media.videocodec = "h264" AND (media.audiocodec = "aac" OR media.audicodec = "ac3") then
+                dsp = 1
+            end if
+        end if
+        ' MKV files
+        if media.container = "mkv" then
+            if media.videocodec = "h264" AND (media.audiocodec = "aac" OR media.audicodec = "ac3") then
+                dsp = 1
+            end if
+        end if
+
+        if metadata.optimizedForStreaming = "0" AND dsp = 1 then
+            print "Container = "+media.container+", ac = "+media.audiocodec+", vc = "+media.videocodec+", but not optimized for streaming"
+            dsp = 0
+        else if dsp = 1 then
+            print "Container = "+media.container+", ac = "+media.audiocodec+", vc = "+media.videocodec+", OPTIMIZED FOR STREAMING"
+        end if
+    end if
 
     if metadata.viewCount <> invalid AND val(metadata.viewCount) > 0 then
         screen.AddButton(buttonCount, "Mark as unwatched")

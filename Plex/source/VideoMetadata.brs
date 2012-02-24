@@ -21,6 +21,10 @@ End Function
 Function ConstructRokuVideoMetadata(server, sourceUrl, xmlContainer, videoItemXml, detailed as boolean) As Object
 	video = CreateObject("roAssociativeArray")
 	
+    if videoItemXML = invalid then
+        return video
+    endif
+
 	video.mediaContainerIdentifier = xmlContainer@identifier
 	video.ratingKey = videoItemXml@ratingKey
 	video.ContentType = videoItemXml@type
@@ -135,6 +139,7 @@ Function ConstructRokuVideoMetadata(server, sourceUrl, xmlContainer, videoItemXm
 					video.FrameRate = 30
 				endif
 			endif
+            video.OptimizedForStreaming = MediaItem@optimizedForStreaming
 		next
 	end if
 	sizes = ImageSizes(xmlContainer@viewGroup, video.ContentType)
