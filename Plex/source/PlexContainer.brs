@@ -17,7 +17,7 @@ Function createPlexContainerForXml(xmlResponse) As Object
     c.GetMetadata = containerGetMetadata
     c.Count = containerCount
 
-    c.ParseDetails = true
+    c.ParseDetails = false
 
     c.ViewGroup = c.xml@viewGroup
 
