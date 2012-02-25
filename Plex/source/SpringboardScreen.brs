@@ -320,6 +320,13 @@ Function videoAddButtons(screen, metadata, media) As Object
         buttonCommands[str(buttonCount)] = "subtitleStreamSelection"
         buttonCount = buttonCount + 1
     endif
+
+    if metadata.UserRating = invalid then
+        metadata.UserRating = 0
+    endif
+    if metadata.StarRating = invalid then
+        metadata.StarRating = 0
+    endif
     screen.AddRatingButton(buttonCount, metadata.UserRating , metadata.StarRating)
     buttonCommands[str(buttonCount)] = "rateVideo"
     buttonCount = buttonCount + 1
