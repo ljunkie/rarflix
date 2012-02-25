@@ -26,6 +26,8 @@ Function createPaginatedLoader(server, sourceUrl, keys, initialLoadSize, pageSiz
     loader.LoadMoreContent = loaderLoadMoreContent
     loader.GetLoadStatus = loaderGetLoadStatus
 
+    loader.Listener = invalid
+
     return loader
 End Function
 
@@ -45,15 +47,26 @@ Function loaderGetContent(index)
     return m.contentArray[index].content
 End Function
 
+'*
+'* Load more data either in the currently focused row or the next one that
+'* hasn't been fully loaded. The return value indicates whether the current
+'* row (and any extra rows) are now fully loaded.
+'*
 Function loaderLoadMoreContent(focusedIndex, extraRows=0)
     status = invalid
+    extraRowsAlreadyLoaded = true
     for i = 0 to extraRows
         index = focusedIndex + i
         if index >= m.contentArray.Count() then
-            return true
-        else if m.contentArray[index].loadStatus < 2 then
-            status = m.contentArray[index]
             exit for
+        else if m.contentArray[index].loadStatus < 2 then
+            if status = invalid then
+                status = m.contentArray[index]
+                loadingRow = index
+            else
+                extraRowsAlreadyLoaded = false
+                exit for
+            end if
         end if
     end for
 
@@ -79,18 +92,25 @@ Function loaderLoadMoreContent(focusedIndex, extraRows=0)
 
     if totalSize <= 0 then
         status.loadStatus = 2
-        return true
+        return extraRowsAlreadyLoaded
     end if
 
     status.content.Append(container.GetMetadata())
 
     if status.content.Count() < totalSize then
         status.loadStatus = 1
+        ret = false
         return false
     else
         status.loadStatus = 2
-        return true
+        ret = extraRowsAlreadyLoaded
     end if
+
+    if m.Listener <> invalid then
+        m.Listener.OnDataLoaded(loadingRow, status.content, startItem, container.Count())
+    end if
+
+    return ret
 End Function
 
 Function loaderGetLoadStatus(index) As Integer

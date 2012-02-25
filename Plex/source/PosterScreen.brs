@@ -20,6 +20,8 @@ Function createPosterScreen(item, viewController) As Object
     obj.ListDisplayMode = invalid
     obj.FilterMode = invalid
 
+    obj.OnDataLoaded = posterOnDataLoaded
+
     obj.styles = []
 
     return obj
@@ -51,6 +53,7 @@ Function showPosterScreen() As Integer
         m.Screen.SetListNames(names)
         m.Screen.SetFocusedList(0)
         m.Loader = createPaginatedLoader(server, container.sourceUrl, keys, 25, 25)
+        m.Loader.Listener = m
 
         for index = 0 to keys.Count() - 1
             style = CreateObject("roAssociativeArray")
@@ -124,38 +127,42 @@ Function showPosterScreen() As Integer
 
                 m.ViewController.CreateScreenForItem(content, index, breadcrumbs)
             else if msg.isScreenClosed() then
+                ' Make sure we don't have hang onto circular references
+                m.Loader.Listener = invalid
+                m.Loader = invalid
+
                 m.ViewController.PopScreen(m)
                 return -1
             end if
         else if msg = invalid then
             ' An invalid event is our timeout, load some more data.
 
-            initialStatus = m.Loader.GetLoadStatus(focusedListItem)
             if m.Loader.LoadMoreContent(focusedListItem, 0) then
                 timeout = 0
             end if
-
-            ' If this was the first content we loaded, set up the styles
-            if initialStatus = 0 then
-                style = m.styles[focusedListItem]
-                if m.UseDefaultStyles then
-                    content = m.Loader.GetContent(focusedListItem)
-                    if content.Count() > 0 then
-                        aa = getDefaultListStyle(content[0].ViewGroup, content[0].contentType)
-                        style.listStyle = aa.style
-                        style.listDisplayMode = aa.display
-                    end if
-                else
-                    style.listStyle = m.ListStyle
-                    style.listDisplayMode = m.ListDisplayMode
-                end if
-            end if
-
-            m.ShowList(focusedListItem, initialStatus = 0)
         end If
     end while
     return 0
 End Function
+
+Sub posterOnDataLoaded(row As Integer, data As Object, startItem as Integer, count As Integer)
+    ' If this was the first content we loaded, set up the styles
+    if startItem = 0 AND count > 0 then
+        style = m.styles[row]
+        if m.UseDefaultStyles then
+            if data.Count() > 0 then
+                aa = getDefaultListStyle(data[0].ViewGroup, data[0].contentType)
+                style.listStyle = aa.style
+                style.listDisplayMode = aa.display
+            end if
+        else
+            style.listStyle = m.ListStyle
+            style.listDisplayMode = m.ListDisplayMode
+        end if
+    end if
+
+    m.ShowList(row, startItem = 0)
+End Sub
 
 Function ChannelInfo(channel) 
 

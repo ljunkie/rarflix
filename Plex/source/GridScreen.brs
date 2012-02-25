@@ -24,7 +24,6 @@ Function createGridScreen(item, viewController) As Object
     screen.ViewController = viewController
 
     screen.Show = showGridScreen
-    screen.LoadContent = loadGridContent
     screen.SetStyle = setGridStyle
 
     screen.timer = createPerformanceTimer()
@@ -34,9 +33,7 @@ Function createGridScreen(item, viewController) As Object
     screen.contentArray = []
     screen.gridStyle = "Flat-Movie"
 
-    screen.extraRowsToLoad = 2
-    screen.initialLoadSize = 8
-    screen.pageSize = 50
+    screen.OnDataLoaded = gridOnDataLoaded
 
     return screen
 End Function
@@ -66,6 +63,8 @@ Function showGridScreen() As Integer
     ' don't load much more than we need to before initially showing the
     ' grid. Once we start the event loop we can load the rest of the
     ' content.
+    m.Loader = createPaginatedLoader(server, content.sourceUrl, keys, 8, 50)
+    m.Loader.Listener = m
 
     maxRow = keys.Count() - 1
     if maxRow > 1 then maxRow = 1
@@ -75,7 +74,7 @@ Function showGridScreen() As Integer
 
         if row <= maxRow then
             Print "Loading beginning of row "; row; ", "; keys[row]
-            m.LoadContent(server, content.sourceUrl, keys[row], row, 0, m.initialLoadSize)
+            m.Loader.LoadMoreContent(row, 0)
         end if
     end for
 
@@ -116,64 +115,40 @@ Function showGridScreen() As Integer
                 ' update.
 
                 m.selectedRow = msg.GetIndex()
-                if m.selectedRow + m.extraRowsToLoad > m.maxLoadedRow then timeout = 5
+                if NOT m.Loader.LoadMoreContent(m.selectedRow, 2) then timeout = 5
             else if msg.isScreenClosed() then
+                ' Make sure we don't hang onto circular references
+                m.Loader.Listener = invalid
+                m.Loader = invalid
+
                 m.ViewController.PopScreen(m)
                 return -1
             end if
         else if msg = invalid then
             ' An invalid event is our timeout, load some more data.
-            row = m.maxLoadedRow + 1
-            if row >= keys.Count() then
-                timeout = 0
-            else if m.LoadContent(server, content.sourceUrl, keys[row], row, m.contentArray[row].Count(), m.pageSize) then
-                m.maxLoadedRow = row
-                maxNeededRow = m.selectedRow + m.extraRowsToLoad
-                if maxNeededRow >= keys.Count() then maxNeededRow = keys.Count() - 1
-                if row >= maxNeededRow then timeout = 0
-            end if
+            if m.Loader.LoadMoreContent(m.selectedRow, 2) then timeout = 0
         end if
     end while
 
     return 0
 End Function
 
-Function loadGridContent(server, sourceUrl, key, rowIndex, startItem, count) As Boolean
-    Print "Loading row "; rowIndex; ", "; key
-    m.timer.Mark()
-    response = server.GetPaginatedQueryResponse(sourceUrl, key, startItem, count)
-    m.timer.PrintElapsedTime("Getting row XML")
-    content = createPlexContainerForXml(response)
-    m.timer.PrintElapsedTime("Parsing row XML")
-
-    ' If the container doesn't play nice with pagination requests then
-    ' whatever we got is the total size.
-    if response.xml@totalSize <> invalid then
-        totalSize = strtoi(response.xml@totalSize)
-    else
-        Print "Request to "; key; " didn't support pagination, returned size "; response.xml@size
-        totalSize = content.Count()
-        m.maxLoadedRow = rowIndex
-    end if
+Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count As Integer)
+    m.contentArray[row] = data
 
     ' Don't bother showing empty rows
-    if totalSize <= 0 then
-        m.Screen.SetListVisible(rowIndex, false)
-        return true
+    if data.Count() = 0 then
+        m.Screen.SetListVisible(row, false)
+        return
     end if
-
-    ' Copy the items to our array
-    m.contentArray[rowIndex].Append(content.GetMetadata())
 
     ' It seems like you should be able to do this, but you have to pass in
     ' the full content list, not some other array you want to use to update
     ' the content list.
     ' m.Screen.SetContentListSubset(rowIndex, content, startItem, content.Count())
 
-    m.Screen.SetContentListSubset(rowIndex, m.contentArray[rowIndex], startItem, content.Count())
-
-    return m.contentArray[rowIndex].Count() >= totalSize
-End Function
+    m.Screen.SetContentListSubset(row, data, startItem, count)
+End Sub
 
 Function setGridStyle(style as String)
     m.gridStyle = style
