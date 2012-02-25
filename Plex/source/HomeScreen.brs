@@ -27,6 +27,7 @@ End Function
 
 Function refreshHomeScreen()
     print "About to show home screen"
+    m.Servers = PlexMediaServers()
     displayServerName = m.Servers.count() > 1
     m.sectionList = CreateObject("roArray", 10, true)  
     for each server in m.Servers
