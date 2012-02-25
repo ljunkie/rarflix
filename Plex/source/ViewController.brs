@@ -26,6 +26,9 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else
         item = context
     end if
+
+    print "Item = ";item
+
     contentType = item.ContentType
     viewGroup = item.viewGroup
     if viewGroup = invalid then viewGroup = ""
@@ -54,8 +57,15 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen.SetListStyle("flat-episodic", "zoom-to-fill")
     else if contentType = "audio" then
         screen = createAudioSpringboardScreen(context, contextIndex, m)
-    else if contentType = "section" then ' Need to actually set the content type to section somewhere, based on title2?
+    else if contentType = "section" then
+        ' Need to actually set the content type to section somewhere, based on title2?
         screen = createGridScreen(item, m)
+    else if contentType = "photo" then
+        if right(item.key, 8) = "children" then
+            screen = createPosterScreen(item, m)
+        else 
+            screen = createPhotoSpringboardScreen(context, contextIndex, m)
+        end if
     else if viewGroup = "Store:Info" then
         ' ChannelInfo(item)
     else if viewGroup = "secondary" then

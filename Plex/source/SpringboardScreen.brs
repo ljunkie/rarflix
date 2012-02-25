@@ -30,6 +30,45 @@ Function createBaseSpringboardScreen(context, index, viewController) As Object
     return obj
 End Function
 
+Function createPhotoSpringboardScreen(context, index, viewController) As Object
+    obj = createBaseSpringboardScreen(context, index, viewController)
+
+    obj.AddButtons = photoAddButtons
+    obj.GetMediaDetails = photoGetMediaDetails
+    obj.HandleMessage = photoHandleMessage
+    
+    return obj
+End Function
+
+Function photoAddButtons(screen, metadata, media) As Object
+    ' TODO(schuyler): This is totally bogus placeholder stuff. Flesh it
+    ' out and update based on the current item and state. They're also
+    ' not really wired up to the message loop meaningfully.
+
+    buttonCommands = CreateObject("roAssociativeArray")
+    screen.ClearButtons()
+    buttonCount = 0
+
+    screen.AddButton(buttonCount, "Show")
+    buttonCommands[str(buttonCount)] = "show"
+    buttonCount = buttonCount + 1
+
+    screen.AddButton(buttonCount, "Next Photo")
+    buttonCommands[str(buttonCount)] = "next"
+    buttonCount = buttonCount + 1
+
+    screen.AddButton(buttonCount, "Previous Photo")
+    buttonCommands[str(buttonCount)] = "prev"
+    buttonCount = buttonCount + 1
+
+    screen.AddButton(buttonCount, "Slideshow")
+    buttonCommands[str(buttonCount)] = "slideshow"
+    buttonCount = buttonCount + 1
+
+    return buttonCommands
+End Function
+
+
 Function createVideoSpringboardScreen(context, index, viewController) As Object
     obj = createBaseSpringboardScreen(context, index, viewController)
 
@@ -436,6 +475,11 @@ Sub audioGetMediaDetails(content)
     m.media = invalid
 End Sub
 
+Sub photoGetMediaDetails(content)
+    m.metadata = content
+    m.media = invalid
+End Sub
+
 Function videoHandleMessage(msg) As Boolean
     server = m.Item.server
 
@@ -481,6 +525,51 @@ Function videoHandleMessage(msg) As Boolean
 End Function
 
 Function audioHandleMessage(msg) As Boolean
+    ' TODO(schuyler) Actually handle all of these
+    if type(msg) = "roAudioPlayerEvent" then
+        if msg.isRequestSucceeded() then
+            Print "Playback of single song completed"
+        else if msg.isRequestFailed() then
+            Print "Playback failed"
+        else if msg.isListItemSelected() then
+            Print "Starting to play item"
+            ' What does this actually mean? How is it triggered?
+            'm.audioPlayer.Play()
+        else if msg.isStatusMessage() then
+            Print "Audio player status: "; msg.getMessage()
+        else if msg.isFullResult() then
+            Print "Playback of entire list finished"
+        else if msg.isPartialResult() then
+            Print "isPartialResult"
+        else if msg.isPaused() then
+            Print "Stream paused by user"
+        else if msg.isResumed() then
+            Print "Stream resumed by user"
+        end if
+        return true
+    else if msg.isButtonPressed() then
+        buttonCommand = m.buttonCommands[str(msg.getIndex())]
+        print "Button command: ";buttonCommand
+        if buttonCommand = "play" then
+            m.audioPlayer.Play()
+        else if buttonCommand = "pause" then
+            m.audioPlayer.Pause()
+        else if buttonCommand = "stop" then
+            m.audioPlayer.Stop()
+        else if buttonCommand = "resume" then
+            m.audioPlayer.Resume()
+        else if buttonCommand = "next" then
+        else if buttonCommand = "prev" then
+        else
+            return false
+        end if
+        return true
+    end if
+
+    return false
+End Function
+
+Function photoHandleMessage(msg) As Boolean
     ' TODO(schuyler) Actually handle all of these
     if type(msg) = "roAudioPlayerEvent" then
         if msg.isRequestSucceeded() then
