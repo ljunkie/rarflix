@@ -320,6 +320,9 @@ Function videoAddButtons(screen, metadata, media) As Object
         buttonCommands[str(buttonCount)] = "subtitleStreamSelection"
         buttonCount = buttonCount + 1
     endif
+    screen.AddRatingButton(buttonCount, metadata.UserRating , metadata.StarRating)
+    buttonCommands[str(buttonCount)] = "rateVideo"
+    buttonCount = buttonCount + 1
     return buttonCommands
 End Function
 
@@ -456,6 +459,10 @@ Function videoHandleMessage(msg) As Boolean
             server.Unscrobble(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier)
             '* Refresh play data after unscrobbling
             m.Refresh()
+	 else if buttonCommand = "rateVideo" then                
+		rateValue% = msg.getData() /10
+		m.metadata.UserRating = msg.getdata()
+		server.Rate(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier,rateValue%.ToStr())
         else
             return false
         endif

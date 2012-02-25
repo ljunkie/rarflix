@@ -76,6 +76,13 @@ Function newVideoMetadata(container, item, detailed=false) As Object
         video.StarRating = int(val(rating)*10)
     endif
 
+    userRating = item@userRating
+    if userRating <> invalid then
+	video.UserRating =  int(val(userRating)*10)
+    else 
+	video.UserRating =  0
+    endif
+	
     video.ParseDetails = videoParseDetails
 
     if detailed then
