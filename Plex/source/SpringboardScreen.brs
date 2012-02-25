@@ -25,6 +25,8 @@ Function createBaseSpringboardScreen(context, index, viewController) As Object
     obj.GotoNextItem = sbGotoNextItem
     obj.GotoPrevItem = sbGotoPrevItem
 
+    obj.msgTimeout = 0
+
     return obj
 End Function
 
@@ -33,6 +35,7 @@ Function createVideoSpringboardScreen(context, index, viewController) As Object
 
     obj.AddButtons = videoAddButtons
     obj.GetMediaDetails = videoGetMediaDetails
+    obj.HandleMessage = videoHandleMessage
     
     return obj
 End Function
@@ -43,8 +46,19 @@ Function createAudioSpringboardScreen(context, index, viewController) As Object
     obj.Screen.SetDescriptionStyle("audio")
     obj.Screen.SetStaticRatingEnabled(false)
 
+    ' Set up audio player, using the same message port
+    obj.audioPlayer = CreateObject("roAudioPlayer")
+    obj.audioPlayer.SetMessagePort(obj.Screen.GetMessagePort())
+
+    ' TODO: Do we want to loop? Always/Sometimes/Never/Preference?
+    obj.audioPlayer.SetLoop(context.Count() > 1)
+
+    obj.audioPlayer.SetContentList(context)
+    obj.audioPlayer.SetNext(index)
+
     obj.AddButtons = audioAddButtons
     obj.GetMediaDetails = audioGetMediaDetails
+    obj.HandleMessage = audioHandleMessage
 
     return obj
 End Function
@@ -54,38 +68,14 @@ Function showSpringboardScreen() As Integer
     m.Refresh()
 
     while true
-        msg = wait(0, m.Screen.GetMessagePort())
-        if msg.isScreenClosed() then
+        msg = wait(m.msgTimeout, m.Screen.GetMessagePort())
+        if m.HandleMessage(msg) then
+        else if msg.isScreenClosed() then
             m.ViewController.PopScreen(m)
             return -1
         else if msg.isButtonPressed() then
             buttonCommand = m.buttonCommands[str(msg.getIndex())]
-            print "Button command: ";buttonCommand
-            if buttonCommand = "play" OR buttonCommand = "resume" then
-                startTime = 0
-                if buttonCommand = "resume" then
-                    startTime = int(val(m.metadata.viewOffset))
-                endif
-                playVideo(server, m.metadata, m.media, startTime)
-                '* Refresh play data after playing
-                m.Refresh()
-            else if buttonCommand = "audioStreamSelection" then
-                SelectAudioStream(server, m.media)
-                m.Refresh()
-            else if buttonCommand = "subtitleStreamSelection" then
-                SelectSubtitleStream(server, m.media)
-                m.Refresh()
-            else if buttonCommand = "scrobble" then
-                'scrobble key here
-                server.Scrobble(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier)
-                '* Refresh play data after scrobbling
-                m.Refresh()
-            else if buttonCommand = "unscrobble" then
-                'unscrobble key here
-                server.Unscrobble(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier)
-                '* Refresh play data after unscrobbling
-                m.Refresh()
-            endif
+            print "Unhandled button press: "; buttonCommand
         else if msg.isRemoteKeyPressed() then
             '* index=4 -> left ; index=5 -> right
             if msg.getIndex() = 4 then
@@ -334,6 +324,10 @@ Function videoAddButtons(screen, metadata, media) As Object
 End Function
 
 Function audioAddButtons(screen, metadata, media) As Object
+    ' TODO(schuyler): This is totally bogus placeholder stuff. Flesh it
+    ' out and update based on the current item and state. They're also
+    ' not really wired up to the message loop meaningfully.
+
     buttonCommands = CreateObject("roAssociativeArray")
     screen.ClearButtons()
     buttonCount = 0
@@ -431,4 +425,89 @@ Sub audioGetMediaDetails(content)
     m.metadata = content
     m.media = invalid
 End Sub
+
+Function videoHandleMessage(msg) As Boolean
+    server = m.Item.server
+
+    if msg.isButtonPressed() then
+        buttonCommand = m.buttonCommands[str(msg.getIndex())]
+        print "Button command: ";buttonCommand
+        if buttonCommand = "play" OR buttonCommand = "resume" then
+            startTime = 0
+            if buttonCommand = "resume" then
+                startTime = int(val(m.metadata.viewOffset))
+            endif
+            playVideo(server, m.metadata, m.media, startTime)
+            '* Refresh play data after playing
+            m.Refresh()
+        else if buttonCommand = "audioStreamSelection" then
+            SelectAudioStream(server, m.media)
+            m.Refresh()
+        else if buttonCommand = "subtitleStreamSelection" then
+            SelectSubtitleStream(server, m.media)
+            m.Refresh()
+        else if buttonCommand = "scrobble" then
+            'scrobble key here
+            server.Scrobble(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier)
+            '* Refresh play data after scrobbling
+            m.Refresh()
+        else if buttonCommand = "unscrobble" then
+            'unscrobble key here
+            server.Unscrobble(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier)
+            '* Refresh play data after unscrobbling
+            m.Refresh()
+        else
+            return false
+        endif
+
+        return true
+    end if
+
+    return false
+End Function
+
+Function audioHandleMessage(msg) As Boolean
+    ' TODO(schuyler) Actually handle all of these
+    if type(msg) = "roAudioPlayerEvent" then
+        if msg.isRequestSucceeded() then
+            Print "Playback of single song completed"
+        else if msg.isRequestFailed() then
+            Print "Playback failed"
+        else if msg.isListItemSelected() then
+            Print "Starting to play item"
+            ' What does this actually mean? How is it triggered?
+            'm.audioPlayer.Play()
+        else if msg.isStatusMessage() then
+            Print "Audio player status: "; msg.getMessage()
+        else if msg.isFullResult() then
+            Print "Playback of entire list finished"
+        else if msg.isPartialResult() then
+            Print "isPartialResult"
+        else if msg.isPaused() then
+            Print "Stream paused by user"
+        else if msg.isResumed() then
+            Print "Stream resumed by user"
+        end if
+        return true
+    else if msg.isButtonPressed() then
+        buttonCommand = m.buttonCommands[str(msg.getIndex())]
+        print "Button command: ";buttonCommand
+        if buttonCommand = "play" then
+            m.audioPlayer.Play()
+        else if buttonCommand = "pause" then
+            m.audioPlayer.Pause()
+        else if buttonCommand = "stop" then
+            m.audioPlayer.Stop()
+        else if buttonCommand = "resume" then
+            m.audioPlayer.Resume()
+        else if buttonCommand = "next" then
+        else if buttonCommand = "prev" then
+        else
+            return false
+        end if
+        return true
+    end if
+
+    return false
+End Function
 

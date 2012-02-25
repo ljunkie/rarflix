@@ -54,6 +54,7 @@ Function newVideoMetadata(container, item, detailed=false) As Object
             episode = "Episode ??"
         end if
         if item@parentIndex <> invalid then
+            video.TitleSeason = video.Title + " Season " + item@parentIndex
             video.ShortDescriptionLine2 = "Season " + item@parentIndex + " - " + episode
         else
             video.ShortDescriptionLine2 = episode

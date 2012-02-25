@@ -136,8 +136,8 @@ Function homePageContent() As Object
         librarySections = container.GetMetadata()
 	content = CreateObject("roArray", librarySections.Count() + 1, true)
 	for each section in librarySections
-		'* Exclude music for now until transcode to mp3 is available
-		if section.type = "movie" OR section.type = "show" then
+                '* Exclude photos for now
+		if section.type = "movie" OR section.type = "show" OR section.type = "artist" then
 			content.Push(section)
 		endif
 	next

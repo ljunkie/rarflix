@@ -61,7 +61,7 @@ Function newTrackMetadata(container, item, detailed=true) As Object
         track.AlbumYear = container.xml@parentYear
     end if
 
-    if item@index <> invalid then track.EpisodeNumber = int(val(item@index))
+    track.EpisodeNumber = item@index
     if item@duration <> invalid then track.Duration = int(val(item@duration)/1000)
     track.Length = track.Duration
 
@@ -69,7 +69,7 @@ Function newTrackMetadata(container, item, detailed=true) As Object
     part = media.Part[0]
 
     if media@audioCodec = "mp3" OR media@audioCodec = "wmv" OR media@audioCodec = "aac" then
-        track.Codec = media@audioCodec
+        track.StreamFormat = media@audioCodec
         track.Url = FullUrl(container.server.serverUrl, container.sourceUrl, part@key)
     else
         ' TODO(schuyler): Transcode to mp3
