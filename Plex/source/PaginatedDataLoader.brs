@@ -100,7 +100,6 @@ Function loaderLoadMoreContent(focusedIndex, extraRows=0)
     if status.content.Count() < totalSize then
         status.loadStatus = 1
         ret = false
-        return false
     else
         status.loadStatus = 2
         ret = extraRowsAlreadyLoaded

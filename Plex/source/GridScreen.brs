@@ -134,6 +134,8 @@ Function showGridScreen() As Integer
 End Function
 
 Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count As Integer)
+    print "Loaded"; count; " elements in row"; row; ", now have"; data.Count()
+
     m.contentArray[row] = data
 
     ' Don't bother showing empty rows
