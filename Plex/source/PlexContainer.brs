@@ -60,9 +60,12 @@ Sub containerParseXml()
             metadata = newDirectoryMetadata(m, n)
         end if
 
-        m.metadata.Push(metadata)
-        m.names.Push(metadata.Title)
-        m.keys.Push(metadata.Key)
+        ' Ignore search nodes for now...
+        if n@search <> "1" then
+            m.metadata.Push(metadata)
+            m.names.Push(metadata.Title)
+            m.keys.Push(metadata.Key)
+        end if
     next
 
     m.Parsed = true
