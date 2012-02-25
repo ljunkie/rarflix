@@ -13,7 +13,6 @@ Function createPosterScreen(item, viewController) As Object
 
     obj.Show = showPosterScreen
     obj.ShowList = posterShowContentList
-    obj.LoadContent = posterLoadMoreContent
     obj.SetListStyle = posterSetListStyle
 
     obj.UseDefaultStyles = true
@@ -21,7 +20,7 @@ Function createPosterScreen(item, viewController) As Object
     obj.ListDisplayMode = invalid
     obj.FilterMode = invalid
 
-    obj.contentArray = []
+    obj.styles = []
 
     return obj
 End Function
@@ -51,43 +50,38 @@ Function showPosterScreen() As Integer
     if m.FilterMode then
         m.Screen.SetListNames(names)
         m.Screen.SetFocusedList(0)
+        m.Loader = createPaginatedLoader(server, container.sourceUrl, keys, 25, 25)
 
         for index = 0 to keys.Count() - 1
-            status = CreateObject("roAssociativeArray")
-            status.content = []
-            status.viewGroup = invalid
-            status.contentType = invalid
-            status.listStyle = invalid
-            status.listDisplayMode = invalid
-            status.loadStatus = 0 ' 0:Not loaded, 1:Partially loaded, 2:Fully loaded
-            m.contentArray[index] = status
+            style = CreateObject("roAssociativeArray")
+            style.listStyle = invalid
+            style.listDisplayMode = invalid
+            m.styles[index] = style
         next
     else
         ' We already grabbed the full list, no need to bother with loading
         ' in chunks.
 
-        status = CreateObject("roAssociativeArray")
+        m.Loader = createDummyLoader([container.GetMetadata()])
 
-        status.viewGroup = container.ViewGroup
+        style = CreateObject("roAssociativeArray")
+
         if container.Count() > 0 then
-            status.contentType = container.GetMetadata()[0].ContentType
+            contentType = container.GetMetadata()[0].ContentType
         else
-            status.contentType = invalid
+            contentType = invalid
         end if
-
-        status.content = container.GetMetadata()
-        status.loadStatus = 2 ' Fully loaded
 
         if m.UseDefaultStyles then
-            aa = getDefaultListStyle(status.viewGroup, status.contentType)
-            status.listStyle = aa.style
-            status.listDisplayMode = aa.display
+            aa = getDefaultListStyle(container.ViewGroup, contentType)
+            style.listStyle = aa.style
+            style.listDisplayMode = aa.display
         else
-            status.listStyle = m.ListStyle
-            status.listDisplayMode = m.ListDisplayMode
+            style.listStyle = m.ListStyle
+            style.listDisplayMode = m.ListDisplayMode
         end if
 
-        m.contentArray[0] = status
+        m.styles[0] = style
     end if
 
     focusedListItem = 0
@@ -98,7 +92,7 @@ Function showPosterScreen() As Integer
     ' and once we start loading it, we do it in chunks. While we're
     ' loading any particular section, use a small timeout so we can
     ' continue loading chunks.
-    if m.contentArray[0].loadStatus < 2 then
+    if m.Loader.GetLoadStatus(0) < 2 then
         timeout = 5
     else
         timeout = 0
@@ -111,13 +105,13 @@ Function showPosterScreen() As Integer
             if msg.isListFocused() then
                 focusedListItem = msg.GetIndex()
                 m.ShowList(focusedListItem)
-                if m.contentArray[focusedListItem].loadStatus < 2 then
+                if m.Loader.GetLoadStatus(focusedListItem) < 2 then
                     timeout = 5
                 end if
             else if msg.isListItemSelected() then
-                status = m.contentArray[focusedListItem]
                 index = msg.GetIndex()
-                selected = status.content[index]
+                content = m.Loader.GetContent(focusedListItem)
+                selected = content[index]
                 contentType = selected.ContentType
 
                 print "Content type in poster screen:";contentType
@@ -128,16 +122,36 @@ Function showPosterScreen() As Integer
                     breadcrumbs = [names[index], selected.Title]
                 end if
 
-                m.ViewController.CreateScreenForItem(status.content, index, breadcrumbs)
+                m.ViewController.CreateScreenForItem(content, index, breadcrumbs)
             else if msg.isScreenClosed() then
                 m.ViewController.PopScreen(m)
                 return -1
             end if
         else if msg = invalid then
             ' An invalid event is our timeout, load some more data.
-            if m.LoadContent(server, container.sourceUrl, keys[focusedListItem], focusedListItem, 25) then
+
+            initialStatus = m.Loader.GetLoadStatus(focusedListItem)
+            if m.Loader.LoadMoreContent(focusedListItem, 0) then
                 timeout = 0
             end if
+
+            ' If this was the first content we loaded, set up the styles
+            if initialStatus = 0 then
+                style = m.styles[focusedListItem]
+                if m.UseDefaultStyles then
+                    content = m.Loader.GetContent(focusedListItem)
+                    if content.Count() > 0 then
+                        aa = getDefaultListStyle(content[0].ViewGroup, content[0].contentType)
+                        style.listStyle = aa.style
+                        style.listDisplayMode = aa.display
+                    end if
+                else
+                    style.listStyle = m.ListStyle
+                    style.listDisplayMode = m.ListDisplayMode
+                end if
+            end if
+
+            m.ShowList(focusedListItem, initialStatus = 0)
         end If
     end while
     return 0
@@ -188,75 +202,23 @@ Function ChannelInfo(channel)
 End Function
 
 Sub posterShowContentList(index, focusFirstItem=true)
-    status = m.contentArray[index]
-    m.Screen.SetContentList(status.content)
+    content = m.Loader.GetContent(index)
+    m.Screen.SetContentList(content)
 
-    if status.listStyle <> invalid then
-        m.Screen.SetListStyle(status.listStyle)
+    style = m.styles[index]
+    if style.listStyle <> invalid then
+        m.Screen.SetListStyle(style.listStyle)
     end if
-    if status.listDisplayMode <> invalid then
-        m.Screen.SetListDisplayMode(status.listDisplayMode)
+    if style.listDisplayMode <> invalid then
+        m.Screen.SetListDisplayMode(style.listDisplayMode)
     end if
 
-    Print "Showing screen with "; status.content.Count(); " elements"
-    Print "List style is "; status.listStyle; ", "; status.listDisplayMode
+    Print "Showing screen with "; content.Count(); " elements"
+    Print "List style is "; style.listStyle; ", "; style.listDisplayMode
 
     m.Screen.Show()
     if focusFirstItem then m.Screen.SetFocusedListItem(0)
 End Sub
-
-Function posterLoadMoreContent(server, sourceUrl, key, index, count) As Boolean
-    status = m.contentArray[index]
-
-    if status.loadStatus = 2 then return true
-
-    startItem = status.content.Count()
-
-    response = server.GetPaginatedQueryResponse(sourceUrl, key, startItem, count)
-    container = createPlexContainerForXml(response)
-
-    ' If the container doesn't play nice with pagination requests then
-    ' whatever we got is the total size.
-    if response.xml@totalSize <> invalid then
-        totalSize = strtoi(response.xml@totalSize)
-    else
-        totalSize = container.Count()
-    end if
-
-    if totalSize <= 0 then
-        status.loadStatus = 2
-        return true
-    end if
-
-    ' If this was the first content we loaded, set up the styles
-    if status.loadStatus = 0 then
-        if m.UseDefaultStyles then
-            status.viewGroup = container.ViewGroup
-            if container.Count() > 0 then
-                status.contentType = container.GetMetadata()[0].ContentType
-            end if
-
-            aa = getDefaultListStyle(status.viewGroup, status.contentType)
-            status.listStyle = aa.style
-            status.listDisplayMode = aa.display
-        else
-            status.listStyle = m.ListStyle
-            status.listDisplayMode = m.ListDisplayMode
-        end if
-    end if
-
-    status.content.Append(container.GetMetadata())
-
-    m.ShowList(index, status.loadStatus = 0)
-
-    if status.content.Count() < totalSize then
-        status.loadStatus = 1
-        return false
-    else
-        status.loadStatus = 2
-        return true
-    end if
-End Function
 
 Function getDefaultListStyle(viewGroup, contentType) As Object
     aa = CreateObject("roAssociativeArray")
