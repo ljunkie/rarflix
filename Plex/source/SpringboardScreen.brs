@@ -40,35 +40,6 @@ Function createPhotoSpringboardScreen(context, index, viewController) As Object
     return obj
 End Function
 
-Function photoAddButtons(screen, metadata, media) As Object
-    ' TODO(schuyler): This is totally bogus placeholder stuff. Flesh it
-    ' out and update based on the current item and state. They're also
-    ' not really wired up to the message loop meaningfully.
-
-    buttonCommands = CreateObject("roAssociativeArray")
-    screen.ClearButtons()
-    buttonCount = 0
-
-    screen.AddButton(buttonCount, "Show")
-    buttonCommands[str(buttonCount)] = "show"
-    buttonCount = buttonCount + 1
-
-    screen.AddButton(buttonCount, "Next Photo")
-    buttonCommands[str(buttonCount)] = "next"
-    buttonCount = buttonCount + 1
-
-    screen.AddButton(buttonCount, "Previous Photo")
-    buttonCommands[str(buttonCount)] = "prev"
-    buttonCount = buttonCount + 1
-
-    screen.AddButton(buttonCount, "Slideshow")
-    buttonCommands[str(buttonCount)] = "slideshow"
-    buttonCount = buttonCount + 1
-
-    return buttonCommands
-End Function
-
-
 Function createVideoSpringboardScreen(context, index, viewController) As Object
     obj = createBaseSpringboardScreen(context, index, viewController)
 
@@ -366,7 +337,7 @@ Function videoAddButtons(screen, metadata, media) As Object
     if metadata.StarRating = invalid then
         metadata.StarRating = 0
     endif
-    screen.AddRatingButton(buttonCount, metadata.UserRating , metadata.StarRating)
+    screen.AddRatingButton(buttonCount, metadata.UserRating, metadata.StarRating)
     buttonCommands[str(buttonCount)] = "rateVideo"
     buttonCount = buttonCount + 1
     return buttonCommands
@@ -391,6 +362,44 @@ Function audioAddButtons(screen, metadata, media) As Object
 
     screen.AddButton(buttonCount, "Previous Song")
     buttonCommands[str(buttonCount)] = "prev"
+    buttonCount = buttonCount + 1
+
+    return buttonCommands
+End Function
+
+Function photoAddButtons(screen, metadata, media) As Object
+    ' TODO(schuyler): This is totally bogus placeholder stuff. Flesh it
+    ' out and update based on the current item and state. They're also
+    ' not really wired up to the message loop meaningfully.
+
+    buttonCommands = CreateObject("roAssociativeArray")
+    screen.ClearButtons()
+    buttonCount = 0
+
+    screen.AddButton(buttonCount, "Show")
+    buttonCommands[str(buttonCount)] = "show"
+    buttonCount = buttonCount + 1
+
+    screen.AddButton(buttonCount, "Slideshow")
+    buttonCommands[str(buttonCount)] = "slideshow"
+    buttonCount = buttonCount + 1
+
+    screen.AddButton(buttonCount, "Next Photo")
+    buttonCommands[str(buttonCount)] = "next"
+    buttonCount = buttonCount + 1
+
+    screen.AddButton(buttonCount, "Previous Photo")
+    buttonCommands[str(buttonCount)] = "prev"
+    buttonCount = buttonCount + 1
+
+    if metadata.UserRating = invalid then
+        metadata.UserRating = 0
+    endif
+    if metadata.StarRating = invalid then
+        metadata.StarRating = 0
+    endif
+    screen.AddRatingButton(buttonCount, metadata.UserRating, metadata.StarRating)
+    buttonCommands[str(buttonCount)] = "ratePhoto"
     buttonCount = buttonCount + 1
 
     return buttonCommands
@@ -570,16 +579,16 @@ Function audioHandleMessage(msg) As Boolean
 End Function
 
 Function photoHandleMessage(msg) As Boolean
+    server = m.Item.server
+
     ' TODO(schuyler) Actually handle all of these
-    if type(msg) = "roAudioPlayerEvent" then
+    if type(msg) = "roSlideShowEvent" then
         if msg.isRequestSucceeded() then
-            Print "Playback of single song completed"
+            Print "Playback of slideshow completed"
         else if msg.isRequestFailed() then
             Print "Playback failed"
         else if msg.isListItemSelected() then
-            Print "Starting to play item"
-            ' What does this actually mean? How is it triggered?
-            'm.audioPlayer.Play()
+            Print "Starting to play slidwshow"
         else if msg.isStatusMessage() then
             Print "Audio player status: "; msg.getMessage()
         else if msg.isFullResult() then
@@ -591,23 +600,35 @@ Function photoHandleMessage(msg) As Boolean
         else if msg.isResumed() then
             Print "Stream resumed by user"
         end if
+
         return true
     else if msg.isButtonPressed() then
         buttonCommand = m.buttonCommands[str(msg.getIndex())]
         print "Button command: ";buttonCommand
-        if buttonCommand = "play" then
-            m.audioPlayer.Play()
-        else if buttonCommand = "pause" then
-            m.audioPlayer.Pause()
-        else if buttonCommand = "stop" then
-            m.audioPlayer.Stop()
-        else if buttonCommand = "resume" then
-            m.audioPlayer.Resume()
+        if buttonCommand = "show" then
+            Print "photoHandleMessage:: Show photo fullscreen"
+        else if buttonCommand = "slideshow" then
+            Print "photoHandleMessage:: Start slideshow"
+            ss = CreateObject("roSlideShow")
+            print m.metadata.server
         else if buttonCommand = "next" then
+            Print "photoHandleMessage:: show next photo"
+             m.GotoNextItem()
         else if buttonCommand = "prev" then
+            Print "photoHandleMessage:: show previous photo"
+             m.GotoPrevItem()
+	    else if buttonCommand = "ratePhoto" then                
+            Print "photoHandleMessage:: Rate photo for key ";m.metadata.ratingKey
+		    rateValue% = (msg.getData() /10)
+		    m.metadata.UserRating = msg.getdata()
+            if m.metadata.ratingKey = invalid then
+                m.metadata.ratingKey = 0
+            end if
+		    server.Rate(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier,rateValue%.ToStr())
         else
             return false
         end if
+
         return true
     end if
 

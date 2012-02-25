@@ -38,6 +38,8 @@ End Function
 Function createBaseMetadata(container, item) As Object
     metadata = CreateObject("roAssociativeArray")
 
+    'print "createBaseMetadata: ";item@key
+
     metadata.Title = firstOf(item@title, item@name)
 
     ' There is a *massive* performance problem on grid views if the description
