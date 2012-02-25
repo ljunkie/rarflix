@@ -42,7 +42,7 @@ Function createGridScreen(item, viewController) As Object
 End Function
 
 Function showGridScreen() As Integer
-    facade = CreateObject("roPosterScreen")
+    facade = CreateObject("roGridScreen")
     facade.Show()
 
     print "Showing grid for item: "; m.Item.key
