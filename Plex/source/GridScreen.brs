@@ -70,7 +70,6 @@ Function showGridScreen() As Integer
     maxRow = keys.Count() - 1
     if maxRow > 1 then maxRow = 1
 
-    rowIndex = 0
     for row = 0 to keys.Count() - 1
         m.contentArray[row] = []
 
@@ -78,8 +77,6 @@ Function showGridScreen() As Integer
             Print "Loading beginning of row "; row; ", "; keys[row]
             m.LoadContent(server, content.sourceUrl, keys[row], row, 0, m.initialLoadSize)
         end if
-
-        rowIndex = rowIndex + 1
     end for
 
     totalTimer.PrintElapsedTime("Total initial grid load")
