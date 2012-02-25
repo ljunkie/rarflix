@@ -107,7 +107,7 @@ Function displaySection(section As Object) As Dynamic
     else
         ' TODO: Don't muck with the contentType here
         section.contentType = "section"
-        screen = homeScreen.ViewController.CreateScreenForItem(section, invalid, [section.server.name, section.Title], false)
+        screen = m.ViewController.CreateScreenForItem(section, invalid, [section.server.name, section.Title], false)
         if section.key = "apps" then screen.SetStyle("flat-square")
         screen.Show()
     endif
