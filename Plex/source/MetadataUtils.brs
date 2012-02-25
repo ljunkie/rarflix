@@ -39,7 +39,10 @@ Function createBaseMetadata(container, item) As Object
     metadata = CreateObject("roAssociativeArray")
 
     metadata.Title = firstOf(item@title, item@name)
-    metadata.Description = item@summary
+
+    ' There is a *massive* performance problem on grid views if the description
+    ' isn't truncated.
+    metadata.Description = truncateString(item@summary, 250, invalid)
     metadata.ShortDescriptionLine1 = metadata.Title
     metadata.ShortDescriptionLine2 = truncateString(item@summary, 250, invalid)
     metadata.Type = item@type
