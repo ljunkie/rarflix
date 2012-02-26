@@ -580,37 +580,24 @@ End Function
 
 Function photoHandleMessage(msg) As Boolean
     server = m.Item.server
+    port = CreateObject("roMessagePort")
 
-    ' TODO(schuyler) Actually handle all of these
-    if type(msg) = "roSlideShowEvent" then
-        if msg.isRequestSucceeded() then
-            Print "Playback of slideshow completed"
-        else if msg.isRequestFailed() then
-            Print "Playback failed"
-        else if msg.isListItemSelected() then
-            Print "Starting to play slidwshow"
-        else if msg.isStatusMessage() then
-            Print "Audio player status: "; msg.getMessage()
-        else if msg.isFullResult() then
-            Print "Playback of entire list finished"
-        else if msg.isPartialResult() then
-            Print "isPartialResult"
-        else if msg.isPaused() then
-            Print "Stream paused by user"
-        else if msg.isResumed() then
-            Print "Stream resumed by user"
-        end if
-
-        return true
-    else if msg.isButtonPressed() then
+    if msg.isButtonPressed() then
         buttonCommand = m.buttonCommands[str(msg.getIndex())]
         print "Button command: ";buttonCommand
         if buttonCommand = "show" then
             Print "photoHandleMessage:: Show photo fullscreen"
+            url = FullUrl(m.item.server.serverurl, m.item.sourceurl, m.item.media[0].parts[0].key)
+            'Print "Url = ";url2
+            slideshow = SlideShowSetup(port, 5.0, "#6b4226", 6)
+            pl = CreateObject("roList")
+            pl.Push(url)
+            DisplaySlideShow(port, slideshow, pl)
         else if buttonCommand = "slideshow" then
             Print "photoHandleMessage:: Start slideshow"
-            ss = CreateObject("roSlideShow")
-            print m.metadata.server
+            list = GetPhotoList(m.item.server.serverurl, m.item.sourceurl)
+            slideshow = SlideShowSetup(port, 5.0, "#6b4226", 6)
+            DisplaySlideShow(port, slideshow, list)
         else if buttonCommand = "next" then
             Print "photoHandleMessage:: show next photo"
              m.GotoNextItem()

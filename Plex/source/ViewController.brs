@@ -27,7 +27,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         item = context
     end if
 
-    print "Item = ";item
+    'print "Item = ";item
 
     contentType = item.ContentType
     viewGroup = item.viewGroup

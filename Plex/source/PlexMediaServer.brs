@@ -210,7 +210,6 @@ Function paginatedQuery(queryUrl, start, size) As Object
 End Function
 
 Function xmlContent(sourceUrl, key) As Object
-
     xmlResult = CreateObject("roAssociativeArray")
     xmlResult.server = m
     if key = "apps" then
@@ -242,12 +241,24 @@ Function IndirectMediaXml(server, originalKey) As Object
     response = httpRequest.GetToStringWithTimeout(60000)
     xml=CreateObject("roXMLElement")
     if not xml.Parse(response) then
-            print "Can't parse feed:";response
-            return originalKey
+        print "Can't parse feed:";response
+        return originalKey
     endif
     return xml
 End Function
         
+Function DirectMediaXml(queryUrl) As Object
+    print "Fetching content from server at query URL:";queryUrl
+    httpRequest = NewHttp(queryUrl)
+    response = httpRequest.GetToStringWithTimeout(60000)
+    xml=CreateObject("roXMLElement")
+    if not xml.Parse(response) then
+        print "Can't parse feed:";response
+        return originalKey
+    endif
+    return xml
+End Function
+
 Function constructPluginVideoScreen(metadata) As Object
     print "Constructing plugin video screen for ";metadata.key
     'printAA(metadata)
