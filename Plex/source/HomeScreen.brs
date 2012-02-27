@@ -17,7 +17,6 @@ Function createHomeScreen(viewController) As Object
     obj.Show = showHomeScreen
     obj.Refresh = refreshHomeScreen
 
-    obj.ShowSection = displaySection
     obj.ShowPreferencesDialog = showPreferencesDialog
     obj.ShowTweaksDialog = showTweaksDialog
     obj.ShowMediaServersDialog = showMediaServersDialog
@@ -54,8 +53,8 @@ Function refreshHomeScreen()
     prefs = CreateObject("roAssociativeArray")
     prefs.server = m
     prefs.sourceUrl = ""
-    prefs.ContentType = "series"
-    prefs.Key = "prefs"
+    prefs.ContentType = "prefs"
+    prefs.Key = "globalprefs"
     prefs.Title = "Preferences"
     prefs.ShortDescriptionLine1 = "Preferences"
     prefs.SDPosterURL = "file://pkg:/images/prefs.jpg"
@@ -81,7 +80,12 @@ Function showHomeScreen() As Integer
                 print "list item selected | index = "; msg.GetIndex()
                 section = m.sectionList[msg.GetIndex()]
                 print "section selected ";section.Title
-                m.ShowSection(section)
+                if section.server <> invalid then
+                    breadcrumbs = [section.server.name, section.Title]
+                else
+                    breadcrumbs = invalid
+                end if
+                m.ViewController.CreateScreenForItem(section, invalid, breadcrumbs)
             else if msg.isScreenClosed() then
                 return -1
             end if
@@ -90,28 +94,6 @@ Function showHomeScreen() As Integer
 
     return 0
 
-End Function
-
-Function displaySection(section As Object) As Dynamic
-    if validateParam(section, "roAssociativeArray", "displaySection") = false return -1
-    
-    if section.key = "globalsearch" then
-    	queryString = getQueryString()
-    	if len(queryString) > 0 then
-    		screen = preShowSearchPosterScreen(section.Title, "")
-    		showSearchPosterScreen(screen, section.server, queryString)
-    		'showSearchGridScreen(section.server, queryString)
-    	end if
-    else if section.key = "prefs" then
-        m.ShowPreferencesDialog()
-    else
-        ' TODO: Don't muck with the contentType here
-        section.contentType = "section"
-        screen = m.ViewController.CreateScreenForItem(section, invalid, [section.server.name, section.Title], false)
-        if section.key = "apps" then screen.SetStyle("flat-square")
-        screen.Show()
-    endif
-    return 0
 End Function
 
 Function showPreferencesDialog()

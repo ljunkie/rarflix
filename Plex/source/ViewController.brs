@@ -26,7 +26,7 @@ Function createViewController() As Object
     return controller
 End Function
 
-Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As Object
+Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As Dynamic
     if type(context) = "roArray" then
         item = context[contextIndex]
     else
@@ -76,6 +76,11 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         ' ChannelInfo(item)
     else if viewGroup = "secondary" then
         screen = createPosterScreen(item, m)
+    else if item.key = "globalsearch" then
+        ' TODO
+    else if item.key = "globalprefs" then
+        m.Home.ShowPreferencesDialog()
+        return invalid
     else
         ' Where do we capture channel directory?
         Print "Creating a default view for contentType=";contentType;", viewGroup=";viewGroup

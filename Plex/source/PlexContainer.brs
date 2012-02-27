@@ -50,6 +50,7 @@ Sub containerParseXml()
             metadata = newAlbumMetadata(m, n, m.ParseDetails)
         else if n.GetName() = "Directory" then
             metadata = newDirectoryMetadata(m, n)
+            if n@scanner <> invalid then metadata.contentType = "section"
         else if nodeType = "movie" OR nodeType = "episode" then
             metadata = newVideoMetadata(m, n, m.ParseDetails)
         else if nodeType = "track" then
