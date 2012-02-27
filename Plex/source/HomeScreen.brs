@@ -96,7 +96,23 @@ Function refreshHomeScreen()
     status.content = []
     status.loadStatus = 0
     status.toLoad = []
-    ' TODO: Search, channel directory
+    ' TODO: Search
+
+    ' Channel directory for each server
+    for each server in m.Servers
+        channels = CreateObject("roAssociativeArray")
+        channels.server = server
+        channels.sourceUrl = ""
+        channels.key = "/system/channeldirectory"
+        channels.Title = "Channel Directory"
+        channels.ShortDescriptionLine2 = "Browse channels to install on " + server.name
+        channels.Description = channels.ShortDescriptionLine2
+        channels.SDPosterURL = "file://pkg:/images/plex.jpg"
+        channels.HDPosterURL = "file://pkg:/images/plex.jpg"
+        'channels.contentType = ...
+
+        status.content.Push(channels)
+    next
 
     '** Prefs
     prefs = CreateObject("roAssociativeArray")
