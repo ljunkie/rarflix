@@ -52,7 +52,7 @@ Function showPosterScreen() As Integer
     if m.FilterMode then
         m.Screen.SetListNames(names)
         m.Screen.SetFocusedList(0)
-        m.Loader = createPaginatedLoader(server, container.sourceUrl, keys, 25, 25)
+        m.Loader = createPaginatedLoader(container, 25, 25)
         m.Loader.Listener = m
 
         for index = 0 to keys.Count() - 1

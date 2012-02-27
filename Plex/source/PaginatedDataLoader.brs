@@ -3,16 +3,18 @@
 '* like the grid screen that want to load additional data in the background.
 '*
 
-Function createPaginatedLoader(server, sourceUrl, keys, initialLoadSize, pageSize)
+Function createPaginatedLoader(container, initialLoadSize, pageSize)
     loader = CreateObject("roAssociativeArray")
 
-    loader.server = server
-    loader.sourceUrl = sourceUrl
+    loader.server = container.server
+    loader.sourceUrl = container.sourceUrl
+    loader.names = container.GetNames()
     loader.initialLoadSize = initialLoadSize
     loader.pageSize = pageSize
 
     loader.contentArray = []
 
+    keys = container.GetKeys()
     for index = 0 to keys.Count() - 1
         status = CreateObject("roAssociativeArray")
         status.content = []
@@ -25,6 +27,7 @@ Function createPaginatedLoader(server, sourceUrl, keys, initialLoadSize, pageSiz
     loader.GetContent = loaderGetContent
     loader.LoadMoreContent = loaderLoadMoreContent
     loader.GetLoadStatus = loaderGetLoadStatus
+    loader.GetNames = loaderGetNames
 
     loader.Listener = invalid
 
@@ -39,6 +42,12 @@ Function createDummyLoader(content)
     loader.GetContent = dummyGetContent
     loader.LoadMoreContent = dummyLoadMoreContent
     loader.GetLoadStatus = dummyGetLoadStatus
+    loader.GetNames = loaderGetNames
+
+    loader.names = []
+    for i = 0 to content.Count() - 1
+        loader.names[i] = ""
+    next
 
     return loader
 End Function
@@ -114,6 +123,10 @@ End Function
 
 Function loaderGetLoadStatus(index) As Integer
     return m.contentArray[index].loadStatus
+End Function
+
+Function loaderGetNames()
+    return m.names
 End Function
 
 Function dummyGetContent(index)

@@ -47,7 +47,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if contentType = "clip" then
         ' playPluginVideo(item.server, item)
     else if contentType = "series" then
-        screen = createGridScreen(item, m)
+        screen = createGridScreenForItem(item, m)
     else if contentType = "artist" then
         ' TODO: Poster, poster with filters, or grid?
         screen = createPosterScreen(item, m)
@@ -59,7 +59,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen = createAudioSpringboardScreen(context, contextIndex, m)
     else if contentType = "section" then
         ' Need to actually set the content type to section somewhere, based on title2?
-        screen = createGridScreen(item, m)
+        screen = createGridScreenForItem(item, m)
     else if contentType = "photo" then
         if right(item.key, 8) = "children" then
             screen = createPosterScreen(item, m)

@@ -2,7 +2,7 @@
 '* A grid screen backed by XML from a PMS.
 '*
 
-Function createGridScreen(item, viewController) As Object
+Function createGridScreen(viewController) As Object
     Print "######## Creating Grid Screen ########"
 
     screen = CreateObject("roAssociativeArray")
@@ -19,7 +19,7 @@ Function createGridScreen(item, viewController) As Object
     grid.SetUpBehaviorAtTopRow("exit")
 
     ' Standard properties for all our Screen types
-    screen.Item = item
+    screen.Item = invalid
     screen.Screen = grid
     screen.ViewController = viewController
 
@@ -29,7 +29,6 @@ Function createGridScreen(item, viewController) As Object
     screen.timer = createPerformanceTimer()
     screen.port = port
     screen.selectedRow = 0
-    screen.maxLoadedRow = -1
     screen.contentArray = []
     screen.gridStyle = "Flat-Movie"
 
@@ -38,42 +37,43 @@ Function createGridScreen(item, viewController) As Object
     return screen
 End Function
 
+'* Convenience method to create a grid screen with a loader for the specified item
+Function createGridScreenForItem(item, viewController) As Object
+    obj = createGridScreen(viewController)
+
+    obj.Item = item
+
+    container = createPlexContainerForUrl(item.server, item.sourceUrl, item.key)
+    obj.Loader = createPaginatedLoader(container, 8, 50)
+    obj.Loader.Listener = obj
+
+    return obj
+End Function
+
 Function showGridScreen() As Integer
     facade = CreateObject("roGridScreen")
     facade.Show()
 
-    print "Showing grid for item: "; m.Item.key
-
     totalTimer = createPerformanceTimer()
 
-    server = m.Item.server
-
-    content = createPlexContainerForUrl(server, m.Item.sourceUrl, m.Item.key)
-    names = content.GetNames()
-    keys = content.GetKeys()
-
-    m.timer.PrintElapsedTime("createPlexContainerForUrl")
+    names = m.Loader.GetNames()
 
     m.Screen.SetupLists(names.Count()) 
-    m.timer.PrintElapsedTime("Grid SetupLists")
     m.Screen.SetListNames(names)
-    m.timer.PrintElapsedTime("Grid SetListNames")
 
     ' Only two rows and five items per row are visible on the screen, so
     ' don't load much more than we need to before initially showing the
     ' grid. Once we start the event loop we can load the rest of the
     ' content.
-    m.Loader = createPaginatedLoader(server, content.sourceUrl, keys, 8, 50)
-    m.Loader.Listener = m
 
-    maxRow = keys.Count() - 1
+    maxRow = names.Count() - 1
     if maxRow > 1 then maxRow = 1
 
-    for row = 0 to keys.Count() - 1
+    for row = 0 to names.Count() - 1
         m.contentArray[row] = []
 
         if row <= maxRow then
-            Print "Loading beginning of row "; row; ", "; keys[row]
+            Print "Loading beginning of row "; row; ", "; names[row]
             m.Loader.LoadMoreContent(row, 0)
         end if
     end for
