@@ -44,13 +44,15 @@ Sub containerParseXml()
 
         nodeType = firstOf(n@type, m.ViewGroup)
 
-        if nodeType = "artist" then
+        if n@scanner <> invalid then
+            metadata = newDirectoryMetadata(m, n)
+            metadata.contentType = "section"
+        else if nodeType = "artist" then
             metadata = newArtistMetadata(m, n, m.ParseDetails)
         else if nodeType = "album" then
             metadata = newAlbumMetadata(m, n, m.ParseDetails)
         else if n.GetName() = "Directory" then
             metadata = newDirectoryMetadata(m, n)
-            if n@scanner <> invalid then metadata.contentType = "section"
         else if nodeType = "movie" OR nodeType = "episode" then
             metadata = newVideoMetadata(m, n, m.ParseDetails)
         else if nodeType = "track" then

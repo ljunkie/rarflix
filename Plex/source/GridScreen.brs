@@ -142,6 +142,8 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
     if data.Count() = 0 then
         m.Screen.SetListVisible(row, false)
         return
+    else if count > 0
+        m.Screen.SetListVisible(row, true)
     end if
 
     ' It seems like you should be able to do this, but you have to pass in

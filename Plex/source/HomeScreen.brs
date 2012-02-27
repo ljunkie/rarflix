@@ -5,13 +5,16 @@
 
 Function createHomeScreen(viewController) As Object
     obj = CreateObject("roAssociativeArray")
-    port=CreateObject("roMessagePort")
-    screen = CreateObject("roPosterScreen")
-    screen.SetMessagePort(port)
+
+    grid = createGridScreen(viewController)
+    grid.SetStyle("flat-square")
+    grid.Screen.SetDisplayMode("photo-fit")
+    grid.Screen.SetUpBehaviorAtTopRow("stop")
+    grid.Loader = obj
 
     ' Standard properties for all our Screen types
     obj.Item = invalid
-    obj.Screen = screen
+    obj.Screen = grid
     obj.ViewController = viewController
 
     obj.Show = showHomeScreen
@@ -28,30 +31,75 @@ Function createHomeScreen(viewController) As Object
 
     obj.Servers = []
 
-    screen.SetListStyle("flat-category")
-    screen.setListDisplayMode("zoom-to-fill")
+    ' Data loader interface used by the grid screen
+    obj.GetContent = homeGetContent
+    obj.LoadMoreContent = homeLoadMoreContent
+    obj.GetLoadStatus = homeGetLoadStatus
+    obj.GetNames = homeGetNames
 
     return obj
 End Function
 
 Function refreshHomeScreen()
-    print "About to show home screen"
     m.Servers = PlexMediaServers()
-    displayServerName = m.Servers.count() > 1
-    m.sectionList = CreateObject("roArray", 10, true)  
+    m.contentArray = []
+    m.RowNames = []
+
+    print "Setting up home screen content, server count:"; m.Servers.Count()
+
+    ' Sections, across all servers
+    status = CreateObject("roAssociativeArray")
+    status.content = []
+    status.loadStatus = 0
+    status.toLoad = []
     for each server in m.Servers
-    	sections = server.GetHomePageContent()
-    	for each section in sections
-    		if displayServerName then
-                    section.ShortDescriptionLine2 = server.name
-    		endif
-    		m.sectionList.Push(section)
-    	end for
-    end for
-	
+        obj = CreateObject("roAssociativeArray")
+        obj.server = server
+        obj.key = "/library/sections"
+        status.toLoad.Push(obj)
+    next
+    m.contentArray.Push(status)
+    m.RowNames.Push("Library Sections")
+
+    ' Recently used channels, across all servers
+    status = CreateObject("roAssociativeArray")
+    status.content = []
+    status.loadStatus = 0
+    status.toLoad = []
+    for each server in m.Servers
+        obj = CreateObject("roAssociativeArray")
+        obj.server = server
+        obj.key = "/channels/recentlyViewed"
+
+        allChannels = CreateObject("roAssociativeArray")
+        allChannels.Title = "More Channels"
+        allChannels.ShortDescriptionLine2 = "All channels on " + server.name
+        allChannels.Description = allChannels.ShortDescriptionLine2
+        allChannels.server = server
+        allChannels.sourceUrl = ""
+        allChannels.Key = "/channels/all"
+        'allChannels.contentType = ...
+        allChannels.SDPosterURL = "file://pkg:/images/plex.jpg"
+        allChannels.HDPosterURL = "file://pkg:/images/plex.jpg"
+        obj.item = allChannels
+
+        status.toLoad.Push(obj)
+    next
+    m.contentArray.Push(status)
+    m.RowNames.Push("Channels")
+
+    ' TODO(schuyler) myPlex content
+
+    ' Misc: global search, preferences, channel directory
+    m.RowNames.Push("Miscellaneous")
+    status = CreateObject("roAssociativeArray")
+    status.content = []
+    status.loadStatus = 0
+    status.toLoad = []
+    ' TODO: Search, channel directory
+
     '** Prefs
     prefs = CreateObject("roAssociativeArray")
-    prefs.server = m
     prefs.sourceUrl = ""
     prefs.ContentType = "prefs"
     prefs.Key = "globalprefs"
@@ -59,41 +107,20 @@ Function refreshHomeScreen()
     prefs.ShortDescriptionLine1 = "Preferences"
     prefs.SDPosterURL = "file://pkg:/images/prefs.jpg"
     prefs.HDPosterURL = "file://pkg:/images/prefs.jpg"
-    m.sectionList.Push(prefs)
-	
-	
-    m.Screen.SetContentList(m.sectionList)
-    m.Screen.SetFocusedListItem(0)
+    status.content.Push(prefs)
+
+    m.contentArray.Push(status)
+
+    if type(m.Screen.Screen) = "roGridScreen" then
+        m.Screen.Screen.SetFocusedListItem(0, 0)
+    else
+        m.Screen.Screen.SetFocusedListItem(0)
+    end if
 End Function
 
 Function showHomeScreen() As Integer
     m.Refresh()
-    m.Screen.Show()
-
-    while true
-        msg = wait(0, m.Screen.GetMessagePort())
-        if type(msg) = "roPosterScreenEvent" then
-            print "showHomeScreen | msg = "; msg.GetMessage() " | index = "; msg.GetIndex()
-            if msg.isListFocused() then
-                print "list focused | index = "; msg.GetIndex(); " | category = "; m.curCategory
-            else if msg.isListItemSelected() then
-                print "list item selected | index = "; msg.GetIndex()
-                section = m.sectionList[msg.GetIndex()]
-                print "section selected ";section.Title
-                if section.server <> invalid then
-                    breadcrumbs = [section.server.name, section.Title]
-                else
-                    breadcrumbs = invalid
-                end if
-                m.ViewController.CreateScreenForItem(section, invalid, breadcrumbs)
-            else if msg.isScreenClosed() then
-                return -1
-            end if
-        end If
-    end while
-
-    return 0
-
+    return m.Screen.Show()
 End Function
 
 Function showPreferencesDialog()
@@ -513,3 +540,107 @@ Function getQueryString() As String
 	print "Query string:";queryString
 	return queryString
 End Function
+
+Function homeGetContent(index)
+    return m.contentArray[index].content
+End Function
+
+Function homeLoadMoreContent(focusedIndex, extraRows=0)
+    status = invalid
+    extraRowsAlreadyLoaded = true
+    for i = 0 to extraRows
+        index = focusedIndex + i
+        if index >= m.contentArray.Count() then
+            exit for
+        else if m.contentArray[index].loadStatus < 2 then
+            if status = invalid then
+                status = m.contentArray[index]
+                loadingRow = index
+            else
+                extraRowsAlreadyLoaded = false
+                exit for
+            end if
+        end if
+    end for
+
+    if status = invalid then return true
+
+    startItem = status.content.Count()
+    if status.toLoad.Count() = 0 then
+        status.loadStatus = 2
+        m.Screen.OnDataLoaded(loadingRow, status.content, 0, status.content.Count())
+        return extraRowsAlreadyLoaded
+    end if
+
+    countLoaded = 0
+    toLoad = status.toLoad.Shift()
+    if toLoad.key <> invalid then
+        container = createPlexContainerForUrl(toLoad.server, "", toLoad.key)
+        countLoaded = container.Count()
+
+        ' Add some extra description
+        if m.Servers.Count() > 1 then
+            serverStr = " on " + toLoad.server.name
+        else
+            serverStr = ""
+        end if
+        items = container.GetMetadata()
+        for each item in items
+            add = true
+            if item.Type = "channel" then
+                channelType = Mid(item.key, 2, 5)
+                if channelType = "music" then
+                    item.ShortDescriptionLine2 = "Music channel" + serverStr
+                else if channelType = "photo" then
+                    item.ShortDescriptionLine2 = "Photo channel" + serverStr
+                else if channelType = "video" then
+                    item.ShortDescriptionLine2 = "Video channel" + serverStr
+                else
+                    print "Skipping unsupported channel type: "; channelType
+                    add = false
+                end if
+            else if item.Type = "movie" then
+                item.ShortDescriptionLine2 = "Movie section" + serverStr
+            else if item.Type = "show" then
+                item.ShortDescriptionLine2 = "TV section" + serverStr
+            else if item.Type = "artist" then
+                item.ShortDescriptionLine2 = "Music section" + serverStr
+            else if item.Type = "photo" then
+                item.ShortDescriptionLine2 = "Photo section" + serverStr
+            else
+                print "Skipping unsupported section type: "; item.Type
+            end if
+
+            if add then
+                item.Description = item.ShortDescriptionLine2
+                status.content.Push(item)
+            end if
+        next
+    end if
+
+    if toLoad.item <> invalid then
+        countLoaded = countLoaded + 1
+        status.content.Push(toLoad.item)
+    end if
+
+    if status.toLoad.Count() > 0 then
+        status.loadStatus = 1
+        ret = false
+    else
+        status.loadStatus = 2
+        ret = extraRowsAlreadyLoaded
+    end if
+
+    m.Screen.OnDataLoaded(loadingRow, status.content, startItem, countLoaded)
+
+    return ret
+End Function
+
+Function homeGetLoadStatus(index) As Integer
+    return m.contentArray[index].loadStatus
+End Function
+
+Function homeGetNames()
+    return m.RowNames
+End Function
+

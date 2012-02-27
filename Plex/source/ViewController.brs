@@ -18,7 +18,7 @@ Function createViewController() As Object
     controller.ShowHomeScreen = vcShowHomeScreen
     controller.RefreshHomeScreen = vcRefreshHomeScreen
 
-    controller.facade = CreateObject("roPosterScreen")
+    controller.facade = CreateObject("roGridScreen")
     controller.facade.Show()
 
     controller.nextId = 1
@@ -64,7 +64,6 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if contentType = "audio" then
         screen = createAudioSpringboardScreen(context, contextIndex, m)
     else if contentType = "section" then
-        ' Need to actually set the content type to section somewhere, based on title2?
         screen = createGridScreenForItem(item, m)
     else if contentType = "photo" then
         if right(item.key, 8) = "children" then
@@ -129,6 +128,17 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
 End Function
 
 Sub vcPopScreen(screen)
+    if screen.ScreenID = -1 then
+        Print "Popping home screen, cleaning up"
+
+        while m.screens.Count() > 0
+            m.PopScreen(m.screens.Peek())
+        end while
+
+        m.Home = invalid
+        return
+    end if
+
     if screen.ScreenID = invalid OR m.screens.Peek().ScreenID = invalid OR screen.ScreenID <> m.screens.Peek().ScreenID then
         Print "Trying to pop screen that doesn't match the top of our stack!"
         Return
@@ -143,6 +153,7 @@ End Sub
 
 Sub vcShowHomeScreen()
     m.Home = createHomeScreen(m)
+    m.Home.Screen.ScreenID = -1
     m.Home.Show()
 End Sub
 
