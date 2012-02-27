@@ -15,6 +15,12 @@ Function createViewController() As Object
     controller.CreateScreenForItem = vcCreateScreenForItem
     controller.PopScreen = vcPopScreen
 
+    controller.ShowHomeScreen = vcShowHomeScreen
+    controller.RefreshHomeScreen = vcRefreshHomeScreen
+
+    controller.facade = CreateObject("roPosterScreen")
+    controller.facade.Show()
+
     controller.nextId = 1
 
     return controller
@@ -129,3 +135,17 @@ Sub vcPopScreen(screen)
         m.breadcrumbs.Pop()
     next
 End Sub
+
+Sub vcShowHomeScreen()
+    m.Home = createHomeScreen(m)
+    m.Home.Show()
+End Sub
+
+Sub vcRefreshHomeScreen()
+    while m.screens.Count() > 0
+        m.PopScreen(m.screens.Peek())
+    end while
+
+    m.Home.Refresh()
+End Sub
+

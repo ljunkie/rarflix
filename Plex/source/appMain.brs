@@ -7,15 +7,13 @@ Sub Main()
 	' Development statements
 	' RemoveAllServers()
 	' AddServer("iMac", "http://192.168.1.3:32400")
-    screenFacade = CreateObject("roPosterScreen")
-    screenFacade.show()
+
     'initialize theme attributes like titles, logos and overhang color
     initTheme()
 
     'prepare the screen for display and get ready to begin
-    home = createHomeScreen()
-    home.Servers = PlexMediaServers()
-    home.Show()
+    controller = createViewController()
+    controller.ShowHomeScreen()
 End Sub
 
 

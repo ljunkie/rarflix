@@ -3,7 +3,7 @@
 '**
 '*****************************************************************
 
-Function createHomeScreen() As Object
+Function createHomeScreen(viewController) As Object
     obj = CreateObject("roAssociativeArray")
     port=CreateObject("roMessagePort")
     screen = CreateObject("roPosterScreen")
@@ -12,7 +12,7 @@ Function createHomeScreen() As Object
     ' Standard properties for all our Screen types
     obj.Item = invalid
     obj.Screen = screen
-    obj.ViewController = createViewController()
+    obj.ViewController = viewController
 
     obj.Show = showHomeScreen
     obj.Refresh = refreshHomeScreen
