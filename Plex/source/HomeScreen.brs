@@ -107,7 +107,7 @@ Function refreshHomeScreen()
         channels = CreateObject("roAssociativeArray")
         channels.server = server
         channels.sourceUrl = ""
-        channels.key = "/system/channeldirectory"
+        channels.key = "/system/appstore"
         channels.Title = "Channel Directory"
         if m.Servers.Count() > 1 then
             allChannels.ShortDescriptionLine2 = "Browse channels to install on " + server.name

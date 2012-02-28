@@ -71,6 +71,9 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         else 
             screen = createPhotoSpringboardScreen(context, contextIndex, m)
         end if
+    else if item.key = "/system/appstore" then
+        screen = createGridScreenForItem(item, m)
+        screen.SetStyle("flat-square")
     else if viewGroup = "Store:Info" then
         ' ChannelInfo(item)
     else if viewGroup = "secondary" then
