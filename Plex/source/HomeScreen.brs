@@ -73,7 +73,11 @@ Function refreshHomeScreen()
 
         allChannels = CreateObject("roAssociativeArray")
         allChannels.Title = "More Channels"
-        allChannels.ShortDescriptionLine2 = "All channels on " + server.name
+        if m.Servers.Count() > 1 then
+            allChannels.ShortDescriptionLine2 = "All channels on " + server.name
+        else
+            allChannels.ShortDescriptionLine2 = "All channels"
+        end if
         allChannels.Description = allChannels.ShortDescriptionLine2
         allChannels.server = server
         allChannels.sourceUrl = ""
@@ -105,7 +109,11 @@ Function refreshHomeScreen()
         channels.sourceUrl = ""
         channels.key = "/system/channeldirectory"
         channels.Title = "Channel Directory"
-        channels.ShortDescriptionLine2 = "Browse channels to install on " + server.name
+        if m.Servers.Count() > 1 then
+            allChannels.ShortDescriptionLine2 = "Browse channels to install on " + server.name
+        else
+            allChannels.ShortDescriptionLine2 = "Browse channels to install"
+        end if
         channels.Description = channels.ShortDescriptionLine2
         channels.SDPosterURL = "file://pkg:/images/plex.jpg"
         channels.HDPosterURL = "file://pkg:/images/plex.jpg"
