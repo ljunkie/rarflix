@@ -246,42 +246,50 @@ Function showMediaServersDialog()
 	
 	fixedSections = 4
 	buttonCount = fixedSections + 1
-	for each server in m.Servers
-		title = "Remove "+server.name + " ("+server.serverUrl+")"
-		dialog.AddButton(buttonCount, title)
-		buttonCount = buttonCount + 1
-	next
-	
+    servers = RegRead("serverList", "servers")
+    if servers <> invalid
+        serverTokens = strTokenize(servers, "{")
+        counter = 0
+        for each token in serverTokens
+            print "Server token:";token
+            serverDetails = strTokenize(token, "\")
+
+		    title = "Remove "+serverDetails[1] + " ("+serverDetails[0]+")"
+		    dialog.AddButton(buttonCount, title)
+		    buttonCount = buttonCount + 1
+        end for
+    end if
+
 	dialog.Show()
 	while true 
-            msg = wait(0, dialog.GetMessagePort()) 
-            if type(msg) = "roMessageDialogEvent"
-                if msg.isScreenClosed() then
-                    print "Manage servers closed event"
-                    dialog.close()
-                    exit while
-                else if msg.isButtonPressed() then
-                    if msg.getIndex() = 1 then
-                        print "Closing dialog"
-                    else if msg.getIndex() = 2 then
-                        m.ShowManualServerDialog()
+        msg = wait(0, dialog.GetMessagePort()) 
+        if type(msg) = "roMessageDialogEvent"
+            if msg.isScreenClosed() then
+                print "Manage servers closed event"
+                dialog.close()
+                exit while
+            else if msg.isButtonPressed() then
+                if msg.getIndex() = 1 then
+                    print "Closing dialog"
+                else if msg.getIndex() = 2 then
+                    m.ShowManualServerDialog()
 
-                        ' UPDATE: I'm not seeing this problem, but I'm loathe to remove such a specific workaround...
-                        ' Not sure why this is needed here. It appears that exiting the keyboard
-                        ' dialog removes all dialogs then locks up screen. Redrawing the home screen
-                        ' works around it.
-                        'screen=preShowHomeScreen("", "")
-                        'showHomeScreen(screen, PlexMediaServers())
-                    else if msg.getIndex() = 3 then
-                        DiscoverPlexMediaServers()
-                    else if msg.getIndex() = 4 then
-                        RemoveAllServers()
-                    else
-                        RemoveServer(msg.getIndex()-(fixedSections+1))
-                    end if
-                    dialog.close()
-                end if 
-            end if
+                    ' UPDATE: I'm not seeing this problem, but I'm loathe to remove such a specific workaround...
+                    ' Not sure why this is needed here. It appears that exiting the keyboard
+                    ' dialog removes all dialogs then locks up screen. Redrawing the home screen
+                    ' works around it.
+                    'screen=preShowHomeScreen("", "")
+                    'showHomeScreen(screen, PlexMediaServers())
+                else if msg.getIndex() = 3 then
+                    DiscoverPlexMediaServers()
+                else if msg.getIndex() = 4 then
+                    RemoveAllServers()
+                else
+                    RemoveServer(msg.getIndex()-(fixedSections+1))
+                end if
+                dialog.close()
+            end if 
+        end if
 	end while
 End Function
 
