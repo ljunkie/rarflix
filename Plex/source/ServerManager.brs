@@ -89,7 +89,8 @@ Function AddUnnamedServer(address)
     sock = CreateObject("roSocketAddress")
     sock.setAddress(address+":32400")
     ipaddr = sock.getAddress()
-    print "Host:"+address", IP Address:"+ipaddr
+    hostname = sock.getHostName()
+    print "Host:"+hostname", IP Address:"+ipaddr
     AddServer(address, "http://"+ipaddr)
 End Function
 
