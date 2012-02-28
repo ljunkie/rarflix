@@ -75,7 +75,9 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen = createGridScreenForItem(item, m)
         screen.SetStyle("flat-square")
     else if viewGroup = "Store:Info" then
-        ' ChannelInfo(item)
+        dialog = createPopupMenu(item)
+        dialog.Show()
+        return invalid
     else if viewGroup = "secondary" then
         screen = createPosterScreen(item, m)
     else if item.key = "globalsearch" then

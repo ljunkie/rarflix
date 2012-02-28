@@ -164,50 +164,6 @@ Sub posterOnDataLoaded(row As Integer, data As Object, startItem as Integer, cou
     m.ShowList(row, startItem = 0)
 End Sub
 
-Function ChannelInfo(channel) 
-
-    print "Store info for:";channel
-    port = CreateObject("roMessagePort") 
-	dialog = CreateObject("roMessageDialog") 
-	dialog.SetMessagePort(port)
-	dialog.SetMenuTopLeft(true)
-	dialog.EnableBackButton(true)
-	dialog.SetTitle(channel.title) 
-	dialog.SetText(channel.description) 
-	queryResponse = channel.server.GetQueryResponse(channel.sourceUrl, channel.key)
-        ' TODO(schuyler): Fix this to use a PlexContainer, it's broken in the meantime
-	content = channel.server.GetContent(queryResponse)
-	buttonCommands = CreateObject("roAssociativeArray")
-	buttonCount = 0
-	for each item in content
-		buttonTitle = item.title
-		dialog.AddButton(buttonCount, buttonTitle)
-		buttonCommands[str(buttonCount)+"_key"] = item.key
-		buttonCount = buttonCount + 1
-	next
-	dialog.Show()
-	while true 
-		msg = wait(0, dialog.GetMessagePort()) 
-		if type(msg) = "roMessageDialogEvent"
-			if msg.isScreenClosed() then
-				dialog.close()
-				exit while
-			else if msg.isButtonPressed() then
-				print "Button pressed:";msg.getIndex()
-				commandKey = buttonCommands[str(msg.getIndex())+"_key"]
-				print "Command Key:"+commandKey
-				dialog.close()
-				retrieving = CreateObject("roOneLineDialog")
-				retrieving.SetTitle("Please wait ...")
-				retrieving.ShowBusyAnimation()
-				retrieving.Show()
-				commandResponse = channel.server.GetQueryResponse(channel.sourceUrl, commandKey)
-				retrieving.Close()
-			end if 
-		end if
-	end while
-End Function
-
 Sub posterShowContentList(index, focusFirstItem=true)
     content = m.Loader.GetContent(index)
     m.Screen.SetContentList(content)

@@ -66,6 +66,8 @@ Sub containerParseXml()
             metadata = newArtistMetadata(m, n, m.ParseDetails)
         else if nodeType = "album" then
             metadata = newAlbumMetadata(m, n, m.ParseDetails)
+        else if nodeType = "Store:Info" then
+            metadata = newChannelMetadata(m, n)
         else if n.GetName() = "Directory" then
             metadata = newDirectoryMetadata(m, n)
         else if nodeType = "movie" OR nodeType = "episode" then
