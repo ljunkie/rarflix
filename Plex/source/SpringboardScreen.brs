@@ -568,7 +568,13 @@ Function audioHandleMessage(msg) As Boolean
         else if buttonCommand = "resume" then
             m.audioPlayer.Resume()
         else if buttonCommand = "next" then
+            m.audioPlayer.Stop()
+            m.GotoNextItem()
+            m.audioPlayer.Play()
         else if buttonCommand = "prev" then
+            m.audioPlayer.Stop()
+            m.GotoNextItem()
+            m.audioPlayer.Play()
         else
             return false
         end if
