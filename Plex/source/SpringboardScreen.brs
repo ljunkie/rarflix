@@ -59,6 +59,12 @@ Function createAudioSpringboardScreen(context, index, viewController) As Object
     ' Set up audio player, using the same message port
     obj.audioPlayer = CreateObject("roAudioPlayer")
     obj.audioPlayer.SetMessagePort(obj.Screen.GetMessagePort())
+    obj.isPlayState = 0   ' Stopped
+    obj.setPlayState = audioPlayer_newstate
+    obj.setupSong = audioPlayer_setup
+    obj.clearContent = audioPlayer_clear_content
+    obj.setContentList = audioPlayer_set_content_list
+    obj.getMsgEvents = audioPlayer_getmsg
 
     ' TODO: Do we want to loop? Always/Sometimes/Never/Preference?
     obj.audioPlayer.SetLoop(context.Count() > 1)
@@ -66,9 +72,9 @@ Function createAudioSpringboardScreen(context, index, viewController) As Object
     obj.audioPlayer.SetContentList(context)
     obj.audioPlayer.SetNext(index)
 
-    obj.AddButtons = audioAddButtons
+    obj.AddButtons      = audioPlayer_setbuttons
     obj.GetMediaDetails = audioGetMediaDetails
-    obj.HandleMessage = audioHandleMessage
+    obj.HandleMessage   = audioHandleMessage
 
     return obj
 End Function
@@ -119,7 +125,7 @@ Function sbRefresh()
     end if
 
     m.Screen.setContent(m.metadata)
-    m.buttonCommands = m.AddButtons(m.Screen, m.metadata, m.media)
+    m.buttonCommands = m.AddButtons(m)
     if m.metadata.SDPosterURL <> invalid and m.metadata.HDPosterURL <> invalid then
         m.Screen.PrefetchPoster(m.metadata.SDPosterURL, m.metadata.HDPosterURL)
     endif
@@ -252,159 +258,6 @@ Function SelectAudioStream(server, media)
     end while
 End Function
 
-Function videoAddButtons(screen, metadata, media) As Object
-    buttonCommands = CreateObject("roAssociativeArray")
-    screen.ClearButtons()
-    buttonCount = 0
-    if metadata.viewOffset <> invalid then
-        intervalInSeconds = fix(val(metadata.viewOffset)/(1000))
-        resumeTitle = "Resume from "+TimeDisplay(intervalInSeconds)
-        screen.AddButton(buttonCount, resumeTitle)
-        buttonCommands[str(buttonCount)] = "resume"
-        buttonCount = buttonCount + 1
-    endif
-    screen.AddButton(buttonCount, "Play")
-    buttonCommands[str(buttonCount)] = "play"
-    buttonCount = buttonCount + 1
-
-    print "Media = ";media
-    print "metadata.optimizedForStreaming = ";metadata.optimizedForStreaming
-
-    if media.container <> invalid AND media.videocodec <> invalid AND media.audiocodec <> invalid AND metadata.optimizedforstreaming <> invalid then
-        dsp = 0
-        ' MP4 files
-        if media.container = "mov" then
-            if media.videocodec = "h264" AND (media.audiocodec = "aac" OR media.audicodec = "ac3") then
-                dsp = 1
-            end if
-        end if
-        ' MKV files
-        if media.container = "mkv" then
-            if media.videocodec = "h264" AND (media.audiocodec = "aac" OR media.audicodec = "ac3") then
-                dsp = 1
-            end if
-        end if
-
-        if metadata.optimizedForStreaming = "0" AND dsp = 1 then
-            print "Container = "+media.container+", ac = "+media.audiocodec+", vc = "+media.videocodec+", but not optimized for streaming"
-            dsp = 0
-        else if dsp = 1 then
-            print "Container = "+media.container+", ac = "+media.audiocodec+", vc = "+media.videocodec+", OPTIMIZED FOR STREAMING"
-        end if
-    end if
-
-    if metadata.viewCount <> invalid AND val(metadata.viewCount) > 0 then
-        screen.AddButton(buttonCount, "Mark as unwatched")
-        buttonCommands[str(buttonCount)] = "unscrobble"
-        buttonCount = buttonCount + 1
-    else
-        if metadata.viewOffset <> invalid AND val(metadata.viewOffset) > 0 then
-            screen.AddButton(buttonCount, "Mark as unwatched")
-            buttonCommands[str(buttonCount)] = "unscrobble"
-            buttonCount = buttonCount + 1
-        end if
-        screen.AddButton(buttonCount, "Mark as watched")
-        buttonCommands[str(buttonCount)] = "scrobble"
-        buttonCount = buttonCount + 1
-    end if
-
-    mediaPart = media.preferredPart
-    subtitleStreams = []
-    audioStreams = []
-    for each Stream in mediaPart.streams
-        if Stream.streamType = "2" then
-            audioStreams.Push(Stream)
-        else if Stream.streamType = "3" then
-            subtitleStreams.Push(Stream)
-        endif
-    next
-    print "Found audio streams:";audioStreams.Count()
-    print "Found subtitle streams:";subtitleStreams.Count()
-    if audioStreams.Count() > 1 then
-        screen.AddButton(buttonCount, "Select audio stream")
-        buttonCommands[str(buttonCount)] = "audioStreamSelection"
-        buttonCount = buttonCount + 1
-    endif
-    if subtitleStreams.Count() > 0 then
-        screen.AddButton(buttonCount, "Select subtitles")
-        buttonCommands[str(buttonCount)] = "subtitleStreamSelection"
-        buttonCount = buttonCount + 1
-    endif
-
-    if metadata.UserRating = invalid then
-        metadata.UserRating = 0
-    endif
-    if metadata.StarRating = invalid then
-        metadata.StarRating = 0
-    endif
-    screen.AddRatingButton(buttonCount, metadata.UserRating, metadata.StarRating)
-    buttonCommands[str(buttonCount)] = "rateVideo"
-    buttonCount = buttonCount + 1
-    return buttonCommands
-End Function
-
-Function audioAddButtons(screen, metadata, media) As Object
-    ' TODO(schuyler): This is totally bogus placeholder stuff. Flesh it
-    ' out and update based on the current item and state. They're also
-    ' not really wired up to the message loop meaningfully.
-
-    buttonCommands = CreateObject("roAssociativeArray")
-    screen.ClearButtons()
-    buttonCount = 0
-
-    screen.AddButton(buttonCount, "Play")
-    buttonCommands[str(buttonCount)] = "play"
-    buttonCount = buttonCount + 1
-
-    screen.AddButton(buttonCount, "Next Song")
-    buttonCommands[str(buttonCount)] = "next"
-    buttonCount = buttonCount + 1
-
-    screen.AddButton(buttonCount, "Previous Song")
-    buttonCommands[str(buttonCount)] = "prev"
-    buttonCount = buttonCount + 1
-
-    return buttonCommands
-End Function
-
-Function photoAddButtons(screen, metadata, media) As Object
-    ' TODO(schuyler): This is totally bogus placeholder stuff. Flesh it
-    ' out and update based on the current item and state. They're also
-    ' not really wired up to the message loop meaningfully.
-
-    buttonCommands = CreateObject("roAssociativeArray")
-    screen.ClearButtons()
-    buttonCount = 0
-
-    screen.AddButton(buttonCount, "Show")
-    buttonCommands[str(buttonCount)] = "show"
-    buttonCount = buttonCount + 1
-
-    screen.AddButton(buttonCount, "Slideshow")
-    buttonCommands[str(buttonCount)] = "slideshow"
-    buttonCount = buttonCount + 1
-
-    screen.AddButton(buttonCount, "Next Photo")
-    buttonCommands[str(buttonCount)] = "next"
-    buttonCount = buttonCount + 1
-
-    screen.AddButton(buttonCount, "Previous Photo")
-    buttonCommands[str(buttonCount)] = "prev"
-    buttonCount = buttonCount + 1
-
-    if metadata.UserRating = invalid then
-        metadata.UserRating = 0
-    endif
-    if metadata.StarRating = invalid then
-        metadata.StarRating = 0
-    endif
-    screen.AddRatingButton(buttonCount, metadata.UserRating, metadata.StarRating)
-    buttonCommands[str(buttonCount)] = "ratePhoto"
-    buttonCount = buttonCount + 1
-
-    return buttonCommands
-End Function
-
 Function TimeDisplay(intervalInSeconds) As String
     hours = fix(intervalInSeconds/(60*60))
     remainder = intervalInSeconds - hours*60*60
@@ -488,143 +341,4 @@ Sub photoGetMediaDetails(content)
     m.metadata = content
     m.media = invalid
 End Sub
-
-Function videoHandleMessage(msg) As Boolean
-    server = m.Item.server
-
-    if msg.isButtonPressed() then
-        buttonCommand = m.buttonCommands[str(msg.getIndex())]
-        print "Button command: ";buttonCommand
-        if buttonCommand = "play" OR buttonCommand = "resume" then
-            startTime = 0
-            if buttonCommand = "resume" then
-                startTime = int(val(m.metadata.viewOffset))
-            endif
-            playVideo(server, m.metadata, m.media, startTime)
-            '* Refresh play data after playing
-            m.Refresh()
-        else if buttonCommand = "audioStreamSelection" then
-            SelectAudioStream(server, m.media)
-            m.Refresh()
-        else if buttonCommand = "subtitleStreamSelection" then
-            SelectSubtitleStream(server, m.media)
-            m.Refresh()
-        else if buttonCommand = "scrobble" then
-            'scrobble key here
-            server.Scrobble(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier)
-            '* Refresh play data after scrobbling
-            m.Refresh()
-        else if buttonCommand = "unscrobble" then
-            'unscrobble key here
-            server.Unscrobble(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier)
-            '* Refresh play data after unscrobbling
-            m.Refresh()
-	 else if buttonCommand = "rateVideo" then                
-		rateValue% = msg.getData() /10
-		m.metadata.UserRating = msg.getdata()
-		server.Rate(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier,rateValue%.ToStr())
-        else
-            return false
-        endif
-
-        return true
-    end if
-
-    return false
-End Function
-
-Function audioHandleMessage(msg) As Boolean
-    ' TODO(schuyler) Actually handle all of these
-    if type(msg) = "roAudioPlayerEvent" then
-        if msg.isRequestSucceeded() then
-            Print "Playback of single song completed"
-        else if msg.isRequestFailed() then
-            Print "Playback failed"
-        else if msg.isListItemSelected() then
-            Print "Starting to play item"
-            ' What does this actually mean? How is it triggered?
-            'm.audioPlayer.Play()
-        else if msg.isStatusMessage() then
-            Print "Audio player status: "; msg.getMessage()
-        else if msg.isFullResult() then
-            Print "Playback of entire list finished"
-        else if msg.isPartialResult() then
-            Print "isPartialResult"
-        else if msg.isPaused() then
-            Print "Stream paused by user"
-        else if msg.isResumed() then
-            Print "Stream resumed by user"
-        end if
-        return true
-    else if msg.isButtonPressed() then
-        buttonCommand = m.buttonCommands[str(msg.getIndex())]
-        print "Button command: ";buttonCommand
-        if buttonCommand = "play" then
-            m.audioPlayer.Play()
-        else if buttonCommand = "pause" then
-            m.audioPlayer.Pause()
-        else if buttonCommand = "stop" then
-            m.audioPlayer.Stop()
-        else if buttonCommand = "resume" then
-            m.audioPlayer.Resume()
-        else if buttonCommand = "next" then
-            m.audioPlayer.Stop()
-            m.GotoNextItem()
-            m.audioPlayer.Play()
-        else if buttonCommand = "prev" then
-            m.audioPlayer.Stop()
-            m.GotoNextItem()
-            m.audioPlayer.Play()
-        else
-            return false
-        end if
-        return true
-    end if
-
-    return false
-End Function
-
-Function photoHandleMessage(msg) As Boolean
-    server = m.Item.server
-    port = CreateObject("roMessagePort")
-
-    if msg.isButtonPressed() then
-        buttonCommand = m.buttonCommands[str(msg.getIndex())]
-        print "Button command: ";buttonCommand
-        if buttonCommand = "show" then
-            Print "photoHandleMessage:: Show photo fullscreen"
-            url = FullUrl(m.item.server.serverurl, m.item.sourceurl, m.item.media[0].parts[0].key)
-            'Print "Url = ";url2
-            slideshow = SlideShowSetup(port, 5.0, "#6b4226", 6)
-            pl = CreateObject("roList")
-            pl.Push(url)
-            DisplaySlideShow(port, slideshow, pl)
-        else if buttonCommand = "slideshow" then
-            Print "photoHandleMessage:: Start slideshow"
-            list = GetPhotoList(m.item.server.serverurl, m.item.sourceurl)
-            slideshow = SlideShowSetup(port, 5.0, "#6b4226", 6)
-            DisplaySlideShow(port, slideshow, list)
-        else if buttonCommand = "next" then
-            Print "photoHandleMessage:: show next photo"
-             m.GotoNextItem()
-        else if buttonCommand = "prev" then
-            Print "photoHandleMessage:: show previous photo"
-             m.GotoPrevItem()
-	    else if buttonCommand = "ratePhoto" then                
-            Print "photoHandleMessage:: Rate photo for key ";m.metadata.ratingKey
-		    rateValue% = (msg.getData() /10)
-		    m.metadata.UserRating = msg.getdata()
-            if m.metadata.ratingKey = invalid then
-                m.metadata.ratingKey = 0
-            end if
-		    server.Rate(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier,rateValue%.ToStr())
-        else
-            return false
-        end if
-
-        return true
-    end if
-
-    return false
-End Function
 
