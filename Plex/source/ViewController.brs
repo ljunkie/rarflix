@@ -80,6 +80,15 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if item.key = "globalprefs" then
         m.Home.ShowPreferencesDialog()
         return invalid
+    else if item.key = "/channels/all" then
+        ' Special case for all channels to force it into a special grid view
+        screen = createGridScreen(m)
+        names = ["Video Channels", "Music Channels", "Photo Channels"]
+        keys = ["/video", "/music", "/photo"]
+        fakeContainer = createFakePlexContainer(item.server, names, keys)
+        screen.Loader = createPaginatedLoader(fakeContainer, 8, 25)
+        screen.Loader.Listener = screen
+        screen.SetStyle("flat-square")
     else
         ' Where do we capture channel directory?
         Print "Creating a default view for contentType=";contentType;", viewGroup=";viewGroup

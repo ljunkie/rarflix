@@ -34,6 +34,21 @@ Function createPlexContainerForUrl(server, baseUrl, key) As Object
     return createPlexContainerForXml(responseXml)
 End Function
 
+Function createFakePlexContainer(server, names, keys) As Object
+    c = CreateObject("roAssociativeArray")
+
+    c.server = server
+    c.sourceUrl = ""
+    c.names = names
+    c.keys = keys
+    c.Parsed = true
+
+    c.GetNames = containerGetNames
+    c.GetKeys = containerGetKeys
+
+    return c
+End Function
+
 Sub containerParseXml()
     if m.Parsed then return
 
