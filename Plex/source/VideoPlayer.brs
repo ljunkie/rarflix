@@ -96,7 +96,11 @@ End Function
 Function videoHandleMessage(msg) As Boolean
     server = m.Item.server
 
-    if msg.isButtonPressed() then
+    if msg = invalid then
+        m.msgTimeout = 0
+        m.Refresh()
+        return true
+    else if msg.isButtonPressed() then
         buttonCommand = m.buttonCommands[str(msg.getIndex())]
         print "Button command: ";buttonCommand
         if buttonCommand = "play" OR buttonCommand = "resume" then
@@ -105,8 +109,10 @@ Function videoHandleMessage(msg) As Boolean
                 startTime = int(val(m.metadata.viewOffset))
             endif
             playVideo(server, m.metadata, m.media, startTime)
-            '* Refresh play data after playing
-            m.Refresh()
+            '* Refresh play data after playing, but only after a timeout,
+            '* otherwise we may leak objects if the play ended because the
+            '* springboard was closed.
+            m.msgTimeout = 1
         else if buttonCommand = "audioStreamSelection" then
             SelectAudioStream(server, m.media)
             m.Refresh()

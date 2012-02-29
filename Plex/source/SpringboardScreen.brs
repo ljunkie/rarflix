@@ -86,6 +86,8 @@ Function showSpringboardScreen() As Integer
     while true
         msg = wait(m.msgTimeout, m.Screen.GetMessagePort())
         if m.HandleMessage(msg) then
+        else if msg = invalid then
+            m.msgTimeout = 0
         else if msg.isScreenClosed() then
             m.ViewController.PopScreen(m)
             return -1
