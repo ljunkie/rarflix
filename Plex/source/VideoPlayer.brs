@@ -98,7 +98,7 @@ Function videoHandleMessage(msg) As Boolean
 
     if msg = invalid then
         m.msgTimeout = 0
-        m.Refresh()
+        m.Refresh(true)
         return true
     else if msg.isButtonPressed() then
         buttonCommand = m.buttonCommands[str(msg.getIndex())]
@@ -115,20 +115,20 @@ Function videoHandleMessage(msg) As Boolean
             m.msgTimeout = 1
         else if buttonCommand = "audioStreamSelection" then
             SelectAudioStream(server, m.media)
-            m.Refresh()
+            m.Refresh(true)
         else if buttonCommand = "subtitleStreamSelection" then
             SelectSubtitleStream(server, m.media)
-            m.Refresh()
+            m.Refresh(true)
         else if buttonCommand = "scrobble" then
             'scrobble key here
             server.Scrobble(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier)
             '* Refresh play data after scrobbling
-            m.Refresh()
+            m.Refresh(true)
         else if buttonCommand = "unscrobble" then
             'unscrobble key here
             server.Unscrobble(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier)
             '* Refresh play data after unscrobbling
-            m.Refresh()
+            m.Refresh(true)
 	 else if buttonCommand = "rateVideo" then                
 		rateValue% = msg.getData() /10
 		m.metadata.UserRating = msg.getdata()

@@ -107,13 +107,14 @@ Function showSpringboardScreen() As Integer
     return 0
 End Function
 
-Function sbRefresh()
+Function sbRefresh(force=false)
     ' Don't show any sort of facade or loading dialog. We already have the
     ' metadata for all of our siblings, we don't have to fetch anything, and
     ' so the new screen usually comes up immediately. The dialog with the
     ' spinner ends up just flashing on the screen and being annoying.
     m.Screen.SetContent(invalid)
 
+    if force then m.Item.Refresh(true)
     m.GetMediaDetails(m.Item)
 
     if m.AllowLeftRight then

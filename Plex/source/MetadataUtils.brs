@@ -64,6 +64,7 @@ Function createBaseMetadata(container, item) As Object
 
     metadata.HasDetails = false
     metadata.ParseDetails = baseParseDetails
+    metadata.Refresh = baseMetadataRefresh
 
     return metadata
 End Function
@@ -72,3 +73,6 @@ Function baseParseDetails()
     m.HasDetails = true
     return m
 End Function
+
+Sub baseMetadataRefresh(detailed=false)
+End Sub

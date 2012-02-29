@@ -2,6 +2,9 @@
 Function newVideoMetadata(container, item, detailed=false) As Object
     video = createBaseMetadata(container, item)
 
+    video.Refresh = videoRefresh
+    video.ParseDetails = videoParseDetails
+
     if item = invalid then return video
 
     video.mediaContainerIdentifier = container.xml@identifier
@@ -13,8 +16,6 @@ Function newVideoMetadata(container, item, detailed=false) As Object
     endif
 
     video.ReleaseDate = item@originallyAvailableAt
-    video.viewOffset = item@viewOffset
-    video.viewCount = item@viewCount
 
     length = item@duration
     if length <> invalid then
@@ -22,7 +23,30 @@ Function newVideoMetadata(container, item, detailed=false) As Object
         video.RawLength = val(length)
     endif
 
+    if container.ViewGroup = "Details" OR container.ViewGroup = "InfoList" then
+        video.ShortDescriptionLine2 = item@summary
+    endif
+
+    setVideoBasics(video, container, item)
+	
+    if detailed then
+        ' Also sets media and preferredMediaItem
+        video.ParseDetails()
+    else
+        video.media = ParseVideoMedia(item)
+        video.preferredMediaItem = PickMediaItem(video.media)
+    end if
+
+    return video
+End Function
+
+Sub setVideoBasics(video, container, item)
+    video.viewOffset = item@viewOffset
+    video.viewCount = item@viewCount
     video.Watched = video.viewCount <> invalid AND val(video.viewCount) > 0
+
+    video.ShortDescriptionLine1 = firstOf(item@title, item@name)
+
     ' if a video has ever been watch mark as such, else mark partially if there's a recorded
     ' offset
     if video.Watched then
@@ -36,8 +60,8 @@ Function newVideoMetadata(container, item, detailed=false) As Object
     video.BookmarkPosition = 0
     if video.viewOffset <> invalid AND val(video.viewOffset) > 0 then
         video.BookmarkPosition = int(val(video.viewOffset)/1000)
-    else if video.Watched AND length <> invalid then
-        video.BookmarkPosition = int(val(length)/1000)
+    else if video.Watched then
+        video.BookmarkPosition = video.Length
     end if
 
     video.ShortDescriptionLine2 = firstOf(item@sourceTitle, item@tagline, video.ShortDescriptionLine2)
@@ -66,10 +90,6 @@ Function newVideoMetadata(container, item, detailed=false) As Object
 
     video.Title = video.ShortDescriptionLine1
 
-    if container.ViewGroup = "Details" OR container.ViewGroup = "InfoList" then
-        video.ShortDescriptionLine2 = item@summary
-    endif
-
     video.Rating = item@contentRating
     rating = item@rating
     if rating <> invalid then
@@ -82,19 +102,7 @@ Function newVideoMetadata(container, item, detailed=false) As Object
     else 
 	video.UserRating =  0
     endif
-	
-    video.ParseDetails = videoParseDetails
-
-    if detailed then
-        ' Also sets media and preferredMediaItem
-        video.ParseDetails()
-    else
-        video.media = ParseVideoMedia(item)
-        video.preferredMediaItem = PickMediaItem(video.media)
-    end if
-
-    return video
-End Function
+End Sub
 
 Function videoParseDetails()
     if m.HasDetails then return m
@@ -102,8 +110,14 @@ Function videoParseDetails()
     container = createPlexContainerForUrl(m.server, m.sourceUrl, m.Key)
     videoItemXml = container.xml.Video[0]
 
-    video = m
+    setVideoDetails(m, container, videoItemXml)
 
+    m.HasDetails = true
+
+    return m
+End Function
+
+Sub setVideoDetails(video, container, videoItemXml)
     video.Actors = CreateObject("roArray", 15, true)
     for each Actor in videoItemXml.Role
         video.Actors.Push(Actor@tag)
@@ -141,9 +155,7 @@ Function videoParseDetails()
 
     video.media = ParseVideoMedia(videoItemXml)
     video.preferredMediaItem = PickMediaItem(video.media)
-
-    return video
-End Function
+End Sub
 
 Function ParseVideoMedia(videoItem) As Object
     mediaArray = CreateObject("roArray", 5, true)
@@ -192,4 +204,15 @@ Function PickMediaItem(mediaItems) As Object
 		return mediaItems[0]
 	endif
 End Function
+
+Sub videoRefresh(detailed=false)
+    container = createPlexContainerForUrl(m.server, m.sourceUrl, m.Key)
+    videoItemXml = container.xml.Video[0]
+
+    setVideoBasics(m, container, videoItemXml)
+
+    if detailed then
+        setVideoDetails(m, container, videoItemXml)
+    end if
+End Sub
 
