@@ -82,16 +82,29 @@ Function AddServer(name, address)
     RegWrite("serverList", allServers, "servers")
 End Function
 
-Function AddUnnamedServer(address)
+Function AddUnnamedServer(address) As Boolean
     print "Adding unnamed server to saved list:";address
+
+    validating = CreateObject("roOneLineDialog")
+    validating.SetTitle("Validating Plex Media Servers ...")
+    validating.ShowBusyAnimation()
+    validating.Show()
+
     strReplace(address, "http://", "")
     strReplace(address, ":32400", "")
     sock = CreateObject("roSocketAddress")
     sock.setAddress(address+":32400")
     ipaddr = sock.getAddress()
     hostname = sock.getHostName()
+
     print "Host:"+hostname", IP Address:"+ipaddr
-    AddServer(address, "http://"+ipaddr)
+
+    if (IsServerValid("http://"+ipaddr)) then
+        AddServer(address, "http://"+ipaddr)
+        return true
+    end if
+
+    return false
 End Function
 
 Function DiscoverPlexMediaServers()

@@ -311,9 +311,10 @@ Sub showManualServerDialog()
                 return
             else if msg.isButtonPressed() then
                 if msg.getIndex() = 1 then
-                    AddUnnamedServer(keyb.GetText())
+                    if (AddUnnamedServer(keyb.GetText())) then
+                        return
+                    end if
                 end if
-                return
             end if 
         end if
     end while
