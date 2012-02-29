@@ -55,6 +55,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         return invalid
     else if contentType = "series" then
         screen = createGridScreenForItem(item, m)
+        screen.setStyle("flat-16X9")
     else if contentType = "artist" then
         ' TODO: Poster, poster with filters, or grid?
         screen = createPosterScreen(item, m)
