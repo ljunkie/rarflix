@@ -72,6 +72,9 @@ Sub containerParseXml()
             metadata = newDirectoryMetadata(m, n)
         else if nodeType = "movie" OR nodeType = "episode" then
             metadata = newVideoMetadata(m, n, m.ParseDetails)
+        else if nodeType = "clip" OR n.GetName() = "Video" then
+            ' Video in a channel, use the regular video metadata
+            metadata = newVideoMetadata(m, n, m.ParseDetails)
         else if nodeType = "track" then
             metadata = newTrackMetadata(m, n, m.ParseDetails)
         else if nodeType = "photo" then

@@ -27,6 +27,8 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
     pms.UpdateSubtitleStreamSelection = updateSubtitleStreamSelection
     pms.Search = search
     pms.TranscodedImage = TranscodedImage
+    pms.ConstructTranscodedVideoItem = constructTranscodedVideoItem
+    pms.TranscodingVideoUrl = TranscodingVideoUrl
     return pms
 End Function
 
@@ -262,34 +264,7 @@ End Function
 Function constructPluginVideoScreen(metadata) As Object
     print "Constructing plugin video screen for ";metadata.key
     'printAA(metadata)
-    if metadata.preferredMediaItem = invalid then
-        print "No preferred part"
-        videoclip = ConstructVideoClip(m.serverUrl, metadata.key, metadata.sourceUrl, "", "", metadata.title, "", "")
-    else
-        mediaItem = metadata.preferredMediaItem
-        mediaPart = mediaItem.preferredPart
-        mediaKey = mediaPart.key
-        sourceUrl = metadata.sourceUrl
-        if mediaItem.indirect then
-            mediaKeyXml = IndirectMediaXml(m, mediaKey)
-            mediaKey = mediaKeyXml.Video.Media.Part[0]@key
-            if mediaKeyXml@httpCookies <> invalid then
-                httpCookies = mediaKeyXml@httpCookies
-            else
-                httpCookies = ""
-            end if
-            if mediaKeyXml@userAgent <> invalid then
-                userAgent = mediaKeyXml@userAgent
-            else
-                userAgent = ""
-            end if
-            videoclip = ConstructVideoClip(m.serverUrl, mediaKey, sourceUrl, "", "", metadata.title, httpCookies, userAgent)
-        else
-            videoclip = ConstructVideoClip(m.serverUrl, mediaKey, sourceUrl, "", "", metadata.title, "", "")
-        end if
-        print "Using preferred part ";mediaKey
-    end if
-    
+    videoclip = m.ConstructTranscodedVideoItem(metadata)
     p = CreateObject("roMessagePort")
     video = CreateObject("roVideoScreen")
     video.setMessagePort(p)
@@ -307,12 +282,55 @@ Function constructVideoScreen(metadata, mediaData, StartTime As Integer) As Obje
     p = CreateObject("roMessagePort")
     video = CreateObject("roVideoScreen")
     video.setMessagePort(p)
-    videoclip = ConstructVideoClip(m.serverUrl, mediaKey, metadata.sourceUrl, metadata.ratingKey, metadata.key, metadata.title, "", "")
+    videoclip = m.ConstructTranscodedVideoItem(metadata)
     videoclip.PlayStart = StartTime
     video.SetContent(videoclip)
     m.Cookie = StartTranscodingSession(videoclip.StreamUrls[0])
     video.AddHeader("Cookie", m.Cookie)
     return video
+End Function
+
+Function constructTranscodedVideoItem(item) As Object
+    transcoded = CreateObject("roAssociativeArray")
+
+    identifier = item.mediaContainerIdentifier
+    httpCookies = ""
+    userAgent = ""
+    key = ""
+    ratingKey = ""
+
+    if identifier = "com.plexapp.plugins.library" then
+        ' Regular library video
+        mediaKey = item.preferredMediaItem.preferredPart.key
+        key = item.key
+        ratingKey = item.ratingKey
+    else if item.preferredMediaItem = invalid then
+        ' Plugin video
+        mediaKey = item.key
+    else
+        ' Plugin video, possibly indirect
+        mediaItem = item.preferredMediaItem
+        mediaKey = mediaItem.preferredPart.key
+        if mediaItem.indirect then
+            mediaKeyXml = IndirectMediaXml(m, mediaKey)
+            mediaKey = mediaKeyXml.Video.Media.Part[0]@key
+            httpCookies = firstOf(mediaKeyXml@httpCookies, "")
+            userAgent = firstOf(mediaKeyXml@userAgent, "")
+        end if
+    end if
+
+    deviceInfo = CreateObject("roDeviceInfo")
+    quality = "SD"
+    if deviceInfo.GetDisplayType() = "HDTV" then quality = "HD"
+    print "Setting stream quality:";quality
+
+    transcoded.StreamBitrates = [0]
+    transcoded.StreamQualities = [quality]
+    transcoded.StreamFormat = "hls"
+    transcoded.Title = item.Title
+    transcoded.StreamUrls = [m.TranscodingVideoUrl(mediaKey, item, httpCookies, userAgent)]
+
+    return transcoded
 End Function
 
 Function stopTranscode()
@@ -415,66 +433,73 @@ Function StartTranscodingSession(videoUrl) As String
     return cookieHeader
 End Function
 
-'* Roku video clip definition as an array
-Function ConstructVideoClip(serverUrl as String, videoUrl as String, sourceUrl As String, ratingKey As String, key As String, title as String, httpCookies as String, userAgent as String) As Object
-    deviceInfo = CreateObject("roDeviceInfo")
-    quality = "SD"
-    if deviceInfo.GetDisplayType() = "HDTV" then
-        quality = "HD"
-    endif
-    print "Setting stream quality:";quality
-    videoclip = CreateObject("roAssociativeArray")
-    videoclip.StreamBitrates = [0]
-    videoclip.StreamUrls = [TranscodingVideoUrl(serverUrl, videoUrl, sourceUrl, ratingKey, key, httpCookies, userAgent)]
-    videoclip.StreamQualities = [quality]
-    videoclip.StreamFormat = "hls"
-    videoclip.Title = title
-    return videoclip
-End Function
-
 '*
 '* Construct the Plex transcoding URL. 
 '*
-Function TranscodingVideoUrl(serverUrl As String, videoUrl As String, sourceUrl As String, ratingKey As String, key As String, httpCookies As String, userAgent As String) As String
+Function TranscodingVideoUrl(videoUrl As String, item As Object, httpCookies As String, userAgent As String) As String
     print "Constructing transcoding video URL for "+videoUrl
     if userAgent <> invalid then
         print "User Agent: ";userAgent
     end if
-    location = ResolveUrl(serverUrl, sourceUrl, videoUrl)
+
+    key = ""
+    ratingKey = ""
+    identifier = item.mediaContainerIdentifier
+    if identifier = "com.plexapp.plugins.library" then
+        key = item.key
+        ratingKey = item.ratingKey
+    end if
+
+    location = ResolveUrl(m.serverUrl, item.sourceUrl, videoUrl)
     location = ConvertTranscodeURLToLoopback(location)
     print "Location:";location
     if len(key) = 0 then
         fullKey = ""
     else
-        fullKey = ResolveUrl(serverUrl, sourceUrl, key)
+        fullKey = ResolveUrl(m.serverUrl, item.sourceUrl, key)
     end if
     print "Original key:";key
     print "Full key:";fullKey
     
-    if not(RegExists("quality", "preferences")) then
-        RegWrite("quality", "7", "preferences")
+    if not(RegExists("quality", "preferences")) then RegWrite("quality", "7", "preferences")
+    if not(RegExists("level", "preferences")) then RegWrite("level", "40", "preferences")
+    print "REG READ LEVEL"+ RegRead("level", "preferences")
+
+    path = "/video/:/transcode/segmented/start.m3u8?"
+
+    query = "offset=0"
+    query = query + "&identifier=" + identifier
+    query = query + "&ratingKey=" + ratingKey
+    if len(fullKey) > 0 then
+        query = query + "&key=" + HttpEncode(fullKey)
+    end if
+    if left(videoUrl, 4) = "plex" then
+        query = query + "&webkit=1"
     end if
 
-    if not(RegExists("level", "preferences")) then
-        RegWrite("level", "40", "preferences")
-    end if
-    print "REG READ LEVEL"+ RegRead("level", "preferences")
-    baseUrl = "/video/:/transcode/segmented/start.m3u8?identifier=com.plexapp.plugins.library&ratingKey="+ratingKey+"&key="+HttpEncode(fullKey)+"&offset=0"
-    if left(videoUrl, 4) = "plex" then
-        baseUrl = baseUrl + "&webkit=1"
-    end if
     currentQuality = RegRead("quality", "preferences")
     if currentQuality = "Auto" then
-        myurl = baseUrl+"&minQuality=4&maxQuality=8"
+        query = query + "&minQuality=4&maxQuality=8"
     else
-        myurl = baseUrl+"&quality="+currentQuality
+        query = query + "&quality=" + currentQuality
     end if
-    myurl = myurl + "&url="+HttpEncode(location)+"&3g=0&httpCookies="+HttpEncode(httpCookies)+"&userAgent="+HttpEncode(userAgent)
+
+    query = query + "&url=" + HttpEncode(location)
+    query = query + "&3g=0"
+    query = query + "&httpCookies=" + HttpEncode(httpCookies)
+    query = query + "&userAgent=" + HttpEncode(userAgent)
+
     publicKey = "KQMIY6GATPC63AIMC4R2"
     time = LinuxTime().tostr()
-    msg = myurl+"@"+time
+    msg = path + query + "@" + time
     finalMsg = HMACHash(msg)
-    finalUrl = serverUrl + myurl+"&X-Plex-Access-Key=" + publicKey + "&X-Plex-Access-Time=" + time + "&X-Plex-Access-Code=" + HttpEncode(finalMsg) + "&X-Plex-Client-Capabilities=" + HttpEncode(Capabilities())
+
+    query = query + "&X-Plex-Access-Key=" + publicKey
+    query = query + "&X-Plex-Access-Time=" + time
+    query = query + "&X-Plex-Access-Code=" + HttpEncode(finalMsg)
+    query = query + "&X-Plex-Client-Capabilities=" + HttpEncode(Capabilities())
+
+    finalUrl = m.serverUrl + path + query
     print "Final URL:";finalUrl
     return finalUrl
 End Function
