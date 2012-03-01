@@ -9,7 +9,9 @@ Function createPosterScreen(item, viewController) As Object
     ' Standard properties for all our screen types
     obj.Item = item
     obj.Screen = screen
+    obj.Port = port
     obj.ViewController = viewController
+    obj.HandleMessage = dummyHandleMessage
 
     obj.Show = showPosterScreen
     obj.ShowList = posterShowContentList
@@ -103,7 +105,8 @@ Function showPosterScreen() As Integer
 
     while true
         msg = wait(timeout, m.Screen.GetMessagePort())
-        if type(msg) = "roPosterScreenEvent" then
+        if m.HandleMessage(msg) then
+        else if type(msg) = "roPosterScreenEvent" then
             '* Focus change on the filter bar causes content change
             if msg.isListFocused() then
                 focusedListItem = msg.GetIndex()

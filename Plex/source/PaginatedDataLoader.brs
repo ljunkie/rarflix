@@ -141,3 +141,7 @@ Function dummyGetLoadStatus(index) As Integer
     return 2
 End Function
 
+Function dummyHandleMessage(msg) As Boolean
+    return false
+End Function
+

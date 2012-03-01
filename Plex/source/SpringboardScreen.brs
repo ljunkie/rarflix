@@ -11,7 +11,9 @@ Function createBaseSpringboardScreen(context, index, viewController) As Object
     ' Standard properties for all our Screen types
     obj.Item = context[index]
     obj.Screen = screen
+    obj.Port = port
     obj.ViewController = viewController
+    obj.HandleMessage = dummyHandleMessage
 
     ' Some properties that allow us to move between items in whatever
     ' container got us to this point.
