@@ -8,6 +8,7 @@ Function createMyPlexManager() As Object
     obj.CreateRequest = mpCreateRequest
     obj.ShowPinScreen = mpShowPinScreen
     obj.ValidateToken = mpValidateToken
+    obj.Disconnect = mpDisconnect
 
     device = CreateObject("roDeviceInfo")
     obj.ClientIdentifier = "Roku-" + device.GetDeviceUniqueId()
@@ -147,4 +148,11 @@ Function mpCreateRequest(url As String) As Object
     req.SetCertificatesFile("common:/certs/ca-bundle.crt")
     return req
 End Function
+
+Sub mpDisconnect()
+    m.EmailAddress = invalid
+    m.IsSignedIn = false
+    m.AuthToken = invalid
+    RegDelete("AuthToken", "myplex")
+End Sub
 

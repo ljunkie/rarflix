@@ -220,11 +220,12 @@ Function showMediaServersScreen()
 	ls.SetTitle("Plex Media Servers") 
 	ls.setHeader("Manage Plex Media Servers")
 	ls.SetContent([{title:"Close Manage Servers"},
+		{title: getCurrentMyPlexLabel(m.myplex)},
 		{title: "Add Server Manually"},
 		{title: "Discover Servers"},
 		{title: "Remove All Servers"}])
-	
-	fixedSections = 3
+
+	fixedSections = 4
 	buttonCount = fixedSections + 1
     servers = RegRead("serverList", "servers")
     if servers <> invalid
@@ -252,6 +253,13 @@ Function showMediaServersScreen()
                     print "Closing Manage Servers"
                     ls.close()
                 else if msg.getIndex() = 1 then
+                    if m.myplex.IsSignedIn then
+                        m.myplex.Disconnect()
+                    else
+                        m.myplex.ShowPinScreen()
+                    end if
+                    ls.SetItem(msg.getIndex(), {title: getCurrentMyPlexLabel(m.myplex)})
+                else if msg.getIndex() = 2 then
                     m.ShowManualServerScreen()
 
                     ' UPDATE: I'm not seeing this problem, but I'm loathe to remove such a specific workaround...
@@ -260,12 +268,12 @@ Function showMediaServersScreen()
                     ' works around it.
                     'screen=preShowHomeScreen("", "")
                     'showHomeScreen(screen, PlexMediaServers())
-                else if msg.getIndex() = 2 then
+                else if msg.getIndex() = 3 then
                     DiscoverPlexMediaServers()
                     m.showMediaServersScreen()
                     ls.setFocusedListItem(0)
                     ls.close()
-                else if msg.getIndex() = 3 then
+                else if msg.getIndex() = 4 then
                     RemoveAllServers()
                     m.showMediaServersScreen()
                     ls.setFocusedListItem(0)
@@ -711,5 +719,13 @@ Function getCurrentChannelsAndSearchSetting()
 		current = "Enabled (Default)"
 	end if
 	return {label: current, value: regValue}
+End Function
+
+Function getCurrentMyPlexLabel(myplex) As String
+    if myplex.IsSignedIn then
+        return "Disconnect myPlex account (" + myplex.EmailAddress + ")"
+    else
+        return "Connect myPlex account"
+    end if
 End Function
 
