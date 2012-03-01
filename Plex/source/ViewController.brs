@@ -85,7 +85,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if item.key = "globalsearch" then
         ' TODO
     else if item.key = "globalprefs" then
-        m.Home.ShowPreferencesDialog()
+        m.Home.ShowPreferencesScreen()
         return invalid
     else if item.key = "/channels/all" then
         ' Special case for all channels to force it into a special grid view
