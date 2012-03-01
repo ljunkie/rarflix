@@ -15,9 +15,10 @@ Function PlexMediaServers() As Object
             serverDetails = strTokenize(token, "\")
             address = serverDetails[0]
             name = serverDetails[1]
-            if IsServerValid(address) then
-                list.AddTail(newPlexMediaServer(address, name))
-            end if
+            ' The server should have been validated when it was added, so
+            ' don't make a blocking validation call here. The home screen
+            ' should be able to handle servers that don't respond.
+            list.AddTail(newPlexMediaServer(address, name))
         end for
     end if
     'list.AddTail(newPlexMediaServer("http://dn-1.com:32400", "dn-1"))
