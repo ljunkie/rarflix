@@ -15,6 +15,7 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
     pms.PluginVideoScreen = constructPluginVideoScreen
     pms.StopVideo = stopTranscode
     pms.PingTranscode = pingTranscode
+    pms.CreateRequest = pmsCreateRequest
     pms.GetQueryResponse = xmlContent
     pms.GetPaginatedQueryResponse = paginatedXmlContent
     pms.SetProgress = progress
@@ -209,6 +210,15 @@ Function paginatedQuery(queryUrl, start, size) As Object
     httpRequest.Http.AddHeader("X-Plex-Container-Size", size.tostr())
     response = httpRequest.GetToStringWithTimeout(60000)
     return response
+End Function
+
+Function pmsCreateRequest(sourceUrl, key) As Object
+    url = FullUrl(m.serverUrl, sourceUrl, key)
+    req = CreateURLTransferObject(url)
+    ' TODO(schuyler): Add anything else that should be on all requests, like
+    ' access tokens, or Accept header. Perhaps set certificates if we'll use
+    ' HTTPS.
+    return req
 End Function
 
 Function xmlContent(sourceUrl, key) As Object

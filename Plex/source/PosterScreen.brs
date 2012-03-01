@@ -11,7 +11,7 @@ Function createPosterScreen(item, viewController) As Object
     obj.Screen = screen
     obj.Port = port
     obj.ViewController = viewController
-    obj.HandleMessage = dummyHandleMessage
+    obj.MessageHandler = invalid
 
     obj.Show = showPosterScreen
     obj.ShowList = posterShowContentList
@@ -105,7 +105,7 @@ Function showPosterScreen() As Integer
 
     while true
         msg = wait(timeout, m.Screen.GetMessagePort())
-        if m.HandleMessage(msg) then
+        if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
         else if type(msg) = "roPosterScreenEvent" then
             '* Focus change on the filter bar causes content change
             if msg.isListFocused() then
@@ -133,6 +133,7 @@ Function showPosterScreen() As Integer
                 ' Make sure we don't have hang onto circular references
                 m.Loader.Listener = invalid
                 m.Loader = invalid
+                m.MessageHandler = invalid
 
                 m.ViewController.PopScreen(m)
                 return -1

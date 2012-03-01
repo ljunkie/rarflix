@@ -11,6 +11,7 @@ Function createHomeScreen(viewController) As Object
     grid.Screen.SetDisplayMode("photo-fit")
     grid.Screen.SetUpBehaviorAtTopRow("stop")
     grid.Loader = obj
+    grid.MessageHandler = obj
 
     ' Standard properties for all our Screen types
     obj.Item = invalid
@@ -36,6 +37,7 @@ Function createHomeScreen(viewController) As Object
     obj.LoadMoreContent = homeLoadMoreContent
     obj.GetLoadStatus = homeGetLoadStatus
     obj.GetNames = homeGetNames
+    obj.HandleMessage = homeHandleMessage
 
     ' The home screen owns the myPlex manager
     obj.myplex = createMyPlexManager()
@@ -47,6 +49,7 @@ Function refreshHomeScreen()
     m.Servers = PlexMediaServers()
     m.contentArray = []
     m.RowNames = []
+    m.PendingRequests = {}
 
     print "Setting up home screen content, server count:"; m.Servers.Count()
 
@@ -54,12 +57,13 @@ Function refreshHomeScreen()
     status = CreateObject("roAssociativeArray")
     status.content = []
     status.loadStatus = 0
-    status.toLoad = []
+    status.toLoad = CreateObject("roList")
+    status.pendingRequests = CreateObject("roList")
     for each server in m.Servers
         obj = CreateObject("roAssociativeArray")
         obj.server = server
         obj.key = "/library/sections"
-        status.toLoad.Push(obj)
+        status.toLoad.AddTail(obj)
     next
     m.contentArray.Push(status)
     m.RowNames.Push("Library Sections")
@@ -68,7 +72,8 @@ Function refreshHomeScreen()
     status = CreateObject("roAssociativeArray")
     status.content = []
     status.loadStatus = 0
-    status.toLoad = []
+    status.toLoad = CreateObject("roList")
+    status.pendingRequests = CreateObject("roList")
     for each server in m.Servers
         obj = CreateObject("roAssociativeArray")
         obj.server = server
@@ -90,7 +95,7 @@ Function refreshHomeScreen()
         allChannels.HDPosterURL = "file://pkg:/images/plex.jpg"
         obj.item = allChannels
 
-        status.toLoad.Push(obj)
+        status.toLoad.AddTail(obj)
     next
     m.contentArray.Push(status)
     m.RowNames.Push("Channels")
@@ -102,7 +107,8 @@ Function refreshHomeScreen()
     status = CreateObject("roAssociativeArray")
     status.content = []
     status.loadStatus = 0
-    status.toLoad = []
+    status.toLoad = CreateObject("roList")
+    status.pendingRequests = CreateObject("roList")
     ' TODO: Search
 
     ' Channel directory for each server
@@ -147,7 +153,14 @@ End Function
 
 Function showHomeScreen() As Integer
     m.Refresh()
-    return m.Screen.Show()
+    ret = m.Screen.Show()
+
+    for each id in m.PendingRequests
+        m.PendingRequests[id].request.AsyncCancel()
+    next
+    m.PendingRequests.Clear()
+
+    return ret
 End Function
 
 Function showPreferencesScreen()
@@ -557,7 +570,7 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
             if status = invalid then
                 status = m.contentArray[index]
                 loadingRow = index
-            else
+            else if m.contentArray[index].toLoad.Count() > 0 OR m.contentArray[index].pendingRequests.Count() > 0 then
                 extraRowsAlreadyLoaded = false
                 exit for
             end if
@@ -566,75 +579,137 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
 
     if status = invalid then return true
 
-    startItem = status.content.Count()
-    if status.toLoad.Count() = 0 then
-        status.loadStatus = 2
-        m.Screen.OnDataLoaded(loadingRow, status.content, 0, status.content.Count())
-        return extraRowsAlreadyLoaded
-    end if
+    ' If we have something to load, kick off all the requests asynchronously
+    ' now. Otherwise return according to whether or not additional rows have
+    ' requests that need to be kicked off. As a special case, if there's
+    ' nothing to load and no pending requests, we must be in a row with static
+    ' content, tell the screen it's been loaded.
 
-    countLoaded = 0
-    toLoad = status.toLoad.Shift()
-    if toLoad.key <> invalid then
-        container = createPlexContainerForUrl(toLoad.server, "", toLoad.key)
-        countLoaded = container.Count()
+    if status.toLoad.Count() > 0 then
+        status.loadStatus = 1
 
-        ' Add some extra description
-        if m.Servers.Count() > 1 then
-            serverStr = " on " + toLoad.server.name
-        else
-            serverStr = ""
-        end if
-        items = container.GetMetadata()
-        for each item in items
-            add = true
-            if item.Type = "channel" then
-                channelType = Mid(item.key, 2, 5)
-                if channelType = "music" then
-                    item.ShortDescriptionLine2 = "Music channel" + serverStr
-                else if channelType = "photo" then
-                    item.ShortDescriptionLine2 = "Photo channel" + serverStr
-                else if channelType = "video" then
-                    item.ShortDescriptionLine2 = "Video channel" + serverStr
-                else
-                    print "Skipping unsupported channel type: "; channelType
-                    add = false
-                end if
-            else if item.Type = "movie" then
-                item.ShortDescriptionLine2 = "Movie section" + serverStr
-            else if item.Type = "show" then
-                item.ShortDescriptionLine2 = "TV section" + serverStr
-            else if item.Type = "artist" then
-                item.ShortDescriptionLine2 = "Music section" + serverStr
-            else if item.Type = "photo" then
-                item.ShortDescriptionLine2 = "Photo section" + serverStr
-            else
-                print "Skipping unsupported section type: "; item.Type
-            end if
+        numRequests = 0
+        for each toLoad in status.toLoad
+            req = toLoad.server.CreateRequest("", toLoad.key)
+            req.SetPort(m.Screen.Port)
+            toLoad.request = req
+            toLoad.row = loadingRow
+            status.pendingRequests.AddTail(req.GetIdentity())
+            m.PendingRequests[str(req.GetIdentity())] = toLoad
 
-            if add then
-                item.Description = item.ShortDescriptionLine2
-                status.content.Push(item)
+            if req.AsyncGetToString() then
+                numRequests = numRequests + 1
             end if
         next
+
+        status.toLoad.Clear()
+
+        print "Successfully kicked off"; numRequests; " requests for row"; loadingRow; ", pending requests now:"; status.pendingRequests.Count()
+    else if status.pendingRequests.Count() > 0 then
+        status.loadStatus = 1
+        print "No additional requests to kick off for row"; loadingRow; ", pending request count:"; status.pendingRequests.Count()
+    else
+        status.loadStatus = 2
+        m.Screen.OnDataLoaded(loadingRow, status.content, 0, status.content.Count())
     end if
+
+    return extraRowsAlreadyLoaded
+End Function
+
+Function homeHandleMessage(msg) As Boolean
+    ' We only handle URL events, leave everything else to the screen
+    if type(msg) <> "roUrlEvent" OR msg.GetInt() <> 1 then return false
+
+print "Got a response for request:"; msg.GetSourceIdentity()
+    id = msg.GetSourceIdentity()
+    toLoad = m.PendingRequests[str(id)]
+    if toLoad = invalid then return false
+    m.PendingRequests.Delete(str(id))
+print "Found a pending request, response is for row"; toLoad.row
+
+    status = m.contentArray[toLoad.row]
+    rowRequests = status.pendingRequests
+    rowRequests.ResetIndex()
+    x = rowRequests.GetIndex()
+    index = 0
+    while x <> invalid
+        if x = id then
+            rowRequests.Delete(index)
+            exit while
+        end if
+        index = index + 1
+        x = rowRequests.GetIndex()
+    end while
+
+    if msg.GetResponseCode() <> 200 then
+        print "Got a"; msg.GetResponseCode(); " response from "; toLoad.request.GetUrl()
+        return true
+    end if
+
+    xml = CreateObject("roXMLElement")
+    xml.Parse(msg.GetString())
+    response = CreateObject("roAssociativeArray")
+    response.xml = xml
+    response.server = toLoad.server
+    response.sourceUrl = toLoad.key
+    container = createPlexContainerForXml(response)
+
+    countLoaded = container.Count()
+
+    startItem = status.content.Count()
+
+    ' Add some extra description
+    if m.Servers.Count() > 1 then
+        serverStr = " on " + toLoad.server.name
+    else
+        serverStr = ""
+    end if
+
+    items = container.GetMetadata()
+    for each item in items
+        add = true
+        if item.Type = "channel" then
+            channelType = Mid(item.key, 2, 5)
+            if channelType = "music" then
+                item.ShortDescriptionLine2 = "Music channel" + serverStr
+            else if channelType = "photo" then
+                item.ShortDescriptionLine2 = "Photo channel" + serverStr
+            else if channelType = "video" then
+                item.ShortDescriptionLine2 = "Video channel" + serverStr
+            else
+                print "Skipping unsupported channel type: "; channelType
+                add = false
+            end if
+        else if item.Type = "movie" then
+            item.ShortDescriptionLine2 = "Movie section" + serverStr
+        else if item.Type = "show" then
+            item.ShortDescriptionLine2 = "TV section" + serverStr
+        else if item.Type = "artist" then
+            item.ShortDescriptionLine2 = "Music section" + serverStr
+        else if item.Type = "photo" then
+            item.ShortDescriptionLine2 = "Photo section" + serverStr
+        else
+            print "Skipping unsupported section type: "; item.Type
+        end if
+
+        if add then
+            item.Description = item.ShortDescriptionLine2
+            status.content.Push(item)
+        end if
+    next
 
     if toLoad.item <> invalid then
         countLoaded = countLoaded + 1
         status.content.Push(toLoad.item)
     end if
 
-    if status.toLoad.Count() > 0 then
-        status.loadStatus = 1
-        ret = false
-    else
+    if status.toLoad.Count() = 0 AND rowRequests.Count() = 0 then
         status.loadStatus = 2
-        ret = extraRowsAlreadyLoaded
     end if
 
-    m.Screen.OnDataLoaded(loadingRow, status.content, startItem, countLoaded)
+    m.Screen.OnDataLoaded(toLoad.row, status.content, startItem, countLoaded)
 
-    return ret
+    return true
 End Function
 
 Function homeGetLoadStatus(index) As Integer

@@ -23,7 +23,7 @@ Function createGridScreen(viewController) As Object
     screen.Screen = grid
     screen.Port = port
     screen.ViewController = viewController
-    screen.HandleMessage = dummyHandleMessage
+    screen.MessageHandler = invalid
 
     screen.Show = showGridScreen
     screen.SetStyle = setGridStyle
@@ -91,7 +91,7 @@ Function showGridScreen() As Integer
 
     while true
         msg = wait(timeout, m.port)
-        if m.HandleMessage(msg) then
+        if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
         else if type(msg) = "roGridScreenEvent" then
             if msg.isListItemSelected() then
                 context = m.contentArray[msg.GetIndex()]
@@ -122,6 +122,7 @@ Function showGridScreen() As Integer
                 ' Make sure we don't hang onto circular references
                 m.Loader.Listener = invalid
                 m.Loader = invalid
+                m.MessageHandler = invalid
 
                 m.ViewController.PopScreen(m)
                 return -1
