@@ -21,6 +21,7 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
     pms.Scrobble = scrobble
     pms.Unscrobble = unscrobble
     pms.Rate = rate
+    pms.setPref = setpref
     pms.ExecuteCommand = issueCommand
     pms.ExecutePostCommand = issuePostCommand
     pms.UpdateAudioStreamSelection = updateAudioStreamSelection
@@ -122,6 +123,11 @@ End Function
 
 Function rate(key, identifier, rating)
     commandUrl = "/:/rate?key="+key+"&identifier="+identifier+"&rating="+rating
+    m.ExecuteCommand(commandUrl)
+End Function
+
+Function setpref(key, identifier, value)
+    commandUrl = key+"/set?"+identifier+"="+value
     m.ExecuteCommand(commandUrl)
 End Function
 

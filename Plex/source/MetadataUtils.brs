@@ -49,6 +49,7 @@ Function createBaseMetadata(container, item) As Object
     metadata.ShortDescriptionLine2 = truncateString(item@summary, 250, invalid)
     metadata.Type = item@type
     metadata.Key = item@key
+    metadata.Settings = item@settings
 
     metadata.viewGroup = container.ViewGroup
 
