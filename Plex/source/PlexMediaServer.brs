@@ -31,6 +31,7 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
     pms.TranscodedImage = TranscodedImage
     pms.ConstructTranscodedVideoItem = constructTranscodedVideoItem
     pms.TranscodingVideoUrl = TranscodingVideoUrl
+    pms.ConvertTranscodeURLToLoopback = ConvertTranscodeURLToLoopback
     return pms
 End Function
 
@@ -419,6 +420,7 @@ End Function
 '* Constructs an image based on a PMS url with the specific width and height. 
 Function TranscodedImage(queryUrl, imagePath, width, height) As String
     imageUrl = FullUrl(m.serverUrl, queryUrl, imagePath)
+    imageUrl = m.ConvertTranscodeURLToLoopback(imageUrl)
     encodedUrl = HttpEncode(imageUrl)
     image = m.serverUrl + "/photo/:/transcode?url="+encodedUrl+"&width="+width+"&height="+height
     'print "Final Image URL:";image
@@ -454,7 +456,7 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpCookies As 
     end if
 
     location = ResolveUrl(m.serverUrl, item.sourceUrl, videoUrl)
-    location = ConvertTranscodeURLToLoopback(location)
+    location = m.ConvertTranscodeURLToLoopback(location)
     print "Location:";location
     if len(key) = 0 then
         fullKey = ""
@@ -508,29 +510,15 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpCookies As 
 End Function
 
 Function ConvertTranscodeURLToLoopback(url) As String
-    'first, if the URL doesn't include ":32400", return it as-is
-    if instr(1, url, ":32400") = 0 then
-        print "ConvertTranscodeURLToLoopback:: remote URL: ";url
-        return url
+    ' If the URL starts with our serverl URL, replace it with
+    ' 127.0.0.1:32400.
+
+    'print "ConvertTranscodeURLToLoopback:: original URL: ";url
+    if Left(url, len(m.serverUrl)) = m.serverUrl then
+        url = "http://127.0.0.1:32400" + Right(url, len(url) - len(m.serverUrl))
     end if
-    print "ConvertTranscodeURLToLoopback:: original URL: ";url
-    'second, strip off the http://
-    url = strReplace(url, "http://", "")
-    'then tokenize on the :
-    tokens = strTokenize(url, ":")
-    tokens[0] = "http://127.0.0.1"
-    x = tokens.GetIndex()
-    y = 0
-    while x <> invalid
-        if y = 0 then
-            url = x
-        else
-            url = url+":"+x
-        end if
-        y = y+1
-        x = tokens.GetIndex()
-    end while
-    print "ConvertTranscodeURLToLoopback:: processed URL: ";url
+
+    'print "ConvertTranscodeURLToLoopback:: processed URL: ";url
     return url
 End Function
 

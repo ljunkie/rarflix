@@ -102,6 +102,11 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen = createPosterScreen(item, m)
     end if
 
+    ' Make sure that metadata requests from the screen carry an auth token.
+    if item.server <> invalid AND item.server.AccessToken <> invalid then
+        screen.Screen.AddHeader("X-Plex-Token", item.server.AccessToken)
+    end if
+
     ' Add the breadcrumbs to our list and set them for the current screen.
     ' If the current screen specified invalid for the breadcrubms then it
     ' doesn't want any breadcrumbs to be shown. If it specified an empty

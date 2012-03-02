@@ -60,6 +60,9 @@ Function createAudioSpringboardScreen(context, index, viewController) As Object
     ' Set up audio player, using the same message port
     obj.audioPlayer = CreateObject("roAudioPlayer")
     obj.audioPlayer.SetMessagePort(obj.Screen.GetMessagePort())
+    if obj.Item.server.AccessToken <> invalid then
+        obj.audioPlayer.AddHeader("X-Plex-Token", obj.Item.server.AccessToken)
+    end if
     obj.isPlayState = 0   ' Stopped
     obj.setPlayState = audioPlayer_newstate
     obj.setupSong = audioPlayer_setup
