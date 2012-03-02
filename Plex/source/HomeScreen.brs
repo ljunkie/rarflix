@@ -142,10 +142,12 @@ Function refreshHomeScreen()
     status.loadStatus = 0
     status.toLoad = CreateObject("roList")
     status.pendingRequests = CreateObject("roList")
-    obj = CreateObject("roAssociativeArray")
-    obj.server = m.myplex
-    obj.key = "/pms/system/library/sections"
-    status.toLoad.AddTail(obj)
+    if m.myplex.IsSignedIn then
+        obj = CreateObject("roAssociativeArray")
+        obj.server = m.myplex
+        obj.key = "/pms/system/library/sections"
+        status.toLoad.AddTail(obj)
+    end if
     m.contentArray.Push(status)
     m.RowNames.Push("Shared Library Sections")
 
