@@ -73,6 +73,18 @@ Function refreshHomeScreen()
         m.PendingRequests[str(req.GetIdentity())] = obj
     next
 
+    if m.myplex.IsSignedIn then
+        req = m.myplex.CreateRequest("/pms/servers")
+        req.SetPort(m.Screen.Port)
+        req.SetUrl(req.GetUrl() + "?auth_token=" + m.myplex.AuthToken)
+        req.AsyncGetToString()
+
+        obj = {}
+        obj.request = req
+        obj.requestType = "servers"
+        m.PendingRequests[str(req.GetIdentity())] = obj
+    end if
+
     ' Sections, across all servers
     status = CreateObject("roAssociativeArray")
     status.content = []
@@ -590,7 +602,7 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
             if status = invalid then
                 status = m.contentArray[index]
                 loadingRow = index
-            else if m.contentArray[index].toLoad.Count() > 0 OR m.contentArray[index].pendingRequests.Count() > 0 then
+            else if m.contentArray[index].toLoad.Count() > 0 then
                 extraRowsAlreadyLoaded = false
                 exit for
             end if
@@ -744,6 +756,24 @@ Function homeHandleMessage(msg) As Boolean
         m.Servers[request.server.machineID] = request.server
 
         print "Fetched additional server information ("; request.server.name; ", "; request.server.machineID; ")"
+    else if request.requestType = "servers" then
+        for each serverElem in xml.Server
+            ' If we already have a server for this machine ID then disregard
+            if NOT m.Servers.DoesExist(xml@machineIdentifier) then
+                server = newPlexMediaServer("http://" + serverElem@host + ":" + serverElem@port, "")
+                server.machineID = serverElem@machineIdentifier
+                if serverElem@owned = "1" then
+                    server.name = serverElem@name
+                    server.owned = true
+                else
+                    server.name = serverElem@name + " (shared by " + serverElem@sourceTitle + ")"
+                end if
+                server.AccessToken = serverElem@accessToken
+                m.Servers[server.machineID] = server
+
+                print "Added shared server: "; server.name
+            end if
+        next
     end if
 
     return true

@@ -13,6 +13,8 @@ Function createMyPlexManager() As Object
     device = CreateObject("roDeviceInfo")
     obj.ClientIdentifier = "Roku-" + device.GetDeviceUniqueId()
 
+    obj.serverUrl = "https://my.plexapp.com"
+
     if RegExists("AuthToken", "myplex") then
         obj.ValidateToken(RegRead("AuthToken", "myplex"))
     else
@@ -43,7 +45,7 @@ Function mpShowPinScreen() As Object
     screen.Show()
 
     ' Kick off a request for the real pin
-    codeRequest = m.CreateRequest("https://my.plexapp.com/pins.xml")
+    codeRequest = m.CreateRequest("/pins.xml")
     codeRequest.SetPort(port)
     codeRequest.AsyncPostFromString("")
 
@@ -65,7 +67,7 @@ Function mpShowPinScreen() As Object
                 if msg.GetIndex() = 0 then
                     ' Get new code
                     screen.SetRegistrationCode("retrieving code...")
-                    codeRequest = m.CreateRequest("https://my.plexapp.com/pins.xml")
+                    codeRequest = m.CreateRequest("/pins.xml")
                     codeRequest.SetPort(port)
                     codeRequest.AsyncPostFromString("")
                 else
@@ -119,7 +121,7 @@ Function mpShowPinScreen() As Object
 End Function
 
 Function mpValidateToken(token) As Boolean
-    req = m.CreateRequest("https://my.plexapp.com/users/sign_in.xml")
+    req = m.CreateRequest("/users/sign_in.xml")
     port = CreateObject("roMessagePort")
     req.SetPort(port)
     req.AsyncPostFromString("auth_token=" + token)
@@ -141,7 +143,8 @@ Function mpValidateToken(token) As Boolean
     return m.IsSignedIn
 End Function
 
-Function mpCreateRequest(url As String) As Object
+Function mpCreateRequest(path As String) As Object
+    url = FullUrl(m.serverUrl, "", path)
     req = CreateURLTransferObject(url)
     req.AddHeader("X-Plex-Client-Identifier", m.ClientIdentifier)
     req.AddHeader("Accept", "application/xml")
