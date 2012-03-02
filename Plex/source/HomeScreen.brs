@@ -46,15 +46,15 @@ Function createHomeScreen(viewController) As Object
 End Function
 
 Function refreshHomeScreen()
-    m.Servers = {}
+    ClearPlexMediaServers()
     m.contentArray = []
     m.RowNames = []
     m.PendingRequests = {}
 
     ' Get the list of servers that have been configured/discovered. Servers
     ' found through myPlex are retrieved separately. Once requests to the
-    ' servers complete, the full list of servers will end up in m.Servers
-    ' indexed by machine ID.
+    ' servers complete, the full list of validated servers indexed by machine
+    ' ID is maintained by the ServerManager.
     configuredServers = PlexMediaServers()
 
     print "Setting up home screen content, server count:"; configuredServers.Count()
@@ -74,9 +74,8 @@ Function refreshHomeScreen()
     next
 
     if m.myplex.IsSignedIn then
-        req = m.myplex.CreateRequest("/pms/servers")
+        req = m.myplex.CreateRequest("", "/pms/servers")
         req.SetPort(m.Screen.Port)
-        req.SetUrl(req.GetUrl() + "?auth_token=" + m.myplex.AuthToken)
         req.AsyncGetToString()
 
         obj = {}
@@ -132,7 +131,21 @@ Function refreshHomeScreen()
     m.contentArray.Push(status)
     m.RowNames.Push("Channels")
 
-    ' TODO(schuyler) myPlex content
+    ' TODO(schuyler): Queue
+
+    ' Shared sections
+    m.SharedSectionsRow = m.contentArray.Count()
+    status = CreateObject("roAssociativeArray")
+    status.content = []
+    status.loadStatus = 0
+    status.toLoad = CreateObject("roList")
+    status.pendingRequests = CreateObject("roList")
+    obj = CreateObject("roAssociativeArray")
+    obj.server = m.myplex
+    obj.key = "/pms/system/library/sections"
+    status.toLoad.AddTail(obj)
+    m.contentArray.Push(status)
+    m.RowNames.Push("Shared Library Sections")
 
     ' Misc: global search, preferences, channel directory
     m.RowNames.Push("Miscellaneous")
@@ -611,6 +624,10 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
 
     if status = invalid then return true
 
+    if NOT m.myplex.IsSignedIn then
+        m.Screen.SetListVisible(m.SharedSectionsRow, false)
+    end if
+
     ' If we have something to load, kick off all the requests asynchronously
     ' now. Otherwise return according to whether or not additional rows have
     ' requests that need to be kicked off. As a special case, if there's
@@ -686,30 +703,41 @@ Function homeHandleMessage(msg) As Boolean
         response = CreateObject("roAssociativeArray")
         response.xml = xml
         response.server = request.server
-        response.sourceUrl = request.key
+        response.sourceUrl = request.request.GetUrl()
         container = createPlexContainerForXml(response)
         countLoaded = container.Count()
 
         startItem = status.content.Count()
 
-        ' Add some extra description
-        if request.server.owned then
-            ' Lame way to determine if m.Servers has more than one item...
-            m.Servers.Reset()
-            m.Servers.Next()
-            if m.Servers.IsNext() then
-                serverStr = " on " + request.server.name
-            else
-                serverStr = ""
-            end if
-        else
+        if AreMultipleValidatedServers() then
             serverStr = " on " + request.server.name
+        else
+            serverStr = ""
         end if
 
         items = container.GetMetadata()
         for each item in items
             add = true
-            if item.Type = "channel" then
+
+            ' A little weird, but sections will only have owned="1" on the
+            ' myPlex request, so we ignore them here since we should have
+            ' also requested them from the server directly.
+            if item.Owned = "1" then
+                add = false
+            else if item.MachineID <> invalid then
+                server = GetPlexMediaServer(item.MachineID)
+                if server <> invalid then
+                    print "Found a server for the section: "; item.Title; " on "; server.name
+                    item.server = server
+                    serverStr = " on " + server.name
+                else
+                    print "Found a shared section for an unknown server: "; item.MachineID
+                    add = false
+                end if
+            end if
+
+            if NOT add then
+            else if item.Type = "channel" then
                 channelType = Mid(item.key, 2, 5)
                 if channelType = "music" then
                     item.ShortDescriptionLine2 = "Music channel" + serverStr
@@ -731,6 +759,7 @@ Function homeHandleMessage(msg) As Boolean
                 item.ShortDescriptionLine2 = "Photo section" + serverStr
             else
                 print "Skipping unsupported section type: "; item.Type
+                add = false
             end if
 
             if add then
@@ -753,13 +782,14 @@ Function homeHandleMessage(msg) As Boolean
         request.server.name = xml@friendlyName
         request.server.machineID = xml@machineIdentifier
         request.server.owned = true
-        m.Servers[request.server.machineID] = request.server
+        PutPlexMediaServer(request.server)
 
         print "Fetched additional server information ("; request.server.name; ", "; request.server.machineID; ")"
+        print "URL: "; request.server.serverUrl
     else if request.requestType = "servers" then
         for each serverElem in xml.Server
             ' If we already have a server for this machine ID then disregard
-            if NOT m.Servers.DoesExist(xml@machineIdentifier) then
+            if GetPlexMediaServer(xml@machineIdentifier) = invalid then
                 server = newPlexMediaServer("http://" + serverElem@host + ":" + serverElem@port, "")
                 server.machineID = serverElem@machineIdentifier
                 if serverElem@owned = "1" then
@@ -769,7 +799,7 @@ Function homeHandleMessage(msg) As Boolean
                     server.name = serverElem@name + " (shared by " + serverElem@sourceTitle + ")"
                 end if
                 server.AccessToken = serverElem@accessToken
-                m.Servers[server.machineID] = server
+                PutPlexMediaServer(server)
 
                 print "Added shared server: "; server.name
             end if

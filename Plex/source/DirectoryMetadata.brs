@@ -9,6 +9,9 @@ Function newDirectoryMetadata(container, item) As Object
         directory.ContentType = "appClip"
     endif
 
+    directory.MachineID = item@machineIdentifier
+    directory.Owned = item@owned
+
     return directory
 End Function
 

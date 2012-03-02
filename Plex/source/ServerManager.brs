@@ -231,3 +231,39 @@ Function GDMDiscover()
     return list
 End Function
 
+Function GetPlexMediaServer(machineID)
+    servers = GetGlobalAA().Lookup("validated_servers")
+    if servers <> invalid then
+        return servers[machineID]
+    else
+        return invalid
+    end if
+End Function
+
+Sub PutPlexMediaServer(server)
+    if server.machineID <> invalid then
+        servers = GetGlobalAA().Lookup("validated_servers")
+        if servers = invalid then
+            servers = {}
+            GetGlobalAA().AddReplace("validated_servers", servers)
+        end if
+        servers[server.machineID] = server
+    end if
+End Sub
+
+Function AreMultipleValidatedServers() As Boolean
+    ' Super lame...
+    servers = GetGlobalAA().Lookup("validated_servers")
+    if servers <> invalid then
+        servers.Reset()
+        servers.Next()
+        return servers.IsNext()
+    else
+        return false
+    end if
+End Function
+
+Sub ClearPlexMediaServers()
+    GetGlobalAA().Delete("validated_servers")
+End Sub
+
