@@ -10,11 +10,13 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
     pms = CreateObject("roAssociativeArray")
     pms.serverUrl = pmsUrl
     pms.name = pmsName
+    pms.owned = true
     pms.GetHomePageContent = homePageContent
     pms.VideoScreen = constructVideoScreen
     pms.PluginVideoScreen = constructPluginVideoScreen
     pms.StopVideo = stopTranscode
     pms.PingTranscode = pingTranscode
+    pms.CreateRequest = pmsCreateRequest
     pms.GetQueryResponse = xmlContent
     pms.GetPaginatedQueryResponse = paginatedXmlContent
     pms.SetProgress = progress
@@ -30,6 +32,7 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
     pms.TranscodedImage = TranscodedImage
     pms.ConstructTranscodedVideoItem = constructTranscodedVideoItem
     pms.TranscodingVideoUrl = TranscodingVideoUrl
+    pms.ConvertTranscodeURLToLoopback = ConvertTranscodeURLToLoopback
     return pms
 End Function
 
@@ -194,27 +197,30 @@ Function paginatedXmlContent(sourceUrl, key, start, size) As Object
         xmlResult.xml = xml
         xmlResult.sourceUrl = invalid
     else
-            queryUrl = FullUrl(m.serverUrl, sourceUrl, key)
-            response = paginatedQuery(queryUrl, start, size)
-            xml=CreateObject("roXMLElement")
-            if not xml.Parse(response) then
-                print "Can't parse feed:";response
-            endif
-            xmlResult.xml = xml
-            xmlResult.sourceUrl = queryUrl
+        httpRequest = m.CreateRequest(sourceUrl, key)
+        httpRequest.AddHeader("X-Plex-Container-Start", start.tostr())
+        httpRequest.AddHeader("X-Plex-Container-Size", size.tostr())
+        print "Fetching content from server at query URL:"; httpRequest.GetUrl()
+        print "Pagination start:";start.tostr()
+        print "Pagination size:";size.tostr()
+        response = GetToStringWithTimeout(httpRequest, 60)
+        xml=CreateObject("roXMLElement")
+        if not xml.Parse(response) then
+            print "Can't parse feed:";response
+        endif
+        xmlResult.xml = xml
+        xmlResult.sourceUrl = httpRequest.GetUrl()
     endif
     return xmlResult
 End Function
 
-Function paginatedQuery(queryUrl, start, size) As Object
-    print "Fetching content from server at query URL:";queryUrl
-    print "Pagination start:";start.tostr()
-    print "Pagination size:";size.tostr()
-    httpRequest = NewHttp(queryUrl)
-    httpRequest.Http.AddHeader("X-Plex-Container-Start", start.tostr())
-    httpRequest.Http.AddHeader("X-Plex-Container-Size", size.tostr())
-    response = httpRequest.GetToStringWithTimeout(60000)
-    return response
+Function pmsCreateRequest(sourceUrl, key) As Object
+    url = FullUrl(m.serverUrl, sourceUrl, key)
+    req = CreateURLTransferObject(url)
+    if m.AccessToken <> invalid then
+        req.AddHeader("X-Plex-Token", m.AccessToken)
+    end if
+    return req
 End Function
 
 Function xmlContent(sourceUrl, key) As Object
@@ -227,26 +233,24 @@ Function xmlContent(sourceUrl, key) As Object
         xmlResult.xml = xml
         xmlResult.sourceUrl = invalid
     else
-        queryUrl = FullUrl(m.serverUrl, sourceUrl, key)
-        print "Fetching content from server at query URL:";queryUrl
-        httpRequest = NewHttp(queryUrl)
-        response = httpRequest.GetToStringWithTimeout(60000)
+        httpRequest = m.CreateRequest(sourceUrl, key)
+        print "Fetching content from server at query URL:"; httpRequest.GetUrl()
+        response = GetToStringWithTimeout(httpRequest, 60)
         xml=CreateObject("roXMLElement")
         if not xml.Parse(response) then
             print "Can't parse feed:";response
         endif
             
         xmlResult.xml = xml
-        xmlResult.sourceUrl = queryUrl
+        xmlResult.sourceUrl = httpRequest.GetUrl()
     endif
     return xmlResult
 End Function
 
 Function IndirectMediaXml(server, originalKey) As Object
-    queryUrl = FullUrl(server.serverUrl, "", originalKey)
-    print "Fetching content from server at query URL:";queryUrl
-    httpRequest = NewHttp(queryUrl)
-    response = httpRequest.GetToStringWithTimeout(60000)
+    httpRequest = server.CreateRequest("", originalKey)
+    print "Fetching content from server at query URL:"; httpRequest.GetUrl()
+    response = GetToStringWithTimeout(httpRequest, 60)
     xml=CreateObject("roXMLElement")
     if not xml.Parse(response) then
         print "Can't parse feed:";response
@@ -255,10 +259,10 @@ Function IndirectMediaXml(server, originalKey) As Object
     return xml
 End Function
         
-Function DirectMediaXml(queryUrl) As Object
-    print "Fetching content from server at query URL:";queryUrl
-    httpRequest = NewHttp(queryUrl)
-    response = httpRequest.GetToStringWithTimeout(60000)
+Function DirectMediaXml(server, queryUrl) As Object
+    httpRequest = server.CreateRequest("", queryUrl)
+    print "Fetching content from server at query URL:"; httpRequest.GetUrl()
+    response = GetToStringWithTimeout(httpRequest, 60)
     xml=CreateObject("roXMLElement")
     if not xml.Parse(response) then
         print "Can't parse feed:";response
@@ -422,6 +426,7 @@ End Function
 '* Constructs an image based on a PMS url with the specific width and height. 
 Function TranscodedImage(queryUrl, imagePath, width, height) As String
     imageUrl = FullUrl(m.serverUrl, queryUrl, imagePath)
+    imageUrl = m.ConvertTranscodeURLToLoopback(imageUrl)
     encodedUrl = HttpEncode(imageUrl)
     image = m.serverUrl + "/photo/:/transcode?url="+encodedUrl+"&width="+width+"&height="+height
     'print "Final Image URL:";image
@@ -457,7 +462,7 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpCookies As 
     end if
 
     location = ResolveUrl(m.serverUrl, item.sourceUrl, videoUrl)
-    location = ConvertTranscodeURLToLoopback(location)
+    location = m.ConvertTranscodeURLToLoopback(location)
     print "Location:";location
     if len(key) = 0 then
         fullKey = ""
@@ -511,29 +516,15 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpCookies As 
 End Function
 
 Function ConvertTranscodeURLToLoopback(url) As String
-    'first, if the URL doesn't include ":32400", return it as-is
-    if instr(1, url, ":32400") = 0 then
-        print "ConvertTranscodeURLToLoopback:: remote URL: ";url
-        return url
+    ' If the URL starts with our serverl URL, replace it with
+    ' 127.0.0.1:32400.
+
+    'print "ConvertTranscodeURLToLoopback:: original URL: ";url
+    if Left(url, len(m.serverUrl)) = m.serverUrl then
+        url = "http://127.0.0.1:32400" + Right(url, len(url) - len(m.serverUrl))
     end if
-    print "ConvertTranscodeURLToLoopback:: original URL: ";url
-    'second, strip off the http://
-    url = strReplace(url, "http://", "")
-    'then tokenize on the :
-    tokens = strTokenize(url, ":")
-    tokens[0] = "http://127.0.0.1"
-    x = tokens.GetIndex()
-    y = 0
-    while x <> invalid
-        if y = 0 then
-            url = x
-        else
-            url = url+":"+x
-        end if
-        y = y+1
-        x = tokens.GetIndex()
-    end while
-    print "ConvertTranscodeURLToLoopback:: processed URL: ";url
+
+    'print "ConvertTranscodeURLToLoopback:: processed URL: ";url
     return url
 End Function
 

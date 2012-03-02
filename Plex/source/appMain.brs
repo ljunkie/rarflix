@@ -52,6 +52,8 @@ Sub initTheme()
     theme.GridScreenLogoSD  = "pkg:/images/logo_final_SD.png"
     theme.GridScreenOverhangHeightSD = "66"
 
+    theme.RegistrationCodeColor = "#8B0000"
+
     app.SetTheme(theme)
 
 End Sub

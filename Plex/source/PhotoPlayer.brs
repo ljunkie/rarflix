@@ -10,13 +10,19 @@ Function photoHandleMessage(msg) As Boolean
             url = FullUrl(m.item.server.serverurl, m.item.sourceurl, m.item.media[0].parts[0].key)
             'Print "Url = ";url2
             slideshow = SlideShowSetup(port, 5.0, "#6b4226", 6)
+            if server.AccessToken <> invalid then
+                slideshow.AddHeader("X-Plex-Token", server.AccessToken)
+            end if
             pl = CreateObject("roList")
             pl.Push(url)
             DisplaySlideShow(port, slideshow, pl)
         else if buttonCommand = "slideshow" then
             Print "photoHandleMessage:: Start slideshow"
-            list = GetPhotoList(m.item.server.serverurl, m.item.sourceurl)
+            list = GetPhotoList(m.item.server, m.item.sourceurl)
             slideshow = SlideShowSetup(port, 5.0, "#6b4226", 6)
+            if server.AccessToken <> invalid then
+                slideshow.AddHeader("X-Plex-Token", server.AccessToken)
+            end if
             DisplaySlideShow(port, slideshow, list)
         else if buttonCommand = "next" then
             Print "photoHandleMessage:: show next photo"

@@ -11,6 +11,7 @@ Function createHomeScreen(viewController) As Object
     grid.Screen.SetDisplayMode("photo-fit")
     grid.Screen.SetUpBehaviorAtTopRow("stop")
     grid.Loader = obj
+    grid.MessageHandler = obj
 
     ' Standard properties for all our Screen types
     obj.Item = invalid
@@ -29,51 +30,91 @@ Function createHomeScreen(viewController) As Object
     obj.ShowH264Screen = showH264Screen
     obj.ShowChannelsAndSearchScreen = showChannelsAndSearchScreen
 
-    obj.Servers = []
+    obj.Servers = {}
 
     ' Data loader interface used by the grid screen
     obj.GetContent = homeGetContent
     obj.LoadMoreContent = homeLoadMoreContent
     obj.GetLoadStatus = homeGetLoadStatus
     obj.GetNames = homeGetNames
+    obj.HandleMessage = homeHandleMessage
+
+    ' The home screen owns the myPlex manager
+    obj.myplex = createMyPlexManager()
 
     return obj
 End Function
 
 Function refreshHomeScreen()
-    m.Servers = PlexMediaServers()
+    ClearPlexMediaServers()
     m.contentArray = []
     m.RowNames = []
+    m.PendingRequests = {}
 
-    print "Setting up home screen content, server count:"; m.Servers.Count()
+    ' Get the list of servers that have been configured/discovered. Servers
+    ' found through myPlex are retrieved separately. Once requests to the
+    ' servers complete, the full list of validated servers indexed by machine
+    ' ID is maintained by the ServerManager.
+    configuredServers = PlexMediaServers()
+
+    print "Setting up home screen content, server count:"; configuredServers.Count()
+
+    ' Request more information about all of our configured servers, to make
+    ' sure we get machine IDs and friendly names.
+    for each server in configuredServers
+        req = server.CreateRequest("", "/")
+        req.SetPort(m.Screen.Port)
+        req.AsyncGetToString()
+
+        obj = {}
+        obj.request = req
+        obj.requestType = "server"
+        obj.server = server
+        m.PendingRequests[str(req.GetIdentity())] = obj
+    next
+
+    if m.myplex.IsSignedIn then
+        req = m.myplex.CreateRequest("", "/pms/servers")
+        req.SetPort(m.Screen.Port)
+        req.AsyncGetToString()
+
+        obj = {}
+        obj.request = req
+        obj.requestType = "servers"
+        m.PendingRequests[str(req.GetIdentity())] = obj
+    end if
 
     ' Sections, across all servers
+    m.SectionsRow = m.contentArray.Count()
     status = CreateObject("roAssociativeArray")
     status.content = []
     status.loadStatus = 0
-    status.toLoad = []
-    for each server in m.Servers
+    status.toLoad = CreateObject("roList")
+    status.pendingRequests = CreateObject("roList")
+    for each server in configuredServers
         obj = CreateObject("roAssociativeArray")
         obj.server = server
         obj.key = "/library/sections"
-        status.toLoad.Push(obj)
+        status.toLoad.AddTail(obj)
     next
     m.contentArray.Push(status)
     m.RowNames.Push("Library Sections")
 
     ' Recently used channels, across all servers
+    m.ChannelsRow = m.contentArray.Count()
     status = CreateObject("roAssociativeArray")
     status.content = []
     status.loadStatus = 0
-    status.toLoad = []
-    for each server in m.Servers
+    status.toLoad = CreateObject("roList")
+    status.pendingRequests = CreateObject("roList")
+    for each server in configuredServers
         obj = CreateObject("roAssociativeArray")
         obj.server = server
         obj.key = "/channels/recentlyViewed"
 
         allChannels = CreateObject("roAssociativeArray")
         allChannels.Title = "More Channels"
-        if m.Servers.Count() > 1 then
+        if configuredServers.Count() > 1 then
             allChannels.ShortDescriptionLine2 = "All channels on " + server.name
         else
             allChannels.ShortDescriptionLine2 = "All channels"
@@ -87,29 +128,46 @@ Function refreshHomeScreen()
         allChannels.HDPosterURL = "file://pkg:/images/plex.jpg"
         obj.item = allChannels
 
-        status.toLoad.Push(obj)
+        status.toLoad.AddTail(obj)
     next
     m.contentArray.Push(status)
     m.RowNames.Push("Channels")
 
-    ' TODO(schuyler) myPlex content
+    ' TODO(schuyler): Queue
+
+    ' Shared sections
+    m.SharedSectionsRow = m.contentArray.Count()
+    status = CreateObject("roAssociativeArray")
+    status.content = []
+    status.loadStatus = 0
+    status.toLoad = CreateObject("roList")
+    status.pendingRequests = CreateObject("roList")
+    if m.myplex.IsSignedIn then
+        obj = CreateObject("roAssociativeArray")
+        obj.server = m.myplex
+        obj.key = "/pms/system/library/sections"
+        status.toLoad.AddTail(obj)
+    end if
+    m.contentArray.Push(status)
+    m.RowNames.Push("Shared Library Sections")
 
     ' Misc: global search, preferences, channel directory
     m.RowNames.Push("Miscellaneous")
     status = CreateObject("roAssociativeArray")
     status.content = []
     status.loadStatus = 0
-    status.toLoad = []
+    status.toLoad = CreateObject("roList")
+    status.pendingRequests = CreateObject("roList")
     ' TODO: Search
 
     ' Channel directory for each server
-    for each server in m.Servers
+    for each server in configuredServers
         channels = CreateObject("roAssociativeArray")
         channels.server = server
         channels.sourceUrl = ""
         channels.key = "/system/appstore"
         channels.Title = "Channel Directory"
-        if m.Servers.Count() > 1 then
+        if configuredServers.Count() > 1 then
             allChannels.ShortDescriptionLine2 = "Browse channels to install on " + server.name
         else
             allChannels.ShortDescriptionLine2 = "Browse channels to install"
@@ -144,7 +202,14 @@ End Function
 
 Function showHomeScreen() As Integer
     m.Refresh()
-    return m.Screen.Show()
+    ret = m.Screen.Show()
+
+    for each id in m.PendingRequests
+        m.PendingRequests[id].request.AsyncCancel()
+    next
+    m.PendingRequests.Clear()
+
+    return ret
 End Function
 
 Function showPreferencesScreen()
@@ -217,11 +282,12 @@ Function showMediaServersScreen()
 	ls.SetTitle("Plex Media Servers") 
 	ls.setHeader("Manage Plex Media Servers")
 	ls.SetContent([{title:"Close Manage Servers"},
+		{title: getCurrentMyPlexLabel(m.myplex)},
 		{title: "Add Server Manually"},
 		{title: "Discover Servers"},
 		{title: "Remove All Servers"}])
-	
-	fixedSections = 3
+
+	fixedSections = 4
 	buttonCount = fixedSections + 1
     servers = RegRead("serverList", "servers")
     if servers <> invalid
@@ -249,6 +315,13 @@ Function showMediaServersScreen()
                     print "Closing Manage Servers"
                     ls.close()
                 else if msg.getIndex() = 1 then
+                    if m.myplex.IsSignedIn then
+                        m.myplex.Disconnect()
+                    else
+                        m.myplex.ShowPinScreen()
+                    end if
+                    ls.SetItem(msg.getIndex(), {title: getCurrentMyPlexLabel(m.myplex)})
+                else if msg.getIndex() = 2 then
                     m.ShowManualServerScreen()
 
                     ' UPDATE: I'm not seeing this problem, but I'm loathe to remove such a specific workaround...
@@ -257,12 +330,12 @@ Function showMediaServersScreen()
                     ' works around it.
                     'screen=preShowHomeScreen("", "")
                     'showHomeScreen(screen, PlexMediaServers())
-                else if msg.getIndex() = 2 then
+                else if msg.getIndex() = 3 then
                     DiscoverPlexMediaServers()
                     m.showMediaServersScreen()
                     ls.setFocusedListItem(0)
                     ls.close()
-                else if msg.getIndex() = 3 then
+                else if msg.getIndex() = 4 then
                     RemoveAllServers()
                     m.showMediaServersScreen()
                     ls.setFocusedListItem(0)
@@ -546,7 +619,7 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
             if status = invalid then
                 status = m.contentArray[index]
                 loadingRow = index
-            else
+            else if m.contentArray[index].toLoad.Count() > 0 then
                 extraRowsAlreadyLoaded = false
                 exit for
             end if
@@ -555,29 +628,120 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
 
     if status = invalid then return true
 
-    startItem = status.content.Count()
-    if status.toLoad.Count() = 0 then
-        status.loadStatus = 2
-        m.Screen.OnDataLoaded(loadingRow, status.content, 0, status.content.Count())
-        return extraRowsAlreadyLoaded
+    if NOT m.myplex.IsSignedIn then
+        m.Screen.OnDataLoaded(m.SharedSectionsRow, [], 0, 0)
     end if
 
-    countLoaded = 0
-    toLoad = status.toLoad.Shift()
-    if toLoad.key <> invalid then
-        container = createPlexContainerForUrl(toLoad.server, "", toLoad.key)
+    ' If we have something to load, kick off all the requests asynchronously
+    ' now. Otherwise return according to whether or not additional rows have
+    ' requests that need to be kicked off. As a special case, if there's
+    ' nothing to load and no pending requests, we must be in a row with static
+    ' content, tell the screen it's been loaded.
+
+    if status.toLoad.Count() > 0 then
+        status.loadStatus = 1
+
+        numRequests = 0
+        for each toLoad in status.toLoad
+            req = toLoad.server.CreateRequest("", toLoad.key)
+            req.SetPort(m.Screen.Port)
+            toLoad.request = req
+            toLoad.row = loadingRow
+            toLoad.requestType = "row"
+            status.pendingRequests.AddTail(req.GetIdentity())
+            m.PendingRequests[str(req.GetIdentity())] = toLoad
+
+            if req.AsyncGetToString() then
+                numRequests = numRequests + 1
+            end if
+        next
+
+        status.toLoad.Clear()
+
+        print "Successfully kicked off"; numRequests; " requests for row"; loadingRow; ", pending requests now:"; status.pendingRequests.Count()
+    else if status.pendingRequests.Count() > 0 then
+        status.loadStatus = 1
+        print "No additional requests to kick off for row"; loadingRow; ", pending request count:"; status.pendingRequests.Count()
+    else
+        status.loadStatus = 2
+        m.Screen.OnDataLoaded(loadingRow, status.content, 0, status.content.Count())
+    end if
+
+    return extraRowsAlreadyLoaded
+End Function
+
+Function homeHandleMessage(msg) As Boolean
+    ' We only handle URL events, leave everything else to the screen
+    if type(msg) <> "roUrlEvent" OR msg.GetInt() <> 1 then return false
+
+    id = msg.GetSourceIdentity()
+    request = m.PendingRequests[str(id)]
+    if request = invalid then return false
+    m.PendingRequests.Delete(str(id))
+
+    if request.requestType = "row" then
+        status = m.contentArray[request.row]
+        rowRequests = status.pendingRequests
+        rowRequests.ResetIndex()
+        x = rowRequests.GetIndex()
+        index = 0
+        while x <> invalid
+            if x = id then
+                rowRequests.Delete(index)
+                exit while
+            end if
+            index = index + 1
+            x = rowRequests.GetIndex()
+        end while
+    end if
+
+    if msg.GetResponseCode() <> 200 then
+        print "Got a"; msg.GetResponseCode(); " response from "; request.request.GetUrl()
+        return true
+    end if
+
+    xml = CreateObject("roXMLElement")
+    xml.Parse(msg.GetString())
+
+    if request.requestType = "row" then
+        response = CreateObject("roAssociativeArray")
+        response.xml = xml
+        response.server = request.server
+        response.sourceUrl = request.request.GetUrl()
+        container = createPlexContainerForXml(response)
         countLoaded = container.Count()
 
-        ' Add some extra description
-        if m.Servers.Count() > 1 then
-            serverStr = " on " + toLoad.server.name
+        startItem = status.content.Count()
+
+        if AreMultipleValidatedServers() then
+            serverStr = " on " + request.server.name
         else
             serverStr = ""
         end if
+
         items = container.GetMetadata()
         for each item in items
             add = true
-            if item.Type = "channel" then
+
+            ' A little weird, but sections will only have owned="1" on the
+            ' myPlex request, so we ignore them here since we should have
+            ' also requested them from the server directly.
+            if item.Owned = "1" then
+                add = false
+            else if item.MachineID <> invalid then
+                server = GetPlexMediaServer(item.MachineID)
+                if server <> invalid then
+                    print "Found a server for the section: "; item.Title; " on "; server.name
+                    item.server = server
+                    serverStr = " on " + server.name
+                else
+                    print "Found a shared section for an unknown server: "; item.MachineID
+                    add = false
+                end if
+            end if
+
+            if NOT add then
+            else if item.Type = "channel" then
                 channelType = Mid(item.key, 2, 5)
                 if channelType = "music" then
                     item.ShortDescriptionLine2 = "Music channel" + serverStr
@@ -599,31 +763,102 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
                 item.ShortDescriptionLine2 = "Photo section" + serverStr
             else
                 print "Skipping unsupported section type: "; item.Type
+                add = false
             end if
 
             if add then
                 item.Description = item.ShortDescriptionLine2
+
+                ' Normally thumbnail requests will have an X-Plex-Token header
+                ' added as necessary by the screen, but we can't do that on the
+                ' home screen because we're showing content from multiple
+                ' servers.
+                if item.SDPosterURL <> invalid AND item.server <> invalid AND item.server.AccessToken <> invalid then
+                    item.SDPosterURL = item.SDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
+                    item.HDPosterURL = item.HDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
+                end if
+
                 status.content.Push(item)
+            end if
+        next
+
+        if request.item <> invalid then
+            countLoaded = countLoaded + 1
+            status.content.Push(request.item)
+        end if
+
+        if status.toLoad.Count() = 0 AND rowRequests.Count() = 0 then
+            status.loadStatus = 2
+        end if
+
+        m.Screen.OnDataLoaded(request.row, status.content, startItem, countLoaded)
+    else if request.requestType = "server" then
+        request.server.name = xml@friendlyName
+        request.server.machineID = xml@machineIdentifier
+        request.server.owned = true
+        PutPlexMediaServer(request.server)
+
+        print "Fetched additional server information ("; request.server.name; ", "; request.server.machineID; ")"
+        print "URL: "; request.server.serverUrl
+    else if request.requestType = "servers" then
+        for each serverElem in xml.Server
+            ' If we already have a server for this machine ID then disregard
+            if GetPlexMediaServer(xml@machineIdentifier) = invalid then
+                server = newPlexMediaServer("http://" + serverElem@host + ":" + serverElem@port, "")
+                server.machineID = serverElem@machineIdentifier
+                server.AccessToken = firstOf(serverElem@accessToken, m.myplex.AuthToken)
+
+                if serverElem@owned = "1" then
+                    server.name = serverElem@name
+                    server.owned = true
+
+                    ' An owned server that we didn't have configured, request
+                    ' its sections and channels now.
+                    sections = CreateObject("roAssociativeArray")
+                    sections.server = server
+                    sections.key = "/library/sections"
+                    sections.row = m.SectionsRow
+                    sections.requestType = "row"
+                    req = server.CreateRequest("", sections.key)
+                    req.SetPort(m.Screen.Port)
+                    req.AsyncGetToString()
+                    sections.request = req
+                    m.contentArray[sections.row].pendingRequests.AddTail(req.GetIdentity())
+                    m.PendingRequests[str(req.GetIdentity())] = sections
+
+                    channels = CreateObject("roAssociativeArray")
+                    channels.server = server
+                    channels.key = "/channels/recentlyViewed"
+                    channels.row = m.ChannelsRow
+                    channels.requestType = "row"
+                    req = server.CreateRequest("", channels.key)
+                    req.SetPort(m.Screen.Port)
+                    req.AsyncGetToString()
+                    channels.request = req
+                    m.contentArray[channels.row].pendingRequests.AddTail(req.GetIdentity())
+                    m.PendingRequests[str(req.GetIdentity())] = channels
+
+                    allChannels = CreateObject("roAssociativeArray")
+                    allChannels.Title = "More Channels"
+                    allChannels.ShortDescriptionLine2 = "All channels on " + server.name
+                    allChannels.Description = allChannels.ShortDescriptionLine2
+                    allChannels.server = server
+                    allChannels.sourceUrl = ""
+                    allChannels.Key = "/channels/all"
+                    allChannels.SDPosterURL = "file://pkg:/images/plex.jpg"
+                    allChannels.HDPosterURL = "file://pkg:/images/plex.jpg"
+                    channels.item = allChannels
+                else
+                    server.name = serverElem@name + " (shared by " + serverElem@sourceTitle + ")"
+                end if
+                PutPlexMediaServer(server)
+
+                print "Added shared server: "; server.name
             end if
         next
     end if
 
-    if toLoad.item <> invalid then
-        countLoaded = countLoaded + 1
-        status.content.Push(toLoad.item)
-    end if
-
-    if status.toLoad.Count() > 0 then
-        status.loadStatus = 1
-        ret = false
-    else
-        status.loadStatus = 2
-        ret = extraRowsAlreadyLoaded
-    end if
-
-    m.Screen.OnDataLoaded(loadingRow, status.content, startItem, countLoaded)
-
-    return ret
+    return true
 End Function
 
 Function homeGetLoadStatus(index) As Integer
@@ -708,5 +943,13 @@ Function getCurrentChannelsAndSearchSetting()
 		current = "Enabled (Default)"
 	end if
 	return {label: current, value: regValue}
+End Function
+
+Function getCurrentMyPlexLabel(myplex) As String
+    if myplex.IsSignedIn then
+        return "Disconnect myPlex account (" + myplex.EmailAddress + ")"
+    else
+        return "Connect myPlex account"
+    end if
 End Function
 

@@ -15,9 +15,10 @@ Function PlexMediaServers() As Object
             serverDetails = strTokenize(token, "\")
             address = serverDetails[0]
             name = serverDetails[1]
-            if IsServerValid(address) then
-                list.AddTail(newPlexMediaServer(address, name))
-            end if
+            ' The server should have been validated when it was added, so
+            ' don't make a blocking validation call here. The home screen
+            ' should be able to handle servers that don't respond.
+            list.AddTail(newPlexMediaServer(address, name))
         end for
     end if
     'list.AddTail(newPlexMediaServer("http://dn-1.com:32400", "dn-1"))
@@ -229,4 +230,40 @@ Function GDMDiscover()
     udp.close() ' would happen automatically as udp goes out of scope End Function  
     return list
 End Function
+
+Function GetPlexMediaServer(machineID)
+    servers = GetGlobalAA().Lookup("validated_servers")
+    if servers <> invalid then
+        return servers[machineID]
+    else
+        return invalid
+    end if
+End Function
+
+Sub PutPlexMediaServer(server)
+    if server.machineID <> invalid then
+        servers = GetGlobalAA().Lookup("validated_servers")
+        if servers = invalid then
+            servers = {}
+            GetGlobalAA().AddReplace("validated_servers", servers)
+        end if
+        servers[server.machineID] = server
+    end if
+End Sub
+
+Function AreMultipleValidatedServers() As Boolean
+    ' Super lame...
+    servers = GetGlobalAA().Lookup("validated_servers")
+    if servers <> invalid then
+        servers.Reset()
+        servers.Next()
+        return servers.IsNext()
+    else
+        return false
+    end if
+End Function
+
+Sub ClearPlexMediaServers()
+    GetGlobalAA().Delete("validated_servers")
+End Sub
 

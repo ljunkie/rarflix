@@ -40,6 +40,11 @@ Function createBaseMetadata(container, item) As Object
 
     'print "createBaseMetadata: ";item@key
 
+    server = container.server
+    if item@machineIdentifier <> invalid then
+        server = GetPlexMediaServer(item@machineIdentifier)
+    end if
+
     metadata.Title = firstOf(item@title, item@name)
 
     ' There is a *massive* performance problem on grid views if the description
@@ -55,13 +60,13 @@ Function createBaseMetadata(container, item) As Object
 
     sizes = ImageSizes(container.ViewGroup, item@type)                                                                                    
     art = firstOf(item@thumb, item@parentThumb, item@art, container.xml@thumb)
-    if art <> invalid then
-        metadata.SDPosterURL = container.server.TranscodedImage(container.sourceUrl, art, sizes.sdWidth, sizes.sdHeight)
-        metadata.HDPosterURL = container.server.TranscodedImage(container.sourceUrl, art, sizes.hdWidth, sizes.hdHeight)
+    if art <> invalid AND server <> invalid then
+        metadata.SDPosterURL = server.TranscodedImage(container.sourceUrl, art, sizes.sdWidth, sizes.sdHeight)
+        metadata.HDPosterURL = server.TranscodedImage(container.sourceUrl, art, sizes.hdWidth, sizes.hdHeight)
     end if
 
     metadata.sourceUrl = container.sourceUrl
-    metadata.server = container.server
+    metadata.server = server
 
     metadata.HasDetails = false
     metadata.ParseDetails = baseParseDetails
