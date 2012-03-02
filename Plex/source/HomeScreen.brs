@@ -627,7 +627,7 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
     if status = invalid then return true
 
     if NOT m.myplex.IsSignedIn then
-        m.Screen.SetListVisible(m.SharedSectionsRow, false)
+        m.Screen.OnDataLoaded(m.SharedSectionsRow, [], 0, 0)
     end if
 
     ' If we have something to load, kick off all the requests asynchronously
