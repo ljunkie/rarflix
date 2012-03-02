@@ -85,6 +85,7 @@ Function refreshHomeScreen()
     end if
 
     ' Sections, across all servers
+    m.SectionsRow = m.contentArray.Count()
     status = CreateObject("roAssociativeArray")
     status.content = []
     status.loadStatus = 0
@@ -100,6 +101,7 @@ Function refreshHomeScreen()
     m.RowNames.Push("Library Sections")
 
     ' Recently used channels, across all servers
+    m.ChannelsRow = m.contentArray.Count()
     status = CreateObject("roAssociativeArray")
     status.content = []
     status.loadStatus = 0
@@ -792,13 +794,51 @@ Function homeHandleMessage(msg) As Boolean
             if GetPlexMediaServer(xml@machineIdentifier) = invalid then
                 server = newPlexMediaServer("http://" + serverElem@host + ":" + serverElem@port, "")
                 server.machineID = serverElem@machineIdentifier
+                server.AccessToken = firstOf(serverElem@accessToken, m.myplex.AuthToken)
+
                 if serverElem@owned = "1" then
                     server.name = serverElem@name
                     server.owned = true
+
+                    ' An owned server that we didn't have configured, request
+                    ' its sections and channels now.
+                    sections = CreateObject("roAssociativeArray")
+                    sections.server = server
+                    sections.key = "/library/sections"
+                    sections.row = m.SectionsRow
+                    sections.requestType = "row"
+                    req = server.CreateRequest("", sections.key)
+                    req.SetPort(m.Screen.Port)
+                    req.AsyncGetToString()
+                    sections.request = req
+                    m.contentArray[sections.row].pendingRequests.AddTail(req.GetIdentity())
+                    m.PendingRequests[str(req.GetIdentity())] = sections
+
+                    channels = CreateObject("roAssociativeArray")
+                    channels.server = server
+                    channels.key = "/channels/recentlyViewed"
+                    channels.row = m.ChannelsRow
+                    channels.requestType = "row"
+                    req = server.CreateRequest("", channels.key)
+                    req.SetPort(m.Screen.Port)
+                    req.AsyncGetToString()
+                    channels.request = req
+                    m.contentArray[channels.row].pendingRequests.AddTail(req.GetIdentity())
+                    m.PendingRequests[str(req.GetIdentity())] = channels
+
+                    allChannels = CreateObject("roAssociativeArray")
+                    allChannels.Title = "More Channels"
+                    allChannels.ShortDescriptionLine2 = "All channels on " + server.name
+                    allChannels.Description = allChannels.ShortDescriptionLine2
+                    allChannels.server = server
+                    allChannels.sourceUrl = ""
+                    allChannels.Key = "/channels/all"
+                    allChannels.SDPosterURL = "file://pkg:/images/plex.jpg"
+                    allChannels.HDPosterURL = "file://pkg:/images/plex.jpg"
+                    channels.item = allChannels
                 else
                     server.name = serverElem@name + " (shared by " + serverElem@sourceTitle + ")"
                 end if
-                server.AccessToken = serverElem@accessToken
                 PutPlexMediaServer(server)
 
                 print "Added shared server: "; server.name
