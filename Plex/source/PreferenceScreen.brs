@@ -32,7 +32,7 @@ Function showPreferenceScreen (item, viewController)
 
         end if
         
-        buttonTitle = prefItem@label
+        buttonTitle = insertLB(prefItem@label, 30)
         if value <>  "" then
 			buttonTitle = buttonTitle + ": " +value		
         end if
@@ -120,11 +120,17 @@ Function showTextInput (inputItem,item,parentScreen, buttonIndex)
 				return 0
 			else if msg.isButtonPressed() then
 				if msg.getIndex() = 1 then
-					inputItem.addattribute("value",keyb.getText())
-					item.server.setPref(item.key,inputItem@id, keyb.getText())
-					if inputItem@option <> "hidden" then
-						parentScreen.setItem(buttonIndex, {title: inputItem@label + ": "+ keyb.getText()})						
+					value = keyb.getText()
+					inputItem.addattribute("value",value)
+					item.server.setPref(item.key,inputItem@id, value)					
+					if inputItem@option = "hidden" then
+						r = CreateObject("roRegex", ".","i")
+						value = r.ReplaceAll(value, "\*")
 					end if
+					if value <> ""  then
+						value = ": "+value
+					end if
+					parentScreen.setItem(buttonIndex, {title: inputItem@label + value})						
 					keyb.close()
 				else if msg.getIndex() =2 then
 					keyb.close()
