@@ -796,10 +796,14 @@ Function homeHandleMessage(msg) As Boolean
         request.server.name = xml@friendlyName
         request.server.machineID = xml@machineIdentifier
         request.server.owned = true
+        if xml@version <> invalid then
+            request.server.SupportsAudioTranscoding = ServerVersionCompare(xml@version, [0, 9, 6])
+        end if
         PutPlexMediaServer(request.server)
 
         print "Fetched additional server information ("; request.server.name; ", "; request.server.machineID; ")"
         print "URL: "; request.server.serverUrl
+        print "Server supports audio transcoding: "; request.server.SupportsAudioTranscoding
     else if request.requestType = "servers" then
         for each serverElem in xml.Server
             ' If we already have a server for this machine ID then disregard

@@ -32,7 +32,12 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
     pms.TranscodedImage = TranscodedImage
     pms.ConstructTranscodedVideoItem = constructTranscodedVideoItem
     pms.TranscodingVideoUrl = TranscodingVideoUrl
+    pms.TranscodingAudioUrl = TranscodingAudioUrl
     pms.ConvertTranscodeURLToLoopback = ConvertTranscodeURLToLoopback
+
+    ' Set to false if a version check fails
+    pms.SupportsAudioTranscoding = true
+
     return pms
 End Function
 
@@ -508,6 +513,32 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpCookies As 
     query = query + "&X-Plex-Access-Key=" + publicKey
     query = query + "&X-Plex-Access-Time=" + time
     query = query + "&X-Plex-Access-Code=" + HttpEncode(finalMsg)
+    query = query + "&X-Plex-Client-Capabilities=" + HttpEncode(Capabilities())
+
+    finalUrl = m.serverUrl + path + query
+    print "Final URL:";finalUrl
+    return finalUrl
+End Function
+
+Function TranscodingAudioUrl(audioUrl As String, item As Object)
+    if NOT m.SupportsAudioTranscoding then return invalid
+
+    print "Constructing transcoding audio URL for "+audioUrl
+
+    location = ResolveUrl(m.serverUrl, item.sourceUrl, audioUrl)
+    location = m.ConvertTranscodeURLToLoopback(location)
+    print "Location:";location
+    
+    path = "/music/:/transcode/generic.mp3?"
+
+    query = "offset=0"
+    query = query + "&format=mp3&audioCodec=libmp3lame"
+    ' TODO(schuyler): Should we be doing something other than hardcoding these?
+    ' If we don't pass a bitrate the server uses 64k, which we don't want.
+    ' There was a rumor that the Roku didn't support 48000 samples, but that
+    ' doesn't seem to be true.
+    query = query + "&audioBitrate=160&audioSamples=44100"
+    query = query + "&url=" + HttpEncode(location)
     query = query + "&X-Plex-Client-Capabilities=" + HttpEncode(Capabilities())
 
     finalUrl = m.serverUrl + path + query

@@ -70,9 +70,10 @@ Function newTrackMetadata(container, item, detailed=true) As Object
 
     if media@audioCodec = "mp3" OR media@audioCodec = "wmv" OR media@audioCodec = "aac" then
         track.StreamFormat = media@audioCodec
-        track.Url = FullUrl(container.server.serverUrl, container.sourceUrl, part@key)
+        track.Url = FullUrl(track.server.serverUrl, track.sourceUrl, part@key)
     else
-        ' TODO(schuyler): Transcode to mp3
+        track.StreamFormat = "mp3"
+        track.Url = track.server.TranscodingAudioUrl(part@key, track)
     end if
 
     return track
