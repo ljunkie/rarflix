@@ -615,11 +615,11 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
         index = focusedIndex + i
         if index >= m.contentArray.Count() then
             exit for
-        else if m.contentArray[index].loadStatus < 2 then
+        else if m.contentArray[index].loadStatus = 0 OR m.contentArray[index].toLoad.Count() > 0 then
             if status = invalid then
                 status = m.contentArray[index]
                 loadingRow = index
-            else if m.contentArray[index].toLoad.Count() > 0 then
+            else
                 extraRowsAlreadyLoaded = false
                 exit for
             end if
@@ -696,7 +696,7 @@ Function homeHandleMessage(msg) As Boolean
     end if
 
     if msg.GetResponseCode() <> 200 then
-        print "Got a"; msg.GetResponseCode(); " response from "; request.request.GetUrl()
+        print "Got a"; msg.GetResponseCode(); " response from "; request.request.GetUrl(); " - "; msg.GetFailureReason()
         return true
     end if
 
@@ -857,6 +857,11 @@ Function homeHandleMessage(msg) As Boolean
             end if
         next
     end if
+
+    print "Remaining pending requests:"
+    for each id in m.PendingRequests
+        print m.PendingRequests[id].request.GetUrl()
+    next
 
     return true
 End Function
