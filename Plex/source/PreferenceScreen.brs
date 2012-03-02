@@ -32,7 +32,7 @@ Function showPreferenceScreen (item, viewController)
 
         end if
         
-        buttonTitle = insertLB(prefItem@label, 30)
+        buttonTitle = prefItem@label
         if value <>  "" then
 			buttonTitle = buttonTitle + ": " +value		
         end if
