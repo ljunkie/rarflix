@@ -34,6 +34,7 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
     pms.TranscodingVideoUrl = TranscodingVideoUrl
     pms.TranscodingAudioUrl = TranscodingAudioUrl
     pms.ConvertTranscodeURLToLoopback = ConvertTranscodeURLToLoopback
+    pms.Log = pmsLog
 
     ' Set to false if a version check fails
     pms.SupportsAudioTranscoding = true
@@ -617,5 +618,23 @@ Function LinuxTime() As Integer
     return time.asSeconds()
 End Function
 
+Sub pmsLog(msg as String, level=3 As Integer, timeout=0 As Integer)
+    query = "source=roku&level=" + level.tostr() + "&message=" + HttpEncode(msg)
+    httpRequest = m.CreateRequest("", "/log?" + query)
+    httpRequest.AsyncGetToString()
+
+    ' If we let the log request go out of scope it will get canceled, but we
+    ' definitely don't want to block waiting for the response. So, we'll hang
+    ' onto one log request at a time. If two log requests are made in rapid
+    ' succession then it's possible for the first to be canceled by the second,
+    ' caveat emptor. If it's really important, pass the timeout parameter and
+    ' make it a blocking request.
+
+    if timeout > 0 then
+        GetToStringWithTimeout(httpRequest, timeout)
+    else
+        GetGlobalAA().AddReplace("log_request", httpRequest)
+    end if
+End Sub
 
 
