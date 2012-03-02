@@ -10,6 +10,7 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
     pms = CreateObject("roAssociativeArray")
     pms.serverUrl = pmsUrl
     pms.name = pmsName
+    pms.owned = true
     pms.GetHomePageContent = homePageContent
     pms.VideoScreen = constructVideoScreen
     pms.PluginVideoScreen = constructPluginVideoScreen

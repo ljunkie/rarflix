@@ -30,7 +30,7 @@ Function createHomeScreen(viewController) As Object
     obj.ShowH264Screen = showH264Screen
     obj.ShowChannelsAndSearchScreen = showChannelsAndSearchScreen
 
-    obj.Servers = []
+    obj.Servers = {}
 
     ' Data loader interface used by the grid screen
     obj.GetContent = homeGetContent
@@ -46,12 +46,32 @@ Function createHomeScreen(viewController) As Object
 End Function
 
 Function refreshHomeScreen()
-    m.Servers = PlexMediaServers()
+    m.Servers = {}
     m.contentArray = []
     m.RowNames = []
     m.PendingRequests = {}
 
-    print "Setting up home screen content, server count:"; m.Servers.Count()
+    ' Get the list of servers that have been configured/discovered. Servers
+    ' found through myPlex are retrieved separately. Once requests to the
+    ' servers complete, the full list of servers will end up in m.Servers
+    ' indexed by machine ID.
+    configuredServers = PlexMediaServers()
+
+    print "Setting up home screen content, server count:"; configuredServers.Count()
+
+    ' Request more information about all of our configured servers, to make
+    ' sure we get machine IDs and friendly names.
+    for each server in configuredServers
+        req = server.CreateRequest("", "/")
+        req.SetPort(m.Screen.Port)
+        req.AsyncGetToString()
+
+        obj = {}
+        obj.request = req
+        obj.requestType = "server"
+        obj.server = server
+        m.PendingRequests[str(req.GetIdentity())] = obj
+    next
 
     ' Sections, across all servers
     status = CreateObject("roAssociativeArray")
@@ -59,7 +79,7 @@ Function refreshHomeScreen()
     status.loadStatus = 0
     status.toLoad = CreateObject("roList")
     status.pendingRequests = CreateObject("roList")
-    for each server in m.Servers
+    for each server in configuredServers
         obj = CreateObject("roAssociativeArray")
         obj.server = server
         obj.key = "/library/sections"
@@ -74,14 +94,14 @@ Function refreshHomeScreen()
     status.loadStatus = 0
     status.toLoad = CreateObject("roList")
     status.pendingRequests = CreateObject("roList")
-    for each server in m.Servers
+    for each server in configuredServers
         obj = CreateObject("roAssociativeArray")
         obj.server = server
         obj.key = "/channels/recentlyViewed"
 
         allChannels = CreateObject("roAssociativeArray")
         allChannels.Title = "More Channels"
-        if m.Servers.Count() > 1 then
+        if configuredServers.Count() > 1 then
             allChannels.ShortDescriptionLine2 = "All channels on " + server.name
         else
             allChannels.ShortDescriptionLine2 = "All channels"
@@ -112,13 +132,13 @@ Function refreshHomeScreen()
     ' TODO: Search
 
     ' Channel directory for each server
-    for each server in m.Servers
+    for each server in configuredServers
         channels = CreateObject("roAssociativeArray")
         channels.server = server
         channels.sourceUrl = ""
         channels.key = "/system/appstore"
         channels.Title = "Channel Directory"
-        if m.Servers.Count() > 1 then
+        if configuredServers.Count() > 1 then
             allChannels.ShortDescriptionLine2 = "Browse channels to install on " + server.name
         else
             allChannels.ShortDescriptionLine2 = "Browse channels to install"
@@ -594,6 +614,7 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
             req.SetPort(m.Screen.Port)
             toLoad.request = req
             toLoad.row = loadingRow
+            toLoad.requestType = "row"
             status.pendingRequests.AddTail(req.GetIdentity())
             m.PendingRequests[str(req.GetIdentity())] = toLoad
 
@@ -620,94 +641,110 @@ Function homeHandleMessage(msg) As Boolean
     ' We only handle URL events, leave everything else to the screen
     if type(msg) <> "roUrlEvent" OR msg.GetInt() <> 1 then return false
 
-print "Got a response for request:"; msg.GetSourceIdentity()
     id = msg.GetSourceIdentity()
-    toLoad = m.PendingRequests[str(id)]
-    if toLoad = invalid then return false
+    request = m.PendingRequests[str(id)]
+    if request = invalid then return false
     m.PendingRequests.Delete(str(id))
-print "Found a pending request, response is for row"; toLoad.row
 
-    status = m.contentArray[toLoad.row]
-    rowRequests = status.pendingRequests
-    rowRequests.ResetIndex()
-    x = rowRequests.GetIndex()
-    index = 0
-    while x <> invalid
-        if x = id then
-            rowRequests.Delete(index)
-            exit while
-        end if
-        index = index + 1
+    if request.requestType = "row" then
+        status = m.contentArray[request.row]
+        rowRequests = status.pendingRequests
+        rowRequests.ResetIndex()
         x = rowRequests.GetIndex()
-    end while
+        index = 0
+        while x <> invalid
+            if x = id then
+                rowRequests.Delete(index)
+                exit while
+            end if
+            index = index + 1
+            x = rowRequests.GetIndex()
+        end while
+    end if
 
     if msg.GetResponseCode() <> 200 then
-        print "Got a"; msg.GetResponseCode(); " response from "; toLoad.request.GetUrl()
+        print "Got a"; msg.GetResponseCode(); " response from "; request.request.GetUrl()
         return true
     end if
 
     xml = CreateObject("roXMLElement")
     xml.Parse(msg.GetString())
-    response = CreateObject("roAssociativeArray")
-    response.xml = xml
-    response.server = toLoad.server
-    response.sourceUrl = toLoad.key
-    container = createPlexContainerForXml(response)
 
-    countLoaded = container.Count()
+    if request.requestType = "row" then
+        response = CreateObject("roAssociativeArray")
+        response.xml = xml
+        response.server = request.server
+        response.sourceUrl = request.key
+        container = createPlexContainerForXml(response)
+        countLoaded = container.Count()
 
-    startItem = status.content.Count()
+        startItem = status.content.Count()
 
-    ' Add some extra description
-    if m.Servers.Count() > 1 then
-        serverStr = " on " + toLoad.server.name
-    else
-        serverStr = ""
-    end if
-
-    items = container.GetMetadata()
-    for each item in items
-        add = true
-        if item.Type = "channel" then
-            channelType = Mid(item.key, 2, 5)
-            if channelType = "music" then
-                item.ShortDescriptionLine2 = "Music channel" + serverStr
-            else if channelType = "photo" then
-                item.ShortDescriptionLine2 = "Photo channel" + serverStr
-            else if channelType = "video" then
-                item.ShortDescriptionLine2 = "Video channel" + serverStr
+        ' Add some extra description
+        if request.server.owned then
+            ' Lame way to determine if m.Servers has more than one item...
+            m.Servers.Reset()
+            m.Servers.Next()
+            if m.Servers.IsNext() then
+                serverStr = " on " + request.server.name
             else
-                print "Skipping unsupported channel type: "; channelType
-                add = false
+                serverStr = ""
             end if
-        else if item.Type = "movie" then
-            item.ShortDescriptionLine2 = "Movie section" + serverStr
-        else if item.Type = "show" then
-            item.ShortDescriptionLine2 = "TV section" + serverStr
-        else if item.Type = "artist" then
-            item.ShortDescriptionLine2 = "Music section" + serverStr
-        else if item.Type = "photo" then
-            item.ShortDescriptionLine2 = "Photo section" + serverStr
         else
-            print "Skipping unsupported section type: "; item.Type
+            serverStr = " on " + request.server.name
         end if
 
-        if add then
-            item.Description = item.ShortDescriptionLine2
-            status.content.Push(item)
+        items = container.GetMetadata()
+        for each item in items
+            add = true
+            if item.Type = "channel" then
+                channelType = Mid(item.key, 2, 5)
+                if channelType = "music" then
+                    item.ShortDescriptionLine2 = "Music channel" + serverStr
+                else if channelType = "photo" then
+                    item.ShortDescriptionLine2 = "Photo channel" + serverStr
+                else if channelType = "video" then
+                    item.ShortDescriptionLine2 = "Video channel" + serverStr
+                else
+                    print "Skipping unsupported channel type: "; channelType
+                    add = false
+                end if
+            else if item.Type = "movie" then
+                item.ShortDescriptionLine2 = "Movie section" + serverStr
+            else if item.Type = "show" then
+                item.ShortDescriptionLine2 = "TV section" + serverStr
+            else if item.Type = "artist" then
+                item.ShortDescriptionLine2 = "Music section" + serverStr
+            else if item.Type = "photo" then
+                item.ShortDescriptionLine2 = "Photo section" + serverStr
+            else
+                print "Skipping unsupported section type: "; item.Type
+            end if
+
+            if add then
+                item.Description = item.ShortDescriptionLine2
+                status.content.Push(item)
+            end if
+        next
+
+        if request.item <> invalid then
+            countLoaded = countLoaded + 1
+            status.content.Push(request.item)
         end if
-    next
 
-    if toLoad.item <> invalid then
-        countLoaded = countLoaded + 1
-        status.content.Push(toLoad.item)
+        if status.toLoad.Count() = 0 AND rowRequests.Count() = 0 then
+            status.loadStatus = 2
+        end if
+
+        m.Screen.OnDataLoaded(request.row, status.content, startItem, countLoaded)
+    else if request.requestType = "server" then
+        request.server.name = xml@friendlyName
+        request.server.machineID = xml@machineIdentifier
+        request.server.owned = true
+        m.Servers[request.server.machineID] = request.server
+
+        print "Fetched additional server information ("; request.server.name; ", "; request.server.machineID; ")"
     end if
-
-    if status.toLoad.Count() = 0 AND rowRequests.Count() = 0 then
-        status.loadStatus = 2
-    end if
-
-    m.Screen.OnDataLoaded(toLoad.row, status.content, startItem, countLoaded)
 
     return true
 End Function
