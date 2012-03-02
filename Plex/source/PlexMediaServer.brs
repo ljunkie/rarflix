@@ -190,35 +190,29 @@ Function paginatedXmlContent(sourceUrl, key, start, size) As Object
         xmlResult.xml = xml
         xmlResult.sourceUrl = invalid
     else
-            queryUrl = FullUrl(m.serverUrl, sourceUrl, key)
-            response = paginatedQuery(queryUrl, start, size)
-            xml=CreateObject("roXMLElement")
-            if not xml.Parse(response) then
-                print "Can't parse feed:";response
-            endif
-            xmlResult.xml = xml
-            xmlResult.sourceUrl = queryUrl
+        httpRequest = m.CreateRequest(sourceUrl, key)
+        httpRequest.AddHeader("X-Plex-Container-Start", start.tostr())
+        httpRequest.AddHeader("X-Plex-Container-Size", size.tostr())
+        print "Fetching content from server at query URL:"; httpRequest.GetUrl()
+        print "Pagination start:";start.tostr()
+        print "Pagination size:";size.tostr()
+        response = GetToStringWithTimeout(httpRequest, 60)
+        xml=CreateObject("roXMLElement")
+        if not xml.Parse(response) then
+            print "Can't parse feed:";response
+        endif
+        xmlResult.xml = xml
+        xmlResult.sourceUrl = httpRequest.GetUrl()
     endif
     return xmlResult
-End Function
-
-Function paginatedQuery(queryUrl, start, size) As Object
-    print "Fetching content from server at query URL:";queryUrl
-    print "Pagination start:";start.tostr()
-    print "Pagination size:";size.tostr()
-    httpRequest = NewHttp(queryUrl)
-    httpRequest.Http.AddHeader("X-Plex-Container-Start", start.tostr())
-    httpRequest.Http.AddHeader("X-Plex-Container-Size", size.tostr())
-    response = httpRequest.GetToStringWithTimeout(60000)
-    return response
 End Function
 
 Function pmsCreateRequest(sourceUrl, key) As Object
     url = FullUrl(m.serverUrl, sourceUrl, key)
     req = CreateURLTransferObject(url)
-    ' TODO(schuyler): Add anything else that should be on all requests, like
-    ' access tokens, or Accept header. Perhaps set certificates if we'll use
-    ' HTTPS.
+    if m.AccessToken <> invalid then
+        req.AddHeader("X-Plex-Token", m.AccessToken)
+    end if
     return req
 End Function
 
@@ -232,26 +226,24 @@ Function xmlContent(sourceUrl, key) As Object
         xmlResult.xml = xml
         xmlResult.sourceUrl = invalid
     else
-        queryUrl = FullUrl(m.serverUrl, sourceUrl, key)
-        print "Fetching content from server at query URL:";queryUrl
-        httpRequest = NewHttp(queryUrl)
-        response = httpRequest.GetToStringWithTimeout(60000)
+        httpRequest = m.CreateRequest(sourceUrl, key)
+        print "Fetching content from server at query URL:"; httpRequest.GetUrl()
+        response = GetToStringWithTimeout(httpRequest, 60)
         xml=CreateObject("roXMLElement")
         if not xml.Parse(response) then
             print "Can't parse feed:";response
         endif
             
         xmlResult.xml = xml
-        xmlResult.sourceUrl = queryUrl
+        xmlResult.sourceUrl = httpRequest.GetUrl()
     endif
     return xmlResult
 End Function
 
 Function IndirectMediaXml(server, originalKey) As Object
-    queryUrl = FullUrl(server.serverUrl, "", originalKey)
-    print "Fetching content from server at query URL:";queryUrl
-    httpRequest = NewHttp(queryUrl)
-    response = httpRequest.GetToStringWithTimeout(60000)
+    httpRequest = server.CreateRequest("", originalKey)
+    print "Fetching content from server at query URL:"; httpRequest.GetUrl()
+    response = GetToStringWithTimeout(httpRequest, 60)
     xml=CreateObject("roXMLElement")
     if not xml.Parse(response) then
         print "Can't parse feed:";response
@@ -260,10 +252,10 @@ Function IndirectMediaXml(server, originalKey) As Object
     return xml
 End Function
         
-Function DirectMediaXml(queryUrl) As Object
-    print "Fetching content from server at query URL:";queryUrl
-    httpRequest = NewHttp(queryUrl)
-    response = httpRequest.GetToStringWithTimeout(60000)
+Function DirectMediaXml(server, queryUrl) As Object
+    httpRequest = server.CreateRequest("", queryUrl)
+    print "Fetching content from server at query URL:"; httpRequest.GetUrl()
+    response = GetToStringWithTimeout(httpRequest, 60)
     xml=CreateObject("roXMLElement")
     if not xml.Parse(response) then
         print "Can't parse feed:";response

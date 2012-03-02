@@ -15,7 +15,7 @@ Function photoHandleMessage(msg) As Boolean
             DisplaySlideShow(port, slideshow, pl)
         else if buttonCommand = "slideshow" then
             Print "photoHandleMessage:: Start slideshow"
-            list = GetPhotoList(m.item.server.serverurl, m.item.sourceurl)
+            list = GetPhotoList(m.item.server, m.item.sourceurl)
             slideshow = SlideShowSetup(port, 5.0, "#6b4226", 6)
             DisplaySlideShow(port, slideshow, list)
         else if buttonCommand = "next" then

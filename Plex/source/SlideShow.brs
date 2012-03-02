@@ -11,16 +11,16 @@ Function SlideShowSetup(port as object, underscan, border, interval)
     return slideshow
 End Function
 
-Function GetPhotoList(serverUrl, sourceUrl) As Object
+Function GetPhotoList(server, sourceUrl) As Object
     pl = CreateObject("roList")
 
-    responseXml = DirectMediaXml(sourceUrl)
+    responseXml = DirectMediaXml(server, sourceUrl)
     nodes = responseXml.GetChildElements()
     for each n in nodes
         if n.GetName() = "Photo" then
             key = n.Media.Part@key
             if (key <> invalid) then
-                url = FullUrl(serverUrl, sourceUrl, key)
+                url = FullUrl(server.serverUrl, sourceUrl, key)
                 pl.Push(url)
 
                 'Print "Found URL: ";url

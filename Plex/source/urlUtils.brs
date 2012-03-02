@@ -214,3 +214,23 @@ Function http_post_from_string_with_timeout(val As String, seconds as Integer) a
 
     return str
 End Function
+
+Function GetToStringWithTimeout(request As Object, seconds as Integer) as String
+    timeout% = 1000 * seconds
+
+    str = ""
+    request.EnableFreshConnection(true) 'Don't reuse existing connections
+    if (request.AsyncGetToString())
+        event = wait(timeout%, request.GetPort())
+        if type(event) = "roUrlEvent"
+            str = event.GetString()
+        elseif event = invalid
+            Dbg("AsyncGetToString timeout")
+            request.AsyncCancel()
+        else
+            Dbg("AsyncGetToString unknown event", event)
+        endif
+    endif
+
+    return str
+End Function
