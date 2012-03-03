@@ -383,7 +383,7 @@ Function showFivePointOneScreen()
 	ls = CreateObject("roListScreen") 
 	ls.SetMessagePort(port)
 	ls.SetTitle("5.1 Support") 
-	ls.setHeader("Bear in mind that 5.1 support only works on the Roku 2 (4.x) "+chr(10)+"firmware, and this setting will be ignored if that firmware is not detected.")
+	ls.setHeader("5.1 audio is only supported on the Roku 2 (4.x) firmware. "+chr(10)+"This setting will be ignored if that firmware is not detected.")
 
 	buttonCommands = CreateObject("roAssociativeArray")
 
@@ -423,7 +423,7 @@ Function showQualityScreen()
 	ls = CreateObject("roListScreen")
 	ls.SetMessagePort(port)
 	ls.SetTitle("Quality Settings") 
-	ls.setHeader("Choose quality setting. Higher settings produce better video quality but require more network bandwidth.")
+	ls.setHeader("Higher settings produce better video quality but require more network bandwidth.")
 	buttonCommands = CreateObject("roAssociativeArray")
 	qualities = CreateObject("roArray", 6 , true)
 	
@@ -542,7 +542,7 @@ Function showChannelsAndSearchScreen()
 	ls = CreateObject("roListScreen") 
 	ls.SetMessagePort(port)
 	ls.SetTitle("Channels and Search") 
-	ls.setHeader("Enable/Disable 'Channel' and 'Search' options showing up on the main screen.")
+	ls.setHeader("Enable/Disable 'Channel' and 'Search' options on the main screen.")
 	
 	buttonCommands = CreateObject("roAssociativeArray")
 	
