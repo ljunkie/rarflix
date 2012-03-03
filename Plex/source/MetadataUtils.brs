@@ -87,6 +87,7 @@ Function newSearchMetadata(container, item) As Object
     metadata = createBaseMetadata(container, item)
 
     metadata.type = "search"
+    metadata.ContentType = "search"
     metadata.search = true
     metadata.prompt = item@prompt
 

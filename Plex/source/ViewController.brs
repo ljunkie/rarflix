@@ -73,6 +73,8 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         else 
             screen = createPhotoSpringboardScreen(context, contextIndex, m)
         end if
+    else if contentType = "search" then
+        screen = createSearchScreen(item, m)
     else if item.key = "/system/appstore" then
         screen = createGridScreenForItem(item, m)
         screen.SetStyle("flat-square")
@@ -101,7 +103,6 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if item.settings = "1"
 		showPreferenceScreen(item, m)
 		return invalid
-		
     else
         ' Where do we capture channel directory?
         Print "Creating a default view for contentType=";contentType;", viewGroup=";viewGroup
@@ -117,13 +118,14 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     ' If the current screen specified invalid for the breadcrubms then it
     ' doesn't want any breadcrumbs to be shown. If it specified an empty
     ' array, then the current breadcrumbs will be shown again.
+    screenType = type(screen.Screen)
     if breadcrumbs = invalid then
-        screen.Screen.SetBreadcrumbEnabled(false)
+        enableBreadcrumbs = false
         screen.NumBreadcrumbs = 0
     else
         ' Special case for springboard screens, don't show the current title
         ' in the breadcrumbs.
-        if type(screen.Screen) = "roSpringboardScreen" AND breadcrumbs.Count() > 0 then breadcrumbs.Pop()
+        if screenType = "roSpringboardScreen" AND breadcrumbs.Count() > 0 then breadcrumbs.Pop()
 
         for each b in breadcrumbs
             m.breadcrumbs.Push(tostr(b))
@@ -132,14 +134,38 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
 
         count = m.breadcrumbs.Count()
         if count >= 2 then
-            screen.Screen.SetBreadcrumbEnabled(true)
-            screen.Screen.SetBreadcrumbText(m.breadcrumbs[count-2], m.breadcrumbs[count-1])
+            enableBreadcrumbs = true
+            bread1 = m.breadcrumbs[count-2]
+            bread2 = m.breadcrumbs[count-1]
+            'screen.Screen.SetBreadcrumbEnabled(true)
+            'screen.Screen.SetBreadcrumbText(m.breadcrumbs[count-2], m.breadcrumbs[count-1])
         else if count = 1 then
+            enableBreadcrumbs = true
+            bread1 = ""
+            bread2 = m.breadcrumbs[0]
+        else
+            enableBreadcrumbs = false
+        end if
+    end if
+
+    ' Sigh, different screen types don't support breadcrumbs with the same functions
+    if screenType = "roGridScreen" OR screenType = "roPosterScreen" OR screenType = "roSpringboardScreen" then
+        if enableBreadcrumbs then
             screen.Screen.SetBreadcrumbEnabled(true)
-            screen.Screen.SetBreadcrumbText("", m.breadcrumbs[0])
+            screen.Screen.SetBreadcrumbText(bread1, bread2)
         else
             screen.Screen.SetBreadcrumbEnabled(false)
         end if
+    else if screenType = "roSearchScreen" then
+        if enableBreadcrumbs then
+            screen.Screen.SetBreadcrumbText(bread1, bread2)
+        end if
+    else if screenType = "roListScreen" then
+        if enableBreadcrumbs then
+            screen.Screen.SetTitle(bread2)
+        end if
+    else
+        print "Not sure what to do with breadcrumbs on screen type: "; screenType
     end if
 
     ' Set an ID on the screen so we can sanity check before popping
