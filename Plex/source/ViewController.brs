@@ -95,6 +95,8 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         fakeContainer = createFakePlexContainer(item.server, names, keys)
         screen.Loader = createPaginatedLoader(fakeContainer, 8, 25)
         screen.Loader.Listener = screen
+        screen.Loader.Port = screen.Port
+        screen.MessageHandler = screen.Loader
         screen.SetStyle("flat-square")
     else if item.settings = "1"
 		showPreferenceScreen(item, m)

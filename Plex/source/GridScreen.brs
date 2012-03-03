@@ -24,6 +24,7 @@ Function createGridScreen(viewController) As Object
     screen.Port = port
     screen.ViewController = viewController
     screen.MessageHandler = invalid
+    screen.MsgTimeout = 0
 
     screen.Show = showGridScreen
     screen.SetStyle = setGridStyle
@@ -47,6 +48,8 @@ Function createGridScreenForItem(item, viewController) As Object
     container = createPlexContainerForUrl(item.server, item.sourceUrl, item.key)
     obj.Loader = createPaginatedLoader(container, 8, 50)
     obj.Loader.Listener = obj
+    obj.Loader.Port = obj.Port
+    obj.MessageHandler = obj.Loader
 
     return obj
 End Function
@@ -84,13 +87,8 @@ Function showGridScreen() As Integer
     m.Screen.Show()
     facade.Close()
 
-    ' We'll use a small timeout to continue loading data as needed. Once we've
-    ' finished loading data, reset the timeout to 0 so that we don't continue
-    ' to get notified.
-    timeout = 5
-
     while true
-        msg = wait(timeout, m.port)
+        msg = wait(m.MsgTimeout, m.port)
         if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
         else if type(msg) = "roGridScreenEvent" then
             if msg.isListItemSelected() then
@@ -113,11 +111,10 @@ Function showGridScreen() As Integer
                 m.ViewController.CreateScreenForItem(context, index, breadcrumbs)
             else if msg.isListItemFocused() then
                 ' If the user is getting close to the limit of what we've
-                ' preloaded, make sure we set the timeout and kick off another
-                ' update.
+                ' preloaded, make sure we kick off another update.
 
                 m.selectedRow = msg.GetIndex()
-                if NOT m.Loader.LoadMoreContent(m.selectedRow, 2) then timeout = 5
+                m.Loader.LoadMoreContent(m.selectedRow, 2)
             else if msg.isScreenClosed() then
                 ' Make sure we don't hang onto circular references
                 m.Loader.Listener = invalid
@@ -127,9 +124,6 @@ Function showGridScreen() As Integer
                 m.ViewController.PopScreen(m)
                 return -1
             end if
-        else if msg = invalid then
-            ' An invalid event is our timeout, load some more data.
-            if m.Loader.LoadMoreContent(m.selectedRow, 2) then timeout = 0
         end if
     end while
 
@@ -155,6 +149,12 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
     ' m.Screen.SetContentListSubset(rowIndex, content, startItem, content.Count())
 
     m.Screen.SetContentListSubset(row, data, startItem, count)
+
+    ' Continue loading this row
+    extraRows = 2 - (m.selectedRow - row)
+    if extraRows >= 0 AND extraRows <= 2 then
+        m.Loader.LoadMoreContent(row, extraRows)
+    end if
 End Sub
 
 Function setGridStyle(style as String)

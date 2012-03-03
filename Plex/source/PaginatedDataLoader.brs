@@ -20,6 +20,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize)
         status.content = []
         status.loadStatus = 0 ' 0:Not loaded, 1:Partially loaded, 2:Fully loaded
         status.key = keys[index]
+        status.pendingRequests = 0
 
         loader.contentArray[index] = status
     end for
@@ -28,8 +29,11 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize)
     loader.LoadMoreContent = loaderLoadMoreContent
     loader.GetLoadStatus = loaderGetLoadStatus
     loader.GetNames = loaderGetNames
+    loader.HandleMessage = loaderHandleMessage
 
     loader.Listener = invalid
+
+    loader.PendingRequests = {}
 
     return loader
 End Function
@@ -58,8 +62,8 @@ End Function
 
 '*
 '* Load more data either in the currently focused row or the next one that
-'* hasn't been fully loaded. The return value indicates whether the current
-'* row (and any extra rows) are now fully loaded.
+'* hasn't been fully loaded. The return value indicates whether subsequent
+'* rows are already loaded.
 '*
 Function loaderLoadMoreContent(focusedIndex, extraRows=0)
     status = invalid
@@ -68,7 +72,7 @@ Function loaderLoadMoreContent(focusedIndex, extraRows=0)
         index = focusedIndex + i
         if index >= m.contentArray.Count() then
             exit for
-        else if m.contentArray[index].loadStatus < 2 then
+        else if m.contentArray[index].loadStatus < 2 AND m.contentArray[index].pendingRequests = 0 then
             if status = invalid then
                 status = m.contentArray[index]
                 loadingRow = index
@@ -88,37 +92,99 @@ Function loaderLoadMoreContent(focusedIndex, extraRows=0)
         count = m.pageSize
     end if
 
-    response = m.server.GetPaginatedQueryResponse(m.sourceUrl, status.key, startItem, count)
-    container = createPlexContainerForXml(response)
+    status.loadStatus = 1
 
-    ' If the container doesn't play nice with pagination requests then
-    ' whatever we got is the total size.
-    if response.xml@totalSize <> invalid then
-        totalSize = strtoi(response.xml@totalSize)
+    request = CreateObject("roAssociativeArray")
+    httpRequest = m.server.CreateRequest(m.sourceUrl, status.key)
+    httpRequest.SetPort(m.Port)
+    httpRequest.AddHeader("X-Plex-Container-Start", startItem.tostr())
+    httpRequest.AddHeader("X-Plex-Container-Size", count.tostr())
+    request.request = httpRequest
+    request.row = loadingRow
+    m.PendingRequests[str(httpRequest.GetIdentity())] = request
+
+    if httpRequest.AsyncGetToString() then
+        status.pendingRequests = status.pendingRequests + 1
     else
-        totalSize = container.Count()
+        print "Failed to start request for row"; loadingRow; ": "; httpRequest.GetUrl()
     end if
 
-    if totalSize <= 0 then
-        status.loadStatus = 2
-        return extraRowsAlreadyLoaded
+    return extraRowsAlreadyLoaded
+End Function
+
+Function loaderHandleMessage(msg) As Boolean
+    if (type(msg) = "roGridScreenEvent" OR type(msg) = "roPosterScreenEvent") AND msg.isScreenClosed() then
+        for each id in m.PendingRequests
+            m.PendingRequests[id].request.AsyncCancel()
+        next
+        m.PendingRequests.Clear()
+
+        ' Let the screen handle this too
+        return false
+    else if type(msg) = "roUrlEvent" AND msg.GetInt() = 1 then
+        id = msg.GetSourceIdentity()
+        request = m.PendingRequests[str(id)]
+        if request = invalid then return false
+        m.PendingRequests.Delete(str(id))
+
+        status = m.contentArray[request.row]
+        status.pendingRequests = status.pendingRequests - 1
+
+        if msg.GetResponseCode() <> 200 then
+            print "Got a " + msg.GetResponseCode(); " response from "; request.request.GetUrl(); " - "; msg.GetFailureReason()
+            return true
+        end if
+
+        xml = CreateObject("roXMLElement")
+        xml.Parse(msg.GetString())
+
+        response = CreateObject("roAssociativeArray")
+        response.xml = xml
+        response.server = m.server
+        response.sourceUrl = request.request.GetUrl()
+        container = createPlexContainerForXml(response)
+
+        ' If the container doesn't play nice with pagination requests then
+        ' whatever we got is the total size.
+        if response.xml@totalSize <> invalid then
+            totalSize = strtoi(response.xml@totalSize)
+        else
+            totalSize = container.Count()
+        end if
+
+        if totalSize <= 0 then
+            status.loadStatus = 2
+            return true
+        end if
+
+        if response.xml@offset <> invalid then
+            startItem = strtoi(response.xml@offset)
+        end if
+
+        if startItem <> status.content.Count() then
+            print "Received paginated response for index"; startItem; " of list with length"; status.content.Count()
+            metadata = container.GetMetadata()
+            for i = 0 to metadata.Count() - 1
+                status.content[startItem + i] = metadata[i]
+            next
+        else
+            status.content.Append(container.GetMetadata())
+        end if
+
+        if status.content.Count() < totalSize then
+            status.loadStatus = 1
+        else
+            status.loadStatus = 2
+        end if
+
+        if m.Listener <> invalid then
+            m.Listener.OnDataLoaded(request.row, status.content, startItem, container.Count())
+        end if
+
+        return true
     end if
 
-    status.content.Append(container.GetMetadata())
-
-    if status.content.Count() < totalSize then
-        status.loadStatus = 1
-        ret = false
-    else
-        status.loadStatus = 2
-        ret = extraRowsAlreadyLoaded
-    end if
-
-    if m.Listener <> invalid then
-        m.Listener.OnDataLoaded(loadingRow, status.content, startItem, container.Count())
-    end if
-
-    return ret
+    return false
 End Function
 
 Function loaderGetLoadStatus(index) As Integer

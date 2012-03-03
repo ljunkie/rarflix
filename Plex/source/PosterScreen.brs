@@ -12,6 +12,7 @@ Function createPosterScreen(item, viewController) As Object
     obj.Port = port
     obj.ViewController = viewController
     obj.MessageHandler = invalid
+    obj.MsgTimeout = 0
 
     obj.Show = showPosterScreen
     obj.ShowList = posterShowContentList
@@ -56,6 +57,8 @@ Function showPosterScreen() As Integer
         m.Screen.SetFocusedList(0)
         m.Loader = createPaginatedLoader(container, 25, 25)
         m.Loader.Listener = m
+        m.Loader.Port = m.Port
+        m.MessageHandler = m.Loader
 
         for index = 0 to keys.Count() - 1
             style = CreateObject("roAssociativeArray")
@@ -63,6 +66,8 @@ Function showPosterScreen() As Integer
             style.listDisplayMode = invalid
             m.styles[index] = style
         next
+
+        m.Loader.LoadMoreContent(0, 0)
     else
         ' We already grabbed the full list, no need to bother with loading
         ' in chunks.
@@ -93,27 +98,15 @@ Function showPosterScreen() As Integer
     m.ShowList(focusedListItem)
     facade.Close()
 
-    ' We don't start loading a filter section until the user selects it,
-    ' and once we start loading it, we do it in chunks. While we're
-    ' loading any particular section, use a small timeout so we can
-    ' continue loading chunks.
-    if m.Loader.GetLoadStatus(0) < 2 then
-        timeout = 5
-    else
-        timeout = 0
-    end if
-
     while true
-        msg = wait(timeout, m.Screen.GetMessagePort())
+        msg = wait(m.MsgTimeout, m.Port)
         if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
         else if type(msg) = "roPosterScreenEvent" then
             '* Focus change on the filter bar causes content change
             if msg.isListFocused() then
                 focusedListItem = msg.GetIndex()
                 m.ShowList(focusedListItem)
-                if m.Loader.GetLoadStatus(focusedListItem) < 2 then
-                    timeout = 5
-                end if
+                m.Loader.LoadMoreContent(focusedListItem, 0)
             else if msg.isListItemSelected() then
                 index = msg.GetIndex()
                 content = m.Loader.GetContent(focusedListItem)
@@ -138,12 +131,6 @@ Function showPosterScreen() As Integer
                 m.ViewController.PopScreen(m)
                 return -1
             end if
-        else if msg = invalid then
-            ' An invalid event is our timeout, load some more data.
-
-            if m.Loader.LoadMoreContent(focusedListItem, 0) then
-                timeout = 0
-            end if
         end If
     end while
     return 0
@@ -166,6 +153,9 @@ Sub posterOnDataLoaded(row As Integer, data As Object, startItem as Integer, cou
     end if
 
     m.ShowList(row, startItem = 0)
+
+    ' Continue loading this row
+    m.Loader.LoadMoreContent(row, 0)
 End Sub
 
 Sub posterShowContentList(index, focusFirstItem=true)

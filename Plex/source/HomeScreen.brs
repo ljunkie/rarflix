@@ -90,7 +90,7 @@ Function refreshHomeScreen()
     status.content = []
     status.loadStatus = 0
     status.toLoad = CreateObject("roList")
-    status.pendingRequests = CreateObject("roList")
+    status.pendingRequests = 0
     for each server in configuredServers
         obj = CreateObject("roAssociativeArray")
         obj.server = server
@@ -106,7 +106,7 @@ Function refreshHomeScreen()
     status.content = []
     status.loadStatus = 0
     status.toLoad = CreateObject("roList")
-    status.pendingRequests = CreateObject("roList")
+    status.pendingRequests = 0
     for each server in configuredServers
         obj = CreateObject("roAssociativeArray")
         obj.server = server
@@ -141,7 +141,7 @@ Function refreshHomeScreen()
     status.content = []
     status.loadStatus = 0
     status.toLoad = CreateObject("roList")
-    status.pendingRequests = CreateObject("roList")
+    status.pendingRequests = 0
     if m.myplex.IsSignedIn then
         obj = CreateObject("roAssociativeArray")
         obj.server = m.myplex
@@ -157,7 +157,7 @@ Function refreshHomeScreen()
     status.content = []
     status.loadStatus = 0
     status.toLoad = CreateObject("roList")
-    status.pendingRequests = CreateObject("roList")
+    status.pendingRequests = 0
     ' TODO: Search
 
     ' Channel directory for each server
@@ -648,20 +648,20 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
             toLoad.request = req
             toLoad.row = loadingRow
             toLoad.requestType = "row"
-            status.pendingRequests.AddTail(req.GetIdentity())
             m.PendingRequests[str(req.GetIdentity())] = toLoad
 
             if req.AsyncGetToString() then
+                status.pendingRequests = status.pendingRequests + 1
                 numRequests = numRequests + 1
             end if
         next
 
         status.toLoad.Clear()
 
-        print "Successfully kicked off"; numRequests; " requests for row"; loadingRow; ", pending requests now:"; status.pendingRequests.Count()
-    else if status.pendingRequests.Count() > 0 then
+        print "Successfully kicked off"; numRequests; " requests for row"; loadingRow; ", pending requests now:"; status.pendingRequests
+    else if status.pendingRequests > 0 then
         status.loadStatus = 1
-        print "No additional requests to kick off for row"; loadingRow; ", pending request count:"; status.pendingRequests.Count()
+        print "No additional requests to kick off for row"; loadingRow; ", pending request count:"; status.pendingRequests
     else
         status.loadStatus = 2
         m.Screen.OnDataLoaded(loadingRow, status.content, 0, status.content.Count())
@@ -681,18 +681,7 @@ Function homeHandleMessage(msg) As Boolean
 
     if request.requestType = "row" then
         status = m.contentArray[request.row]
-        rowRequests = status.pendingRequests
-        rowRequests.ResetIndex()
-        x = rowRequests.GetIndex()
-        index = 0
-        while x <> invalid
-            if x = id then
-                rowRequests.Delete(index)
-                exit while
-            end if
-            index = index + 1
-            x = rowRequests.GetIndex()
-        end while
+        status.pendingRequests = status.pendingRequests - 1
     end if
 
     if msg.GetResponseCode() <> 200 then
@@ -787,7 +776,7 @@ Function homeHandleMessage(msg) As Boolean
             status.content.Push(request.item)
         end if
 
-        if status.toLoad.Count() = 0 AND rowRequests.Count() = 0 then
+        if status.toLoad.Count() = 0 AND status.pendingRequests = 0 then
             status.loadStatus = 2
         end if
 
@@ -827,7 +816,7 @@ Function homeHandleMessage(msg) As Boolean
                     req.SetPort(m.Screen.Port)
                     req.AsyncGetToString()
                     sections.request = req
-                    m.contentArray[sections.row].pendingRequests.AddTail(req.GetIdentity())
+                    m.contentArray[sections.row].pendingRequests = m.contentArray[sections.row].pendingRequests + 1
                     m.PendingRequests[str(req.GetIdentity())] = sections
 
                     channels = CreateObject("roAssociativeArray")
@@ -839,7 +828,7 @@ Function homeHandleMessage(msg) As Boolean
                     req.SetPort(m.Screen.Port)
                     req.AsyncGetToString()
                     channels.request = req
-                    m.contentArray[channels.row].pendingRequests.AddTail(req.GetIdentity())
+                    m.contentArray[channels.row].pendingRequests = m.contentArray[channels.row].pendingRequests + 1
                     m.PendingRequests[str(req.GetIdentity())] = channels
 
                     allChannels = CreateObject("roAssociativeArray")
