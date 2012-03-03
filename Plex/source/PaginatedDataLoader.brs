@@ -178,33 +178,36 @@ Function loaderHandleMessage(msg) As Boolean
 
         if totalSize <= 0 then
             status.loadStatus = 2
-            return true
-        end if
-
-        if response.xml@offset <> invalid then
-            startItem = strtoi(response.xml@offset)
+            startItem = 0
+            countLoaded = status.content.Count()
         else
-            startItem = status.content.Count()
-        end if
+            if response.xml@offset <> invalid then
+                startItem = strtoi(response.xml@offset)
+            else
+                startItem = status.content.Count()
+            end if
 
-        if startItem <> status.content.Count() then
-            print "Received paginated response for index"; startItem; " of list with length"; status.content.Count()
-            metadata = container.GetMetadata()
-            for i = 0 to metadata.Count() - 1
-                status.content[startItem + i] = metadata[i]
-            next
-        else
-            status.content.Append(container.GetMetadata())
-        end if
+            if startItem <> status.content.Count() then
+                print "Received paginated response for index"; startItem; " of list with length"; status.content.Count()
+                metadata = container.GetMetadata()
+                for i = 0 to metadata.Count() - 1
+                    status.content[startItem + i] = metadata[i]
+                next
+            else
+                status.content.Append(container.GetMetadata())
+            end if
 
-        if status.content.Count() < totalSize then
-            status.loadStatus = 1
-        else
-            status.loadStatus = 2
+            if status.content.Count() < totalSize then
+                status.loadStatus = 1
+            else
+                status.loadStatus = 2
+            end if
+
+            countLoaded = container.Count()
         end if
 
         if m.Listener <> invalid then
-            m.Listener.OnDataLoaded(request.row, status.content, startItem, container.Count())
+            m.Listener.OnDataLoaded(request.row, status.content, startItem, countLoaded)
         end if
 
         return true
