@@ -46,6 +46,7 @@ Function createGridScreenForItem(item, viewController) As Object
     obj.Item = item
 
     container = createPlexContainerForUrl(item.server, item.sourceUrl, item.key)
+    container.SeparateSearchItems = true
     obj.Loader = createPaginatedLoader(container, 8, 50)
     obj.Loader.Listener = obj
     obj.Loader.Port = obj.Port

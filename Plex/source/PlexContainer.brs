@@ -15,15 +15,18 @@ Function createPlexContainerForXml(xmlResponse) As Object
     c.GetNames = containerGetNames
     c.GetKeys = containerGetKeys
     c.GetMetadata = containerGetMetadata
+    c.GetSearch = containerGetSearch
     c.Count = containerCount
 
     c.ParseDetails = false
+    c.SeparateSearchItems = false
 
     c.ViewGroup = c.xml@viewGroup
 
     c.names = []
     c.keys = []
     c.metadata = []
+    c.search = []
     c.Parsed = false
 
     return c
@@ -41,10 +44,12 @@ Function createFakePlexContainer(server, names, keys) As Object
     c.sourceUrl = ""
     c.names = names
     c.keys = keys
+    c.search = []
     c.Parsed = true
 
     c.GetNames = containerGetNames
     c.GetKeys = containerGetKeys
+    c.GetSearch = containerGetSearch
 
     return c
 End Function
@@ -68,6 +73,8 @@ Sub containerParseXml()
             metadata = newAlbumMetadata(m, n, m.ParseDetails)
         else if nodeType = "Store:Info" then
             metadata = newChannelMetadata(m, n)
+        else if n@search = "1" then
+            metadata = newSearchMetadata(m, n)
         else if n.GetName() = "Directory" then
             metadata = newDirectoryMetadata(m, n)
         else if nodeType = "movie" OR nodeType = "episode" then
@@ -83,8 +90,9 @@ Sub containerParseXml()
             metadata = newDirectoryMetadata(m, n)
         end if
 
-        ' Ignore search nodes for now...
-        if n@search <> "1" then
+        if metadata.search = true AND m.SeparateSearchItems then
+            m.search.Push(metadata)
+        else
             m.metadata.Push(metadata)
             m.names.Push(metadata.Title)
             m.keys.Push(metadata.Key)
@@ -110,6 +118,12 @@ Function containerGetMetadata()
     if NOT m.Parsed then m.ParseXml()
 
     return m.metadata
+End Function
+
+Function containerGetSearch()
+    if NOT m.Parsed then m.ParseXml()
+
+    return m.search
 End Function
 
 Function containerCount()

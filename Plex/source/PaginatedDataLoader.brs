@@ -25,6 +25,20 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize)
         loader.contentArray[index] = status
     end for
 
+    ' Set up search nodes as the last row if we have any
+    searchItems = container.GetSearch()
+    if searchItems.Count() > 0 then
+        loader.names.Push("Search")
+
+        status = CreateObject("roAssociativeArray")
+        status.content = searchItems
+        status.loadStatus = 0
+        status.key = invalid
+        status.pendingRequests = 0
+
+        loader.contentArray.Push(status)
+    end if
+
     loader.GetContent = loaderGetContent
     loader.LoadMoreContent = loaderLoadMoreContent
     loader.GetLoadStatus = loaderGetLoadStatus
@@ -84,6 +98,16 @@ Function loaderLoadMoreContent(focusedIndex, extraRows=0)
     end for
 
     if status = invalid then return true
+
+    ' Special case, if this is a row with static content, update the status
+    ' and tell the listener about the content.
+    if status.key = invalid then
+        status.loadStatus = 2
+        if m.Listener <> invalid then
+            m.Listener.OnDataLoaded(loadingRow, status.content, 0, status.content.Count())
+        end if
+        return extraRowsAlreadyLoaded
+    end if
 
     startItem = status.content.Count()
     if startItem = 0 then
@@ -159,6 +183,8 @@ Function loaderHandleMessage(msg) As Boolean
 
         if response.xml@offset <> invalid then
             startItem = strtoi(response.xml@offset)
+        else
+            startItem = status.content.Count()
         end if
 
         if startItem <> status.content.Count() then

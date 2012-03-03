@@ -82,3 +82,19 @@ End Function
 
 Sub baseMetadataRefresh(detailed=false)
 End Sub
+
+Function newSearchMetadata(container, item) As Object
+    metadata = createBaseMetadata(container, item)
+
+    metadata.type = "search"
+    metadata.search = true
+    metadata.prompt = item@prompt
+
+    if metadata.SDPosterURL = invalid then
+        metadata.SDPosterURL = "file://pkg:/images/icon-search.jpg"
+        metadata.HDPosterURL = "file://pkg:/images/icon-search.jpg"
+    end if
+
+    return metadata
+End Function
+
