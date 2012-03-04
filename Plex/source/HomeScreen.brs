@@ -52,6 +52,7 @@ Function refreshHomeScreen()
     m.contentArray = []
     m.RowNames = []
     m.PendingRequests = {}
+    m.FirstLoad = true
 
     ' Get the list of servers that have been configured/discovered. Servers
     ' found through myPlex are retrieved separately. Once requests to the
@@ -81,6 +82,7 @@ Function refreshHomeScreen()
         print "Failed to create GDM discovery object"
     end if
 
+    ' Find any servers linked through myPlex
     if m.myplex.IsSignedIn then
         req = m.myplex.CreateRequest("", "/pms/servers")
         req.SetPort(m.Screen.Port)
@@ -91,6 +93,49 @@ Function refreshHomeScreen()
         obj.requestType = "servers"
         m.PendingRequests[str(req.GetIdentity())] = obj
     end if
+
+    ' Misc: global search, preferences, channel directory
+    m.MiscRow = m.contentArray.Count()
+    m.RowNames.Push("Miscellaneous")
+    status = CreateObject("roAssociativeArray")
+    status.content = []
+    status.loadStatus = 0
+    status.toLoad = CreateObject("roList")
+    status.pendingRequests = 0
+    ' TODO: Search
+
+    '** Prefs
+    prefs = CreateObject("roAssociativeArray")
+    prefs.sourceUrl = ""
+    prefs.ContentType = "prefs"
+    prefs.Key = "globalprefs"
+    prefs.Title = "Preferences"
+    prefs.ShortDescriptionLine1 = "Preferences"
+    prefs.SDPosterURL = "file://pkg:/images/prefs.jpg"
+    prefs.HDPosterURL = "file://pkg:/images/prefs.jpg"
+    status.content.Push(prefs)
+
+    ' Channel directory for each server
+    for each server in configuredServers
+        channels = CreateObject("roAssociativeArray")
+        channels.server = server
+        channels.sourceUrl = ""
+        channels.key = "/system/appstore"
+        channels.Title = "Channel Directory"
+        if configuredServers.Count() > 1 then
+            channels.ShortDescriptionLine2 = "Browse channels to install on " + server.name
+        else
+            channels.ShortDescriptionLine2 = "Browse channels to install"
+        end if
+        channels.Description = channels.ShortDescriptionLine2
+        channels.SDPosterURL = "file://pkg:/images/plex.jpg"
+        channels.HDPosterURL = "file://pkg:/images/plex.jpg"
+        'channels.contentType = ...
+
+        status.content.Push(channels)
+    next
+
+    m.contentArray.Push(status)
 
     ' Sections, across all servers
     m.SectionsRow = m.contentArray.Count()
@@ -159,52 +204,10 @@ Function refreshHomeScreen()
     m.contentArray.Push(status)
     m.RowNames.Push("Shared Library Sections")
 
-    ' Misc: global search, preferences, channel directory
-    m.RowNames.Push("Miscellaneous")
-    status = CreateObject("roAssociativeArray")
-    status.content = []
-    status.loadStatus = 0
-    status.toLoad = CreateObject("roList")
-    status.pendingRequests = 0
-    ' TODO: Search
-
-    ' Channel directory for each server
-    for each server in configuredServers
-        channels = CreateObject("roAssociativeArray")
-        channels.server = server
-        channels.sourceUrl = ""
-        channels.key = "/system/appstore"
-        channels.Title = "Channel Directory"
-        if configuredServers.Count() > 1 then
-            allChannels.ShortDescriptionLine2 = "Browse channels to install on " + server.name
-        else
-            allChannels.ShortDescriptionLine2 = "Browse channels to install"
-        end if
-        channels.Description = channels.ShortDescriptionLine2
-        channels.SDPosterURL = "file://pkg:/images/plex.jpg"
-        channels.HDPosterURL = "file://pkg:/images/plex.jpg"
-        'channels.contentType = ...
-
-        status.content.Push(channels)
-    next
-
-    '** Prefs
-    prefs = CreateObject("roAssociativeArray")
-    prefs.sourceUrl = ""
-    prefs.ContentType = "prefs"
-    prefs.Key = "globalprefs"
-    prefs.Title = "Preferences"
-    prefs.ShortDescriptionLine1 = "Preferences"
-    prefs.SDPosterURL = "file://pkg:/images/prefs.jpg"
-    prefs.HDPosterURL = "file://pkg:/images/prefs.jpg"
-    status.content.Push(prefs)
-
-    m.contentArray.Push(status)
-
     if type(m.Screen.Screen) = "roGridScreen" then
-        m.Screen.Screen.SetFocusedListItem(0, 0)
+        m.Screen.Screen.SetFocusedListItem(1, 0)
     else
-        m.Screen.Screen.SetFocusedListItem(0)
+        m.Screen.Screen.SetFocusedListItem(1)
     end if
 End Function
 
@@ -620,6 +623,19 @@ Function homeGetContent(index)
 End Function
 
 Function homeLoadMoreContent(focusedIndex, extraRows=0)
+    if m.FirstLoad then
+        m.FirstLoad = false
+        if NOT m.myplex.IsSignedIn then
+            m.Screen.OnDataLoaded(m.SharedSectionsRow, [], 0, 0)
+        end if
+
+        if type(m.Screen.Screen) = "roGridScreen" then
+            m.Screen.Screen.SetFocusedListItem(1, 0)
+        else
+            m.Screen.Screen.SetFocusedListItem(1)
+        end if
+    end if
+
     status = invalid
     extraRowsAlreadyLoaded = true
     for i = 0 to extraRows
@@ -638,10 +654,6 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
     end for
 
     if status = invalid then return true
-
-    if NOT m.myplex.IsSignedIn then
-        m.Screen.OnDataLoaded(m.SharedSectionsRow, [], 0, 0)
-    end if
 
     ' If we have something to load, kick off all the requests asynchronously
     ' now. Otherwise return according to whether or not additional rows have
@@ -891,6 +903,19 @@ Sub homeStartServerRequests(server)
     allChannels.SDPosterURL = "file://pkg:/images/plex.jpg"
     allChannels.HDPosterURL = "file://pkg:/images/plex.jpg"
     channels.item = allChannels
+
+    channelDir = CreateObject("roAssociativeArray")
+    channelDir.server = server
+    channelDir.sourceUrl = ""
+    channelDir.key = "/system/appstore"
+    channelDir.Title = "Channel Directory"
+    channelDir.ShortDescriptionLine2 = "Browse channels to install on " + server.name
+    channelDir.Description = channelDir.ShortDescriptionLine2
+    channelDir.SDPosterURL = "file://pkg:/images/plex.jpg"
+    channelDir.HDPosterURL = "file://pkg:/images/plex.jpg"
+    status = m.contentArray[m.MiscRow]
+    status.content.Push(channelDir)
+    m.Screen.OnDataLoaded(m.MiscRow, status.content, status.content.Count() - 1, 1)
 End Sub
 
 Function homeGetLoadStatus(index) As Integer
