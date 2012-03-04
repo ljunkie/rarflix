@@ -39,6 +39,8 @@ Function createHomeScreen(viewController) As Object
     obj.GetNames = homeGetNames
     obj.HandleMessage = homeHandleMessage
 
+    obj.StartServerRequests = homeStartServerRequests
+
     ' The home screen owns the myPlex manager
     obj.myplex = createMyPlexManager()
 
@@ -72,6 +74,12 @@ Function refreshHomeScreen()
         obj.server = server
         m.PendingRequests[str(req.GetIdentity())] = obj
     next
+
+    ' Kick off an asynchronous GDM discover.
+    m.GDM = createGDMDiscovery(m.Screen.Port)
+    if m.GDM = invalid then
+        print "Failed to create GDM discovery object"
+    end if
 
     if m.myplex.IsSignedIn then
         req = m.myplex.CreateRequest("", "/pms/servers")
@@ -674,193 +682,216 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
 End Function
 
 Function homeHandleMessage(msg) As Boolean
-    ' We only handle URL events, leave everything else to the screen
-    if type(msg) <> "roUrlEvent" OR msg.GetInt() <> 1 then return false
+    if type(msg) = "roUrlEvent" AND msg.GetInt() = 1 then
+        id = msg.GetSourceIdentity()
+        request = m.PendingRequests[str(id)]
+        if request = invalid then return false
+        m.PendingRequests.Delete(str(id))
 
-    id = msg.GetSourceIdentity()
-    request = m.PendingRequests[str(id)]
-    if request = invalid then return false
-    m.PendingRequests.Delete(str(id))
-
-    if request.requestType = "row" then
-        status = m.contentArray[request.row]
-        status.pendingRequests = status.pendingRequests - 1
-    end if
-
-    if msg.GetResponseCode() <> 200 then
-        print "Got a"; msg.GetResponseCode(); " response from "; request.request.GetUrl(); " - "; msg.GetFailureReason()
-        return true
-    end if
-
-    xml = CreateObject("roXMLElement")
-    xml.Parse(msg.GetString())
-
-    if request.requestType = "row" then
-        response = CreateObject("roAssociativeArray")
-        response.xml = xml
-        response.server = request.server
-        response.sourceUrl = request.request.GetUrl()
-        container = createPlexContainerForXml(response)
-        countLoaded = container.Count()
-
-        startItem = status.content.Count()
-
-        if AreMultipleValidatedServers() then
-            serverStr = " on " + request.server.name
-        else
-            serverStr = ""
+        if request.requestType = "row" then
+            status = m.contentArray[request.row]
+            status.pendingRequests = status.pendingRequests - 1
         end if
 
-        items = container.GetMetadata()
-        for each item in items
-            add = true
+        if msg.GetResponseCode() <> 200 then
+            print "Got a"; msg.GetResponseCode(); " response from "; request.request.GetUrl(); " - "; msg.GetFailureReason()
+            return true
+        end if
 
-            ' A little weird, but sections will only have owned="1" on the
-            ' myPlex request, so we ignore them here since we should have
-            ' also requested them from the server directly.
-            if item.Owned = "1" then
-                add = false
-            else if item.MachineID <> invalid then
-                server = GetPlexMediaServer(item.MachineID)
-                if server <> invalid then
-                    print "Found a server for the section: "; item.Title; " on "; server.name
-                    item.server = server
-                    serverStr = " on " + server.name
-                else
-                    print "Found a shared section for an unknown server: "; item.MachineID
-                    add = false
-                end if
-            end if
+        xml = CreateObject("roXMLElement")
+        xml.Parse(msg.GetString())
 
-            if NOT add then
-            else if item.Type = "channel" then
-                channelType = Mid(item.key, 2, 5)
-                if channelType = "music" then
-                    item.ShortDescriptionLine2 = "Music channel" + serverStr
-                else if channelType = "photo" then
-                    item.ShortDescriptionLine2 = "Photo channel" + serverStr
-                else if channelType = "video" then
-                    item.ShortDescriptionLine2 = "Video channel" + serverStr
-                else
-                    print "Skipping unsupported channel type: "; channelType
-                    add = false
-                end if
-            else if item.Type = "movie" then
-                item.ShortDescriptionLine2 = "Movie section" + serverStr
-            else if item.Type = "show" then
-                item.ShortDescriptionLine2 = "TV section" + serverStr
-            else if item.Type = "artist" then
-                item.ShortDescriptionLine2 = "Music section" + serverStr
-            else if item.Type = "photo" then
-                item.ShortDescriptionLine2 = "Photo section" + serverStr
+        if request.requestType = "row" then
+            response = CreateObject("roAssociativeArray")
+            response.xml = xml
+            response.server = request.server
+            response.sourceUrl = request.request.GetUrl()
+            container = createPlexContainerForXml(response)
+            countLoaded = container.Count()
+
+            startItem = status.content.Count()
+
+            if AreMultipleValidatedServers() then
+                serverStr = " on " + request.server.name
             else
-                print "Skipping unsupported section type: "; item.Type
-                add = false
+                serverStr = ""
             end if
 
-            if add then
-                item.Description = item.ShortDescriptionLine2
+            items = container.GetMetadata()
+            for each item in items
+                add = true
 
-                ' Normally thumbnail requests will have an X-Plex-Token header
-                ' added as necessary by the screen, but we can't do that on the
-                ' home screen because we're showing content from multiple
-                ' servers.
-                if item.SDPosterURL <> invalid AND item.server <> invalid AND item.server.AccessToken <> invalid then
-                    item.SDPosterURL = item.SDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
-                    item.HDPosterURL = item.HDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
+                ' A little weird, but sections will only have owned="1" on the
+                ' myPlex request, so we ignore them here since we should have
+                ' also requested them from the server directly.
+                if item.Owned = "1" then
+                    add = false
+                else if item.MachineID <> invalid then
+                    server = GetPlexMediaServer(item.MachineID)
+                    if server <> invalid then
+                        print "Found a server for the section: "; item.Title; " on "; server.name
+                        item.server = server
+                        serverStr = " on " + server.name
+                    else
+                        print "Found a shared section for an unknown server: "; item.MachineID
+                        add = false
+                    end if
                 end if
 
-                status.content.Push(item)
-            end if
-        next
-
-        if request.item <> invalid then
-            countLoaded = countLoaded + 1
-            status.content.Push(request.item)
-        end if
-
-        if status.toLoad.Count() = 0 AND status.pendingRequests = 0 then
-            status.loadStatus = 2
-        end if
-
-        m.Screen.OnDataLoaded(request.row, status.content, startItem, countLoaded)
-    else if request.requestType = "server" then
-        request.server.name = xml@friendlyName
-        request.server.machineID = xml@machineIdentifier
-        request.server.owned = true
-        if xml@version <> invalid then
-            request.server.SupportsAudioTranscoding = ServerVersionCompare(xml@version, [0, 9, 6])
-        end if
-        PutPlexMediaServer(request.server)
-
-        print "Fetched additional server information ("; request.server.name; ", "; request.server.machineID; ")"
-        print "URL: "; request.server.serverUrl
-        print "Server supports audio transcoding: "; request.server.SupportsAudioTranscoding
-    else if request.requestType = "servers" then
-        for each serverElem in xml.Server
-            ' If we already have a server for this machine ID then disregard
-            if GetPlexMediaServer(xml@machineIdentifier) = invalid then
-                addr = "http://" + serverElem@host + ":" + serverElem@port
-                server = newPlexMediaServer(addr, serverElem@name, serverElem@machineIdentifier)
-                server.AccessToken = firstOf(serverElem@accessToken, m.myplex.AuthToken)
-
-                if serverElem@owned = "1" then
-                    server.name = serverElem@name
-                    server.owned = true
-
-                    ' An owned server that we didn't have configured, request
-                    ' its sections and channels now.
-                    sections = CreateObject("roAssociativeArray")
-                    sections.server = server
-                    sections.key = "/library/sections"
-                    sections.row = m.SectionsRow
-                    sections.requestType = "row"
-                    req = server.CreateRequest("", sections.key)
-                    req.SetPort(m.Screen.Port)
-                    req.AsyncGetToString()
-                    sections.request = req
-                    m.contentArray[sections.row].pendingRequests = m.contentArray[sections.row].pendingRequests + 1
-                    m.PendingRequests[str(req.GetIdentity())] = sections
-
-                    channels = CreateObject("roAssociativeArray")
-                    channels.server = server
-                    channels.key = "/channels/recentlyViewed"
-                    channels.row = m.ChannelsRow
-                    channels.requestType = "row"
-                    req = server.CreateRequest("", channels.key)
-                    req.SetPort(m.Screen.Port)
-                    req.AsyncGetToString()
-                    channels.request = req
-                    m.contentArray[channels.row].pendingRequests = m.contentArray[channels.row].pendingRequests + 1
-                    m.PendingRequests[str(req.GetIdentity())] = channels
-
-                    allChannels = CreateObject("roAssociativeArray")
-                    allChannels.Title = "More Channels"
-                    allChannels.ShortDescriptionLine2 = "All channels on " + server.name
-                    allChannels.Description = allChannels.ShortDescriptionLine2
-                    allChannels.server = server
-                    allChannels.sourceUrl = ""
-                    allChannels.Key = "/channels/all"
-                    allChannels.SDPosterURL = "file://pkg:/images/plex.jpg"
-                    allChannels.HDPosterURL = "file://pkg:/images/plex.jpg"
-                    channels.item = allChannels
+                if NOT add then
+                else if item.Type = "channel" then
+                    channelType = Mid(item.key, 2, 5)
+                    if channelType = "music" then
+                        item.ShortDescriptionLine2 = "Music channel" + serverStr
+                    else if channelType = "photo" then
+                        item.ShortDescriptionLine2 = "Photo channel" + serverStr
+                    else if channelType = "video" then
+                        item.ShortDescriptionLine2 = "Video channel" + serverStr
+                    else
+                        print "Skipping unsupported channel type: "; channelType
+                        add = false
+                    end if
+                else if item.Type = "movie" then
+                    item.ShortDescriptionLine2 = "Movie section" + serverStr
+                else if item.Type = "show" then
+                    item.ShortDescriptionLine2 = "TV section" + serverStr
+                else if item.Type = "artist" then
+                    item.ShortDescriptionLine2 = "Music section" + serverStr
+                else if item.Type = "photo" then
+                    item.ShortDescriptionLine2 = "Photo section" + serverStr
                 else
-                    server.name = serverElem@name + " (shared by " + serverElem@sourceTitle + ")"
+                    print "Skipping unsupported section type: "; item.Type
+                    add = false
                 end if
-                PutPlexMediaServer(server)
 
-                print "Added shared server: "; server.name
+                if add then
+                    item.Description = item.ShortDescriptionLine2
+
+                    ' Normally thumbnail requests will have an X-Plex-Token header
+                    ' added as necessary by the screen, but we can't do that on the
+                    ' home screen because we're showing content from multiple
+                    ' servers.
+                    if item.SDPosterURL <> invalid AND item.server <> invalid AND item.server.AccessToken <> invalid then
+                        item.SDPosterURL = item.SDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
+                        item.HDPosterURL = item.HDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
+                    end if
+
+                    status.content.Push(item)
+                end if
+            next
+
+            if request.item <> invalid then
+                countLoaded = countLoaded + 1
+                status.content.Push(request.item)
             end if
+
+            if status.toLoad.Count() = 0 AND status.pendingRequests = 0 then
+                status.loadStatus = 2
+            end if
+
+            m.Screen.OnDataLoaded(request.row, status.content, startItem, countLoaded)
+        else if request.requestType = "server" then
+            request.server.name = xml@friendlyName
+            request.server.machineID = xml@machineIdentifier
+            request.server.owned = true
+            if xml@version <> invalid then
+                request.server.SupportsAudioTranscoding = ServerVersionCompare(xml@version, [0, 9, 6])
+            end if
+            PutPlexMediaServer(request.server)
+
+            print "Fetched additional server information ("; request.server.name; ", "; request.server.machineID; ")"
+            print "URL: "; request.server.serverUrl
+            print "Server supports audio transcoding: "; request.server.SupportsAudioTranscoding
+        else if request.requestType = "servers" then
+            for each serverElem in xml.Server
+                ' If we already have a server for this machine ID then disregard
+                if GetPlexMediaServer(xml@machineIdentifier) = invalid then
+                    addr = "http://" + serverElem@host + ":" + serverElem@port
+                    server = newPlexMediaServer(addr, serverElem@name, serverElem@machineIdentifier)
+                    server.AccessToken = firstOf(serverElem@accessToken, m.myplex.AuthToken)
+
+                    if serverElem@owned = "1" then
+                        server.name = serverElem@name
+                        server.owned = true
+
+                        ' An owned server that we didn't have configured, request
+                        ' its sections and channels now.
+                        m.StartServerRequests(server)
+                    else
+                        server.name = serverElem@name + " (shared by " + serverElem@sourceTitle + ")"
+                    end if
+                    PutPlexMediaServer(server)
+
+                    print "Added shared server: "; server.name
+                end if
+            next
+        end if
+
+        print "Remaining pending requests:"
+        for each id in m.PendingRequests
+            print m.PendingRequests[id].request.GetUrl()
         next
+
+        return true
+    else if type(msg) = "roSocketEvent" then
+        serverInfo = m.GDM.HandleMessage(msg)
+        if serverInfo <> invalid then
+            print "GDM discovery found server at "; serverInfo.Url
+
+            existing = GetPlexMediaServer(serverInfo.MachineID)
+            if existing <> invalid AND existing.IsConfigured then
+                print "GDM discovery ignoring already configured server"
+            else
+                AddServer(serverInfo.Name, serverInfo.Url, serverInfo.MachineID)
+                server = newPlexMediaServer(serverInfo.Url, serverInfo.Name, serverInfo.MachineID)
+                server.owned = true
+                PutPlexMediaServer(server)
+                m.StartServerRequests(server)
+            end if
+
+            return true
+        end if
     end if
 
-    print "Remaining pending requests:"
-    for each id in m.PendingRequests
-        print m.PendingRequests[id].request.GetUrl()
-    next
-
-    return true
+    return false
 End Function
+
+Sub homeStartServerRequests(server)
+    sections = CreateObject("roAssociativeArray")
+    sections.server = server
+    sections.key = "/library/sections"
+    sections.row = m.SectionsRow
+    sections.requestType = "row"
+    req = server.CreateRequest("", sections.key)
+    req.SetPort(m.Screen.Port)
+    req.AsyncGetToString()
+    sections.request = req
+    m.contentArray[sections.row].pendingRequests = m.contentArray[sections.row].pendingRequests + 1
+    m.PendingRequests[str(req.GetIdentity())] = sections
+
+    channels = CreateObject("roAssociativeArray")
+    channels.server = server
+    channels.key = "/channels/recentlyViewed"
+    channels.row = m.ChannelsRow
+    channels.requestType = "row"
+    req = server.CreateRequest("", channels.key)
+    req.SetPort(m.Screen.Port)
+    req.AsyncGetToString()
+    channels.request = req
+    m.contentArray[channels.row].pendingRequests = m.contentArray[channels.row].pendingRequests + 1
+    m.PendingRequests[str(req.GetIdentity())] = channels
+
+    allChannels = CreateObject("roAssociativeArray")
+    allChannels.Title = "More Channels"
+    allChannels.ShortDescriptionLine2 = "All channels on " + server.name
+    allChannels.Description = allChannels.ShortDescriptionLine2
+    allChannels.server = server
+    allChannels.sourceUrl = ""
+    allChannels.Key = "/channels/all"
+    allChannels.SDPosterURL = "file://pkg:/images/plex.jpg"
+    allChannels.HDPosterURL = "file://pkg:/images/plex.jpg"
+    channels.item = allChannels
+End Sub
 
 Function homeGetLoadStatus(index) As Integer
     return m.contentArray[index].loadStatus
