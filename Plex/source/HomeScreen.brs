@@ -254,8 +254,9 @@ Function showPreferencesScreen()
 	
 	ls.show()
 	
+    timeout = 0
     while true 
-        msg = wait(0, ls.GetMessagePort())         
+        msg = wait(timeout, ls.GetMessagePort())         
         if type(msg) = "roListScreenEvent"
 			'print "Event: ";type(msg)
             'print msg.GetType(),msg.GetIndex(),msg.GetData()
@@ -265,7 +266,7 @@ Function showPreferencesScreen()
             else if msg.isListItemSelected() then
                 if msg.getIndex() = 0 then
                     m.ShowMediaServersScreen()                    
-                    m.Refresh()
+                    timeout = 100
                 else if msg.getIndex() = 1 then
                     m.ShowQualityScreen()
                     ls.setItem(msg.getIndex(), {title:"Quality: "+ getCurrentQualityName() })
@@ -282,6 +283,8 @@ Function showPreferencesScreen()
                     ls.close()
                 end if
             end if 
+        else if msg = invalid then
+            m.Refresh()
         end if
     end while
 End Function
