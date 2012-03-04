@@ -372,6 +372,9 @@ Sub showManualServerScreen()
                     if (AddUnnamedServer(keyb.GetText())) then
                         return
                     end if
+                else if msg.getIndex() = 2 then
+                    print "Exiting keyboard dialog screen"
+                    return
                 end if
             end if 
         end if
