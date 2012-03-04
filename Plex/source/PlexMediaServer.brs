@@ -6,10 +6,11 @@
 
 '* Constructor for a specific PMS instance identified via the URL and 
 '* human readable name, which can be used in section names
-Function newPlexMediaServer(pmsUrl, pmsName) As Object
+Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms = CreateObject("roAssociativeArray")
     pms.serverUrl = pmsUrl
     pms.name = pmsName
+    pms.machineID = machineID
     pms.owned = true
     pms.GetHomePageContent = homePageContent
     pms.VideoScreen = constructVideoScreen
@@ -38,6 +39,7 @@ Function newPlexMediaServer(pmsUrl, pmsName) As Object
 
     ' Set to false if a version check fails
     pms.SupportsAudioTranscoding = true
+    pms.IsConfigured = false
 
     return pms
 End Function

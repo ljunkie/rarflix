@@ -15,10 +15,18 @@ Function PlexMediaServers() As Object
             serverDetails = strTokenize(token, "\")
             address = serverDetails[0]
             name = serverDetails[1]
+            if serverDetails.Count() > 2 then
+                machineID = serverDetails[2]
+            else
+                machineID = invalid
+            end if
+
             ' The server should have been validated when it was added, so
             ' don't make a blocking validation call here. The home screen
             ' should be able to handle servers that don't respond.
-            list.AddTail(newPlexMediaServer(address, name))
+            server = newPlexMediaServer(address, name, machineID)
+            server.IsConfigured = true
+            list.AddTail(server)
         end for
     end if
     'list.AddTail(newPlexMediaServer("http://dn-1.com:32400", "dn-1"))
@@ -41,8 +49,13 @@ Function RemoveServer(index)
             serverDetails = strTokenize(token, "\")
             address = serverDetails[0]
             name = serverDetails[1]
+            if serverDetails.Count() > 2 then
+                machineID = serverDetails[2]
+            else
+                machineID = invalid
+            end if
             if counter <> index then
-                AddServer(name, address)
+                AddServer(name, address, machineID)
             else
                 print "Not adding server back to list:";name
             end if
@@ -52,33 +65,23 @@ Function RemoveServer(index)
 End Function
 
 ' * Adds a server to the list used by the application. Not validated at this 
-' * time which allows off-line servers to be specified.
-' 
-' * TODO: Check for duplicates?
-Function AddServer(name, address)
-    print "Adding server to saved list:";name
-    print "With address:";address
+' * time which allows off-line servers to be specified. Checking for dupes,
+' * usually based on machine ID, should be done by the caller.
+Function AddServer(name, address, machineID)
+    print "Adding server to saved list: ";name
+    print "With address: ";address
+    print "With machine ID: "; machineID
+
+    serverStr = address + "\" + name
+    if machineID <> invalid then
+        serverStr = serverStr + "\" + machineID
+    end if
+
     existing = RegRead("serverList", "servers")
     if existing <> invalid
-        dupe = 0
-        for each server in PlexMediaServers()
-            print "Checking existing server "+server.name + " for duplicates... ("+server.serverUrl+")"
-            if name = server.name then
-                dupe = 1
-            endif
-            if address = server.serverUrl then
-                dupe = 1
-            endif
-        next
-        if dupe = 0 then
-            print "No dupes found, adding server..."
-            allServers = existing + "{" + address+"\"+name
-        else
-            print "Dupe found, not adding server..."
-            allServers = existing
-        endif
+        allServers = existing + "{" + serverStr
     else
-        allServers = address+"\"+name
+        allServers = serverStr
     end if
     RegWrite("serverList", allServers, "servers")
 End Function
@@ -91,18 +94,33 @@ Function AddUnnamedServer(address) As Boolean
     validating.ShowBusyAnimation()
     validating.Show()
 
-    strReplace(address, "http://", "")
-    strReplace(address, ":32400", "")
-    sock = CreateObject("roSocketAddress")
-    sock.setAddress(address+":32400")
-    ipaddr = sock.getAddress()
-    hostname = sock.getHostName()
+    if left(address, 4) <> "http" then
+        address = "http://" + address
+    end if
 
-    print "Host:"+hostname", IP Address:"+ipaddr
+    if instr(7, address, ":") <= 0 then
+        address = address + ":32400"
+    end if
 
-    if (IsServerValid("http://"+ipaddr)) then
-        AddServer(address, "http://"+ipaddr)
-        return true
+    print "Trying to validate server at "; address
+
+    httpRequest = NewHttp(address)
+    response = httpRequest.GetToStringWithTimeout(60)
+    xml=CreateObject("roXMLElement")
+    if xml.Parse(response) then
+        print "Got server response, version "; xml@version
+
+        server = GetPlexMediaServer(xml@machineIdentifier)
+        if server <> invalid AND server.IsConfigured then
+            print "Duplicate server machine ID, ignoring"
+        else if ServerVersionCompare(xml@version, [0, 9, 2, 7]) then
+            AddServer(xml@friendlyName, address, xml@machineIdentifier)
+            return true
+        else
+            print "Server version is insufficient"
+        end if
+    else
+        print "No response from server"
     end if
 
     return false
@@ -133,37 +151,23 @@ Function DiscoverPlexMediaServers()
             gdm.Stop()
             exit while
         else if type(msg) = "roSocketEvent" then
-            server = gdm.HandleMessage(msg)
-            if server <> invalid then
-                AddServer(server.Name, server.Url)
-                found = found + 1
-            end if
             timeout = 2000
+            server = gdm.HandleMessage(msg)
+
+            if server <> invalid then
+                existing = GetPlexMediaServer(server.MachineID)
+                if existing <> invalid AND existing.IsConfigured then
+                    print "GDM discovery ignoring already configured server"
+                else
+                    AddServer(server.Name, server.Url, server.MachineID)
+                    found = found + 1
+                end if
+            end if
         end if
     end while
 
     retrieving.Close()
     return found
-End Function
-
-Function IsServerValid(address) As Boolean
-    print "Validating server ";address
-    
-    Dim minVersion[4]
-    minVersion.Push(0)
-    minVersion.Push(9)
-    minVersion.Push(2)
-    minVersion.Push(7)
-    httpRequest = NewHttp(address)
-    response = httpRequest.GetToStringWithTimeout(60000)
-    xml=CreateObject("roXMLElement")
-    if xml.Parse(response) then
-        versionStr = xml@version
-        print "Version str:";versionStr
-        versionHighEnough = ServerVersionCompare(versionStr, minVersion)
-        return versionHighEnough
-    end if
-    return false
 End Function
 
 Function ServerVersionCompare(versionStr, minVersion) As Boolean
@@ -244,7 +248,15 @@ Function gdmHandleMessage(msg)
         h_port = Mid(message, x, y-x)
         print h_port
 
-        server = {Name: h_name, Url: "http://" + h_address + ":" + h_port}
+        x = instr(1, message, "Resource-Identifier: ") 
+        x = x + 21
+        y = instr(x, message, chr(13))
+        h_machineID = Mid(message, x, y-x)
+        print h_machineID
+
+        server = {Name: h_name,
+            Url: "http://" + h_address + ":" + h_port,
+            MachineID: h_machineID}
         return server
     end if
 
