@@ -113,11 +113,37 @@ Function DiscoverPlexMediaServers()
     retrieving.SetTitle("Finding Plex Media Servers ...")
     retrieving.ShowBusyAnimation()
     retrieving.Show()
-    found = GDMDiscover()
-    for each server in found
-        AddServer(server[0], server[1])
-    end for
+
+    port = CreateObject("roMessagePort")
+
+    gdm = createGDMDiscovery(port)
+
+    if gdm = invalid then
+        print "Failed to create GDM Discovery object"
+        return 0
+    end if
+
+    timeout = 5000
+    found = 0
+
+    while true
+        msg = wait(timeout, port)
+        if msg = invalid then
+            print "Canceling GDM discovery after timeout, servers found:"; found
+            gdm.Stop()
+            exit while
+        else if type(msg) = "roSocketEvent" then
+            server = gdm.HandleMessage(msg)
+            if server <> invalid then
+                AddServer(server.Name, server.Url)
+                found = found + 1
+            end if
+            timeout = 2000
+        end if
+    end while
+
     retrieving.Close()
+    return found
 End Function
 
 Function IsServerValid(address) As Boolean
@@ -158,17 +184,16 @@ Function ServerVersionCompare(versionStr, minVersion) As Boolean
     return true
 End Function
 
-Function GDMDiscover()
+Function createGDMDiscovery(port)
     print "IN GDMFind"
-    msgPort = createobject("roMessagePort")  
-    timeout = 1 * 5 * 1000 ' 2 seconds in milliseconds 
-    message = "M-SEARCH * HTTP/1.1"+chr(13)+chr(10)+chr(13)+chr(10) 
 
-    continue = false
-    count = 0 
-    while count < 10     
-        udp = createobject("roDatagramSocket") 
-        udp.setMessagePort(msgPort) 'notifications for udp come to msgPort  
+    message = "M-SEARCH * HTTP/1.1"+chr(13)+chr(10)+chr(13)+chr(10) 
+    success = false
+    try = 0
+
+    while try < 10
+        udp = CreateObject("roDatagramSocket")
+        udp.setMessagePort(port)
         print "broadcast"
         print udp.setBroadcast(true)
         addr = createobject("roSocketAddress") 
@@ -177,59 +202,58 @@ Function GDMDiscover()
         print udp.setSendToAddress(addr) ' peer IP and port 
         udp.notifyReadable(true)
         print udp.sendStr(message) 
-        continue = udp.eOK()                                                   
+        success = udp.eOK()                                                   
 
-        if continue 
-            count = 11
+        if success then
+            exit while
         else
-            count = count + 1
             sleep(500)
             print "retrying"
+            try = try + 1
         end if
     end while
-    
-    list = CreateObject("roList") 
 
-    while continue 
-        print "4"
-        event = wait(timeout, msgPort)
-        print "5"
-        if type(event)="roSocketEvent"
-            if event.getSocketID()=udp.getID() 
-                if udp.isReadable()
-                    message = udp.receiveStr(4096) ' max 4096 characters  
-                    caddr = udp.getReceivedFromAddress()
-                    h_address = caddr.getHostName()
-                    
-                    print "Received message: '"; message; "'"
-                    timeout = 2000 ' Now that we got first response lets not wait as long 
-                    
-                    x = instr(1,message, "Name: ")
-                    x = x + 6
-                    y = instr(x, message, chr(13))
-                    h_name = Mid(message, x, y-x)
-                    print h_name
-                
-                    x = instr(1, message, "Port: ") 
-                    x = x + 6
-                    y = instr(x, message, chr(13))
-                    h_port = Mid(message, x, y-x)
-                    print h_port
-                    
-                    serverDetails = CreateObject("roArray", 2 , true)
-                    serverDetails.Push(h_name)
-                    serverDetails.Push("http://" + h_address + ":"+ h_port)
-                    list.AddTail(serverDetails)
-                end if
-            end if 
-        else if event=invalid
-            print "Timeout"
-            continue = false
-        end if
-    end while
-    udp.close() ' would happen automatically as udp goes out of scope End Function  
-    return list
+    if success then
+        gdm = CreateObject("roAssociativeArray")
+        gdm.udp = udp
+        gdm.HandleMessage = gdmHandleMessage
+        gdm.Stop = gdmStop
+        return gdm
+    else
+        return invalid
+    end if
 End Function
+
+Function gdmHandleMessage(msg)
+    if type(msg) = "roSocketEvent" AND msg.getSocketID() = m.udp.getID() AND m.udp.isReadable() then
+        message = m.udp.receiveStr(4096) ' max 4096 characters  
+        caddr = m.udp.getReceivedFromAddress()
+        h_address = caddr.getHostName()
+
+        print "Received message: '"; message; "'"
+
+        x = instr(1,message, "Name: ")
+        x = x + 6
+        y = instr(x, message, chr(13))
+        h_name = Mid(message, x, y-x)
+        print h_name
+
+        x = instr(1, message, "Port: ") 
+        x = x + 6
+        y = instr(x, message, chr(13))
+        h_port = Mid(message, x, y-x)
+        print h_port
+
+        server = {Name: h_name, Url: "http://" + h_address + ":" + h_port}
+        return server
+    end if
+
+    return invalid
+End Function
+
+Sub gdmStop()
+    m.udp.Close()
+End Sub
 
 Function GetPlexMediaServer(machineID)
     servers = GetGlobalAA().Lookup("validated_servers")
