@@ -35,6 +35,7 @@ End Function
 
 Function RemoveAllServers()
     RegDelete("serverList", "servers")
+    ClearPlexMediaServers()
 End Function
 
 Function RemoveServer(index) 
@@ -51,6 +52,7 @@ Function RemoveServer(index)
             name = serverDetails[1]
             if serverDetails.Count() > 2 then
                 machineID = serverDetails[2]
+                DeletePlexMediaServer(machineID)
             else
                 machineID = invalid
             end if
@@ -79,7 +81,11 @@ Function AddServer(name, address, machineID)
 
     existing = RegRead("serverList", "servers")
     if existing <> invalid
-        allServers = existing + "{" + serverStr
+        ' The caller checked for dupes, but do a simple sanity check on
+        ' machine ID.
+        if machineID = invalid OR instr(1, existing, machineID) <= 0 then
+            allServers = existing + "{" + serverStr
+        end if
     else
         allServers = serverStr
     end if
@@ -298,6 +304,13 @@ Function AreMultipleValidatedServers() As Boolean
         return false
     end if
 End Function
+
+Sub DeletePlexMediaServer(machineID)
+    servers = GetGlobalAA().Lookup("validated_servers")
+    if servers <> invalid then
+        servers.Delete(machineID)
+    end if
+End Sub
 
 Sub ClearPlexMediaServers()
     GetGlobalAA().Delete("validated_servers")
