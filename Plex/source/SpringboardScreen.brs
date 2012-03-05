@@ -81,6 +81,7 @@ Function createAudioSpringboardScreen(context, index, viewController) As Object
     obj.AddButtons      = audioPlayer_setbuttons
     obj.GetMediaDetails = audioGetMediaDetails
     obj.HandleMessage   = audioHandleMessage
+    obj.setPlayState(2) ' start playback when screen is opened
 
     return obj
 End Function
