@@ -79,6 +79,8 @@ Function refreshHomeScreen()
         obj.requestType = "server"
         obj.server = server
         m.PendingRequests[str(req.GetIdentity())] = obj
+
+        PutPlexMediaServer(server)
     next
 
     ' Kick off an asynchronous GDM discover.
