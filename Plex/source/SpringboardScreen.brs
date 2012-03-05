@@ -58,6 +58,7 @@ Function createAudioSpringboardScreen(context, index, viewController) As Object
     obj.Screen.SetStaticRatingEnabled(false)
     obj.Screen.AllowNavRewind(true)
     obj.Screen.AllowNavFastForward(true)
+    obj.Screen.setProgressIndicatorEnabled(true)
 
     ' Set up audio player, using the same message port
     obj.audioPlayer = CreateObject("roAudioPlayer")
@@ -82,6 +83,7 @@ Function createAudioSpringboardScreen(context, index, viewController) As Object
     obj.GetMediaDetails = audioGetMediaDetails
     obj.HandleMessage   = audioHandleMessage
     obj.setPlayState(2) ' start playback when screen is opened
+    obj.audioplayer.setNext(0)
 
     return obj
 End Function

@@ -18,6 +18,7 @@ Function newArtistMetadata(container, item, detailed=true) As Object
 
     artist.Artist = item@title
     artist.ContentType = "artist"
+    artist.mediaContainerIdentifier = container.xml@identifier
     if artist.Type = invalid then artist.Type = "artist"
 
     if detailed then
@@ -34,6 +35,7 @@ Function newAlbumMetadata(container, item, detailed=true) As Object
     album = createBaseAudioMetadata(container, item)
 
     album.ContentType = "album"
+    album.mediaContainerIdentifier = container.xml@identifier
     if album.Type = invalid then album.Type = "album"
 
     album.Artist = firstOf(item@parentTitle, container.xml@parentTitle)
@@ -47,6 +49,7 @@ Function newTrackMetadata(container, item, detailed=true) As Object
     track = createBaseAudioMetadata(container, item)
 
     track.ContentType = "audio"
+    track.mediaContainerIdentifier = container.xml@identifier
     if track.Type = invalid then track.Type = "track"
 
     if container.xml@mixedParents = "1" then

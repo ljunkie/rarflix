@@ -36,6 +36,14 @@ Sub audioPlayer_setbuttons(obj)
         screen.AddButton(3, "next song")
         screen.AddButton(4, "previous song")
     endif
+
+    if metadata.UserRating = invalid then
+        metadata.UserRating = 0
+    endif
+    if metadata.StarRating = invalid then
+        metadata.StarRating = 0
+    endif
+    screen.AddRatingButton(5, metadata.UserRating, metadata.StarRating)
 End Sub
 
 REM ******************************************************
@@ -145,6 +153,7 @@ Function playAlbum(server, metadata)
 End Function
 
 Function audioHandleMessage(msg) As Boolean
+    server = m.Item.server
     nextOffset = m.curindex
     prevOffset = m.curindex - 2
     if (prevOffset < 0) then
@@ -158,8 +167,7 @@ Function audioHandleMessage(msg) As Boolean
             Print "Playback failed"
         else if msg.isListItemSelected() then
             Print "Starting to play item"
-            ' What does this actually mean? How is it triggered?
-            'm.audioPlayer.Play()
+            m.Refresh(true)
         else if msg.isStatusMessage() then
             'Print "Audio player status: "; msg.getMessage()
         else if msg.isFullResult() then
@@ -227,6 +235,14 @@ Function audioHandleMessage(msg) As Boolean
             m.audioPlayer.SetNext(prevOffset)
             m.audioPlayer.Play()
             newstate = 2 
+        else if button = 5 ' rating
+            Print "audioHandleMessage:: Rate audio for key ";m.metadata.ratingKey
+            rateValue% = (msg.getData() /10)
+            m.metadata.UserRating = msg.getdata()
+            if m.metadata.ratingKey = invalid then
+                m.metadata.ratingKey = 0
+            end if
+            server.Rate(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier, rateValue%.ToStr())
         end if
         m.setPlayState(newstate)
         m.AddButtons(m)
