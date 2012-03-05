@@ -40,6 +40,11 @@ Function createHomeScreen(viewController) As Object
     obj.HandleMessage = homeHandleMessage
 
     obj.StartServerRequests = homeStartServerRequests
+    obj.InitSectionsRow = homeInitSectionsRow
+    obj.InitChannelsRow = homeInitChannelsRow
+    obj.InitQueueRow = homeInitQueueRow
+    obj.InitSharedRow = homeInitSharedRow
+    obj.InitMiscRow = homeInitMiscRow
 
     ' The home screen owns the myPlex manager
     obj.myplex = createMyPlexManager()
@@ -94,7 +99,92 @@ Function refreshHomeScreen()
         m.PendingRequests[str(req.GetIdentity())] = obj
     end if
 
-    ' Misc: global search, preferences, channel directory
+    m.InitChannelsRow(configuredServers)
+    m.InitSectionsRow(configuredServers)
+    m.InitQueueRow()
+    m.InitSharedRow()
+    m.InitMiscRow(configuredServers)
+
+    if type(m.Screen.Screen) = "roGridScreen" then
+        m.Screen.Screen.SetFocusedListItem(m.SectionsRow, 0)
+    else
+        m.Screen.Screen.SetFocusedListItem(m.SectionsRow)
+    end if
+End Function
+
+Sub homeInitSectionsRow(configuredServers)
+    m.SectionsRow = m.contentArray.Count()
+    status = CreateObject("roAssociativeArray")
+    status.content = []
+    status.loadStatus = 0
+    status.toLoad = CreateObject("roList")
+    status.pendingRequests = 0
+    for each server in configuredServers
+        obj = CreateObject("roAssociativeArray")
+        obj.server = server
+        obj.key = "/library/sections"
+        status.toLoad.AddTail(obj)
+    next
+    m.contentArray.Push(status)
+    m.RowNames.Push("Library Sections")
+End Sub
+
+Sub homeInitChannelsRow(configuredServers)
+    m.ChannelsRow = m.contentArray.Count()
+    status = CreateObject("roAssociativeArray")
+    status.content = []
+    status.loadStatus = 0
+    status.toLoad = CreateObject("roList")
+    status.pendingRequests = 0
+    for each server in configuredServers
+        obj = CreateObject("roAssociativeArray")
+        obj.server = server
+        obj.key = "/channels/recentlyViewed"
+
+        allChannels = CreateObject("roAssociativeArray")
+        allChannels.Title = "More Channels"
+        if configuredServers.Count() > 1 then
+            allChannels.ShortDescriptionLine2 = "All channels on " + server.name
+        else
+            allChannels.ShortDescriptionLine2 = "All channels"
+        end if
+        allChannels.Description = allChannels.ShortDescriptionLine2
+        allChannels.server = server
+        allChannels.sourceUrl = ""
+        allChannels.Key = "/channels/all"
+        'allChannels.contentType = ...
+        allChannels.SDPosterURL = "file://pkg:/images/plex.jpg"
+        allChannels.HDPosterURL = "file://pkg:/images/plex.jpg"
+        obj.item = allChannels
+
+        status.toLoad.AddTail(obj)
+    next
+    m.contentArray.Push(status)
+    m.RowNames.Push("Channels")
+End Sub
+
+Sub homeInitQueueRow()
+    ' TODO(schuyler): Queue
+End Sub
+
+Sub homeInitSharedRow()
+    m.SharedSectionsRow = m.contentArray.Count()
+    status = CreateObject("roAssociativeArray")
+    status.content = []
+    status.loadStatus = 0
+    status.toLoad = CreateObject("roList")
+    status.pendingRequests = 0
+    if m.myplex.IsSignedIn then
+        obj = CreateObject("roAssociativeArray")
+        obj.server = m.myplex
+        obj.key = "/pms/system/library/sections"
+        status.toLoad.AddTail(obj)
+    end if
+    m.contentArray.Push(status)
+    m.RowNames.Push("Shared Library Sections")
+End Sub
+
+Sub homeInitMiscRow(configuredServers)
     m.MiscRow = m.contentArray.Count()
     m.RowNames.Push("Miscellaneous")
     status = CreateObject("roAssociativeArray")
@@ -136,80 +226,7 @@ Function refreshHomeScreen()
     next
 
     m.contentArray.Push(status)
-
-    ' Sections, across all servers
-    m.SectionsRow = m.contentArray.Count()
-    status = CreateObject("roAssociativeArray")
-    status.content = []
-    status.loadStatus = 0
-    status.toLoad = CreateObject("roList")
-    status.pendingRequests = 0
-    for each server in configuredServers
-        obj = CreateObject("roAssociativeArray")
-        obj.server = server
-        obj.key = "/library/sections"
-        status.toLoad.AddTail(obj)
-    next
-    m.contentArray.Push(status)
-    m.RowNames.Push("Library Sections")
-
-    ' Recently used channels, across all servers
-    m.ChannelsRow = m.contentArray.Count()
-    status = CreateObject("roAssociativeArray")
-    status.content = []
-    status.loadStatus = 0
-    status.toLoad = CreateObject("roList")
-    status.pendingRequests = 0
-    for each server in configuredServers
-        obj = CreateObject("roAssociativeArray")
-        obj.server = server
-        obj.key = "/channels/recentlyViewed"
-
-        allChannels = CreateObject("roAssociativeArray")
-        allChannels.Title = "More Channels"
-        if configuredServers.Count() > 1 then
-            allChannels.ShortDescriptionLine2 = "All channels on " + server.name
-        else
-            allChannels.ShortDescriptionLine2 = "All channels"
-        end if
-        allChannels.Description = allChannels.ShortDescriptionLine2
-        allChannels.server = server
-        allChannels.sourceUrl = ""
-        allChannels.Key = "/channels/all"
-        'allChannels.contentType = ...
-        allChannels.SDPosterURL = "file://pkg:/images/plex.jpg"
-        allChannels.HDPosterURL = "file://pkg:/images/plex.jpg"
-        obj.item = allChannels
-
-        status.toLoad.AddTail(obj)
-    next
-    m.contentArray.Push(status)
-    m.RowNames.Push("Channels")
-
-    ' TODO(schuyler): Queue
-
-    ' Shared sections
-    m.SharedSectionsRow = m.contentArray.Count()
-    status = CreateObject("roAssociativeArray")
-    status.content = []
-    status.loadStatus = 0
-    status.toLoad = CreateObject("roList")
-    status.pendingRequests = 0
-    if m.myplex.IsSignedIn then
-        obj = CreateObject("roAssociativeArray")
-        obj.server = m.myplex
-        obj.key = "/pms/system/library/sections"
-        status.toLoad.AddTail(obj)
-    end if
-    m.contentArray.Push(status)
-    m.RowNames.Push("Shared Library Sections")
-
-    if type(m.Screen.Screen) = "roGridScreen" then
-        m.Screen.Screen.SetFocusedListItem(1, 0)
-    else
-        m.Screen.Screen.SetFocusedListItem(1)
-    end if
-End Function
+End Sub
 
 Function showHomeScreen() As Integer
     m.Refresh()
@@ -633,9 +650,9 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
         end if
 
         if type(m.Screen.Screen) = "roGridScreen" then
-            m.Screen.Screen.SetFocusedListItem(1, 0)
+            m.Screen.Screen.SetFocusedListItem(m.SectionsRow, 0)
         else
-            m.Screen.Screen.SetFocusedListItem(1)
+            m.Screen.Screen.SetFocusedListItem(m.SectionsRow)
         end if
     end if
 
