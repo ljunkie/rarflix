@@ -28,7 +28,7 @@ Function createSearchScreen(item, viewController) As Object
 
     obj.Show = showSearchScreen
 
-    obj.Progressive = true
+    obj.Progressive = (item.server <> invalid)
     obj.History = history
 
     return obj
@@ -67,6 +67,7 @@ Function showSearchScreen() As Integer
                 item.Title = "Search for '" + term + "'"
                 item.sourceUrl = m.Item.sourceUrl
                 item.viewGroup = m.Item.viewGroup
+                item.searchTerm = term
                 if instr(1, m.Item.Key, "?") > 0 then
                     item.Key = m.Item.Key + "&query=" + HttpEncode(term)
                 else

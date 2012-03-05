@@ -192,7 +192,17 @@ Sub homeInitMiscRow(configuredServers)
     status.loadStatus = 0
     status.toLoad = CreateObject("roList")
     status.pendingRequests = 0
-    ' TODO: Search
+
+    ' Universal search
+    univSearch = CreateObject("roAssociativeArray")
+    univSearch.sourceUrl = ""
+    univSearch.ContentType = "search"
+    univSearch.Key = "globalsearch"
+    univSearch.Title = "Search"
+    univSearch.ShortDescriptionLine1 = "Search"
+    univSearch.SDPosterURL = "file://pkg:/images/icon-search.jpg"
+    univSearch.HDPosterURL = "file://pkg:/images/icon-search.jpg"
+    status.content.Push(univSearch)
 
     '** Prefs
     prefs = CreateObject("roAssociativeArray")
@@ -482,6 +492,7 @@ Function homeHandleMessage(msg) As Boolean
                         m.StartServerRequests(server)
                     else
                         server.name = serverElem@name + " (shared by " + serverElem@sourceTitle + ")"
+                        server.owned = false
                     end if
                     PutPlexMediaServer(server)
 

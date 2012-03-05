@@ -58,6 +58,8 @@ Function createBaseMetadata(container, item) As Object
 
     metadata.viewGroup = container.ViewGroup
 
+    metadata.sourceTitle = item@sourceTitle
+
     sizes = ImageSizes(container.ViewGroup, item@type)                                                                                    
     art = firstOf(item@thumb, item@parentThumb, item@art, container.xml@thumb)
     if art <> invalid AND server <> invalid then

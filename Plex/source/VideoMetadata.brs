@@ -66,7 +66,7 @@ Sub setVideoBasics(video, container, item)
 
     video.ShortDescriptionLine2 = firstOf(item@sourceTitle, item@tagline, video.ShortDescriptionLine2)
 
-    if container.ViewGroup = "episode" then
+    if container.ViewGroup = "episode" OR item@type = "episode" then
         if item@grandparentTitle <> invalid then
             video.ShortDescriptionLine1 = item@grandparentTitle + ": " + video.ShortDescriptionLine1
         end if

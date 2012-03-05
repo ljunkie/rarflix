@@ -47,7 +47,6 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     ' include the filter bar that makes it more grid like, but it can
     ' be forced by setting screen.FilterMode = true.
 
-    ' TODO(schuyler): Fill all this in
     if contentType = "movie" OR contentType = "episode" then
         screen = createVideoSpringboardScreen(context, contextIndex, m)
     else if contentType = "clip" then
@@ -84,8 +83,6 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         return invalid
     else if viewGroup = "secondary" then
         screen = createPosterScreen(item, m)
-    else if item.key = "globalsearch" then
-        ' TODO
     else if item.key = "globalprefs" then
         m.Home.ShowPreferencesScreen()
         return invalid
@@ -98,6 +95,12 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen.Loader = createPaginatedLoader(fakeContainer, 8, 25)
         screen.Loader.Listener = screen
         screen.Loader.Port = screen.Port
+        screen.MessageHandler = screen.Loader
+        screen.SetStyle("flat-square")
+    else if item.searchTerm <> invalid AND item.server = invalid then
+        screen = createGridScreen(m)
+        screen.Loader = createSearchLoader(item.searchTerm)
+        screen.Loader.Listener = screen
         screen.MessageHandler = screen.Loader
         screen.SetStyle("flat-square")
     else if item.settings = "1"

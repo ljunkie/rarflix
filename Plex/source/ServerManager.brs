@@ -334,3 +334,19 @@ Sub ClearPlexMediaServers()
     GetGlobalAA().Delete("validated_servers")
 End Sub
 
+Function GetOwnedPlexMediaServers()
+    owned = []
+    servers = GetGlobalAA().Lookup("validated_servers")
+
+    if servers <> invalid then
+        for each id in servers
+            server = servers[id]
+            if server.owned then
+                owned.Push(server)
+            end if
+        next
+    end if
+
+    return owned
+End Function
+
