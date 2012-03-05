@@ -155,7 +155,7 @@ Function loaderHandleMessage(msg) As Boolean
         status.pendingRequests = status.pendingRequests - 1
 
         if msg.GetResponseCode() <> 200 then
-            print "Got a " + msg.GetResponseCode(); " response from "; request.request.GetUrl(); " - "; msg.GetFailureReason()
+            print "Got a "; msg.GetResponseCode(); " response from "; request.request.GetUrl(); " - "; msg.GetFailureReason()
             return true
         end if
 
