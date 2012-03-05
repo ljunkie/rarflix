@@ -56,6 +56,8 @@ Function createAudioSpringboardScreen(context, index, viewController) As Object
 
     obj.Screen.SetDescriptionStyle("audio")
     obj.Screen.SetStaticRatingEnabled(false)
+    obj.Screen.AllowNavRewind(true)
+    obj.Screen.AllowNavFastForward(true)
 
     ' Set up audio player, using the same message port
     obj.audioPlayer = CreateObject("roAudioPlayer")

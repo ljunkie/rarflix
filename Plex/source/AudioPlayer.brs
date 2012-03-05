@@ -180,14 +180,14 @@ Function audioHandleMessage(msg) As Boolean
         button = msg.GetIndex()
         print "Remote Key button = "; button
         newstate = m.isPlayState
-        if button = 5 ' next
+        if button = 5 or button = 9 ' next
             m.setPlayState(0) ' stop
             m.audioPlayer.Stop()
             m.GotoNextItem()
             m.audioPlayer.SetNext(nextOffset)
             m.audioPlayer.Play()
             newstate = 2
-        else if button = 4 ' prev
+        else if button = 4 or button = 8 ' prev
             m.setPlayState(0) ' stop
             m.audioPlayer.Stop()
             m.GotoPrevItem()
