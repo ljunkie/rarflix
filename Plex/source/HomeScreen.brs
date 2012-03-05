@@ -36,7 +36,6 @@ Function createHomeScreen(viewController) As Object
     ' Data loader interface used by the grid screen
     obj.GetContent = homeGetContent
     obj.LoadMoreContent = homeLoadMoreContent
-    obj.GetLoadStatus = homeGetLoadStatus
     obj.GetNames = homeGetNames
     obj.HandleMessage = homeHandleMessage
 
@@ -571,10 +570,6 @@ Sub homeStartServerRequests(server)
     status.content.Push(channelDir)
     m.Screen.OnDataLoaded(m.MiscRow, status.content, status.content.Count() - 1, 1)
 End Sub
-
-Function homeGetLoadStatus(index) As Integer
-    return m.contentArray[index].loadStatus
-End Function
 
 Function homeGetNames()
     return m.RowNames
