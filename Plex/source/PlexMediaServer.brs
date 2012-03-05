@@ -228,6 +228,7 @@ Function pmsCreateRequest(sourceUrl, key) As Object
     if m.AccessToken <> invalid then
         req.AddHeader("X-Plex-Token", m.AccessToken)
     end if
+    req.AddHeader("X-Plex-Client-Capabilities", Capabilities())
     return req
 End Function
 
