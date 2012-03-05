@@ -323,13 +323,16 @@ Function constructTranscodedVideoItem(item) As Object
         mediaKey = item.preferredMediaItem.preferredPart.key
         key = item.key
         ratingKey = item.ratingKey
+        videoRes = item.preferredMediaItem.videoresolution
     else if item.preferredMediaItem = invalid then
         ' Plugin video
         mediaKey = item.key
+        videoRes = item.videoresolution
     else
         ' Plugin video, possibly indirect
         mediaItem = item.preferredMediaItem
         mediaKey = mediaItem.preferredPart.key
+        videoRes = mediaItem.videoresolution
         if mediaItem.indirect then
             mediaKeyXml = IndirectMediaXml(m, mediaKey)
             mediaKey = mediaKeyXml.Video.Media.Part[0]@key
@@ -342,7 +345,31 @@ Function constructTranscodedVideoItem(item) As Object
     quality = "SD"
     if deviceInfo.GetDisplayType() = "HDTV" then quality = "HD"
     print "Setting stream quality:";quality
-
+    
+	'Check to see if the video is fullHD or not
+    if RegRead("quality", "preferences") = "9" and videoRes = "1080" then
+		device = CreateObject("roDeviceInfo")
+		version = device.GetVersion()
+			major = Mid(version, 3, 1)
+			minor = Mid(version, 5, 2)
+			build = Mid(version, 8, 5)
+		print "Device Version:" + major +"." + minor +" build "+build
+		if major.toInt() < 4  then
+			if RegRead("legacy1080p","preferences") = "enabled" then
+				transcoded.fullHD = true
+				transcoded.framerate = 30
+				frSetting = RegRead("legacy1080pframerate","preferences")
+				if frSetting = "24" then
+					transcoded.framerate = 24
+				else if frSetting = "native" and item.preferredMediaItem.framerate = "24"					
+					transcoded.framerate = 24
+				end if
+			end if
+		else 
+			transcoded.fullHD = true
+		endif
+	endif
+	printAA(transcoded)
     transcoded.StreamBitrates = [0]
     transcoded.StreamQualities = [quality]
     transcoded.StreamFormat = "hls"
