@@ -69,7 +69,7 @@ End Function
 ' * Adds a server to the list used by the application. Not validated at this 
 ' * time which allows off-line servers to be specified. Checking for dupes,
 ' * usually based on machine ID, should be done by the caller.
-Function AddServer(name, address, machineID)
+Sub AddServer(name, address, machineID)
     print "Adding server to saved list: ";name
     print "With address: ";address
     print "With machine ID: "; machineID
@@ -85,12 +85,14 @@ Function AddServer(name, address, machineID)
         ' machine ID.
         if machineID = invalid OR instr(1, existing, machineID) <= 0 then
             allServers = existing + "{" + serverStr
+        else
+            return
         end if
     else
         allServers = serverStr
     end if
     RegWrite("serverList", allServers, "servers")
-End Function
+End Sub
 
 Function AddUnnamedServer(address) As Boolean
     print "Adding unnamed server to saved list:";address
@@ -100,6 +102,7 @@ Function AddUnnamedServer(address) As Boolean
     validating.ShowBusyAnimation()
     validating.Show()
 
+    orig = address
     if left(address, 4) <> "http" then
         address = "http://" + address
     end if
@@ -119,14 +122,29 @@ Function AddUnnamedServer(address) As Boolean
         server = GetPlexMediaServer(xml@machineIdentifier)
         if server <> invalid AND server.IsConfigured then
             print "Duplicate server machine ID, ignoring"
+            dialog = createBaseDialog()
+            dialog.Facade = validating
+            dialog.Title = "Error"
+            dialog.Text = "The Plex Media Server at " + orig + " is already configured (" + server.name + ")."
+            dialog.Show()
         else if ServerVersionCompare(xml@version, [0, 9, 2, 7]) then
             AddServer(xml@friendlyName, address, xml@machineIdentifier)
             return true
         else
             print "Server version is insufficient"
+            dialog = createBaseDialog()
+            dialog.Facade = validating
+            dialog.Title = "Error"
+            dialog.Text = "The Plex Media Server at " + orig + " is running too old a version, please upgrade to the latest release."
+            dialog.Show()
         end if
     else
         print "No response from server"
+        dialog = createBaseDialog()
+        dialog.Facade = validating
+        dialog.Title = "Error"
+        dialog.Text = "There was no response from " + orig + "."
+        dialog.Show()
     end if
 
     return false

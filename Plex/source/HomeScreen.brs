@@ -301,6 +301,7 @@ Function showPreferencesScreen()
                 end if
             end if 
         else if msg = invalid then
+            timeout = 0
             m.Refresh()
         end if
     end while
