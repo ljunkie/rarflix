@@ -28,6 +28,11 @@ Function newArtistMetadata(container, item, detailed=true) As Object
         next
     end if
 
+    if artist.Title = invalid then
+        artist.Title = item@artist
+        artist.ShortDescriptionLine1 = artist.Title
+    end if
+
     return artist
 End Function
 
@@ -38,9 +43,14 @@ Function newAlbumMetadata(container, item, detailed=true) As Object
     album.mediaContainerIdentifier = container.xml@identifier
     if album.Type = invalid then album.Type = "album"
 
-    album.Artist = firstOf(item@parentTitle, container.xml@parentTitle)
-    album.Album = item@title
+    album.Artist = firstOf(item@parentTitle, container.xml@parentTitle, item@artist)
+    album.Album = firstOf(item@title, item@album)
     album.ReleaseDate = firstOf(item@originallyAvailableAt, item@year)
+
+    if album.Title = invalid then
+        album.Title = album.Album
+        album.ShortDescriptionLine1 = album.Title
+    end if
 
     return album
 End Function
@@ -53,13 +63,13 @@ Function newTrackMetadata(container, item, detailed=true) As Object
     if track.Type = invalid then track.Type = "track"
 
     if container.xml@mixedParents = "1" then
-        track.Artist = item@grandparentTitle
-        track.Album = firstOf(item@parentTitle, "Unknown Album")
+        track.Artist = firstOf(item@grandparentTitle, item@artist)
+        track.Album = firstOf(item@parentTitle, item@album, "Unknown Album")
         track.ReleaseDate = item@parentYear
         track.AlbumYear = item@parentYear
     else
-        track.Artist = container.xml@grandparentTitle
-        track.Album = firstOf(container.xml@parentTitle, "Unknown Album")
+        track.Artist = firstOf(container.xml@grandparentTitle, item@artist)
+        track.Album = firstOf(container.xml@parentTitle, item@album, "Unknown Album")
         track.ReleaseDate = container.xml@parentYear
         track.AlbumYear = container.xml@parentYear
     end if
@@ -68,6 +78,11 @@ Function newTrackMetadata(container, item, detailed=true) As Object
     duration = firstOf(item@duration, item@totalTime)
     if duration <> invalid then track.Duration = int(val(duration)/1000)
     track.Length = track.Duration
+
+    if track.Title = invalid then
+        track.Title = item@track
+        track.ShortDescriptionLine1 = track.Title
+    end if
 
     media = item.Media[0]
 

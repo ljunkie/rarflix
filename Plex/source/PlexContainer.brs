@@ -67,9 +67,9 @@ Sub containerParseXml()
         if n@scanner <> invalid then
             metadata = newDirectoryMetadata(m, n)
             metadata.contentType = "section"
-        else if nodeType = "artist" then
+        else if nodeType = "artist" OR n.GetName() = "Artist" then
             metadata = newArtistMetadata(m, n, m.ParseDetails)
-        else if nodeType = "album" then
+        else if nodeType = "album" OR n.GetName() = "Album" then
             metadata = newAlbumMetadata(m, n, m.ParseDetails)
         else if nodeType = "Store:Info" then
             metadata = newChannelMetadata(m, n)
