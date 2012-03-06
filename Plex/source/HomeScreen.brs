@@ -100,7 +100,7 @@ Function refreshHomeScreen()
 
     m.InitChannelsRow(configuredServers)
     m.InitSectionsRow(configuredServers)
-    m.InitQueueRow()
+    'm.InitQueueRow()
     m.InitSharedRow()
     m.InitMiscRow(configuredServers)
 
@@ -163,7 +163,21 @@ Sub homeInitChannelsRow(configuredServers)
 End Sub
 
 Sub homeInitQueueRow()
-    ' TODO(schuyler): Queue
+    m.QueueRow = m.contentArray.Count()
+    status = CreateObject("roAssociativeArray")
+    status.content = []
+    status.loadStatus = 0
+    status.toLoad = CreateObject("roList")
+    status.pendingRequests = 0
+    if m.myplex.IsSignedIn then
+        obj = CreateObject("roAssociativeArray")
+        obj.server = m.myplex
+        obj.requestType = "queue"
+        obj.key = "/pms/playlists/queue/unwatched"
+        status.toLoad.AddTail(obj)
+    end if
+    m.contentArray.Push(status)
+    m.RowNames.Push("Queue")
 End Sub
 
 Sub homeInitSharedRow()
@@ -214,26 +228,6 @@ Sub homeInitMiscRow(configuredServers)
     prefs.HDPosterURL = "file://pkg:/images/prefs.jpg"
     status.content.Push(prefs)
 
-    ' Channel directory for each server
-    for each server in configuredServers
-        channels = CreateObject("roAssociativeArray")
-        channels.server = server
-        channels.sourceUrl = ""
-        channels.key = "/system/appstore"
-        channels.Title = "Channel Directory"
-        if configuredServers.Count() > 1 then
-            channels.ShortDescriptionLine2 = "Browse channels to install on " + server.name
-        else
-            channels.ShortDescriptionLine2 = "Browse channels to install"
-        end if
-        channels.Description = channels.ShortDescriptionLine2
-        channels.SDPosterURL = "file://pkg:/images/plex.jpg"
-        channels.HDPosterURL = "file://pkg:/images/plex.jpg"
-        'channels.contentType = ...
-
-        status.content.Push(channels)
-    next
-
     m.contentArray.Push(status)
 End Sub
 
@@ -253,6 +247,7 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
     if m.FirstLoad then
         m.FirstLoad = false
         if NOT m.myplex.IsSignedIn then
+            'm.Screen.OnDataLoaded(m.QueueRow, [], 0, 0)
             m.Screen.OnDataLoaded(m.SharedSectionsRow, [], 0, 0)
         end if
 
@@ -297,7 +292,7 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
             req.SetPort(m.Screen.Port)
             toLoad.request = req
             toLoad.row = loadingRow
-            toLoad.requestType = "row"
+            toLoad.requestType = firstOf(toLoad.requestType, "row")
             m.PendingRequests[str(req.GetIdentity())] = toLoad
 
             if req.AsyncGetToString() then
@@ -327,7 +322,7 @@ Function homeHandleMessage(msg) As Boolean
         if request = invalid then return false
         m.PendingRequests.Delete(str(id))
 
-        if request.requestType = "row" then
+        if request.row <> invalid then
             status = m.contentArray[request.row]
             status.pendingRequests = status.pendingRequests - 1
         end if
@@ -346,7 +341,7 @@ Function homeHandleMessage(msg) As Boolean
             response.server = request.server
             response.sourceUrl = request.request.GetUrl()
             container = createPlexContainerForXml(response)
-            countLoaded = container.Count()
+            countLoaded = 0
 
             startItem = status.content.Count()
 
@@ -416,6 +411,7 @@ Function homeHandleMessage(msg) As Boolean
                     end if
 
                     status.content.Push(item)
+                    countLoaded = countLoaded + 1
                 end if
             next
 
@@ -429,6 +425,36 @@ Function homeHandleMessage(msg) As Boolean
             end if
 
             m.Screen.OnDataLoaded(request.row, status.content, startItem, countLoaded)
+        else if request.requestType = "queue" then
+            response = CreateObject("roAssociativeArray")
+            response.xml = xml
+            response.server = GetPrimaryServer()
+            response.sourceUrl = request.request.GetUrl()
+            container = createPlexContainerForXml(response)
+
+            startItem = status.content.Count()
+
+            items = container.GetMetadata()
+            for each item in items
+                ' Normally thumbnail requests will have an X-Plex-Token header
+                ' added as necessary by the screen, but we can't do that on the
+                ' home screen because we're showing content from multiple
+                ' servers.
+                if item.SDPosterURL <> invalid AND item.server <> invalid AND item.server.AccessToken <> invalid then
+                    item.SDPosterURL = item.SDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
+                    item.HDPosterURL = item.HDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
+                end if
+
+                status.content.Push(item)
+            next
+
+            if request.item <> invalid then
+                status.content.Push(request.item)
+            end if
+
+            status.loadStatus = 2
+
+            m.Screen.OnDataLoaded(request.row, status.content, 0, status.content.Count())
         else if request.requestType = "server" then
             request.server.name = xml@friendlyName
             request.server.machineID = xml@machineIdentifier
@@ -441,6 +467,23 @@ Function homeHandleMessage(msg) As Boolean
             print "Fetched additional server information ("; request.server.name; ", "; request.server.machineID; ")"
             print "URL: "; request.server.serverUrl
             print "Server supports audio transcoding: "; request.server.SupportsAudioTranscoding
+
+            channelDir = CreateObject("roAssociativeArray")
+            channelDir.server = request.server
+            channelDir.sourceUrl = ""
+            channelDir.key = "/system/appstore"
+            channelDir.Title = "Channel Directory"
+            if AreMultipleValidatedServers() then
+                channelDir.ShortDescriptionLine2 = "Browse channels to install on " + request.server.name
+            else
+                channelDir.ShortDescriptionLine2 = "Browse channels to install"
+            end if
+            channelDir.Description = channelDir.ShortDescriptionLine2
+            channelDir.SDPosterURL = "file://pkg:/images/plex.jpg"
+            channelDir.HDPosterURL = "file://pkg:/images/plex.jpg"
+            status = m.contentArray[m.MiscRow]
+            status.content.Push(channelDir)
+            m.Screen.OnDataLoaded(m.MiscRow, status.content, status.content.Count() - 1, 1)
         else if request.requestType = "servers" then
             for each serverElem in xml.Server
                 ' If we already have a server for this machine ID then disregard
@@ -451,7 +494,11 @@ Function homeHandleMessage(msg) As Boolean
 
                     if serverElem@owned = "1" then
                         server.name = serverElem@name
-                        server.owned = true
+
+                        ' The server is owned, but it might not be online.
+                        ' Don't set this yet, it will be set correctly if the
+                        ' request to / gets a response.
+                        server.owned = false
 
                         ' An owned server that we didn't have configured, request
                         ' its sections and channels now.
@@ -532,18 +579,15 @@ Sub homeStartServerRequests(server)
     allChannels.HDPosterURL = "file://pkg:/images/plex.jpg"
     channels.item = allChannels
 
-    channelDir = CreateObject("roAssociativeArray")
-    channelDir.server = server
-    channelDir.sourceUrl = ""
-    channelDir.key = "/system/appstore"
-    channelDir.Title = "Channel Directory"
-    channelDir.ShortDescriptionLine2 = "Browse channels to install on " + server.name
-    channelDir.Description = channelDir.ShortDescriptionLine2
-    channelDir.SDPosterURL = "file://pkg:/images/plex.jpg"
-    channelDir.HDPosterURL = "file://pkg:/images/plex.jpg"
-    status = m.contentArray[m.MiscRow]
-    status.content.Push(channelDir)
-    m.Screen.OnDataLoaded(m.MiscRow, status.content, status.content.Count() - 1, 1)
+    serverInfo = CreateObject("roAssociativeArray")
+    serverInfo.server = server
+    serverInfo.key = "/"
+    serverInfo.requestType = "server"
+    req = server.CreateRequest("", "/")
+    req.SetPort(m.Screen.Port)
+    req.AsyncGetToString()
+    serverInfo.request = req
+    m.PendingRequests[str(req.GetIdentity())] = serverInfo
 End Sub
 
 Function homeGetNames()

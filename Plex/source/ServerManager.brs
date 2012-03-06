@@ -350,3 +350,14 @@ Function GetOwnedPlexMediaServers()
     return owned
 End Function
 
+Function GetPrimaryServer()
+    ' TODO(schuyler): Actually define a primary server instead of using an arbitrary one
+    owned = GetOwnedPlexMediaServers()
+    if owned.Count() > 0 then
+        print "Setting primary server to "; owned[0].name
+        return owned[0]
+    end if
+
+    return invalid
+End Function
+
