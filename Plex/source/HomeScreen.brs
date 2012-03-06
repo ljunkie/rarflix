@@ -32,7 +32,6 @@ Function createHomeScreen(viewController) As Object
     obj.Show1080pScreen = show1080pScreen
 
     ' Data loader interface used by the grid screen
-    obj.GetContent = homeGetContent
     obj.LoadMoreContent = homeLoadMoreContent
     obj.GetNames = homeGetNames
     obj.HandleMessage = homeHandleMessage
@@ -248,10 +247,6 @@ Function showHomeScreen() As Integer
     m.PendingRequests.Clear()
 
     return ret
-End Function
-
-Function homeGetContent(index)
-    return m.contentArray[index].content
 End Function
 
 Function homeLoadMoreContent(focusedIndex, extraRows=0)

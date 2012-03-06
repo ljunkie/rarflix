@@ -7,7 +7,6 @@
 Function createSearchLoader(searchTerm)
     loader = CreateObject("roAssociativeArray")
 
-    loader.GetContent = searchGetContent
     loader.LoadMoreContent = searchLoadMoreContent
     loader.GetNames = searchGetNames
     loader.HandleMessage = searchHandleMessage
@@ -70,10 +69,6 @@ Sub searchStartRequest(server, url, title)
 
     print "Kicked off search request for "; req.title
 End Sub
-
-Function searchGetContent(row)
-    return m.contentArray[index].content
-End Function
 
 Function searchLoadMoreContent(focusedRow, extraRows=0) As Boolean
     ' We don't really load by row. If this is the first load call, kick off

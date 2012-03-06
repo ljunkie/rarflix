@@ -25,7 +25,8 @@ Function createPosterScreen(item, viewController) As Object
 
     obj.OnDataLoaded = posterOnDataLoaded
 
-    obj.styles = []
+    obj.contentArray = []
+    obj.focusedList = 0
 
     return obj
 End Function
@@ -61,10 +62,13 @@ Function showPosterScreen() As Integer
         m.MessageHandler = m.Loader
 
         for index = 0 to keys.Count() - 1
-            style = CreateObject("roAssociativeArray")
-            style.listStyle = invalid
-            style.listDisplayMode = invalid
-            m.styles[index] = style
+            status = CreateObject("roAssociativeArray")
+            status.listStyle = invalid
+            status.listDisplayMode = invalid
+            status.focusedIndex = 0
+            status.content = []
+            status.lastUpdatedSize = 0
+            m.contentArray[index] = status
         next
 
         m.Loader.LoadMoreContent(0, 0)
@@ -72,9 +76,10 @@ Function showPosterScreen() As Integer
         ' We already grabbed the full list, no need to bother with loading
         ' in chunks.
 
-        m.Loader = createDummyLoader([container.GetMetadata()])
+        status = CreateObject("roAssociativeArray")
+        status.content = container.GetMetadata()
 
-        style = CreateObject("roAssociativeArray")
+        m.Loader = createDummyLoader(status.content)
 
         if container.Count() > 0 then
             contentType = container.GetMetadata()[0].ContentType
@@ -84,18 +89,21 @@ Function showPosterScreen() As Integer
 
         if m.UseDefaultStyles then
             aa = getDefaultListStyle(container.ViewGroup, contentType)
-            style.listStyle = aa.style
-            style.listDisplayMode = aa.display
+            status.listStyle = aa.style
+            status.listDisplayMode = aa.display
         else
-            style.listStyle = m.ListStyle
-            style.listDisplayMode = m.ListDisplayMode
+            status.listStyle = m.ListStyle
+            status.listDisplayMode = m.ListDisplayMode
         end if
 
-        m.styles[0] = style
+        status.focusedIndex = 0
+        status.lastUpdatedSize = status.content.Count()
+
+        m.contentArray[0] = status
     end if
 
-    focusedListItem = 0
-    m.ShowList(focusedListItem)
+    m.focusedList = 0
+    m.ShowList(0)
     facade.Close()
 
     while true
@@ -104,12 +112,12 @@ Function showPosterScreen() As Integer
         else if type(msg) = "roPosterScreenEvent" then
             '* Focus change on the filter bar causes content change
             if msg.isListFocused() then
-                focusedListItem = msg.GetIndex()
-                m.ShowList(focusedListItem)
-                m.Loader.LoadMoreContent(focusedListItem, 0)
+                m.focusedList = msg.GetIndex()
+                m.ShowList(m.focusedList)
+                m.Loader.LoadMoreContent(m.focusedList, 0)
             else if msg.isListItemSelected() then
                 index = msg.GetIndex()
-                content = m.Loader.GetContent(focusedListItem)
+                content = m.contentArray[m.focusedList].content
                 selected = content[index]
                 contentType = selected.ContentType
 
@@ -118,7 +126,7 @@ Function showPosterScreen() As Integer
                 if contentType = "series" OR NOT m.FilterMode then
                     breadcrumbs = [selected.Title]
                 else
-                    breadcrumbs = [names[index], selected.Title]
+                    breadcrumbs = [names[m.focusedList], selected.Title]
                 end if
 
                 m.ViewController.CreateScreenForItem(content, index, breadcrumbs)
@@ -130,6 +138,19 @@ Function showPosterScreen() As Integer
 
                 m.ViewController.PopScreen(m)
                 return -1
+            else if msg.isListItemFocused() then
+                ' We don't immediately update the screen's content list when
+                ' we get more data because the poster screen doesn't perform
+                ' as well as the grid screen (which has an actual method for
+                ' refreshing part of the list). Instead, if the user has
+                ' focused toward the end of the list, update the content.
+
+                status = m.contentArray[m.focusedList]
+                status.focusedIndex = msg.GetIndex()
+                if status.focusedIndex + 10 > status.lastUpdatedSize AND status.content.Count() > status.lastUpdatedSize then
+                    m.Screen.SetContentList(status.content)
+                    status.lastUpdatedSize = status.content.Count()
+                end if
             end if
         end If
     end while
@@ -137,44 +158,48 @@ Function showPosterScreen() As Integer
 End Function
 
 Sub posterOnDataLoaded(row As Integer, data As Object, startItem as Integer, count As Integer)
+    status = m.contentArray[row]
+    status.content = data
+
     ' If this was the first content we loaded, set up the styles
     if startItem = 0 AND count > 0 then
-        style = m.styles[row]
         if m.UseDefaultStyles then
             if data.Count() > 0 then
                 aa = getDefaultListStyle(data[0].ViewGroup, data[0].contentType)
-                style.listStyle = aa.style
-                style.listDisplayMode = aa.display
+                status.listStyle = aa.style
+                status.listDisplayMode = aa.display
             end if
         else
-            style.listStyle = m.ListStyle
-            style.listDisplayMode = m.ListDisplayMode
+            status.listStyle = m.ListStyle
+            status.listDisplayMode = m.ListDisplayMode
         end if
     end if
 
-    m.ShowList(row, startItem = 0)
+    if startItem = 0 OR status.focusedIndex + 10 > status.lastUpdatedSize then
+        m.ShowList(row)
+        status.lastUpdatedSize = status.content.Count()
+    end if
 
     ' Continue loading this row
     m.Loader.LoadMoreContent(row, 0)
 End Sub
 
-Sub posterShowContentList(index, focusFirstItem=true)
-    content = m.Loader.GetContent(index)
-    m.Screen.SetContentList(content)
+Sub posterShowContentList(index)
+    status = m.contentArray[index]
+    m.Screen.SetContentList(status.content)
 
-    style = m.styles[index]
-    if style.listStyle <> invalid then
-        m.Screen.SetListStyle(style.listStyle)
+    if status.listStyle <> invalid then
+        m.Screen.SetListStyle(status.listStyle)
     end if
-    if style.listDisplayMode <> invalid then
-        m.Screen.SetListDisplayMode(style.listDisplayMode)
+    if status.listDisplayMode <> invalid then
+        m.Screen.SetListDisplayMode(status.listDisplayMode)
     end if
 
-    Print "Showing screen with "; content.Count(); " elements"
-    Print "List style is "; style.listStyle; ", "; style.listDisplayMode
+    Print "Showing screen with "; status.content.Count(); " elements"
+    Print "List style is "; status.listStyle; ", "; status.listDisplayMode
 
     m.Screen.Show()
-    if focusFirstItem then m.Screen.SetFocusedListItem(0)
+    m.Screen.SetFocusedListItem(status.focusedIndex)
 End Sub
 
 Function getDefaultListStyle(viewGroup, contentType) As Object

@@ -39,7 +39,6 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize)
         loader.contentArray.Push(status)
     end if
 
-    loader.GetContent = loaderGetContent
     loader.LoadMoreContent = loaderLoadMoreContent
     loader.GetNames = loaderGetNames
     loader.HandleMessage = loaderHandleMessage
@@ -56,7 +55,6 @@ Function createDummyLoader(content)
 
     loader.content = content
 
-    loader.GetContent = dummyGetContent
     loader.LoadMoreContent = dummyLoadMoreContent
     loader.GetNames = loaderGetNames
 
@@ -66,10 +64,6 @@ Function createDummyLoader(content)
     next
 
     return loader
-End Function
-
-Function loaderGetContent(index)
-    return m.contentArray[index].content
 End Function
 
 '*
@@ -216,10 +210,6 @@ End Function
 
 Function loaderGetNames()
     return m.names
-End Function
-
-Function dummyGetContent(index)
-    return m.content[index]
 End Function
 
 Function dummyLoadMoreContent(index, extraRows=0)
