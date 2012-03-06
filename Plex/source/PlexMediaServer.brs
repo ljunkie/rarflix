@@ -12,14 +12,12 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.name = pmsName
     pms.machineID = machineID
     pms.owned = true
-    pms.GetHomePageContent = homePageContent
     pms.VideoScreen = constructVideoScreen
     pms.PluginVideoScreen = constructPluginVideoScreen
     pms.StopVideo = stopTranscode
     pms.PingTranscode = pingTranscode
     pms.CreateRequest = pmsCreateRequest
     pms.GetQueryResponse = xmlContent
-    pms.GetPaginatedQueryResponse = paginatedXmlContent
     pms.SetProgress = progress
     pms.Scrobble = scrobble
     pms.Unscrobble = unscrobble
@@ -148,78 +146,6 @@ Function issueCommand(commandPath)
     request = CreateObject("roUrlTransfer")
     request.SetUrl(commandUrl)
     request.GetToString()
-End Function
-
-Function homePageContent() As Object
-    container = createPlexContainerForUrl(m, "", "/library/sections")
-    librarySections = container.GetMetadata()
-    content = CreateObject("roArray", librarySections.Count() + 1, true)
-    for each section in librarySections
-        '* Exclude photos for now
-        if section.type = "movie" OR section.type = "show" OR section.type = "artist" OR section.type = "photo" then
-            content.Push(section)
-        else
-            print "SKIPPING unsupported section type: ";section.type
-        endif
-    next
-    
-    if not(RegExists("ChannelsAndSearch", "preferences")) then
-        RegWrite("ChannelsAndSearch", "1", "preferences")
-    end if
-    
-    if RegRead("ChannelsAndSearch", "preferences") = "1" then
-        '* TODO: only add this if we actually have any valid apps?
-        appsSection = CreateObject("roAssociativeArray")
-        appsSection.server = m
-        appsSection.sourceUrl = ""
-        appsSection.ContentType = "series"
-        appsSection.Key = "apps"
-        appsSection.Title = "Channels"
-        appsSection.ShortDescriptionLine1 = "Channels"
-        appsSection.SDPosterURL = "file://pkg:/images/plex.jpg"
-        appsSection.HDPosterURL = "file://pkg:/images/plex.jpg"
-        content.Push(appsSection)
-    
-        searchSection = CreateObject("roAssociativeArray")
-        searchSection.server = m
-        searchSection.sourceUrl = ""
-        searchSection.ContentType = "series"
-        searchSection.Key = "globalsearch"
-        searchSection.Title = "Search"
-        searchSection.ShortDescriptionLine1 = "Search"
-        searchSection.SDPosterURL = "file://pkg:/images/icon-search.jpg"
-        searchSection.HDPosterURL = "file://pkg:/images/icon-search.jpg"
-        content.Push(searchSection)
-    end if
-    return content
-End Function
-
-Function paginatedXmlContent(sourceUrl, key, start, size) As Object
-
-    xmlResult = CreateObject("roAssociativeArray")
-    xmlResult.server = m
-    if key = "apps" then
-        '* Fake a minimal server response with a new viewgroup
-        xml=CreateObject("roXMLElement")
-        xml.Parse("<MediaContainer viewgroup='apps'/>")
-        xmlResult.xml = xml
-        xmlResult.sourceUrl = invalid
-    else
-        httpRequest = m.CreateRequest(sourceUrl, key)
-        httpRequest.AddHeader("X-Plex-Container-Start", start.tostr())
-        httpRequest.AddHeader("X-Plex-Container-Size", size.tostr())
-        print "Fetching content from server at query URL:"; httpRequest.GetUrl()
-        print "Pagination start:";start.tostr()
-        print "Pagination size:";size.tostr()
-        response = GetToStringWithTimeout(httpRequest, 60)
-        xml=CreateObject("roXMLElement")
-        if not xml.Parse(response) then
-            print "Can't parse feed:";response
-        endif
-        xmlResult.xml = xml
-        xmlResult.sourceUrl = httpRequest.GetUrl()
-    endif
-    return xmlResult
 End Function
 
 Function pmsCreateRequest(sourceUrl, key) As Object
