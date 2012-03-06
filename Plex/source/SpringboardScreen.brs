@@ -68,10 +68,6 @@ Function createAudioSpringboardScreen(context, index, viewController) As Object
     end if
     obj.isPlayState = 0   ' Stopped
     obj.setPlayState = audioPlayer_newstate
-    obj.setupSong = audioPlayer_setup
-    obj.clearContent = audioPlayer_clear_content
-    obj.setContentList = audioPlayer_set_content_list
-    obj.getMsgEvents = audioPlayer_getmsg
 
     ' TODO: Do we want to loop? Always/Sometimes/Never/Preference?
     obj.audioPlayer.SetLoop(context.Count() > 1)
@@ -83,7 +79,6 @@ Function createAudioSpringboardScreen(context, index, viewController) As Object
     obj.GetMediaDetails = audioGetMediaDetails
     obj.HandleMessage   = audioHandleMessage
     obj.setPlayState(2) ' start playback when screen is opened
-    obj.audioplayer.setNext(0)
 
     return obj
 End Function
