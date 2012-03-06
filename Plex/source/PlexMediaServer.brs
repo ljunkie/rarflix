@@ -465,7 +465,12 @@ Function ConvertTranscodeURLToLoopback(url) As String
     return url
 End Function
 
-Function Capabilities() As String
+Function Capabilities(recompute=false) As String
+    if NOT recompute then
+        capaString = GetGlobalAA().Lookup("capabilities")
+        if capaString <> invalid then return capaString
+    end if
+
     protocols = "protocols=http-live-streaming,http-mp4-streaming,http-mp4-video,http-mp4-video-720p,http-streaming-video,http-streaming-video-720p"
     print "REG READ LEVEL"+ RegRead("level", "preferences")
     'do checks to see if 5.1 is supported, else use stereo
@@ -496,6 +501,7 @@ Function Capabilities() As String
 
     capaString = protocols+";"+decoders '+";"+anamorphic
     print "Capabilities: "+capaString
+    GetGlobalAA().AddReplace("capabilities", capaString)
     return capaString
 End Function
 

@@ -457,6 +457,7 @@ Function showFivePointOneScreen()
         		fiveone = (msg.getIndex()+1).tostr()
         		print "Set 5.1 support to ";fiveone
         		RegWrite("fivepointone", fiveone, "preferences")
+                Capabilities(true)
 				ls.close()
 			end if 
 		end if
@@ -576,6 +577,7 @@ Function showH264Screen()
 				end if
         		print "Set selected level to ";level
         		RegWrite("level", level, "preferences")
+                Capabilities(true)
 				ls.close()
 			end if
 		end if 
