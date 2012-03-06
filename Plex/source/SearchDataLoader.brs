@@ -156,7 +156,11 @@ Function searchHandleMessage(msg) As Boolean
         next
 
         for each node in xml.Provider
-            m.StartRequest(request.server, node@key, node@title)
+            ' We should already have searched other local servers, ignore
+            ' those providers.
+            if node@machineIdentifier = invalid then
+                m.StartRequest(request.server, node@key, node@title)
+            end if
         next
 
         for i = 0 to m.contentArray.Count() - 1
