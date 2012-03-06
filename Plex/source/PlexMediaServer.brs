@@ -27,7 +27,6 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.ExecutePostCommand = issuePostCommand
     pms.UpdateAudioStreamSelection = updateAudioStreamSelection
     pms.UpdateSubtitleStreamSelection = updateSubtitleStreamSelection
-    pms.Search = search
     pms.TranscodedImage = TranscodedImage
     pms.ConstructTranscodedVideoItem = constructTranscodedVideoItem
     pms.TranscodingVideoUrl = TranscodingVideoUrl
@@ -40,56 +39,6 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.IsConfigured = false
 
     return pms
-End Function
-
-Function search(query) As Object
-    searchResults = CreateObject("roAssociativeArray")
-    searchResults.names = []
-    searchResults.content = []
-    movies = []
-    shows = []
-    episodes = []
-
-        container = createPlexContainerForUrl(m, "", "/search?query="+HttpEncode(query))
-    for each directoryItem in container.xml.Directory
-        if directoryItem@type = "show" then
-                        directory = newDirectoryMetadata(container, directoryItem)
-            shows.Push(directory)
-        endif
-    next
-    for each videoItem in container.xml.Video
-                video = newVideoMetadata(container, videoItem)
-        if videoItem@type = "movie" then
-            movies.Push(video)
-        else if videoItem@type = "episode" then
-            episodes.Push(video)
-        end if
-    next
-    if movies.Count() > 0  then
-        searchResults.names.Push("Movies")
-        searchResults.content.Push(movies)
-    end if    
-    if shows.Count() > 0  then
-        searchResults.names.Push("TV Shows")
-        searchResults.content.Push(shows)
-    end if    
-    if episodes.Count() > 0  then
-        searchResults.names.Push("TV Episodes")
-        searchResults.content.Push(episodes)
-    end if
-    videoClips = []
-    videoSurfResult = createPlexContainerForUrl(m, "", "/system/services/search?identifier=com.plexapp.search.videosurf&query="+HttpEncode(query))
-    for each videoItem in videoSurfResult.xml.Video
-        video = newVideoMetadata(videoSurfResult, videoItem)
-        if videoItem@type = "clip" then
-            videoClips.Push(video)
-        end if
-    next
-    if videoClips.Count() > 0 then
-        searchResults.names.Push("Video Clips")
-        searchResults.content.Push(videoClips)
-    end if
-    return searchResults
 End Function
 
 '* This needs a HTTP PUT command that does not exist in the Roku API but it's faked with a POST

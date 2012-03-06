@@ -250,35 +250,6 @@ Function showHomeScreen() As Integer
     return ret
 End Function
 
-
-Function getQueryString() As String
-	queryString = ""
-	
-	searchHistory = CreateObject("roSearchHistory")
-	port = CreateObject("roMessagePort") 
-	searchScreen = CreateObject("roSearchScreen") 
-	searchScreen.SetMessagePort(port)
-	searchScreen.SetSearchTerms(searchHistory.GetAsArray())
-	searchScreen.show()
-	done = false
-	while done = false
-		msg = wait(0, searchScreen.getMessagePort())
-		if type(msg) = "roSearchScreenEvent" then
-			if msg.isFullResult() then
-				queryString = msg.getMessage()
-				if len(queryString) > 0 then
-					searchHistory.Push(queryString)
-				end if
-				done = true
-			else if msg.isScreenClosed() then
-				done = true
-			end if
-		end if
-	end while
-	print "Query string:";queryString
-	return queryString
-End Function
-
 Function homeGetContent(index)
     return m.contentArray[index].content
 End Function
