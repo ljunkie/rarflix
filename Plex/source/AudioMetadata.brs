@@ -65,18 +65,29 @@ Function newTrackMetadata(container, item, detailed=true) As Object
     end if
 
     track.EpisodeNumber = item@index
-    if item@duration <> invalid then track.Duration = int(val(item@duration)/1000)
+    duration = firstOf(item@duration, item@totalTime)
+    if duration <> invalid then track.Duration = int(val(duration)/1000)
     track.Length = track.Duration
 
     media = item.Media[0]
-    part = media.Part[0]
 
-    if media@audioCodec = "mp3" OR media@audioCodec = "wmv" OR media@audioCodec = "aac" then
-        track.StreamFormat = media@audioCodec
-        track.Url = FullUrl(track.server.serverUrl, track.sourceUrl, part@key)
+    if media <> invalid
+        part = media.Part[0]
+        codec = media@audioCodec
+        key = part@key
+    else
+        ' TODO(schuyler): How are we supposed to figure this out? Infer from
+        ' the URL, hoping that it has an extension in a predictable place?
+        codec = "mp3"
+        key = item@key
+    end if
+
+    if codec = "mp3" OR codec = "wmv" OR codec = "aac" then
+        track.StreamFormat = codec
+        track.Url = FullUrl(track.server.serverUrl, track.sourceUrl, key)
     else
         track.StreamFormat = "mp3"
-        track.Url = track.server.TranscodingAudioUrl(part@key, track)
+        track.Url = track.server.TranscodingAudioUrl(key, track)
     end if
 
     return track
