@@ -55,6 +55,7 @@ Sub audioPlayer_newstate(newstate as integer)
     if newstate = m.isplaystate return    ' already there
 
     if newstate = 0 then            ' STOPPED
+        m.Screen.SetProgressIndicatorEnabled(false)
         m.audioPlayer.Stop()
         m.isPlayState = 0
         m.MsgTimeout = 0
@@ -93,10 +94,18 @@ Function audioHandleMessage(msg) As Boolean
             m.Refresh(true)
             m.progressOffset = 0
             m.progressTimer.Mark()
+
+            if m.metadata.Duration <> invalid then
+                m.Screen.SetProgressIndicator(0, m.metadata.Duration)
+                m.Screen.SetProgressIndicatorEnabled(true)
+            else
+                m.Screen.SetProgressIndicatorEnabled(false)
+            end if
         else if msg.isStatusMessage() then
             'Print "Audio player status: "; msg.getMessage()
         else if msg.isFullResult() then
             Print "Playback of entire list finished"
+            m.setPlayState(0)
         else if msg.isPartialResult() then
             Print "isPartialResult"
         else if msg.isPaused() then
