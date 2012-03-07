@@ -23,18 +23,24 @@ Sub audioPlayer_setbuttons(obj)
     screen.ClearButtons()
     if (playstate = 2)  then ' playing
         screen.AddButton(0, "pause playing")
-        screen.AddButton(3, "next song")
-        screen.AddButton(4, "previous song")
+        if m.Context.Count() > 1 then
+            screen.AddButton(3, "next song")
+            screen.AddButton(4, "previous song")
+        end if
         screen.AddButton(2, "stop playing")
     else if (playstate = 1) then ' paused
         screen.AddButton(1, "resume playing")
-        screen.AddButton(3, "next song")
-        screen.AddButton(4, "previous song")
+        if m.Context.Count() > 1 then
+            screen.AddButton(3, "next song")
+            screen.AddButton(4, "previous song")
+        end if
         screen.AddButton(2, "stop playing")
     else ' stopped
         screen.AddButton(1, "start playing")
-        screen.AddButton(3, "next song")
-        screen.AddButton(4, "previous song")
+        if m.Context.Count() > 1 then
+            screen.AddButton(3, "next song")
+            screen.AddButton(4, "previous song")
+        end if
     endif
 
     if metadata.UserRating = invalid then
