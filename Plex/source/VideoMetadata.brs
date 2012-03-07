@@ -67,6 +67,8 @@ Sub setVideoBasics(video, container, item)
     video.ShortDescriptionLine2 = firstOf(item@sourceTitle, item@tagline, video.ShortDescriptionLine2)
 
     if container.ViewGroup = "episode" OR item@type = "episode" then
+        episodeStr = invalid
+        seasonStr = invalid
         if item@grandparentTitle <> invalid then
             video.ShortDescriptionLine1 = item@grandparentTitle + ": " + video.ShortDescriptionLine1
         end if
@@ -106,6 +108,14 @@ Sub setVideoBasics(video, container, item)
     end if
 
     video.Title = video.ShortDescriptionLine1
+
+    if container.xml@mixedParents = "1" then
+        if video.server <> invalid AND item@grandparentThumb <> invalid then
+            sizes = ImageSizes(container.ViewGroup, item@type)                                                                                    
+            video.SDPosterURL = video.server.TranscodedImage(container.sourceUrl, item@grandparentThumb, sizes.sdWidth, sizes.sdHeight)
+            video.HDPosterURL = video.server.TranscodedImage(container.sourceUrl, item@grandparentThumb, sizes.hdWidth, sizes.hdHeight)
+        end if
+    end if
 
     video.Rating = item@contentRating
     rating = item@rating
@@ -148,7 +158,14 @@ Sub setVideoDetails(video, container, videoItemXml)
         video.Categories.Push(Category@tag)
     next
 
+    ' Fix some items that might have been modified for the grid view.
     video.ReleaseDate = video.OrigReleaseDate
+    art = videoItemXml@thumb
+    if video.server <> invalid AND art <> invalid then
+        sizes = ImageSizes(container.ViewGroup, video.type)
+        video.SDPosterURL = video.server.TranscodedImage(container.sourceUrl, art, sizes.sdWidth, sizes.sdHeight)
+        video.HDPosterURL = video.server.TranscodedImage(container.sourceUrl, art, sizes.hdWidth, sizes.hdHeight)
+    end if
 
     ' TODO: review the logic here. Last media item wins. Is this what we want?
     ' TODO: comment out HD for now - does it fix the SD playing regression?
