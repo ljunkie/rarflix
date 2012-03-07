@@ -16,12 +16,28 @@ Function createMyPlexManager() As Object
     ' Masquerade as a basic Plex Media Server
     obj.serverUrl = "https://my.plexapp.com"
     obj.name = "myPlex"
+    obj.VideoScreen = mpVideoScreen
+    obj.PluginVideoScreen = mpPluginVideoScreen
+    obj.StopVideo = mpStopVideo
+    obj.PingTranscode = mpPingTranscode
+    obj.TranscodedImage = mpTranscodedImage
+
+    ' Commands, mostly use the PMS functions
+    obj.SetProgress = progress
+    obj.Scrobble = scrobble
+    obj.Unscrobble = unscrobble
+    obj.Rate = rate
+    obj.ExecuteCommand = mpExecuteCommand
+    obj.ExecutePostCommand = mpExecutePostCommand
 
     if RegExists("AuthToken", "myplex") then
         obj.ValidateToken(RegRead("AuthToken", "myplex"))
     else
         obj.IsSignedIn = false
     end if
+
+    obj.TranscodeServer = invalid
+    obj.CheckTranscodeServer = mpCheckTranscodeServer
 
     return obj
 End Function
@@ -167,4 +183,76 @@ Sub mpDisconnect()
     m.AuthToken = invalid
     RegDelete("AuthToken", "myplex")
 End Sub
+
+Function mpCheckTranscodeServer(showError=false As Boolean) As Boolean
+    if m.TranscodeServer = invalid then
+        m.TranscodeServer = GetPrimaryServer()
+    end if
+
+    if m.TranscodeServer = invalid then
+        if showError then
+            ' TODO(schuyler): Show a friendly dialog to user. This operation requires the help of a Plex Media Server, blah blah blah
+        end if
+        print "myPlex operation failed due to lack of primary server"
+        return false
+    end if
+
+    return true
+End Function
+
+Function mpVideoScreen(metadata, mediaData, StartTime As Integer) As Object
+    if NOT m.CheckTranscodeServer() then return {}
+
+    return m.TranscodeServer.VideoScreen(metadata, mediaData, StartTime)
+End Function
+
+Function mpPluginVideoScreen(metadata) As Object
+    if NOT m.CheckTranscodeServer() then return {}
+
+    return m.TranscodeServer.PluginVideoScreen(metadata)
+End Function
+
+Function mpStopVideo()
+    if NOT m.CheckTranscodeServer() then return invalid
+
+    return m.TranscodeServer.StopVideo()
+End Function
+
+Function mpPingTranscode()
+    if NOT m.CheckTranscodeServer() then return invalid
+
+    return m.TranscodeServer.PingTranscode()
+End Function
+
+Function mpTranscodedImage(queryUrl, imagePath, width, height) As String
+    if m.CheckTranscodeServer() then
+        url = m.TranscodeServer.TranscodedImage(queryUrl, imagePath, width, height)
+        if m.TranscodeServer.AccessToken <> invalid then
+            url = url + "&X-Plex-Token=" + m.TranscodeServer.AccessToken
+        end if
+        return url
+    else
+        ' TODO(schuyler): Is it worth returning the raw URL? Might work for
+        ' queue items, among others.
+        return ""
+    end if
+End Function
+
+Function mpExecuteCommand(commandPath)
+    commandUrl = m.serverUrl + "/pms" + commandPath
+    print "Executing command with full command URL: "; commandUrl
+    request = m.CreateRequest("", commandUrl)
+    request.AsyncGetToString()
+
+    GetGlobalAA().AddReplace("async_command", request)
+End Function
+
+Function mpExecutePostCommand(commandPath)
+    commandUrl = m.serverUrl + "/pms" + commandPath
+    print "Executing POST command with full command URL: "; commandUrl
+    request = m.CreateRequest("", commandUrl)
+    request.AsyncPostFromString("")
+
+    GetGlobalAA().AddReplace("async_command", request)
+End Function
 

@@ -442,25 +442,11 @@ Function homeHandleMessage(msg) As Boolean
         else if request.requestType = "queue" then
             response = CreateObject("roAssociativeArray")
             response.xml = xml
-            response.server = GetPrimaryServer()
+            response.server = request.server
             response.sourceUrl = request.request.GetUrl()
             container = createPlexContainerForXml(response)
 
-            startItem = status.content.Count()
-
-            items = container.GetMetadata()
-            for each item in items
-                ' Normally thumbnail requests will have an X-Plex-Token header
-                ' added as necessary by the screen, but we can't do that on the
-                ' home screen because we're showing content from multiple
-                ' servers.
-                if item.SDPosterURL <> invalid AND item.server <> invalid AND item.server.AccessToken <> invalid then
-                    item.SDPosterURL = item.SDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
-                    item.HDPosterURL = item.HDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
-                end if
-
-                status.content.Push(item)
-            next
+            status.content.Append(container.GetMetadata())
 
             if request.item <> invalid then
                 status.content.Push(request.item)

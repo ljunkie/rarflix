@@ -60,28 +60,27 @@ End Function
 Function issuePostCommand(commandPath)
     commandUrl = m.serverUrl + commandPath
     print "Executing POST command with full command URL:";commandUrl
-    request = CreateObject("roUrlTransfer")
-    request.SetUrl(commandUrl)
+    request = m.CreateRequest("", commandUrl)
     request.PostFromString("")
 End Function
 
 Function progress(key, identifier, time)
-    commandUrl = "/:/progress?key="+key+"&identifier="+identifier+"&time="+time.tostr()
+    commandUrl = "/:/progress?key="+HttpEncode(key)+"&identifier="+identifier+"&time="+time.tostr()
     m.ExecuteCommand(commandUrl)
 End Function
 
 Function scrobble(key, identifier)
-    commandUrl = "/:/scrobble?key="+key+"&identifier="+identifier
+    commandUrl = "/:/scrobble?key="+HttpEncode(key)+"&identifier="+identifier
     m.ExecuteCommand(commandUrl)
 End Function
 
 Function unscrobble(key, identifier)
-    commandUrl = "/:/unscrobble?key="+key+"&identifier="+identifier
+    commandUrl = "/:/unscrobble?key="+HttpEncode(key)+"&identifier="+identifier
     m.ExecuteCommand(commandUrl)
 End Function
 
 Function rate(key, identifier, rating)
-    commandUrl = "/:/rate?key="+key+"&identifier="+identifier+"&rating="+rating
+    commandUrl = "/:/rate?key="+HttpEncode(key)+"&identifier="+identifier+"&rating="+rating
     m.ExecuteCommand(commandUrl)
 End Function
 
@@ -93,8 +92,7 @@ End Function
 Function issueCommand(commandPath)
     commandUrl = m.serverUrl + commandPath
     print "Executing command with full command URL:";commandUrl
-    request = CreateObject("roUrlTransfer")
-    request.SetUrl(commandUrl)
+    request = m.CreateRequest("", commandUrl)
     request.GetToString()
 End Function
 
