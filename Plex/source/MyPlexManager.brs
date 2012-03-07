@@ -30,17 +30,21 @@ Function createMyPlexManager() As Object
     obj.ExecuteCommand = mpExecuteCommand
     obj.ExecutePostCommand = mpExecutePostCommand
 
-    if RegExists("AuthToken", "myplex") then
-        obj.ValidateToken(RegRead("AuthToken", "myplex"))
-    else
-        obj.IsSignedIn = false
-    end if
+    obj.IsSignedIn = false
+    obj.CheckAuthentication = mpCheckAuthentication
 
     obj.TranscodeServer = invalid
     obj.CheckTranscodeServer = mpCheckTranscodeServer
 
     return obj
 End Function
+
+Sub mpCheckAuthentication()
+    if m.IsSignedIn then return
+    if RegExists("AuthToken", "myplex") then
+        m.ValidateToken(RegRead("AuthToken", "myplex"))
+    end if
+End Sub
 
 Function mpShowPinScreen() As Object
     port = CreateObject("roMessagePort")

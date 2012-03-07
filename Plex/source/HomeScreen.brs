@@ -67,6 +67,7 @@ Function refreshHomeScreen()
     m.RowNames = []
     m.PendingRequests = {}
     m.FirstLoad = true
+    m.FirstServer = true
 
     ' Get the list of servers that have been configured/discovered. Servers
     ' found through myPlex are retrieved separately. Once requests to the
@@ -99,6 +100,7 @@ Function refreshHomeScreen()
     end if
 
     ' Find any servers linked through myPlex
+    m.myplex.CheckAuthentication()
     if m.myplex.IsSignedIn then
         req = m.myplex.CreateRequest("", "/pms/servers")
         req.SetPort(m.Screen.Port)
@@ -218,17 +220,6 @@ Sub homeInitMiscRow(configuredServers)
     status.toLoad = CreateObject("roList")
     status.pendingRequests = 0
 
-    ' Universal search
-    univSearch = CreateObject("roAssociativeArray")
-    univSearch.sourceUrl = ""
-    univSearch.ContentType = "search"
-    univSearch.Key = "globalsearch"
-    univSearch.Title = "Search"
-    univSearch.ShortDescriptionLine1 = "Search"
-    univSearch.SDPosterURL = "file://pkg:/images/icon-search.jpg"
-    univSearch.HDPosterURL = "file://pkg:/images/icon-search.jpg"
-    status.content.Push(univSearch)
-
     '** Prefs
     prefs = CreateObject("roAssociativeArray")
     prefs.sourceUrl = ""
@@ -320,8 +311,15 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
         status.loadStatus = 1
         print "No additional requests to kick off for row"; loadingRow; ", pending request count:"; status.pendingRequests
     else
-        status.loadStatus = 2
-        m.Screen.OnDataLoaded(loadingRow, status.content, 0, status.content.Count())
+        ' Special case, if we try loading the Misc row and have no servers,
+        ' this is probably a first run scenario, try to be helpful.
+        if loadingRow = m.MiscRow AND RegRead("serverList", "servers") = invalid AND NOT m.myplex.IsSignedIn then
+            ' Give GDM discovery a chance...
+            m.Screen.MsgTimeout = 5000
+        else
+            status.loadStatus = 2
+            m.Screen.OnDataLoaded(loadingRow, status.content, 0, status.content.Count())
+        end if
     end if
 
     return extraRowsAlreadyLoaded
@@ -469,6 +467,8 @@ Function homeHandleMessage(msg) As Boolean
             print "URL: "; request.server.serverUrl
             print "Server supports audio transcoding: "; request.server.SupportsAudioTranscoding
 
+            status = m.contentArray[m.MiscRow]
+
             channelDir = CreateObject("roAssociativeArray")
             channelDir.server = request.server
             channelDir.sourceUrl = ""
@@ -482,9 +482,25 @@ Function homeHandleMessage(msg) As Boolean
             channelDir.Description = channelDir.ShortDescriptionLine2
             channelDir.SDPosterURL = "file://pkg:/images/plex.jpg"
             channelDir.HDPosterURL = "file://pkg:/images/plex.jpg"
-            status = m.contentArray[m.MiscRow]
             status.content.Push(channelDir)
-            m.Screen.OnDataLoaded(m.MiscRow, status.content, status.content.Count() - 1, 1)
+
+            if m.FirstServer then
+                m.FirstServer = false
+
+                ' Add universal search now that we have a server
+                univSearch = CreateObject("roAssociativeArray")
+                univSearch.sourceUrl = ""
+                univSearch.ContentType = "search"
+                univSearch.Key = "globalsearch"
+                univSearch.Title = "Search"
+                univSearch.ShortDescriptionLine1 = "Search"
+                univSearch.SDPosterURL = "file://pkg:/images/icon-search.jpg"
+                univSearch.HDPosterURL = "file://pkg:/images/icon-search.jpg"
+                status.content.Unshift(univSearch)
+                m.Screen.OnDataLoaded(m.MiscRow, status.content, 0, status.content.Count())
+            else
+                m.Screen.OnDataLoaded(m.MiscRow, status.content, status.content.Count() - 1, 1)
+            end if
         else if request.requestType = "servers" then
             for each serverElem in xml.Server
                 ' If we already have a server for this machine ID then disregard
@@ -534,6 +550,18 @@ Function homeHandleMessage(msg) As Boolean
             end if
 
             return true
+        end if
+    else if msg = invalid then
+        ' We timed out waiting for servers to load
+
+        m.Screen.MsgTimeout = 0
+
+        if RegRead("serverList", "servers") = invalid AND NOT m.myplex.IsSignedIn then
+            print "No servers and no myPlex, appears to be a first run"
+            ShowHelpScreen()
+            status = m.contentArray[m.MiscRow]
+            status.loadStatus = 2
+            m.Screen.OnDataLoaded(m.MiscRow, status.content, 0, status.content.Count())
         end if
     end if
 
@@ -598,4 +626,27 @@ Function getCurrentMyPlexLabel(myplex) As String
         return "Connect myPlex account"
     end if
 End Function
+
+Sub ShowHelpScreen()
+    ' TODO(schuyler): Finalize content
+    port = CreateObject("roMessagePort")
+    screen = CreateObject("roParagraphScreen")
+    screen.SetMessagePort(port)
+    screen.AddHeaderText("Welcome to Plex for Roku!")
+    screen.AddParagraph("Plex for Roku automatically connects to Plex Media Servers on your local network and also works with myPlex to connect to your published and shared servers.")
+    screen.AddParagraph("To download and install Plex Media Server on your computer, visit http://plexapp.com/getplex")
+    screen.AddParagraph("For more information on getting started, visit http://plexapp.com/roku")
+    screen.AddButton(1, "close")
+
+    screen.Show()
+
+    while true
+        msg = wait(0, port)
+        if type(msg) = "roParagraphScreenEvent" then
+            if msg.isButtonPressed() OR msg.isScreenClosed() then
+                exit while
+            end if
+        end if
+    end while
+End Sub
 
