@@ -73,6 +73,11 @@ Sub setVideoBasics(video, container, item)
         if item@index <> invalid then
             video.EpisodeNumber = item@index
             episode = "Episode " + item@index
+            if val(item@index) >= 10 then
+                episodeStr = "E" + item@index
+            else
+                episodeStr = "E0" + item@index
+            end if
         else
             video.EpisodeNumber = 0
             episode = "Episode ??"
@@ -80,11 +85,23 @@ Sub setVideoBasics(video, container, item)
         if item@parentIndex <> invalid then
             video.TitleSeason = video.Title + " Season " + item@parentIndex
             video.ShortDescriptionLine2 = "Season " + item@parentIndex + " - " + episode
+
+            if val(item@parentIndex) >= 10 then
+                seasonStr = "S" + item@parentIndex
+            else
+                seasonStr = "S0" + item@parentIndex
+            end if
         else
             video.ShortDescriptionLine2 = episode
         end if
         if video.ReleaseDate <> invalid then
             video.ShortDescriptionLine2 = video.ShortDescriptionLine2 + " - " + video.ReleaseDate
+        end if
+
+        if episodeStr <> invalid AND seasonStr <> invalid then
+            video.EpisodeStr = seasonStr + episodeStr
+            video.OrigReleaseDate = video.ReleaseDate
+            video.ReleaseDate = video.EpisodeStr
         end if
     end if
 
@@ -130,6 +147,8 @@ Sub setVideoDetails(video, container, videoItemXml)
     for each Category in videoItemXml.Genre
         video.Categories.Push(Category@tag)
     next
+
+    video.ReleaseDate = video.OrigReleaseDate
 
     ' TODO: review the logic here. Last media item wins. Is this what we want?
     ' TODO: comment out HD for now - does it fix the SD playing regression?
