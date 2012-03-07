@@ -46,8 +46,20 @@ Function createHomeScreen(viewController) As Object
     ' The home screen owns the myPlex manager
     obj.myplex = createMyPlexManager()
 
+    obj.AddPendingRequest = homeAddPendingRequest
+
     return obj
 End Function
+
+Sub homeAddPendingRequest(request)
+    id = request.request.GetIdentity().ToStr()
+    print "Adding pending request "; id; " -> "; request.request.GetUrl()
+
+    if m.PendingRequests.DoesExist(id) then
+        print Chr(10) + "!!! Duplicate pending request ID !!!" + Chr(10)
+    end if
+    m.PendingRequests[id] = request
+End Sub
 
 Function refreshHomeScreen()
     ClearPlexMediaServers()
@@ -75,7 +87,7 @@ Function refreshHomeScreen()
         obj.request = req
         obj.requestType = "server"
         obj.server = server
-        m.PendingRequests[str(req.GetIdentity())] = obj
+        m.AddPendingRequest(obj)
 
         PutPlexMediaServer(server)
     next
@@ -95,7 +107,7 @@ Function refreshHomeScreen()
         obj = {}
         obj.request = req
         obj.requestType = "servers"
-        m.PendingRequests[str(req.GetIdentity())] = obj
+        m.AddPendingRequest(obj)
     end if
 
     m.InitChannelsRow(configuredServers)
@@ -293,7 +305,7 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
             toLoad.request = req
             toLoad.row = loadingRow
             toLoad.requestType = firstOf(toLoad.requestType, "row")
-            m.PendingRequests[str(req.GetIdentity())] = toLoad
+            m.AddPendingRequest(toLoad)
 
             if req.AsyncGetToString() then
                 status.pendingRequests = status.pendingRequests + 1
@@ -317,10 +329,10 @@ End Function
 
 Function homeHandleMessage(msg) As Boolean
     if type(msg) = "roUrlEvent" AND msg.GetInt() = 1 then
-        id = msg.GetSourceIdentity()
-        request = m.PendingRequests[str(id)]
+        id = msg.GetSourceIdentity().ToStr()
+        request = m.PendingRequests[id]
         if request = invalid then return false
-        m.PendingRequests.Delete(str(id))
+        m.PendingRequests.Delete(id)
 
         if request.row <> invalid then
             status = m.contentArray[request.row]
@@ -553,7 +565,7 @@ Sub homeStartServerRequests(server)
     req.AsyncGetToString()
     sections.request = req
     m.contentArray[sections.row].pendingRequests = m.contentArray[sections.row].pendingRequests + 1
-    m.PendingRequests[str(req.GetIdentity())] = sections
+    m.AddPendingRequest(sections)
 
     channels = CreateObject("roAssociativeArray")
     channels.server = server
@@ -565,7 +577,7 @@ Sub homeStartServerRequests(server)
     req.AsyncGetToString()
     channels.request = req
     m.contentArray[channels.row].pendingRequests = m.contentArray[channels.row].pendingRequests + 1
-    m.PendingRequests[str(req.GetIdentity())] = channels
+    m.AddPendingRequest(channels)
 
     allChannels = CreateObject("roAssociativeArray")
     allChannels.Title = "More Channels"
@@ -586,7 +598,7 @@ Sub homeStartServerRequests(server)
     req.SetPort(m.Screen.Port)
     req.AsyncGetToString()
     serverInfo.request = req
-    m.PendingRequests[str(req.GetIdentity())] = serverInfo
+    m.AddPendingRequest(serverInfo)
 End Sub
 
 Function homeGetNames()
