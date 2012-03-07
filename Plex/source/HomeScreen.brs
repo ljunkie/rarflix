@@ -112,7 +112,7 @@ Function refreshHomeScreen()
 
     m.InitChannelsRow(configuredServers)
     m.InitSectionsRow(configuredServers)
-    'm.InitQueueRow()
+    m.InitQueueRow()
     m.InitSharedRow()
     m.InitMiscRow(configuredServers)
 
@@ -259,7 +259,7 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
     if m.FirstLoad then
         m.FirstLoad = false
         if NOT m.myplex.IsSignedIn then
-            'm.Screen.OnDataLoaded(m.QueueRow, [], 0, 0)
+            m.Screen.OnDataLoaded(m.QueueRow, [], 0, 0)
             m.Screen.OnDataLoaded(m.SharedSectionsRow, [], 0, 0)
         end if
 
