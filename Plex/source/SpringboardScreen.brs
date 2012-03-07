@@ -80,6 +80,9 @@ Function createAudioSpringboardScreen(context, index, viewController) As Object
     obj.HandleMessage   = audioHandleMessage
     obj.setPlayState(2) ' start playback when screen is opened
 
+    obj.progressTimer = CreateObject("roTimespan")
+    obj.progressOffset = 0
+
     return obj
 End Function
 

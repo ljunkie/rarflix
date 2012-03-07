@@ -57,9 +57,11 @@ Sub audioPlayer_newstate(newstate as integer)
     if newstate = 0 then            ' STOPPED
         m.audioPlayer.Stop()
         m.isPlayState = 0
+        m.MsgTimeout = 0
     else if newstate = 1 then        ' PAUSED
         m.audioPlayer.Pause()
         m.isPlayState = 1
+        m.MsgTimeout = 0
     else if newstate = 2 then        ' PLAYING
         if m.isplaystate = 0
             m.audioPlayer.play()    ' STOP->START
@@ -67,6 +69,7 @@ Sub audioPlayer_newstate(newstate as integer)
             m.audioPlayer.Resume()    ' PAUSE->START
         endif
         m.isPlayState = 2
+        m.MsgTimeout = 1000
     endif
 End Sub
 
@@ -82,6 +85,8 @@ Function audioHandleMessage(msg) As Boolean
         else if msg.isListItemSelected() then
             Print "Starting to play item"
             m.Refresh(true)
+            m.progressOffset = 0
+            m.progressTimer.Mark()
         else if msg.isStatusMessage() then
             'Print "Audio player status: "; msg.getMessage()
         else if msg.isFullResult() then
@@ -90,8 +95,17 @@ Function audioHandleMessage(msg) As Boolean
             Print "isPartialResult"
         else if msg.isPaused() then
             Print "Stream paused by user"
+            m.progressOffset = m.progressOffset + m.progressTimer.TotalSeconds()
         else if msg.isResumed() then
             Print "Stream resumed by user"
+            m.progressTimer.Mark()
+        end if
+        return true
+    else if msg = invalid then
+        if m.isPlayState = 2 AND m.metadata.Duration <> invalid then
+            m.Screen.SetProgressIndicator(m.progressOffset + m.progressTimer.TotalSeconds(), m.metadata.Duration)
+        else
+            m.MsgTimeout = 0
         end if
         return true
     else if msg.isRemoteKeyPressed() then
