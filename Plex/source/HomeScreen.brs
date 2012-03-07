@@ -316,6 +316,10 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
         if loadingRow = m.MiscRow AND RegRead("serverList", "servers") = invalid AND NOT m.myplex.IsSignedIn then
             ' Give GDM discovery a chance...
             m.Screen.MsgTimeout = 5000
+            m.LoadingFacade = CreateObject("roOneLineDialog")
+            m.LoadingFacade.SetTitle("Looking for Plex Media Servers...")
+            m.LoadingFacade.ShowBusyAnimation()
+            m.LoadingFacade.Show()
         else
             status.loadStatus = 2
             m.Screen.OnDataLoaded(loadingRow, status.content, 0, status.content.Count())
@@ -339,6 +343,12 @@ Function homeHandleMessage(msg) As Boolean
 
         if msg.GetResponseCode() <> 200 then
             print "Got a"; msg.GetResponseCode(); " response from "; request.request.GetUrl(); " - "; msg.GetFailureReason()
+
+            if request.row <> invalid AND status.loadStatus < 2 AND status.pendingRequests = 0 then
+                status.loadStatus = 2
+                m.Screen.OnDataLoaded(request.row, status.content, 0, status.content.Count())
+            end if
+
             return true
         else
             print "Got a 200 response from "; request.request.GetUrl(); " (type "; request.requestType; ", row"; request.row; ")"
@@ -487,6 +497,11 @@ Function homeHandleMessage(msg) As Boolean
             if m.FirstServer then
                 m.FirstServer = false
 
+                if m.LoadingFacade <> invalid then
+                    m.LoadingFacade.Close()
+                    m.LoadingFacade = invalid
+                end if
+
                 ' Add universal search now that we have a server
                 univSearch = CreateObject("roAssociativeArray")
                 univSearch.sourceUrl = ""
@@ -555,6 +570,10 @@ Function homeHandleMessage(msg) As Boolean
         ' We timed out waiting for servers to load
 
         m.Screen.MsgTimeout = 0
+        if m.LoadingFacade <> invalid then
+            m.LoadingFacade.Close()
+            m.LoadingFacade = invalid
+        end if
 
         if RegRead("serverList", "servers") = invalid AND NOT m.myplex.IsSignedIn then
             print "No servers and no myPlex, appears to be a first run"
