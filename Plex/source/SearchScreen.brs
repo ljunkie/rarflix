@@ -94,14 +94,9 @@ Function showSearchScreen() As Integer
                     url = m.Item.Key + "?query=" + HttpEncode(m.SearchTerm)
                 end if
             else
-                servers = GetOwnedPlexMediaServers()
-                if servers.Count() > 0 then
-                    server = servers[0]
-                    url = "/search?local=1&query=" + HttpEncode(m.SearchTerm)
-                    sourceUrl = ""
-                else
-                    server = invalid
-                end if
+                server = GetPrimaryServer()
+                url = "/search?local=1&query=" + HttpEncode(m.SearchTerm)
+                sourceUrl = ""
             end if
 
             if server <> invalid then
