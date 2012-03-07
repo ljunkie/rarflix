@@ -12,6 +12,7 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.name = pmsName
     pms.machineID = machineID
     pms.owned = true
+    pms.online = false
     pms.VideoScreen = constructVideoScreen
     pms.PluginVideoScreen = constructPluginVideoScreen
     pms.StopVideo = stopTranscode
@@ -131,10 +132,65 @@ Function xmlContent(sourceUrl, key) As Object
     return xmlResult
 End Function
 
-Function IndirectMediaXml(server, originalKey) As Object
-    httpRequest = server.CreateRequest("", originalKey)
-    print "Fetching content from server at query URL:"; httpRequest.GetUrl()
-    response = GetToStringWithTimeout(httpRequest, 60)
+Function IndirectMediaXml(server, originalKey, postURL) As Object
+    if postURL <> invalid then
+        crlf = Chr(13) + Chr(10)
+
+        print "Fetching content for indirect video POST URL: "; postURL
+        httpRequest = server.CreateRequest("", postURL)
+        if httpRequest.AsyncGetToString() then
+            while true
+                msg = wait(60000, httpRequest.GetPort())
+                if msg = invalid then
+                    httpRequest.AsyncCancel()
+                    exit while
+                else if type(msg) = "roUrlEvent" AND msg.GetInt() = 1 then
+                    postBody = box("")
+                    for each header in msg.GetResponseHeadersArray()
+                        for each name in header
+                            headerStr = name + ": " + header[name] + crlf
+                            postBody.AppendString(headerStr, Len(headerStr))
+                        next
+                    next
+                    postBody.AppendString(crlf, 2)
+
+                    getBody = msg.GetString()
+                    postBody.AppendString(getBody, len(getBody))
+
+                    exit while
+                end if
+            end while
+        end if
+
+        if postBody <> invalid then
+            print "Retrieved data from postURL, posting to resolve container"
+            if instr(1, originalKey, "?") > 0 then
+                url = originalKey + "&postURL=" + HttpEncode(postURL)
+            else
+                url = originalKey + "?postURL=" + HttpEncode(postURL)
+            end if
+            httpRequest = server.CreateRequest("", url)
+            if httpRequest.AsyncPostFromString(postBody) then
+                while true
+                    msg = wait(60000, httpRequest.GetPort())
+                    if msg = invalid then
+                        httpRequest.AsyncCancel()
+                        exit while
+                    else if type(msg) = "roUrlEvent" AND msg.GetInt() = 1 then
+                        response = msg.GetString()
+                        exit while
+                    end if
+                end while
+            end if
+        else
+            print "Failed to retrieve data from postURL"
+        end if
+    else
+        httpRequest = server.CreateRequest("", originalKey)
+        print "Fetching content from server at query URL:"; httpRequest.GetUrl()
+        response = GetToStringWithTimeout(httpRequest, 60)
+    end if
+
     xml=CreateObject("roXMLElement")
     if not xml.Parse(response) then
         print "Can't parse feed:";response
@@ -207,12 +263,15 @@ Function constructTranscodedVideoItem(item) As Object
         ' Plugin video, possibly indirect
         mediaItem = item.preferredMediaItem
         mediaKey = mediaItem.preferredPart.key
+        postURL = mediaItem.preferredPart.postURL
         videoRes = mediaItem.videoresolution
         if mediaItem.indirect then
-            mediaKeyXml = IndirectMediaXml(m, mediaKey)
+            mediaKeyXml = IndirectMediaXml(m, mediaKey, postURL)
             mediaKey = mediaKeyXml.Video.Media.Part[0]@key
             httpCookies = firstOf(mediaKeyXml@httpCookies, "")
             userAgent = firstOf(mediaKeyXml@userAgent, "")
+            print "Indirect video item, cookies: "; httpCookies
+            print "Indirect video item, UA: "; userAgent
         end if
     end if
 

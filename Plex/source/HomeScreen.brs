@@ -330,6 +330,8 @@ Function homeHandleMessage(msg) As Boolean
         if msg.GetResponseCode() <> 200 then
             print "Got a"; msg.GetResponseCode(); " response from "; request.request.GetUrl(); " - "; msg.GetFailureReason()
             return true
+        else
+            print "Got a 200 response from "; request.request.GetUrl(); " (type "; request.requestType; ", row"; request.row; ")"
         end if
 
         xml = CreateObject("roXMLElement")
@@ -459,6 +461,7 @@ Function homeHandleMessage(msg) As Boolean
             request.server.name = xml@friendlyName
             request.server.machineID = xml@machineIdentifier
             request.server.owned = true
+            request.server.online = true
             if xml@version <> invalid then
                 request.server.SupportsAudioTranscoding = ServerVersionCompare(xml@version, [0, 9, 6])
             end if
@@ -494,11 +497,7 @@ Function homeHandleMessage(msg) As Boolean
 
                     if serverElem@owned = "1" then
                         server.name = serverElem@name
-
-                        ' The server is owned, but it might not be online.
-                        ' Don't set this yet, it will be set correctly if the
-                        ' request to / gets a response.
-                        server.owned = false
+                        server.owned = true
 
                         ' An owned server that we didn't have configured, request
                         ' its sections and channels now.

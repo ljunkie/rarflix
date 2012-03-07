@@ -175,6 +175,7 @@ Function ParseVideoMedia(videoItem) As Object
 			part = CreateObject("roAssociativeArray")
 			part.id = MediaPart@id
 			part.key = MediaPart@key
+            part.postURL = MediaPart@postURL
 			part.streams = CreateObject("roArray", 5, true)
 			for each StreamItem in MediaPart.Stream
 				stream = CreateObject("roAssociativeArray")
