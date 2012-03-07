@@ -79,6 +79,12 @@ Function audioHandleMessage(msg) As Boolean
     if type(msg) = "roAudioPlayerEvent" then
         if msg.isRequestSucceeded() then
             Print "Playback of single song completed"
+
+            if m.metadata.ratingKey <> invalid then
+                print "Scrobbling audio track -> "; m.metadata.ratingKey
+                server.Scrobble(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier)
+            end if
+
             m.GotoNextItem()
         else if msg.isRequestFailed() then
             Print "Playback failed"
