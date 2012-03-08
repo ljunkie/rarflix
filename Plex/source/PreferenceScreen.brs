@@ -469,7 +469,7 @@ Function showQualityScreen()
 	ls = CreateObject("roListScreen")
 	ls.SetMessagePort(port)
 	ls.SetTitle("Quality Settings") 
-	ls.setHeader("Higher settings produce better video quality but require more network bandwidth.")
+	ls.setHeader("Higher settings produce better video quality but require more" + chr(10) + "network bandwidth.")
 	
 	qualities = CreateObject("roArray", 6 , true)
 	
