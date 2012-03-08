@@ -235,9 +235,12 @@ Function mpTranscodedImage(queryUrl, imagePath, width, height) As String
             url = url + "&X-Plex-Token=" + m.TranscodeServer.AccessToken
         end if
         return url
+    else if Left(imagePath, 5) = "https" then
+        return "http" +  Mid(imagePath, 6, len(imagePath) - 5)
+    else if Left(imagePath, 4) = "http" then
+        return imagePath
     else
-        ' TODO(schuyler): Is it worth returning the raw URL? Might work for
-        ' queue items, among others.
+        print "Don't know how to transcode image: "; queryUrl; ", "; imagePath
         return ""
     end if
 End Function
