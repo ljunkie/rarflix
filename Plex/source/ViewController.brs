@@ -205,6 +205,10 @@ Sub vcPopScreen(screen)
     for i = 0 to screen.NumBreadcrumbs - 1
         m.breadcrumbs.Pop()
     next
+
+    if m.screens.Count() = 0 then
+        m.Home.CreateQueueRequests(true)
+    end if
 End Sub
 
 Sub vcShowHomeScreen()

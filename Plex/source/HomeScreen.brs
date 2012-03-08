@@ -45,6 +45,7 @@ Function createHomeScreen(viewController) As Object
     obj.CreateRow = homeCreateRow
     obj.CreateServerRequests = homeCreateServerRequests
     obj.CreateMyPlexRequests = homeCreateMyPlexRequests
+    obj.CreateQueueRequests = homeCreateQueueRequests
     obj.RemoveFromRowIf = homeRemoveFromRowIf
 
     obj.contentArray = []
@@ -160,17 +161,23 @@ Sub homeCreateMyPlexRequests(startRequests As Boolean)
     m.AddPendingRequest(servers)
 
     ' Queue request
-    queue = CreateObject("roAssociativeArray")
-    queue.server = m.myplex
-    queue.requestType = "queue"
-    queue.key = "/pms/playlists/queue/unwatched"
-    m.AddOrStartRequest(queue, m.QueueRow, startRequests)
+    m.CreateQueueRequests(startRequests)
 
     ' Shared sections request
     shared = CreateObject("roAssociativeArray")
     shared.server = m.myplex
     shared.key = "/pms/system/library/sections"
     m.AddOrStartRequest(shared, m.SharedSectionsRow, startRequests)
+End Sub
+
+Sub homeCreateQueueRequests(startRequests As Boolean)
+    if NOT m.myplex.IsSignedIn then return
+
+    queue = CreateObject("roAssociativeArray")
+    queue.server = m.myplex
+    queue.requestType = "queue"
+    queue.key = "/pms/playlists/queue/unwatched"
+    m.AddOrStartRequest(queue, m.QueueRow, startRequests)
 End Sub
 
 Sub homeAddOrStartRequest(request As Object, row As Integer, startRequests As Boolean)
@@ -238,6 +245,9 @@ Sub refreshHomeScreen(changes)
             m.RemoveFromRowIf(m.QueueRow, AlwaysTrue)
             m.RemoveFromRowIf(m.SharedSectionsRow, AlwaysTrue)
         end if
+    else
+        ' Always refresh the queue when we get back from the prefs screen
+        m.CreateQueueRequests(true)
     end if
 
     ' If a server was added or removed, we need to update the sections,
@@ -504,7 +514,7 @@ Function homeHandleMessage(msg) As Boolean
             response.sourceUrl = request.request.GetUrl()
             container = createPlexContainerForXml(response)
 
-            status.content.Append(container.GetMetadata())
+            status.content = container.GetMetadata()
 
             if request.item <> invalid then
                 status.content.Push(request.item)
