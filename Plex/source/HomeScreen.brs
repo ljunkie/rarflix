@@ -486,7 +486,7 @@ Function homeHandleMessage(msg) As Boolean
                     ' added as necessary by the screen, but we can't do that on the
                     ' home screen because we're showing content from multiple
                     ' servers.
-                    if item.SDPosterURL <> invalid AND item.server <> invalid AND item.server.AccessToken <> invalid then
+                    if item.SDPosterURL <> invalid AND Left(item.SDPosterURL, 4) = "http" AND item.server <> invalid AND item.server.AccessToken <> invalid then
                         item.SDPosterURL = item.SDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
                         item.HDPosterURL = item.HDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
                     end if
