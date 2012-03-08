@@ -45,6 +45,7 @@ Function createHomeScreen(viewController) As Object
     obj.CreateRow = homeCreateRow
     obj.CreateServerRequests = homeCreateServerRequests
     obj.CreateMyPlexRequests = homeCreateMyPlexRequests
+    obj.RemoveFromRowIf = homeRemoveFromRowIf
 
     obj.contentArray = []
     obj.RowNames = []
@@ -201,6 +202,25 @@ Sub homeAddPendingRequest(request)
     m.PendingRequests[id] = request
 End Sub
 
+Function IsMyPlexServer(item) As Boolean
+    return (item.server <> invalid AND NOT item.server.IsConfigured)
+end function
+
+Function AlwaysTrue(item) As Boolean
+    return true
+End Function
+
+Function IsInvalidServer(item) As Boolean
+    server = item.server
+    if server <> invalid AND server.IsConfigured AND server.machineID <> invalid then
+        return (GetPlexMediaServer(server.machineID) = invalid)
+    else if item.key = "globalsearch"
+        return (GetPrimaryServer() = invalid)
+    else
+        return false
+    end if
+end function
+
 Sub refreshHomeScreen(changes)
     PrintAA(changes)
 
@@ -208,21 +228,70 @@ Sub refreshHomeScreen(changes)
     ' and any owned servers that were discovered through myPlex.
     if changes.DoesExist("myplex") then
         print "myPlex status changed"
+
+        if m.myplex.IsSignedIn then
+            m.CreateMyPlexRequests(true)
+        else
+            m.RemoveFromRowIf(m.SectionsRow, IsMyPlexServer)
+            m.RemoveFromRowIf(m.ChannelsRow, IsMyPlexServer)
+            m.RemoveFromRowIf(m.MiscRow, IsMyPlexServer)
+            m.RemoveFromRowIf(m.QueueRow, AlwaysTrue)
+            m.RemoveFromRowIf(m.SharedSectionsRow, AlwaysTrue)
+        end if
     end if
 
     ' If a server was added or removed, we need to update the sections,
     ' channels, and channel directories.
     if changes.DoesExist("servers") then
+        for each server in PlexMediaServers()
+            if server.machineID <> invalid AND GetPlexMediaServer(server.machineID) = invalid then
+                PutPlexMediaServer(server)
+            end if
+        next
+
         servers = changes["servers"]
+        didRemove = false
         for each machineID in servers
             print "Server "; machineID; " was "; servers[machineID]
             if servers[machineID] = "removed" then
+                DeletePlexMediaServer(machineID)
+                didRemove = true
             else
+                server = GetPlexMediaServer(machineID)
+                if server <> invalid then
+                    m.CreateServerRequests(server, true)
+                end if
             end if
         next
+
+        if didRemove then
+            m.RemoveFromRowIf(m.SectionsRow, IsInvalidServer)
+            m.RemoveFromRowIf(m.ChannelsRow, IsInvalidServer)
+            m.RemoveFromRowIf(m.MiscRow, IsInvalidServer)
+        end if
     end if
 
     ' We don't really care about anything else when it comes to refreshing the home screen.
+End Sub
+
+Sub homeRemoveFromRowIf(row, predicate)
+    newContent = []
+    modified = false
+    status = m.contentArray[row]
+
+    for each item in status.content
+        if predicate(item) then
+            modified = true
+        else
+            newContent.Push(item)
+        end if
+    next
+
+    if modified then
+        print "Removed"; (status.content.Count() - newContent.Count()); " items from row"; row
+        status.content = newContent
+        m.Screen.OnDataLoaded(row, newContent, 0, newContent.Count())
+    end if
 End Sub
 
 Function showHomeScreen() As Integer
@@ -541,6 +610,7 @@ Function homeHandleMessage(msg) As Boolean
                 AddServer(serverInfo.Name, serverInfo.Url, serverInfo.MachineID)
                 server = newPlexMediaServer(serverInfo.Url, serverInfo.Name, serverInfo.MachineID)
                 server.owned = true
+                server.IsConfigured = true
                 PutPlexMediaServer(server)
                 m.CreateServerRequests(server, true)
             end if

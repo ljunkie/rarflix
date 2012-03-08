@@ -35,7 +35,6 @@ End Function
 
 Function RemoveAllServers()
     RegDelete("serverList", "servers")
-    ClearPlexMediaServers()
 End Function
 
 Function RemoveServer(index) 
@@ -52,7 +51,6 @@ Function RemoveServer(index)
             name = serverDetails[1]
             if serverDetails.Count() > 2 then
                 machineID = serverDetails[2]
-                DeletePlexMediaServer(machineID)
             else
                 machineID = invalid
             end if
@@ -184,6 +182,10 @@ Function DiscoverPlexMediaServers()
                     print "GDM discovery ignoring already configured server"
                 else
                     AddServer(server.Name, server.Url, server.MachineID)
+                    pms = newPlexMediaServer(server.Url, server.Name, server.MachineID)
+                    pms.owned = true
+                    pms.IsConfigured = true
+                    PutPlexMediaServer(pms)
                     found = found + 1
                 end if
             end if
