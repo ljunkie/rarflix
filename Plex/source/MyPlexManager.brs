@@ -195,7 +195,10 @@ Function mpCheckTranscodeServer(showError=false As Boolean) As Boolean
 
     if m.TranscodeServer = invalid then
         if showError then
-            ' TODO(schuyler): Show a friendly dialog to user. This operation requires the help of a Plex Media Server, blah blah blah
+            dlg = createBaseDialog()
+            dlg.Title = "Unsupported Content"
+            dlg.Text = "Your Roku needs a bit of help to play this. This video is in a format that your Roku doesn't understand. To play it, you need to connect to your Plex Media Server, which can convert it in real time to a more friendly format."
+            dlg.Show()
         end if
         print "myPlex operation failed due to lack of primary server"
         return false
@@ -204,14 +207,14 @@ Function mpCheckTranscodeServer(showError=false As Boolean) As Boolean
     return true
 End Function
 
-Function mpVideoScreen(metadata, mediaData, StartTime As Integer) As Object
-    if NOT m.CheckTranscodeServer() then return {}
+Function mpVideoScreen(metadata, mediaData, StartTime As Integer)
+    if NOT m.CheckTranscodeServer(true) then return invalid
 
     return m.TranscodeServer.VideoScreen(metadata, mediaData, StartTime)
 End Function
 
-Function mpPluginVideoScreen(metadata) As Object
-    if NOT m.CheckTranscodeServer() then return {}
+Function mpPluginVideoScreen(metadata)
+    if NOT m.CheckTranscodeServer(true) then return invalid
 
     return m.TranscodeServer.PluginVideoScreen(metadata)
 End Function

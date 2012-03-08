@@ -209,7 +209,7 @@ Function DirectMediaXml(server, queryUrl) As Object
     return xml
 End Function
 
-Function constructPluginVideoScreen(metadata) As Object
+Function constructPluginVideoScreen(metadata)
     print "Constructing plugin video screen for ";metadata.key
     'printAA(metadata)
     videoclip = m.ConstructTranscodedVideoItem(metadata)
@@ -223,7 +223,7 @@ Function constructPluginVideoScreen(metadata) As Object
 End Function
 
 '* TODO: this assumes one part media. Implement multi-part at some point.
-Function constructVideoScreen(metadata, mediaData, StartTime As Integer) As Object
+Function constructVideoScreen(metadata, mediaData, StartTime As Integer)
     mediaPart = mediaData.preferredPart
     mediaKey = mediaPart.key
     print "Constructing video screen for ";mediaKey

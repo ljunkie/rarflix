@@ -143,25 +143,27 @@ Function videoHandleMessage(msg) As Boolean
     return false
 End Function
 
-Function playVideo(server, metadata, mediaData, seekValue) 
+Sub playVideo(server, metadata, mediaData, seekValue) 
 	print "MediaPlayer::playVideo: Displaying video: ";metadata.title
 	seconds = int(seekValue/1000)
 	
 	video = server.VideoScreen(metadata, mediaData, seconds)
+    if video = invalid then return
 	video.SetPositionNotificationPeriod(5)
 	video.show()
 
     videoMessageLoop(server, metadata, video.GetMessagePort())
-End Function
+End Sub
 
-Function playPluginVideo(server, metadata) 
+Sub playPluginVideo(server, metadata) 
 	print "MediaPlayer::playPluginVideo: Displaying plugin video: ";metadata.title
 	video = server.PluginVideoScreen(metadata)
+    if video = invalid then return
     video.SetPositionNotificationPeriod(5)
 	video.show()
 
     videoMessageLoop(server, metadata, video.GetMessagePort())
-End Function
+End Sub
 
 Sub videoMessageLoop(server, metadata, messagePort)
     scrobbleThreshold = 0.90
