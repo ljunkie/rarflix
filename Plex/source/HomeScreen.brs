@@ -36,20 +36,160 @@ Function createHomeScreen(viewController) As Object
     obj.GetNames = homeGetNames
     obj.HandleMessage = homeHandleMessage
 
-    obj.StartServerRequests = homeStartServerRequests
-    obj.InitSectionsRow = homeInitSectionsRow
-    obj.InitChannelsRow = homeInitChannelsRow
-    obj.InitQueueRow = homeInitQueueRow
-    obj.InitSharedRow = homeInitSharedRow
-    obj.InitMiscRow = homeInitMiscRow
-
     ' The home screen owns the myPlex manager
     obj.myplex = createMyPlexManager()
 
     obj.AddPendingRequest = homeAddPendingRequest
+    obj.AddOrStartRequest = homeAddOrStartRequest
+
+    obj.CreateRow = homeCreateRow
+    obj.CreateServerRequests = homeCreateServerRequests
+    obj.CreateMyPlexRequests = homeCreateMyPlexRequests
+
+    obj.contentArray = []
+    obj.RowNames = []
+    obj.PendingRequests = {}
+    obj.FirstLoad = true
+    obj.FirstServer = true
+
+    obj.ChannelsRow = obj.CreateRow("Channels")
+    obj.SectionsRow = obj.CreateRow("Library Sections")
+    obj.QueueRow = obj.CreateRow("Queue")
+    obj.SharedSectionsRow = obj.CreateRow("Shared Library Sections")
+    obj.MiscRow = obj.CreateRow("Miscellaneous")
+
+    ' Kick off an asynchronous GDM discover.
+    obj.GDM = createGDMDiscovery(obj.Screen.Port)
+    if obj.GDM = invalid then
+        print "Failed to create GDM discovery object"
+    end if
+
+    configuredServers = PlexMediaServers()
+    print "Setting up home screen content, server count:"; configuredServers.Count()
+    for each server in configuredServers
+        obj.CreateServerRequests(server, false)
+    next
+
+    obj.myplex.CheckAuthentication()
+    if obj.myplex.IsSignedIn then
+        obj.CreateMyPlexRequests(false)
+    end if
+
+    '** Prefs
+    prefs = CreateObject("roAssociativeArray")
+    prefs.sourceUrl = ""
+    prefs.ContentType = "prefs"
+    prefs.Key = "globalprefs"
+    prefs.Title = "Preferences"
+    prefs.ShortDescriptionLine1 = "Preferences"
+    prefs.SDPosterURL = "file://pkg:/images/prefs.jpg"
+    prefs.HDPosterURL = "file://pkg:/images/prefs.jpg"
+    obj.contentArray[obj.MiscRow].content.Push(prefs)
 
     return obj
 End Function
+
+Function homeCreateRow(name) As Integer
+    index = m.RowNames.Count()
+
+    status = CreateObject("roAssociativeArray")
+    status.content = []
+    status.loadStatus = 0
+    status.toLoad = CreateObject("roList")
+    status.pendingRequests = 0
+
+    m.contentArray.Push(status)
+    m.RowNames.Push(name)
+
+    return index
+End Function
+
+Sub homeCreateServerRequests(server As Object, startRequests As Boolean)
+    PutPlexMediaServer(server)
+
+    ' Request server details (ensure we have a machine ID, check transcoding
+    ' support, etc.)
+    req = server.CreateRequest("", "/")
+    req.SetPort(m.Screen.Port)
+    req.AsyncGetToString()
+    serverInfo = CreateObject("roAssociativeArray")
+    serverInfo.request = req
+    serverInfo.requestType = "server"
+    serverInfo.server = server
+    m.AddPendingRequest(serverInfo)
+
+    ' Request sections
+    sections = CreateObject("roAssociativeArray")
+    sections.server = server
+    sections.key = "/library/sections"
+    m.AddOrStartRequest(sections, m.SectionsRow, startRequests)
+
+    ' Request recently used channels
+    channels = CreateObject("roAssociativeArray")
+    channels.server = server
+    channels.key = "/channels/recentlyViewed"
+
+    allChannels = CreateObject("roAssociativeArray")
+    allChannels.Title = "More Channels"
+    if AreMultipleValidatedServers() then
+        allChannels.ShortDescriptionLine2 = "All channels on " + server.name
+    else
+        allChannels.ShortDescriptionLine2 = "All channels"
+    end if
+    allChannels.Description = allChannels.ShortDescriptionLine2
+    allChannels.server = server
+    allChannels.sourceUrl = ""
+    allChannels.Key = "/channels/all"
+    allChannels.SDPosterURL = "file://pkg:/images/plex.jpg"
+    allChannels.HDPosterURL = "file://pkg:/images/plex.jpg"
+    channels.item = allChannels
+    m.AddOrStartRequest(channels, m.ChannelsRow, startRequests)
+End Sub
+
+Sub homeCreateMyPlexRequests(startRequests As Boolean)
+    if NOT m.myplex.IsSignedIn then return
+
+    ' Find any servers linked through myPlex
+    req = m.myplex.CreateRequest("", "/pms/servers")
+    req.SetPort(m.Screen.Port)
+    req.AsyncGetToString()
+    servers = CreateObject("roAssociativeArray")
+    servers.request = req
+    servers.requestType = "servers"
+    m.AddPendingRequest(servers)
+
+    ' Queue request
+    queue = CreateObject("roAssociativeArray")
+    queue.server = m.myplex
+    queue.requestType = "queue"
+    queue.key = "/pms/playlists/queue/unwatched"
+    m.AddOrStartRequest(queue, m.QueueRow, startRequests)
+
+    ' Shared sections request
+    shared = CreateObject("roAssociativeArray")
+    shared.server = m.myplex
+    shared.key = "/pms/system/library/sections"
+    m.AddOrStartRequest(shared, m.SharedSectionsRow, startRequests)
+End Sub
+
+Sub homeAddOrStartRequest(request As Object, row As Integer, startRequests As Boolean)
+    status = m.contentArray[row]
+
+    if startRequests then
+        httpRequest = request.server.CreateRequest("", request.key)
+        httpRequest.SetPort(m.Screen.Port)
+        request.request = httpRequest
+        request.row = row
+        request.requestType = firstOf(request.requestType, "row")
+
+        if httpRequest.AsyncGetToString() then
+            m.AddPendingRequest(request)
+            status.pendingRequests = status.pendingRequests + 1
+        end if
+    else
+        status.toLoad.AddTail(request)
+    end if
+End Sub
 
 Sub homeAddPendingRequest(request)
     id = request.request.GetIdentity().ToStr()
@@ -61,181 +201,10 @@ Sub homeAddPendingRequest(request)
     m.PendingRequests[id] = request
 End Sub
 
-Function refreshHomeScreen()
-    ClearPlexMediaServers()
-    m.contentArray = []
-    m.RowNames = []
-    m.PendingRequests = {}
-    m.FirstLoad = true
-    m.FirstServer = true
-
-    ' Get the list of servers that have been configured/discovered. Servers
-    ' found through myPlex are retrieved separately. Once requests to the
-    ' servers complete, the full list of validated servers indexed by machine
-    ' ID is maintained by the ServerManager.
-    configuredServers = PlexMediaServers()
-
-    print "Setting up home screen content, server count:"; configuredServers.Count()
-
-    ' Request more information about all of our configured servers, to make
-    ' sure we get machine IDs and friendly names.
-    for each server in configuredServers
-        req = server.CreateRequest("", "/")
-        req.SetPort(m.Screen.Port)
-        req.AsyncGetToString()
-
-        obj = {}
-        obj.request = req
-        obj.requestType = "server"
-        obj.server = server
-        m.AddPendingRequest(obj)
-
-        PutPlexMediaServer(server)
-    next
-
-    ' Kick off an asynchronous GDM discover.
-    m.GDM = createGDMDiscovery(m.Screen.Port)
-    if m.GDM = invalid then
-        print "Failed to create GDM discovery object"
-    end if
-
-    ' Find any servers linked through myPlex
-    m.myplex.CheckAuthentication()
-    if m.myplex.IsSignedIn then
-        req = m.myplex.CreateRequest("", "/pms/servers")
-        req.SetPort(m.Screen.Port)
-        req.AsyncGetToString()
-
-        obj = {}
-        obj.request = req
-        obj.requestType = "servers"
-        m.AddPendingRequest(obj)
-    end if
-
-    m.InitChannelsRow(configuredServers)
-    m.InitSectionsRow(configuredServers)
-    m.InitQueueRow()
-    m.InitSharedRow()
-    m.InitMiscRow(configuredServers)
-
-    if type(m.Screen.Screen) = "roGridScreen" then
-        m.Screen.Screen.SetFocusedListItem(m.SectionsRow, 0)
-    else
-        m.Screen.Screen.SetFocusedListItem(m.SectionsRow)
-    end if
-End Function
-
-Sub homeInitSectionsRow(configuredServers)
-    m.SectionsRow = m.contentArray.Count()
-    status = CreateObject("roAssociativeArray")
-    status.content = []
-    status.loadStatus = 0
-    status.toLoad = CreateObject("roList")
-    status.pendingRequests = 0
-    for each server in configuredServers
-        obj = CreateObject("roAssociativeArray")
-        obj.server = server
-        obj.key = "/library/sections"
-        status.toLoad.AddTail(obj)
-    next
-    m.contentArray.Push(status)
-    m.RowNames.Push("Library Sections")
-End Sub
-
-Sub homeInitChannelsRow(configuredServers)
-    m.ChannelsRow = m.contentArray.Count()
-    status = CreateObject("roAssociativeArray")
-    status.content = []
-    status.loadStatus = 0
-    status.toLoad = CreateObject("roList")
-    status.pendingRequests = 0
-    for each server in configuredServers
-        obj = CreateObject("roAssociativeArray")
-        obj.server = server
-        obj.key = "/channels/recentlyViewed"
-
-        allChannels = CreateObject("roAssociativeArray")
-        allChannels.Title = "More Channels"
-        if configuredServers.Count() > 1 then
-            allChannels.ShortDescriptionLine2 = "All channels on " + server.name
-        else
-            allChannels.ShortDescriptionLine2 = "All channels"
-        end if
-        allChannels.Description = allChannels.ShortDescriptionLine2
-        allChannels.server = server
-        allChannels.sourceUrl = ""
-        allChannels.Key = "/channels/all"
-        'allChannels.contentType = ...
-        allChannels.SDPosterURL = "file://pkg:/images/plex.jpg"
-        allChannels.HDPosterURL = "file://pkg:/images/plex.jpg"
-        obj.item = allChannels
-
-        status.toLoad.AddTail(obj)
-    next
-    m.contentArray.Push(status)
-    m.RowNames.Push("Channels")
-End Sub
-
-Sub homeInitQueueRow()
-    m.QueueRow = m.contentArray.Count()
-    status = CreateObject("roAssociativeArray")
-    status.content = []
-    status.loadStatus = 0
-    status.toLoad = CreateObject("roList")
-    status.pendingRequests = 0
-    if m.myplex.IsSignedIn then
-        obj = CreateObject("roAssociativeArray")
-        obj.server = m.myplex
-        obj.requestType = "queue"
-        obj.key = "/pms/playlists/queue/unwatched"
-        status.toLoad.AddTail(obj)
-    end if
-    m.contentArray.Push(status)
-    m.RowNames.Push("Queue")
-End Sub
-
-Sub homeInitSharedRow()
-    m.SharedSectionsRow = m.contentArray.Count()
-    status = CreateObject("roAssociativeArray")
-    status.content = []
-    status.loadStatus = 0
-    status.toLoad = CreateObject("roList")
-    status.pendingRequests = 0
-    if m.myplex.IsSignedIn then
-        obj = CreateObject("roAssociativeArray")
-        obj.server = m.myplex
-        obj.key = "/pms/system/library/sections"
-        status.toLoad.AddTail(obj)
-    end if
-    m.contentArray.Push(status)
-    m.RowNames.Push("Shared Library Sections")
-End Sub
-
-Sub homeInitMiscRow(configuredServers)
-    m.MiscRow = m.contentArray.Count()
-    m.RowNames.Push("Miscellaneous")
-    status = CreateObject("roAssociativeArray")
-    status.content = []
-    status.loadStatus = 0
-    status.toLoad = CreateObject("roList")
-    status.pendingRequests = 0
-
-    '** Prefs
-    prefs = CreateObject("roAssociativeArray")
-    prefs.sourceUrl = ""
-    prefs.ContentType = "prefs"
-    prefs.Key = "globalprefs"
-    prefs.Title = "Preferences"
-    prefs.ShortDescriptionLine1 = "Preferences"
-    prefs.SDPosterURL = "file://pkg:/images/prefs.jpg"
-    prefs.HDPosterURL = "file://pkg:/images/prefs.jpg"
-    status.content.Push(prefs)
-
-    m.contentArray.Push(status)
+Sub refreshHomeScreen()
 End Sub
 
 Function showHomeScreen() As Integer
-    m.Refresh()
     ret = m.Screen.Show()
 
     for each id in m.PendingRequests
@@ -289,20 +258,11 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
     if status.toLoad.Count() > 0 then
         status.loadStatus = 1
 
-        numRequests = 0
+        origCount = status.pendingRequests
         for each toLoad in status.toLoad
-            req = toLoad.server.CreateRequest("", toLoad.key)
-            req.SetPort(m.Screen.Port)
-            toLoad.request = req
-            toLoad.row = loadingRow
-            toLoad.requestType = firstOf(toLoad.requestType, "row")
-            m.AddPendingRequest(toLoad)
-
-            if req.AsyncGetToString() then
-                status.pendingRequests = status.pendingRequests + 1
-                numRequests = numRequests + 1
-            end if
+            m.AddOrStartRequest(toLoad, loadingRow, true)
         next
+        numRequests = status.pendingRequests - origCount
 
         status.toLoad.Clear()
 
@@ -530,7 +490,7 @@ Function homeHandleMessage(msg) As Boolean
 
                         ' An owned server that we didn't have configured, request
                         ' its sections and channels now.
-                        m.StartServerRequests(server)
+                        m.CreateServerRequests(server, true)
                     else
                         server.name = serverElem@name + " (shared by " + serverElem@sourceTitle + ")"
                         server.owned = false
@@ -561,7 +521,7 @@ Function homeHandleMessage(msg) As Boolean
                 server = newPlexMediaServer(serverInfo.Url, serverInfo.Name, serverInfo.MachineID)
                 server.owned = true
                 PutPlexMediaServer(server)
-                m.StartServerRequests(server)
+                m.CreateServerRequests(server, true)
             end if
 
             return true
@@ -586,53 +546,6 @@ Function homeHandleMessage(msg) As Boolean
 
     return false
 End Function
-
-Sub homeStartServerRequests(server)
-    sections = CreateObject("roAssociativeArray")
-    sections.server = server
-    sections.key = "/library/sections"
-    sections.row = m.SectionsRow
-    sections.requestType = "row"
-    req = server.CreateRequest("", sections.key)
-    req.SetPort(m.Screen.Port)
-    req.AsyncGetToString()
-    sections.request = req
-    m.contentArray[sections.row].pendingRequests = m.contentArray[sections.row].pendingRequests + 1
-    m.AddPendingRequest(sections)
-
-    channels = CreateObject("roAssociativeArray")
-    channels.server = server
-    channels.key = "/channels/recentlyViewed"
-    channels.row = m.ChannelsRow
-    channels.requestType = "row"
-    req = server.CreateRequest("", channels.key)
-    req.SetPort(m.Screen.Port)
-    req.AsyncGetToString()
-    channels.request = req
-    m.contentArray[channels.row].pendingRequests = m.contentArray[channels.row].pendingRequests + 1
-    m.AddPendingRequest(channels)
-
-    allChannels = CreateObject("roAssociativeArray")
-    allChannels.Title = "More Channels"
-    allChannels.ShortDescriptionLine2 = "All channels on " + server.name
-    allChannels.Description = allChannels.ShortDescriptionLine2
-    allChannels.server = server
-    allChannels.sourceUrl = ""
-    allChannels.Key = "/channels/all"
-    allChannels.SDPosterURL = "file://pkg:/images/plex.jpg"
-    allChannels.HDPosterURL = "file://pkg:/images/plex.jpg"
-    channels.item = allChannels
-
-    serverInfo = CreateObject("roAssociativeArray")
-    serverInfo.server = server
-    serverInfo.key = "/"
-    serverInfo.requestType = "server"
-    req = server.CreateRequest("", "/")
-    req.SetPort(m.Screen.Port)
-    req.AsyncGetToString()
-    serverInfo.request = req
-    m.AddPendingRequest(serverInfo)
-End Sub
 
 Function homeGetNames()
     return m.RowNames
