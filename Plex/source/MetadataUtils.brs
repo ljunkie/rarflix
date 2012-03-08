@@ -65,6 +65,9 @@ Function createBaseMetadata(container, item) As Object
     if art <> invalid AND server <> invalid then
         metadata.SDPosterURL = server.TranscodedImage(container.sourceUrl, art, sizes.sdWidth, sizes.sdHeight)
         metadata.HDPosterURL = server.TranscodedImage(container.sourceUrl, art, sizes.hdWidth, sizes.hdHeight)
+    else
+        metadata.SDPosterURL = "file://pkg:/images/BlankPoster.png"
+        metadata.HDPosterURL = "file://pkg:/images/BlankPoster.png"
     end if
 
     metadata.sourceUrl = container.sourceUrl
@@ -93,7 +96,7 @@ Function newSearchMetadata(container, item) As Object
     metadata.search = true
     metadata.prompt = item@prompt
 
-    if metadata.SDPosterURL = invalid then
+    if metadata.SDPosterURL = invalid OR Left(metadata.SDPosterURL, 4) = "file" then
         metadata.SDPosterURL = "file://pkg:/images/icon-search.jpg"
         metadata.HDPosterURL = "file://pkg:/images/icon-search.jpg"
     end if

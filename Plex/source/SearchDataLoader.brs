@@ -140,7 +140,7 @@ Function searchHandleMessage(msg) As Boolean
                     item.Description = "(" + item.sourceTitle + ") " + firstOf(item.Description, "")
                 end if
 
-                if item.SDPosterURL <> invalid AND item.server <> invalid AND item.server.AccessToken <> invalid then
+                if item.SDPosterURL <> invalid AND Left(item.SDPosterURL, 4) = "http" AND item.server <> invalid AND item.server.AccessToken <> invalid then
                     item.SDPosterURL = item.SDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
                     item.HDPosterURL = item.HDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
                 end if
