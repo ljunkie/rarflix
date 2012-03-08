@@ -54,6 +54,15 @@ Sub initTheme()
 
     theme.RegistrationCodeColor = "#8B0000"
 
+    theme.ThemeType = "generic-dark"
+    theme.BackgroundColor = "#363636"
+    theme.ButtonMenuNormalText = "#74777A"
+    theme.GridScreenBackgroundColor = "#363636"
+    theme.SpringboardTitleText = "#AAAEB3"
+    theme.SpringboardArtistColor = "#74777A"
+    theme.SpringboardAlbumColor = "#74777A"
+    theme.SpringboardRuntimeColor = "#74777A"
+
     app.SetTheme(theme)
 
 End Sub
