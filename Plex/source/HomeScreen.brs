@@ -7,7 +7,7 @@ Function createHomeScreen(viewController) As Object
     obj = CreateObject("roAssociativeArray")
 
     grid = createGridScreen(viewController)
-    grid.SetStyle("flat-16x9")
+    grid.SetStyle("flat-square")
     grid.Screen.SetDisplayMode("photo-fit")
     grid.Screen.SetUpBehaviorAtTopRow("stop")
     grid.Loader = obj

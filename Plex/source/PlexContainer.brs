@@ -67,6 +67,25 @@ Sub containerParseXml()
         if n@scanner <> invalid then
             metadata = newDirectoryMetadata(m, n)
             metadata.contentType = "section"
+            if n@thumb = invalid then
+                if metadata.Type = "movie" then
+                    thumb = "file://pkg:/images/section-movie.png"
+                else if metadata.Type = "show" then
+                    thumb = "file://pkg:/images/section-tv.png"
+                else if metadata.Type = "artist" then
+                    thumb = "file://pkg:/images/section-music.png"
+                else if metadata.Type = "photo" then
+                    thumb = "file://pkg:/images/section-photo.png"
+                else
+                    thumb = invalid
+                end if
+
+                if thumb <> invalid then
+                    metadata.SDPosterURL = thumb
+                    metadata.HDPosterURL = thumb
+                    metadata.CompositionMode = "Source_Over"
+                end if
+            end if
         else if nodeType = "artist" OR n.GetName() = "Artist" then
             metadata = newArtistMetadata(m, n, m.ParseDetails)
         else if nodeType = "album" OR n.GetName() = "Album" then
