@@ -236,11 +236,33 @@ End Function
 
 '* Logic for choosing which Media item to use from the collection of possibles.
 Function PickMediaItem(mediaItems) As Object
-	if mediaItems.count()  = 0 then
-		return mediaItems[0]
-	else
-		return mediaItems[0]
-	endif
+    quality = firstOf(RegRead("quality", "preferences"), "7").toInt()
+    if quality >= 9 then
+        maxResolution = 1080
+    else if quality >= 6 then
+        maxResolution = 720
+    else if quality >= 5 then
+        maxResolution = 480
+    else
+        maxResolution = 0
+    end if
+    print "Picking media item based on max resolution:"; maxResolution
+
+    best = invalid
+    for each mediaItem in mediaItems
+        resolution = firstOf(mediaItem.videoResolution, "0").toInt()
+        if resolution <= maxResolution then
+            if best = invalid then best = mediaItem
+
+            ' If it looks like direct play would work, return it immediately
+            print "Media item optimized for streaming: "; mediaItem.optimized
+            if (mediaItem.optimized = "true" OR mediaItem.optimized = "1") AND mediaItem.container = "mp4" AND mediaItem.videoCodec = "h264" AND (mediaItem.audioCodec = "aac" OR mediaItem.audioCodec = "mp3") then
+                return mediaItem
+            end if
+        end if
+    next
+
+    return firstOf(best, mediaItems[0])
 End Function
 
 Sub videoRefresh(detailed=false)

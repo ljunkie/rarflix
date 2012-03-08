@@ -219,20 +219,20 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay)
     userAgent = ""
     key = ""
     ratingKey = ""
+    mediaItem = item.preferredMediaItem
 
     if identifier = "com.plexapp.plugins.library" then
         ' Regular library video
-        mediaKey = item.preferredMediaItem.preferredPart.key
+        mediaKey = mediaItem.preferredPart.key
         key = item.key
         ratingKey = item.ratingKey
-        videoRes = item.preferredMediaItem.videoresolution
-    else if item.preferredMediaItem = invalid then
+        videoRes = mediaItem.videoresolution
+    else if mediaItem = invalid then
         ' Plugin video
         mediaKey = item.key
         videoRes = item.videoresolution
     else
         ' Plugin video, possibly indirect
-        mediaItem = item.preferredMediaItem
         mediaKey = mediaItem.preferredPart.key
         postURL = mediaItem.preferredPart.postURL
         videoRes = mediaItem.videoresolution
@@ -251,7 +251,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay)
     if deviceInfo.GetDisplayType() = "HDTV" then quality = "HD"
     print "Setting stream quality:";quality
 
-    if allowDirectPlay then
+    if allowDirectPlay AND mediaItem <> invalid then
         print "Checking to see if direct play of video is possible"
         qualityPref = firstOf(RegRead("quality", "preferences"), "7").toInt()
         if qualityPref >= 9 then
@@ -265,29 +265,27 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay)
         end if
         print "Max resolution:"; maxResolution
 
-        for each mediaItem in item.media
-            print "Media item optimized for streaming: "; mediaItem.optimized
-            if mediaItem.optimized = "true" OR mediaItem.optimized = "1" then
-                print "Media item container: "; mediaItem.container
-                print "Media item video codec: "; mediaItem.videoCodec
-                print "Media item audio codec: "; mediaItem.audioCodec
+        print "Media item optimized for streaming: "; mediaItem.optimized
+        if mediaItem.optimized = "true" OR mediaItem.optimized = "1" then
+            print "Media item container: "; mediaItem.container
+            print "Media item video codec: "; mediaItem.videoCodec
+            print "Media item audio codec: "; mediaItem.audioCodec
 
-                if mediaItem.container = "mp4" AND mediaItem.videoCodec = "h264" AND (mediaItem.audioCodec = "aac" OR mediaItem.audioCodec = "mp3") then
-                    resolution = firstOf(mediaItem.videoResolution, "0").toInt()
-                    print "Media item resolution:"; resolution; ", max is"; maxResolution
-                    if resolution <= maxResolution then
-                        print "Will try to direct play "; mediaKey
-                        video.StreamUrls = [mediaKey]
-                        video.StreamBitrates = [0]
-                        video.StreamQualities = [quality]
-                        video.StreamFormat = "mp4"
-                        video.FrameRate = item.FrameRate
-                        video.IsTranscoded = false
-                        return video
-                    end if
+            if mediaItem.container = "mp4" AND mediaItem.videoCodec = "h264" AND (mediaItem.audioCodec = "aac" OR mediaItem.audioCodec = "mp3") then
+                resolution = firstOf(mediaItem.videoResolution, "0").toInt()
+                print "Media item resolution:"; resolution; ", max is"; maxResolution
+                if resolution <= maxResolution then
+                    print "Will try to direct play "; mediaKey
+                    video.StreamUrls = [mediaKey]
+                    video.StreamBitrates = [0]
+                    video.StreamQualities = [quality]
+                    video.StreamFormat = "mp4"
+                    video.FrameRate = item.FrameRate
+                    video.IsTranscoded = false
+                    return video
                 end if
             end if
-        next
+        end if
     end if
 
     video.IsTranscoded = true
