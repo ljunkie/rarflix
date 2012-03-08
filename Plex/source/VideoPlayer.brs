@@ -108,7 +108,10 @@ Function videoHandleMessage(msg) As Boolean
             if buttonCommand = "resume" then
                 startTime = int(val(m.metadata.viewOffset))
             endif
-            playVideo(server, m.metadata, m.media, startTime)
+            ' TODO(schuyler): We can probably allow direct play here. I'm only
+            ' disabling it out of irrational fear. At the moment it's enabled
+            ' for plugin videos only (which includes the queue).
+            playVideo(server, m.metadata, startTime, false)
             '* Refresh play data after playing, but only after a timeout,
             '* otherwise we may leak objects if the play ended because the
             '* springboard was closed.
@@ -143,32 +146,43 @@ Function videoHandleMessage(msg) As Boolean
     return false
 End Function
 
-Sub playVideo(server, metadata, mediaData, seekValue) 
+Sub playVideo(server, metadata, seekValue=0, allowDirectPlay=true)
 	print "MediaPlayer::playVideo: Displaying video: ";metadata.title
 	seconds = int(seekValue/1000)
-	
-	video = server.VideoScreen(metadata, mediaData, seconds)
-    if video = invalid then return
-	video.SetPositionNotificationPeriod(5)
-	video.show()
 
-    videoMessageLoop(server, metadata, video.GetMessagePort())
+    videoItem = server.ConstructVideoItem(metadata, seconds, allowDirectPlay)
+    if videoItem = invalid then
+        print "Can't play video, server was unable to construct video item"
+        return
+    end if
+
+    port = CreateObject("roMessagePort")
+    videoPlayer = CreateObject("roVideoScreen")
+    videoPlayer.SetMessagePort(port)
+    videoPlayer.SetContent(videoItem)
+
+    if videoItem.IsTranscoded then
+        cookie = server.StartTranscode(videoItem.StreamUrls[0])
+        if cookie <> invalid then
+            videoPlayer.AddHeader("Cookie", cookie)
+        end if
+    end if
+
+    videoPlayer.SetPositionNotificationPeriod(5)
+    videoPlayer.Show()
+
+    success = videoMessageLoop(server, metadata, port, videoItem.IsTranscoded)
+
+    if NOT success AND NOT videoItem.IsTranscoded then
+        playVideo(server, metadata, seekValue, false)
+    end if
 End Sub
 
-Sub playPluginVideo(server, metadata) 
-	print "MediaPlayer::playPluginVideo: Displaying plugin video: ";metadata.title
-	video = server.PluginVideoScreen(metadata)
-    if video = invalid then return
-    video.SetPositionNotificationPeriod(5)
-	video.show()
-
-    videoMessageLoop(server, metadata, video.GetMessagePort())
-End Sub
-
-Sub videoMessageLoop(server, metadata, messagePort)
+Function videoMessageLoop(server, metadata, messagePort, transcoded) As Boolean
     scrobbleThreshold = 0.90
     lastPosition = 0
     played = false
+    success = true
 
     while true
     	' Time out after 60 seconds causing invalid event allowing ping to be sent during 
@@ -177,7 +191,7 @@ Sub videoMessageLoop(server, metadata, messagePort)
     	' video screen isPlaybackPosition events to be generated and reacted to
         msg = wait(60005, messagePort)
         print "MediaPlayer::playVideo: Reacting to video screen event message -> ";msg
-        server.PingTranscode()
+        if transcoded then server.PingTranscode()
         if type(msg) = "roVideoScreenEvent"
             if msg.isScreenClosed() then
                 print "MediaPlayer::playVideo::VideoScreenEvent::isScreenClosed: position -> "; lastPosition
@@ -189,7 +203,7 @@ Sub videoMessageLoop(server, metadata, messagePort)
                         server.SetProgress(metadata.ratingKey, metadata.mediaContainerIdentifier, 1000*lastPosition)
                     end if
                 end if
-                server.StopVideo()
+                if transcoded then server.StopVideo()
                 exit while
             else if msg.isPlaybackPosition() then
                 lastPosition = msg.GetIndex()
@@ -208,6 +222,7 @@ Sub videoMessageLoop(server, metadata, messagePort)
                 print "MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed - message = "; msg.GetMessage()
                 print "MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed - data = "; msg.GetData()
                 print "MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed - index = "; msg.GetIndex()
+                success = false
             else if msg.isPaused() then
                 print "MediaPlayer::playVideo::VideoScreenEvent::isPaused: position -> "; lastPosition
             else if msg.isPartialResult() then
@@ -218,11 +233,12 @@ Sub videoMessageLoop(server, metadata, messagePort)
             			played = true
             		end if
             	end if
-                server.StopVideo()
+                if transcoded then server.StopVideo()
             else if msg.isFullResult() then
             	print "MediaPlayer::playVideo::VideoScreenEvent::isFullResult: position -> ";lastPosition
     			played = true
-                server.StopVideo()
+                if transcoded then server.StopVideo()
+                success = true
             else if msg.isStreamStarted() then
             	print "MediaPlayer::playVideo::VideoScreenEvent::isStreamStarted: position -> ";lastPosition
             	print "Message data -> ";msg.GetInfo()
@@ -231,5 +247,7 @@ Sub videoMessageLoop(server, metadata, messagePort)
             endif
         end if
     end while
-End Sub
+
+    return success
+End Function
 

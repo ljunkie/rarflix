@@ -206,6 +206,7 @@ Function ParseVideoMedia(videoItem) As Object
 		media.videoCodec = MediaItem@videoCodec
 		media.videoResolution = MediaItem@videoResolution
 		media.container = MediaItem@container
+        media.optimized = MediaItem@optimizedForStreaming
 		media.parts = CreateObject("roArray", 3, true)
 		for each MediaPart in MediaItem.Part
 			part = CreateObject("roAssociativeArray")

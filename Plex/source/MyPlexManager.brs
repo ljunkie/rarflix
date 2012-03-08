@@ -16,11 +16,12 @@ Function createMyPlexManager() As Object
     ' Masquerade as a basic Plex Media Server
     obj.serverUrl = "https://my.plexapp.com"
     obj.name = "myPlex"
-    obj.VideoScreen = mpVideoScreen
-    obj.PluginVideoScreen = mpPluginVideoScreen
     obj.StopVideo = mpStopVideo
+    obj.StartTranscode = mpStartTranscode
     obj.PingTranscode = mpPingTranscode
     obj.TranscodedImage = mpTranscodedImage
+    obj.TranscodingVideoUrl = mpTranscodingVideoUrl
+    obj.ConstructVideoItem = pmsConstructVideoItem
 
     ' Commands, mostly use the PMS functions
     obj.SetProgress = progress
@@ -207,16 +208,16 @@ Function mpCheckTranscodeServer(showError=false As Boolean) As Boolean
     return true
 End Function
 
-Function mpVideoScreen(metadata, mediaData, StartTime As Integer)
+Function mpTranscodingVideoUrl(videoUrl As String, item As Object, httpCookies As String, userAgent As String)
     if NOT m.CheckTranscodeServer(true) then return invalid
 
-    return m.TranscodeServer.VideoScreen(metadata, mediaData, StartTime)
+    return m.TranscodeServer.TranscodingVideoUrl(videoUrl, item, httpCookies, userAgent)
 End Function
 
-Function mpPluginVideoScreen(metadata)
-    if NOT m.CheckTranscodeServer(true) then return invalid
+Function mpStartTranscode(videoUrl)
+    if NOT m.CheckTranscodeServer() then return ""
 
-    return m.TranscodeServer.PluginVideoScreen(metadata)
+    return m.TranscodeServer.StartTranscode(videoUrl)
 End Function
 
 Function mpStopVideo()

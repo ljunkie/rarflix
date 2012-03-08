@@ -13,9 +13,8 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.machineID = machineID
     pms.owned = true
     pms.online = false
-    pms.VideoScreen = constructVideoScreen
-    pms.PluginVideoScreen = constructPluginVideoScreen
     pms.StopVideo = stopTranscode
+    pms.StartTranscode = StartTranscodingSession
     pms.PingTranscode = pingTranscode
     pms.CreateRequest = pmsCreateRequest
     pms.GetQueryResponse = xmlContent
@@ -29,7 +28,7 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.UpdateAudioStreamSelection = updateAudioStreamSelection
     pms.UpdateSubtitleStreamSelection = updateSubtitleStreamSelection
     pms.TranscodedImage = TranscodedImage
-    pms.ConstructTranscodedVideoItem = constructTranscodedVideoItem
+    pms.ConstructVideoItem = pmsConstructVideoItem
     pms.TranscodingVideoUrl = TranscodingVideoUrl
     pms.TranscodingAudioUrl = TranscodingAudioUrl
     pms.ConvertTranscodeURLToLoopback = ConvertTranscodeURLToLoopback
@@ -209,37 +208,11 @@ Function DirectMediaXml(server, queryUrl) As Object
     return xml
 End Function
 
-Function constructPluginVideoScreen(metadata)
-    print "Constructing plugin video screen for ";metadata.key
-    'printAA(metadata)
-    videoclip = m.ConstructTranscodedVideoItem(metadata)
-    p = CreateObject("roMessagePort")
-    video = CreateObject("roVideoScreen")
-    video.setMessagePort(p)
-    video.SetContent(videoclip)
-    m.Cookie = StartTranscodingSession(videoclip.StreamUrls[0])
-    video.AddHeader("Cookie", m.Cookie)
-    return video
-End Function
-
 '* TODO: this assumes one part media. Implement multi-part at some point.
-Function constructVideoScreen(metadata, mediaData, StartTime As Integer)
-    mediaPart = mediaData.preferredPart
-    mediaKey = mediaPart.key
-    print "Constructing video screen for ";mediaKey
-    p = CreateObject("roMessagePort")
-    video = CreateObject("roVideoScreen")
-    video.setMessagePort(p)
-    videoclip = m.ConstructTranscodedVideoItem(metadata)
-    videoclip.PlayStart = StartTime
-    video.SetContent(videoclip)
-    m.Cookie = StartTranscodingSession(videoclip.StreamUrls[0])
-    video.AddHeader("Cookie", m.Cookie)
-    return video
-End Function
-
-Function constructTranscodedVideoItem(item) As Object
-    transcoded = CreateObject("roAssociativeArray")
+Function pmsConstructVideoItem(item, seekValue, allowDirectPlay)
+    video = CreateObject("roAssociativeArray")
+    video.PlayStart = seekValue
+    video.Title = item.Title
 
     identifier = item.mediaContainerIdentifier
     httpCookies = ""
@@ -277,6 +250,47 @@ Function constructTranscodedVideoItem(item) As Object
     quality = "SD"
     if deviceInfo.GetDisplayType() = "HDTV" then quality = "HD"
     print "Setting stream quality:";quality
+
+    if allowDirectPlay then
+        print "Checking to see if direct play of video is possible"
+        qualityPref = firstOf(RegRead("quality", "preferences"), "7").toInt()
+        if qualityPref >= 9 then
+            maxResolution = 1080
+        else if qualityPref >= 6 then
+            maxResolution = 720
+        else if qualityPref >= 5 then
+            maxResolution = 480
+        else
+            maxResolution = 0
+        end if
+        print "Max resolution:"; maxResolution
+
+        for each mediaItem in item.media
+            print "Media item optimized for streaming: "; mediaItem.optimized
+            if mediaItem.optimized = "true" OR mediaItem.optimized = "1" then
+                print "Media item container: "; mediaItem.container
+                print "Media item video codec: "; mediaItem.videoCodec
+                print "Media item audio codec: "; mediaItem.audioCodec
+
+                if mediaItem.container = "mp4" AND mediaItem.videoCodec = "h264" AND (mediaItem.audioCodec = "aac" OR mediaItem.audioCodec = "mp3") then
+                    resolution = firstOf(mediaItem.videoResolution, "0").toInt()
+                    print "Media item resolution:"; resolution; ", max is"; maxResolution
+                    if resolution <= maxResolution then
+                        print "Will try to direct play "; mediaKey
+                        video.StreamUrls = [mediaKey]
+                        video.StreamBitrates = [0]
+                        video.StreamQualities = [quality]
+                        video.StreamFormat = "mp4"
+                        video.FrameRate = item.FrameRate
+                        video.IsTranscoded = false
+                        return video
+                    end if
+                end if
+            end if
+        next
+    end if
+
+    video.IsTranscoded = true
     
 	'Check to see if the video is fullHD or not
     if RegRead("quality", "preferences") = "9" and videoRes = "1080" then
@@ -288,27 +302,28 @@ Function constructTranscodedVideoItem(item) As Object
 		print "Device Version:" + major +"." + minor +" build "+build
 		if major.toInt() < 4  then
 			if RegRead("legacy1080p","preferences") = "enabled" then
-				transcoded.fullHD = true
-				transcoded.framerate = 30
+				video.fullHD = true
+				video.framerate = 30
 				frSetting = RegRead("legacy1080pframerate","preferences")
 				if frSetting = "24" then
-					transcoded.framerate = 24
+					video.framerate = 24
 				else if frSetting = "native" and item.preferredMediaItem.framerate = "24"					
-					transcoded.framerate = 24
+					video.framerate = 24
 				end if
 			end if
 		else 
-			transcoded.fullHD = true
+			video.fullHD = true
 		endif
 	endif
-	printAA(transcoded)
-    transcoded.StreamBitrates = [0]
-    transcoded.StreamQualities = [quality]
-    transcoded.StreamFormat = "hls"
-    transcoded.Title = item.Title
-    transcoded.StreamUrls = [m.TranscodingVideoUrl(mediaKey, item, httpCookies, userAgent)]
+	printAA(video)
+    video.StreamBitrates = [0]
+    video.StreamQualities = [quality]
+    video.StreamFormat = "hls"
+    url = m.TranscodingVideoUrl(mediaKey, item, httpCookies, userAgent)
+    if url = invalid then return invalid
+    video.StreamUrls = [url]
 
-    return transcoded
+    return video
 End Function
 
 Function stopTranscode()
@@ -404,18 +419,18 @@ End Function
 '* Starts a transcoding session by issuing a HEAD request and captures
 '* the resultant session ID from the cookie that can then be used to
 '* access and stop the transcoding
-Function StartTranscodingSession(videoUrl) As String
+Function StartTranscodingSession(videoUrl)
     cookiesRequest = CreateObject("roUrlTransfer")
     cookiesRequest.SetUrl(videoUrl)
     cookiesHead = cookiesRequest.Head()
-    cookieHeader = cookiesHead.GetResponseHeaders()["set-cookie"]
-    return cookieHeader
+    m.Cookie = cookiesHead.GetResponseHeaders()["set-cookie"]
+    return m.Cookie
 End Function
 
 '*
 '* Construct the Plex transcoding URL. 
 '*
-Function TranscodingVideoUrl(videoUrl As String, item As Object, httpCookies As String, userAgent As String) As String
+Function TranscodingVideoUrl(videoUrl As String, item As Object, httpCookies As String, userAgent As String)
     print "Constructing transcoding video URL for "+videoUrl
     if userAgent <> invalid then
         print "User Agent: ";userAgent
