@@ -78,7 +78,7 @@ Function searchLoadMoreContent(focusedRow, extraRows=0) As Boolean
 
         for i = 0 to m.contentArray.Count() - 1
             content = m.contentArray[i].content
-            m.Listener.OnDataLoaded(i, content, 0, content.Count())
+            m.Listener.OnDataLoaded(i, content, 0, content.Count(), true)
         next
 
         for each server in GetOwnedPlexMediaServers()
@@ -161,7 +161,7 @@ Function searchHandleMessage(msg) As Boolean
         for i = 0 to m.contentArray.Count() - 1
             status = m.contentArray[i]
             if status.numLoaded > 0 then
-                m.Listener.OnDataLoaded(i, status.content, status.content.Count() - status.numLoaded, status.numLoaded)
+                m.Listener.OnDataLoaded(i, status.content, status.content.Count() - status.numLoaded, status.numLoaded, true)
                 status.numLoaded = 0
             end if
         next

@@ -96,7 +96,7 @@ Function loaderLoadMoreContent(focusedIndex, extraRows=0)
     if status.key = invalid then
         status.loadStatus = 2
         if m.Listener <> invalid then
-            m.Listener.OnDataLoaded(loadingRow, status.content, 0, status.content.Count())
+            m.Listener.OnDataLoaded(loadingRow, status.content, 0, status.content.Count(), true)
         end if
         return extraRowsAlreadyLoaded
     end if
@@ -199,7 +199,7 @@ Function loaderHandleMessage(msg) As Boolean
         end if
 
         if m.Listener <> invalid then
-            m.Listener.OnDataLoaded(request.row, status.content, startItem, countLoaded)
+            m.Listener.OnDataLoaded(request.row, status.content, startItem, countLoaded, status.loadStatus = 2)
         end if
 
         return true

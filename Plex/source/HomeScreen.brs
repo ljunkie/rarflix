@@ -299,7 +299,7 @@ Sub homeRemoveFromRowIf(row, predicate)
     if modified then
         print "Removed"; (status.content.Count() - newContent.Count()); " items from row"; row
         status.content = newContent
-        m.Screen.OnDataLoaded(row, newContent, 0, newContent.Count())
+        m.Screen.OnDataLoaded(row, newContent, 0, newContent.Count(), true)
     end if
 End Sub
 
@@ -318,8 +318,8 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
     if m.FirstLoad then
         m.FirstLoad = false
         if NOT m.myplex.IsSignedIn then
-            m.Screen.OnDataLoaded(m.QueueRow, [], 0, 0)
-            m.Screen.OnDataLoaded(m.SharedSectionsRow, [], 0, 0)
+            m.Screen.OnDataLoaded(m.QueueRow, [], 0, 0, true)
+            m.Screen.OnDataLoaded(m.SharedSectionsRow, [], 0, 0, true)
         end if
 
         if type(m.Screen.Screen) = "roGridScreen" then
@@ -381,7 +381,7 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
             m.LoadingFacade.Show()
         else
             status.loadStatus = 2
-            m.Screen.OnDataLoaded(loadingRow, status.content, 0, status.content.Count())
+            m.Screen.OnDataLoaded(loadingRow, status.content, 0, status.content.Count(), true)
         end if
     end if
 
@@ -405,7 +405,7 @@ Function homeHandleMessage(msg) As Boolean
 
             if request.row <> invalid AND status.loadStatus < 2 AND status.pendingRequests = 0 then
                 status.loadStatus = 2
-                m.Screen.OnDataLoaded(request.row, status.content, 0, status.content.Count())
+                m.Screen.OnDataLoaded(request.row, status.content, 0, status.content.Count(), true)
             end if
 
             return true
@@ -505,7 +505,7 @@ Function homeHandleMessage(msg) As Boolean
                 status.loadStatus = 2
             end if
 
-            m.Screen.OnDataLoaded(request.row, status.content, startItem, countLoaded)
+            m.Screen.OnDataLoaded(request.row, status.content, startItem, countLoaded, true)
         else if request.requestType = "queue" then
             response = CreateObject("roAssociativeArray")
             response.xml = xml
@@ -521,7 +521,7 @@ Function homeHandleMessage(msg) As Boolean
 
             status.loadStatus = 2
 
-            m.Screen.OnDataLoaded(request.row, status.content, 0, status.content.Count())
+            m.Screen.OnDataLoaded(request.row, status.content, 0, status.content.Count(), true)
         else if request.requestType = "server" then
             request.server.name = xml@friendlyName
             request.server.machineID = xml@machineIdentifier
@@ -571,9 +571,9 @@ Function homeHandleMessage(msg) As Boolean
                 univSearch.SDPosterURL = "file://pkg:/images/icon-search.jpg"
                 univSearch.HDPosterURL = "file://pkg:/images/icon-search.jpg"
                 status.content.Unshift(univSearch)
-                m.Screen.OnDataLoaded(m.MiscRow, status.content, 0, status.content.Count())
+                m.Screen.OnDataLoaded(m.MiscRow, status.content, 0, status.content.Count(), true)
             else
-                m.Screen.OnDataLoaded(m.MiscRow, status.content, status.content.Count() - 1, 1)
+                m.Screen.OnDataLoaded(m.MiscRow, status.content, status.content.Count() - 1, 1, true)
             end if
         else if request.requestType = "servers" then
             for each serverElem in xml.Server
@@ -640,7 +640,7 @@ Function homeHandleMessage(msg) As Boolean
             ShowHelpScreen()
             status = m.contentArray[m.MiscRow]
             status.loadStatus = 2
-            m.Screen.OnDataLoaded(m.MiscRow, status.content, 0, status.content.Count())
+            m.Screen.OnDataLoaded(m.MiscRow, status.content, 0, status.content.Count(), true)
         end if
     end if
 

@@ -157,7 +157,7 @@ Function showPosterScreen() As Integer
     return 0
 End Function
 
-Sub posterOnDataLoaded(row As Integer, data As Object, startItem as Integer, count As Integer)
+Sub posterOnDataLoaded(row As Integer, data As Object, startItem as Integer, count As Integer, finished As Boolean)
     status = m.contentArray[row]
     status.content = data
 
@@ -175,7 +175,7 @@ Sub posterOnDataLoaded(row As Integer, data As Object, startItem as Integer, cou
         end if
     end if
 
-    if startItem = 0 OR status.focusedIndex + 10 > status.lastUpdatedSize then
+    if finished OR startItem = 0 OR status.focusedIndex + 10 > status.lastUpdatedSize then
         m.ShowList(row)
         status.lastUpdatedSize = status.content.Count()
     end if

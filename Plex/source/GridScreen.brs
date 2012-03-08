@@ -32,6 +32,7 @@ Function createGridScreen(viewController) As Object
     screen.timer = createPerformanceTimer()
     screen.selectedRow = 0
     screen.contentArray = []
+    screen.lastUpdatedSize = []
     screen.gridStyle = "Flat-Movie"
 
     screen.OnDataLoaded = gridOnDataLoaded
@@ -47,7 +48,7 @@ Function createGridScreenForItem(item, viewController) As Object
 
     container = createPlexContainerForUrl(item.server, item.sourceUrl, item.key)
     container.SeparateSearchItems = true
-    obj.Loader = createPaginatedLoader(container, 8, 50)
+    obj.Loader = createPaginatedLoader(container, 8, 75)
     obj.Loader.Listener = obj
     obj.Loader.Port = obj.Port
     obj.MessageHandler = obj.Loader
@@ -76,6 +77,7 @@ Function showGridScreen() As Integer
 
     for row = 0 to names.Count() - 1
         m.contentArray[row] = []
+        m.lastUpdatedSize[row] = 0
 
         if row <= maxRow then
             Print "Loading beginning of row "; row; ", "; names[row]
@@ -115,6 +117,15 @@ Function showGridScreen() As Integer
                 ' preloaded, make sure we kick off another update.
 
                 m.selectedRow = msg.GetIndex()
+                m.focusedIndex = msg.GetData()
+
+                lastUpdatedSize = m.lastUpdatedSize[m.selectedRow]
+                if m.focusedIndex + 10 > lastUpdatedSize AND m.contentArray[m.selectedRow].Count() > lastUpdatedSize then
+                    data = m.contentArray[m.selectedRow]
+                    m.Screen.SetContentListSubset(m.selectedRow, data, lastUpdatedSize, data.Count() - lastUpdatedSize)
+                    m.lastUpdatedSize[m.selectedRow] = data.Count()
+                end if
+
                 m.Loader.LoadMoreContent(m.selectedRow, 2)
             else if msg.isScreenClosed() then
                 ' Make sure we don't hang onto circular references
@@ -131,7 +142,7 @@ Function showGridScreen() As Integer
     return 0
 End Function
 
-Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count As Integer)
+Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count As Integer, finished As Boolean)
     print "Loaded"; count; " elements in row"; row; ", now have"; data.Count()
 
     m.contentArray[row] = data
@@ -149,7 +160,15 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
     ' the content list.
     ' m.Screen.SetContentListSubset(rowIndex, content, startItem, content.Count())
 
-    m.Screen.SetContentListSubset(row, data, startItem, count)
+    lastUpdatedSize = m.lastUpdatedSize[row]
+
+    if startItem < lastUpdatedSize then
+        m.Screen.SetContentListSubset(row, data, startItem, count)
+        m.lastUpdatedSize[row] = data.Count()
+    else if finished OR startItem = 0 OR (m.selectedRow = row AND m.focusedIndex + 10 > lastUpdatedSize) then
+        m.Screen.SetContentListSubset(row, data, lastUpdatedSize, data.Count() - lastUpdatedSize)
+        m.lastUpdatedSize[row] = data.Count()
+    end if
 
     ' Continue loading this row
     extraRows = 2 - (m.selectedRow - row)
