@@ -201,7 +201,28 @@ Sub homeAddPendingRequest(request)
     m.PendingRequests[id] = request
 End Sub
 
-Sub refreshHomeScreen()
+Sub refreshHomeScreen(changes)
+    PrintAA(changes)
+
+    ' If myPlex state changed, we need to update the queue, shared sections,
+    ' and any owned servers that were discovered through myPlex.
+    if changes.DoesExist("myplex") then
+        print "myPlex status changed"
+    end if
+
+    ' If a server was added or removed, we need to update the sections,
+    ' channels, and channel directories.
+    if changes.DoesExist("servers") then
+        servers = changes["servers"]
+        for each machineID in servers
+            print "Server "; machineID; " was "; servers[machineID]
+            if servers[machineID] = "removed" then
+            else
+            end if
+        next
+    end if
+
+    ' We don't really care about anything else when it comes to refreshing the home screen.
 End Sub
 
 Function showHomeScreen() As Integer

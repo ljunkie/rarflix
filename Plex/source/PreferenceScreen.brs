@@ -273,6 +273,13 @@ Function showPreferencesScreen()
 	
 	ls.AddContent({title:"Close Preferences"})
 	
+    changes = {}
+    serversBefore = {}
+    for each server in PlexMediaServers()
+        if server.machineID <> invalid then
+            serversBefore[server.machineID] = ""
+        end if
+    next
 	
 	ls.show()
 	
@@ -287,23 +294,22 @@ Function showPreferencesScreen()
                 exit while
             else if msg.isListItemSelected() then
                 if msg.getIndex() = 0 then
-                    m.ShowMediaServersScreen()                    
-                    timeout = 100
+                    m.ShowMediaServersScreen(changes)
                 else if msg.getIndex() = 1 then
-                    m.ShowQualityScreen()
+                    m.ShowQualityScreen(changes)
                     ls.setItem(msg.getIndex(), {title:"Quality: "+ getCurrentQualityName() })
                 else if msg.getIndex() = 2 then
-                    m.ShowH264Screen()
+                    m.ShowH264Screen(changes)
                     ls.setItem(msg.getIndex(), {title:"H264 Level: " + getCurrentH264Level()})
                 else if msg.getIndex() = 3 then
-                    m.ShowChannelsAndSearchScreen()
+                    m.ShowChannelsAndSearchScreen(changes)
                     ls.setItem(msg.getIndex(), {title:"Channels and Search: " + getCurrentChannelsAndSearchSetting().label})
                 else if msg.getIndex() = 4 then
-                     m.ShowFivePointOneScreen()
+                     m.ShowFivePointOneScreen(changes)
                      ls.setItem(msg.getIndex(), {title:"5.1 Support: " + getCurrentFiveOneSetting()})
                 else if msg.getIndex() = 5 then
 					if buttonCount = 7 then
-						m.Show1080pScreen()
+						m.Show1080pScreen(changes)
 					else 
 						ls.close()
 					endif
@@ -311,14 +317,34 @@ Function showPreferencesScreen()
                     ls.close()
                 end if
             end if 
-        else if msg = invalid then
-            timeout = 0
-            m.Refresh()
         end if
     end while
+
+    serversAfter = {}
+    for each server in PlexMediaServers()
+        if server.machineID <> invalid then
+            serversAfter[server.machineID] = ""
+        end if
+    next
+
+    if NOT changes.DoesExist("servers") then
+        changes["servers"] = {}
+    end if
+
+    for each machineID in serversAfter
+        if NOT serversBefore.Delete(machineID) then
+            changes["servers"].AddReplace(machineID, "added")
+        end if
+    next
+
+    for each machineID in serversBefore
+        changes["servers"].AddReplace(machineID, "removed")
+    next
+
+    m.Refresh(changes)
 End Function
 
-Function showMediaServersScreen()
+Function showMediaServersScreen(changes)
 	port = CreateObject("roMessagePort") 
 	ls = CreateObject("roListScreen")
 	ls.SetMessagePort(port)
@@ -347,6 +373,7 @@ Function showMediaServersScreen()
     end if
 
 	ls.Show()
+
 	while true 
         msg = wait(0, ls.GetMessagePort()) 
         if type(msg) = "roListScreenEvent"
@@ -360,8 +387,12 @@ Function showMediaServersScreen()
                 else if msg.getIndex() = 1 then
                     if m.myplex.IsSignedIn then
                         m.myplex.Disconnect()
+                        changes["myplex"] = "disconnected"
                     else
                         m.myplex.ShowPinScreen()
+                        if m.myplex.IsSignedIn then
+                            changes["myplex"] = "connected"
+                        end if
                     end if
                     ls.SetItem(msg.getIndex(), {title: getCurrentMyPlexLabel(m.myplex)})
                 else if msg.getIndex() = 2 then
@@ -375,12 +406,12 @@ Function showMediaServersScreen()
                     'showHomeScreen(screen, PlexMediaServers())
                 else if msg.getIndex() = 3 then
                     DiscoverPlexMediaServers()
-                    m.showMediaServersScreen()
+                    m.showMediaServersScreen(changes)
                     ls.setFocusedListItem(0)
                     ls.close()
                 else if msg.getIndex() = 4 then
                     RemoveAllServers()
-                    m.showMediaServersScreen()
+                    m.showMediaServersScreen(changes)
                     ls.setFocusedListItem(0)
                     ls.close()
                                         
@@ -424,7 +455,7 @@ Sub showManualServerScreen()
     end while
 End Sub
 
-Function showFivePointOneScreen()
+Function showFivePointOneScreen(changes)
 	port = CreateObject("roMessagePort") 
 	ls = CreateObject("roListScreen") 
 	ls.SetMessagePort(port)
@@ -457,6 +488,7 @@ Function showFivePointOneScreen()
         		fiveone = (msg.getIndex()+1).tostr()
         		print "Set 5.1 support to ";fiveone
         		RegWrite("fivepointone", fiveone, "preferences")
+                changes.AddReplace("fiveone", fiveone)
                 Capabilities(true)
 				ls.close()
 			end if 
@@ -464,7 +496,7 @@ Function showFivePointOneScreen()
 	end while
 End Function
 
-Function showQualityScreen()
+Function showQualityScreen(changes)
 	port = CreateObject("roMessagePort") 
 	ls = CreateObject("roListScreen")
 	ls.SetMessagePort(port)
@@ -506,6 +538,7 @@ Function showQualityScreen()
         		end if
         		print "Set selected quality to ";quality
         		RegWrite("quality", quality, "preferences")
+                changes.AddReplace("quality", quality)
 				ls.close()
 				exit while
 			end if 
@@ -513,7 +546,7 @@ Function showQualityScreen()
 	end while
 End Function
 
-Function showH264Screen()
+Function showH264Screen(changes)
 	port = CreateObject("roMessagePort") 
 	ls = CreateObject("roListScreen") 
 	ls.SetMessagePort(port)
@@ -577,6 +610,7 @@ Function showH264Screen()
 				end if
         		print "Set selected level to ";level
         		RegWrite("level", level, "preferences")
+                changes.AddReplace("level", level)
                 Capabilities(true)
 				ls.close()
 			end if
@@ -584,7 +618,7 @@ Function showH264Screen()
 	end while
 End Function
 
-Function showChannelsAndSearchScreen()
+Function showChannelsAndSearchScreen(changes)
 	port = CreateObject("roMessagePort") 
 	ls = CreateObject("roListScreen") 
 	ls.SetMessagePort(port)
@@ -624,7 +658,7 @@ Function showChannelsAndSearchScreen()
 End Function
 
 
-Function show1080pScreen()
+Function show1080pScreen(changes)
 	port = CreateObject("roMessagePort") 
 	ls = CreateObject("roListScreen") 
 	ls.SetMessagePort(port)
