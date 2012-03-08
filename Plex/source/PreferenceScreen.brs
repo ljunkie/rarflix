@@ -256,7 +256,6 @@ Function showPreferencesScreen()
 	ls.SetContent([{title:"Plex Media Servers"},
 		{title:"Quality: "+getCurrentQualityName()},
 		{title:"H264 Level: " + getCurrentH264Level()},
-		{title:"Channels and Search: " + getCurrentChannelsAndSearchSetting().label},
 		{title:"5.1 Support: " + getCurrentFiveOneSetting()}])
 		
 	device = CreateObject("roDeviceInfo")
@@ -265,10 +264,10 @@ Function showPreferencesScreen()
 	minor = Mid(version, 5, 2)
 	build = Mid(version, 8, 5)
 	print "Device Version:" + major +"." + minor +" build "+build
-	buttonCount = 6
+	buttonCount = 5
 	if major.toInt() < 4  and device.hasFeature("1080p_hardware") then
 		ls.AddContent({title:"1080p Settings"})
-		buttonCount = 7
+		buttonCount = 6
 	end if
 	
 	ls.AddContent({title:"Close Preferences"})
@@ -302,18 +301,15 @@ Function showPreferencesScreen()
                     m.ShowH264Screen(changes)
                     ls.setItem(msg.getIndex(), {title:"H264 Level: " + getCurrentH264Level()})
                 else if msg.getIndex() = 3 then
-                    m.ShowChannelsAndSearchScreen(changes)
-                    ls.setItem(msg.getIndex(), {title:"Channels and Search: " + getCurrentChannelsAndSearchSetting().label})
-                else if msg.getIndex() = 4 then
                      m.ShowFivePointOneScreen(changes)
                      ls.setItem(msg.getIndex(), {title:"5.1 Support: " + getCurrentFiveOneSetting()})
-                else if msg.getIndex() = 5 then
-					if buttonCount = 7 then
+                else if msg.getIndex() = 4 then
+					if buttonCount = 6 then
 						m.Show1080pScreen(changes)
 					else 
 						ls.close()
 					endif
-                else if msg.getIndex() = 6 then
+                else if msg.getIndex() = 5 then
                     ls.close()
                 end if
             end if 
@@ -618,45 +614,6 @@ Function showH264Screen(changes)
 	end while
 End Function
 
-Function showChannelsAndSearchScreen(changes)
-	port = CreateObject("roMessagePort") 
-	ls = CreateObject("roListScreen") 
-	ls.SetMessagePort(port)
-	ls.SetTitle("Channels and Search") 
-	ls.setHeader("Enable/Disable 'Channel' and 'Search' options on the main screen.")
-	
-	
-	
-	
-	
-	options = CreateObject("roArray", 2 , true)	
-	options.Push("Enabled (Default)") 'N=1
-	options.Push("Disabled") 'N=2
-	
-	current = getCurrentChannelsAndSearchSetting()
-	
-	for each option in options
-		buttonTitle = option
-		ls.AddContent({title:buttonTitle})
-	next
-	ls.SetFocusedListItem(current.value.toint() -1)
-	ls.Show()
-	while true 
-            msg = wait(0, ls.GetMessagePort()) 
-            if type(msg) = "roListScreenEvent"
-                if msg.isScreenClosed() then
-                    ls.close()
-                    exit while
-                else if msg.isListItemSelected() then
-                    option = (msg.getIndex()+1).tostr()	
-                    RegWrite("ChannelsAndSearch", option, "preferences")
-                    ls.Close()
-                    m.Refresh()
-                end if
-            end if 
-	end while
-End Function
-
 
 Function show1080pScreen(changes)
 	port = CreateObject("roMessagePort") 
@@ -832,24 +789,4 @@ Function getCurrentFiveOneSetting()
 		
 	return currentText
 End Function
-
-
-Function getCurrentChannelsAndSearchSetting()
-	options = CreateObject("roArray", 2 , true)
-	options.Push("Enabled (Default)") 'N=1
-	options.Push("Disabled") 'N=2
-	
-	if not(RegExists("ChannelsAndSearch", "preferences")) then
-		RegWrite("ChannelsAndSearch", "1", "preferences")
-	end if
-	regValue = RegRead("ChannelsAndSearch", "preferences")
-	if regValue = "2" then
-		current = "Disabled"
-    else
-		current = "Enabled (Default)"
-	end if
-	return {label: current, value: regValue}
-End Function
-
-
 
