@@ -87,6 +87,8 @@ Function createAudioSpringboardScreen(context, index, viewController) As Object
 End Function
 
 Function showSpringboardScreen() As Integer
+    m.ViewController.PushTheme("light")
+
     server = m.Item.server
     m.Refresh()
 
@@ -97,7 +99,7 @@ Function showSpringboardScreen() As Integer
             m.msgTimeout = 0
         else if msg.isScreenClosed() then
             m.ViewController.PopScreen(m)
-            return -1
+            exit while
         else if msg.isButtonPressed() then
             buttonCommand = m.buttonCommands[str(msg.getIndex())]
             print "Unhandled button press: "; buttonCommand
@@ -111,6 +113,7 @@ Function showSpringboardScreen() As Integer
         endif
     end while
 
+    m.ViewController.PopTheme()
     return 0
 End Function
 

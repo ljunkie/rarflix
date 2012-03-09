@@ -35,6 +35,7 @@ Function createSearchScreen(item, viewController) As Object
 End Function
 
 Function showSearchScreen() As Integer
+    m.ViewController.PushTheme("light")
     m.Screen.Show()
 
     while true
@@ -44,7 +45,7 @@ Function showSearchScreen() As Integer
             if msg.isScreenClosed() then
                 m.MessageHandler = invalid
                 m.ViewController.PopScreen(m)
-                return -1
+                exit while
             else if msg.isCleared() then
                 m.History.Clear()
                 m.Screen.ClearSearchTerms()
@@ -125,6 +126,8 @@ Function showSearchScreen() As Integer
             end if
         end if
     end while
+
+    m.ViewController.PopTheme()
 
     return 0
 End Function

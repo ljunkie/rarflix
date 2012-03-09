@@ -24,6 +24,14 @@ Function createViewController() As Object
 
     controller.nextId = 1
 
+    controller.InitThemes = vcInitThemes
+    controller.PushTheme = vcPushTheme
+    controller.PopTheme = vcPopTheme
+    controller.ApplyThemeAttrs = vcApplyThemeAttrs
+
+    controller.InitThemes()
+    controller.PushTheme("dark")
+
     return controller
 End Function
 
@@ -230,5 +238,72 @@ Sub vcUpdateScreenProperties(screen)
     else
         print "Not sure what to do with breadcrumbs on screen type: "; screenType
     end if
+End Sub
+
+Sub vcInitThemes()
+    m.ThemeStack = CreateObject("roList")
+    m.ThemeApplyParams = CreateObject("roAssociativeArray")
+    m.ThemeRevertParams = CreateObject("roAssociativeArray")
+
+    ' This isn't very carefully thought out, if we actually had multiple
+    ' themes we'd probably need to be a bit more robust about how we revert
+    ' themes.
+
+    m.ThemeApplyParams["dark"] = {
+        BackgroundColor: "#363636",
+        ButtonMenuNormalText: "#A4AAAA",
+        PosterScreenLine1Text: "#A4AAAA",
+        PosterScreenLine2Text: "#A4AAAA"
+    }
+    m.ThemeRevertParams["dark"] = {
+        BackgroundColor: invalid,
+        ButtonMenuNormalText: invalid,
+        PosterScreenLine1Text: invalid,
+        PosterScreenLine2Text: invalid
+    }
+
+    m.ThemeApplyParams["light"] = {
+        BackgroundColor: invalid,
+        ButtonMenuNormalText: invalid,
+        PosterScreenLine1Text: invalid,
+        PosterScreenLine2Text: invalid
+    }
+    m.ThemeRevertParams["light"] = {
+        BackgroundColor: "#363636",
+        ButtonMenuNormalText: "#A4AAAA",
+        PosterScreenLine1Text: "#A4AAAA",
+        PosterScreenLine2Text: "#A4AAAA"
+    }
+
+End Sub
+
+Sub vcPushTheme(name)
+    if NOT m.ThemeApplyParams.DoesExist(name) then return
+
+    if name <> m.ThemeStack.GetTail() then
+        m.ApplyThemeAttrs(m.ThemeApplyParams[name])
+    end if
+
+    m.ThemeStack.AddTail(name)
+End Sub
+
+Sub vcPopTheme()
+    name = m.ThemeStack.RemoveTail()
+
+    if name <> m.ThemeStack.GetTail() then
+        m.ApplyThemeAttrs(m.ThemeRevertParams[name])
+        m.ApplyThemeAttrs(m.ThemeApplyParams[m.ThemeStack.GetTail()])
+    end if
+End Sub
+
+Sub vcApplyThemeAttrs(attrs)
+    app = CreateObject("roAppManager")
+    for each attr in attrs
+        if attrs[attr] <> invalid then
+            app.SetThemeAttribute(attr, attrs[attr])
+        else
+            app.ClearThemeAttribute(attr)
+        end if
+    next
 End Sub
 

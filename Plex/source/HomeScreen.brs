@@ -36,7 +36,7 @@ Function createHomeScreen(viewController) As Object
     obj.HandleMessage = homeHandleMessage
 
     ' The home screen owns the myPlex manager
-    obj.myplex = createMyPlexManager()
+    obj.myplex = createMyPlexManager(viewController)
 
     obj.AddPendingRequest = homeAddPendingRequest
     obj.AddOrStartRequest = homeAddOrStartRequest

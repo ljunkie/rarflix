@@ -2,7 +2,7 @@
 '* Utilities related to signing in to myPlex and making myPlex requests
 '*
 
-Function createMyPlexManager() As Object
+Function createMyPlexManager(viewController) As Object
     obj = CreateObject("roAssociativeArray")
 
     obj.CreateRequest = mpCreateRequest
@@ -12,6 +12,8 @@ Function createMyPlexManager() As Object
 
     device = CreateObject("roDeviceInfo")
     obj.ClientIdentifier = "Roku-" + device.GetDeviceUniqueId()
+
+    obj.ViewController = viewController
 
     ' Masquerade as a basic Plex Media Server
     obj.serverUrl = "https://my.plexapp.com"
@@ -48,6 +50,7 @@ Sub mpCheckAuthentication()
 End Sub
 
 Function mpShowPinScreen() As Object
+    m.ViewController.PushTheme("light")
     port = CreateObject("roMessagePort")
     screen = CreateObject("roCodeRegistrationScreen")
     screen.SetMessagePort(port)
@@ -138,6 +141,8 @@ Function mpShowPinScreen() As Object
             end if
         end if
     end while
+
+    m.ViewController.PopTheme()
 
     if codeRequest <> invalid then codeRequest.AsyncCancel()
     if pollRequest <> invalid then pollRequest.AsyncCancel()
