@@ -169,14 +169,18 @@ Function showGridScreen() As Integer
                 m.selectedRow = msg.GetIndex()
                 m.focusedIndex = msg.GetData()
 
-                lastUpdatedSize = m.lastUpdatedSize[m.selectedRow]
-                if m.focusedIndex + 10 > lastUpdatedSize AND m.contentArray[m.selectedRow].Count() > lastUpdatedSize then
-                    data = m.contentArray[m.selectedRow]
-                    m.Screen.SetContentListSubset(m.selectedRow, data, lastUpdatedSize, data.Count() - lastUpdatedSize)
-                    m.lastUpdatedSize[m.selectedRow] = data.Count()
-                end if
+                if m.selectedRow < 0 OR m.selectedRow >= names.Count() then
+                    print "Igoring grid ListItemFocused event for bogus row:"; msg.GetIndex()
+                else
+                    lastUpdatedSize = m.lastUpdatedSize[m.selectedRow]
+                    if m.focusedIndex + 10 > lastUpdatedSize AND m.contentArray[m.selectedRow].Count() > lastUpdatedSize then
+                        data = m.contentArray[m.selectedRow]
+                        m.Screen.SetContentListSubset(m.selectedRow, data, lastUpdatedSize, data.Count() - lastUpdatedSize)
+                        m.lastUpdatedSize[m.selectedRow] = data.Count()
+                    end if
 
-                m.Loader.LoadMoreContent(m.selectedRow, 2)
+                    m.Loader.LoadMoreContent(m.selectedRow, 2)
+                end if
             else if msg.isScreenClosed() then
                 if ignoreClose then
                     ignoreClose = false
