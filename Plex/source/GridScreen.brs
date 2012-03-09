@@ -67,6 +67,21 @@ Function showGridScreen() As Integer
 
     names = m.Loader.GetNames()
 
+    if names.Count() = 0 then
+        print "Nothing to load for grid"
+        dialog = createBaseDialog()
+        dialog.Facade = facade
+        dialog.Title = "Content Unavailable"
+        dialog.Text = "An error occurred while trying to load this content, make sure the server is running."
+        dialog.Show()
+
+        m.Loader.Listener = invalid
+        m.Loader = invalid
+        m.MessageHandler = invalid
+        m.ViewController.PopScreen(m)
+        return -1
+    end if
+
     m.Screen.SetupLists(names.Count()) 
     m.Screen.SetListNames(names)
 

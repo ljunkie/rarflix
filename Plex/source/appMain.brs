@@ -54,7 +54,6 @@ Sub initTheme()
 
     theme.RegistrationCodeColor = "#8B0000"
 
-    theme.ThemeType = "generic-dark"
     theme.BackgroundColor = "#363636"
     theme.ButtonMenuNormalText = "#74777A"
     theme.GridScreenBackgroundColor = "#363636"
