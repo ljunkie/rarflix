@@ -19,6 +19,8 @@ Function createViewController() As Object
     controller.RefreshHomeScreen = vcRefreshHomeScreen
     controller.UpdateScreenProperties = vcUpdateScreenProperties
 
+    controller.DestroyGlitchyScreens = vcDestroyGlitchyScreens
+
     controller.facade = CreateObject("roGridScreen")
     controller.facade.Show()
 
@@ -157,9 +159,10 @@ Sub vcPopScreen(screen)
     if screen.ScreenID = -1 then
         Print "Popping home screen, cleaning up"
 
-        while m.screens.Count() > 0
+        while m.screens.Count() > 1
             m.PopScreen(m.screens.Peek())
         end while
+        m.screens.Pop()
 
         m.Home = invalid
         return
@@ -184,11 +187,12 @@ End Sub
 Sub vcShowHomeScreen()
     m.Home = createHomeScreen(m)
     m.Home.Screen.ScreenID = -1
+    m.screens.Push(m.Home.Screen)
     m.Home.Show()
 End Sub
 
 Sub vcRefreshHomeScreen()
-    while m.screens.Count() > 0
+    while m.screens.Count() > 1
         m.PopScreen(m.screens.Peek())
     end while
 
@@ -303,6 +307,15 @@ Sub vcApplyThemeAttrs(attrs)
             app.SetThemeAttribute(attr, attrs[attr])
         else
             app.ClearThemeAttribute(attr)
+        end if
+    next
+End Sub
+
+Sub vcDestroyGlitchyScreens()
+    for each screen in m.screens
+        if screen.DestroyAndRecreate <> invalid then
+            print "Destroying screen "; screen.ScreenID; " to work around glitch"
+            screen.DestroyAndRecreate()
         end if
     next
 End Sub

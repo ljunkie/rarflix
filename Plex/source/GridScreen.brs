@@ -25,6 +25,7 @@ Function createGridScreen(viewController) As Object
     screen.ViewController = viewController
     screen.MessageHandler = invalid
     screen.MsgTimeout = 0
+    screen.DestroyAndRecreate = gridDestroyAndRecreate
 
     screen.Show = showGridScreen
     screen.SetStyle = setGridStyle
@@ -108,8 +109,6 @@ Function showGridScreen() As Integer
     m.Screen.Show()
     facade.Close()
 
-    ignoreClose = false
-
     while true
         msg = wait(m.MsgTimeout, m.port)
         if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
@@ -133,36 +132,36 @@ Function showGridScreen() As Integer
                     breadcrumbs = [names[msg.GetIndex()], item.Title]
                 end if
 
-                ' Close our current grid and recreate it once we get back.
-                ' Works around a weird glitch when certain screens (maybe just
-                ' an audio player) are shown on top of grids.
-                ignoreClose = true
                 facade = CreateObject("roGridScreen")
                 facade.Show()
-                m.Screen.Close()
 
                 m.ViewController.CreateScreenForItem(context, index, breadcrumbs)
 
-                m.Screen = CreateObject("roGridScreen")
-                m.Screen.SetMessagePort(m.Port)
-                m.Screen.SetDisplayMode("scale-to-fit")
-                m.Screen.SetGridStyle(m.gridStyle)
-                m.Screen.SetUpBehaviorAtTopRow(m.upBehavior)
+                ' If our screen was destroyed by some child screen, recreate it now
+                if m.Screen = invalid then
+                    print "Recreating grid..."
+                    m.Screen = CreateObject("roGridScreen")
+                    m.Screen.SetMessagePort(m.Port)
+                    m.Screen.SetDisplayMode("scale-to-fit")
+                    m.Screen.SetGridStyle(m.gridStyle)
+                    m.Screen.SetUpBehaviorAtTopRow(m.upBehavior)
 
-                m.Screen.SetupLists(names.Count())
-                m.Screen.SetListNames(names)
+                    m.Screen.SetupLists(names.Count())
+                    m.Screen.SetListNames(names)
 
-                m.ViewController.UpdateScreenProperties(m)
+                    m.ViewController.UpdateScreenProperties(m)
 
-                for row = 0 to names.Count() - 1
-                    m.Screen.SetContentList(row, m.contentArray[row])
-                    if m.contentArray[row].Count() = 0 then
-                        m.Screen.SetListVisible(row, false)
-                    end if
-                end for
-                m.Screen.SetFocusedListItem(m.selectedRow, m.focusedIndex)
+                    for row = 0 to names.Count() - 1
+                        m.Screen.SetContentList(row, m.contentArray[row])
+                        if m.contentArray[row].Count() = 0 then
+                            m.Screen.SetListVisible(row, false)
+                        end if
+                    end for
+                    m.Screen.SetFocusedListItem(m.selectedRow, m.focusedIndex)
 
-                m.Screen.Show()
+                    m.Screen.Show()
+                end if
+
                 facade.Close()
             else if msg.isListItemFocused() then
                 ' If the user is getting close to the limit of what we've
@@ -184,17 +183,13 @@ Function showGridScreen() As Integer
                     m.Loader.LoadMoreContent(m.selectedRow, 2)
                 end if
             else if msg.isScreenClosed() then
-                if ignoreClose then
-                    ignoreClose = false
-                else
-                    ' Make sure we don't hang onto circular references
-                    m.Loader.Listener = invalid
-                    m.Loader = invalid
-                    m.MessageHandler = invalid
+                ' Make sure we don't hang onto circular references
+                m.Loader.Listener = invalid
+                m.Loader = invalid
+                m.MessageHandler = invalid
 
-                    m.ViewController.PopScreen(m)
-                    return -1
-                end if
+                m.ViewController.PopScreen(m)
+                return -1
             end if
         end if
     end while
@@ -245,5 +240,14 @@ End Sub
 Sub setUpBehavior(behavior as String)
     m.upBehavior = behavior
     m.Screen.SetUpBehaviorAtTopRow(behavior)
+End Sub
+
+Sub gridDestroyAndRecreate()
+    ' Close our current grid and recreate it once we get back.
+    ' Works around a weird glitch when certain screens (maybe just
+    ' an audio player) are shown on top of grids.
+    print "Destroying grid..."
+    m.Screen.Close()
+    m.Screen = invalid
 End Sub
 

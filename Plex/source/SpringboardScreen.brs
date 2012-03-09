@@ -60,6 +60,10 @@ Function createAudioSpringboardScreen(context, index, viewController) As Object
     obj.Screen.AllowNavFastForward(true)
     obj.Screen.setProgressIndicatorEnabled(true)
 
+    ' Grid screens get corrupted when audio players are created, so tell the
+    ' controller to destroy and recreate them.
+    viewController.DestroyGlitchyScreens()
+
     ' Set up audio player, using the same message port
     obj.audioPlayer = CreateObject("roAudioPlayer")
     obj.audioPlayer.SetMessagePort(obj.Screen.GetMessagePort())
