@@ -135,6 +135,8 @@ Function showGridScreen() As Integer
                 ' Works around a weird glitch when certain screens (maybe just
                 ' an audio player) are shown on top of grids.
                 ignoreClose = true
+                facade = CreateObject("roGridScreen")
+                facade.Show()
                 m.Screen.Close()
 
                 m.ViewController.CreateScreenForItem(context, index, breadcrumbs)
@@ -150,8 +152,6 @@ Function showGridScreen() As Integer
 
                 m.ViewController.UpdateScreenProperties(m)
 
-                m.Screen.Show()
-
                 for row = 0 to names.Count() - 1
                     m.Screen.SetContentList(row, m.contentArray[row])
                     if m.contentArray[row].Count() = 0 then
@@ -159,6 +159,9 @@ Function showGridScreen() As Integer
                     end if
                 end for
                 m.Screen.SetFocusedListItem(m.selectedRow, m.focusedIndex)
+
+                m.Screen.Show()
+                facade.Close()
             else if msg.isListItemFocused() then
                 ' If the user is getting close to the limit of what we've
                 ' preloaded, make sure we kick off another update.
