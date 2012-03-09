@@ -17,6 +17,7 @@ Function createViewController() As Object
 
     controller.ShowHomeScreen = vcShowHomeScreen
     controller.RefreshHomeScreen = vcRefreshHomeScreen
+    controller.UpdateScreenProperties = vcUpdateScreenProperties
 
     controller.facade = CreateObject("roGridScreen")
     controller.facade.Show()
@@ -112,18 +113,12 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen = createPosterScreen(item, m)
     end if
 
-    ' Make sure that metadata requests from the screen carry an auth token.
-    if item.server <> invalid AND item.server.AccessToken <> invalid then
-        screen.Screen.AddHeader("X-Plex-Token", item.server.AccessToken)
-    end if
-
     ' Add the breadcrumbs to our list and set them for the current screen.
     ' If the current screen specified invalid for the breadcrubms then it
     ' doesn't want any breadcrumbs to be shown. If it specified an empty
     ' array, then the current breadcrumbs will be shown again.
     screenType = type(screen.Screen)
     if breadcrumbs = invalid then
-        enableBreadcrumbs = false
         screen.NumBreadcrumbs = 0
     else
         ' Special case for springboard screens, don't show the current title
@@ -134,42 +129,9 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             m.breadcrumbs.Push(tostr(b))
         next
         screen.NumBreadcrumbs = breadcrumbs.Count()
-
-        count = m.breadcrumbs.Count()
-        if count >= 2 then
-            enableBreadcrumbs = true
-            bread1 = m.breadcrumbs[count-2]
-            bread2 = m.breadcrumbs[count-1]
-            'screen.Screen.SetBreadcrumbEnabled(true)
-            'screen.Screen.SetBreadcrumbText(m.breadcrumbs[count-2], m.breadcrumbs[count-1])
-        else if count = 1 then
-            enableBreadcrumbs = true
-            bread1 = ""
-            bread2 = m.breadcrumbs[0]
-        else
-            enableBreadcrumbs = false
-        end if
     end if
 
-    ' Sigh, different screen types don't support breadcrumbs with the same functions
-    if screenType = "roGridScreen" OR screenType = "roPosterScreen" OR screenType = "roSpringboardScreen" then
-        if enableBreadcrumbs then
-            screen.Screen.SetBreadcrumbEnabled(true)
-            screen.Screen.SetBreadcrumbText(bread1, bread2)
-        else
-            screen.Screen.SetBreadcrumbEnabled(false)
-        end if
-    else if screenType = "roSearchScreen" then
-        if enableBreadcrumbs then
-            screen.Screen.SetBreadcrumbText(bread1, bread2)
-        end if
-    else if screenType = "roListScreen" then
-        if enableBreadcrumbs then
-            screen.Screen.SetTitle(bread2)
-        end if
-    else
-        print "Not sure what to do with breadcrumbs on screen type: "; screenType
-    end if
+    m.UpdateScreenProperties(screen)
 
     ' Set an ID on the screen so we can sanity check before popping
     screen.ScreenID = m.nextId
@@ -223,5 +185,50 @@ Sub vcRefreshHomeScreen()
     end while
 
     m.Home.Refresh()
+End Sub
+
+Sub vcUpdateScreenProperties(screen)
+    ' Make sure that metadata requests from the screen carry an auth token.
+    if screen.Item <> invalid AND screen.Item.server <> invalid AND screen.Item.server.AccessToken <> invalid then
+        screen.Screen.AddHeader("X-Plex-Token", screen.Item.server.AccessToken)
+    end if
+
+    if screen.NumBreadcrumbs <> 0 then
+        count = m.breadcrumbs.Count()
+        if count >= 2 then
+            enableBreadcrumbs = true
+            bread1 = m.breadcrumbs[count-2]
+            bread2 = m.breadcrumbs[count-1]
+        else if count = 1 then
+            enableBreadcrumbs = true
+            bread1 = ""
+            bread2 = m.breadcrumbs[0]
+        else
+            enableBreadcrumbs = false
+        end if
+    else
+        enableBreadcrumbs = false
+    end if
+
+    screenType = type(screen.Screen)
+    ' Sigh, different screen types don't support breadcrumbs with the same functions
+    if screenType = "roGridScreen" OR screenType = "roPosterScreen" OR screenType = "roSpringboardScreen" then
+        if enableBreadcrumbs then
+            screen.Screen.SetBreadcrumbEnabled(true)
+            screen.Screen.SetBreadcrumbText(bread1, bread2)
+        else
+            screen.Screen.SetBreadcrumbEnabled(false)
+        end if
+    else if screenType = "roSearchScreen" then
+        if enableBreadcrumbs then
+            screen.Screen.SetBreadcrumbText(bread1, bread2)
+        end if
+    else if screenType = "roListScreen" then
+        if enableBreadcrumbs then
+            screen.Screen.SetTitle(bread2)
+        end if
+    else
+        print "Not sure what to do with breadcrumbs on screen type: "; screenType
+    end if
 End Sub
 

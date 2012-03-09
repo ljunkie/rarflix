@@ -28,12 +28,15 @@ Function createGridScreen(viewController) As Object
 
     screen.Show = showGridScreen
     screen.SetStyle = setGridStyle
+    screen.SetUpBehaviorAtTopRow = setUpBehavior
 
     screen.timer = createPerformanceTimer()
     screen.selectedRow = 0
+    screen.focusedIndex = 0
     screen.contentArray = []
     screen.lastUpdatedSize = []
     screen.gridStyle = "Flat-Movie"
+    screen.upBehavior = "exit"
 
     screen.OnDataLoaded = gridOnDataLoaded
 
@@ -90,6 +93,8 @@ Function showGridScreen() As Integer
     m.Screen.Show()
     facade.Close()
 
+    ignoreClose = false
+
     while true
         msg = wait(m.MsgTimeout, m.port)
         if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
@@ -111,7 +116,34 @@ Function showGridScreen() As Integer
                     breadcrumbs = [names[msg.GetIndex()], item.Title]
                 end if
 
+                ' Close our current grid and recreate it once we get back.
+                ' Works around a weird glitch when certain screens (maybe just
+                ' an audio player) are shown on top of grids.
+                ignoreClose = true
+                m.Screen.Close()
+
                 m.ViewController.CreateScreenForItem(context, index, breadcrumbs)
+
+                m.Screen = CreateObject("roGridScreen")
+                m.Screen.SetMessagePort(m.Port)
+                m.Screen.SetDisplayMode("scale-to-fit")
+                m.Screen.SetGridStyle(m.gridStyle)
+                m.Screen.SetUpBehaviorAtTopRow(m.upBehavior)
+
+                m.Screen.SetupLists(names.Count())
+                m.Screen.SetListNames(names)
+
+                m.ViewController.UpdateScreenProperties(m)
+
+                m.Screen.Show()
+
+                for row = 0 to names.Count() - 1
+                    m.Screen.SetContentList(row, m.contentArray[row])
+                    if m.contentArray[row].Count() = 0 then
+                        m.Screen.SetListVisible(row, false)
+                    end if
+                end for
+                m.Screen.SetFocusedListItem(m.selectedRow, m.focusedIndex)
             else if msg.isListItemFocused() then
                 ' If the user is getting close to the limit of what we've
                 ' preloaded, make sure we kick off another update.
@@ -128,13 +160,17 @@ Function showGridScreen() As Integer
 
                 m.Loader.LoadMoreContent(m.selectedRow, 2)
             else if msg.isScreenClosed() then
-                ' Make sure we don't hang onto circular references
-                m.Loader.Listener = invalid
-                m.Loader = invalid
-                m.MessageHandler = invalid
+                if ignoreClose then
+                    ignoreClose = false
+                else
+                    ' Make sure we don't hang onto circular references
+                    m.Loader.Listener = invalid
+                    m.Loader = invalid
+                    m.MessageHandler = invalid
 
-                m.ViewController.PopScreen(m)
-                return -1
+                    m.ViewController.PopScreen(m)
+                    return -1
+                end if
             end if
         end if
     end while
@@ -177,8 +213,13 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
     end if
 End Sub
 
-Function setGridStyle(style as String)
+Sub setGridStyle(style as String)
     m.gridStyle = style
     m.Screen.SetGridStyle(style)
-End Function
+End Sub
+
+Sub setUpBehavior(behavior as String)
+    m.upBehavior = behavior
+    m.Screen.SetUpBehaviorAtTopRow(behavior)
+End Sub
 

@@ -8,8 +8,8 @@ Function createHomeScreen(viewController) As Object
 
     grid = createGridScreen(viewController)
     grid.SetStyle("flat-square")
+    grid.SetUpBehaviorAtTopRow("stop")
     grid.Screen.SetDisplayMode("photo-fit")
-    grid.Screen.SetUpBehaviorAtTopRow("stop")
     grid.Loader = obj
     grid.MessageHandler = obj
 
