@@ -127,6 +127,8 @@ Function showGridScreen() As Integer
                 item = context[index]
                 if item.ContentType = "series" then
                     breadcrumbs = [item.Title]
+                else if item.ContentType = "section" then
+                    breadcrumbs = [item.server.name, item.Title]
                 else
                     breadcrumbs = [names[msg.GetIndex()], item.Title]
                 end if
