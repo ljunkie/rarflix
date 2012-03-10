@@ -18,30 +18,7 @@ Function videoAddButtons(obj) As Object
     buttonCount = buttonCount + 1
 
     print "Media = ";media
-    print "metadata.optimizedForStreaming = ";metadata.optimizedForStreaming
-
-    if media.container <> invalid AND media.videocodec <> invalid AND media.audiocodec <> invalid AND metadata.optimizedforstreaming <> invalid then
-        dsp = 0
-        ' MP4 files
-        if media.container = "mov" then
-            if media.videocodec = "h264" AND (media.audiocodec = "aac" OR media.audicodec = "ac3") then
-                dsp = 1
-            end if
-        end if
-        ' MKV files
-        if media.container = "mkv" then
-            if media.videocodec = "h264" AND (media.audiocodec = "aac" OR media.audicodec = "ac3") then
-                dsp = 1
-            end if
-        end if
-
-        if metadata.optimizedForStreaming = "0" AND dsp = 1 then
-            print "Container = "+media.container+", ac = "+media.audiocodec+", vc = "+media.videocodec+", but not optimized for streaming"
-            dsp = 0
-        else if dsp = 1 then
-            print "Container = "+media.container+", ac = "+media.audiocodec+", vc = "+media.videocodec+", OPTIMIZED FOR STREAMING"
-        end if
-    end if
+    print "Can direct play = ";videoCanDirectPlay(media)
 
     if metadata.viewCount <> invalid AND val(metadata.viewCount) > 0 then
         screen.AddButton(buttonCount, "Mark as unwatched")
@@ -129,10 +106,10 @@ Function videoHandleMessage(msg) As Boolean
             server.Unscrobble(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier)
             '* Refresh play data after unscrobbling
             m.Refresh(true)
-	 else if buttonCommand = "rateVideo" then                
-		rateValue% = msg.getData() /10
-		m.metadata.UserRating = msg.getdata()
-		server.Rate(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier,rateValue%.ToStr())
+	    else if buttonCommand = "rateVideo" then                
+		    rateValue% = msg.getData() /10
+		    m.metadata.UserRating = msg.getdata()
+		    server.Rate(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier,rateValue%.ToStr())
         else
             return false
         endif
@@ -174,6 +151,36 @@ Sub playVideo(server, metadata, seekValue=0, allowDirectPlay=true)
         playVideo(server, metadata, seekValue, false)
     end if
 End Sub
+
+Function videoCanDirectPlay(mediaItem As Object) As Boolean
+    print "Media item optimized for streaming: "; mediaItem.optimized
+
+    if (mediaItem.optimized <> "true" AND mediaItem.optimized <> "1")
+        print "videoCanDirectPlay: media is not optimized"
+        return false
+    end if
+
+    print "Media item container: "; mediaItem.container
+    print "Media item video codec: "; mediaItem.videoCodec
+    print "Media item audio codec: "; mediaItem.audioCodec
+
+    if (mediaItem.container <> "mp4" AND mediaItem.container <> "mov" AND mediaItem.container <> "mkv") then
+        print "videoCanDirectPlay: container not mp4/mov/mkv"
+        return false
+    end if
+
+    if mediaItem.videoCodec <> "h264" then
+        print "videoCanDirectPlay: vc not h264"
+        return false
+    end if
+
+    if (mediaItem.audioCodec <> "aac" AND mediaItem.audioCodec <> "ac3" AND mediaItem.audioCodec <> "mp3") then
+        print "videoCanDirectPlay: ac not aac/ac3/mp3"
+        return false
+    end if
+
+    return true
+End Function
 
 Function videoMessageLoop(server, metadata, messagePort, transcoded) As Boolean
     scrobbleThreshold = 0.90

@@ -265,25 +265,19 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay)
         end if
         print "Max resolution:"; maxResolution
 
-        print "Media item optimized for streaming: "; mediaItem.optimized
-        if mediaItem.optimized = "true" OR mediaItem.optimized = "1" then
-            print "Media item container: "; mediaItem.container
-            print "Media item video codec: "; mediaItem.videoCodec
-            print "Media item audio codec: "; mediaItem.audioCodec
-
-            if mediaItem.container = "mp4" AND mediaItem.videoCodec = "h264" AND (mediaItem.audioCodec = "aac" OR mediaItem.audioCodec = "mp3") then
-                resolution = firstOf(mediaItem.videoResolution, "0").toInt()
-                print "Media item resolution:"; resolution; ", max is"; maxResolution
-                if resolution <= maxResolution then
-                    print "Will try to direct play "; mediaKey
-                    video.StreamUrls = [mediaKey]
-                    video.StreamBitrates = [0]
-                    video.StreamQualities = [quality]
-                    video.StreamFormat = "mp4"
-                    video.FrameRate = item.FrameRate
-                    video.IsTranscoded = false
-                    return video
-                end if
+        if (videoCanDirectPlay(mediaItem))
+            resolution = firstOf(mediaItem.videoResolution, "0").toInt()
+            print "Media item resolution:"; resolution; ", max is"; maxResolution
+            if resolution <= maxResolution then
+                mediaFullUrl = FullUrl(m.serverUrl, "", mediaKey)
+                print "Will try to direct play "; mediaFullUrl
+                video.StreamUrls = [mediaFullUrl]
+                video.StreamBitrates = [0]
+                video.StreamQualities = [quality]
+                video.StreamFormat = "mp4"
+                video.FrameRate = item.FrameRate
+                video.IsTranscoded = false
+                return video
             end if
         end if
     end if
