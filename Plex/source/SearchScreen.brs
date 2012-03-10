@@ -35,7 +35,6 @@ Function createSearchScreen(item, viewController) As Object
 End Function
 
 Function showSearchScreen() As Integer
-    m.ViewController.PushTheme("light")
     m.Screen.Show()
 
     while true
@@ -126,8 +125,6 @@ Function showSearchScreen() As Integer
             end if
         end if
     end while
-
-    m.ViewController.PopTheme()
 
     return 0
 End Function

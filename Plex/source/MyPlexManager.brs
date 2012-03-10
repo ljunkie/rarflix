@@ -50,7 +50,6 @@ Sub mpCheckAuthentication()
 End Sub
 
 Function mpShowPinScreen() As Object
-    m.ViewController.PushTheme("light")
     port = CreateObject("roMessagePort")
     screen = CreateObject("roCodeRegistrationScreen")
     screen.SetMessagePort(port)
@@ -141,8 +140,6 @@ Function mpShowPinScreen() As Object
             end if
         end if
     end while
-
-    m.ViewController.PopTheme()
 
     if codeRequest <> invalid then codeRequest.AsyncCancel()
     if pollRequest <> invalid then pollRequest.AsyncCancel()

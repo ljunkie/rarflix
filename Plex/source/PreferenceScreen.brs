@@ -1,6 +1,4 @@
 Function showPreferenceScreen (item, viewController)
-    viewController.PushTheme("dark")
-	
 	port = CreateObject("roMessagePort")
 	screen = createObject("roListScreen")
 	screen.setMessagePort(port)
@@ -59,8 +57,6 @@ Function showPreferenceScreen (item, viewController)
             end if 
         end if
 	end while
-
-    viewController.PopTheme()
 End Function
 
 Function showInput (inputItem,item,screen, buttonIndex)
@@ -241,7 +237,6 @@ End Function
 ' Roku channel settings
 '#######################################################
 Function showPreferencesScreen()
-    m.ViewController.PushTheme("dark")
 	port = CreateObject("roMessagePort") 
 
     manifest = ReadAsciiFile("pkg:/manifest")
@@ -340,8 +335,6 @@ Function showPreferencesScreen()
     for each machineID in serversBefore
         changes["servers"].AddReplace(machineID, "removed")
     next
-
-    m.ViewController.PopTheme()
 
     m.Refresh(changes)
 End Function

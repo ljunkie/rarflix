@@ -91,8 +91,6 @@ Function createAudioSpringboardScreen(context, index, viewController) As Object
 End Function
 
 Function showSpringboardScreen() As Integer
-    m.ViewController.PushTheme("light")
-
     server = m.Item.server
     m.Refresh()
 
@@ -117,7 +115,6 @@ Function showSpringboardScreen() As Integer
         endif
     end while
 
-    m.ViewController.PopTheme()
     return 0
 End Function
 

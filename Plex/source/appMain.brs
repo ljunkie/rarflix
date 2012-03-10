@@ -52,7 +52,63 @@ Sub initTheme()
     theme.GridScreenLogoSD  = "pkg:/images/logo_final_SD.png"
     theme.GridScreenOverhangHeightSD = "66"
 
-    theme.RegistrationCodeColor = "#8B0000"
+    ' We want to use a dark background throughout, just like the default
+    ' grid. Unfortunately that means we need to change all sorts of stuff.
+    ' The general idea is that we have a small number of colors for text
+    ' and try to set them appropriately for each screen type.
+
+    background = "#363636"
+    titleText = "#BFBFBF"
+    normalText = "#999999"
+    detailText = "#74777A"
+    subtleText = "#525252"
+
+    theme.BackgroundColor = background
+
+    theme.GridScreenBackgroundColor = background
+    theme.GridScreenRetrievingColor = subtleText
+    theme.GridScreenListNameColor = titleText
+    theme.CounterTextLeft = titleText
+    theme.CounterSeparator = normalText
+    theme.CounterTextRight = normalText
+    ' Defaults for all GridScreenDescriptionXXX
+
+    theme.ListScreenHeaderText = titleText
+    theme.ListItemText = normalText
+    theme.ListItemHighlightText = titleText
+    ' Other roListScreen attrs a mystery...
+
+    theme.ParagraphHeaderText = titleText
+    theme.ParagraphBodyText = normalText
+
+    theme.ButtonNormalColor = normalText
+    ' Default for ButtonHighlightColor seems OK...
+
+    theme.RegistrationCodeColor = "#FFA500"
+    theme.RegistrationFocalColor = normalText
+
+    theme.SearchHeaderText = titleText
+    theme.ButtonMenuHighlightText = titleText
+    theme.ButtonMenuNormalText = titleText
+
+    theme.PosterScreenLine1Text = titleText
+    theme.PosterScreenLine2Text = normalText
+
+    theme.SpringboardTitleText = titleText
+    theme.SpringboardArtistColor = titleText
+    theme.SpringboardArtistLabelColor = detailText
+    theme.SpringboardAlbumColor = titleText
+    theme.SpringboardAlbumLabelColor = detailText
+    theme.SpringboardRuntimeColor = normalText
+    theme.SpringboardActorColor = titleText
+    theme.SpringboardDirectorColor = titleText
+    theme.SpringboardDirectorLabel = detailText
+    theme.SpringboardGenreColor = normalText
+    theme.SpringboardSynopsisColor = normalText
+
+    ' Not sure these are actually used, but they should probably be normal
+    theme.SpringboardSynopsisText = normalText
+    theme.EpisodeSynopsisText = normalText
 
     app.SetTheme(theme)
 

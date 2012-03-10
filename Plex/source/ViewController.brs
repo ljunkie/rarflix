@@ -32,7 +32,6 @@ Function createViewController() As Object
     controller.ApplyThemeAttrs = vcApplyThemeAttrs
 
     controller.InitThemes()
-    controller.PushTheme("dark")
 
     return controller
 End Function
@@ -248,37 +247,6 @@ Sub vcInitThemes()
     m.ThemeStack = CreateObject("roList")
     m.ThemeApplyParams = CreateObject("roAssociativeArray")
     m.ThemeRevertParams = CreateObject("roAssociativeArray")
-
-    ' This isn't very carefully thought out, if we actually had multiple
-    ' themes we'd probably need to be a bit more robust about how we revert
-    ' themes.
-
-    m.ThemeApplyParams["dark"] = {
-        BackgroundColor: "#363636",
-        ButtonMenuNormalText: "#A4AAAA",
-        PosterScreenLine1Text: "#A4AAAA",
-        PosterScreenLine2Text: "#A4AAAA"
-    }
-    m.ThemeRevertParams["dark"] = {
-        BackgroundColor: invalid,
-        ButtonMenuNormalText: invalid,
-        PosterScreenLine1Text: invalid,
-        PosterScreenLine2Text: invalid
-    }
-
-    m.ThemeApplyParams["light"] = {
-        BackgroundColor: invalid,
-        ButtonMenuNormalText: invalid,
-        PosterScreenLine1Text: invalid,
-        PosterScreenLine2Text: invalid
-    }
-    m.ThemeRevertParams["light"] = {
-        BackgroundColor: "#363636",
-        ButtonMenuNormalText: "#A4AAAA",
-        PosterScreenLine1Text: "#A4AAAA",
-        PosterScreenLine2Text: "#A4AAAA"
-    }
-
 End Sub
 
 Sub vcPushTheme(name)

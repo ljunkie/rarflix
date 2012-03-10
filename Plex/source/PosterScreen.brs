@@ -32,7 +32,6 @@ Function createPosterScreen(item, viewController) As Object
 End Function
 
 Function showPosterScreen() As Integer
-    m.ViewController.PushTheme("dark")
     ' Show a facade immediately to get the background 'retrieving' instead of
     ' using a one line dialog.
     facade = CreateObject("roPosterScreen")
@@ -155,7 +154,6 @@ Function showPosterScreen() As Integer
             end if
         end If
     end while
-    m.ViewController.PopTheme()
     return 0
 End Function
 
