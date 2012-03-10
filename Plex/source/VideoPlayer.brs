@@ -108,10 +108,7 @@ Function videoHandleMessage(msg) As Boolean
             if buttonCommand = "resume" then
                 startTime = int(val(m.metadata.viewOffset))
             endif
-            ' TODO(schuyler): We can probably allow direct play here. I'm only
-            ' disabling it out of irrational fear. At the moment it's enabled
-            ' for plugin videos only (which includes the queue).
-            playVideo(server, m.metadata, startTime, false)
+            playVideo(server, m.metadata, startTime, true)
             '* Refresh play data after playing, but only after a timeout,
             '* otherwise we may leak objects if the play ended because the
             '* springboard was closed.
