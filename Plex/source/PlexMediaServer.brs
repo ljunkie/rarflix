@@ -305,7 +305,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay)
 				frSetting = RegRead("legacy1080pframerate","preferences")
 				if frSetting = "24" then
 					video.framerate = 24
-				else if frSetting = "native" and item.preferredMediaItem.framerate = "24"					
+				else if frSetting = "auto" and item.preferredMediaItem.framerate = "24"					
 					video.framerate = 24
 				end if
 			end if
