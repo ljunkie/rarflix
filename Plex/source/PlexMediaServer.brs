@@ -455,7 +455,7 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpCookies As 
     
     if not(RegExists("quality", "preferences")) then RegWrite("quality", "7", "preferences")
     if not(RegExists("level", "preferences")) then RegWrite("level", "40", "preferences")
-    print "REG READ LEVEL"+ RegRead("level", "preferences")
+    print "REG READ LEVEL "; RegRead("level", "preferences")
 
     path = "/video/:/transcode/segmented/start.m3u8?"
 
@@ -542,7 +542,8 @@ Function Capabilities(recompute=false) As String
     end if
 
     protocols = "protocols=http-live-streaming,http-mp4-streaming,http-mp4-video,http-mp4-video-720p,http-streaming-video,http-streaming-video-720p"
-    print "REG READ LEVEL"+ RegRead("level", "preferences")
+    print "REG READ LEVEL "; RegRead("level", "preferences")
+    level = firstOf(RegRead("level", "preferences"), "40")
     'do checks to see if 5.1 is supported, else use stereo
     device = CreateObject("roDeviceInfo")
     audio = "aac"
@@ -565,7 +566,7 @@ Function Capabilities(recompute=false) As String
             print "5.1 support disabled via Tweaks"
         end if
     end if 
-    decoders = "videoDecoders=h264{profile:high&resolution:1080&level:"+ RegRead("level", "preferences") + "};audioDecoders="+audio
+    decoders = "videoDecoders=h264{profile:high&resolution:1080&level:"+ level + "};audioDecoders="+audio
     'anamorphic video causes problems, disable support for it
     'anamorphic = "playsAnamorphic=no"
 
