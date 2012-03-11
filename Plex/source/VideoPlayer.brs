@@ -164,13 +164,13 @@ Function videoCanDirectPlay(mediaItem As Object) As Boolean
     print "Media item video codec: "; mediaItem.videoCodec
     print "Media item audio codec: "; mediaItem.audioCodec
 
-    if (mediaItem.container <> "mp4" AND mediaItem.container <> "mov" AND mediaItem.container <> "mkv") then
-        print "videoCanDirectPlay: container not mp4/mov/mkv"
+    if (mediaItem.container <> "mp4" AND mediaItem.container <> "mov" AND mediaItem.container <> "mkv" AND mediaItem.container <> "m4v") then
+        print "videoCanDirectPlay: container not mp4/mov/m4v/mkv"
         return false
     end if
 
-    if mediaItem.videoCodec <> "h264" then
-        print "videoCanDirectPlay: vc not h264"
+    if (mediaItem.videoCodec <> "h264" AND mediaItem.videoCodec <> "mpeg4") then
+        print "videoCanDirectPlay: vc not h264/mpeg4"
         return false
     end if
 
