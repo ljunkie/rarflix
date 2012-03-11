@@ -14,6 +14,7 @@ Function createViewController() As Object
 
     controller.CreateScreenForItem = vcCreateScreenForItem
     controller.CreateTextInputScreen = vcCreateTextInputScreen
+    controller.CreateEnumInputScreen = vcCreateEnumInputScreen
     controller.PushScreen = vcPushScreen
     controller.PopScreen = vcPopScreen
 
@@ -150,6 +151,22 @@ Function vcCreateTextInputScreen(heading, breadcrumbs, show=true) As Dynamic
     return screen
 End Function
 
+Function vcCreateEnumInputScreen(options, selected, heading, breadcrumbs, show=true) As Dynamic
+    screen = createEnumScreen(options, selected, m)
+
+    if heading <> invalid then
+        screen.Screen.SetHeader(heading)
+    end if
+
+    m.AddBreadcrumbs(screen, breadcrumbs)
+    m.UpdateScreenProperties(screen)
+    m.PushScreen(screen)
+
+    if show then screen.Show()
+
+    return screen
+End Function
+
 Sub vcPushScreen(screen)
     ' Set an ID on the screen so we can sanity check before popping
     screen.ScreenID = m.nextId
@@ -213,6 +230,16 @@ Sub vcAddBreadcrumbs(screen, breadcrumbs)
     screenType = type(screen.Screen)
     if breadcrumbs = invalid then
         screen.NumBreadcrumbs = 0
+    else if breadcrumbs.Count() = 0 AND m.breadcrumbs.Count() > 0 then
+        count = m.breadcrumbs.Count()
+        if count >= 2 then
+            breadcrumbs = [m.breadcrumbs[count-2], m.breadcrumbs[count-1]]
+        else
+            breadcrumbs = m.breadcrumbs[0]
+        end if
+
+        m.breadcrumbs.Append(breadcrumbs)
+        screen.NumBreadcrumbs = breadcrumbs.Count()
     else
         ' Special case for springboard screens, don't show the current title
         ' in the breadcrumbs.
