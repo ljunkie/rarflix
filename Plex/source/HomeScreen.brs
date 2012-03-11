@@ -25,7 +25,6 @@ Function createHomeScreen(viewController) As Object
     
     obj.ShowMediaServersScreen = showMediaServersScreen
     obj.ShowManualServerScreen = showManualServerScreen
-    obj.Show1080pScreen = show1080pScreen
 
     ' Data loader interface used by the grid screen
     obj.LoadMoreContent = homeLoadMoreContent

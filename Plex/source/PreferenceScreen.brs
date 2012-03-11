@@ -227,7 +227,12 @@ Sub showPreferencesScreen()
                 else if command = "quality" OR command = "level" OR command = "fivepointone" then
                     m.HandleEnumPreference(command, msg.GetIndex())
                 else if command = "1080p" then
-                    m.ViewController.Home.Show1080pScreen(m.Changes)
+                    screen = create1080PreferencesScreen(m.ViewController)
+                    ' This is slightly wrong, the ViewController normally calls these...
+                    m.ViewController.AddBreadcrumbs(screen, ["1080p Settings"])
+                    m.ViewController.UpdateScreenProperties(screen)
+                    m.ViewController.PushScreen(screen)
+                    screen.Show()
                 else if command = "close" then
                     m.Screen.Close()
                 end if
@@ -257,6 +262,92 @@ Sub showPreferencesScreen()
     next
 
     m.ViewController.Home.Refresh(m.Changes)
+End Sub
+
+Function create1080PreferencesScreen(viewController) As Object
+    obj = CreateObject("roAssociativeArray")
+    port = CreateObject("roMessagePort")
+    screen = CreateObject("roListScreen")
+
+    screen.SetMessagePort(port)
+
+    ' Standard properties for all our Screen types
+    obj.Item = invalid
+    obj.Screen = screen
+    obj.Port = port
+    obj.ViewController = viewController
+    obj.MessageHandler = invalid
+    obj.MsgTimeout = 0
+
+    obj.Show = show1080PreferencesScreen
+
+    obj.Changes = CreateObject("roAssociativeArray")
+    obj.Prefs = CreateObject("roAssociativeArray")
+
+    ' Legacy 1080p enabled
+    options = [
+        { title: "Enabled", EnumValue: "enabled" },
+        { title: "Disabled", EnumValue: "disabled" }
+    ]
+    obj.Prefs["legacy1080p"] = {
+        values: options,
+        label: "1080p Support",
+        heading: "1080p support (Roku 1 only)",
+        default: "disabled"
+    }
+
+    ' Framerate override
+    options = [
+        { title: "auto", EnumValue: "auto" },
+        { title: "24", EnumValue: "24" },
+        { title: "30", EnumValue: "30" }
+    ]
+    obj.Prefs["legacy1080pframerate"] = {
+        values: options,
+        label: "Frame Rate Override",
+        heading: "Select a frame rate to use with 1080p content.",
+        default: "auto"
+    }
+
+    obj.HandleEnumPreference = prefsHandleEnumPreference
+    obj.GetEnumLabel = prefsGetEnumLabel
+
+    return obj
+End Function
+
+Sub show1080PreferencesScreen()
+    m.Screen.SetHeader("1080p settings (Roku 1 only)")
+
+    items = []
+
+    m.Screen.AddContent({title: m.GetEnumLabel("legacy1080p")})
+    items.Push("legacy1080p")
+
+    m.Screen.AddContent({title: m.GetEnumLabel("legacy1080pframerate")})
+    items.Push("legacy1080pframerate")
+
+    m.Screen.AddContent({title: "Close"})
+    items.Push("close")
+
+    m.Screen.Show()
+
+    while true
+        msg = wait(m.MsgTimeout, m.Port)
+        if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
+        else if type(msg) = "roListScreenEvent" then
+            if msg.isScreenClosed() then
+                m.ViewController.PopScreen(m)
+                exit while
+            else if msg.isListItemSelected() then
+                command = items[msg.GetIndex()]
+                if command = "legacy1080p" OR command = "legacy1080pframerate" then
+                    m.HandleEnumPreference(command, msg.GetIndex())
+                else if command = "close" then
+                    m.Screen.Close()
+                end if
+            end if
+        end if
+    end while
 End Sub
 
 Sub prefsHandleEnumPreference(regKey, index)
@@ -381,121 +472,6 @@ Sub showManualServerScreen()
         end if
     end while
 End Sub
-
-Function show1080pScreen(changes)
-	port = CreateObject("roMessagePort") 
-	ls = CreateObject("roListScreen") 
-	ls.SetMessagePort(port)
-	ls.SetTitle("1080p Roku 1 Support") 
-	ls.setHeader("This screen allows you to configure 1080p support for Roku 1 devices.")
-	if not(RegExists("legacy1080p", "preferences")) then
-		RegWrite("legacy1080p", "disabled", "preferences")
-	end if
-	if not(RegExists("legacy1080pframerate", "preferences")) then
-		RegWrite("legacy1080pframerate", "auto", "preferences")
-	end if
-	
-	ls.setContent([{title: "1080p: "+ RegRead("legacy1080p","preferences") },
-		{title: "Framerate Override: "+ RegRead("legacy1080pframerate","preferences")},
-		{title: "Close 1080p Menu"}])
-	ls.Show()
-	
-	while true 
-		msg = wait(0, ls.GetMessagePort()) 
-		if type(msg) = "roListScreenEvent"
-			if msg.isScreenClosed() then
-				ls.close()
-				exit while
-			else if msg.isListItemSelected() then
-				if msg.getIndex() = 0 then
-					show1080pSettingScreen()
-					ls.setItem(msg.getIndex(), {title:"1080p: " + RegRead("legacy1080p","preferences")})
-				else if msg.getIndex() = 1 then
-					show1080pframerateScreen()
-					ls.setItem(msg.getIndex(), {title:"Framerate Override: " + RegRead("legacy1080pframerate","preferences")})
-				else if msg.getIndex() = 2 then
-					ls.close()
-				end if
-			end if
-		end if 
-	end while
-End Function
-
-Function show1080pSettingScreen()
-	port = CreateObject("roMessagePort") 
-	ls = CreateObject("roListScreen") 
-	ls.SetMessagePort(port)
-	ls.SetTitle("1080p Roku 1 setting") 
-	ls.setHeader("Enable 1080p Support for Roku 1 devices")
-	
-	
-	ls.setContent([{title: "enable"},
-		{title: "disable"}])
-	
-	if RegRead("legacy1080p","preferences") = "enabled" then
-		ls.setFocusedListItem(0)
-	else
-		ls.setFocusedListItem(1)
-	end if
-	ls.Show()
-	while true 
-		msg = wait(0, ls.GetMessagePort()) 
-		if type(msg) = "roListScreenEvent"
-			if msg.isScreenClosed() then
-				ls.close()
-				exit while
-			else if msg.isListItemSelected() then
-				if msg.getIndex() = 0 then
-					RegWrite("legacy1080p","enabled","preferences")
-				else if msg.getIndex() = 1 then
-					RegWrite("legacy1080p","disabled","preferences")
-				end if
-				ls.close()
-			end if
-		end if 
-	end while
-End Function
-
-Function show1080pFramerateScreen()
-	port = CreateObject("roMessagePort") 
-	ls = CreateObject("roListScreen") 
-	ls.SetMessagePort(port)
-	ls.SetTitle("1080p Roku 1 Framerate") 
-	ls.setHeader("Select [auto] if your device supports both 1080p24 and 1080p30.")
-	
-	
-	ls.setContent([{title: "auto"},
-		{title: "24"},
-		{title: "30"}])
-	
-	if RegRead("legacy1080pframerate","preferences") = "24" then
-		ls.setFocusedListItem(1)
-	else if RegRead("legacy1080pframerate","preferences") = "30"
-		ls.setFocusedListItem(2)
-	else 
-		ls.setFocusedListItem(0)
-	end if
-	
-	ls.Show()
-	while true 
-		msg = wait(0, ls.GetMessagePort()) 
-		if type(msg) = "roListScreenEvent"
-			if msg.isScreenClosed() then
-				ls.close()
-				exit while
-			else if msg.isListItemSelected() then
-				if msg.getIndex() = 0 then
-					RegWrite("legacy1080pframerate","auto","preferences")
-				else if msg.getIndex() = 1 then
-					RegWrite("legacy1080pframerate","24","preferences")
-				else if msg.getIndex() = 2 then
-					RegWrite("legacy1080pframerate","30","preferences")
-				end if
-				ls.close()
-			end if
-		end if 
-	end while
-End Function
 
 Function prefsGetEnumLabel(regKey) As String
     pref = m.Prefs[regKey]
