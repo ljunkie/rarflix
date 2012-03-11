@@ -135,10 +135,13 @@ Function containerMoveKeyToHead(key)
     for i = 0 to m.keys.Count() - 1
         if m.keys[i] = key then
             name = m.names[i]
+            metadata = m.metadata[i]
             m.names.Delete(i)
             m.names.Unshift(name)
             m.keys.Delete(i)
             m.keys.Unshift(key)
+            m.metadata.Delete(i)
+            m.metadata.Unshift(metadata)
             return true
         end if
     end for
