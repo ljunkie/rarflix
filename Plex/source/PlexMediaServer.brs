@@ -84,7 +84,7 @@ Function rate(key, identifier, rating)
 End Function
 
 Function setpref(key, identifier, value)
-    commandUrl = key+"/set?"+identifier+"="+value
+    commandUrl = key+"/set?"+identifier+"="+HttpEncode(value)
     m.ExecuteCommand(commandUrl)
 End Function
 
