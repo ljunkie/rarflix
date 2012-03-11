@@ -105,11 +105,21 @@ Function showPreferencesScreen()
 	
 	ls = CreateObject("roListScreen")
 	ls.SetMEssagePort(port)
-	ls.setTitle("Preferences v."+aa["version"])
+	ls.setTitle("Preferences v"+aa["version"])
 	ls.setheader("Set Plex Channel Preferences")
-	print "Quality:";currentQualityTitle
+
+    qualities = [
+        { title: "720 kbps, 320p", EnumValue: "Auto" },
+        { title: "1.5 Mbps, 480p", EnumValue: "5" },
+        { title: "2.0 Mbps, 720p", EnumValue: "6" },
+        { title: "3.0 Mbps, 720p", EnumValue: "7" },
+        { title: "4.0 Mbps, 720p", EnumValue: "8" },
+        { title: "8.0 Mbps, 1080p", EnumValue: "9" }
+    ]
+    quality = RegRead("quality", "preferences", "7")
+
 	ls.SetContent([{title:"Plex Media Servers"},
-		{title:"Quality: "+getCurrentQualityName()},
+		{title:"Quality" + getCurrentEnumLabel(qualities, quality)},
 		{title:"H264 Level: " + getCurrentH264Level()},
 		{title:"5.1 Support: " + getCurrentFiveOneSetting()}])
 		
@@ -150,8 +160,13 @@ Function showPreferencesScreen()
                 if msg.getIndex() = 0 then
                     m.ShowMediaServersScreen(changes)
                 else if msg.getIndex() = 1 then
-                    m.ShowQualityScreen(changes)
-                    ls.setItem(msg.getIndex(), {title:"Quality: "+ getCurrentQualityName() })
+                    screen = m.ViewController.CreateEnumInputScreen(qualities, quality, "Higher settings produce better video quality but require more" + Chr(10) + "network bandwidth.", ["Quality Settings"])
+                    if screen.SelectedIndex <> invalid then
+                        print "Set selected quality to "; screen.SelectedValue
+                        RegWrite("quality", screen.SelectedValue, "preferences")
+                        changes.AddReplace("quality", screen.SelectedValue)
+                        ls.setItem(msg.getIndex(), {title:"Quality: " + screen.SelectedLabel})
+                    end if
                 else if msg.getIndex() = 2 then
                     m.ShowH264Screen(changes)
                     ls.setItem(msg.getIndex(), {title:"H264 Level: " + getCurrentH264Level()})
@@ -347,56 +362,6 @@ Function showFivePointOneScreen(changes)
 	end while
 End Function
 
-Function showQualityScreen(changes)
-	port = CreateObject("roMessagePort") 
-	ls = CreateObject("roListScreen")
-	ls.SetMessagePort(port)
-	ls.SetTitle("Quality Settings") 
-	ls.setHeader("Higher settings produce better video quality but require more" + chr(10) + "network bandwidth.")
-	
-	qualities = CreateObject("roArray", 6 , true)
-	
-	qualities.Push("720 kbps, 320p") 'N=1, Q=4
-	qualities.Push("1.5 Mbps, 480p") 'N=2, Q=5
-	qualities.Push("2.0 Mbps, 720p") 'N=3, Q=6
-	qualities.Push("3.0 Mbps, 720p") 'N=4, Q=7
-	qualities.Push("4.0 Mbps, 720p") 'N=5, Q=8
-	qualities.Push("8.0 Mbps, 1080p") 'N=6, Q=9
-	
-	if not(RegExists("quality", "preferences")) then
-		RegWrite("quality", "7", "preferences")
-	end if
-	current = RegRead("quality", "preferences")
-	
-	
-	for each quality in qualities
-		listTitle = quality		
-		ls.AddContent({title: listTitle})
-	next
-	ls.setFocusedListItem(current.toint()-4)
-	ls.Show()
-	while true 
-		msg = wait(0, ls.GetMessagePort()) 
-		if type(msg) = "roListScreenEvent"
-			if msg.isScreenClosed() then
-				ls.close()
-				exit while
-			else if msg.isListItemSelected() then
-				if msg.getIndex() = 0 then
-					quality = "Auto"
-				else
-        			quality = (4 + msg.getIndex()).tostr()
-        		end if
-        		print "Set selected quality to ";quality
-        		RegWrite("quality", quality, "preferences")
-                changes.AddReplace("quality", quality)
-				ls.close()
-				exit while
-			end if 
-		end if
-	end while
-End Function
-
 Function showH264Screen(changes)
 	port = CreateObject("roMessagePort") 
 	ls = CreateObject("roListScreen") 
@@ -585,30 +550,6 @@ Function show1080pFramerateScreen()
 	end while
 End Function
 
-
-
-Function getCurrentQualityName()
-	qualities = CreateObject("roArray", 6 , true)
-	qualities.Push("720 kbps, 320p") 'N=1, Q=4
-	qualities.Push("1.5 Mbps, 480p") 'N=2, Q=5
-	qualities.Push("2.0 Mbps, 720p") 'N=3, Q=6
-	qualities.Push("3.0 Mbps, 720p") 'N=4, Q=7
-	qualities.Push("4.0 Mbps, 720p") 'N=5, Q=8
-	qualities.Push("8.0 Mbps, 1080p") 'N=6, Q=9
-	
-	if not(RegExists("quality", "preferences")) then
-		RegWrite("quality", "7", "preferences")
-	end if
-	currentQuality = RegRead("quality", "preferences")
-	if currentQuality = "Auto" then
-		currentQualityTitle = "Auto"
-	else 
-		currentQualityIndex = currentQuality.toint() -4
-		currentQualityTitle = qualities[currentQualityIndex]
-	endif
-	return currentQualityTitle
-End Function
-
 Function getCurrentH264Level()
 	if not(RegExists("level", "preferences")) then
 		RegWrite("level", "40", "preferences")
@@ -643,5 +584,15 @@ Function getCurrentFiveOneSetting()
 	endif
 		
 	return currentText
+End Function
+
+Function getCurrentEnumLabel(items, value) As String
+    for each item in items
+        if value = item.EnumValue then
+            return ": " + item.title
+        end if
+    next
+
+    return ""
 End Function
 

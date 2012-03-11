@@ -26,7 +26,6 @@ Function createHomeScreen(viewController) As Object
     obj.ShowMediaServersScreen = showMediaServersScreen
     obj.ShowManualServerScreen = showManualServerScreen
     obj.ShowFivePointOneScreen = showFivePointOneScreen
-    obj.ShowQualityScreen = showQualityScreen
     obj.ShowH264Screen = showH264Screen
     obj.Show1080pScreen = show1080pScreen
 

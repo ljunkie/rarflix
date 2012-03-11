@@ -35,7 +35,7 @@ Function createEnumScreen(options, selected, viewController) As Object
             if option.EnumValue = invalid then
                 option.EnumValue = option.title
             end if
-            if GetInterface(selected, "ifString") <> invalid AND selected = option.title then
+            if GetInterface(selected, "ifString") <> invalid AND selected = option.EnumValue then
                 focusedIndex = obj.Options.Count()
             end if
 

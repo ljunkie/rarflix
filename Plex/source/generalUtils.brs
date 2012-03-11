@@ -7,11 +7,11 @@
 '******************************************************
 'Registry Helper Functions
 '******************************************************
-Function RegRead(key, section=invalid)
+Function RegRead(key, section=invalid, default=invalid)
     if section = invalid then section = "Default"
     sec = CreateObject("roRegistrySection", section)
     if sec.Exists(key) then return sec.Read(key)
-    return invalid
+    return default
 End Function
 
 Function RegWrite(key, val, section=invalid)
