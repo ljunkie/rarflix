@@ -13,7 +13,7 @@ Function videoAddButtons(obj) As Object
         buttonCommands[str(buttonCount)] = "resume"
         buttonCount = buttonCount + 1
     endif
-    screen.AddButton(buttonCount, "Play")
+    screen.AddButton(buttonCount, m.PlayButtonStates[m.PlayButtonState].label)
     buttonCommands[str(buttonCount)] = "play"
     buttonCount = buttonCount + 1
 
@@ -35,28 +35,9 @@ Function videoAddButtons(obj) As Object
         buttonCount = buttonCount + 1
     end if
 
-    mediaPart = media.preferredPart
-    subtitleStreams = []
-    audioStreams = []
-    for each Stream in mediaPart.streams
-        if Stream.streamType = "2" then
-            audioStreams.Push(Stream)
-        else if Stream.streamType = "3" then
-            subtitleStreams.Push(Stream)
-        endif
-    next
-    print "Found audio streams:";audioStreams.Count()
-    print "Found subtitle streams:";subtitleStreams.Count()
-    if audioStreams.Count() > 1 then
-        screen.AddButton(buttonCount, "Select audio stream")
-        buttonCommands[str(buttonCount)] = "audioStreamSelection"
-        buttonCount = buttonCount + 1
-    endif
-    if subtitleStreams.Count() > 0 then
-        screen.AddButton(buttonCount, "Select subtitles")
-        buttonCommands[str(buttonCount)] = "subtitleStreamSelection"
-        buttonCount = buttonCount + 1
-    endif
+    screen.AddButton(buttonCount, "Playback options")
+    buttonCommands[str(buttonCount)] = "options"
+    buttonCount = buttonCount + 1
 
     if metadata.UserRating = invalid then
         metadata.UserRating = 0
@@ -85,17 +66,13 @@ Function videoHandleMessage(msg) As Boolean
             if buttonCommand = "resume" then
                 startTime = int(val(m.metadata.viewOffset))
             endif
-            playVideo(server, m.metadata, startTime, true)
+            directPlayOptions = m.PlayButtonStates[m.PlayButtonState]
+            print "Playing video with Direct Play options set to: "; directPlayOptions.label
+            playVideo(server, m.metadata, startTime, directPlayOptions.value)
             '* Refresh play data after playing, but only after a timeout,
             '* otherwise we may leak objects if the play ended because the
             '* springboard was closed.
             m.msgTimeout = 1
-        else if buttonCommand = "audioStreamSelection" then
-            SelectAudioStream(server, m.media)
-            m.Refresh(true)
-        else if buttonCommand = "subtitleStreamSelection" then
-            SelectSubtitleStream(server, m.media)
-            m.Refresh(true)
         else if buttonCommand = "scrobble" then
             'scrobble key here
             server.Scrobble(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier)
@@ -106,6 +83,27 @@ Function videoHandleMessage(msg) As Boolean
             server.Unscrobble(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier)
             '* Refresh play data after unscrobbling
             m.Refresh(true)
+        else if buttonCommand = "options" then
+            screen = createVideoOptionsScreen(m.metadata, m.ViewController)
+            m.ViewController.InitializeOtherScreen(screen, ["Video Playback Options"])
+            screen.Show()
+
+            if screen.Changes.DoesExist("playback") then
+                m.PlayButtonState = screen.Changes["playback"].toint()
+            end if
+
+            if screen.Changes.DoesExist("audio") then
+                server.UpdateAudioStreamSelection(m.media.preferredPart.id, screen.Changes["audio"])
+            end if
+
+            if screen.Changes.DoesExist("subtitles") then
+                server.UpdateSubtitleStreamSelection(m.media.preferredPart.id, screen.Changes["subtitles"])
+            end if
+
+            if NOT screen.Changes.IsEmpty() then
+                m.Refresh(true)
+            end if
+            screen = invalid
 	    else if buttonCommand = "rateVideo" then                
 		    rateValue% = msg.getData() /10
 		    m.metadata.UserRating = msg.getdata()
@@ -120,11 +118,11 @@ Function videoHandleMessage(msg) As Boolean
     return false
 End Function
 
-Sub playVideo(server, metadata, seekValue=0, allowDirectPlay=true)
+Sub playVideo(server, metadata, seekValue=0, directPlayOptions=0)
 	print "MediaPlayer::playVideo: Displaying video: ";metadata.title
 	seconds = int(seekValue/1000)
 
-    videoItem = server.ConstructVideoItem(metadata, seconds, allowDirectPlay)
+    videoItem = server.ConstructVideoItem(metadata, seconds, directPlayOptions <> 3, directPlayOptions = 1 OR directPlayOptions = 2)
     if videoItem = invalid then
         print "Can't play video, server was unable to construct video item"
         return
@@ -154,8 +152,14 @@ Sub playVideo(server, metadata, seekValue=0, allowDirectPlay=true)
             dialog.Title = "Video Unavailable"
             dialog.Text = "We're unable to play this video, make sure the server is running and has access to this video."
             dialog.Show()
+        else if directPlayOptions = 1 then
+            dialog = createBaseDialog()
+            dialog.Title = "Direct Play Unavailable"
+            dialog.Text = "This video isn't supported for Direct Play."
+            dialog.Show()
         else
-            playVideo(server, metadata, seekValue, false)
+            ' Force transcoding this time
+            playVideo(server, metadata, seekValue, 3)
         end if
     end if
 End Sub
@@ -261,5 +265,167 @@ Function videoMessageLoop(server, metadata, messagePort, transcoded) As Boolean
     end while
 
     return success
+End Function
+
+Function createVideoOptionsScreen(item, viewController) As Object
+    obj = CreateObject("roAssociativeArray")
+    port = CreateObject("roMessagePort")
+    screen = CreateObject("roListScreen")
+
+    screen.SetMessagePort(port)
+
+    ' Standard properties for all our Screen types
+    obj.Item = item
+    obj.Screen = screen
+    obj.Port = port
+    obj.ViewController = viewController
+    obj.MessageHandler = invalid
+    obj.MsgTimeout = 0
+
+    obj.Show = showVideoOptionsScreen
+
+    obj.Changes = CreateObject("roAssociativeArray")
+    obj.Prefs = CreateObject("roAssociativeArray")
+
+    ' Transcoding vs. direct play
+    options = [
+        { title: "Automatic", EnumValue: "0" },
+        { title: "Direct Play", EnumValue: "1" },
+        { title: "Direct Play w/ Fallback", EnumValue: "2" },
+        { title: "Transcode", EnumValue: "3" }
+    ]
+    obj.Prefs["playback"] = {
+        values: options,
+        label: "Transcoding",
+        heading: "Should this video be transcoded or use Direct Play?",
+        default: "0"
+    }
+
+    audioStreams = []
+    subtitleStreams = []
+    defaultAudio = ""
+    defaultSubtitle = ""
+
+    subtitleStreams.Push({ title: "No Subtitles", EnumValue: "" })
+
+    for each stream in item.preferredMediaItem.preferredPart.streams
+        if stream.streamType = "2" then
+            language = firstOf(stream.Language, "Unknown")
+            format = ucase(firstOf(stream.Codec, ""))
+            if format = "DCA" then format = "DTS"
+            if stream.Channels <> invalid then
+                if stream.Channels = "2" then
+                    format = format + " Stereo"
+                else if stream.Channels = "6" then
+                    format = format + " 5.1"
+                else if stream.Channels = "8" then
+                    format = format + " 7.1"
+                end if
+            end if
+            if format <> "" then
+                title = language + " (" + format + ")"
+            else
+                title = language
+            end if
+            if stream.selected <> invalid then
+                defaultAudio = stream.Id
+            end if
+
+            audioStreams.Push({ title: title, EnumValue: stream.Id })
+        else if stream.streamType = "3" then
+            language = firstOf(stream.Language, "Unknown")
+            if stream.Codec = "srt" then
+                language = language + " (*)"
+            end if
+            if stream.selected <> invalid then
+                defaultSubtitle = stream.Id
+            end if
+
+            subtitleStreams.Push({ title: language, EnumValue: stream.Id })
+        end if
+    next
+
+    ' Audio streams
+    print "Found audio streams:"; audioStreams.Count()
+    if audioStreams.Count() > 0 then
+        obj.Prefs["audio"] = {
+            values: audioStreams,
+            label: "Audio Stream",
+            heading: "Select an audio stream",
+            default: defaultAudio
+        }
+    end if
+
+    ' Subtitle streams
+    print "Found subtitle streams:"; (subtitleStreams.Count() - 1)
+    if subtitleStreams.Count() > 1 then
+        obj.Prefs["subtitles"] = {
+            values: subtitleStreams,
+            label: "Subtitle Stream",
+            heading: "Select a subtitle stream",
+            default: defaultSubtitle
+        }
+    end if
+
+    obj.GetEnumLabel = videoGetEnumLabel
+
+    return obj
+End Function
+
+Sub showVideoOptionsScreen()
+    m.Screen.SetHeader("Video playback options")
+
+    items = []
+
+    possiblePrefs = ["playback", "audio", "subtitles"]
+    for each key in possiblePrefs
+        pref = m.Prefs[key]
+        if pref <> invalid then
+            m.Screen.AddContent({title: m.GetEnumLabel(key)})
+            items.Push(key)
+        end if
+    next
+
+    m.Screen.AddContent({title: "Close"})
+    items.Push("close")
+
+    m.Screen.Show()
+
+    while true
+        msg = wait(m.MsgTimeout, m.Port)
+        if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
+        else if type(msg) = "roListScreenEvent" then
+            if msg.isScreenClosed() then
+                print "Closing video options screen"
+                m.ViewController.PopScreen(m)
+                exit while
+            else if msg.isListItemSelected() then
+                command = items[msg.GetIndex()]
+                if command = "playback" OR command = "audio" OR command = "subtitles" then
+                    pref = m.Prefs[command]
+                    screen = m.ViewController.CreateEnumInputScreen(pref.values, pref.default, pref.heading, [pref.label])
+                    if screen.SelectedIndex <> invalid then
+                        m.Changes.AddReplace(command, screen.SelectedValue)
+                        pref.default = screen.SelectedValue
+                        m.Screen.SetItem(msg.GetIndex(), {title: pref.label + ": " + screen.SelectedLabel})
+                    end if
+                    screen = invalid
+                else if command = "close" then
+                    m.Screen.Close()
+                end if
+            end if
+        end if
+    end while
+End Sub
+
+Function videoGetEnumLabel(key) As String
+    pref = m.Prefs[key]
+    for each item in pref.values
+        if item.EnumValue = pref.default then
+            return pref.label + ": " + item.title
+        end if
+    next
+
+    return pref.label
 End Function
 

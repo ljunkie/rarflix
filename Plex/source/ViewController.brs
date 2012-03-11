@@ -15,6 +15,7 @@ Function createViewController() As Object
     controller.CreateScreenForItem = vcCreateScreenForItem
     controller.CreateTextInputScreen = vcCreateTextInputScreen
     controller.CreateEnumInputScreen = vcCreateEnumInputScreen
+    controller.InitializeOtherScreen = vcInitializeOtherScreen
     controller.PushScreen = vcPushScreen
     controller.PopScreen = vcPopScreen
 
@@ -164,6 +165,12 @@ Function vcCreateEnumInputScreen(options, selected, heading, breadcrumbs, show=t
 
     return screen
 End Function
+
+Sub vcInitializeOtherScreen(screen, breadcrumbs)
+    m.AddBreadcrumbs(screen, breadcrumbs)
+    m.UpdateScreenProperties(screen)
+    m.PushScreen(screen)
+End Sub
 
 Sub vcPushScreen(screen)
     ' Set an ID on the screen so we can sanity check before popping

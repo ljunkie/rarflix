@@ -32,6 +32,7 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.TranscodingVideoUrl = TranscodingVideoUrl
     pms.TranscodingAudioUrl = TranscodingAudioUrl
     pms.ConvertTranscodeURLToLoopback = ConvertTranscodeURLToLoopback
+    pms.AddDirectPlayInfo = pmsAddDirectPlayInfo
     pms.Log = pmsLog
 
     ' Set to false if a version check fails
@@ -209,7 +210,7 @@ Function DirectMediaXml(server, queryUrl) As Object
 End Function
 
 '* TODO: this assumes one part media. Implement multi-part at some point.
-Function pmsConstructVideoItem(item, seekValue, allowDirectPlay)
+Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay)
     video = CreateObject("roAssociativeArray")
     video.PlayStart = seekValue
     video.Title = item.Title
@@ -250,8 +251,17 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay)
     quality = "SD"
     if deviceInfo.GetDisplayType() = "HDTV" then quality = "HD"
     print "Setting stream quality:";quality
+    video.StreamQualities = [quality]
 
-    if allowDirectPlay AND mediaItem <> invalid then
+    if forceDirectPlay then
+        if mediaItem = invalid then
+            print "Can't direct play, plugin video has no media item!"
+            return invalid
+        else
+            m.AddDirectPlayInfo(video, item, mediaKey)
+            return video
+        end if
+    else if allowDirectPlay AND mediaItem <> invalid then
         print "Checking to see if direct play of video is possible"
         qualityPref = firstOf(RegRead("quality", "preferences"), "7").toInt()
         if qualityPref >= 9 then
@@ -269,14 +279,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay)
             resolution = firstOf(mediaItem.videoResolution, "0").toInt()
             print "Media item resolution:"; resolution; ", max is"; maxResolution
             if resolution <= maxResolution then
-                mediaFullUrl = FullUrl(m.serverUrl, "", mediaKey)
-                print "Will try to direct play "; mediaFullUrl
-                video.StreamUrls = [mediaFullUrl]
-                video.StreamBitrates = [0]
-                video.StreamQualities = [quality]
-                video.StreamFormat = "mp4"
-                video.FrameRate = item.FrameRate
-                video.IsTranscoded = false
+                m.AddDirectPlayInfo(video, item, mediaKey)
                 return video
             end if
         end if
@@ -309,7 +312,6 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay)
 	endif
 	printAA(video)
     video.StreamBitrates = [0]
-    video.StreamQualities = [quality]
     video.StreamFormat = "hls"
     url = m.TranscodingVideoUrl(mediaKey, item, httpCookies, userAgent)
     if url = invalid then return invalid
@@ -613,4 +615,14 @@ Sub pmsLog(msg as String, level=3 As Integer, timeout=0 As Integer)
     end if
 End Sub
 
+Sub pmsAddDirectPlayInfo(video, item, mediaKey)
+    mediaFullUrl = FullUrl(m.serverUrl, "", mediaKey)
+    print "Will try to direct play "; mediaFullUrl
+    video.StreamUrls = [mediaFullUrl]
+    video.StreamBitrates = [0]
+    video.FrameRate = item.FrameRate
+    video.IsTranscoded = false
+    video.StreamFormat = item.preferredMediaItem.container
+    PrintAA(video)
+End Sub
 

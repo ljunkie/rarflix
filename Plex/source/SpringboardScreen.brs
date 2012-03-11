@@ -47,6 +47,14 @@ Function createVideoSpringboardScreen(context, index, viewController) As Object
     obj.AddButtons = videoAddButtons
     obj.GetMediaDetails = videoGetMediaDetails
     obj.HandleMessage = videoHandleMessage
+
+    obj.PlayButtonStates = [
+        {label: "Play", value: 0},
+        {label: "Direct Play", value: 1},
+        {label: "Direct Play w/ Fallback", value: 2},
+        {label: "Play Transcoded", value: 3}
+    ]
+    obj.PlayButtonState = 0
     
     return obj
 End Function
@@ -139,137 +147,13 @@ Function sbRefresh(force=false)
     end if
 
     m.Screen.setContent(m.metadata)
+    m.Screen.AllowUpdates(false)
     m.buttonCommands = m.AddButtons(m)
+    m.Screen.AllowUpdates(true)
     if m.metadata.SDPosterURL <> invalid and m.metadata.HDPosterURL <> invalid then
         m.Screen.PrefetchPoster(m.metadata.SDPosterURL, m.metadata.HDPosterURL)
     endif
     m.Screen.Show()
-End Function
-
-'* Show a dialog allowing user to select from all available subtitle streams
-Function SelectSubtitleStream(server, media)
-    port = CreateObject("roMessagePort")
-    dialog = CreateObject("roMessageDialog")
-    dialog.SetMessagePort(port)
-    dialog.SetMenuTopLeft(true)
-    dialog.EnableBackButton(true)
-    dialog.SetTitle("Select Subtitle")
-    mediaPart = media.preferredPart
-    selected = false
-    for each Stream in mediaPart.streams
-        if Stream.streamType = "3" AND Stream.selected <> invalid then
-            selected = true
-        endif
-    next
-    noSelectionTitle = "No Subtitles"
-    if not selected then
-        noSelectionTitle = "> "+noSelectionTitle
-    endif
-
-    buttonCommands = CreateObject("roAssociativeArray")
-    buttonCount = 0
-    dialog.AddButton(buttonCount, noSelectionTitle)
-    buttonCommands[str(buttonCount)+"_id"] = ""
-    buttonCount = buttonCount + 1
-    for each Stream in mediaPart.streams
-        if Stream.streamType = "3" then
-            buttonTitle = "Unknown"
-            if Stream.Language <> Invalid then
-                buttonTitle = Stream.Language
-            endif
-            if Stream.Language <> Invalid AND Stream.Codec <> Invalid AND Stream.Codec = "srt" then
-                buttonTitle = Stream.Language + " (*)"
-            else if Stream.Codec <> Invalid AND Stream.Codec = "srt" then
-                buttonTitle = "Unknown (*)"
-            endif
-            if Stream.selected <> invalid then
-                buttonTitle = "> " + buttonTitle
-            endif
-            dialog.AddButton(buttonCount, buttonTitle)
-            buttonCommands[str(buttonCount)+"_id"] = Stream.Id
-            buttonCount = buttonCount + 1
-        endif
-    next
-    dialog.Show()
-    while true
-        msg = wait(0, dialog.GetMessagePort())
-        if type(msg) = "roMessageDialogEvent"
-            if msg.isScreenClosed() then
-                dialog.close()
-                exit while
-            else if msg.isButtonPressed() then
-                print "Button pressed:";msg.getIndex()
-                streamId = buttonCommands[str(msg.getIndex())+"_id"]
-                print "Media part "+media.preferredPart.id
-                print "Selected subtitle "+streamId
-                server.UpdateSubtitleStreamSelection(media.preferredPart.id, streamId)
-                dialog.close()
-            end if
-        end if
-    end while
-End Function
-
-'* Show a dialog allowing user to select from all available subtitle streams
-Function SelectAudioStream(server, media)
-    port = CreateObject("roMessagePort")
-    dialog = CreateObject("roMessageDialog")
-    dialog.SetMessagePort(port)
-    dialog.SetMenuTopLeft(true)
-    dialog.EnableBackButton(true)
-    dialog.SetTitle("Select Audio Stream")
-    mediaPart = media.preferredPart
-    buttonCommands = CreateObject("roAssociativeArray")
-    buttonCount = 0
-    for each Stream in mediaPart.streams
-        if Stream.streamType = "2" then
-            buttonTitle = "Unkwown"
-            if Stream.Language <> Invalid then
-                buttonTitle = Stream.Language
-            endif
-            subtitle = invalid
-            if Stream.Codec <> invalid then
-                if Stream.Codec = "dca" then
-                    subtitle = "DTS"
-                else
-                    subtitle = ucase(Stream.Codec)
-                endif
-            endif
-            if Stream.Channels <> invalid then
-                if Stream.Channels = "2" then
-                    subtitle = subtitle + " Stereo"
-                else if Stream.Channels = "6" then
-                    subtitle = subtitle + " 5.1"
-                else if Stream.Channels = "8" then
-                    subtitle = subtitle + " 7.1"
-                endif
-            endif
-            if subtitle <> invalid then
-                buttonTitle = buttonTitle + " ("+subtitle+")"
-            endif
-            if Stream.selected <> invalid then
-                buttonTitle = "> " + buttonTitle
-            endif
-            dialog.AddButton(buttonCount, buttonTitle)
-            buttonCommands[str(buttonCount)+"_id"] = Stream.Id
-            buttonCount = buttonCount + 1
-        endif
-    next
-    dialog.Show()
-    while true
-        msg = wait(0, dialog.GetMessagePort())
-        if type(msg) = "roMessageDialogEvent"
-            if msg.isScreenClosed() then
-                dialog.close()
-                exit while
-            else if msg.isButtonPressed() then
-                streamId = buttonCommands[str(msg.getIndex())+"_id"]
-                print "Media part "+media.preferredPart.id
-                print "Selected audio stream "+streamId
-                server.UpdateAudioStreamSelection(media.preferredPart.id, streamId)
-                dialog.close()
-            end if
-        end if
-    end while
 End Function
 
 Function TimeDisplay(intervalInSeconds) As String

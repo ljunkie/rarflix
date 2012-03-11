@@ -230,10 +230,7 @@ Sub showPreferencesScreen()
                 command = items[msg.GetIndex()]
                 if command = "servers" then
                     screen = createManageServersScreen(m.ViewController)
-                    ' This is slightly wrong, the ViewController normally calls these...
-                    m.ViewController.AddBreadcrumbs(screen, ["Plex Media Servers"])
-                    m.ViewController.UpdateScreenProperties(screen)
-                    m.ViewController.PushScreen(screen)
+                    m.ViewController.InitializeOtherScreen(screen, ["Plex Media Servers"])
                     screen.Show()
                     m.Changes.Append(screen.Changes)
                     screen = invalid
@@ -252,10 +249,7 @@ Sub showPreferencesScreen()
                     m.HandleEnumPreference(command, msg.GetIndex())
                 else if command = "1080p" then
                     screen = create1080PreferencesScreen(m.ViewController)
-                    ' This is slightly wrong, the ViewController normally calls these...
-                    m.ViewController.AddBreadcrumbs(screen, ["1080p Settings"])
-                    m.ViewController.UpdateScreenProperties(screen)
-                    m.ViewController.PushScreen(screen)
+                    m.ViewController.InitializeOtherScreen(screen, ["1080p Settings"])
                     screen.Show()
                     screen = invalid
                 else if command = "close" then
