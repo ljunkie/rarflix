@@ -405,6 +405,24 @@ Function createManageServersScreen(viewController) As Object
 
     obj.RefreshServerList = manageRefreshServerList
 
+    obj.Changes = CreateObject("roAssociativeArray")
+    obj.Prefs = CreateObject("roAssociativeArray")
+
+    ' Automatic discovery
+    options = [
+        { title: "Enabled", EnumValue: "1" },
+        { title: "Disabled", EnumValue: "0" }
+    ]
+    obj.Prefs["autodiscover"] = {
+        values: options,
+        label: "Discover at Startup",
+        heading: "Automatically discover Plex Media Servers at startup.",
+        default: "1"
+    }
+
+    obj.HandleEnumPreference = prefsHandleEnumPreference
+    obj.GetEnumLabel = prefsGetEnumLabel
+
     return obj
 End Function
 
@@ -418,6 +436,9 @@ Sub showManageServersScreen()
 
     m.Screen.AddContent({title: "Discover Servers"})
     items.Push("discover")
+
+    m.Screen.AddContent({title: m.GetEnumLabel("autodiscover")})
+    items.Push("autodiscover")
 
     m.Screen.AddContent({title: "Remove All Servers"})
     items.Push("removeall")
@@ -451,6 +472,8 @@ Sub showManageServersScreen()
                 else if command = "discover" then
                     DiscoverPlexMediaServers()
                     m.RefreshServerList(removeOffset, items)
+                else if command = "autodiscover" then
+                    m.HandleEnumPreference(command, msg.GetIndex())
                 else if command = "removeall" then
                     RemoveAllServers()
                     m.RefreshServerList(removeOffset, items)

@@ -51,9 +51,11 @@ Function createHomeScreen(viewController) As Object
     obj.MiscRow = obj.CreateRow("Miscellaneous")
 
     ' Kick off an asynchronous GDM discover.
-    obj.GDM = createGDMDiscovery(obj.Screen.Port)
-    if obj.GDM = invalid then
-        print "Failed to create GDM discovery object"
+    if RegRead("autodiscover", "preferences", "1") = "1" then
+        obj.GDM = createGDMDiscovery(obj.Screen.Port)
+        if obj.GDM = invalid then
+            print "Failed to create GDM discovery object"
+        end if
     end if
 
     configuredServers = PlexMediaServers()
