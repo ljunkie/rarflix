@@ -60,34 +60,13 @@ Function showPreferenceScreen (item, viewController)
 End Function
 
 Function showInput (inputItem,item,screen, buttonIndex)
-	if inputItem@secure = "true" then		
-		popup = createObject("roMessageDialog")
-		popup.setMessagePort(port)
-		popup.setTitle("Secure Preferences Not Supported")
-		popup.setText("The Roku client does not support the setting of secure preferences.  Please use another client to configure this preference")
-		popup.addButton(0,"Close")
-		popup.show()
-		while true
-			dlgMsg = wait(0, popup.GetMessagePort())
-			if type(dlgMsg) = "roMessageDialogEvent"
-				if msg.isScreenClosed() then
-					exit while
-				else if msg.isButtonPressed() then
-					if msg.GetIndex() =0  then
-						popup.close()						
-					end if
-				end if
-			end if
-		end while
-	else
-		if inputItem@type = "text"  then
-			showTextInput(inputItem,item,screen, buttonIndex)
-		else if inputItem@type = "bool"  then
-			showBoolInput(inputItem,item,screen, buttonIndex)
-		else if inputItem@type = "enum"  then
-			ShowEnumInput(inputItem,item,screen, buttonIndex)
-		end if
-	end if
+    if inputItem@type = "text"  then
+        showTextInput(inputItem,item,screen, buttonIndex)
+    else if inputItem@type = "bool"  then
+        showBoolInput(inputItem,item,screen, buttonIndex)
+    else if inputItem@type = "enum"  then
+        ShowEnumInput(inputItem,item,screen, buttonIndex)
+    end if
 End Function
 
 

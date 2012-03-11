@@ -14,6 +14,7 @@ Function createPlexContainerForXml(xmlResponse) As Object
     c.ParseXml = containerParseXml
     c.GetNames = containerGetNames
     c.GetKeys = containerGetKeys
+    c.MoveKeyToHead = containerMoveKeyToHead
     c.GetMetadata = containerGetMetadata
     c.GetSearch = containerGetSearch
     c.Count = containerCount
@@ -120,6 +121,21 @@ Sub containerParseXml()
 
     m.Parsed = true
 End Sub
+
+Function containerMoveKeyToHead(key)
+    if NOT m.Parsed then m.ParseXml()
+    for i = 0 to m.keys.Count() - 1
+        if m.keys[i] = key then
+            name = m.names[i]
+            m.names.Delete(i)
+            m.names.Unshift(name)
+            m.keys.Delete(i)
+            m.keys.Unshift(key)
+            return true
+        end if
+    end for
+    return false
+End Function
 
 Function containerGetNames()
     if NOT m.Parsed then m.ParseXml()

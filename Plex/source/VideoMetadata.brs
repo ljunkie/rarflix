@@ -84,14 +84,14 @@ Sub setVideoBasics(video, container, item)
             video.EpisodeNumber = 0
             episode = "Episode ??"
         end if
-        if item@parentIndex <> invalid then
-            video.TitleSeason = video.Title + " Season " + item@parentIndex
-            video.ShortDescriptionLine2 = "Season " + item@parentIndex + " - " + episode
+        parentIndex = firstOf(item@parentIndex, container.xml@parentIndex)
+        if parentIndex <> invalid then
+            video.ShortDescriptionLine2 = "Season " + parentIndex + " - " + episode
 
-            if val(item@parentIndex) >= 10 then
-                seasonStr = "S" + item@parentIndex
+            if val(parentIndex) >= 10 then
+                seasonStr = "S" + parentIndex
             else
-                seasonStr = "S0" + item@parentIndex
+                seasonStr = "S0" + parentIndex
             end if
         else
             video.ShortDescriptionLine2 = episode
@@ -104,6 +104,7 @@ Sub setVideoBasics(video, container, item)
             video.EpisodeStr = seasonStr + episodeStr
             video.OrigReleaseDate = video.ReleaseDate
             video.ReleaseDate = video.EpisodeStr
+            video.TitleSeason = video.Title + " - " + video.EpisodeStr
         end if
     end if
 
@@ -159,7 +160,10 @@ Sub setVideoDetails(video, container, videoItemXml)
     next
 
     ' Fix some items that might have been modified for the grid view.
-    video.ReleaseDate = video.OrigReleaseDate
+    if video.OrigReleaseDate <> invalid then
+        video.ReleaseDate = video.OrigReleaseDate
+    end if
+
     art = videoItemXml@thumb
     if video.server <> invalid AND art <> invalid then
         sizes = ImageSizes(container.ViewGroup, video.type)

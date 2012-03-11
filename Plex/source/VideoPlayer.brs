@@ -147,8 +147,16 @@ Sub playVideo(server, metadata, seekValue=0, allowDirectPlay=true)
 
     success = videoMessageLoop(server, metadata, port, videoItem.IsTranscoded)
 
-    if NOT success AND NOT videoItem.IsTranscoded then
-        playVideo(server, metadata, seekValue, false)
+    if NOT success then
+        if videoItem.IsTranscoded then
+            ' Nothing left to fall back to, tell the user
+            dialog = createBaseDialog()
+            dialog.Title = "Video Unavailable"
+            dialog.Text = "We're unable to play this video, make sure the server is running and has access to this video."
+            dialog.Show()
+        else
+            playVideo(server, metadata, seekValue, false)
+        end if
     end if
 End Sub
 

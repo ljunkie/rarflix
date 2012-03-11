@@ -246,8 +246,10 @@ Sub gridDestroyAndRecreate()
     ' Close our current grid and recreate it once we get back.
     ' Works around a weird glitch when certain screens (maybe just
     ' an audio player) are shown on top of grids.
-    print "Destroying grid..."
-    m.Screen.Close()
-    m.Screen = invalid
+    if m.Screen <> invalid then
+        print "Destroying grid..."
+        m.Screen.Close()
+        m.Screen = invalid
+    end if
 End Sub
 
