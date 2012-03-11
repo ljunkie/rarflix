@@ -298,7 +298,7 @@ Function createVideoOptionsScreen(item, viewController) As Object
         values: options,
         label: "Transcoding",
         heading: "Should this video be transcoded or use Direct Play?",
-        default: "0"
+        default: RegRead("directplay", "preferences", "0")
     }
 
     audioStreams = []

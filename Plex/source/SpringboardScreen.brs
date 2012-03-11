@@ -54,7 +54,7 @@ Function createVideoSpringboardScreen(context, index, viewController) As Object
         {label: "Direct Play w/ Fallback", value: 2},
         {label: "Play Transcoded", value: 3}
     ]
-    obj.PlayButtonState = 0
+    obj.PlayButtonState = RegRead("directplay", "preferences", "0").toint()
     
     return obj
 End Function

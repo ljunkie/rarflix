@@ -155,6 +155,20 @@ Function createPreferencesScreen(viewController) As Object
         default: "1"
     }
 
+    ' Direct play options
+    directplay = [
+        { title: "Automatic (recommended)", EnumValue: "0" },
+        { title: "Direct Play", EnumValue: "1" },
+        { title: "Direct Play w/ Fallback", EnumValue: "2" },
+        { title: "Always Transcode", EnumValue: "3" }
+    ]
+    obj.Prefs["directplay"] = {
+        values: directplay,
+        label: "Direct Play",
+        heading: "Direct Play preferences",
+        default: "0"
+    }
+
     obj.HandleEnumPreference = prefsHandleEnumPreference
     obj.GetEnumLabel = prefsGetEnumLabel
 
@@ -196,6 +210,9 @@ Sub showPreferencesScreen()
 
     m.Screen.AddContent({title: m.GetEnumLabel("level")})
     items.Push("level")
+
+    m.Screen.AddContent({title: m.GetEnumLabel("directplay")})
+    items.Push("directplay")
 
     if major.toInt() >= 4 AND device.hasFeature("5.1_surround_sound") then
         m.Screen.AddContent({title: m.GetEnumLabel("fivepointone")})
@@ -245,7 +262,7 @@ Sub showPreferencesScreen()
                         end if
                     end if
                     m.Screen.SetItem(msg.GetIndex(), {title: getCurrentMyPlexLabel(m.myplex)})
-                else if command = "quality" OR command = "level" OR command = "fivepointone" then
+                else if command = "quality" OR command = "level" OR command = "fivepointone" OR command = "directplay" then
                     m.HandleEnumPreference(command, msg.GetIndex())
                 else if command = "1080p" then
                     screen = create1080PreferencesScreen(m.ViewController)
