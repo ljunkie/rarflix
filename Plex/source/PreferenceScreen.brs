@@ -151,7 +151,7 @@ Function createPreferencesScreen(viewController) As Object
     obj.Prefs["fivepointone"] = {
         values: fiveone,
         label: "5.1 Support",
-        heading: "5.1 audio is only supported on the Roku 2 (4.x) firmware." + Chr(10) + "This setting will be ignored if that firmware is not detected.",
+        heading: "5.1 audio support.",
         default: "1"
     }
 
@@ -191,8 +191,10 @@ Sub showPreferencesScreen()
     m.Screen.AddContent({title: m.GetEnumLabel("level")})
     items.Push("level")
 
-    m.Screen.AddContent({title: m.GetEnumLabel("fivepointone")})
-    items.Push("fivepointone")
+    if major.toInt() >= 4 AND device.hasFeature("5.1_surround_sound") then
+        m.Screen.AddContent({title: m.GetEnumLabel("fivepointone")})
+        items.Push("fivepointone")
+    end if
 
 	if major.toInt() < 4  and device.hasFeature("1080p_hardware") then
         m.Screen.AddContent({title: "1080p Settings"})
