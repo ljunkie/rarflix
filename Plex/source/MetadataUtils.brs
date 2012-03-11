@@ -104,3 +104,46 @@ Function newSearchMetadata(container, item) As Object
     return metadata
 End Function
 
+Function newSettingMetadata(container, item) As Object
+    metadata = CreateObject("roAssociativeArray")
+
+    metadata.ContentType = "setting"
+    metadata.setting = true
+
+    metadata.type = firstOf(item@type, "text")
+    metadata.default = firstOf(item@default, "")
+    metadata.value = firstOf(item@value, "")
+    metadata.label = firstOf(item@label, "")
+    metadata.id = firstOf(item@id, "")
+    metadata.hidden = (item@option = "hidden")
+    metadata.secure = (item@secure = "true")
+
+    if metadata.value = "" then
+        metadata.value = metadata.default
+    end if
+
+    if metadata.type = "enum" then
+        re = CreateObject("roRegex", "\|", "")
+        metadata.values = re.Split(item@values)
+    end if
+
+    metadata.GetValueString = settingGetValueString
+
+    return metadata
+End Function
+
+Function settingGetValueString() As String
+    if m.type = "enum" then
+        value = m.values[m.value.toint()]
+    else
+        value = m.value
+    end if
+
+    if m.hidden OR m.secure then
+        re = CreateObject("roRegex", ".", "i")
+        value = re.ReplaceAll(value, "\*")
+    end if
+
+    return value
+End Function
+

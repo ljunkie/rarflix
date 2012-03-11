@@ -17,6 +17,7 @@ Function createPlexContainerForXml(xmlResponse) As Object
     c.MoveKeyToHead = containerMoveKeyToHead
     c.GetMetadata = containerGetMetadata
     c.GetSearch = containerGetSearch
+    c.GetSettings = containerGetSettings
     c.Count = containerCount
 
     c.ParseDetails = false
@@ -28,6 +29,7 @@ Function createPlexContainerForXml(xmlResponse) As Object
     c.keys = []
     c.metadata = []
     c.search = []
+    c.settings = []
     c.Parsed = false
 
     return c
@@ -46,11 +48,13 @@ Function createFakePlexContainer(server, names, keys) As Object
     c.names = names
     c.keys = keys
     c.search = []
+    c.settings = []
     c.Parsed = true
 
     c.GetNames = containerGetNames
     c.GetKeys = containerGetKeys
     c.GetSearch = containerGetSearch
+    c.GetSettings = containerGetSettings
 
     return c
 End Function
@@ -106,12 +110,16 @@ Sub containerParseXml()
             metadata = newTrackMetadata(m, n, m.ParseDetails)
         else if nodeType = "photo" then
             metadata = newPhotoMetadata(m, n, m.ParseDetails)
+        else if n.GetName() = "Setting" then
+            metadata = newSettingMetadata(m, n)
         else
             metadata = newDirectoryMetadata(m, n)
         end if
 
         if metadata.search = true AND m.SeparateSearchItems then
             m.search.Push(metadata)
+        else if metadata.setting = true then
+            m.settings.Push(metadata)
         else
             m.metadata.Push(metadata)
             m.names.Push(metadata.Title)
@@ -159,6 +167,12 @@ Function containerGetSearch()
     if NOT m.Parsed then m.ParseXml()
 
     return m.search
+End Function
+
+Function containerGetSettings()
+    if NOT m.Parsed then m.ParseXml()
+
+    return m.settings
 End Function
 
 Function containerCount()
