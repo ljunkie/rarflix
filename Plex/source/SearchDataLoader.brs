@@ -10,6 +10,7 @@ Function createSearchLoader(searchTerm)
     loader.LoadMoreContent = searchLoadMoreContent
     loader.GetNames = searchGetNames
     loader.HandleMessage = searchHandleMessage
+    loader.GetLoadStatus = searchGetLoadStatus
 
     loader.Listener = invalid
     loader.SearchTerm = searchTerm
@@ -176,5 +177,15 @@ Function searchHandleMessage(msg) As Boolean
     end if
 
     return false
+End Function
+
+Function searchGetLoadStatus(row)
+    if m.FirstLoad then
+        return 0
+    else if m.PendingRequests.IsEmpty() then
+        return 2
+    else
+        return 1
+    end if
 End Function
 

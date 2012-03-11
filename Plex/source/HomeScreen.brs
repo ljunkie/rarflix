@@ -25,6 +25,7 @@ Function createHomeScreen(viewController) As Object
     obj.LoadMoreContent = homeLoadMoreContent
     obj.GetNames = homeGetNames
     obj.HandleMessage = homeHandleMessage
+    obj.GetLoadStatus = homeGetLoadStatus
 
     ' The home screen owns the myPlex manager
     obj.myplex = createMyPlexManager(viewController)
@@ -643,6 +644,10 @@ End Function
 
 Function homeGetNames()
     return m.RowNames
+End Function
+
+Function homeGetLoadStatus(row)
+    return m.contentArray[row].loadStatus
 End Function
 
 Function getCurrentMyPlexLabel(myplex) As String

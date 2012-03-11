@@ -153,7 +153,7 @@ Function showGridScreen() As Integer
 
                     for row = 0 to names.Count() - 1
                         m.Screen.SetContentList(row, m.contentArray[row])
-                        if m.contentArray[row].Count() = 0 then
+                        if m.contentArray[row].Count() = 0 AND m.Loader.GetLoadStatus(row) = 2 then
                             m.Screen.SetListVisible(row, false)
                         end if
                     end for
