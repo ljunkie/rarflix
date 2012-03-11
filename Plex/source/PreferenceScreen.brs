@@ -1,215 +1,92 @@
-Function showPreferenceScreen (item, viewController)
-	port = CreateObject("roMessagePort")
-	screen = createObject("roListScreen")
-	screen.setMessagePort(port)
-	screen.setTitle("Preferences")
-    server = item.server
+Function createSettingsScreen(item, viewController) As Object
+    obj = CreateObject("roAssociativeArray")
+    port = CreateObject("roMessagePort")
+    screen = CreateObject("roListScreen")
 
-    container = createPlexContainerForUrl(server, item.sourceUrl, item.key)
-    
-    prefArray = CreateObject("roArray", 6 , true)
-    
-    prefArray.Push({label: "Close Preferences"})
-    screen.addContent({title: "Close Preferences"})
-    for each prefItem in container.xml.Setting
-        prefArray.Push(prefItem)
-        'Start getting values
-        value = prefItem@value
-        if value = ""  then
-			value = prefItem@default
-        end if
-        'If an enum, get the value from the values attribute
-        if prefItem@type = "enum" then
-			r = CreateObject("roRegex", "\|", "")
-			valuesList = r.Split(prefItem@values)
-			value = valuesList[value.toint()]
-        end if
-        'If hidden, replace value with *
-        if prefItem@option = "hidden" then
-			r = CreateObject("roRegex", ".","i")
-			value = r.ReplaceAll(value, "\*")
+    screen.SetMessagePort(port)
+    screen.SetHeader(item.Title)
 
+    ' Standard properties for all our screen types
+    obj.Item = item
+    obj.Screen = screen
+    obj.Port = port
+    obj.ViewController = viewController
+    obj.MessageHandler = invalid
+    obj.MsgTimeout = 0
+
+    obj.Show = showSettingsScreen
+
+    return obj
+End Function
+
+Sub showSettingsScreen()
+    server = m.Item.server
+    container = createPlexContainerForUrl(server, m.Item.sourceUrl, m.Item.key)
+    settings = container.GetSettings()
+
+    for each setting in settings
+        title = setting.label
+        value = setting.GetValueString()
+        if value <> "" then
+            title = title + ": " + value
         end if
-        
-        buttonTitle = prefItem@label
-        if value <>  "" then
-			buttonTitle = buttonTitle + ": " +value		
-        end if
-        screen.addContent({title: buttonTitle})
+
+        m.Screen.AddContent({title: title})
     next
-    
-    
-    
-    
-	screen.show()
+    m.Screen.AddContent({title: "Close"})
+
+    m.Screen.Show()
+
 	while true 
-        msg = wait(0, screen.GetMessagePort()) 
-        if type(msg) = "roListScreenEvent"
+        msg = wait(m.MsgTimeout, m.Port)
+        if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
+        else if type(msg) = "roListScreenEvent" then
             if msg.isScreenClosed() then
+                print "Exiting settings screen"
+                m.ViewController.PopScreen(m)
                 exit while
-             else if msg.isListItemSelected() then
-                if msg.getIndex() = 0 then
-                    print "Closing Preferences"
-                    screen.close()
-                else 
-                    showInput(prefArray[msg.getIndex()],item, screen, msg.getIndex())
+            else if msg.isListItemSelected() then
+                if msg.GetIndex() < settings.Count() then
+                    setting = settings[msg.GetIndex()]
+
+                    modified = false
+
+                    if setting.type = "text" then
+                        screen = m.ViewController.CreateTextInputScreen("Enter " + setting.label, [], false)
+                        screen.Screen.SetText(setting.value)
+                        screen.Screen.SetSecureText(setting.hidden OR setting.secure)
+                        screen.Show()
+
+                        if screen.Text <> invalid then
+                            setting.value = screen.Text
+                            modified = true
+                        end if
+                    else if setting.type = "bool" then
+                        screen = m.ViewController.CreateEnumInputScreen(["true", "false"], setting.value, setting.label, [])
+                        if screen.SelectedValue <> invalid then
+                            setting.value = screen.SelectedValue
+                            modified = true
+                        end if
+                    else if setting.type = "enum" then
+                        screen = m.ViewController.CreateEnumInputScreen(setting.values, setting.value.toint(), setting.label, [])
+                        if screen.SelectedIndex <> invalid then
+                            setting.value = screen.SelectedIndex.tostr()
+                            modified = true
+                        end if
+                    end if
+
+                    if modified then
+                        server.SetPref(m.Item.key, setting.id, setting.value)
+                        m.Screen.SetItem(msg.GetIndex(), {title: setting.label + ": " + setting.GetValueString()})
+                    end if
+                else if msg.GetIndex() = settings.Count() then
+                    m.Screen.Close()
                 end if
-            end if 
+            end if
         end if
 	end while
-End Function
+End Sub
 
-Function showInput (inputItem,item,screen, buttonIndex)
-    if inputItem@type = "text"  then
-        showTextInput(inputItem,item,screen, buttonIndex)
-    else if inputItem@type = "bool"  then
-        showBoolInput(inputItem,item,screen, buttonIndex)
-    else if inputItem@type = "enum"  then
-        ShowEnumInput(inputItem,item,screen, buttonIndex)
-    end if
-End Function
-
-
-Function showTextInput (inputItem,item,parentScreen, buttonIndex) 
-	port = createObject("roMessagePort")
-
-
-		
-	keyb = CreateObject("roKeyboardScreen")    
-	keyb.SetMessagePort(port)
-	keyb.SetDisplayText("Enter " + inputItem@label)		
-	keyb.AddButton(1, "Done") 
-	keyb.AddButton(2, "Close")
-	keyb.setTitle(inputItem@label)
-	if inputItem@value = "" then
-		keyb.setText(inputItem@default)		
-	else
-		keyb.setText(inputItem@value)		
-	end if
-	if inputItem@option = "hidden" then
-		keyb.setSecureText(true)
-	end if
-	keyb.Show()
-	while true 
-		msg = wait(0, keyb.GetMessagePort()) 
-		if type(msg) = "roKeyboardScreenEvent" then
-			if msg.isScreenClosed() then
-				print "Exiting keyboard dialog screen"
-				return 0
-			else if msg.isButtonPressed() then
-				if msg.getIndex() = 1 then
-					value = keyb.getText()
-					inputItem.addattribute("value",value)
-					item.server.setPref(item.key,inputItem@id, value)					
-					if inputItem@option = "hidden" then
-						r = CreateObject("roRegex", ".","i")
-						value = r.ReplaceAll(value, "\*")
-					end if
-					if value <> ""  then
-						value = ": "+value
-					end if
-					parentScreen.setItem(buttonIndex, {title: inputItem@label + value})						
-					keyb.close()
-				else if msg.getIndex() =2 then
-					keyb.close()
-				end if				
-			end if 
-		end if
-	end while
-
-
-
-End Function
-
-
-
-Function showBoolInput (inputItem,item,parentScreen, buttonIndex) 
-	port = CreateObject("roMessagePort")
-	screen = createObject("roListScreen")
-	screen.setMessagePort(port)
-	screen.setTitle(inputItem@label)
-	screen.setHeader("")
-	screen.setContent([{title: "true"},{title: "false"}])
-	
-	value = inputItem@value
-	if value = ""  then
-		value = inputItem@default
-	endif
-	
-	if value = "true" then
-		screen.setFocusedListItem(0)
-	else if value = "true" then
-		screen.setFocusedListItem(1)
-	end if
-	 
-    
-    
-    
-	screen.show()
-	while true 
-        msg = wait(0, screen.GetMessagePort()) 
-        if type(msg) = "roListScreenEvent"
-            if msg.isScreenClosed() then
-                exit while
-             else if msg.isListItemSelected() then
-                if msg.getIndex() = 0 then
-					inputItem.addattribute("value","true")
-                    item.server.setPref(item.key,inputItem@id, "true")
-                    parentScreen.setItem(buttonIndex, {title: inputItem@label + ": true"})
-                    screen.close()
-                else
-					inputItem.addattribute("value","false")
-                    item.server.setPref(item.key,inputItem@id, "false")
-                    parentScreen.setItem(buttonIndex, {title: inputItem@label + ": false"})
-                    screen.close()
-                end if
-            end if 
-        end if
-	end while
-
-End Function
-
-
-Function showEnumInput (inputItem,item,parentScreen, buttonIndex) 
-	port = CreateObject("roMessagePort")
-	screen = createObject("roListScreen")
-	screen.setMessagePort(port)
-	screen.setTitle(inputItem@label)
-	screen.setHeader("")
-	r = CreateObject("roRegex", "\|", "")
-	valuesList = r.Split(inputItem@values)
-	
-	for each valueOption in valuesList
-		print valueOption
-		screen.AddContent({title: valueOption})
-	next
-	
-	value = inputItem@value
-	if value = ""  then
-		value = inputItem@default
-	endif
-	
-	screen.setFocusedListItem(value.toint())
-	
-	
-
-	
-	screen.show()
-	while true 
-        msg = wait(0, screen.GetMessagePort()) 
-        if type(msg) = "roListScreenEvent"
-            if msg.isScreenClosed() then
-                exit while
-             else if msg.isListItemSelected() then
-                inputItem.addattribute("value",msg.getIndex().tostr())
-                item.server.setPref(item.key,inputItem@id, msg.getIndex().tostr())
-                parentScreen.setItem(buttonIndex, {title: inputItem@label + ": "+ valuesList[msg.getIndex()]})
-                screen.close()
-                
-            end if 
-        end if
-	end while
-End Function
 
 '#######################################################
 'Below are the preference Functions for the Global 

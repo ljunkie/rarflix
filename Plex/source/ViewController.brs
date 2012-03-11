@@ -118,8 +118,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen.MessageHandler = screen.Loader
         screen.SetStyle("flat-square")
     else if item.settings = "1"
-		showPreferenceScreen(item, m)
-		return invalid
+        screen = createSettingsScreen(item, m)
     else
         ' Where do we capture channel directory?
         Print "Creating a default view for contentType=";contentType;", viewGroup=";viewGroup
