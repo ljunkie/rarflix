@@ -158,6 +158,9 @@ Function createPreferencesScreen(viewController) As Object
     obj.HandleEnumPreference = prefsHandleEnumPreference
     obj.GetEnumLabel = prefsGetEnumLabel
 
+    ' This is a slightly evil amount of reaching inside another object...
+    obj.myplex = viewController.Home.myplex
+
     return obj
 End Function
 
@@ -184,6 +187,9 @@ Sub showPreferencesScreen()
 
     m.Screen.AddContent({title: "Plex Media Servers"})
     items.Push("servers")
+
+    m.Screen.AddContent({title: getCurrentMyPlexLabel(m.myplex)})
+    items.Push("myplex")
 
     m.Screen.AddContent({title: m.GetEnumLabel("quality")})
     items.Push("quality")
@@ -231,6 +237,17 @@ Sub showPreferencesScreen()
                     screen.Show()
                     m.Changes.Append(screen.Changes)
                     screen = invalid
+                else if command = "myplex" then
+                    if m.myplex.IsSignedIn then
+                        m.myplex.Disconnect()
+                        m.Changes["myplex"] = "disconnected"
+                    else
+                        m.myplex.ShowPinScreen()
+                        if m.myplex.IsSignedIn then
+                            m.Changes["myplex"] = "connected"
+                        end if
+                    end if
+                    m.Screen.SetItem(msg.GetIndex(), {title: getCurrentMyPlexLabel(m.myplex)})
                 else if command = "quality" OR command = "level" OR command = "fivepointone" then
                     m.HandleEnumPreference(command, msg.GetIndex())
                 else if command = "1080p" then
@@ -388,9 +405,6 @@ Function createManageServersScreen(viewController) As Object
 
     obj.RefreshServerList = manageRefreshServerList
 
-    ' This is a slightly evil amount of reaching inside another object...
-    obj.myplex = viewController.Home.myplex
-
     return obj
 End Function
 
@@ -398,9 +412,6 @@ Sub showManageServersScreen()
     m.Screen.SetHeader("Manage Plex Media Servers")
 
     items = []
-
-    m.Screen.AddContent({title: getCurrentMyPlexLabel(m.myplex)})
-    items.Push("myplex")
 
     m.Screen.AddContent({title: "Add Server Manually"})
     items.Push("manual")
@@ -426,18 +437,7 @@ Sub showManageServersScreen()
                 exit while
             else if msg.isListItemSelected() then
                 command = items[msg.GetIndex()]
-                if command = "myplex" then
-                    if m.myplex.IsSignedIn then
-                        m.myplex.Disconnect()
-                        m.Changes["myplex"] = "disconnected"
-                    else
-                        m.myplex.ShowPinScreen()
-                        if m.myplex.IsSignedIn then
-                            m.Changes["myplex"] = "connected"
-                        end if
-                    end if
-                    m.Screen.SetItem(msg.GetIndex(), {title: getCurrentMyPlexLabel(m.myplex)})
-                else if command = "manual" then
+                if command = "manual" then
                     screen = m.ViewController.CreateTextInputScreen("Enter Host Name or IP without http:// or :32400", ["Add Server Manually"], false)
                     screen.Screen.SetMaxLength(80)
                     screen.ValidateText = AddUnnamedServer
