@@ -118,10 +118,25 @@ Function showPreferencesScreen()
     ]
     quality = RegRead("quality", "preferences", "7")
 
+    levels = [
+        { title: "Level 4.0 (Supported)", EnumValue: "40" },
+        { title: "Level 4.1", EnumValue: "41" },
+        { title: "Level 4.2", EnumValue: "42" },
+        { title: "Level 5.0", EnumValue: "50" },
+        { title: "Level 5.1", EnumValue: "51" }
+    ]
+    level = RegRead("level", "preferences", "40")
+
+    fiveones = [
+        { title: "Enabled", EnumValue: "1" },
+        { title: "Disabled", EnumValue: "2" }
+    ]
+    fiveone = RegRead("fivepointone", "preferences", "1")
+
 	ls.SetContent([{title:"Plex Media Servers"},
 		{title:"Quality" + getCurrentEnumLabel(qualities, quality)},
-		{title:"H264 Level: " + getCurrentH264Level()},
-		{title:"5.1 Support: " + getCurrentFiveOneSetting()}])
+		{title:"H264" + getCurrentEnumLabel(levels, level)},
+		{title:"5.1 Support" + getCurrentEnumLabel(fiveones, fiveone)}])
 		
 	device = CreateObject("roDeviceInfo")
 	version = device.GetVersion()
@@ -166,13 +181,28 @@ Function showPreferencesScreen()
                         RegWrite("quality", screen.SelectedValue, "preferences")
                         changes.AddReplace("quality", screen.SelectedValue)
                         ls.setItem(msg.getIndex(), {title:"Quality: " + screen.SelectedLabel})
+                        quality = screen.SelectedValue
                     end if
                 else if msg.getIndex() = 2 then
-                    m.ShowH264Screen(changes)
-                    ls.setItem(msg.getIndex(), {title:"H264 Level: " + getCurrentH264Level()})
+                    screen = m.ViewController.CreateEnumInputScreen(levels, level, "Use specific H264 level. Only 4.0 is officially supported.", ["H264 Level"])
+                    if screen.SelectedIndex <> invalid then
+                        print "Set selected level to "; screen.SelectedValue
+                        RegWrite("level", screen.SelectedValue, "preferences")
+                        changes.AddReplace("level", screen.SelectedValue)
+                        ls.setItem(msg.getIndex(), {title:"H264: " + screen.SelectedLabel})
+                        Capabilities(true)
+                        level = screen.SelectedValue
+                    end if
                 else if msg.getIndex() = 3 then
-                     m.ShowFivePointOneScreen(changes)
-                     ls.setItem(msg.getIndex(), {title:"5.1 Support: " + getCurrentFiveOneSetting()})
+                    screen = m.ViewController.CreateEnumInputScreen(fiveones, fiveone, "5.1 audio is only supported on the Roku 2 (4.x) firmware." + Chr(10) + "This setting will be ignored if that firmware is not detected.", ["5.1 Support"])
+                    if screen.SelectedIndex <> invalid then
+                        print "Set 5.1 support to "; screen.SelectedValue
+                        RegWrite("fivepointone", screen.SelectedValue, "preferences")
+                        changes.AddReplace("fivepointone", screen.SelectedValue)
+                        ls.setItem(msg.getIndex(), {title:"5.1 Support: " + screen.SelectedLabel})
+                        Capabilities(true)
+                        fiveone = screen.SelectedValue
+                    end if
                 else if msg.getIndex() = 4 then
 					if buttonCount = 6 then
 						m.Show1080pScreen(changes)
@@ -321,120 +351,6 @@ Sub showManualServerScreen()
     end while
 End Sub
 
-Function showFivePointOneScreen(changes)
-	port = CreateObject("roMessagePort") 
-	ls = CreateObject("roListScreen") 
-	ls.SetMessagePort(port)
-	ls.SetTitle("5.1 Support") 
-	ls.setHeader("5.1 audio is only supported on the Roku 2 (4.x) firmware. "+chr(10)+"This setting will be ignored if that firmware is not detected.")
-
-	
-	fiveone = CreateObject("roArray", 6 , true)
-	fiveone.Push("Enabled")
-	fiveone.Push("Disabled")
-
-	if not(RegExists("fivepointone", "preferences")) then
-		RegWrite("fivepointone", "1", "preferences")
-	end if
-	current = RegRead("fivepointone", "preferences")
-
-	for each value in fiveone
-		fiveoneTitle = value
-		ls.AddContent({title: fiveoneTitle})
-	next
-	ls.setFocusedListItem(current.toint() -1)
-	ls.Show()
-	while true 
-		msg = wait(0, ls.GetMessagePort()) 
-		if type(msg) = "roListScreenEvent"
-			if msg.isScreenClosed() then
-				ls.close()
-				exit while
-			else if msg.isListItemSelected() then
-        		fiveone = (msg.getIndex()+1).tostr()
-        		print "Set 5.1 support to ";fiveone
-        		RegWrite("fivepointone", fiveone, "preferences")
-                changes.AddReplace("fiveone", fiveone)
-                Capabilities(true)
-				ls.close()
-			end if 
-		end if
-	end while
-End Function
-
-Function showH264Screen(changes)
-	port = CreateObject("roMessagePort") 
-	ls = CreateObject("roListScreen") 
-	ls.SetMessagePort(port)
-	ls.SetTitle("H264 Level") 
-	ls.setHeader("Use specific H264 level. Only 4.0 is officially supported.")
-	
-	
-	levels = CreateObject("roArray", 5 , true)
-	
-	levels.Push("Level 4.0 (Supported)") 'N=1
-	levels.Push("Level 4.1") 'N=2
-	levels.Push("Level 4.2") 'N=3
-	levels.Push("Level 5.0") 'N=4
-	levels.Push("Level 5.1") 'N=5
-	
-	if not(RegExists("level", "preferences")) then
-		RegWrite("level", "40", "preferences")
-	end if
-
-	current = "Level 4.0 (Default)"
-	selected = 0
-	if RegRead("level", "preferences") = "40" then
-		current = "Level 4.0 (Default)"
-		selected = 0
-	else if RegRead("level", "preferences") = "41" then
-		current = "Level 4.1"
-		selected = 1
-	else if RegRead("level", "preferences") = "42" then
-		current = "Level 4.2"
-		selected = 2
-	else if RegRead("level", "preferences") = "50" then
-		current = "Level 5.0"
-		selected = 3
-	else if RegRead("level", "preferences") = "51" then
-		current = "Level 5.1"
-		selected = 4
-	end if
-	for each level in levels
-		levelTitle = level		
-		ls.AddContent({title: levelTitle})		
-	next
-	ls.setFocusedListItem(selected)
-	ls.Show()
-	while true 
-		msg = wait(0, ls.GetMessagePort()) 
-		if type(msg) = "roListScreenEvent"
-			if msg.isScreenClosed() then
-				ls.close()
-				exit while
-			else if msg.isListItemSelected() then
-				if msg.getIndex() = 0 then
-					level = "40"
-				else if msg.getIndex() = 1 then
-					level = "41"
-				else if msg.getIndex() = 2 then
-					level = "42"
-				else if msg.getIndex() = 3 then
-					level = "50"
-				else if msg.getIndex() = 4 then
-					level = "51"
-				end if
-        		print "Set selected level to ";level
-        		RegWrite("level", level, "preferences")
-                changes.AddReplace("level", level)
-                Capabilities(true)
-				ls.close()
-			end if
-		end if 
-	end while
-End Function
-
-
 Function show1080pScreen(changes)
 	port = CreateObject("roMessagePort") 
 	ls = CreateObject("roListScreen") 
@@ -548,42 +464,6 @@ Function show1080pFramerateScreen()
 			end if
 		end if 
 	end while
-End Function
-
-Function getCurrentH264Level()
-	if not(RegExists("level", "preferences")) then
-		RegWrite("level", "40", "preferences")
-	end if
-
-	currentLevel = "Level 4.0 (Default)"
-	if RegRead("level", "preferences") = "40" then
-		currentLevel = "Level 4.0 (Default)"
-	else if RegRead("level", "preferences") = "41" then
-		currentLevel = "Level 4.1"
-	else if RegRead("level", "preferences") = "42" then
-		currentLevel = "Level 4.2"
-	else if RegRead("level", "preferences") = "50" then
-		currentLevel = "Level 5.0"
-	else if RegRead("level", "preferences") = "51" then
-		currentLevel = "Level 5.1"
-	end if
-	return currentLevel
-End Function
-
-Function getCurrentFiveOneSetting()
-	fiveone = CreateObject("roArray", 6 , true)
-	fiveone.Push("Enabled")
-	fiveone.Push("Disabled")
-	if not(RegExists("fivepointone", "preferences")) then
-		RegWrite("fivepointone", "1", "preferences")
-	end if
-	current = RegRead("fivepointone", "preferences")
-	currentText = fiveone[current.toint()-1]
-	if currentText = invalid then
-		currentText = ""
-	endif
-		
-	return currentText
 End Function
 
 Function getCurrentEnumLabel(items, value) As String
