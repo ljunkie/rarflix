@@ -223,7 +223,14 @@ Sub showPreferencesScreen()
             else if msg.isListItemSelected() then
                 command = items[msg.GetIndex()]
                 if command = "servers" then
-                    m.ViewController.Home.ShowMediaServersScreen(m.Changes)
+                    screen = createManageServersScreen(m.ViewController)
+                    ' This is slightly wrong, the ViewController normally calls these...
+                    m.ViewController.AddBreadcrumbs(screen, ["Plex Media Servers"])
+                    m.ViewController.UpdateScreenProperties(screen)
+                    m.ViewController.PushScreen(screen)
+                    screen.Show()
+                    m.Changes.Append(screen.Changes)
+                    screen = invalid
                 else if command = "quality" OR command = "level" OR command = "fivepointone" then
                     m.HandleEnumPreference(command, msg.GetIndex())
                 else if command = "1080p" then
@@ -233,6 +240,7 @@ Sub showPreferencesScreen()
                     m.ViewController.UpdateScreenProperties(screen)
                     m.ViewController.PushScreen(screen)
                     screen.Show()
+                    screen = invalid
                 else if command = "close" then
                     m.Screen.Close()
                 end if
@@ -361,116 +369,121 @@ Sub prefsHandleEnumPreference(regKey, index)
     end if
 End Sub
 
+Function createManageServersScreen(viewController) As Object
+    obj = CreateObject("roAssociativeArray")
+    port = CreateObject("roMessagePort")
+    screen = CreateObject("roListScreen")
 
-Function showMediaServersScreen(changes)
-	port = CreateObject("roMessagePort") 
-	ls = CreateObject("roListScreen")
-	ls.SetMessagePort(port)
-	ls.SetTitle("Plex Media Servers") 
-	ls.setHeader("Manage Plex Media Servers")
-	ls.SetContent([{title:"Close Manage Servers"},
-		{title: getCurrentMyPlexLabel(m.myplex)},
-		{title: "Add Server Manually"},
-		{title: "Discover Servers"},
-		{title: "Remove All Servers"}])
+    screen.SetMessagePort(port)
 
-	fixedSections = 4
-	buttonCount = fixedSections + 1
-    servers = RegRead("serverList", "servers")
-    if servers <> invalid
-        serverTokens = strTokenize(servers, "{")
-        counter = 0
-        for each token in serverTokens
-            print "Server token:";token
-            serverDetails = strTokenize(token, "\")
+    ' Standard properties for all our Screen types
+    obj.Item = invalid
+    obj.Screen = screen
+    obj.Port = port
+    obj.ViewController = viewController
+    obj.MessageHandler = invalid
+    obj.MsgTimeout = 0
 
-		    itemTitle = "Remove "+serverDetails[1] + " ("+serverDetails[0]+")"
-		    ls.AddContent({title: itemTitle})
-		    buttonCount = buttonCount + 1
-        end for
-    end if
+    obj.Show = showManageServersScreen
 
-	ls.Show()
+    obj.RefreshServerList = manageRefreshServerList
 
-	while true 
-        msg = wait(0, ls.GetMessagePort()) 
-        if type(msg) = "roListScreenEvent"
+    ' This is a slightly evil amount of reaching inside another object...
+    obj.myplex = viewController.Home.myplex
+
+    return obj
+End Function
+
+Sub showManageServersScreen()
+    m.Screen.SetHeader("Manage Plex Media Servers")
+
+    items = []
+
+    m.Screen.AddContent({title: getCurrentMyPlexLabel(m.myplex)})
+    items.Push("myplex")
+
+    m.Screen.AddContent({title: "Add Server Manually"})
+    items.Push("manual")
+
+    m.Screen.AddContent({title: "Discover Servers"})
+    items.Push("discover")
+
+    m.Screen.AddContent({title: "Remove All Servers"})
+    items.Push("removeall")
+
+    removeOffset = items.Count()
+    m.RefreshServerList(removeOffset, items)
+
+    m.Screen.Show()
+
+    while true
+        msg = wait(m.MsgTimeout, m.Port)
+        if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
+        else if type(msg) = "roListScreenEvent" then
             if msg.isScreenClosed() then
                 print "Manage servers closed event"
+                m.ViewController.PopScreen(m)
                 exit while
-             else if msg.isListItemSelected() then
-                if msg.getIndex() = 0 then
-                    print "Closing Manage Servers"
-                    ls.close()
-                else if msg.getIndex() = 1 then
+            else if msg.isListItemSelected() then
+                command = items[msg.GetIndex()]
+                if command = "myplex" then
                     if m.myplex.IsSignedIn then
                         m.myplex.Disconnect()
-                        changes["myplex"] = "disconnected"
+                        m.Changes["myplex"] = "disconnected"
                     else
                         m.myplex.ShowPinScreen()
                         if m.myplex.IsSignedIn then
-                            changes["myplex"] = "connected"
+                            m.Changes["myplex"] = "connected"
                         end if
                     end if
-                    ls.SetItem(msg.getIndex(), {title: getCurrentMyPlexLabel(m.myplex)})
-                else if msg.getIndex() = 2 then
-                    m.ShowManualServerScreen()
+                    m.Screen.SetItem(msg.GetIndex(), {title: getCurrentMyPlexLabel(m.myplex)})
+                else if command = "manual" then
+                    screen = m.ViewController.CreateTextInputScreen("Enter Host Name or IP without http:// or :32400", ["Add Server Manually"], false)
+                    screen.Screen.SetMaxLength(80)
+                    screen.ValidateText = AddUnnamedServer
+                    screen.Show()
 
-                    ' UPDATE: I'm not seeing this problem, but I'm loathe to remove such a specific workaround...
-                    ' Not sure why this is needed here. It appears that exiting the keyboard
-                    ' dialog removes all dialogs then locks up screen. Redrawing the home screen
-                    ' works around it.
-                    'screen=preShowHomeScreen("", "")
-                    'showHomeScreen(screen, PlexMediaServers())
-                else if msg.getIndex() = 3 then
-                    DiscoverPlexMediaServers()
-                    m.showMediaServersScreen(changes)
-                    ls.setFocusedListItem(0)
-                    ls.close()
-                else if msg.getIndex() = 4 then
-                    RemoveAllServers()
-                    m.showMediaServersScreen(changes)
-                    ls.setFocusedListItem(0)
-                    ls.close()
-                                        
-                else
-                    RemoveServer(msg.getIndex()-(fixedSections+1))
-                    ls.removeContent(msg.getIndex())
-                    ls.setFocusedListItem(msg.getIndex() -1)
-                end if
-            end if 
-        end if
-	end while
-End Function
-
-Sub showManualServerScreen()
-    port = CreateObject("roMessagePort") 
-    keyb = CreateObject("roKeyboardScreen")    
-    keyb.SetMessagePort(port)
-    keyb.SetDisplayText("Enter Host Name or IP without http:// or :32400")
-    keyb.SetMaxLength(80)
-    keyb.AddButton(1, "Done") 
-    keyb.AddButton(2, "Close")
-    keyb.setText("")
-    keyb.Show()
-    while true 
-        msg = wait(0, keyb.GetMessagePort()) 
-        if type(msg) = "roKeyboardScreenEvent" then
-            if msg.isScreenClosed() then
-                print "Exiting keyboard dialog screen"
-                return
-            else if msg.isButtonPressed() then
-                if msg.getIndex() = 1 then
-                    if (AddUnnamedServer(keyb.GetText())) then
-                        return
+                    if screen.Text <> invalid then
+                        m.RefreshServerList(removeOffset, items)
                     end if
-                else if msg.getIndex() = 2 then
-                    print "Exiting keyboard dialog screen"
-                    return
+
+                    screen = invalid
+                else if command = "discover" then
+                    DiscoverPlexMediaServers()
+                    m.RefreshServerList(removeOffset, items)
+                else if command = "removeall" then
+                    RemoveAllServers()
+                    m.RefreshServerList(removeOffset, items)
+                else if command = "remove" then
+                    RemoveServer(msg.GetIndex() - removeOffset)
+                    items.Delete(msg.GetIndex())
+                    m.Screen.RemoveContent(msg.GetIndex())
+                else if command = "close" then
+                    m.Screen.Close()
                 end if
-            end if 
+            end if
         end if
     end while
+End Sub
+
+Sub manageRefreshServerList(removeOffset, items)
+    while items.Count() > removeOffset
+        items.Pop()
+        m.Screen.RemoveContent(removeOffset)
+    end while
+
+    servers = RegRead("serverList", "servers")
+    if servers <> invalid then
+        serverTokens = strTokenize(servers, "{")
+        for each token in serverTokens
+            serverDetails = strTokenize(token, "\")
+            m.Screen.AddContent({title: "Remove " + serverDetails[1] + " (" + serverDetails[0] + ")"})
+            items.Push("remove")
+        next
+    end if
+
+    m.Screen.AddContent({title: "Close"})
+    items.Push("close")
 End Sub
 
 Function prefsGetEnumLabel(regKey) As String

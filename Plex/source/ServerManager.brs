@@ -58,6 +58,7 @@ Function RemoveServer(index)
                 AddServer(name, address, machineID)
             else
                 print "Not adding server back to list:";name
+                DeletePlexMediaServer(machineID)
             end if
             counter = counter + 1
         end for

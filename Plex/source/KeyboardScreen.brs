@@ -21,6 +21,7 @@ Function createKeyboardScreen(viewController As Object) As Object
     obj.MsgTimeout = 0
 
     obj.Show = showKeyboardScreen
+    obj.ValidateText = invalid
 
     ' If the user enters this text, as opposed to just exiting the screen,
     ' this will be set.
@@ -46,8 +47,10 @@ Sub showKeyboardScreen()
                 exit while
             else if msg.isButtonPressed() then
                 if msg.GetIndex() = 1 then
-                    m.Text = m.Screen.GetText()
-                    m.Screen.Close()
+                    if m.ValidateText = invalid OR m.ValidateText(m.Screen.GetText()) then
+                        m.Text = m.Screen.GetText()
+                        m.Screen.Close()
+                    end if
                 else if msg.GetIndex() = 2 then
                     m.Screen.Close()
                 end if
