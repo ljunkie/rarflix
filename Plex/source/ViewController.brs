@@ -98,8 +98,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if viewGroup = "secondary" then
         screen = createPosterScreen(item, m)
     else if item.key = "globalprefs" then
-        m.Home.ShowPreferencesScreen()
-        return invalid
+        screen = createPreferencesScreen(m)
     else if item.key = "/channels/all" then
         ' Special case for all channels to force it into a special grid view
         screen = createGridScreen(m)

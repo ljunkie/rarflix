@@ -92,22 +92,27 @@ End Sub
 'Below are the preference Functions for the Global 
 ' Roku channel settings
 '#######################################################
-Function showPreferencesScreen()
-	port = CreateObject("roMessagePort") 
+Function createPreferencesScreen(viewController) As Object
+    obj = CreateObject("roAssociativeArray")
+    port = CreateObject("roMessagePort")
+    screen = CreateObject("roListScreen")
 
-    manifest = ReadAsciiFile("pkg:/manifest")
-    lines = manifest.Tokenize(chr(10))
-    aa = {}
-    for each line in lines
-        entry = line.Tokenize("=")
-        aa.AddReplace(entry[0],entry[1])
-    end for
-	
-	ls = CreateObject("roListScreen")
-	ls.SetMEssagePort(port)
-	ls.setTitle("Preferences v"+aa["version"])
-	ls.setheader("Set Plex Channel Preferences")
+    screen.SetMessagePort(port)
 
+    ' Standard properties for all our Screen types
+    obj.Item = invalid
+    obj.Screen = screen
+    obj.Port = port
+    obj.ViewController = viewController
+    obj.MessageHandler = invalid
+    obj.MsgTimeout = 0
+
+    obj.Show = showPreferencesScreen
+
+    obj.Changes = CreateObject("roAssociativeArray")
+    obj.Prefs = CreateObject("roAssociativeArray")
+
+    ' Quality settings
     qualities = [
         { title: "720 kbps, 320p", EnumValue: "Auto" },
         { title: "1.5 Mbps, 480p", EnumValue: "5" },
@@ -116,8 +121,14 @@ Function showPreferencesScreen()
         { title: "4.0 Mbps, 720p", EnumValue: "8" },
         { title: "8.0 Mbps, 1080p", EnumValue: "9" }
     ]
-    quality = RegRead("quality", "preferences", "7")
+    obj.Prefs["quality"] = {
+        values: qualities,
+        label: "Quality",
+        heading: "Higher settings produce better video quality but require more" + Chr(10) + "network bandwidth.",
+        default: "7"
+    }
 
+    ' H.264 Level
     levels = [
         { title: "Level 4.0 (Supported)", EnumValue: "40" },
         { title: "Level 4.1", EnumValue: "41" },
@@ -125,94 +136,100 @@ Function showPreferencesScreen()
         { title: "Level 5.0", EnumValue: "50" },
         { title: "Level 5.1", EnumValue: "51" }
     ]
-    level = RegRead("level", "preferences", "40")
+    obj.Prefs["level"] = {
+        values: levels,
+        label: "H.264",
+        heading: "Use specific H264 level. Only 4.0 is officially supported.",
+        default: "40"
+    }
 
-    fiveones = [
+    ' 5.1 Support
+    fiveone = [
         { title: "Enabled", EnumValue: "1" },
         { title: "Disabled", EnumValue: "2" }
     ]
-    fiveone = RegRead("fivepointone", "preferences", "1")
+    obj.Prefs["fivepointone"] = {
+        values: fiveone,
+        label: "5.1 Support",
+        heading: "5.1 audio is only supported on the Roku 2 (4.x) firmware." + Chr(10) + "This setting will be ignored if that firmware is not detected.",
+        default: "1"
+    }
 
-	ls.SetContent([{title:"Plex Media Servers"},
-		{title:"Quality" + getCurrentEnumLabel(qualities, quality)},
-		{title:"H264" + getCurrentEnumLabel(levels, level)},
-		{title:"5.1 Support" + getCurrentEnumLabel(fiveones, fiveone)}])
-		
+    obj.HandleEnumPreference = prefsHandleEnumPreference
+    obj.GetEnumLabel = prefsGetEnumLabel
+
+    return obj
+End Function
+
+Sub showPreferencesScreen()
+    manifest = ReadAsciiFile("pkg:/manifest")
+    lines = manifest.Tokenize(chr(10))
+    aa = {}
+    for each line in lines
+        entry = line.Tokenize("=")
+        aa.AddReplace(entry[0],entry[1])
+    end for
+
 	device = CreateObject("roDeviceInfo")
 	version = device.GetVersion()
 	major = Mid(version, 3, 1)
 	minor = Mid(version, 5, 2)
 	build = Mid(version, 8, 5)
 	print "Device Version:" + major +"." + minor +" build "+build
-	buttonCount = 5
+
+    m.Screen.SetTitle("Preferences v" + aa["version"])
+    m.Screen.SetHeader("Set Plex Channel Preferences")
+
+    items = []
+
+    m.Screen.AddContent({title: "Plex Media Servers"})
+    items.Push("servers")
+
+    m.Screen.AddContent({title: m.GetEnumLabel("quality")})
+    items.Push("quality")
+
+    m.Screen.AddContent({title: m.GetEnumLabel("level")})
+    items.Push("level")
+
+    m.Screen.AddContent({title: m.GetEnumLabel("fivepointone")})
+    items.Push("fivepointone")
+
 	if major.toInt() < 4  and device.hasFeature("1080p_hardware") then
-		ls.AddContent({title:"1080p Settings"})
-		buttonCount = 6
+        m.Screen.AddContent({title: "1080p Settings"})
+        items.Push("1080p")
 	end if
-	
-	ls.AddContent({title:"Close Preferences"})
-	
-    changes = {}
+
+    m.Screen.AddContent({title: "Close Preferences"})
+    items.Push("close")
+
     serversBefore = {}
     for each server in PlexMediaServers()
         if server.machineID <> invalid then
             serversBefore[server.machineID] = ""
         end if
     next
-	
-	ls.show()
-	
-    timeout = 0
-    while true 
-        msg = wait(timeout, ls.GetMessagePort())         
-        if type(msg) = "roListScreenEvent"
-			'print "Event: ";type(msg)
-            'print msg.GetType(),msg.GetIndex(),msg.GetData()
+
+    m.Screen.Show()
+
+    while true
+        msg = wait(m.MsgTimeout, m.Port)
+        if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
+        else if type(msg) = "roListScreenEvent" then
             if msg.isScreenClosed() then
-                ls.close()
+                m.ViewController.PopScreen(m)
                 exit while
             else if msg.isListItemSelected() then
-                if msg.getIndex() = 0 then
-                    m.ShowMediaServersScreen(changes)
-                else if msg.getIndex() = 1 then
-                    screen = m.ViewController.CreateEnumInputScreen(qualities, quality, "Higher settings produce better video quality but require more" + Chr(10) + "network bandwidth.", ["Quality Settings"])
-                    if screen.SelectedIndex <> invalid then
-                        print "Set selected quality to "; screen.SelectedValue
-                        RegWrite("quality", screen.SelectedValue, "preferences")
-                        changes.AddReplace("quality", screen.SelectedValue)
-                        ls.setItem(msg.getIndex(), {title:"Quality: " + screen.SelectedLabel})
-                        quality = screen.SelectedValue
-                    end if
-                else if msg.getIndex() = 2 then
-                    screen = m.ViewController.CreateEnumInputScreen(levels, level, "Use specific H264 level. Only 4.0 is officially supported.", ["H264 Level"])
-                    if screen.SelectedIndex <> invalid then
-                        print "Set selected level to "; screen.SelectedValue
-                        RegWrite("level", screen.SelectedValue, "preferences")
-                        changes.AddReplace("level", screen.SelectedValue)
-                        ls.setItem(msg.getIndex(), {title:"H264: " + screen.SelectedLabel})
-                        Capabilities(true)
-                        level = screen.SelectedValue
-                    end if
-                else if msg.getIndex() = 3 then
-                    screen = m.ViewController.CreateEnumInputScreen(fiveones, fiveone, "5.1 audio is only supported on the Roku 2 (4.x) firmware." + Chr(10) + "This setting will be ignored if that firmware is not detected.", ["5.1 Support"])
-                    if screen.SelectedIndex <> invalid then
-                        print "Set 5.1 support to "; screen.SelectedValue
-                        RegWrite("fivepointone", screen.SelectedValue, "preferences")
-                        changes.AddReplace("fivepointone", screen.SelectedValue)
-                        ls.setItem(msg.getIndex(), {title:"5.1 Support: " + screen.SelectedLabel})
-                        Capabilities(true)
-                        fiveone = screen.SelectedValue
-                    end if
-                else if msg.getIndex() = 4 then
-					if buttonCount = 6 then
-						m.Show1080pScreen(changes)
-					else 
-						ls.close()
-					endif
-                else if msg.getIndex() = 5 then
-                    ls.close()
+                command = items[msg.GetIndex()]
+                if command = "servers" then
+                    m.ViewController.Home.ShowMediaServersScreen(m.Changes)
+                else if command = "quality" OR command = "level" OR command = "fivepointone" then
+                    m.HandleEnumPreference(command, msg.GetIndex())
+                else if command = "1080p" then
+                    m.ViewController.Home.Show1080pScreen(m.Changes)
+                else if command = "close" then
+                    m.Screen.Close()
                 end if
-            end if 
+            end if
         end if
     end while
 
@@ -223,22 +240,34 @@ Function showPreferencesScreen()
         end if
     next
 
-    if NOT changes.DoesExist("servers") then
-        changes["servers"] = {}
+    if NOT m.Changes.DoesExist("servers") then
+        m.Changes["servers"] = {}
     end if
 
     for each machineID in serversAfter
         if NOT serversBefore.Delete(machineID) then
-            changes["servers"].AddReplace(machineID, "added")
+            m.Changes["servers"].AddReplace(machineID, "added")
         end if
     next
 
     for each machineID in serversBefore
-        changes["servers"].AddReplace(machineID, "removed")
+        m.Changes["servers"].AddReplace(machineID, "removed")
     next
 
-    m.Refresh(changes)
-End Function
+    m.ViewController.Home.Refresh(m.Changes)
+End Sub
+
+Sub prefsHandleEnumPreference(regKey, index)
+    pref = m.Prefs[regKey]
+    screen = m.ViewController.CreateEnumInputScreen(pref.values, RegRead(regKey, "preferences", pref.default), pref.heading, [pref.label])
+    if screen.SelectedIndex <> invalid then
+        print "Set "; pref.label; " to "; screen.SelectedValue
+        RegWrite(regKey, screen.SelectedValue, "preferences")
+        m.Changes.AddReplace(regKey, screen.SelectedValue)
+        m.Screen.SetItem(index, {title:pref.label + ": " + screen.SelectedLabel})
+    end if
+End Sub
+
 
 Function showMediaServersScreen(changes)
 	port = CreateObject("roMessagePort") 
@@ -466,13 +495,15 @@ Function show1080pFramerateScreen()
 	end while
 End Function
 
-Function getCurrentEnumLabel(items, value) As String
-    for each item in items
+Function prefsGetEnumLabel(regKey) As String
+    pref = m.Prefs[regKey]
+    value = RegRead(regKey, "preferences", pref.default)
+    for each item in pref.values
         if value = item.EnumValue then
-            return ": " + item.title
+            return pref.label + ": " + item.title
         end if
     next
 
-    return ""
+    return pref.label
 End Function
 

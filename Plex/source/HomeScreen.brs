@@ -277,7 +277,8 @@ Sub refreshHomeScreen(changes)
         end if
     end if
 
-    ' We don't really care about anything else when it comes to refreshing the home screen.
+    ' Recompute our capabilities
+    Capabilities(true)
 End Sub
 
 Sub homeRemoveFromRowIf(row, predicate)
