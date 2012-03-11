@@ -13,11 +13,14 @@ Function createViewController() As Object
     controller.screens = CreateObject("roArray", 10, true)
 
     controller.CreateScreenForItem = vcCreateScreenForItem
+    controller.CreateTextInputScreen = vcCreateTextInputScreen
+    controller.PushScreen = vcPushScreen
     controller.PopScreen = vcPopScreen
 
     controller.ShowHomeScreen = vcShowHomeScreen
     controller.RefreshHomeScreen = vcRefreshHomeScreen
     controller.UpdateScreenProperties = vcUpdateScreenProperties
+    controller.AddBreadcrumbs = vcAddBreadcrumbs
 
     controller.DestroyGlitchyScreens = vcDestroyGlitchyScreens
 
@@ -122,37 +125,39 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen = createPosterScreen(item, m)
     end if
 
-    ' Add the breadcrumbs to our list and set them for the current screen.
-    ' If the current screen specified invalid for the breadcrubms then it
-    ' doesn't want any breadcrumbs to be shown. If it specified an empty
-    ' array, then the current breadcrumbs will be shown again.
-    screenType = type(screen.Screen)
-    if breadcrumbs = invalid then
-        screen.NumBreadcrumbs = 0
-    else
-        ' Special case for springboard screens, don't show the current title
-        ' in the breadcrumbs.
-        if screenType = "roSpringboardScreen" AND breadcrumbs.Count() > 0 then breadcrumbs.Pop()
+    m.AddBreadcrumbs(screen, breadcrumbs)
+    m.UpdateScreenProperties(screen)
+    m.PushScreen(screen)
 
-        for each b in breadcrumbs
-            m.breadcrumbs.Push(tostr(b))
-        next
-        screen.NumBreadcrumbs = breadcrumbs.Count()
+    if show then screen.Show()
+
+    return screen
+End Function
+
+Function vcCreateTextInputScreen(heading, breadcrumbs, show=true) As Dynamic
+    screen = createKeyboardScreen(m)
+
+    if heading <> invalid then
+        screen.Screen.SetDisplayText(heading)
     end if
 
+    m.AddBreadcrumbs(screen, breadcrumbs)
     m.UpdateScreenProperties(screen)
+    m.PushScreen(screen)
 
+    if show then screen.Show()
+
+    return screen
+End Function
+
+Sub vcPushScreen(screen)
     ' Set an ID on the screen so we can sanity check before popping
     screen.ScreenID = m.nextId
     m.nextId = m.nextId + 1
 
     Print "Pushing screen"; screen.ScreenID; " onto view controller stack"
     m.screens.Push(screen)
-
-    if show then screen.Show()
-
-    return screen
-End Function
+End Sub
 
 Sub vcPopScreen(screen)
     if screen.ScreenID = -1 then
@@ -166,6 +171,8 @@ Sub vcPopScreen(screen)
         m.Home = invalid
         return
     end if
+
+    screen.MessageHandler = invalid
 
     if screen.ScreenID = invalid OR m.screens.Peek().ScreenID = invalid OR screen.ScreenID <> m.screens.Peek().ScreenID then
         Print "Trying to pop screen that doesn't match the top of our stack!"
@@ -196,6 +203,26 @@ Sub vcRefreshHomeScreen()
     end while
 
     m.Home.Refresh()
+End Sub
+
+Sub vcAddBreadcrumbs(screen, breadcrumbs)
+    ' Add the breadcrumbs to our list and set them for the current screen.
+    ' If the current screen specified invalid for the breadcrubms then it
+    ' doesn't want any breadcrumbs to be shown. If it specified an empty
+    ' array, then the current breadcrumbs will be shown again.
+    screenType = type(screen.Screen)
+    if breadcrumbs = invalid then
+        screen.NumBreadcrumbs = 0
+    else
+        ' Special case for springboard screens, don't show the current title
+        ' in the breadcrumbs.
+        if screenType = "roSpringboardScreen" AND breadcrumbs.Count() > 0 then breadcrumbs.Pop()
+
+        for each b in breadcrumbs
+            m.breadcrumbs.Push(tostr(b))
+        next
+        screen.NumBreadcrumbs = breadcrumbs.Count()
+    end if
 End Sub
 
 Sub vcUpdateScreenProperties(screen)
@@ -234,7 +261,7 @@ Sub vcUpdateScreenProperties(screen)
         if enableBreadcrumbs then
             screen.Screen.SetBreadcrumbText(bread1, bread2)
         end if
-    else if screenType = "roListScreen" then
+    else if screenType = "roListScreen" OR screenType = "roKeyboardScreen" then
         if enableBreadcrumbs then
             screen.Screen.SetTitle(bread2)
         end if
