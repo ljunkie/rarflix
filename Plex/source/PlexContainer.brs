@@ -55,6 +55,7 @@ Function createFakePlexContainer(server, names, keys) As Object
     c.GetKeys = containerGetKeys
     c.GetSearch = containerGetSearch
     c.GetSettings = containerGetSettings
+    c.MoveKeyToHead = containerMoveKeyToHead
 
     return c
 End Function
