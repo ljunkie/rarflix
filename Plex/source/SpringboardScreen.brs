@@ -44,6 +44,12 @@ End Function
 Function createVideoSpringboardScreen(context, index, viewController) As Object
     obj = createBaseSpringboardScreen(context, index, viewController)
 
+    ' Our item's content-type affects the poster dimensions here, so treat
+    ' clips as episodes.
+    if obj.Item.ContentType = "clip" then
+        obj.Item.ContentType = "episode"
+    end if
+
     obj.AddButtons = videoAddButtons
     obj.GetMediaDetails = videoGetMediaDetails
     obj.HandleMessage = videoHandleMessage

@@ -65,8 +65,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     if contentType = "movie" OR contentType = "episode" then
         screen = createVideoSpringboardScreen(context, contextIndex, m)
     else if contentType = "clip" then
-        playVideo(item.server, item)
-        return invalid
+        screen = createVideoSpringboardScreen(context, contextIndex, m)
     else if contentType = "series" then
         screen = createGridScreenForItem(item, m)
         screen.setStyle("flat-16X9")

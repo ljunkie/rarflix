@@ -106,6 +106,8 @@ Sub setVideoBasics(video, container, item)
             video.ReleaseDate = video.EpisodeStr
             video.TitleSeason = video.Title + " - " + video.EpisodeStr
         end if
+    else if video.ContentType = "clip" then
+        video.ReleaseDate = firstOf(video.ReleaseDate, item@subtitle)
     end if
 
     video.Title = video.ShortDescriptionLine1
@@ -135,10 +137,13 @@ End Sub
 Function videoParseDetails()
     if m.HasDetails then return m
 
-    container = createPlexContainerForUrl(m.server, m.sourceUrl, m.Key)
-    videoItemXml = container.xml.Video[0]
+    ' Don't bother trying to request bogus (webkit) keys
+    if left(m.Key, 5) <> "plex:" then
+        container = createPlexContainerForUrl(m.server, m.sourceUrl, m.Key)
+        videoItemXml = container.xml.Video[0]
 
-    setVideoDetails(m, container, videoItemXml)
+        setVideoDetails(m, container, videoItemXml)
+    end if
 
     m.HasDetails = true
 
@@ -146,6 +151,14 @@ Function videoParseDetails()
 End Function
 
 Sub setVideoDetails(video, container, videoItemXml)
+    ' Fix some items that might have been modified for the grid view.
+    if video.OrigReleaseDate <> invalid then
+        video.ReleaseDate = video.OrigReleaseDate
+    end if
+
+    ' Everything else requires a Video item, which we might not have for clips.
+    if videoItemXml = invalid then return
+
     video.Actors = CreateObject("roArray", 15, true)
     for each Actor in videoItemXml.Role
         video.Actors.Push(Actor@tag)
@@ -158,11 +171,6 @@ Sub setVideoDetails(video, container, videoItemXml)
     for each Category in videoItemXml.Genre
         video.Categories.Push(Category@tag)
     next
-
-    ' Fix some items that might have been modified for the grid view.
-    if video.OrigReleaseDate <> invalid then
-        video.ReleaseDate = video.OrigReleaseDate
-    end if
 
     art = videoItemXml@thumb
     if video.server <> invalid AND art <> invalid then
@@ -273,10 +281,12 @@ Sub videoRefresh(detailed=false)
     container = createPlexContainerForUrl(m.server, m.sourceUrl, m.Key)
     videoItemXml = container.xml.Video[0]
 
-    setVideoBasics(m, container, videoItemXml)
+    if videoItemXml <> invalid then
+        setVideoBasics(m, container, videoItemXml)
 
-    if detailed then
-        setVideoDetails(m, container, videoItemXml)
+        if detailed then
+            setVideoDetails(m, container, videoItemXml)
+        end if
     end if
 End Sub
 

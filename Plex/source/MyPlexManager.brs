@@ -24,6 +24,8 @@ Function createMyPlexManager(viewController) As Object
     obj.TranscodedImage = mpTranscodedImage
     obj.TranscodingVideoUrl = mpTranscodingVideoUrl
     obj.ConstructVideoItem = pmsConstructVideoItem
+    obj.GetQueryResponse = mpGetQueryResponse
+    obj.AddDirectPlayInfo = pmsAddDirectPlayInfo
 
     ' Commands, mostly use the PMS functions
     obj.SetProgress = progress
@@ -267,5 +269,17 @@ Function mpExecutePostCommand(commandPath)
     request.AsyncPostFromString("")
 
     GetGlobalAA().AddReplace("async_command", request)
+End Function
+
+Function mpGetQueryResponse(sourceUrl, key) As Object
+    ' We never actually need this for myPlex (at least at the moment), so
+    ' just return a fake.
+    xmlResult = CreateObject("roAssociativeArray")
+    xmlResult.server = m
+    xml=CreateObject("roXMLElement")
+    xml.Parse("<MediaContainer viewgroup='apps'/>")
+    xmlResult.xml = xml
+    xmlResult.sourceUrl = invalid
+    return xmlResult
 End Function
 

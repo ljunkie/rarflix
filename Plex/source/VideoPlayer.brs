@@ -164,7 +164,12 @@ Sub playVideo(server, metadata, seekValue=0, directPlayOptions=0)
     end if
 End Sub
 
-Function videoCanDirectPlay(mediaItem As Object) As Boolean
+Function videoCanDirectPlay(mediaItem) As Boolean
+    if mediaItem = invalid then
+        print "Media item has no Video object, can't direct play"
+        return false
+    end if
+
     print "Media item optimized for streaming: "; mediaItem.optimized
 
     if (mediaItem.optimized <> "true" AND mediaItem.optimized <> "1")
