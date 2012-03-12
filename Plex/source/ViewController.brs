@@ -235,7 +235,16 @@ Sub vcAddBreadcrumbs(screen, breadcrumbs)
     screenType = type(screen.Screen)
     if breadcrumbs = invalid then
         screen.NumBreadcrumbs = 0
-    else if breadcrumbs.Count() = 0 AND m.breadcrumbs.Count() > 0 then
+        return
+    end if
+
+    ' Special case for springboard screens, don't show the current title
+    ' in the breadcrumbs.
+    if screenType = "roSpringboardScreen" AND breadcrumbs.Count() > 0 then
+        breadcrumbs.Pop()
+    end if
+
+    if breadcrumbs.Count() = 0 AND m.breadcrumbs.Count() > 0 then
         count = m.breadcrumbs.Count()
         if count >= 2 then
             breadcrumbs = [m.breadcrumbs[count-2], m.breadcrumbs[count-1]]
@@ -246,10 +255,6 @@ Sub vcAddBreadcrumbs(screen, breadcrumbs)
         m.breadcrumbs.Append(breadcrumbs)
         screen.NumBreadcrumbs = breadcrumbs.Count()
     else
-        ' Special case for springboard screens, don't show the current title
-        ' in the breadcrumbs.
-        if screenType = "roSpringboardScreen" AND breadcrumbs.Count() > 0 then breadcrumbs.Pop()
-
         for each b in breadcrumbs
             m.breadcrumbs.Push(tostr(b))
         next
