@@ -76,7 +76,7 @@ Sub initTheme()
     theme.ListScreenHeaderText = titleText
     theme.ListItemText = normalText
     theme.ListItemHighlightText = titleText
-    ' Other roListScreen attrs a mystery...
+    theme.ListScreenDescriptionText = normalText
 
     theme.ParagraphHeaderText = titleText
     theme.ParagraphBodyText = normalText

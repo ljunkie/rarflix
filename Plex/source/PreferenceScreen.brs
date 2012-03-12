@@ -16,6 +16,8 @@ Function createSettingsScreen(item, viewController) As Object
 
     obj.Show = showSettingsScreen
 
+    lsInitBaseListScreen(obj)
+
     return obj
 End Function
 
@@ -25,15 +27,11 @@ Sub showSettingsScreen()
     settings = container.GetSettings()
 
     for each setting in settings
-        title = setting.label
-        value = setting.GetValueString()
-        if value <> "" then
-            title = title + ": " + value
-        end if
-
-        m.Screen.AddContent({title: title})
+        setting.title = setting.label
+        m.AddItem(setting, "setting")
+        m.AppendValue(invalid, setting.GetValueString())
     next
-    m.Screen.AddContent({title: "Close"})
+    m.AddItem({title: "Close"}, "close")
 
     m.Screen.Show()
 
@@ -46,8 +44,9 @@ Sub showSettingsScreen()
                 m.ViewController.PopScreen(m)
                 exit while
             else if msg.isListItemSelected() then
-                if msg.GetIndex() < settings.Count() then
-                    setting = settings[msg.GetIndex()]
+                command = m.GetSelectedCommand(msg.GetIndex())
+                if command = "setting" then
+                    setting = m.contentArray[msg.GetIndex()]
 
                     modified = false
 
@@ -77,9 +76,9 @@ Sub showSettingsScreen()
 
                     if modified then
                         server.SetPref(m.Item.key, setting.id, setting.value)
-                        m.Screen.SetItem(msg.GetIndex(), {title: setting.label + ": " + setting.GetValueString()})
+                        m.AppendValue(msg.GetIndex(), setting.GetValueString())
                     end if
-                else if msg.GetIndex() = settings.Count() then
+                else if command = "close" then
                     m.Screen.Close()
                 end if
             end if
@@ -112,18 +111,19 @@ Function createPreferencesScreen(viewController) As Object
     obj.Changes = CreateObject("roAssociativeArray")
     obj.Prefs = CreateObject("roAssociativeArray")
 
+    lsInitBaseListScreen(obj)
+
     ' Quality settings
     qualities = [
-        { title: "720 kbps, 320p", EnumValue: "Auto" },
+        { title: "720 kbps, 320p", EnumValue: "4" },
         { title: "1.5 Mbps, 480p", EnumValue: "5" },
         { title: "2.0 Mbps, 720p", EnumValue: "6" },
-        { title: "3.0 Mbps, 720p", EnumValue: "7" },
+        { title: "3.0 Mbps, 720p", EnumValue: "7", ShortDescriptionLine2: "Default" },
         { title: "4.0 Mbps, 720p", EnumValue: "8" },
-        { title: "8.0 Mbps, 1080p", EnumValue: "9" }
+        { title: "8.0 Mbps, 1080p", EnumValue: "9", ShortDescriptionLine2: "Pushing the limits, requires fast connection." }
     ]
     obj.Prefs["quality"] = {
         values: qualities,
-        label: "Quality",
         heading: "Higher settings produce better video quality but require more" + Chr(10) + "network bandwidth.",
         default: "7"
     }
@@ -131,46 +131,43 @@ Function createPreferencesScreen(viewController) As Object
     ' H.264 Level
     levels = [
         { title: "Level 4.0 (Supported)", EnumValue: "40" },
-        { title: "Level 4.1", EnumValue: "41" },
-        { title: "Level 4.2", EnumValue: "42" },
-        { title: "Level 5.0", EnumValue: "50" },
-        { title: "Level 5.1", EnumValue: "51" }
+        { title: "Level 4.1", EnumValue: "41", ShortDescriptionLine2: "This level may not be supported well." },
+        { title: "Level 4.2", EnumValue: "42", ShortDescriptionLine2: "This level may not be supported well." },
+        { title: "Level 5.0", EnumValue: "50", ShortDescriptionLine2: "This level may not be supported well." },
+        { title: "Level 5.1", EnumValue: "51", ShortDescriptionLine2: "This level may not be supported well." }
     ]
     obj.Prefs["level"] = {
         values: levels,
-        label: "H.264",
         heading: "Use specific H264 level. Only 4.0 is officially supported.",
         default: "40"
     }
 
     ' 5.1 Support
     fiveone = [
-        { title: "Enabled", EnumValue: "1" },
-        { title: "Disabled", EnumValue: "2" }
+        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Try to copy 5.1 audio streams when transcoding." },
+        { title: "Disabled", EnumValue: "2", ShortDescriptionLine2: "Always use 2-channel audio when transcoding." }
     ]
     obj.Prefs["fivepointone"] = {
         values: fiveone,
-        label: "5.1 Support",
-        heading: "5.1 audio support.",
+        heading: "5.1 audio support for transcoded content",
         default: "1"
     }
 
     ' Direct play options
     directplay = [
         { title: "Automatic (recommended)", EnumValue: "0" },
-        { title: "Direct Play", EnumValue: "1" },
-        { title: "Direct Play w/ Fallback", EnumValue: "2" },
-        { title: "Always Transcode", EnumValue: "3" }
+        { title: "Direct Play", EnumValue: "1", ShortDescriptionLine2: "Always Direct Play, no matter what." },
+        { title: "Direct Play w/ Fallback", EnumValue: "2", ShortDescriptionLine2: "Always try Direct Play, then transcode." },
+        { title: "Always Transcode", EnumValue: "3", ShortDescriptionLine2: "Never Direct Play, always transcode/remux." }
     ]
     obj.Prefs["directplay"] = {
         values: directplay,
-        label: "Direct Play",
         heading: "Direct Play preferences",
         default: "0"
     }
 
     obj.HandleEnumPreference = prefsHandleEnumPreference
-    obj.GetEnumLabel = prefsGetEnumLabel
+    obj.GetEnumValue = prefsGetEnumValue
 
     ' This is a slightly evil amount of reaching inside another object...
     obj.myplex = viewController.Home.myplex
@@ -197,35 +194,25 @@ Sub showPreferencesScreen()
     m.Screen.SetTitle("Preferences v" + aa["version"])
     m.Screen.SetHeader("Set Plex Channel Preferences")
 
-    items = []
-
-    m.Screen.AddContent({title: "Plex Media Servers"})
-    items.Push("servers")
-
-    m.Screen.AddContent({title: getCurrentMyPlexLabel(m.myplex)})
-    items.Push("myplex")
-
-    m.Screen.AddContent({title: m.GetEnumLabel("quality")})
-    items.Push("quality")
-
-    m.Screen.AddContent({title: m.GetEnumLabel("level")})
-    items.Push("level")
-
-    m.Screen.AddContent({title: m.GetEnumLabel("directplay")})
-    items.Push("directplay")
+    m.AddItem({title: "Plex Media Servers"}, "servers")
+    m.AddItem({title: getCurrentMyPlexLabel(m.myplex)}, "myplex")
+    m.AddItem({title: "Quality"}, "quality")
+    m.AppendValue(invalid, m.GetEnumValue("quality"))
+    m.AddItem({title: "H.264"}, "level")
+    m.AppendValue(invalid, m.GetEnumValue("level"))
+    m.AddItem({title: "Direct Play"}, "directplay")
+    m.AppendValue(invalid, m.GetEnumValue("directplay"))
 
     if major.toInt() >= 4 AND device.hasFeature("5.1_surround_sound") then
-        m.Screen.AddContent({title: m.GetEnumLabel("fivepointone")})
-        items.Push("fivepointone")
+        m.AddItem({title: "5.1 Support"}, "fivepointone")
+        m.AppendValue(invalid, m.GetEnumValue("fivepointone"))
     end if
 
 	if major.toInt() < 4  and device.hasFeature("1080p_hardware") then
-        m.Screen.AddContent({title: "1080p Settings"})
-        items.Push("1080p")
+        m.AddItem({title: "1080p Settings"}, "1080p")
 	end if
 
-    m.Screen.AddContent({title: "Close Preferences"})
-    items.Push("close")
+    m.AddItem({title: "Close Preferences"}, "close")
 
     serversBefore = {}
     for each server in PlexMediaServers()
@@ -244,7 +231,7 @@ Sub showPreferencesScreen()
                 m.ViewController.PopScreen(m)
                 exit while
             else if msg.isListItemSelected() then
-                command = items[msg.GetIndex()]
+                command = m.GetSelectedCommand(msg.GetIndex())
                 if command = "servers" then
                     screen = createManageServersScreen(m.ViewController)
                     m.ViewController.InitializeOtherScreen(screen, ["Plex Media Servers"])
@@ -320,6 +307,8 @@ Function create1080PreferencesScreen(viewController) As Object
     obj.Changes = CreateObject("roAssociativeArray")
     obj.Prefs = CreateObject("roAssociativeArray")
 
+    lsInitBaseListScreen(obj)
+
     ' Legacy 1080p enabled
     options = [
         { title: "Enabled", EnumValue: "enabled" },
@@ -327,7 +316,6 @@ Function create1080PreferencesScreen(viewController) As Object
     ]
     obj.Prefs["legacy1080p"] = {
         values: options,
-        label: "1080p Support",
         heading: "1080p support (Roku 1 only)",
         default: "disabled"
     }
@@ -340,13 +328,12 @@ Function create1080PreferencesScreen(viewController) As Object
     ]
     obj.Prefs["legacy1080pframerate"] = {
         values: options,
-        label: "Frame Rate Override",
         heading: "Select a frame rate to use with 1080p content.",
         default: "auto"
     }
 
     obj.HandleEnumPreference = prefsHandleEnumPreference
-    obj.GetEnumLabel = prefsGetEnumLabel
+    obj.GetEnumValue = prefsGetEnumValue
 
     return obj
 End Function
@@ -354,16 +341,11 @@ End Function
 Sub show1080PreferencesScreen()
     m.Screen.SetHeader("1080p settings (Roku 1 only)")
 
-    items = []
-
-    m.Screen.AddContent({title: m.GetEnumLabel("legacy1080p")})
-    items.Push("legacy1080p")
-
-    m.Screen.AddContent({title: m.GetEnumLabel("legacy1080pframerate")})
-    items.Push("legacy1080pframerate")
-
-    m.Screen.AddContent({title: "Close"})
-    items.Push("close")
+    m.AddItem({title: "1080p Support"}, "legacy1080p")
+    m.AppendValue(invalid, m.GetEnumValue("legacy1080p"))
+    m.AddItem({title: "Frame Rate Override"}, "legacy1080pframerate")
+    m.AppendValue(invalid, m.GetEnumValue("legacy1080pframerate"))
+    m.AddItem({title: "Close"}, "close")
 
     m.Screen.Show()
 
@@ -375,7 +357,7 @@ Sub show1080PreferencesScreen()
                 m.ViewController.PopScreen(m)
                 exit while
             else if msg.isListItemSelected() then
-                command = items[msg.GetIndex()]
+                command = m.GetSelectedCommand(msg.GetIndex())
                 if command = "legacy1080p" OR command = "legacy1080pframerate" then
                     m.HandleEnumPreference(command, msg.GetIndex())
                 else if command = "close" then
@@ -387,13 +369,14 @@ Sub show1080PreferencesScreen()
 End Sub
 
 Sub prefsHandleEnumPreference(regKey, index)
+    label = m.contentArray[index].OrigTitle
     pref = m.Prefs[regKey]
-    screen = m.ViewController.CreateEnumInputScreen(pref.values, RegRead(regKey, "preferences", pref.default), pref.heading, [pref.label])
+    screen = m.ViewController.CreateEnumInputScreen(pref.values, RegRead(regKey, "preferences", pref.default), pref.heading, [label])
     if screen.SelectedIndex <> invalid then
-        print "Set "; pref.label; " to "; screen.SelectedValue
+        print "Set "; label; " to "; screen.SelectedValue
         RegWrite(regKey, screen.SelectedValue, "preferences")
         m.Changes.AddReplace(regKey, screen.SelectedValue)
-        m.Screen.SetItem(index, {title:pref.label + ": " + screen.SelectedLabel})
+        m.AppendValue(index, screen.SelectedLabel)
     end if
 End Sub
 
@@ -419,6 +402,8 @@ Function createManageServersScreen(viewController) As Object
     obj.Changes = CreateObject("roAssociativeArray")
     obj.Prefs = CreateObject("roAssociativeArray")
 
+    lsInitBaseListScreen(obj)
+
     ' Automatic discovery
     options = [
         { title: "Enabled", EnumValue: "1" },
@@ -426,13 +411,12 @@ Function createManageServersScreen(viewController) As Object
     ]
     obj.Prefs["autodiscover"] = {
         values: options,
-        label: "Discover at Startup",
         heading: "Automatically discover Plex Media Servers at startup.",
         default: "1"
     }
 
     obj.HandleEnumPreference = prefsHandleEnumPreference
-    obj.GetEnumLabel = prefsGetEnumLabel
+    obj.GetEnumValue = prefsGetEnumValue
 
     return obj
 End Function
@@ -440,22 +424,14 @@ End Function
 Sub showManageServersScreen()
     m.Screen.SetHeader("Manage Plex Media Servers")
 
-    items = []
+    m.AddItem({title: "Add Server Manually"}, "manual")
+    m.AddItem({title: "Discover Servers"}, "discover")
+    m.AddItem({title: "Discover at Startup"}, "autodiscover")
+    m.AppendValue(invalid, m.GetEnumValue("autodiscover"))
+    m.AddItem({title: "Remove All Servers"}, "removeall")
 
-    m.Screen.AddContent({title: "Add Server Manually"})
-    items.Push("manual")
-
-    m.Screen.AddContent({title: "Discover Servers"})
-    items.Push("discover")
-
-    m.Screen.AddContent({title: m.GetEnumLabel("autodiscover")})
-    items.Push("autodiscover")
-
-    m.Screen.AddContent({title: "Remove All Servers"})
-    items.Push("removeall")
-
-    removeOffset = items.Count()
-    m.RefreshServerList(removeOffset, items)
+    removeOffset = m.contentArray.Count()
+    m.RefreshServerList(removeOffset)
 
     m.Screen.Show()
 
@@ -468,7 +444,7 @@ Sub showManageServersScreen()
                 m.ViewController.PopScreen(m)
                 exit while
             else if msg.isListItemSelected() then
-                command = items[msg.GetIndex()]
+                command = m.GetSelectedCommand(msg.GetIndex())
                 if command = "manual" then
                     screen = m.ViewController.CreateTextInputScreen("Enter Host Name or IP without http:// or :32400", ["Add Server Manually"], false)
                     screen.Screen.SetMaxLength(80)
@@ -476,21 +452,21 @@ Sub showManageServersScreen()
                     screen.Show()
 
                     if screen.Text <> invalid then
-                        m.RefreshServerList(removeOffset, items)
+                        m.RefreshServerList(removeOffset)
                     end if
 
                     screen = invalid
                 else if command = "discover" then
                     DiscoverPlexMediaServers()
-                    m.RefreshServerList(removeOffset, items)
+                    m.RefreshServerList(removeOffset)
                 else if command = "autodiscover" then
                     m.HandleEnumPreference(command, msg.GetIndex())
                 else if command = "removeall" then
                     RemoveAllServers()
-                    m.RefreshServerList(removeOffset, items)
+                    m.RefreshServerList(removeOffset)
                 else if command = "remove" then
                     RemoveServer(msg.GetIndex() - removeOffset)
-                    items.Delete(msg.GetIndex())
+                    m.contentArray.Delete(msg.GetIndex())
                     m.Screen.RemoveContent(msg.GetIndex())
                 else if command = "close" then
                     m.Screen.Close()
@@ -500,9 +476,9 @@ Sub showManageServersScreen()
     end while
 End Sub
 
-Sub manageRefreshServerList(removeOffset, items)
-    while items.Count() > removeOffset
-        items.Pop()
+Sub manageRefreshServerList(removeOffset)
+    while m.contentArray.Count() > removeOffset
+        m.contentArray.Pop()
         m.Screen.RemoveContent(removeOffset)
     end while
 
@@ -511,24 +487,22 @@ Sub manageRefreshServerList(removeOffset, items)
         serverTokens = strTokenize(servers, "{")
         for each token in serverTokens
             serverDetails = strTokenize(token, "\")
-            m.Screen.AddContent({title: "Remove " + serverDetails[1] + " (" + serverDetails[0] + ")"})
-            items.Push("remove")
+            m.AddItem({title: "Remove " + serverDetails[1] + " (" + serverDetails[0] + ")"}, "remove")
         next
     end if
 
-    m.Screen.AddContent({title: "Close"})
-    items.Push("close")
+    m.AddItem({title: "Close"}, "close")
 End Sub
 
-Function prefsGetEnumLabel(regKey) As String
+Function prefsGetEnumValue(regKey)
     pref = m.Prefs[regKey]
     value = RegRead(regKey, "preferences", pref.default)
     for each item in pref.values
         if value = item.EnumValue then
-            return pref.label + ": " + item.title
+            return item.title
         end if
     next
 
-    return pref.label
+    return invalid
 End Function
 

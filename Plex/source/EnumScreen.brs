@@ -26,7 +26,8 @@ Function createEnumScreen(options, selected, viewController) As Object
         focusedIndex = 0
     end if
 
-    obj.Options = []
+    lsInitBaseListScreen(obj)
+
     for each option in options
         if type(option) = "roAssociativeArray" then
             if option.title = invalid then
@@ -36,20 +37,20 @@ Function createEnumScreen(options, selected, viewController) As Object
                 option.EnumValue = option.title
             end if
             if GetInterface(selected, "ifString") <> invalid AND selected = option.EnumValue then
-                focusedIndex = obj.Options.Count()
+                focusedIndex = obj.contentArray.Count()
             end if
 
-            obj.Options.Push(option)
+            obj.AddItem(option)
         else
             o = {title: option, EnumValue: option}
             if GetInterface(selected, "ifString") <> invalid AND selected = option then
-                focusedIndex = obj.Options.Count()
+                focusedIndex = obj.contentArray.Count()
             end if
-            obj.Options.Push(o)
+
+            obj.AddItem(o)
         end if
     next
 
-    screen.SetContent(obj.Options)
     screen.SetFocusedListItem(focusedIndex)
 
     ' If the user selects something, these will be set.
@@ -72,7 +73,7 @@ Sub showEnumScreen()
                 m.ViewController.PopScreen(m)
                 exit while
             else if msg.isListItemSelected() then
-                option = m.Options[msg.GetIndex()]
+                option = m.contentArray[msg.GetIndex()]
                 if option <> invalid then
                     m.SelectedIndex = msg.GetIndex()
                     m.SelectedValue = option.EnumValue
