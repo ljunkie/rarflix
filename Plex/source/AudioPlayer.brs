@@ -21,6 +21,9 @@ Sub audioPlayer_setbuttons(obj)
     playstate = obj.isPlayState
 
     screen.ClearButtons()
+
+    if NOT m.IsPlayable then return
+
     if (playstate = 2)  then ' playing
         screen.AddButton(0, "pause playing")
         if m.Context.Count() > 1 then
@@ -95,6 +98,7 @@ Function audioHandleMessage(msg) As Boolean
             m.GotoNextItem()
         else if msg.isRequestFailed() then
             Print "Playback failed"
+            m.GotoNextItem()
         else if msg.isListItemSelected() then
             Print "Starting to play item"
             m.Refresh(true)
@@ -112,6 +116,17 @@ Function audioHandleMessage(msg) As Boolean
         else if msg.isFullResult() then
             Print "Playback of entire list finished"
             m.setPlayState(0)
+            m.Refresh(false)
+
+            if m.metadata.Url = "" then
+                ' TODO(schuyler): Show something more useful, especially once
+                ' there's a server version that transcodes audio.
+                dialog = createBaseDialog()
+                dialog.Title = "Content Unavailable"
+                dialog.Text = "We're unable to play this audio format."
+                dialog.Show()
+                dialog = invalid
+            end if
         else if msg.isPartialResult() then
             Print "isPartialResult"
         else if msg.isPaused() then

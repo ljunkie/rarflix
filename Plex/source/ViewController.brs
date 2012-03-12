@@ -78,6 +78,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen.SetListStyle("flat-episodic", "zoom-to-fill")
     else if contentType = "audio" then
         screen = createAudioSpringboardScreen(context, contextIndex, m)
+        if screen = invalid then return invalid
     else if contentType = "section" then
         screen = createGridScreenForItem(item, m)
     else if contentType = "photo" then

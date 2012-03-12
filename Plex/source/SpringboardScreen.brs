@@ -65,7 +65,7 @@ Function createVideoSpringboardScreen(context, index, viewController) As Object
     return obj
 End Function
 
-Function createAudioSpringboardScreen(context, index, viewController) As Object
+Function createAudioSpringboardScreen(context, index, viewController) As Dynamic
     obj = createBaseSpringboardScreen(context, index, viewController)
 
     obj.Screen.SetDescriptionStyle("audio")
@@ -96,7 +96,29 @@ Function createAudioSpringboardScreen(context, index, viewController) As Object
     obj.AddButtons      = audioPlayer_setbuttons
     obj.GetMediaDetails = audioGetMediaDetails
     obj.HandleMessage   = audioHandleMessage
-    obj.setPlayState(2) ' start playback when screen is opened
+
+    ' In there isn't a single playable item in the list then the Roku has
+    ' been observed to die a horrible death.
+    obj.IsPlayable = false
+    for i = index to context.Count() - 1
+        url = context[i].Url
+        if url <> invalid AND url <> "" then
+            obj.IsPlayable = true
+            obj.audioPlayer.SetNext(i)
+            obj.Item = context[i]
+            exit for
+        end if
+    next
+
+    if obj.IsPlayable then
+        obj.setPlayState(2) ' start playback when screen is opened
+    else
+        dialog = createBaseDialog()
+        dialog.Title = "Unsupported Format"
+        dialog.Text = "None of the audio tracks in this list are in a supported format. Use MP3s for best results."
+        dialog.Show()
+        return invalid
+    end if
 
     obj.progressTimer = CreateObject("roTimespan")
     obj.progressOffset = 0

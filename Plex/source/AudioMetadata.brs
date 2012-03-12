@@ -105,5 +105,13 @@ Function newTrackMetadata(container, item, detailed=true) As Object
         track.Url = track.server.TranscodingAudioUrl(key, track)
     end if
 
+    ' Url being invalid has been observed to make the Roku die a very
+    ' horrible death that requires a power cycle.
+    if track.Url = invalid then
+        track.Codec = "invalid"
+        track.StreamFormat = "invalid"
+        track.Url = ""
+    end if
+
     return track
 End Function
