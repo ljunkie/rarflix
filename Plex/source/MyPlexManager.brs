@@ -237,14 +237,16 @@ Function mpPingTranscode()
 End Function
 
 Function mpTranscodedImage(queryUrl, imagePath, width, height) As String
+    if Left(imagePath, 5) = "https" then
+        imagePath = "http" +  Mid(imagePath, 6, len(imagePath) - 5)
+    end if
+
     if m.CheckTranscodeServer() then
         url = m.TranscodeServer.TranscodedImage(queryUrl, imagePath, width, height)
         if m.TranscodeServer.AccessToken <> invalid then
             url = url + "&X-Plex-Token=" + m.TranscodeServer.AccessToken
         end if
         return url
-    else if Left(imagePath, 5) = "https" then
-        return "http" +  Mid(imagePath, 6, len(imagePath) - 5)
     else if Left(imagePath, 4) = "http" then
         return imagePath
     else
