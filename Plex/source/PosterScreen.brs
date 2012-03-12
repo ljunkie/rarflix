@@ -198,8 +198,16 @@ Sub posterShowContentList(index)
     Print "Showing screen with "; status.content.Count(); " elements"
     Print "List style is "; status.listStyle; ", "; status.listDisplayMode
 
-    m.Screen.Show()
-    m.Screen.SetFocusedListItem(status.focusedIndex)
+    if status.content.Count() = 0 AND NOT m.FilterMode then
+        dialog = createBaseDialog()
+        dialog.Title = "Content Unavailable"
+        dialog.Text = "An error occurred while trying to load this content, make sure the server is running."
+        dialog.Show()
+        m.Screen.Close()
+    else
+        m.Screen.Show()
+        m.Screen.SetFocusedListItem(status.focusedIndex)
+    end if
 End Sub
 
 Function getDefaultListStyle(viewGroup, contentType) As Object
