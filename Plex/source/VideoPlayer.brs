@@ -171,32 +171,72 @@ Function videoCanDirectPlay(mediaItem) As Boolean
     end if
 
     print "Media item optimized for streaming: "; mediaItem.optimized
-
-    if (mediaItem.optimized <> "true" AND mediaItem.optimized <> "1")
-        print "videoCanDirectPlay: media is not optimized"
-        return false
-    end if
-
     print "Media item container: "; mediaItem.container
     print "Media item video codec: "; mediaItem.videoCodec
     print "Media item audio codec: "; mediaItem.audioCodec
 
-    if (mediaItem.container <> "mp4" AND mediaItem.container <> "mov" AND mediaItem.container <> "mkv" AND mediaItem.container <> "m4v") then
-        print "videoCanDirectPlay: container not mp4/mov/m4v/mkv"
-        return false
+    device = CreateObject("roDeviceInfo")
+    version = device.GetVersion()
+    major = Mid(version, 3, 1).toint()
+
+    if mediaItem.container = "mp4" OR mediaItem.container = "mov" OR mediaItem.container = "m4v" then
+        if (mediaItem.optimized <> "true" AND mediaItem.optimized <> "1")
+            print "videoCanDirectPlay: media is not optimized"
+            return false
+        end if
+
+        if (mediaItem.videoCodec <> "h264" AND mediaItem.videoCodec <> "mpeg4") then
+            print "videoCanDirectPlay: vc not h264/mpeg4"
+            return false
+        end if
+
+        ' NOTE: ac3 seems to fail for this commenter (though it does at least throw an error)
+        if (mediaItem.audioCodec <> "aac" AND mediaItem.audioCodec <> "ac3") then
+            print "videoCanDirectPlay: ac not aac/ac3"
+            return false
+        end if
+
+        return true
     end if
 
-    if (mediaItem.videoCodec <> "h264" AND mediaItem.videoCodec <> "mpeg4") then
-        print "videoCanDirectPlay: vc not h264/mpeg4"
-        return false
+    if mediaItem.container = "wmv" then
+        ' TODO: What exactly should we check here?
+
+        ' Based on docs, only WMA9.2 is supported for audio
+        if Left(mediaItem.audioCodec, 3) <> "wma" then
+            print "videoCanDirectPlay: ac not wmav2"
+            return false
+        end if
+
+        ' Video support is less obvious. WMV9 up to 480p, VC-1 up to 1080p?
+        if mediaItem.videoCodec <> "wmv3" AND mediaItem.videoCodec <> "vc1" then
+            print "videoCanDirectPlay: vc not wmv3/vc1"
+            return false
+        end if
+
+        return true
     end if
 
-    if (mediaItem.audioCodec <> "aac" AND mediaItem.audioCodec <> "ac3" AND mediaItem.audioCodec <> "mp3") then
-        print "videoCanDirectPlay: ac not aac/ac3/mp3"
-        return false
+    if mediaItem.container = "mkv" then
+        if major < 4 then
+            print "videoCanDirectPlay: mkv not supported by version"; major
+            return false
+        end if
+
+        if mediaItem.videoCodec <> "h264" then
+            print "videoCanDirectPlay: vc not h264"
+            return false
+        end if
+
+        if (mediaItem.audioCodec <> "aac" AND mediaItem.audioCodec <> "ac3" AND mediaItem.audioCodec <> "mp3") then
+            print "videoCanDirectPlay: ac not aac/ac3/mp3"
+            return false
+        end if
+
+        return true
     end if
 
-    return true
+    return false
 End Function
 
 Function videoMessageLoop(server, metadata, messagePort, transcoded) As Boolean
