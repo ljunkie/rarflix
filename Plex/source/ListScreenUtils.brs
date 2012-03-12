@@ -15,8 +15,8 @@ End Sub
 
 Sub lsAddItem(item, command=invalid)
     if item.SDPosterURL = invalid then
-        item.SDPosterURL = "file://pkg:/images/prefs.jpg"
-        item.HDPosterURL = "file://pkg:/images/prefs.jpg"
+        item.SDPosterURL = "file://pkg:/images/gear.png"
+        item.HDPosterURL = "file://pkg:/images/gear.png"
     end if
 
     item.OrigTitle = item.Title

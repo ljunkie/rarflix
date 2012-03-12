@@ -97,8 +97,8 @@ Function newSearchMetadata(container, item) As Object
     metadata.prompt = item@prompt
 
     if metadata.SDPosterURL = invalid OR Left(metadata.SDPosterURL, 4) = "file" then
-        metadata.SDPosterURL = "file://pkg:/images/icon-search.jpg"
-        metadata.HDPosterURL = "file://pkg:/images/icon-search.jpg"
+        metadata.SDPosterURL = "file://pkg:/images/search.png"
+        metadata.HDPosterURL = "file://pkg:/images/search.png"
     end if
 
     return metadata

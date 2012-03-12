@@ -77,8 +77,8 @@ Function createHomeScreen(viewController) As Object
     prefs.Key = "globalprefs"
     prefs.Title = "Preferences"
     prefs.ShortDescriptionLine1 = "Preferences"
-    prefs.SDPosterURL = "file://pkg:/images/prefs.jpg"
-    prefs.HDPosterURL = "file://pkg:/images/prefs.jpg"
+    prefs.SDPosterURL = "file://pkg:/images/gear.png"
+    prefs.HDPosterURL = "file://pkg:/images/gear.png"
     obj.contentArray[obj.MiscRow].content.Push(prefs)
 
     return obj
@@ -576,8 +576,8 @@ Function homeHandleMessage(msg) As Boolean
                 univSearch.Key = "globalsearch"
                 univSearch.Title = "Search"
                 univSearch.ShortDescriptionLine1 = "Search"
-                univSearch.SDPosterURL = "file://pkg:/images/icon-search.jpg"
-                univSearch.HDPosterURL = "file://pkg:/images/icon-search.jpg"
+                univSearch.SDPosterURL = "file://pkg:/images/search.png"
+                univSearch.HDPosterURL = "file://pkg:/images/search.png"
                 status.content.Unshift(univSearch)
                 m.Screen.OnDataLoaded(m.MiscRow, status.content, 0, status.content.Count(), true)
             else
