@@ -120,7 +120,7 @@ Sub setVideoBasics(video, container, item)
         end if
     end if
 
-    video.Rating = item@contentRating
+    video.Rating = firstOf(item@contentRating, container.xml@grandparentContentRating)
     rating = item@rating
     if rating <> invalid then
         video.StarRating = int(val(rating)*10)
