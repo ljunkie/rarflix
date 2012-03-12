@@ -166,10 +166,23 @@ End Sub
 Sub homeCreateQueueRequests(startRequests As Boolean)
     if NOT m.myplex.IsSignedIn then return
 
+    ' Unwatched queue items
     queue = CreateObject("roAssociativeArray")
     queue.server = m.myplex
     queue.requestType = "queue"
     queue.key = "/pms/playlists/queue/unwatched"
+
+    ' A dummy item to pull up the full queue
+    allQueue = CreateObject("roAssociativeArray")
+    allQueue.Title = "All Queued Items"
+    allQueue.server = m.myplex
+    allQueue.sourceUrl = ""
+    allQueue.Key = "/pms/playlists/queue"
+    allQueue.SDPosterURL = "file://pkg:/images/plex.jpg"
+    allQueue.HDPosterURL = "file://pkg:/images/plex.jpg"
+    allQueue.ContentType = "series"
+    queue.item = allQueue
+
     m.AddOrStartRequest(queue, m.QueueRow, startRequests)
 End Sub
 

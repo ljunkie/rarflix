@@ -272,14 +272,25 @@ Function mpExecutePostCommand(commandPath)
 End Function
 
 Function mpGetQueryResponse(sourceUrl, key) As Object
-    ' We never actually need this for myPlex (at least at the moment), so
-    ' just return a fake.
     xmlResult = CreateObject("roAssociativeArray")
     xmlResult.server = m
-    xml=CreateObject("roXMLElement")
-    xml.Parse("<MediaContainer viewgroup='apps'/>")
-    xmlResult.xml = xml
-    xmlResult.sourceUrl = invalid
+    if left(key, 4) = "http" then
+        xml=CreateObject("roXMLElement")
+        xml.Parse("<MediaContainer viewgroup='apps'/>")
+        xmlResult.xml = xml
+        xmlResult.sourceUrl = invalid
+    else
+        httpRequest = m.CreateRequest(sourceUrl, key)
+        print "Fetching content from server at query URL:"; httpRequest.GetUrl()
+        response = GetToStringWithTimeout(httpRequest, 60)
+        xml=CreateObject("roXMLElement")
+        if not xml.Parse(response) then
+            print "Can't parse feed:";response
+        endif
+
+        xmlResult.xml = xml
+        xmlResult.sourceUrl = httpRequest.GetUrl()
+    end if
     return xmlResult
 End Function
 
