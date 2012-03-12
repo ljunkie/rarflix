@@ -101,7 +101,11 @@ Sub setVideoBasics(video, container, item)
         end if
 
         if episodeStr <> invalid AND seasonStr <> invalid then
-            video.EpisodeStr = seasonStr + episodeStr
+            if container.xml@mixedParents = "1" then
+                video.EpisodeStr = seasonStr + " " + episodeStr
+            else
+                video.EpisodeStr = episodeStr
+            end if
             video.OrigReleaseDate = video.ReleaseDate
             video.ReleaseDate = video.EpisodeStr
             video.TitleSeason = video.Title + " - " + video.EpisodeStr
