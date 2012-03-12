@@ -200,7 +200,10 @@ End Function
 Function ServerVersionCompare(versionStr, minVersion) As Boolean
     versionStr = strReplace(versionStr,"v","")
     index = instr(1, versionStr, "-")
-    tokens = strTokenize(left(versionStr, index-1), ".")
+    if index > 0 then
+        versionStr = left(versionStr, index - 1)
+    end if
+    tokens = strTokenize(versionStr, ".")
     count = 0
     for each token in tokens
         value = val(token)
