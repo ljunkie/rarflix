@@ -623,9 +623,6 @@ Sub pmsAddDirectPlayInfo(video, item, mediaKey)
     video.FrameRate = item.FrameRate
     video.IsTranscoded = false
     video.StreamFormat = firstOf(item.preferredMediaItem.container, "mp4")
-    if video.StreamFormat = "asf" then
-        video.StreamFormat = "wmv"
-    end if
     PrintAA(video)
 End Sub
 

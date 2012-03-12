@@ -97,7 +97,7 @@ Function newTrackMetadata(container, item, detailed=true) As Object
         key = item@key
     end if
 
-    if codec = "mp3" OR codec = "wmv" OR codec = "aac" then
+    if codec = "mp3" OR codec = "wma" OR codec = "aac" then
         track.StreamFormat = codec
         track.Url = FullUrl(track.server.serverUrl, track.sourceUrl, key)
     else
