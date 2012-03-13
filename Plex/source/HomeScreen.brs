@@ -135,8 +135,8 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean)
     allChannels.server = server
     allChannels.sourceUrl = ""
     allChannels.Key = "/channels/all"
-    allChannels.SDPosterURL = "file://pkg:/images/plex.jpg"
-    allChannels.HDPosterURL = "file://pkg:/images/plex.jpg"
+    allChannels.SDPosterURL = "file://pkg:/images/more.png"
+    allChannels.HDPosterURL = "file://pkg:/images/more.png"
     channels.item = allChannels
     m.AddOrStartRequest(channels, m.ChannelsRow, startRequests)
 End Sub
@@ -178,8 +178,8 @@ Sub homeCreateQueueRequests(startRequests As Boolean)
     allQueue.server = m.myplex
     allQueue.sourceUrl = ""
     allQueue.Key = "/pms/playlists/queue"
-    allQueue.SDPosterURL = "file://pkg:/images/plex.jpg"
-    allQueue.HDPosterURL = "file://pkg:/images/plex.jpg"
+    allQueue.SDPosterURL = "file://pkg:/images/more.png"
+    allQueue.HDPosterURL = "file://pkg:/images/more.png"
     allQueue.ContentType = "series"
     queue.item = allQueue
 
@@ -557,8 +557,8 @@ Function homeHandleMessage(msg) As Boolean
                 channelDir.ShortDescriptionLine2 = "Browse channels to install"
             end if
             channelDir.Description = channelDir.ShortDescriptionLine2
-            channelDir.SDPosterURL = "file://pkg:/images/plex.jpg"
-            channelDir.HDPosterURL = "file://pkg:/images/plex.jpg"
+            channelDir.SDPosterURL = "file://pkg:/images/more.png"
+            channelDir.HDPosterURL = "file://pkg:/images/more.png"
             status.content.Push(channelDir)
 
             if m.FirstServer then
