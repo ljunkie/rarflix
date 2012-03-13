@@ -623,6 +623,12 @@ Sub pmsAddDirectPlayInfo(video, item, mediaKey)
     video.FrameRate = item.FrameRate
     video.IsTranscoded = false
     video.StreamFormat = firstOf(item.preferredMediaItem.container, "mp4")
+
+    part = item.preferredMediaItem.preferredPart
+    if part <> invalid AND part.subtitles <> invalid AND part.subtitles.Codec = "srt" then
+        video.SubtitleUrl = FullUrl(m.serverUrl, "", part.subtitles.key)
+    end if
+
     PrintAA(video)
 End Sub
 
