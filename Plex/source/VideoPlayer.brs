@@ -133,6 +133,10 @@ Sub playVideo(server, metadata, seekValue=0, directPlayOptions=0)
     videoPlayer.SetMessagePort(port)
     videoPlayer.SetContent(videoItem)
 
+    if server.AccessToken <> invalid then
+        videoPlayer.AddHeader("X-Plex-Token", server.AccessToken)
+    end if
+
     if videoItem.IsTranscoded then
         cookie = server.StartTranscode(videoItem.StreamUrls[0])
         if cookie <> invalid then
