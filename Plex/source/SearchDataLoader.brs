@@ -20,6 +20,7 @@ Function createSearchLoader(searchTerm)
     loader.RowNames = []
     loader.PendingRequests = {}
     loader.FirstLoad = true
+    loader.StartedRequests = false
     loader.ContentTypes = {}
 
     loader.StartRequest = searchStartRequest
@@ -86,6 +87,8 @@ Function searchLoadMoreContent(focusedRow, extraRows=0) As Boolean
         for each server in GetOwnedPlexMediaServers()
             m.StartRequest(server, "/search", "Root")
         next
+
+        m.StartedRequests = true
     end if
 
     return true
@@ -181,7 +184,7 @@ Function searchHandleMessage(msg) As Boolean
 End Function
 
 Function searchGetLoadStatus(row)
-    if m.FirstLoad then
+    if NOT m.StartedRequests then
         return 0
     else if m.PendingRequests.IsEmpty() then
         return 2
