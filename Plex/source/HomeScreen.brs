@@ -174,6 +174,8 @@ Sub homeCreateQueueRequests(startRequests As Boolean)
     ' A dummy item to pull up the full queue
     allQueue = CreateObject("roAssociativeArray")
     allQueue.Title = "All Queued Items"
+    allQueue.Description = "All queued items, including already watched items"
+    allQueue.ShortDescriptionLine2 = allQueue.Description
     allQueue.server = m.myplex
     allQueue.sourceUrl = ""
     allQueue.Key = "/pms/playlists/queue"
@@ -181,6 +183,7 @@ Sub homeCreateQueueRequests(startRequests As Boolean)
     allQueue.HDPosterURL = "file://pkg:/images/more.png"
     allQueue.ContentType = "series"
     queue.item = allQueue
+    queue.emptyItem = allQueue
 
     m.AddOrStartRequest(queue, m.QueueRow, startRequests)
 End Sub
@@ -511,9 +514,12 @@ Function homeHandleMessage(msg) As Boolean
                 end if
             next
 
-            if request.item <> invalid then
+            if request.item <> invalid AND countLoaded > 0 then
                 countLoaded = countLoaded + 1
                 status.content.Push(request.item)
+            else if request.emptyItem <> invalid AND countLoaded = 0 then
+                countLoaded = countLoaded + 1
+                status.content.Push(request.emptyItem)
             end if
 
             if status.toLoad.Count() = 0 AND status.pendingRequests = 0 then
@@ -530,8 +536,10 @@ Function homeHandleMessage(msg) As Boolean
 
             status.content = container.GetMetadata()
 
-            if request.item <> invalid then
+            if request.item <> invalid AND status.content.Count() > 0 then
                 status.content.Push(request.item)
+            else if request.emptyItem <> invalid AND status.content.Count() = 0 then
+                status.content.Push(request.emptyItem)
             end if
 
             status.loadStatus = 2
@@ -582,7 +590,8 @@ Function homeHandleMessage(msg) As Boolean
                 univSearch.ContentType = "search"
                 univSearch.Key = "globalsearch"
                 univSearch.Title = "Search"
-                univSearch.ShortDescriptionLine1 = "Search"
+                univSearch.Description = "Search for items across all your sections and channels"
+                univSearch.ShortDescriptionLine2 = univSearch.Description
                 univSearch.SDPosterURL = "file://pkg:/images/search.png"
                 univSearch.HDPosterURL = "file://pkg:/images/search.png"
                 status.content.Unshift(univSearch)
