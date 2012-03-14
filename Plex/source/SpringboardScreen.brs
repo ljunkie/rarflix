@@ -28,6 +28,9 @@ Function createBaseSpringboardScreen(context, index, viewController) As Object
 
     obj.msgTimeout = 0
 
+    ' Stretched and cropped posters both look kind of terrible, so zoom.
+    screen.SetDisplayMode("zoom-to-fill")
+
     return obj
 End Function
 
