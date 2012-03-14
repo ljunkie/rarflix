@@ -330,6 +330,9 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
         if NOT m.myplex.IsSignedIn then
             m.Screen.OnDataLoaded(m.QueueRow, [], 0, 0, true)
             m.Screen.OnDataLoaded(m.SharedSectionsRow, [], 0, 0, true)
+        else
+            ' It'll be made visible if we get any data.
+            m.Screen.Screen.SetListVisible(m.SharedSectionsRow, false)
         end if
 
         if type(m.Screen.Screen) = "roGridScreen" then
