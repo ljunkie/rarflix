@@ -381,12 +381,20 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
         ' Special case, if we try loading the Misc row and have no servers,
         ' this is probably a first run scenario, try to be helpful.
         if loadingRow = m.MiscRow AND RegRead("serverList", "servers") = invalid AND NOT m.myplex.IsSignedIn then
-            ' Give GDM discovery a chance...
-            m.Screen.MsgTimeout = 5000
-            m.LoadingFacade = CreateObject("roOneLineDialog")
-            m.LoadingFacade.SetTitle("Looking for Plex Media Servers...")
-            m.LoadingFacade.ShowBusyAnimation()
-            m.LoadingFacade.Show()
+            if RegRead("autodiscover", "preferences", "1") = "1" then
+                ' Give GDM discovery a chance...
+                m.Screen.MsgTimeout = 5000
+                m.LoadingFacade = CreateObject("roOneLineDialog")
+                m.LoadingFacade.SetTitle("Looking for Plex Media Servers...")
+                m.LoadingFacade.ShowBusyAnimation()
+                m.LoadingFacade.Show()
+            else
+                ' Slightly strange, GDM disabled but no servers configured
+                print "No servers, no GDM, and no myPlex..."
+                ShowHelpScreen()
+                status.loadStatus = 2
+                m.Screen.OnDataLoaded(loadingRow, status.content, 0, status.content.Count(), true)
+            end if
         else
             status.loadStatus = 2
             m.Screen.OnDataLoaded(loadingRow, status.content, 0, status.content.Count(), true)
