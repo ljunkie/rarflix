@@ -52,6 +52,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize)
     loader.GetNames = loaderGetNames
     loader.HandleMessage = loaderHandleMessage
     loader.GetLoadStatus = loaderGetLoadStatus
+    loader.RefreshData = loaderRefreshData
 
     loader.Listener = invalid
 
@@ -68,6 +69,7 @@ Function createDummyLoader(content)
     loader.LoadMoreContent = dummyLoadMoreContent
     loader.GetNames = loaderGetNames
     loader.GetLoadStatus = dummyGetLoadStatus
+    loader.RefreshData = dummyRefreshData
 
     loader.names = []
     for i = 0 to content.Count() - 1
@@ -139,6 +141,26 @@ Function loaderLoadMoreContent(focusedIndex, extraRows=0)
     return extraRowsAlreadyLoaded
 End Function
 
+Sub loaderRefreshData()
+    for row = 0 to m.contentArray.Count() - 1
+        status = m.contentArray[row]
+        if status.key <> invalid AND status.loadStatus <> 0 then
+            request = CreateObject("roAssociativeArray")
+            httpRequest = m.server.CreateRequest(m.sourceUrl, status.key)
+            httpRequest.SetPort(m.Port)
+            request.request = httpRequest
+            request.row = row
+
+            if httpRequest.AsyncGetToString() then
+                m.PendingRequests[str(httpRequest.GetIdentity())] = request
+                status.pendingRequests = status.pendingRequests + 1
+            else
+                print "Failed to start request for row"; row; ": "; httpRequest.GetUrl()
+            end if
+        end if
+    next
+End Sub
+
 Function loaderHandleMessage(msg) As Boolean
     if (type(msg) = "roGridScreenEvent" OR type(msg) = "roPosterScreenEvent") AND msg.isScreenClosed() then
         for each id in m.PendingRequests
@@ -187,10 +209,12 @@ Function loaderHandleMessage(msg) As Boolean
             if response.xml@offset <> invalid then
                 startItem = strtoi(response.xml@offset)
             else
-                startItem = status.content.Count()
+                startItem = 0
             end if
 
-            if startItem <> status.content.Count() then
+            if startItem = 0 then
+                status.content = container.GetMetadata()
+            else if startItem <> status.content.Count() then
                 print "Received paginated response for index"; startItem; " of list with length"; status.content.Count()
                 metadata = container.GetMetadata()
                 for i = 0 to metadata.Count() - 1
@@ -234,4 +258,8 @@ End Function
 Function dummyGetLoadStatus(row)
     return 2
 End Function
+
+Sub dummyRefreshData()
+    ' We had static data, nothing to refresh.
+End Sub
 

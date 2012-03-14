@@ -165,6 +165,8 @@ Function showGridScreen() As Integer
                     m.Screen.Show()
                 end if
 
+                m.Loader.RefreshData()
+
                 facade.Close()
             else if msg.isListItemFocused() then
                 ' If the user is getting close to the limit of what we've
@@ -249,7 +251,10 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
 
     lastUpdatedSize = m.lastUpdatedSize[row]
 
-    if startItem < lastUpdatedSize then
+    if startItem = 0 then
+        m.Screen.SetContentList(row, data)
+        m.lastUpdatedSize[row] = data.Count()
+    else if startItem < lastUpdatedSize then
         m.Screen.SetContentListSubset(row, data, startItem, count)
         m.lastUpdatedSize[row] = data.Count()
     else if finished OR startItem = 0 OR (m.selectedRow = row AND m.focusedIndex + 10 > lastUpdatedSize) then

@@ -25,6 +25,7 @@ Function createHomeScreen(viewController) As Object
     obj.GetNames = homeGetNames
     obj.HandleMessage = homeHandleMessage
     obj.GetLoadStatus = homeGetLoadStatus
+    obj.RefreshData = homeRefreshData
 
     ' The home screen owns the myPlex manager
     obj.myplex = createMyPlexManager(viewController)
@@ -253,9 +254,6 @@ Sub refreshHomeScreen(changes)
             m.RemoveFromRowIf(m.QueueRow, AlwaysTrue)
             m.RemoveFromRowIf(m.SharedSectionsRow, AlwaysTrue)
         end if
-    else
-        ' Always refresh the queue when we get back from the prefs screen
-        m.CreateQueueRequests(true)
     end if
 
     ' If a server was added or removed, we need to update the sections,
@@ -711,5 +709,10 @@ Sub ShowHelpScreen()
             end if
         end if
     end while
+End Sub
+
+Sub homeRefreshData()
+    ' At the moment, the only data we refresh is the queue.
+    m.CreateQueueRequests(true)
 End Sub
 
