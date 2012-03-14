@@ -86,6 +86,9 @@ Function showGridScreen() As Integer
     m.Screen.SetupLists(names.Count()) 
     m.Screen.SetListNames(names)
 
+    m.Screen.Show()
+    facade.Close()
+
     ' Only two rows and five items per row are visible on the screen, so
     ' don't load much more than we need to before initially showing the
     ' grid. Once we start the event loop we can load the rest of the
@@ -97,17 +100,14 @@ Function showGridScreen() As Integer
     for row = 0 to names.Count() - 1
         m.contentArray[row] = []
         m.lastUpdatedSize[row] = 0
+    end for
 
-        if row <= maxRow then
-            Print "Loading beginning of row "; row; ", "; names[row]
-            m.Loader.LoadMoreContent(row, 0)
-        end if
+    for row = 0 to maxRow
+        Print "Loading beginning of row "; row; ", "; names[row]
+        m.Loader.LoadMoreContent(row, 0)
     end for
 
     totalTimer.PrintElapsedTime("Total initial grid load")
-
-    m.Screen.Show()
-    facade.Close()
 
     while true
         msg = wait(m.MsgTimeout, m.port)
@@ -171,7 +171,7 @@ Function showGridScreen() As Integer
                 m.focusedIndex = msg.GetData()
 
                 if m.selectedRow < 0 OR m.selectedRow >= names.Count() then
-                    print "Igoring grid ListItemFocused event for bogus row:"; msg.GetIndex()
+                    print "Ignoring grid ListItemFocused event for bogus row:"; msg.GetIndex()
                 else
                     lastUpdatedSize = m.lastUpdatedSize[m.selectedRow]
                     if m.focusedIndex + 10 > lastUpdatedSize AND m.contentArray[m.selectedRow].Count() > lastUpdatedSize then
@@ -205,6 +205,15 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
     ' Don't bother showing empty rows
     if data.Count() = 0 then
         m.Screen.SetListVisible(row, false)
+        m.Screen.SetContentList(row, data)
+
+        ' Load the next row though. This is particularly important if all of
+        ' the initial rows are empty, we need to keep loading until we find a
+        ' row with data.
+        if row < m.contentArray.Count() - 1 then
+            m.Loader.LoadMoreContent(row + 1, 0)
+        end if
+
         return
     else if count > 0
         m.Screen.SetListVisible(row, true)
