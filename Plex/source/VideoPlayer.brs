@@ -166,6 +166,11 @@ Sub playVideo(server, metadata, seekValue=0, directPlayOptions=0)
             playVideo(server, metadata, seekValue, 3)
         end if
     end if
+
+    if metadata.RestoreSubtitleID <> invalid then
+        print "Restoring subtitle selection"
+        server.UpdateSubtitleStreamSelection(metadata.RestoreSubtitlePartID, metadata.RestoreSubtitleID)
+    end if
 End Sub
 
 Function videoCanDirectPlay(mediaItem) As Boolean

@@ -317,6 +317,20 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
     if url = invalid then return invalid
     video.StreamUrls = [url]
 
+    ' If we have SRT subtitles, let the Roku display them itself. They'll
+    ' usually be more readable, and it might let us direct stream.
+
+    if mediaItem <> invalid then
+        part = mediaItem.preferredPart
+        if part <> invalid AND part.subtitles <> invalid AND part.subtitles.Codec = "srt" then
+            print "Disabling subtitle selection temporarily"
+            video.SubtitleUrl = FullUrl(m.serverUrl, "", part.subtitles.key)
+            m.UpdateSubtitleStreamSelection(part.id, "")
+            item.RestoreSubtitleID = part.subtitles.id
+            item.RestoreSubtitlePartID = part.id
+        end if
+    end if
+
     return video
 End Function
 
