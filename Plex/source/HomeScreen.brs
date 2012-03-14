@@ -602,7 +602,7 @@ Function homeHandleMessage(msg) As Boolean
         else if request.requestType = "servers" then
             for each serverElem in xml.Server
                 ' If we already have a server for this machine ID then disregard
-                if GetPlexMediaServer(xml@machineIdentifier) = invalid then
+                if GetPlexMediaServer(serverElem@machineIdentifier) = invalid then
                     addr = "http://" + serverElem@host + ":" + serverElem@port
                     server = newPlexMediaServer(addr, serverElem@name, serverElem@machineIdentifier)
                     server.AccessToken = firstOf(serverElem@accessToken, m.myplex.AuthToken)
