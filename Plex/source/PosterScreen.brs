@@ -54,12 +54,13 @@ Function showPosterScreen() As Integer
     m.FilterMode = names.Count() > 0
 
     if m.FilterMode then
-        m.Screen.SetListNames(names)
-        m.Screen.SetFocusedList(0)
         m.Loader = createPaginatedLoader(container, 25, 25)
         m.Loader.Listener = m
         m.Loader.Port = m.Port
         m.MessageHandler = m.Loader
+
+        m.Screen.SetListNames(names)
+        m.Screen.SetFocusedList(0)
 
         for index = 0 to keys.Count() - 1
             status = CreateObject("roAssociativeArray")

@@ -11,6 +11,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize)
     container.MoveKeyToHead("recentlyAdded")
     container.MoveKeyToHead("recentlyViewedShows")
     container.MoveKeyToHead("onDeck")
+    container.MoveKeyToHead("all")
 
     loader = CreateObject("roAssociativeArray")
 
