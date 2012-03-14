@@ -2,8 +2,10 @@
 '* A grid screen backed by XML from a PMS.
 '*
 
-Function createGridScreen(viewController) As Object
+Function createGridScreen(viewController, style="flat-movie") As Object
     Print "######## Creating Grid Screen ########"
+
+    setGridTheme(style)
 
     screen = CreateObject("roAssociativeArray")
     port = CreateObject("roMessagePort")
@@ -15,7 +17,7 @@ Function createGridScreen(viewController) As Object
     ' best. Anything else makes something look horrible when the grid has
     ' some combination of posters and video frames.
     grid.SetDisplayMode("scale-to-fit")
-    grid.SetGridStyle("Flat-Movie")
+    grid.SetGridStyle(style)
     grid.SetUpBehaviorAtTopRow("exit")
 
     ' Standard properties for all our Screen types
@@ -28,7 +30,6 @@ Function createGridScreen(viewController) As Object
     screen.DestroyAndRecreate = gridDestroyAndRecreate
 
     screen.Show = showGridScreen
-    screen.SetStyle = setGridStyle
     screen.SetUpBehaviorAtTopRow = setUpBehavior
 
     screen.timer = createPerformanceTimer()
@@ -36,7 +37,7 @@ Function createGridScreen(viewController) As Object
     screen.focusedIndex = 0
     screen.contentArray = []
     screen.lastUpdatedSize = []
-    screen.gridStyle = "Flat-Movie"
+    screen.gridStyle = style
     screen.upBehavior = "exit"
 
     screen.OnDataLoaded = gridOnDataLoaded
@@ -45,8 +46,8 @@ Function createGridScreen(viewController) As Object
 End Function
 
 '* Convenience method to create a grid screen with a loader for the specified item
-Function createGridScreenForItem(item, viewController) As Object
-    obj = createGridScreen(viewController)
+Function createGridScreenForItem(item, viewController, style) As Object
+    obj = createGridScreen(viewController, style)
 
     obj.Item = item
 
@@ -86,6 +87,9 @@ Function showGridScreen() As Integer
     m.Screen.SetupLists(names.Count()) 
     m.Screen.SetListNames(names)
 
+    m.Screen.Show()
+    facade.Close()
+
     ' Only two rows and five items per row are visible on the screen, so
     ' don't load much more than we need to before initially showing the
     ' grid. Once we start the event loop we can load the rest of the
@@ -97,17 +101,14 @@ Function showGridScreen() As Integer
     for row = 0 to names.Count() - 1
         m.contentArray[row] = []
         m.lastUpdatedSize[row] = 0
+    end for
 
-        if row <= maxRow then
-            Print "Loading beginning of row "; row; ", "; names[row]
-            m.Loader.LoadMoreContent(row, 0)
-        end if
+    for row = 0 to maxRow
+        Print "Loading beginning of row "; row; ", "; names[row]
+        m.Loader.LoadMoreContent(row, 0)
     end for
 
     totalTimer.PrintElapsedTime("Total initial grid load")
-
-    m.Screen.Show()
-    facade.Close()
 
     while true
         msg = wait(m.MsgTimeout, m.port)
@@ -140,6 +141,7 @@ Function showGridScreen() As Integer
                 ' If our screen was destroyed by some child screen, recreate it now
                 if m.Screen = invalid then
                     print "Recreating grid..."
+                    setGridTheme(m.gridStyle)
                     m.Screen = CreateObject("roGridScreen")
                     m.Screen.SetMessagePort(m.Port)
                     m.Screen.SetDisplayMode("scale-to-fit")
@@ -171,7 +173,7 @@ Function showGridScreen() As Integer
                 m.focusedIndex = msg.GetData()
 
                 if m.selectedRow < 0 OR m.selectedRow >= names.Count() then
-                    print "Igoring grid ListItemFocused event for bogus row:"; msg.GetIndex()
+                    print "Ignoring grid ListItemFocused event for bogus row:"; msg.GetIndex()
                 else
                     lastUpdatedSize = m.lastUpdatedSize[m.selectedRow]
                     if m.focusedIndex + 10 > lastUpdatedSize AND m.contentArray[m.selectedRow].Count() > lastUpdatedSize then
@@ -205,6 +207,15 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
     ' Don't bother showing empty rows
     if data.Count() = 0 then
         m.Screen.SetListVisible(row, false)
+        m.Screen.SetContentList(row, data)
+
+        ' Load the next row though. This is particularly important if all of
+        ' the initial rows are empty, we need to keep loading until we find a
+        ' row with data.
+        if row < m.contentArray.Count() - 1 then
+            m.Loader.LoadMoreContent(row + 1, 0)
+        end if
+
         return
     else if count > 0
         m.Screen.SetListVisible(row, true)
@@ -232,9 +243,21 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
     end if
 End Sub
 
-Sub setGridStyle(style as String)
-    m.gridStyle = style
-    m.Screen.SetGridStyle(style)
+Sub setGridTheme(style as String)
+    ' This has to be done before the CreateObject call. Once the grid has
+    ' been created you can change its style, but you can't change its theme.
+
+    app = CreateObject("roAppManager")
+    if style = "flat-square" then
+        app.SetThemeAttribute("GridScreenFocusBorderHD", "pkg:/images/border-square-hd.png")
+        app.SetThemeAttribute("GridScreenFocusBorderSD", "pkg:/images/border-square-sd.png")
+    else if style = "flat-16X9" then
+        app.SetThemeAttribute("GridScreenFocusBorderHD", "pkg:/images/border-episode-hd.png")
+        app.SetThemeAttribute("GridScreenFocusBorderSD", "pkg:/images/border-episode-sd.png")
+    else if style = "flat-movie" then
+        app.SetThemeAttribute("GridScreenFocusBorderHD", "pkg:/images/border-movie-hd.png")
+        app.SetThemeAttribute("GridScreenFocusBorderSD", "pkg:/images/border-movie-sd.png")
+    end if
 End Sub
 
 Sub setUpBehavior(behavior as String)

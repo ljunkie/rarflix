@@ -67,8 +67,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if contentType = "clip" then
         screen = createVideoSpringboardScreen(context, contextIndex, m)
     else if contentType = "series" then
-        screen = createGridScreenForItem(item, m)
-        screen.setStyle("flat-16X9")
+        screen = createGridScreenForItem(item, m, "flat-16X9")
     else if contentType = "artist" then
         ' TODO: Poster, poster with filters, or grid?
         screen = createPosterScreen(item, m)
@@ -80,7 +79,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen = createAudioSpringboardScreen(context, contextIndex, m)
         if screen = invalid then return invalid
     else if contentType = "section" then
-        screen = createGridScreenForItem(item, m)
+        screen = createGridScreenForItem(item, m, "flat-movie")
     else if contentType = "photo" then
         if right(item.key, 8) = "children" then
             screen = createPosterScreen(item, m)
@@ -90,8 +89,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if contentType = "search" then
         screen = createSearchScreen(item, m)
     else if item.key = "/system/appstore" then
-        screen = createGridScreenForItem(item, m)
-        screen.SetStyle("flat-square")
+        screen = createGridScreenForItem(item, m, "flat-square")
     else if viewGroup = "Store:Info" then
         dialog = createPopupMenu(item)
         dialog.Show()
@@ -102,7 +100,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen = createPreferencesScreen(m)
     else if item.key = "/channels/all" then
         ' Special case for all channels to force it into a special grid view
-        screen = createGridScreen(m)
+        screen = createGridScreen(m, "flat-square")
         names = ["Video Channels", "Music Channels", "Photo Channels"]
         keys = ["/video", "/music", "/photo"]
         fakeContainer = createFakePlexContainer(item.server, names, keys)
@@ -110,13 +108,11 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen.Loader.Listener = screen
         screen.Loader.Port = screen.Port
         screen.MessageHandler = screen.Loader
-        screen.SetStyle("flat-square")
     else if item.searchTerm <> invalid AND item.server = invalid then
-        screen = createGridScreen(m)
+        screen = createGridScreen(m, "flat-square")
         screen.Loader = createSearchLoader(item.searchTerm)
         screen.Loader.Listener = screen
         screen.MessageHandler = screen.Loader
-        screen.SetStyle("flat-square")
     else if item.settings = "1"
         screen = createSettingsScreen(item, m)
     else

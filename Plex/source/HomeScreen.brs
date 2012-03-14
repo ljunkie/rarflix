@@ -6,8 +6,7 @@
 Function createHomeScreen(viewController) As Object
     obj = CreateObject("roAssociativeArray")
 
-    grid = createGridScreen(viewController)
-    grid.SetStyle("flat-square")
+    grid = createGridScreen(viewController, "flat-square")
     grid.SetUpBehaviorAtTopRow("stop")
     grid.Screen.SetDisplayMode("photo-fit")
     grid.Loader = obj
@@ -135,8 +134,8 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean)
     allChannels.server = server
     allChannels.sourceUrl = ""
     allChannels.Key = "/channels/all"
-    allChannels.SDPosterURL = "file://pkg:/images/plex.jpg"
-    allChannels.HDPosterURL = "file://pkg:/images/plex.jpg"
+    allChannels.SDPosterURL = "file://pkg:/images/more.png"
+    allChannels.HDPosterURL = "file://pkg:/images/more.png"
     channels.item = allChannels
     m.AddOrStartRequest(channels, m.ChannelsRow, startRequests)
 End Sub
@@ -178,8 +177,8 @@ Sub homeCreateQueueRequests(startRequests As Boolean)
     allQueue.server = m.myplex
     allQueue.sourceUrl = ""
     allQueue.Key = "/pms/playlists/queue"
-    allQueue.SDPosterURL = "file://pkg:/images/plex.jpg"
-    allQueue.HDPosterURL = "file://pkg:/images/plex.jpg"
+    allQueue.SDPosterURL = "file://pkg:/images/more.png"
+    allQueue.HDPosterURL = "file://pkg:/images/more.png"
     allQueue.ContentType = "series"
     queue.item = allQueue
 
@@ -381,12 +380,20 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
         ' Special case, if we try loading the Misc row and have no servers,
         ' this is probably a first run scenario, try to be helpful.
         if loadingRow = m.MiscRow AND RegRead("serverList", "servers") = invalid AND NOT m.myplex.IsSignedIn then
-            ' Give GDM discovery a chance...
-            m.Screen.MsgTimeout = 5000
-            m.LoadingFacade = CreateObject("roOneLineDialog")
-            m.LoadingFacade.SetTitle("Looking for Plex Media Servers...")
-            m.LoadingFacade.ShowBusyAnimation()
-            m.LoadingFacade.Show()
+            if RegRead("autodiscover", "preferences", "1") = "1" then
+                ' Give GDM discovery a chance...
+                m.Screen.MsgTimeout = 5000
+                m.LoadingFacade = CreateObject("roOneLineDialog")
+                m.LoadingFacade.SetTitle("Looking for Plex Media Servers...")
+                m.LoadingFacade.ShowBusyAnimation()
+                m.LoadingFacade.Show()
+            else
+                ' Slightly strange, GDM disabled but no servers configured
+                print "No servers, no GDM, and no myPlex..."
+                ShowHelpScreen()
+                status.loadStatus = 2
+                m.Screen.OnDataLoaded(loadingRow, status.content, 0, status.content.Count(), true)
+            end if
         else
             status.loadStatus = 2
             m.Screen.OnDataLoaded(loadingRow, status.content, 0, status.content.Count(), true)
@@ -557,8 +564,8 @@ Function homeHandleMessage(msg) As Boolean
                 channelDir.ShortDescriptionLine2 = "Browse channels to install"
             end if
             channelDir.Description = channelDir.ShortDescriptionLine2
-            channelDir.SDPosterURL = "file://pkg:/images/plex.jpg"
-            channelDir.HDPosterURL = "file://pkg:/images/plex.jpg"
+            channelDir.SDPosterURL = "file://pkg:/images/more.png"
+            channelDir.HDPosterURL = "file://pkg:/images/more.png"
             status.content.Push(channelDir)
 
             if m.FirstServer then

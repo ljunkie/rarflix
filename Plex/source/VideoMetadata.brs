@@ -234,6 +234,7 @@ Function ParseVideoMedia(videoItem) As Object
 			part.key = MediaPart@key
             part.postURL = MediaPart@postURL
 			part.streams = CreateObject("roArray", 5, true)
+            part.subtitles = invalid
 			for each StreamItem in MediaPart.Stream
 				stream = CreateObject("roAssociativeArray")
 				stream.id = StreamItem@id
@@ -242,6 +243,10 @@ Function ParseVideoMedia(videoItem) As Object
 				stream.language = StreamItem@language
 				stream.selected = StreamItem@selected
 				stream.channels = StreamItem@channels
+                stream.key = StreamItem@key
+                if stream.selected <> invalid AND stream.streamType = "3" then
+                    part.subtitles = stream
+                end if
 				part.streams.Push(stream)
 			next
 			media.parts.Push(part)

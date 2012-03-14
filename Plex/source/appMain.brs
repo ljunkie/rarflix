@@ -73,6 +73,10 @@ Sub initTheme()
     theme.CounterTextRight = normalText
     ' Defaults for all GridScreenDescriptionXXX
 
+    ' The actual focus border is set by the grid based on the style
+    theme.GridScreenBorderOffsetHD = "(-9,-9)"
+    theme.GridScreenBorderOffsetSD = "(-9,-9)"
+
     theme.ListScreenHeaderText = titleText
     theme.ListItemText = normalText
     theme.ListItemHighlightText = titleText

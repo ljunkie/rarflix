@@ -133,6 +133,10 @@ Sub playVideo(server, metadata, seekValue=0, directPlayOptions=0)
     videoPlayer.SetMessagePort(port)
     videoPlayer.SetContent(videoItem)
 
+    if server.AccessToken <> invalid then
+        videoPlayer.AddHeader("X-Plex-Token", server.AccessToken)
+    end if
+
     if videoItem.IsTranscoded then
         cookie = server.StartTranscode(videoItem.StreamUrls[0])
         if cookie <> invalid then
@@ -170,14 +174,26 @@ Function videoCanDirectPlay(mediaItem) As Boolean
         return false
     end if
 
+    if mediaItem.preferredPart <> invalid AND mediaItem.preferredPart.subtitles <> invalid then
+        subtitleFormat = firstOf(mediaItem.preferredPart.subtitles.codec, "")
+    else
+        subtitleFormat = invalid
+    end if
+
     print "Media item optimized for streaming: "; mediaItem.optimized
     print "Media item container: "; mediaItem.container
     print "Media item video codec: "; mediaItem.videoCodec
     print "Media item audio codec: "; mediaItem.audioCodec
+    print "Media item subtitles: "; subtitleFormat
 
     device = CreateObject("roDeviceInfo")
     version = device.GetVersion()
     major = Mid(version, 3, 1).toint()
+
+    if subtitleFormat <> invalid AND subtitleFormat <> "srt" then
+        print "videoCanDirectPlay: subtitles not SRT"
+        return false
+    end if
 
     if mediaItem.container = "mp4" OR mediaItem.container = "mov" OR mediaItem.container = "m4v" then
         if (mediaItem.optimized <> "true" AND mediaItem.optimized <> "1")

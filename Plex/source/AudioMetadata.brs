@@ -97,6 +97,12 @@ Function newTrackMetadata(container, item, detailed=true) As Object
         key = item@key
     end if
 
+    if (codec = invalid OR codec = "") AND key <> invalid then
+        ' It's probably the extension on the key, try to be lenient.
+        codec = key.Tokenize(".").Peek()
+        print "Audio codec wasn't set, inferred "; codec
+    end if
+
     if codec = "mp3" OR codec = "wma" OR codec = "aac" then
         track.StreamFormat = codec
         track.Url = FullUrl(track.server.serverUrl, track.sourceUrl, key)
