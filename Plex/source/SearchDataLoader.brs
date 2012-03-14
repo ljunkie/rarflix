@@ -11,6 +11,7 @@ Function createSearchLoader(searchTerm)
     loader.GetNames = searchGetNames
     loader.HandleMessage = searchHandleMessage
     loader.GetLoadStatus = searchGetLoadStatus
+    loader.RefreshData = searchRefreshData
 
     loader.Listener = invalid
     loader.SearchTerm = searchTerm
@@ -188,4 +189,9 @@ Function searchGetLoadStatus(row)
         return 1
     end if
 End Function
+
+Sub searchRefreshData()
+    ' Ignore, at least for now. Redoing the search is expensive and there's
+    ' no obvious scenario where the content changed.
+End Sub
 
