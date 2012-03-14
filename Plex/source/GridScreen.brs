@@ -39,6 +39,7 @@ Function createGridScreen(viewController, style="flat-movie") As Object
     screen.lastUpdatedSize = []
     screen.gridStyle = style
     screen.upBehavior = "exit"
+    screen.hasData = false
 
     screen.OnDataLoaded = gridOnDataLoaded
 
@@ -209,6 +210,24 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
         m.Screen.SetListVisible(row, false)
         m.Screen.SetContentList(row, data)
 
+        if NOT m.hasData then
+            pendingRows = false
+            for i = 0 to m.contentArray.Count() - 1
+                if m.Loader.GetLoadStatus(i) < 2 then
+                    pendingRows = true
+                    exit for
+                end if
+            next
+            if NOT pendingRows then
+                print "Nothing in any grid rows"
+                dialog = createBaseDialog()
+                dialog.Title = "Section Empty"
+                dialog.Text = "This section doesn't contain any items."
+                dialog.Show()
+                m.Screen.Close()
+            end if
+        end if
+
         ' Load the next row though. This is particularly important if all of
         ' the initial rows are empty, we need to keep loading until we find a
         ' row with data.
@@ -220,6 +239,8 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
     else if count > 0
         m.Screen.SetListVisible(row, true)
     end if
+
+    m.hasData = true
 
     ' It seems like you should be able to do this, but you have to pass in
     ' the full content list, not some other array you want to use to update
