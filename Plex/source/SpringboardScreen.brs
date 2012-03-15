@@ -183,6 +183,7 @@ Function sbRefresh(force=false)
     m.Screen.AllowUpdates(true)
     if m.metadata.SDPosterURL <> invalid and m.metadata.HDPosterURL <> invalid then
         m.Screen.PrefetchPoster(m.metadata.SDPosterURL, m.metadata.HDPosterURL)
+        SaveImagesForScreenSaver(m.metadata.SDPosterURL, m.metadata.HDPosterURL, ImageSizes(m.metadata.ViewGroup, m.metadata.Type))
     endif
     m.Screen.Show()
 End Function

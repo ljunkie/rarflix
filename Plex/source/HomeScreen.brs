@@ -714,5 +714,8 @@ End Sub
 Sub homeRefreshData()
     ' At the moment, the only data we refresh is the queue.
     m.CreateQueueRequests(true)
+
+    ' Clear any screensaver images, use the default.
+    SaveImagesForScreenSaver(invalid, invalid, {})
 End Sub
 
