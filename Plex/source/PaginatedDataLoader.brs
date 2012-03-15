@@ -145,6 +145,7 @@ Sub loaderRefreshData()
     for row = 0 to m.contentArray.Count() - 1
         status = m.contentArray[row]
         if status.key <> invalid AND status.loadStatus <> 0 then
+            status.loadStatus = 1
             request = CreateObject("roAssociativeArray")
             httpRequest = m.server.CreateRequest(m.sourceUrl, status.key)
             httpRequest.SetPort(m.Port)
