@@ -251,13 +251,13 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
 
     lastUpdatedSize = m.lastUpdatedSize[row]
 
-    if startItem = 0 then
+    if finished then
         m.Screen.SetContentList(row, data)
         m.lastUpdatedSize[row] = data.Count()
     else if startItem < lastUpdatedSize then
         m.Screen.SetContentListSubset(row, data, startItem, count)
         m.lastUpdatedSize[row] = data.Count()
-    else if finished OR startItem = 0 OR (m.selectedRow = row AND m.focusedIndex + 10 > lastUpdatedSize) then
+    else if startItem = 0 OR (m.selectedRow = row AND m.focusedIndex + 10 > lastUpdatedSize) then
         m.Screen.SetContentListSubset(row, data, lastUpdatedSize, data.Count() - lastUpdatedSize)
         m.lastUpdatedSize[row] = data.Count()
     end if

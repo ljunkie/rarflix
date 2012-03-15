@@ -148,6 +148,8 @@ Sub loaderRefreshData()
             request = CreateObject("roAssociativeArray")
             httpRequest = m.server.CreateRequest(m.sourceUrl, status.key)
             httpRequest.SetPort(m.Port)
+            httpRequest.AddHeader("X-Plex-Container-Start", "0")
+            httpRequest.AddHeader("X-Plex-Container-Size", m.pageSize.tostr())
             request.request = httpRequest
             request.row = row
 
@@ -212,9 +214,7 @@ Function loaderHandleMessage(msg) As Boolean
                 startItem = 0
             end if
 
-            if startItem = 0 then
-                status.content = container.GetMetadata()
-            else if startItem <> status.content.Count() then
+            if startItem <> status.content.Count() then
                 print "Received paginated response for index"; startItem; " of list with length"; status.content.Count()
                 metadata = container.GetMetadata()
                 for i = 0 to metadata.Count() - 1
@@ -232,6 +232,10 @@ Function loaderHandleMessage(msg) As Boolean
 
             countLoaded = container.Count()
         end if
+
+        while status.content.Count() > totalSize
+            status.content.Pop()
+        end while
 
         if m.Listener <> invalid then
             m.Listener.OnDataLoaded(request.row, status.content, startItem, countLoaded, status.loadStatus = 2)
