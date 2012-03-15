@@ -1,9 +1,15 @@
 
 Sub RunScreenSaver()
-    DisplayScreenSaver()
+    mode = RegRead("screensaver", "preferences", "random")
+
+    if mode <> "disabled" then
+        DisplayScreenSaver(mode)
+    else
+        print "Deferring to system screensaver"
+    end if
 End Sub
 
-Sub DisplayScreenSaver()
+Sub DisplayScreenSaver(mode)
     if IsHD() then
         m.default_screensaver = {url:"pkg:/images/screensaver-hd.png", SourceRect:{w:336,h:210}, TargetRect:{x:0,y:0}}
     else
@@ -15,13 +21,15 @@ Sub DisplayScreenSaver()
     canvas.SetUpdatePeriodInMS(6000)
     canvas.SetUnderscan(.05)
 
-    smooth = true
-    if smooth then
+    if mode = "animated" then
         canvas.SetLocFunc(screensaverLib_SmoothAnimation)
         canvas.SetLocUpdatePeriodInMS(40)
-    else
+    else if mode = "random" then
         canvas.SetLocFunc(screensaverLib_RandomLocation)
         canvas.SetLocUpdatePeriodInMS(0)
+    else
+        print "Unrecognized screensaver preference: "; mode
+        return
     end if
 
     canvas.Go()

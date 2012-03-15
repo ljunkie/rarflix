@@ -166,6 +166,18 @@ Function createPreferencesScreen(viewController) As Object
         default: "0"
     }
 
+    ' Screensaver options
+    screensaver = [
+        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Use the system screensaver" },
+        { title: "Animated", EnumValue: "animated" },
+        { title: "Random", EnumValue: "random" }
+    ]
+    obj.Prefs["screensaver"] = {
+        values: screensaver,
+        heading: "Screensaver",
+        default: "random"
+    }
+
     obj.HandleEnumPreference = prefsHandleEnumPreference
     obj.GetEnumValue = prefsGetEnumValue
 
@@ -212,6 +224,9 @@ Sub showPreferencesScreen()
         m.AddItem({title: "1080p Settings"}, "1080p")
 	end if
 
+    m.AddItem({title: "Screensaver"}, "screensaver")
+    m.AppendValue(invalid, m.GetEnumValue("screensaver"))
+
     m.AddItem({title: "Close Preferences"}, "close")
 
     serversBefore = {}
@@ -249,7 +264,7 @@ Sub showPreferencesScreen()
                         end if
                     end if
                     m.Screen.SetItem(msg.GetIndex(), {title: getCurrentMyPlexLabel(m.myplex)})
-                else if command = "quality" OR command = "level" OR command = "fivepointone" OR command = "directplay" then
+                else if command = "quality" OR command = "level" OR command = "fivepointone" OR command = "directplay" OR command = "screensaver" then
                     m.HandleEnumPreference(command, msg.GetIndex())
                 else if command = "1080p" then
                     screen = create1080PreferencesScreen(m.ViewController)
