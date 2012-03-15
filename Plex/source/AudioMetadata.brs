@@ -52,6 +52,13 @@ Function newAlbumMetadata(container, item, detailed=true) As Object
         album.ShortDescriptionLine1 = album.Title
     end if
 
+    if container.xml@mixedParents = "1" then
+        if album.Artist <> invalid then
+            album.Title = album.Artist + ": " + album.Album
+        end if
+        album.ShortDescriptionLine2 = album.Artist
+    end if
+
     return album
 End Function
 
@@ -67,6 +74,7 @@ Function newTrackMetadata(container, item, detailed=true) As Object
         track.Album = firstOf(item@parentTitle, item@album, "Unknown Album")
         track.ReleaseDate = item@parentYear
         track.AlbumYear = item@parentYear
+        track.ShortDescriptionLine2 = track.Album
     else
         track.Artist = firstOf(container.xml@grandparentTitle, item@artist)
         track.Album = firstOf(container.xml@parentTitle, item@album, "Unknown Album")
