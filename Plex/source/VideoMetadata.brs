@@ -30,12 +30,16 @@ Function newVideoMetadata(container, item, detailed=false) As Object
 
     setVideoBasics(video, container, item)
 	
-    if detailed then
+    if detailed AND NOT item.Media.IsEmpty() then
         ' Also sets media and preferredMediaItem
         video.ParseDetails()
     else
         video.media = ParseVideoMedia(item)
         video.preferredMediaItem = PickMediaItem(video.media)
+
+        if video.preferredMediaItem = invalid then
+            video.HasDetails = true
+        end if
     end if
 
     return video
@@ -290,6 +294,8 @@ Function PickMediaItem(mediaItems) As Object
 End Function
 
 Sub videoRefresh(detailed=false)
+    if m.preferredMediaItem = invalid then return
+
     container = createPlexContainerForUrl(m.server, m.sourceUrl, m.Key)
     videoItemXml = container.xml.Video[0]
 
