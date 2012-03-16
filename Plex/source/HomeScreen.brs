@@ -551,9 +551,7 @@ Function homeHandleMessage(msg) As Boolean
             request.server.machineID = xml@machineIdentifier
             request.server.owned = true
             request.server.online = true
-            if xml@version <> invalid then
-                request.server.SupportsAudioTranscoding = ServerVersionCompare(xml@version, [0, 9, 6])
-            end if
+            request.server.SupportsAudioTranscoding = (xml@transcoderAudio = "1")
             PutPlexMediaServer(request.server)
 
             print "Fetched additional server information ("; request.server.name; ", "; request.server.machineID; ")"
