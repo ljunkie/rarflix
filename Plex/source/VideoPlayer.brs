@@ -20,34 +20,39 @@ Function videoAddButtons(obj) As Object
     print "Media = ";media
     print "Can direct play = ";videoCanDirectPlay(media)
 
-    if metadata.viewCount <> invalid AND val(metadata.viewCount) > 0 then
-        screen.AddButton(buttonCount, "Mark as unwatched")
-        buttonCommands[str(buttonCount)] = "unscrobble"
-        buttonCount = buttonCount + 1
-    else
-        if metadata.viewOffset <> invalid AND val(metadata.viewOffset) > 0 then
+    supportedIdentifier = (m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
+    if supportedIdentifier then
+        if metadata.viewCount <> invalid AND val(metadata.viewCount) > 0 then
             screen.AddButton(buttonCount, "Mark as unwatched")
             buttonCommands[str(buttonCount)] = "unscrobble"
             buttonCount = buttonCount + 1
+        else
+            if metadata.viewOffset <> invalid AND val(metadata.viewOffset) > 0 then
+                screen.AddButton(buttonCount, "Mark as unwatched")
+                buttonCommands[str(buttonCount)] = "unscrobble"
+                buttonCount = buttonCount + 1
+            end if
+            screen.AddButton(buttonCount, "Mark as watched")
+            buttonCommands[str(buttonCount)] = "scrobble"
+            buttonCount = buttonCount + 1
         end if
-        screen.AddButton(buttonCount, "Mark as watched")
-        buttonCommands[str(buttonCount)] = "scrobble"
-        buttonCount = buttonCount + 1
     end if
 
     screen.AddButton(buttonCount, "Playback options")
     buttonCommands[str(buttonCount)] = "options"
     buttonCount = buttonCount + 1
 
-    if metadata.UserRating = invalid then
-        metadata.UserRating = 0
-    endif
-    if metadata.StarRating = invalid then
-        metadata.StarRating = 0
-    endif
-    screen.AddRatingButton(buttonCount, metadata.UserRating, metadata.StarRating)
-    buttonCommands[str(buttonCount)] = "rateVideo"
-    buttonCount = buttonCount + 1
+    if supportedIdentifier then
+        if metadata.UserRating = invalid then
+            metadata.UserRating = 0
+        endif
+        if metadata.StarRating = invalid then
+            metadata.StarRating = 0
+        endif
+        screen.AddRatingButton(buttonCount, metadata.UserRating, metadata.StarRating)
+        buttonCommands[str(buttonCount)] = "rateVideo"
+        buttonCount = buttonCount + 1
+    end if
     return buttonCommands
 End Function
 
