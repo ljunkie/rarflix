@@ -258,6 +258,8 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
             print "Can't direct play, plugin video has no media item!"
             return invalid
         else
+            video.IndirectHttpCookies = httpCookies
+            video.IndirectUserAgent = userAgent
             m.AddDirectPlayInfo(video, item, mediaKey)
             return video
         end if
@@ -279,6 +281,8 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
             resolution = firstOf(mediaItem.videoResolution, "0").toInt()
             print "Media item resolution:"; resolution; ", max is"; maxResolution
             if resolution <= maxResolution then
+                video.IndirectHttpCookies = httpCookies
+                video.IndirectUserAgent = userAgent
                 m.AddDirectPlayInfo(video, item, mediaKey)
                 return video
             end if

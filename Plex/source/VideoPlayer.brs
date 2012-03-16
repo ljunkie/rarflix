@@ -151,6 +151,13 @@ Sub playVideo(server, metadata, seekValue=0, directPlayOptions=0)
         if cookie <> invalid then
             videoPlayer.AddHeader("Cookie", cookie)
         end if
+    else
+        if videoItem.IndirectHttpCookies <> "" then
+            videoPlayer.AddHeader("Cookie", videoItem.IndirectHttpCookies)
+        end if
+        if videoItem.IndirectUserAgent <> "" then
+            videoPlayer.AddHeader("User-Agent", videoItem.IndirectUserAgent)
+        end if
     end if
 
     videoPlayer.SetPositionNotificationPeriod(5)
