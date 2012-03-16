@@ -158,7 +158,8 @@ Function createPreferencesScreen(viewController) As Object
         { title: "Automatic (recommended)", EnumValue: "0" },
         { title: "Direct Play", EnumValue: "1", ShortDescriptionLine2: "Always Direct Play, no matter what." },
         { title: "Direct Play w/ Fallback", EnumValue: "2", ShortDescriptionLine2: "Always try Direct Play, then transcode." },
-        { title: "Always Transcode", EnumValue: "3", ShortDescriptionLine2: "Never Direct Play, always transcode/remux." }
+        { title: "Direct Stream/Transcode", EnumValue: "3", ShortDescriptionLine2: "Always Direct Stream or transcode." },
+        { title: "Always Transcode", EnumValue: "4", ShortDescriptionLine2: "Never Direct Play or Direct Stream." }
     ]
     obj.Prefs["directplay"] = {
         values: directplay,

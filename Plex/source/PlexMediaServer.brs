@@ -258,12 +258,14 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
             print "Can't direct play, plugin video has no media item!"
             return invalid
         else
+            video.IndirectHttpCookies = httpCookies
+            video.IndirectUserAgent = userAgent
             m.AddDirectPlayInfo(video, item, mediaKey)
             return video
         end if
     else if allowDirectPlay AND mediaItem <> invalid then
         print "Checking to see if direct play of video is possible"
-        qualityPref = firstOf(RegRead("quality", "preferences"), "7").toInt()
+        qualityPref = RegRead("quality", "preferences", "7").toInt()
         if qualityPref >= 9 then
             maxResolution = 1080
         else if qualityPref >= 6 then
@@ -279,6 +281,8 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
             resolution = firstOf(mediaItem.videoResolution, "0").toInt()
             print "Media item resolution:"; resolution; ", max is"; maxResolution
             if resolution <= maxResolution then
+                video.IndirectHttpCookies = httpCookies
+                video.IndirectUserAgent = userAgent
                 m.AddDirectPlayInfo(video, item, mediaKey)
                 return video
             end if
@@ -463,7 +467,6 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpCookies As 
     print "Original key:";key
     print "Full key:";fullKey
     
-    if not(RegExists("quality", "preferences")) then RegWrite("quality", "7", "preferences")
     if not(RegExists("level", "preferences")) then RegWrite("level", "40", "preferences")
     print "REG READ LEVEL "; RegRead("level", "preferences")
 
@@ -479,7 +482,7 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpCookies As 
         query = query + "&webkit=1"
     end if
 
-    currentQuality = RegRead("quality", "preferences")
+    currentQuality = RegRead("quality", "preferences", "7")
     if currentQuality = "Auto" then
         query = query + "&minQuality=4&maxQuality=8"
     else
@@ -576,7 +579,20 @@ Function Capabilities(recompute=false) As String
             print "5.1 support disabled via Tweaks"
         end if
     end if 
-    decoders = "videoDecoders=h264{profile:high&resolution:1080&level:"+ level + "};audioDecoders="+audio
+
+    ' The Roku1 seems to be pretty picky about h.264 streams inside HLS, it
+    ' will show very blocky video for certain streams that work fine in MP4.
+    ' We can't really detect when this will be a problem, so just don't
+    ' direct stream to a Roku1 by default.
+
+    directPlayOptions = RegRead("directplay", "preferences", "0")
+    if (major.ToInt() >= 4 AND directPlayOptions <> "4") OR directPlayOptions = "3" then
+        decoders = "videoDecoders=h264{profile:high&resolution:1080&level:"+ level + "};audioDecoders="+audio
+    else
+        print "Disallowing direct streaming in capabilities string"
+        decoders = "audioDecoders=" + audio
+    end if
+
     'anamorphic video causes problems, disable support for it
     'anamorphic = "playsAnamorphic=no"
 

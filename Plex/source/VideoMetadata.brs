@@ -261,7 +261,7 @@ End Function
 
 '* Logic for choosing which Media item to use from the collection of possibles.
 Function PickMediaItem(mediaItems) As Object
-    quality = firstOf(RegRead("quality", "preferences"), "7").toInt()
+    quality = RegRead("quality", "preferences", "7").toInt()
     if quality >= 9 then
         maxResolution = 1080
     else if quality >= 6 then
