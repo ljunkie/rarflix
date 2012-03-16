@@ -265,7 +265,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
         end if
     else if allowDirectPlay AND mediaItem <> invalid then
         print "Checking to see if direct play of video is possible"
-        qualityPref = firstOf(RegRead("quality", "preferences"), "7").toInt()
+        qualityPref = RegRead("quality", "preferences", "7").toInt()
         if qualityPref >= 9 then
             maxResolution = 1080
         else if qualityPref >= 6 then
@@ -453,7 +453,6 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpCookies As 
     print "Original key:";key
     print "Full key:";fullKey
     
-    if not(RegExists("quality", "preferences")) then RegWrite("quality", "7", "preferences")
     if not(RegExists("level", "preferences")) then RegWrite("level", "40", "preferences")
     print "REG READ LEVEL "; RegRead("level", "preferences")
 
@@ -469,7 +468,7 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpCookies As 
         query = query + "&webkit=1"
     end if
 
-    currentQuality = RegRead("quality", "preferences")
+    currentQuality = RegRead("quality", "preferences", "7")
     if currentQuality = "Auto" then
         query = query + "&minQuality=4&maxQuality=8"
     else

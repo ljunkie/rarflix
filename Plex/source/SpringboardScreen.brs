@@ -56,6 +56,7 @@ Function createVideoSpringboardScreen(context, index, viewController) As Object
     obj.AddButtons = videoAddButtons
     obj.GetMediaDetails = videoGetMediaDetails
     obj.HandleMessage = videoHandleMessage
+    obj.PlayVideo = playVideo
 
     obj.PlayButtonStates = [
         {label: "Play", value: 0},
@@ -65,6 +66,8 @@ Function createVideoSpringboardScreen(context, index, viewController) As Object
         {label: "Play Transcoded", value: 4}
     ]
     obj.PlayButtonState = RegRead("directplay", "preferences", "0").toint()
+
+    obj.OrigQuality = RegRead("quality", "preferences", "7")
     
     return obj
 End Function

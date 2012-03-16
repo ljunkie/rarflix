@@ -58,6 +58,9 @@ Function videoHandleMessage(msg) As Boolean
         m.msgTimeout = 0
         m.Refresh(true)
         return true
+    else if msg.isScreenClosed() then
+        RegWrite("quality", m.OrigQuality, "preferences")
+        return false
     else if msg.isButtonPressed() then
         buttonCommand = m.buttonCommands[str(msg.getIndex())]
         print "Button command: ";buttonCommand
@@ -68,7 +71,7 @@ Function videoHandleMessage(msg) As Boolean
             endif
             directPlayOptions = m.PlayButtonStates[m.PlayButtonState]
             print "Playing video with Direct Play options set to: "; directPlayOptions.label
-            playVideo(server, m.metadata, startTime, directPlayOptions.value)
+            m.PlayVideo(startTime, directPlayOptions.value)
             '* Refresh play data after playing, but only after a timeout,
             '* otherwise we may leak objects if the play ended because the
             '* springboard was closed.
@@ -90,6 +93,11 @@ Function videoHandleMessage(msg) As Boolean
 
             if screen.Changes.DoesExist("playback") then
                 m.PlayButtonState = screen.Changes["playback"].toint()
+            end if
+
+            if screen.Changes.DoesExist("quality") then
+                RegWrite("quality", screen.Changes["quality"], "preferences")
+                m.metadata.preferredMediaItem = PickMediaItem(m.metadata.media)
             end if
 
             if screen.Changes.DoesExist("audio") then
@@ -118,7 +126,10 @@ Function videoHandleMessage(msg) As Boolean
     return false
 End Function
 
-Sub playVideo(server, metadata, seekValue=0, directPlayOptions=0)
+Sub playVideo(seekValue=0, directPlayOptions=0)
+    metadata = m.metadata
+    server = metadata.server
+
 	print "MediaPlayer::playVideo: Displaying video: ";metadata.title
 	seconds = int(seekValue/1000)
 
@@ -179,7 +190,7 @@ Sub playVideo(server, metadata, seekValue=0, directPlayOptions=0)
             dialog.Show()
         else
             ' Force transcoding this time
-            playVideo(server, metadata, seekValue, 3)
+            m.PlayVideo(seekValue, 3)
         end if
     end if
 
@@ -187,6 +198,46 @@ Sub playVideo(server, metadata, seekValue=0, directPlayOptions=0)
         print "Restoring direct play options to: "; origDirectPlayOptions
         RegWrite("directplay", origDirectPlayOptions, "preferences")
         Capabilities(true)
+    end if
+
+    if GetGlobalAA().DoesExist("show_underrun_warning") then
+        GetGlobalAA().AddReplace("underrun_warning_shown", "1")
+        GetGlobalAA().Delete("show_underrun_warning")
+
+        dialog = createBaseDialog()
+        dialog.Title = "Quality Too High"
+        dialog.Text = "We seem to have had a hard time playing that video. You may get better results with a lower quality setting."
+        dialog.Buttons = {ok: "Ok", quality: "Lower the quality setting now"}
+        dialog.HandleButton = qualityHandleButton
+        dialog.Quality = m.OrigQuality
+        dialog.Show()
+
+        if m.OrigQuality <> dialog.Quality then
+            m.metadata.preferredMediaItem = PickMediaItem(m.metadata.media)
+            m.OrigQuality = dialog.Quality
+        end if
+    end if
+End Sub
+
+Sub qualityHandleButton(key)
+    if key = "quality" then
+        print "Lowering quality from original value: "; m.Quality
+        quality = m.Quality.toint()
+        newQuality = invalid
+
+        if quality >= 9 then
+            newQuality = 7
+        else if quality >= 6 then
+            newQuality = 5
+        else if quality >= 5 then
+            newQuality = 4
+        end if
+
+        if newQuality <> invalid then
+            print "New quality:"; newQuality
+            RegWrite("quality", newQuality.tostr(), "preferences")
+            m.Quality = newQuality.tostr()
+        end if
     end if
 End Sub
 
@@ -282,6 +333,7 @@ Function videoMessageLoop(server, metadata, messagePort, transcoded) As Boolean
     lastPosition = 0
     played = false
     success = true
+    underrunCount = 0
 
     while true
     	' Time out after 60 seconds causing invalid event allowing ping to be sent during 
@@ -341,6 +393,13 @@ Function videoMessageLoop(server, metadata, messagePort, transcoded) As Boolean
             else if msg.isStreamStarted() then
             	print "MediaPlayer::playVideo::VideoScreenEvent::isStreamStarted: position -> ";lastPosition
             	print "Message data -> ";msg.GetInfo()
+
+                if msg.GetInfo().IsUnderrun = true then
+                    underrunCount = underrunCount + 1
+                    if underrunCount = 4 and not GetGlobalAA().DoesExist("underrun_warning_shown") then
+                        GetGlobalAA().AddReplace("show_underrun_warning", "1")
+                    end if
+                end if
             else
                 print "Unknown event: "; msg.GetType(); " msg: "; msg.GetMessage()
             endif
@@ -383,6 +442,22 @@ Function createVideoOptionsScreen(item, viewController) As Object
         label: "Transcoding",
         heading: "Should this video be transcoded or use Direct Play?",
         default: RegRead("directplay", "preferences", "0")
+    }
+
+    ' Quality
+    qualities = [
+        { title: "720 kbps, 320p", EnumValue: "4" },
+        { title: "1.5 Mbps, 480p", EnumValue: "5" },
+        { title: "2.0 Mbps, 720p", EnumValue: "6" },
+        { title: "3.0 Mbps, 720p", EnumValue: "7" },
+        { title: "4.0 Mbps, 720p", EnumValue: "8" },
+        { title: "8.0 Mbps, 1080p", EnumValue: "9"}
+    ]
+    obj.Prefs["quality"] = {
+        values: qualities,
+        label: "Quality",
+        heading: "Higher settings require more bandwidth and may buffer",
+        default: RegRead("quality", "preferences", "7")
     }
 
     audioStreams = []
@@ -461,7 +536,7 @@ Sub showVideoOptionsScreen()
 
     items = []
 
-    possiblePrefs = ["playback", "audio", "subtitles"]
+    possiblePrefs = ["playback", "quality", "audio", "subtitles"]
     for each key in possiblePrefs
         pref = m.Prefs[key]
         if pref <> invalid then
@@ -485,7 +560,7 @@ Sub showVideoOptionsScreen()
                 exit while
             else if msg.isListItemSelected() then
                 command = items[msg.GetIndex()]
-                if command = "playback" OR command = "audio" OR command = "subtitles" then
+                if command = "playback" OR command = "audio" OR command = "subtitles" OR command = "quality" then
                     pref = m.Prefs[command]
                     screen = m.ViewController.CreateEnumInputScreen(pref.values, pref.default, pref.heading, [pref.label])
                     if screen.SelectedIndex <> invalid then
