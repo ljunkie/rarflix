@@ -439,6 +439,8 @@ Function createVideoOptionsScreen(item, viewController) As Object
     obj.Changes = CreateObject("roAssociativeArray")
     obj.Prefs = CreateObject("roAssociativeArray")
 
+    lsInitBaseListScreen(obj)
+
     ' Transcoding vs. direct play
     options = [
         { title: "Automatic", EnumValue: "0" },
@@ -536,7 +538,7 @@ Function createVideoOptionsScreen(item, viewController) As Object
         }
     end if
 
-    obj.GetEnumLabel = videoGetEnumLabel
+    obj.GetEnumValue = videoGetEnumValue
 
     return obj
 End Function
@@ -544,19 +546,16 @@ End Function
 Sub showVideoOptionsScreen()
     m.Screen.SetHeader("Video playback options")
 
-    items = []
-
     possiblePrefs = ["playback", "quality", "audio", "subtitles"]
     for each key in possiblePrefs
         pref = m.Prefs[key]
         if pref <> invalid then
-            m.Screen.AddContent({title: m.GetEnumLabel(key)})
-            items.Push(key)
+            m.AddItem({title: pref.label}, key)
+            m.AppendValue(invalid, m.GetEnumValue(key))
         end if
     next
 
-    m.Screen.AddContent({title: "Close"})
-    items.Push("close")
+    m.AddItem({title: "Close"}, "close")
 
     m.Screen.Show()
 
@@ -569,14 +568,14 @@ Sub showVideoOptionsScreen()
                 m.ViewController.PopScreen(m)
                 exit while
             else if msg.isListItemSelected() then
-                command = items[msg.GetIndex()]
+                command = m.GetSelectedCommand(msg.GetIndex())
                 if command = "playback" OR command = "audio" OR command = "subtitles" OR command = "quality" then
                     pref = m.Prefs[command]
                     screen = m.ViewController.CreateEnumInputScreen(pref.values, pref.default, pref.heading, [pref.label])
                     if screen.SelectedIndex <> invalid then
                         m.Changes.AddReplace(command, screen.SelectedValue)
                         pref.default = screen.SelectedValue
-                        m.Screen.SetItem(msg.GetIndex(), {title: pref.label + ": " + screen.SelectedLabel})
+                        m.AppendValue(msg.GetIndex(), screen.SelectedLabel)
                     end if
                     screen = invalid
                 else if command = "close" then
@@ -587,14 +586,14 @@ Sub showVideoOptionsScreen()
     end while
 End Sub
 
-Function videoGetEnumLabel(key) As String
+Function videoGetEnumValue(key) As String
     pref = m.Prefs[key]
     for each item in pref.values
         if item.EnumValue = pref.default then
-            return pref.label + ": " + item.title
+            return item.title
         end if
     next
 
-    return pref.label
+    return invalid
 End Function
 
