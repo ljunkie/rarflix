@@ -200,11 +200,7 @@ Function loaderHandleMessage(msg) As Boolean
             startItem = 0
             countLoaded = status.content.Count()
         else
-            if response.xml@offset <> invalid then
-                startItem = strtoi(response.xml@offset)
-            else
-                startItem = 0
-            end if
+            startItem = firstOf(response.xml@offset, msg.GetResponseHeaders()["X-Plex-Container-Start"], "0").toInt()
 
             countLoaded = container.Count()
 
