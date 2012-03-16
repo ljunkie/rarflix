@@ -163,6 +163,11 @@ Function showGridScreen() As Integer
                     m.Screen.SetFocusedListItem(m.selectedRow, m.focusedIndex)
 
                     m.Screen.Show()
+                else
+                    ' Regardless, reset the current row in case the currently
+                    ' selected item had metadata changed that would affect its
+                    ' display in the grid.
+                    m.Screen.SetContentList(m.selectedRow, m.contentArray[m.selectedRow])
                 end if
 
                 m.Loader.RefreshData()
