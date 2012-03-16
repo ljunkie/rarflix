@@ -122,6 +122,15 @@ Sub playVideo(server, metadata, seekValue=0, directPlayOptions=0)
 	print "MediaPlayer::playVideo: Displaying video: ";metadata.title
 	seconds = int(seekValue/1000)
 
+    origDirectPlayOptions = RegRead("directplay", "preferences", "0")
+    if origDirectPlayOptions <> directPlayOptions.tostr() then
+        print "Temporarily overwriting direct play preference to:"; directPlayOptions
+        RegWrite("directplay", directPlayOptions.tostr(), "preferences")
+        Capabilities(true)
+    else
+        origDirectPlayOptions = invalid
+    end if
+
     videoItem = server.ConstructVideoItem(metadata, seconds, directPlayOptions <> 3, directPlayOptions = 1 OR directPlayOptions = 2)
     if videoItem = invalid then
         print "Can't play video, server was unable to construct video item"
@@ -165,6 +174,12 @@ Sub playVideo(server, metadata, seekValue=0, directPlayOptions=0)
             ' Force transcoding this time
             playVideo(server, metadata, seekValue, 3)
         end if
+    end if
+
+    if origDirectPlayOptions <> invalid then
+        print "Restoring direct play options to: "; origDirectPlayOptions
+        RegWrite("directplay", origDirectPlayOptions, "preferences")
+        Capabilities(true)
     end if
 End Sub
 
@@ -353,7 +368,8 @@ Function createVideoOptionsScreen(item, viewController) As Object
         { title: "Automatic", EnumValue: "0" },
         { title: "Direct Play", EnumValue: "1" },
         { title: "Direct Play w/ Fallback", EnumValue: "2" },
-        { title: "Transcode", EnumValue: "3" }
+        { title: "Direct Stream/Transcode", EnumValue: "3" },
+        { title: "Transcode", EnumValue: "4" }
     ]
     obj.Prefs["playback"] = {
         values: options,

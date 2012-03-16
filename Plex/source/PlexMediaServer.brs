@@ -562,7 +562,20 @@ Function Capabilities(recompute=false) As String
             print "5.1 support disabled via Tweaks"
         end if
     end if 
-    decoders = "videoDecoders=h264{profile:high&resolution:1080&level:"+ level + "};audioDecoders="+audio
+
+    ' The Roku1 seems to be pretty picky about h.264 streams inside HLS, it
+    ' will show very blocky video for certain streams that work fine in MP4.
+    ' We can't really detect when this will be a problem, so just don't
+    ' direct stream to a Roku1 by default.
+
+    directPlayOptions = RegRead("directplay", "preferences", "0")
+    if (major.ToInt() >= 4 AND directPlayOptions <> "4") OR directPlayOptions = "3" then
+        decoders = "videoDecoders=h264{profile:high&resolution:1080&level:"+ level + "};audioDecoders="+audio
+    else
+        print "Disallowing direct streaming in capabilities string"
+        decoders = "audioDecoders=" + audio
+    end if
+
     'anamorphic video causes problems, disable support for it
     'anamorphic = "playsAnamorphic=no"
 
