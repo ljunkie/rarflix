@@ -53,6 +53,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize)
     loader.HandleMessage = loaderHandleMessage
     loader.GetLoadStatus = loaderGetLoadStatus
     loader.RefreshData = loaderRefreshData
+    loader.StartRequest = loaderStartRequest
 
     loader.Listener = invalid
 
@@ -122,21 +123,7 @@ Function loaderLoadMoreContent(focusedIndex, extraRows=0)
     end if
 
     status.loadStatus = 1
-
-    request = CreateObject("roAssociativeArray")
-    httpRequest = m.server.CreateRequest(m.sourceUrl, status.key)
-    httpRequest.SetPort(m.Port)
-    httpRequest.AddHeader("X-Plex-Container-Start", startItem.tostr())
-    httpRequest.AddHeader("X-Plex-Container-Size", count.tostr())
-    request.request = httpRequest
-    request.row = loadingRow
-    m.PendingRequests[str(httpRequest.GetIdentity())] = request
-
-    if httpRequest.AsyncGetToString() then
-        status.pendingRequests = status.pendingRequests + 1
-    else
-        print "Failed to start request for row"; loadingRow; ": "; httpRequest.GetUrl()
-    end if
+    m.StartRequest(loadingRow, startItem, count)
 
     return extraRowsAlreadyLoaded
 End Function
@@ -145,23 +132,27 @@ Sub loaderRefreshData()
     for row = 0 to m.contentArray.Count() - 1
         status = m.contentArray[row]
         if status.key <> invalid AND status.loadStatus <> 0 then
-            status.loadStatus = 1
-            request = CreateObject("roAssociativeArray")
-            httpRequest = m.server.CreateRequest(m.sourceUrl, status.key)
-            httpRequest.SetPort(m.Port)
-            httpRequest.AddHeader("X-Plex-Container-Start", "0")
-            httpRequest.AddHeader("X-Plex-Container-Size", m.pageSize.tostr())
-            request.request = httpRequest
-            request.row = row
-
-            if httpRequest.AsyncGetToString() then
-                m.PendingRequests[str(httpRequest.GetIdentity())] = request
-                status.pendingRequests = status.pendingRequests + 1
-            else
-                print "Failed to start request for row"; row; ": "; httpRequest.GetUrl()
-            end if
+            m.StartRequest(row, 0, m.pageSize)
         end if
     next
+End Sub
+
+Sub loaderStartRequest(row, startItem, count)
+    status = m.contentArray[row]
+    request = CreateObject("roAssociativeArray")
+    httpRequest = m.server.CreateRequest(m.sourceUrl, status.key)
+    httpRequest.SetPort(m.Port)
+    httpRequest.AddHeader("X-Plex-Container-Start", startItem.tostr())
+    httpRequest.AddHeader("X-Plex-Container-Size", count.tostr())
+    request.request = httpRequest
+    request.row = row
+
+    if httpRequest.AsyncGetToString() then
+        m.PendingRequests[httpRequest.GetIdentity().tostr()] = request
+        status.pendingRequests = status.pendingRequests + 1
+    else
+        print "Failed to start request for row"; row; ": "; httpRequest.GetUrl()
+    end if
 End Sub
 
 Function loaderHandleMessage(msg) As Boolean
@@ -175,9 +166,9 @@ Function loaderHandleMessage(msg) As Boolean
         return false
     else if type(msg) = "roUrlEvent" AND msg.GetInt() = 1 then
         id = msg.GetSourceIdentity()
-        request = m.PendingRequests[str(id)]
+        request = m.PendingRequests[id.tostr()]
         if request = invalid then return false
-        m.PendingRequests.Delete(str(id))
+        m.PendingRequests.Delete(id.tostr())
 
         status = m.contentArray[request.row]
         status.pendingRequests = status.pendingRequests - 1
@@ -215,23 +206,27 @@ Function loaderHandleMessage(msg) As Boolean
                 startItem = 0
             end if
 
+            countLoaded = container.Count()
+
             if startItem <> status.content.Count() then
                 print "Received paginated response for index"; startItem; " of list with length"; status.content.Count()
                 metadata = container.GetMetadata()
-                for i = 0 to metadata.Count() - 1
+                for i = 0 to countLoaded - 1
                     status.content[startItem + i] = metadata[i]
                 next
             else
                 status.content.Append(container.GetMetadata())
             end if
 
-            if status.content.Count() < totalSize then
+            if status.loadStatus = 2 AND startItem + countLoaded < totalSize then
+                ' We're in the middle of refreshing the row, kick off the
+                ' next request.
+                m.StartRequest(request.row, startItem + countLoaded, m.pageSize)
+            else if status.content.Count() < totalSize then
                 status.loadStatus = 1
             else
                 status.loadStatus = 2
             end if
-
-            countLoaded = container.Count()
         end if
 
         while status.content.Count() > totalSize
