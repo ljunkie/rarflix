@@ -68,7 +68,7 @@ Sub searchStartRequest(server, url, title)
     req.request = httpRequest
     req.server = server
     req.title = firstOf(title, "unknown") + " (" + server.name + ")"
-    m.PendingRequests[str(httpRequest.GetIdentity())] = req
+    m.PendingRequests[httpRequest.GetIdentity().tostr()] = req
 
     print "Kicked off search request for "; req.title
 End Sub
@@ -101,9 +101,9 @@ End Function
 Function searchHandleMessage(msg) As Boolean
     if type(msg) = "roUrlEvent" AND msg.GetInt() = 1 then
         id = msg.GetSourceIdentity()
-        request = m.PendingRequests[str(id)]
+        request = m.PendingRequests[id.tostr()]
         if request = invalid then return false
-        m.PendingRequests.Delete(str(id))
+        m.PendingRequests.Delete(id.tostr())
 
         if msg.GetResponseCode() <> 200 then
             print "Got a "; msg.GetResponseCode(); " response from "; request.request.GetUrl(); " - "; msg.GetFailureReason()
