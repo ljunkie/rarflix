@@ -9,6 +9,7 @@ Function newVideoMetadata(container, item, detailed=false) As Object
 
     video.mediaContainerIdentifier = container.xml@identifier
     video.ratingKey = item@ratingKey
+    video.id = item@id
     video.ContentType = item@type
     if video.ContentType = invalid then
         '* treat video items with no content type as clips

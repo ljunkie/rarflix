@@ -38,6 +38,12 @@ Function videoAddButtons(obj) As Object
         end if
     end if
 
+    if m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex" AND m.metadata.id <> invalid then
+        screen.AddButton(buttonCount, "Delete from queue")
+        buttonCommands[str(buttonCount)] = "delete"
+        buttonCount = buttonCount + 1
+    end if
+
     screen.AddButton(buttonCount, "Playback options")
     buttonCommands[str(buttonCount)] = "options"
     buttonCount = buttonCount + 1
@@ -91,6 +97,9 @@ Function videoHandleMessage(msg) As Boolean
             server.Unscrobble(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier)
             '* Refresh play data after unscrobbling
             m.Refresh(true)
+        else if buttonCommand = "delete" then
+            server.Delete(m.metadata.id)
+            m.Screen.Close()
         else if buttonCommand = "options" then
             screen = createVideoOptionsScreen(m.metadata, m.ViewController)
             m.ViewController.InitializeOtherScreen(screen, ["Video Playback Options"])

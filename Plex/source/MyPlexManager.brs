@@ -32,6 +32,7 @@ Function createMyPlexManager(viewController) As Object
     obj.Scrobble = scrobble
     obj.Unscrobble = unscrobble
     obj.Rate = rate
+    obj.Delete = mpDelete
     obj.ExecuteCommand = mpExecuteCommand
     obj.ExecutePostCommand = mpExecutePostCommand
 
@@ -254,6 +255,15 @@ Function mpTranscodedImage(queryUrl, imagePath, width, height) As String
         return ""
     end if
 End Function
+
+Sub mpDelete(id)
+    if id <> invalid then
+        commandUrl = m.serverUrl + "/pms/playlists/queue/items/" + id
+        print "Executing delete command: "; commandUrl
+        request = m.CreateRequest("", commandUrl)
+        request.PostFromString("_method=DELETE")
+    end if
+End Sub
 
 Function mpExecuteCommand(commandPath)
     commandUrl = m.serverUrl + "/pms" + commandPath

@@ -21,6 +21,7 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.SetProgress = progress
     pms.Scrobble = scrobble
     pms.Unscrobble = unscrobble
+    pms.Delete = pmsDelete
     pms.Rate = rate
     pms.setPref = setpref
     pms.ExecuteCommand = issueCommand
@@ -78,6 +79,10 @@ Function unscrobble(key, identifier)
     commandUrl = "/:/unscrobble?key="+HttpEncode(key)+"&identifier="+identifier
     m.ExecuteCommand(commandUrl)
 End Function
+
+Sub pmsDelete(id)
+    print "Delete not implemented for non-queue items"
+End Sub
 
 Function rate(key, identifier, rating)
     commandUrl = "/:/rate?key="+HttpEncode(key)+"&identifier="+identifier+"&rating="+rating
