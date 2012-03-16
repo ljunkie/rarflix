@@ -171,6 +171,23 @@ Function searchHandleMessage(msg) As Boolean
             end if
         next
 
+        if m.PendingRequests.IsEmpty() then
+            foundSomething = false
+            for each status in m.contentArray
+                if status.content.Count() > 0 then
+                    foundSomething = true
+                    exit for
+                end if
+            next
+            if not foundSomething then
+                dialog = createBaseDialog()
+                dialog.Title = "No Results"
+                dialog.Text = "Sorry, we couldn't find anything for '" + m.SearchTerm + "'"
+                dialog.Show()
+                m.Listener.Screen.Close()
+            end if
+        end if
+
         return true
     else if (type(msg) = "roGridScreenEvent" OR type(msg) = "roPosterScreenEvent") AND msg.isScreenClosed() then
         for each id in m.PendingRequests
