@@ -8,17 +8,25 @@ Function createBaseSpringboardScreen(context, index, viewController) As Object
     screen = CreateObject("roSpringboardScreen")
     screen.SetMessagePort(port)
 
+    ' Filter out anything in the context that can't be shown on a springboard.
+    contextCopy = []
+    for each item in context
+        if item.refresh <> invalid then
+            contextCopy.Push(item)
+        end if
+    next
+
     ' Standard properties for all our Screen types
-    obj.Item = context[index]
+    obj.Item = contextCopy[index]
     obj.Screen = screen
     obj.Port = port
     obj.ViewController = viewController
 
     ' Some properties that allow us to move between items in whatever
     ' container got us to this point.
-    obj.Context = context
+    obj.Context = contextCopy
     obj.CurIndex = index
-    obj.AllowLeftRight = context.Count() > 1
+    obj.AllowLeftRight = contextCopy.Count() > 1
     obj.WrapLeftRight = obj.AllowLeftRight
 
     obj.Show = showSpringboardScreen
@@ -95,9 +103,9 @@ Function createAudioSpringboardScreen(context, index, viewController) As Dynamic
     obj.setPlayState = audioPlayer_newstate
 
     ' TODO: Do we want to loop? Always/Sometimes/Never/Preference?
-    obj.audioPlayer.SetLoop(context.Count() > 1)
+    obj.audioPlayer.SetLoop(obj.Context.Count() > 1)
 
-    obj.audioPlayer.SetContentList(context)
+    obj.audioPlayer.SetContentList(obj.Context)
     obj.audioPlayer.SetNext(index)
 
     obj.AddButtons      = audioPlayer_setbuttons
@@ -107,12 +115,12 @@ Function createAudioSpringboardScreen(context, index, viewController) As Dynamic
     ' In there isn't a single playable item in the list then the Roku has
     ' been observed to die a horrible death.
     obj.IsPlayable = false
-    for i = index to context.Count() - 1
-        url = context[i].Url
+    for i = index to obj.Context.Count() - 1
+        url = obj.Context[i].Url
         if url <> invalid AND url <> "" then
             obj.IsPlayable = true
             obj.audioPlayer.SetNext(i)
-            obj.Item = context[i]
+            obj.Item = obj.Context[i]
             exit for
         end if
     next
