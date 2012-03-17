@@ -156,7 +156,7 @@ Sub playVideo(seekValue=0, directPlayOptions=0)
         origDirectPlayOptions = invalid
     end if
 
-    videoItem = server.ConstructVideoItem(metadata, seconds, directPlayOptions <> 3, directPlayOptions = 1 OR directPlayOptions = 2)
+    videoItem = server.ConstructVideoItem(metadata, seconds, directPlayOptions < 3, directPlayOptions = 1 OR directPlayOptions = 2)
     if videoItem = invalid then
         print "Can't play video, server was unable to construct video item"
         return
