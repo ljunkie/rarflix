@@ -62,7 +62,7 @@ Function createHomeScreen(viewController) As Object
     configuredServers = PlexMediaServers()
     print "Setting up home screen content, server count:"; configuredServers.Count()
     for each server in configuredServers
-        obj.CreateServerRequests(server, false)
+        obj.CreateServerRequests(server, false, false)
     next
 
     obj.myplex.CheckAuthentication()
@@ -92,6 +92,7 @@ Function homeCreateRow(name) As Integer
     status.loadStatus = 0
     status.toLoad = CreateObject("roList")
     status.pendingRequests = 0
+    status.refreshContent = invalid
 
     m.contentArray.Push(status)
     m.RowNames.Push(name)
@@ -99,19 +100,24 @@ Function homeCreateRow(name) As Integer
     return index
 End Function
 
-Sub homeCreateServerRequests(server As Object, startRequests As Boolean)
-    PutPlexMediaServer(server)
+Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refreshRequest As Boolean)
+    if not refreshRequest then
+        PutPlexMediaServer(server)
 
-    ' Request server details (ensure we have a machine ID, check transcoding
-    ' support, etc.)
-    req = server.CreateRequest("", "/")
-    req.SetPort(m.Screen.Port)
-    req.AsyncGetToString()
-    serverInfo = CreateObject("roAssociativeArray")
-    serverInfo.request = req
-    serverInfo.requestType = "server"
-    serverInfo.server = server
-    m.AddPendingRequest(serverInfo)
+        ' Request server details (ensure we have a machine ID, check transcoding
+        ' support, etc.)
+        req = server.CreateRequest("", "/")
+        req.SetPort(m.Screen.Port)
+        req.AsyncGetToString()
+        serverInfo = CreateObject("roAssociativeArray")
+        serverInfo.request = req
+        serverInfo.requestType = "server"
+        serverInfo.server = server
+        m.AddPendingRequest(serverInfo)
+    else
+        m.contentArray[m.SectionsRow].refreshContent = []
+        m.contentArray[m.ChannelsRow].refreshContent = []
+    end if
 
     ' Request sections
     sections = CreateObject("roAssociativeArray")
@@ -275,7 +281,7 @@ Sub refreshHomeScreen(changes)
             else
                 server = GetPlexMediaServer(machineID)
                 if server <> invalid then
-                    m.CreateServerRequests(server, true)
+                    m.CreateServerRequests(server, true, false)
                 end if
             end if
         next
@@ -424,6 +430,10 @@ Function homeHandleMessage(msg) As Boolean
 
             if request.row <> invalid AND status.loadStatus < 2 AND status.pendingRequests = 0 then
                 status.loadStatus = 2
+                if status.refreshContent <> invalid then
+                    status.content = status.refreshContent
+                    status.refreshContent = invalid
+                end if
                 m.Screen.OnDataLoaded(request.row, status.content, 0, status.content.Count(), true)
             end if
 
@@ -443,7 +453,8 @@ Function homeHandleMessage(msg) As Boolean
             container = createPlexContainerForXml(response)
             countLoaded = 0
 
-            startItem = status.content.Count()
+            content = firstOf(status.refreshContent, status.content)
+            startItem = content.Count()
 
             if AreMultipleValidatedServers() then
                 serverStr = " on " + request.server.name
@@ -510,24 +521,32 @@ Function homeHandleMessage(msg) As Boolean
                         item.HDPosterURL = item.HDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
                     end if
 
-                    status.content.Push(item)
+                    content.Push(item)
                     countLoaded = countLoaded + 1
                 end if
             next
 
             if request.item <> invalid AND countLoaded > 0 then
                 countLoaded = countLoaded + 1
-                status.content.Push(request.item)
+                content.Push(request.item)
             else if request.emptyItem <> invalid AND countLoaded = 0 then
                 countLoaded = countLoaded + 1
-                status.content.Push(request.emptyItem)
+                content.Push(request.emptyItem)
             end if
 
             if status.toLoad.Count() = 0 AND status.pendingRequests = 0 then
                 status.loadStatus = 2
             end if
 
-            m.Screen.OnDataLoaded(request.row, status.content, startItem, countLoaded, true)
+            if status.refreshContent <> invalid then
+                if status.toLoad.Count() = 0 AND status.pendingRequests = 0 then
+                    status.content = status.refreshContent
+                    status.refreshContent = invalid
+                    m.Screen.OnDataLoaded(request.row, status.content, 0, status.content.Count(), true)
+                end if
+            else
+                m.Screen.OnDataLoaded(request.row, status.content, startItem, countLoaded, true)
+            end if
         else if request.requestType = "queue" then
             response = CreateObject("roAssociativeArray")
             response.xml = xml
@@ -612,7 +631,7 @@ Function homeHandleMessage(msg) As Boolean
 
                         ' An owned server that we didn't have configured, request
                         ' its sections and channels now.
-                        m.CreateServerRequests(server, true)
+                        m.CreateServerRequests(server, true, false)
                     else
                         server.name = serverElem@name + " (shared by " + serverElem@sourceTitle + ")"
                         server.owned = false
@@ -644,7 +663,7 @@ Function homeHandleMessage(msg) As Boolean
                 server.owned = true
                 server.IsConfigured = true
                 PutPlexMediaServer(server)
-                m.CreateServerRequests(server, true)
+                m.CreateServerRequests(server, true, false)
             end if
 
             return true
@@ -710,8 +729,13 @@ Sub ShowHelpScreen()
 End Sub
 
 Sub homeRefreshData()
-    ' At the moment, the only data we refresh is the queue.
+    ' Refresh the queue
     m.CreateQueueRequests(true)
+
+    ' Refresh the sections and channels for all of our owned servers
+    for each server in GetOwnedPlexMediaServers()
+        m.CreateServerRequests(server, true, true)
+    next
 
     ' Clear any screensaver images, use the default.
     SaveImagesForScreenSaver(invalid, invalid, {})
