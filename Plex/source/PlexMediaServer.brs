@@ -221,8 +221,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
     video.Title = item.Title
 
     identifier = item.mediaContainerIdentifier
-    httpCookies = ""
-    userAgent = ""
+    headers = []
     key = ""
     ratingKey = ""
     mediaItem = item.preferredMediaItem
@@ -245,10 +244,17 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
         if mediaItem.indirect then
             mediaKeyXml = IndirectMediaXml(m, mediaKey, postURL)
             mediaKey = mediaKeyXml.Video.Media.Part[0]@key
-            httpCookies = firstOf(mediaKeyXml@httpCookies, "")
-            userAgent = firstOf(mediaKeyXml@userAgent, "")
-            print "Indirect video item, cookies: "; httpCookies
-            print "Indirect video item, UA: "; userAgent
+
+            if mediaKeyXml@httpHeaders <> invalid AND mediaKeyXml@httpHeaders <> "" then
+                tokens = strTokenize(mediaKeyXml@httpHeaders, "&")
+                for each token in tokens
+                    arr = strTokenize(token, "=")
+                    value = {}
+                    value[arr[0]] = arr[1]
+                    headers.Push(value)
+                    print "Indirect video item header: "; value
+                next
+            end if
         end if
     end if
 
@@ -263,8 +269,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
             print "Can't direct play, plugin video has no media item!"
             return invalid
         else
-            video.IndirectHttpCookies = httpCookies
-            video.IndirectUserAgent = userAgent
+            video.IndirectHttpHeaders = headers
             m.AddDirectPlayInfo(video, item, mediaKey)
             return video
         end if
@@ -286,8 +291,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
             resolution = firstOf(mediaItem.videoResolution, "0").toInt()
             print "Media item resolution:"; resolution; ", max is"; maxResolution
             if resolution <= maxResolution then
-                video.IndirectHttpCookies = httpCookies
-                video.IndirectUserAgent = userAgent
+                video.IndirectHttpHeaders = headers
                 m.AddDirectPlayInfo(video, item, mediaKey)
                 return video
             end if
@@ -322,7 +326,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
 	printAA(video)
     video.StreamBitrates = [0]
     video.StreamFormat = "hls"
-    url = m.TranscodingVideoUrl(mediaKey, item, httpCookies, userAgent)
+    url = m.TranscodingVideoUrl(mediaKey, item, headers)
     if url = invalid then return invalid
     video.StreamUrls = [url]
 
@@ -447,11 +451,8 @@ End Function
 '*
 '* Construct the Plex transcoding URL. 
 '*
-Function TranscodingVideoUrl(videoUrl As String, item As Object, httpCookies As String, userAgent As String)
+Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As Object)
     print "Constructing transcoding video URL for "+videoUrl
-    if userAgent <> invalid then
-        print "User Agent: ";userAgent
-    end if
 
     key = ""
     ratingKey = ""
@@ -496,8 +497,18 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpCookies As 
 
     query = query + "&url=" + HttpEncode(location)
     query = query + "&3g=0"
-    query = query + "&httpCookies=" + HttpEncode(httpCookies)
-    query = query + "&userAgent=" + HttpEncode(userAgent)
+
+    for each header in httpHeaders
+        for each name in header
+            if name = "Cookie" then
+                query = query + "&httpCookies=" + HttpEncode(header[name])
+            else if name = "User-Agent" then
+                query = query + "&userAgent=" + HttpEncode(header[name])
+            else
+                print "Header can not be passed to transcoder at this time: "; name
+            end if
+        next
+    next
 
     publicKey = "KQMIY6GATPC63AIMC4R2"
     time = LinuxTime().tostr()
