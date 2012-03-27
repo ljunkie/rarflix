@@ -10,8 +10,19 @@ Function createMyPlexManager(viewController) As Object
     obj.ValidateToken = mpValidateToken
     obj.Disconnect = mpDisconnect
 
-    device = CreateObject("roDeviceInfo")
-    obj.ClientIdentifier = "Roku-" + device.GetDeviceUniqueId()
+    obj.ExtraHeaders = {}
+    obj.ExtraHeaders["X-Plex-Platform"] = "Roku"
+    obj.ExtraHeaders["X-Plex-Platform-Version"] = GetGlobal("rokuVersionStr", "unknown")
+    obj.ExtraHeaders["X-Plex-Provides"] = "player"
+    obj.ExtraHeaders["X-Plex-Product"] = "Plex for Roku"
+    obj.ExtraHeaders["X-Plex-Version"] = GetGlobal("appVersionStr")
+    obj.ExtraHeaders["X-Plex-Device"] = GetGlobal("rokuModel")
+    obj.ExtraHeaders["X-Plex-Client-Identifier"] = GetGlobal("rokuUniqueID")
+
+    print "myPlex headers"
+    for each name in obj.ExtraHeaders
+        print name + ": " + obj.ExtraHeaders[name]
+    next
 
     obj.ViewController = viewController
 
@@ -181,7 +192,9 @@ Function mpCreateRequest(sourceUrl As String, path As String, appendToken=true A
             req.SetUrl(url + "?auth_token=" + m.AuthToken)
         end if
     end if
-    req.AddHeader("X-Plex-Client-Identifier", m.ClientIdentifier)
+    for each name in m.ExtraHeaders
+        req.AddHeader(name, m.ExtraHeaders[name])
+    next
     req.AddHeader("Accept", "application/xml")
     req.SetCertificatesFile("common:/certs/ca-bundle.crt")
     return req

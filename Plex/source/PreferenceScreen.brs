@@ -189,22 +189,11 @@ Function createPreferencesScreen(viewController) As Object
 End Function
 
 Sub showPreferencesScreen()
-    manifest = ReadAsciiFile("pkg:/manifest")
-    lines = manifest.Tokenize(chr(10))
-    aa = {}
-    for each line in lines
-        entry = line.Tokenize("=")
-        aa.AddReplace(entry[0],entry[1])
-    end for
+    device = CreateObject("roDeviceInfo")
+    versionArr = GetGlobalAA().Lookup("rokuVersionArr")
+    major = versionArr[0]
 
-	device = CreateObject("roDeviceInfo")
-	version = device.GetVersion()
-	major = Mid(version, 3, 1)
-	minor = Mid(version, 5, 2)
-	build = Mid(version, 8, 5)
-	print "Device Version:" + major +"." + minor +" build "+build
-
-    m.Screen.SetTitle("Preferences v" + aa["version"])
+    m.Screen.SetTitle("Preferences v" + GetGlobalAA().Lookup("appVersionStr"))
     m.Screen.SetHeader("Set Plex Channel Preferences")
 
     m.AddItem({title: "Plex Media Servers"}, "servers")
@@ -216,12 +205,12 @@ Sub showPreferencesScreen()
     m.AddItem({title: "Direct Play"}, "directplay")
     m.AppendValue(invalid, m.GetEnumValue("directplay"))
 
-    if major.toInt() >= 4 AND device.hasFeature("5.1_surround_sound") then
+    if major >= 4 AND device.hasFeature("5.1_surround_sound") then
         m.AddItem({title: "5.1 Support"}, "fivepointone")
         m.AppendValue(invalid, m.GetEnumValue("fivepointone"))
     end if
 
-	if major.toInt() < 4  and device.hasFeature("1080p_hardware") then
+	if major < 4  and device.hasFeature("1080p_hardware") then
         m.AddItem({title: "1080p Settings"}, "1080p")
 	end if
 

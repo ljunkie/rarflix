@@ -302,13 +302,9 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
     
 	'Check to see if the video is fullHD or not
     if RegRead("quality", "preferences") = "9" and videoRes = "1080" then
-		device = CreateObject("roDeviceInfo")
-		version = device.GetVersion()
-			major = Mid(version, 3, 1)
-			minor = Mid(version, 5, 2)
-			build = Mid(version, 8, 5)
-		print "Device Version:" + major +"." + minor +" build "+build
-		if major.toInt() < 4  then
+        versionArr = GetGlobal("rokuVersionArr", [0])
+        major = versionArr[0]
+		if major < 4  then
 			if RegRead("legacy1080p","preferences") = "enabled" then
 				video.fullHD = true
 				video.framerate = 30
@@ -576,13 +572,10 @@ Function Capabilities(recompute=false) As String
     'do checks to see if 5.1 is supported, else use stereo
     device = CreateObject("roDeviceInfo")
     audio = "aac"
-    version = device.GetVersion()
-       major = Mid(version, 3, 1)
-       minor = Mid(version, 5, 2)
-       build = Mid(version, 8, 5)
-    print "Device Version:" + major +"." + minor +" build "+build
+    versionArr = GetGlobal("rokuVersionArr", [0])
+    major = versionArr[0]
 
-    if device.HasFeature("5.1_surround_sound") and major.ToInt() >= 4 then
+    if device.HasFeature("5.1_surround_sound") and major >= 4 then
         if not(RegExists("fivepointone", "preferences")) then
             RegWrite("fivepointone", "1", "preferences")
         end if
@@ -602,7 +595,7 @@ Function Capabilities(recompute=false) As String
     ' direct stream to a Roku1 by default.
 
     directPlayOptions = RegRead("directplay", "preferences", "0")
-    if (major.ToInt() >= 4 AND directPlayOptions <> "4") OR directPlayOptions = "3" then
+    if (major >= 4 AND directPlayOptions <> "4") OR directPlayOptions = "3" then
         decoders = "videoDecoders=h264{profile:high&resolution:1080&level:"+ level + "};audioDecoders="+audio
     else
         print "Disallowing direct streaming in capabilities string"

@@ -277,9 +277,8 @@ Function videoCanDirectPlay(mediaItem) As Boolean
     print "Media item audio codec: "; mediaItem.audioCodec
     print "Media item subtitles: "; subtitleFormat
 
-    device = CreateObject("roDeviceInfo")
-    version = device.GetVersion()
-    major = Mid(version, 3, 1).toint()
+    versionArr = GetGlobal("rokuVersionArr", [0])
+    major = versionArr[0]
 
     if subtitleFormat <> invalid AND subtitleFormat <> "srt" then
         print "videoCanDirectPlay: subtitles not SRT"

@@ -4,17 +4,69 @@
 ' ********************************************************************
 
 Sub Main()
-	' Development statements
-	' RemoveAllServers()
-	' AddServer("iMac", "http://192.168.1.3:32400")
-
     'initialize theme attributes like titles, logos and overhang color
     initTheme()
+
+    initGlobals()
 
     'prepare the screen for display and get ready to begin
     controller = createViewController()
     controller.ShowHomeScreen()
 End Sub
+
+Sub initGlobals()
+    device = CreateObject("roDeviceInfo")
+
+    version = device.GetVersion()
+    major = Mid(version, 3, 1).toInt()
+    minor = Mid(version, 5, 2).toInt()
+    build = Mid(version, 8, 5).toInt()
+    versionStr = major.toStr() + "." + minor.toStr() + " build " + build.toStr()
+
+    GetGlobalAA().AddReplace("rokuVersionStr", versionStr)
+    GetGlobalAA().AddReplace("rokuVersionArr", [major, minor, build])
+
+    print "Roku version: "; versionStr; " ("; version; ")"
+
+    manifest = ReadAsciiFile("pkg:/manifest")
+    lines = manifest.Tokenize(chr(10))
+    aa = {}
+    for each line in lines
+        entry = line.Tokenize("=")
+        aa.AddReplace(entry[0], entry[1])
+    next
+
+    appVersion = firstOf(aa["version"], "Unknown")
+    GetGlobalAA().AddReplace("appVersionStr", appVersion)
+
+    print "App version: "; appVersion
+
+    knownModels = {}
+    knownModels["N1050"] = "Roku SD"
+    knownModels["N1000"] = "Roku HD"
+    knownModels["N1100"] = "Roku HD"
+    knownModels["2000C"] = "Roku HD"
+    knownModels["2050N"] = "Roku XD"
+    knownModels["2050X"] = "Roku XD"
+    knownModels["N1101"] = "Roku XD|S"
+    knownModels["2100X"] = "Roku XD|S"
+    knownModels["2400X"] = "Roku LT"
+    knownModels["2450X"] = "Roku LT"
+    knownModels["3000X"] = "Roku 2 HD"
+    knownModels["3050X"] = "Roku 2 XD"
+    knownModels["3100X"] = "Roku 2 XS"
+
+    model = firstOf(knownModels[device.GetModel()], "Roku " + device.GetModel())
+    GetGlobalAA().AddReplace("rokuModel", model)
+
+    print "Roku model: "; model
+
+    GetGlobalAA().AddReplace("rokuUniqueID", device.GetDeviceUniqueId())
+End Sub
+
+Function GetGlobal(var, default=invalid)
+    return firstOf(GetGlobalAA().Lookup(var), default)
+End Function
 
 
 '*************************************************************
