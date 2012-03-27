@@ -271,17 +271,37 @@ Function videoCanDirectPlay(mediaItem) As Boolean
         subtitleFormat = invalid
     end if
 
+    audioStreamIndex = 0
+    selectedAudioStreamIndex = invalid
+    if mediaItem.preferredPart <> invalid then
+        for each stream in mediaItem.preferredPart.streams
+            if stream.streamType = "2" then
+                if stream.selected <> invalid then
+                    selectedAudioStreamIndex = audioStreamIndex
+                    exit for
+                end if
+                audioStreamIndex = audioStreamIndex + 1
+            end if
+        next
+    end if
+
     print "Media item optimized for streaming: "; mediaItem.optimized
     print "Media item container: "; mediaItem.container
     print "Media item video codec: "; mediaItem.videoCodec
     print "Media item audio codec: "; mediaItem.audioCodec
     print "Media item subtitles: "; subtitleFormat
+    print "Media item audio index: "; selectedAudioStreamIndex
 
     versionArr = GetGlobal("rokuVersionArr", [0])
     major = versionArr[0]
 
     if subtitleFormat <> invalid AND subtitleFormat <> "srt" then
         print "videoCanDirectPlay: subtitles not SRT"
+        return false
+    end if
+
+    if selectedAudioStreamIndex <> invalid AND selectedAudioStreamIndex > 0 then
+        print "videoCanDirectPlay: audio stream selected"
         return false
     end if
 
