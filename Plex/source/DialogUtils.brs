@@ -44,11 +44,17 @@ Function createPopupMenu(item) As Object
 
     dlg.HandleButton = popupHandleButton
 
-    dlg.Buttons = CreateObject("roAssociativeArray")
     container = createPlexContainerForUrl(item.server, item.sourceUrl, item.key)
-    for each option in container.GetMetadata()
-        dlg.Buttons[option.Key] = option.Title
-    next
+
+    if container.xml@header <> invalid AND container.xml@replaceParent = "1" then
+        dlg.Title = container.xml@header
+        dlg.Text = container.xml@message
+    else
+        dlg.Buttons = CreateObject("roAssociativeArray")
+        for each option in container.GetMetadata()
+            dlg.Buttons[option.Key] = option.Title
+        next
+    end if
 
     return dlg
 End Function
