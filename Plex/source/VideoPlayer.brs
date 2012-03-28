@@ -347,6 +347,11 @@ Function videoCanDirectPlay(mediaItem) As Boolean
         if major < 4 then
             print "videoCanDirectPlay: mkv not supported by version"; major
             return false
+        else
+            ' TODO(schuyler): Reenable for 4+ only if/when we can figure out
+            ' why so many MKVs fail.
+            print "videoCanDirectPlay: mkv (temporarily?) disallowed for version"; major
+            return false
         end if
 
         if mediaItem.videoCodec <> "h264" then
