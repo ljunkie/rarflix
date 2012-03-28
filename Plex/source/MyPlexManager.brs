@@ -299,23 +299,17 @@ End Function
 Function mpGetQueryResponse(sourceUrl, key) As Object
     xmlResult = CreateObject("roAssociativeArray")
     xmlResult.server = m
-    if left(key, 4) = "http" then
-        xml=CreateObject("roXMLElement")
-        xml.Parse("<MediaContainer viewgroup='apps'/>")
-        xmlResult.xml = xml
-        xmlResult.sourceUrl = invalid
-    else
-        httpRequest = m.CreateRequest(sourceUrl, key)
-        print "Fetching content from server at query URL:"; httpRequest.GetUrl()
-        response = GetToStringWithTimeout(httpRequest, 60)
-        xml=CreateObject("roXMLElement")
-        if not xml.Parse(response) then
-            print "Can't parse feed:";response
-        endif
+    httpRequest = m.CreateRequest(sourceUrl, key)
+    print "Fetching content from server at query URL:"; httpRequest.GetUrl()
+    response = GetToStringWithTimeout(httpRequest, 60)
+    xml=CreateObject("roXMLElement")
+    if not xml.Parse(response) then
+        print "Can't parse feed:";response
+    endif
 
-        xmlResult.xml = xml
-        xmlResult.sourceUrl = httpRequest.GetUrl()
-    end if
+    xmlResult.xml = xml
+    xmlResult.sourceUrl = httpRequest.GetUrl()
+
     return xmlResult
 End Function
 

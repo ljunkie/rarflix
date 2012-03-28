@@ -28,6 +28,11 @@ Function newVideoMetadata(container, item, detailed=false) As Object
         video.ShortDescriptionLine2 = item@summary
     endif
 
+    ' TODO(schuyler): Is there a less hacky way to decide this?
+    if video.mediaContainerIdentifier = "com.plexapp.plugins.myplex" AND video.id <> invalid then
+        video.DetailUrl = "/pms/playlists/items/" + video.id
+    end if
+
     setVideoBasics(video, container, item)
 	
     if detailed AND NOT item.Media.IsEmpty() then
@@ -147,10 +152,15 @@ Function videoParseDetails()
     if m.HasDetails then return m
 
     ' Don't bother trying to request bogus (webkit) keys
-    if left(m.Key, 5) <> "plex:" then
+    container = invalid
+    if m.DetailUrl <> invalid then
+        container = createPlexContainerForUrl(m.server, m.sourceUrl, m.DetailUrl)
+    else if left(m.Key, 5) <> "plex:" then
         container = createPlexContainerForUrl(m.server, m.sourceUrl, m.Key)
-        videoItemXml = container.xml.Video[0]
+    end if
 
+    if container <> invalid then
+        videoItemXml = container.xml.Video[0]
         setVideoDetails(m, container, videoItemXml)
     end if
 
@@ -296,7 +306,11 @@ End Function
 Sub videoRefresh(detailed=false)
     if m.preferredMediaItem = invalid then return
 
-    container = createPlexContainerForUrl(m.server, m.sourceUrl, m.Key)
+    if m.DetailUrl <> invalid then
+        container = createPlexContainerForUrl(m.server, m.sourceUrl, m.DetailUrl)
+    else
+        container = createPlexContainerForUrl(m.server, m.sourceUrl, m.Key)
+    end if
     videoItemXml = container.xml.Video[0]
 
     if videoItemXml <> invalid then
