@@ -468,6 +468,7 @@ Sub showManageServersScreen()
                     m.HandleEnumPreference(command, msg.GetIndex())
                 else if command = "removeall" then
                     RemoveAllServers()
+                    ClearPlexMediaServers()
                     m.RefreshServerList(removeOffset)
                 else if command = "remove" then
                     RemoveServer(msg.GetIndex() - removeOffset)
