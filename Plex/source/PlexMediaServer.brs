@@ -135,7 +135,7 @@ Function xmlContent(sourceUrl, key) As Object
     return xmlResult
 End Function
 
-Function IndirectMediaXml(server, originalKey, postURL) As Object
+Function IndirectMediaXml(server, originalKey, postURL)
     if postURL <> invalid then
         crlf = Chr(13) + Chr(10)
 
@@ -197,7 +197,7 @@ Function IndirectMediaXml(server, originalKey, postURL) As Object
     xml=CreateObject("roXMLElement")
     if not xml.Parse(response) then
         print "Can't parse feed:";response
-        return originalKey
+        return invalid
     endif
     return xml
 End Function
@@ -243,6 +243,14 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
         videoRes = mediaItem.videoresolution
         if mediaItem.indirect then
             mediaKeyXml = IndirectMediaXml(m, mediaKey, postURL)
+            if mediaKeyXml = invalid then
+                print "Failed to resolve indirect media"
+                dlg = createBaseDialog()
+                dlg.Title = "Video Unavailable"
+                dlg.Text = "Sorry, but we can't play this video. The original video may no longer be available, or it may be in a format that isn't supported."
+                dlg.Show()
+                return invalid
+            end if
             mediaKey = mediaKeyXml.Video.Media.Part[0]@key
 
             if mediaKeyXml@httpHeaders <> invalid AND mediaKeyXml@httpHeaders <> "" then
