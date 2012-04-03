@@ -266,8 +266,10 @@ Function videoCanDirectPlay(mediaItem) As Boolean
     end if
 
     if mediaItem.preferredPart <> invalid AND mediaItem.preferredPart.subtitles <> invalid then
-        subtitleFormat = firstOf(mediaItem.preferredPart.subtitles.codec, "")
+        subtitleStream = mediaItem.preferredPart.subtitles
+        subtitleFormat = firstOf(subtitleStream.codec, "")
     else
+        subtitleStream = invalid
         subtitleFormat = invalid
     end if
 
@@ -295,8 +297,8 @@ Function videoCanDirectPlay(mediaItem) As Boolean
     versionArr = GetGlobal("rokuVersionArr", [0])
     major = versionArr[0]
 
-    if subtitleFormat <> invalid AND subtitleFormat <> "srt" then
-        print "videoCanDirectPlay: subtitles not SRT"
+    if subtitleStream <> invalid AND NOT shouldUseSoftSubs(subtitleStream) then
+        print "videoCanDirectPlay: need to burn in subtitles"
         return false
     end if
 
@@ -627,5 +629,12 @@ Function videoGetEnumValue(key) As String
     next
 
     return invalid
+End Function
+
+Function shouldUseSoftSubs(stream) As Boolean
+    if RegRead("softsubtitles", "preferences", "1") = "0" then return false
+    if stream.codec <> "srt" then return false
+
+    return true
 End Function
 

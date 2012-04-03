@@ -167,6 +167,17 @@ Function createPreferencesScreen(viewController) As Object
         default: "0"
     }
 
+    ' Subtitle options
+    softsubtitles = [
+        { title: "Soft", EnumValue: "1", ShortDescriptionLine2: "Use soft subtitles whenever possible." },
+        { title: "Burned In", EnumValue: "0", ShortDescriptionLine2: "Always burn in selected subtitles." }
+    ]
+    obj.Prefs["softsubtitles"] = {
+        values: softsubtitles,
+        heading: "Allow Roku to show soft subtitles itself, or burn them in to videos?",
+        default: "1"
+    }
+
     ' Screensaver options
     screensaver = [
         { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Use the system screensaver" },
@@ -204,6 +215,8 @@ Sub showPreferencesScreen()
     m.AppendValue(invalid, m.GetEnumValue("level"))
     m.AddItem({title: "Direct Play"}, "directplay")
     m.AppendValue(invalid, m.GetEnumValue("directplay"))
+    m.AddItem({title: "Subtitles"}, "softsubtitles")
+    m.AppendValue(invalid, m.GetEnumValue("softsubtitles"))
 
     if major >= 4 AND device.hasFeature("5.1_surround_sound") then
         m.AddItem({title: "5.1 Support"}, "fivepointone")
@@ -254,7 +267,7 @@ Sub showPreferencesScreen()
                         end if
                     end if
                     m.Screen.SetItem(msg.GetIndex(), {title: getCurrentMyPlexLabel(m.myplex)})
-                else if command = "quality" OR command = "level" OR command = "fivepointone" OR command = "directplay" OR command = "screensaver" then
+                else if command = "quality" OR command = "level" OR command = "fivepointone" OR command = "directplay" OR command = "softsubtitles" OR command = "screensaver" then
                     m.HandleEnumPreference(command, msg.GetIndex())
                 else if command = "1080p" then
                     screen = create1080PreferencesScreen(m.ViewController)

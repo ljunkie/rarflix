@@ -339,7 +339,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
 
     if mediaItem <> invalid then
         part = mediaItem.preferredPart
-        if part <> invalid AND part.subtitles <> invalid AND part.subtitles.Codec = "srt" then
+        if part <> invalid AND part.subtitles <> invalid AND shouldUseSoftSubs(part.subtitles) then
             print "Disabling subtitle selection temporarily"
             video.SubtitleUrl = FullUrl(m.serverUrl, "", part.subtitles.key) + "?encoding=utf-8"
             m.UpdateSubtitleStreamSelection(part.id, "")
