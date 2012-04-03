@@ -55,6 +55,7 @@ Function createBaseMetadata(container, item) As Object
     metadata.Type = item@type
     metadata.Key = item@key
     metadata.Settings = item@settings
+    metadata.NodeName = item.GetName()
 
     metadata.viewGroup = container.ViewGroup
 

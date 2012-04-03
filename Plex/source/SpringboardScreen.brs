@@ -2,7 +2,11 @@
 '* Springboard screens on top of which audio/video players are used.
 '*
 
-Function createBaseSpringboardScreen(context, index, viewController) As Object
+Function itemIsRefreshable(item) As Boolean
+    return item.refresh <> invalid
+End Function
+
+Function createBaseSpringboardScreen(context, index, viewController, includePredicate=itemIsRefreshable) As Object
     obj = CreateObject("roAssociativeArray")
     port = CreateObject("roMessagePort")
     screen = CreateObject("roSpringboardScreen")
@@ -10,11 +14,18 @@ Function createBaseSpringboardScreen(context, index, viewController) As Object
 
     ' Filter out anything in the context that can't be shown on a springboard.
     contextCopy = []
+    i = 0
+    offset = 0
     for each item in context
-        if item.refresh <> invalid then
+        if includePredicate(item) then
             contextCopy.Push(item)
+        else if i < index then
+            offset = offset + 1
         end if
+        i = i + 1
     next
+
+    index = index - offset
 
     ' Standard properties for all our Screen types
     obj.Item = contextCopy[index]
@@ -42,14 +53,35 @@ Function createBaseSpringboardScreen(context, index, viewController) As Object
     return obj
 End Function
 
+Function itemIsPhoto(item) As Boolean
+    return item.NodeName = "Photo"
+End Function
+
 Function createPhotoSpringboardScreen(context, index, viewController) As Object
-    obj = createBaseSpringboardScreen(context, index, viewController)
+    obj = createBaseSpringboardScreen(context, index, viewController, itemIsPhoto)
 
     obj.AddButtons = photoAddButtons
     obj.GetMediaDetails = photoGetMediaDetails
     obj.HandleMessage = photoHandleMessage
-    
+    obj.CreateSlideShow = photoCreateSlideShow
+
     return obj
+End Function
+
+Function photoCreateSlideShow() As Object
+    slideshow = CreateObject("roSlideShow")
+    slideshow.SetMessagePort(m.Port)
+    slideshow.SetUnderscan(2.5)
+    'slideshow.SetBorderColor("#6b4226")
+    slideshow.SetMaxUpscale(8.0)
+    slideshow.SetDisplayMode("photo-fit")
+    slideshow.SetPeriod(6)
+    slideshow.SetTextOverlayHoldTime(2500)
+    if m.Item.server.AccessToken <> invalid then
+        slideshow.AddHeader("X-Plex-Token", m.Item.server.AccessToken)
+    end if
+
+    return slideshow
 End Function
 
 Function createVideoSpringboardScreen(context, index, viewController) As Object

@@ -1,29 +1,36 @@
 Function photoHandleMessage(msg) As Boolean
     server = m.Item.server
-    port = CreateObject("roMessagePort")
 
-    if msg.isButtonPressed() then
+    if type(msg) = "roSlideShowEvent" then
+        if msg.isPlaybackPosition() then
+            'm.CurIndex = msg.GetIndex()
+        else if msg.isRequestFailed() then
+            print "preload failed:"; msg.GetIndex()
+        else if msg.isRequestInterrupted() then
+            print "preload interrupted:"; msg.GetIndex()
+        else if msg.isPaused() then
+            print "paused"
+        else if msg.isResumed() then
+            print "resumed"
+        end if
+
+        return true
+    else if msg = invalid then
+    else if msg.isButtonPressed() then
         buttonCommand = m.buttonCommands[str(msg.getIndex())]
         print "Button command: ";buttonCommand
         if buttonCommand = "show" then
             Print "photoHandleMessage:: Show photo fullscreen"
-            url = FullUrl(m.item.server.serverurl, m.item.sourceurl, m.item.media[0].parts[0].key)
-            'Print "Url = ";url2
-            slideshow = SlideShowSetup(port, 5.0, "#6b4226", 6)
-            if server.AccessToken <> invalid then
-                slideshow.AddHeader("X-Plex-Token", server.AccessToken)
-            end if
-            pl = CreateObject("roList")
-            pl.Push(url)
-            DisplaySlideShow(port, slideshow, pl)
+            m.slideshow = m.CreateSlideShow()
+            m.slideshow.AddContent(m.item)
+            m.slideshow.SetNext(0, true)
+            m.slideshow.Show()
         else if buttonCommand = "slideshow" then
             Print "photoHandleMessage:: Start slideshow"
-            list = GetPhotoList(m.item.server, m.item.sourceurl)
-            slideshow = SlideShowSetup(port, 5.0, "#6b4226", 6)
-            if server.AccessToken <> invalid then
-                slideshow.AddHeader("X-Plex-Token", server.AccessToken)
-            end if
-            DisplaySlideShow(port, slideshow, list)
+            m.slideshow = m.CreateSlideShow()
+            m.slideshow.SetContentList(m.Context)
+            m.slideshow.SetNext(m.CurIndex, true)
+            m.slideshow.Show()
         else if buttonCommand = "next" then
             Print "photoHandleMessage:: show next photo"
              m.GotoNextItem()

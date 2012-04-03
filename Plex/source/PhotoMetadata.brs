@@ -22,8 +22,33 @@ Function newPhotoMetadata(container, item, detailed=true) As Object
     if photo.Type = invalid then photo.Type = "photo"
     photo.media = ParsePhotoMedia(item)
 
-    'Print "item = ";item
-    'Print "photo = ";photo
+    if photo.media.Count() > 0 AND photo.media[0].preferredPart <> invalid then
+        photo.Url = FullUrl(photo.server.serverUrl, photo.sourceUrl, photo.media[0].preferredPart.key)
+    else
+        photo.Url = FullUrl(photo.server.serverUrl, photo.sourceUrl, photo.key)
+    end if
+
+    photo.TextOverlayUL = photo.Title
+    photo.TextOverlayBody = item@summary
+
+    ' If there's no thumb, make a thumb out of the full URL.
+    if photo.SDPosterURL = invalid OR Left(photo.SDPosterURL, 4) = "file" then
+        sizes = ImageSizes("photos", "photo")
+        photo.SDPosterURL = photo.server.TranscodedImage("", photo.Url, sizes.sdWidth, sizes.sdHeight)
+        photo.HDPosterURL = photo.server.TranscodedImage("", photo.Url, sizes.hdWidth, sizes.hdHeight)
+    end if
+
+    ' Transcode if necessary
+    if photo.media.Count() > 0 then
+        format = firstOf(photo.media[0].container, "JPEG")
+        ' JPEG and PNG are documented, GIF appears to work fine
+        if format <> "JPEG" AND format <> "PNG" AND format <> "GIF" then
+            print "Transcoding photo to JPEG from "; format
+            device = CreateObject("roDeviceInfo")
+            size = device.GetDisplaySize()
+            photo.Url = photo.server.TranscodedImage("", photo.Url, size.w.toStr(), size.h.toStr())
+        end if
+    end if
 
     return photo
 End Function

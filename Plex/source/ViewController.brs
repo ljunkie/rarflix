@@ -102,7 +102,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         ' Special case for all channels to force it into a special grid view
         screen = createGridScreen(m, "flat-square")
         names = ["Video Channels", "Music Channels", "Photo Channels"]
-        keys = ["/video", "/music", "/photo"]
+        keys = ["/video", "/music", "/photos"]
         fakeContainer = createFakePlexContainer(item.server, names, keys)
         screen.Loader = createPaginatedLoader(fakeContainer, 8, 25)
         screen.Loader.Listener = screen

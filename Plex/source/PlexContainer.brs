@@ -109,7 +109,7 @@ Sub containerParseXml()
             metadata = newVideoMetadata(m, n, m.ParseDetails)
         else if nodeType = "track" OR n.GetName() = "Track" then
             metadata = newTrackMetadata(m, n, m.ParseDetails)
-        else if nodeType = "photo" then
+        else if nodeType = "photo" OR n.GetName() = "Photo" then
             metadata = newPhotoMetadata(m, n, m.ParseDetails)
         else if n.GetName() = "Setting" then
             metadata = newSettingMetadata(m, n)
