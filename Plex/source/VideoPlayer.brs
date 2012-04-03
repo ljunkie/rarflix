@@ -230,6 +230,11 @@ Sub playVideo(seekValue=0, directPlayOptions=0)
             m.OrigQuality = dialog.Quality
         end if
     end if
+
+    if m.metadata.RestoreSubtitleID <> invalid then
+        print "Restoring subtitle selection"
+        server.UpdateSubtitleStreamSelection(m.metadata.RestoreSubtitlePartID, m.metadata.RestoreSubtitleID)
+    end if
 End Sub
 
 Sub qualityHandleButton(key)
@@ -251,11 +256,6 @@ Sub qualityHandleButton(key)
             RegWrite("quality", newQuality.tostr(), "preferences")
             m.Quality = newQuality.tostr()
         end if
-    end if
-
-    if metadata.RestoreSubtitleID <> invalid then
-        print "Restoring subtitle selection"
-        server.UpdateSubtitleStreamSelection(metadata.RestoreSubtitlePartID, metadata.RestoreSubtitleID)
     end if
 End Sub
 
