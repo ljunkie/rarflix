@@ -635,6 +635,26 @@ Function shouldUseSoftSubs(stream) As Boolean
     if RegRead("softsubtitles", "preferences", "1") = "0" then return false
     if stream.codec <> "srt" then return false
 
+    ' TODO(schuyler) If Roku adds support for non-Latin characters, remove
+    ' this hackery. If people start complaining about other languages, add
+    ' to this hackery.
+
+    if m.HardSubLanguages = invalid then
+        m.HardSubLanguages = {
+            ara: 1,
+            chi: 1,
+            gre: 1,
+            heb: 1,
+            hin: 1,
+            jpn: 1,
+            kor: 1,
+            rus: 1,
+            yid: 1
+        }
+    end if
+
+    if stream.languageCode <> invalid AND m.HardSubLanguages.DoesExist(stream.languageCode) then return false
+
     return true
 End Function
 

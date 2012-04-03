@@ -256,6 +256,7 @@ Function ParseVideoMedia(videoItem) As Object
 				stream.streamType = StreamItem@streamType
 				stream.codec = StreamItem@codec
 				stream.language = StreamItem@language
+                stream.languageCode = StreamItem@languageCode
 				stream.selected = StreamItem@selected
 				stream.channels = StreamItem@channels
                 stream.key = StreamItem@key
