@@ -109,8 +109,12 @@ Function newTrackMetadata(container, item, detailed=true) As Object
         print "Audio codec wasn't set, inferred "; codec
     end if
 
-    ' If it's a .m4a, it was probably an iTunes AAC file.
-    if codec = "m4a" then codec = "aac"
+    ' If it's a .m4a, we're probably in the iTunes channel, and we don't know
+    ' if it's AAC or ALAC. If the server supports transcoding, play it safe
+    ' and transcode. If it doesn't, call it AAC and hope for the best.
+    if codec = "m4a" AND NOT track.server.SupportsAudioTranscoding then
+        codec = "aac"
+    end if
 
     if codec = "mp3" OR codec = "wma" OR codec = "aac" then
         track.StreamFormat = codec
