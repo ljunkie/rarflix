@@ -99,9 +99,7 @@ Function newTrackMetadata(container, item, detailed=true) As Object
         codec = media@audioCodec
         key = part@key
     else
-        ' TODO(schuyler): How are we supposed to figure this out? Infer from
-        ' the URL, hoping that it has an extension in a predictable place?
-        codec = "mp3"
+        codec = invalid
         key = item@key
     end if
 
@@ -110,6 +108,9 @@ Function newTrackMetadata(container, item, detailed=true) As Object
         codec = key.Tokenize(".").Peek()
         print "Audio codec wasn't set, inferred "; codec
     end if
+
+    ' If it's a .m4a, it was probably an iTunes AAC file.
+    if codec = "m4a" then codec = "aac"
 
     if codec = "mp3" OR codec = "wma" OR codec = "aac" then
         track.StreamFormat = codec
