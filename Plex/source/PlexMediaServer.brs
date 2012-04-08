@@ -546,7 +546,7 @@ Function TranscodingAudioUrl(audioUrl As String, item As Object)
     ' If we don't pass a bitrate the server uses 64k, which we don't want.
     ' There was a rumor that the Roku didn't support 48000 samples, but that
     ' doesn't seem to be true.
-    query = query + "&audioBitrate=160&audioSamples=44100"
+    query = query + "&audioBitrate=320&audioSamples=44100"
     query = query + "&url=" + HttpEncode(location)
     query = query + "&X-Plex-Client-Capabilities=" + HttpEncode(Capabilities())
 
