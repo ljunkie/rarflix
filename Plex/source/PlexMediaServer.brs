@@ -584,14 +584,11 @@ Function Capabilities(recompute=false) As String
     major = versionArr[0]
 
     if device.HasFeature("5.1_surround_sound") and major >= 4 then
-        if not(RegExists("fivepointone", "preferences")) then
-            RegWrite("fivepointone", "1", "preferences")
-        end if
-        fiveone = RegRead("fivepointone", "preferences")
+        fiveone = RegRead("fivepointone", "preferences", "1")
         print "5.1 support set to: ";fiveone
         
         if fiveone <> "2" then
-            audio="ac3{channels:6}"
+            audio = audio + ",ac3{channels:6}"
         else
             print "5.1 support disabled via Tweaks"
         end if
