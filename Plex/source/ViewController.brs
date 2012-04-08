@@ -79,6 +79,8 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen = createAudioSpringboardScreen(context, contextIndex, m)
         if screen = invalid then return invalid
     else if contentType = "section" then
+        RegWrite("lastMachineID", item.server.machineID)
+        RegWrite("lastSectionKey", item.key)
         screen = createGridScreenForItem(item, m, "flat-movie")
     else if contentType = "photo" then
         if right(item.key, 8) = "children" then

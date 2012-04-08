@@ -81,6 +81,9 @@ Function createHomeScreen(viewController) As Object
     prefs.HDPosterURL = "file://pkg:/images/gear.png"
     obj.contentArray[obj.MiscRow].content.Push(prefs)
 
+    obj.lastMachineID = RegRead("lastMachineID")
+    obj.lastSectionKey = RegRead("lastSectionKey")
+
     return obj
 End Function
 
@@ -339,6 +342,9 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
             m.Screen.Screen.SetListVisible(m.SharedSectionsRow, false)
         end if
 
+        m.Screen.hasBeenFocused = false
+        m.Screen.ignoreNextFocus = true
+
         if type(m.Screen.Screen) = "roGridScreen" then
             m.Screen.Screen.SetFocusedListItem(m.SectionsRow, 0)
         else
@@ -546,6 +552,16 @@ Function homeHandleMessage(msg) As Boolean
                 end if
             else
                 m.Screen.OnDataLoaded(request.row, status.content, startItem, countLoaded, true)
+            end if
+
+            if m.Screen.hasBeenFocused = false AND request.row = m.SectionsRow AND type(m.Screen.Screen) = "roGridScreen" AND request.server.machineID = m.lastMachineID then
+                print "Trying to focus last used section"
+                for i = 0 to status.content.Count() - 1
+                    if status.content[i].key = m.lastSectionKey then
+                        m.Screen.Screen.SetFocusedListItem(request.row, i)
+                        exit for
+                    end if
+                next
             end if
         else if request.requestType = "queue" then
             response = CreateObject("roAssociativeArray")

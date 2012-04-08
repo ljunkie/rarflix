@@ -40,6 +40,8 @@ Function createGridScreen(viewController, style="flat-movie") As Object
     screen.gridStyle = style
     screen.upBehavior = "exit"
     screen.hasData = false
+    screen.hasBeenFocused = false
+    screen.ignoreNextFocus = false
 
     screen.OnDataLoaded = gridOnDataLoaded
 
@@ -179,6 +181,12 @@ Function showGridScreen() As Integer
 
                 m.selectedRow = msg.GetIndex()
                 m.focusedIndex = msg.GetData()
+
+                if m.ignoreNextFocus then
+                    m.ignoreNextFocus = false
+                else
+                    m.hasBeenFocused = true
+                end if
 
                 if m.selectedRow < 0 OR m.selectedRow >= names.Count() then
                     print "Ignoring grid ListItemFocused event for bogus row:"; msg.GetIndex()
