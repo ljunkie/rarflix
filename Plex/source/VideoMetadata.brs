@@ -295,7 +295,7 @@ Function PickMediaItem(mediaItems) As Object
             if best = invalid then best = mediaItem
 
             ' If it looks like direct play would work, return it immediately
-            if (mediaItem.optimized = "true" OR mediaItem.optimized = "1") AND mediaItem.container = "mp4" AND mediaItem.videoCodec = "h264" AND (mediaItem.audioCodec = "aac" OR mediaItem.audioCodec = "mp3") then
+            if mediaItem.container = "mp4" AND mediaItem.videoCodec = "h264" AND (mediaItem.audioCodec = "aac" OR mediaItem.audioCodec = "mp3") then
                 return mediaItem
             end if
         end if

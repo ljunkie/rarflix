@@ -308,11 +308,6 @@ Function videoCanDirectPlay(mediaItem) As Boolean
     end if
 
     if mediaItem.container = "mp4" OR mediaItem.container = "mov" OR mediaItem.container = "m4v" then
-        if (mediaItem.optimized <> "true" AND mediaItem.optimized <> "1")
-            print "videoCanDirectPlay: media is not optimized"
-            return false
-        end if
-
         if (mediaItem.videoCodec <> "h264" AND mediaItem.videoCodec <> "mpeg4") then
             print "videoCanDirectPlay: vc not h264/mpeg4"
             return false
