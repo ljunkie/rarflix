@@ -220,7 +220,8 @@ Sub playVideo(seekValue=0, directPlayOptions=0)
         dialog = createBaseDialog()
         dialog.Title = "Quality Too High"
         dialog.Text = "We seem to have had a hard time playing that video. You may get better results with a lower quality setting."
-        dialog.Buttons = {ok: "Ok", quality: "Lower the quality setting now"}
+        dialog.SetButton("ok", "Ok")
+        dialog.SetButton("quality", "Lower the quality setting now")
         dialog.HandleButton = qualityHandleButton
         dialog.Quality = m.OrigQuality
         dialog.Show()
@@ -237,7 +238,7 @@ Sub playVideo(seekValue=0, directPlayOptions=0)
     end if
 End Sub
 
-Sub qualityHandleButton(key)
+Function qualityHandleButton(key, data) As Boolean
     if key = "quality" then
         print "Lowering quality from original value: "; m.Quality
         quality = m.Quality.toint()
@@ -257,7 +258,8 @@ Sub qualityHandleButton(key)
             m.Quality = newQuality.tostr()
         end if
     end if
-End Sub
+    return true
+End Function
 
 Function videoCanDirectPlay(mediaItem) As Boolean
     if mediaItem = invalid then
