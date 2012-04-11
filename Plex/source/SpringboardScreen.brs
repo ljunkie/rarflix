@@ -19,6 +19,7 @@ Function createBaseSpringboardScreen(context, index, viewController, includePred
     for each item in context
         if includePredicate(item) then
             contextCopy.Push(item)
+            item.OrigIndex = i - offset
         else if i < index then
             offset = offset + 1
         end if
@@ -112,6 +113,43 @@ Function createVideoSpringboardScreen(context, index, viewController) As Object
     return obj
 End Function
 
+Sub SwapArray(arr, i, j)
+    if i <> j then
+        temp = arr[i]
+        arr[i] = arr[j]
+        arr[j] = temp
+    end if
+End Sub
+
+Sub audioShuffle(arr)
+    ' Our context is already a copy of the original, so we can safely shuffle
+    ' in place. Mixing up the list means that all the navigation will work as
+    ' expected without needing a bunch of special logic elsewhere.
+
+    ' Start by moving the current song to the front so we can easily play it.
+    SwapArray(m.Context, 0, m.CurIndex)
+    m.CurIndex = 0
+
+    for i = m.Context.Count() - 1 to 1 step -1
+        ' Note that we're only looping to 1, and Rnd doesn't return 0, so
+        ' the item we put at 0 will be left untouched.
+        SwapArray(m.Context, i, Rnd(i))
+    next
+
+    m.audioPlayer.SetContentList(m.Context)
+    m.audioPlayer.SetNext(m.CurIndex + 1)
+End Sub
+
+Sub audioUnshuffle(arr)
+    for i = 0 to m.Context.Count() - 1
+        SwapArray(m.Context, i, m.Context[i].OrigIndex)
+    next
+    m.CurIndex = m.Item.OrigIndex
+
+    m.audioPlayer.SetContentList(m.Context)
+    m.audioPlayer.SetNext(m.CurIndex + 1)
+End Sub
+
 Function createAudioSpringboardScreen(context, index, viewController) As Dynamic
     obj = createBaseSpringboardScreen(context, index, viewController)
 
@@ -137,8 +175,12 @@ Function createAudioSpringboardScreen(context, index, viewController) As Dynamic
     ' TODO: Do we want to loop? Always/Sometimes/Never/Preference?
     obj.audioPlayer.SetLoop(obj.Context.Count() > 1)
 
+    obj.IsShuffled = false
+    obj.Shuffle = audioShuffle
+    obj.Unshuffle = audioUnshuffle
+
     obj.audioPlayer.SetContentList(obj.Context)
-    obj.audioPlayer.SetNext(index)
+    obj.audioPlayer.SetNext(obj.CurIndex)
 
     obj.AddButtons      = audioPlayer_setbuttons
     obj.GetMediaDetails = audioGetMediaDetails
@@ -147,7 +189,7 @@ Function createAudioSpringboardScreen(context, index, viewController) As Dynamic
     ' In there isn't a single playable item in the list then the Roku has
     ' been observed to die a horrible death.
     obj.IsPlayable = false
-    for i = index to obj.Context.Count() - 1
+    for i = obj.CurIndex to obj.Context.Count() - 1
         url = obj.Context[i].Url
         if url <> invalid AND url <> "" then
             obj.IsPlayable = true

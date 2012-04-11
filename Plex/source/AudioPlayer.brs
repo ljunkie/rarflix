@@ -52,7 +52,7 @@ Sub audioPlayer_setbuttons(obj)
     if metadata.StarRating = invalid then
         metadata.StarRating = 0
     endif
-    screen.AddRatingButton(5, metadata.UserRating, metadata.StarRating)
+    screen.AddButton(6, "more...")
 End Sub
 
 REM ******************************************************
@@ -186,19 +186,58 @@ Function audioHandleMessage(msg) As Boolean
                 m.setPlayState(0) ' stop
                 newstate = 2
             end if
-        else if button = 5 ' rating
-            Print "audioHandleMessage:: Rate audio for key ";m.metadata.ratingKey
-            rateValue% = (msg.getData() /10)
-            m.metadata.UserRating = msg.getdata()
-            if m.metadata.ratingKey <> invalid then
-                server.Rate(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier, rateValue%.ToStr())
+        else if button = 6 ' more
+            m.dialog = createBaseDialog()
+            m.dialog.Title = ""
+            m.dialog.Text = ""
+            m.dialog.Item = m.metadata
+            if m.IsShuffled then
+                m.dialog.SetButton("shuffle", "Shuffle: On")
+            else
+                m.dialog.SetButton("shuffle", "Shuffle: Off")
             end if
+            m.dialog.SetButton("rate", "_rate_")
+            m.dialog.SetButton("close", "Back")
+            m.dialog.HandleButton = audioDialogHandleButton
+            m.dialog.ParentScreen = m
+            m.dialog.Show()
+            m.dialog.ParentScreen = invalid
+            m.dialog = invalid
         end if
         m.setPlayState(newstate)
         m.AddButtons(m)
         return true
     end if
 
+    return false
+End Function
+
+Function audioDialogHandleButton(command, data) As Boolean
+    ' We're evaluated in the context of the dialog, but we want to be in
+    ' the context of the original screen.
+    obj = m.ParentScreen
+
+    if command = "shuffle" then
+        if obj.IsShuffled then
+            obj.Unshuffle(obj.Context)
+            obj.IsShuffled = false
+            m.SetButton(command, "Shuffle: Off")
+        else
+            obj.Shuffle(obj.Context)
+            obj.IsShuffled = true
+            m.SetButton(command, "Shuffle: On")
+        end if
+        m.Refresh()
+    else if command = "rate" then
+        Print "audioHandleMessage:: Rate audio for key ";obj.metadata.ratingKey
+        rateValue% = (data /10)
+        obj.metadata.UserRating = data
+        if obj.metadata.ratingKey <> invalid then
+            obj.Item.server.Rate(obj.metadata.ratingKey, obj.metadata.mediaContainerIdentifier, rateValue%.ToStr())
+        end if
+    else if command = "close" then
+        return true
+    end if
     return false
 End Function
 
