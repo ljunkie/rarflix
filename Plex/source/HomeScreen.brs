@@ -722,7 +722,6 @@ Function getCurrentMyPlexLabel(myplex) As String
 End Function
 
 Sub ShowHelpScreen()
-    ' TODO(schuyler): Finalize content
     port = CreateObject("roMessagePort")
     screen = CreateObject("roParagraphScreen")
     screen.SetMessagePort(port)

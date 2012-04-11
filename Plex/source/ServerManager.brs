@@ -29,7 +29,6 @@ Function PlexMediaServers() As Object
             list.AddTail(server)
         end for
     end if
-    'list.AddTail(newPlexMediaServer("http://dn-1.com:32400", "dn-1"))
     return list
 End Function
 
