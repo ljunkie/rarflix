@@ -514,6 +514,10 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As 
         next
     next
 
+    ' TODO(schuyler): The subtitle size for burned in subs should be configurable,
+    ' but in the meantime, ask for something a little bigger than the default.
+    query = query + "&subtitleSize=125"
+
     publicKey = "KQMIY6GATPC63AIMC4R2"
     time = LinuxTime().tostr()
     msg = path + query + "@" + time
@@ -601,7 +605,7 @@ Function Capabilities(recompute=false) As String
 
     directPlayOptions = RegRead("directplay", "preferences", "0")
     if (major >= 4 AND directPlayOptions <> "4") OR directPlayOptions = "3" then
-        decoders = "videoDecoders=h264{profile:high&resolution:1080&level:"+ level + "};audioDecoders="+audio
+        decoders = "videoDecoders=mpeg4,h264{profile:high&resolution:1080&level:"+ level + "};audioDecoders="+audio
     else
         print "Disallowing direct streaming in capabilities string"
         decoders = "audioDecoders=" + audio
