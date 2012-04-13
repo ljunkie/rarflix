@@ -352,17 +352,25 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
 End Function
 
 Function stopTranscode()
-    stopTransfer = CreateObject("roUrlTransfer")
-    stopTransfer.SetUrl(m.serverUrl + "/video/:/transcode/segmented/stop")
-    stopTransfer.AddHeader("Cookie", m.Cookie) 
-    content = stopTransfer.GetToString()
+    if m.Cookie <> invalid then
+        stopTransfer = CreateObject("roUrlTransfer")
+        stopTransfer.SetUrl(m.serverUrl + "/video/:/transcode/segmented/stop")
+        stopTransfer.AddHeader("Cookie", m.Cookie) 
+        content = stopTransfer.GetToString()
+    else
+        print "Can't send stop request, cookie wasn't set"
+    end if
 End Function
 
 Function pingTranscode()
-    pingTransfer = CreateObject("roUrlTransfer")
-    pingTransfer.SetUrl(m.serverUrl + "/video/:/transcode/segmented/ping")
-    pingTransfer.AddHeader("Cookie", m.Cookie) 
-    content = pingTransfer.GetToString()
+    if m.Cookie <> invalid then
+        pingTransfer = CreateObject("roUrlTransfer")
+        pingTransfer.SetUrl(m.serverUrl + "/video/:/transcode/segmented/ping")
+        pingTransfer.AddHeader("Cookie", m.Cookie) 
+        content = pingTransfer.GetToString()
+    else
+        print "Can't send ping request, cookie wasn't set"
+    end if
 End Function
 
 '* Constructs a Full URL taking into account relative/absolute. Relative to the 
