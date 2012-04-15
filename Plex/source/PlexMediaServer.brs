@@ -272,6 +272,26 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
     print "Setting stream quality:";quality
     video.StreamQualities = [quality]
 
+	'Setup 1080p metadata 	
+    if videoRes = "1080" then
+        versionArr = GetGlobal("rokuVersionArr", [0])
+        major = versionArr[0]
+		if major < 4  then
+			if RegRead("legacy1080p","preferences") = "enabled" then
+				video.fullHD = true
+				video.framerate = 30
+				frSetting = RegRead("legacy1080pframerate","preferences")
+				if frSetting = "24" then
+					video.framerate = 24
+				else if frSetting = "auto" and item.preferredMediaItem.framerate = "24"					
+					video.framerate = 24
+				end if
+			end if
+		else 
+			video.fullHD = true
+		endif
+	endif
+
     if forceDirectPlay then
         if mediaItem = invalid then
             print "Can't direct play, plugin video has no media item!"
@@ -308,25 +328,11 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
 
     video.IsTranscoded = true
     
-	'Check to see if the video is fullHD or not
-    if RegRead("quality", "preferences") = "9" and videoRes = "1080" then
-        versionArr = GetGlobal("rokuVersionArr", [0])
-        major = versionArr[0]
-		if major < 4  then
-			if RegRead("legacy1080p","preferences") = "enabled" then
-				video.fullHD = true
-				video.framerate = 30
-				frSetting = RegRead("legacy1080pframerate","preferences")
-				if frSetting = "24" then
-					video.framerate = 24
-				else if frSetting = "auto" and item.preferredMediaItem.framerate = "24"					
-					video.framerate = 24
-				end if
-			end if
-		else 
-			video.fullHD = true
-		endif
+	'We are transcoding, don't set fullHD if quality isn't 1080p
+    if RegRead("quality", "preferences") <> "9" then
+        video.fullHD = False
 	endif
+	
 	printAA(video)
     video.StreamBitrates = [0]
     video.StreamFormat = "hls"
