@@ -100,6 +100,22 @@ Function AddUnnamedServer(address) As Boolean
     validating.ShowBusyAnimation()
     validating.Show()
 
+    ' See if the user misunderstood and entered the Roku's IP
+    device = CreateObject("roDeviceInfo")
+    addrs = device.GetIPAddrs()
+    for each iface in addrs
+        ip = addrs[iface]
+        print "Roku IP: "; ip
+        if ip = address then
+            dialog = createBaseDialog()
+            dialog.Facade = validating
+            dialog.Title = "Error"
+            dialog.Text = address + " is the IP address of the Roku, enter the IP address of the Plex Media Server."
+            dialog.Show()
+            return false
+        end if
+    next
+
     orig = address
     if left(address, 4) <> "http" then
         address = "http://" + address
