@@ -241,6 +241,10 @@ Function ParseVideoMedia(videoItem) As Object
         ' Translate any containers that Roku expects to see with a different name
         if media.container = "asf" then media.container = "wmv"
 
+        if MediaItem@protocol = "hls" then
+            media.container = "hls"
+        end if
+
         media.optimized = MediaItem@optimizedForStreaming
 		media.parts = CreateObject("roArray", 3, true)
 		for each MediaPart in MediaItem.Part

@@ -367,6 +367,20 @@ Function videoCanDirectPlay(mediaItem) As Boolean
         return true
     end if
 
+    if mediaItem.container = "hls" then
+        if mediaItem.videoCodec <> "h264" then
+            print "videoCanDirectPlay: vc not h264"
+            return false
+        end if
+
+        if (mediaItem.audioCodec <> "aac" AND mediaItem.audioCodec <> "ac3" AND mediaItem.audioCodec <> "mp3") then
+            print "videoCanDirectPlay: ac not aac/ac3/mp3"
+            return false
+        end if
+
+        return true
+    end if
+
     return false
 End Function
 
