@@ -157,40 +157,41 @@ Sub playVideo(seekValue=0, directPlayOptions=0)
     end if
 
     videoItem = server.ConstructVideoItem(metadata, seconds, directPlayOptions < 3, directPlayOptions = 1 OR directPlayOptions = 2)
+
     if videoItem = invalid then
         print "Can't play video, server was unable to construct video item"
-        return
-    end if
-
-    port = CreateObject("roMessagePort")
-    videoPlayer = CreateObject("roVideoScreen")
-    videoPlayer.SetMessagePort(port)
-    videoPlayer.SetContent(videoItem)
-
-    if server.AccessToken <> invalid then
-        videoPlayer.AddHeader("X-Plex-Token", server.AccessToken)
-    end if
-
-    if videoItem.IsTranscoded then
-        cookie = server.StartTranscode(videoItem.StreamUrls[0])
-        if cookie <> invalid then
-            videoPlayer.AddHeader("Cookie", cookie)
-        end if
+        success = false
     else
-        for each header in videoItem.IndirectHttpHeaders
-            for each name in header
-                videoPlayer.AddHeader(name, header[name])
+        port = CreateObject("roMessagePort")
+        videoPlayer = CreateObject("roVideoScreen")
+        videoPlayer.SetMessagePort(port)
+        videoPlayer.SetContent(videoItem)
+
+        if server.AccessToken <> invalid then
+            videoPlayer.AddHeader("X-Plex-Token", server.AccessToken)
+        end if
+
+        if videoItem.IsTranscoded then
+            cookie = server.StartTranscode(videoItem.StreamUrls[0])
+            if cookie <> invalid then
+                videoPlayer.AddHeader("Cookie", cookie)
+            end if
+        else
+            for each header in videoItem.IndirectHttpHeaders
+                for each name in header
+                    videoPlayer.AddHeader(name, header[name])
+                next
             next
-        next
+        end if
+
+        videoPlayer.SetPositionNotificationPeriod(5)
+        videoPlayer.Show()
+
+        success = videoMessageLoop(server, metadata, port, videoItem.IsTranscoded)
     end if
-
-    videoPlayer.SetPositionNotificationPeriod(5)
-    videoPlayer.Show()
-
-    success = videoMessageLoop(server, metadata, port, videoItem.IsTranscoded)
 
     if NOT success then
-        if videoItem.IsTranscoded then
+        if (videoItem <> invalid AND videoItem.IsTranscoded) OR directPlayOptions >= 3 then
             ' Nothing left to fall back to, tell the user
             dialog = createBaseDialog()
             dialog.Title = "Video Unavailable"
@@ -510,42 +511,44 @@ Function createVideoOptionsScreen(item, viewController) As Object
 
     subtitleStreams.Push({ title: "No Subtitles", EnumValue: "" })
 
-    for each stream in item.preferredMediaItem.preferredPart.streams
-        if stream.streamType = "2" then
-            language = firstOf(stream.Language, "Unknown")
-            format = ucase(firstOf(stream.Codec, ""))
-            if format = "DCA" then format = "DTS"
-            if stream.Channels <> invalid then
-                if stream.Channels = "2" then
-                    format = format + " Stereo"
-                else if stream.Channels = "6" then
-                    format = format + " 5.1"
-                else if stream.Channels = "8" then
-                    format = format + " 7.1"
+    if item.preferredMediaItem <> invalid AND item.preferredMediaItem.preferredPart <> invalid then
+        for each stream in item.preferredMediaItem.preferredPart.streams
+            if stream.streamType = "2" then
+                language = firstOf(stream.Language, "Unknown")
+                format = ucase(firstOf(stream.Codec, ""))
+                if format = "DCA" then format = "DTS"
+                if stream.Channels <> invalid then
+                    if stream.Channels = "2" then
+                        format = format + " Stereo"
+                    else if stream.Channels = "6" then
+                        format = format + " 5.1"
+                    else if stream.Channels = "8" then
+                        format = format + " 7.1"
+                    end if
                 end if
-            end if
-            if format <> "" then
-                title = language + " (" + format + ")"
-            else
-                title = language
-            end if
-            if stream.selected <> invalid then
-                defaultAudio = stream.Id
-            end if
+                if format <> "" then
+                    title = language + " (" + format + ")"
+                else
+                    title = language
+                end if
+                if stream.selected <> invalid then
+                    defaultAudio = stream.Id
+                end if
 
-            audioStreams.Push({ title: title, EnumValue: stream.Id })
-        else if stream.streamType = "3" then
-            language = firstOf(stream.Language, "Unknown")
-            if stream.Codec = "srt" then
-                language = language + " (*)"
-            end if
-            if stream.selected <> invalid then
-                defaultSubtitle = stream.Id
-            end if
+                audioStreams.Push({ title: title, EnumValue: stream.Id })
+            else if stream.streamType = "3" then
+                language = firstOf(stream.Language, "Unknown")
+                if stream.Codec = "srt" then
+                    language = language + " (*)"
+                end if
+                if stream.selected <> invalid then
+                    defaultSubtitle = stream.Id
+                end if
 
-            subtitleStreams.Push({ title: language, EnumValue: stream.Id })
-        end if
-    next
+                subtitleStreams.Push({ title: language, EnumValue: stream.Id })
+            end if
+        next
+    end if
 
     ' Audio streams
     print "Found audio streams:"; audioStreams.Count()

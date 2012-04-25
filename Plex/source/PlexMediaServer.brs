@@ -296,6 +296,9 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
         if mediaItem = invalid then
             print "Can't direct play, plugin video has no media item!"
             return invalid
+        else if left(mediaKey, 5) = "plex:" then
+            print "Can't direct play plex: URLs: "; mediaKey
+            return invalid
         else
             video.IndirectHttpHeaders = headers
             m.AddDirectPlayInfo(video, item, mediaKey)
