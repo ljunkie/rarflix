@@ -19,9 +19,9 @@ Function createMyPlexManager(viewController) As Object
     obj.ExtraHeaders["X-Plex-Device"] = GetGlobal("rokuModel")
     obj.ExtraHeaders["X-Plex-Client-Identifier"] = GetGlobal("rokuUniqueID")
 
-    print "myPlex headers"
+    Debug("myPlex headers")
     for each name in obj.ExtraHeaders
-        print name + ": " + obj.ExtraHeaders[name]
+        Debug(name + ": " + obj.ExtraHeaders[name])
     next
 
     obj.ViewController = viewController
@@ -37,6 +37,7 @@ Function createMyPlexManager(viewController) As Object
     obj.ConstructVideoItem = pmsConstructVideoItem
     obj.GetQueryResponse = mpGetQueryResponse
     obj.AddDirectPlayInfo = pmsAddDirectPlayInfo
+    obj.Log = mpLog
 
     ' Commands, mostly use the PMS functions
     obj.SetProgress = progress
@@ -95,7 +96,7 @@ Function mpShowPinScreen() As Object
         msg = wait(5000, port)
         if msg = invalid AND pollRequest = invalid AND pollUrl <> invalid then
             ' Our 5 second timeout, check the server
-            print "Polling for myPlex PIN update at "; pollUrl
+            Debug("Polling for myPlex PIN update at " + pollUrl)
             pollRequest = m.CreateRequest("", pollUrl)
             pollRequest.SetPort(port)
             pollRequest.AsyncGetToString()
@@ -116,7 +117,7 @@ Function mpShowPinScreen() As Object
         else if type(msg) = "roUrlEvent" AND msg.GetInt() = 1 then
             if codeRequest <> invalid AND codeRequest.GetIdentity() = msg.GetSourceIdentity() then
                 if msg.GetResponseCode() <> 201 then
-                    print "Request for new PIN failed:"; msg.GetResponseCode(); " - "; msg.GetFailureReason()
+                    Debug("Request for new PIN failed:" + tostr(msg.GetResponseCode()) + " - " + tostr(msg.GetFailureReason()))
                     dialog = createBaseDialog()
                     dialog.Title = "Server unavailable"
                     dialog.Text = "The myPlex server couldn't be reached, please try again later."
@@ -127,7 +128,7 @@ Function mpShowPinScreen() As Object
                     xml.Parse(msg.GetString())
                     screen.SetRegistrationCode(xml.code.GetText())
 
-                    print "Got a PIN ("; xml.code.GetText(); ") that expires at "; xml.GetNamedElements("expires-at").GetText()
+                    Debug("Got a PIN (" + tostr(xml.code.GetText()) + ") that expires at " + tostr(xml.GetNamedElements("expires-at").GetText()))
                 end if
 
                 codeRequest = invalid
@@ -137,7 +138,7 @@ Function mpShowPinScreen() As Object
                     xml.Parse(msg.GetString())
                     token = xml.auth_token.GetText()
                     if len(token) > 0 then
-                        print "Got a myPlex token"
+                        Debug("Got a myPlex token")
                         if m.ValidateToken(token) then
                             RegWrite("AuthToken", token, "myplex")
                         end if
@@ -145,7 +146,7 @@ Function mpShowPinScreen() As Object
                     end if
                 else
                     ' 404 is expected for expired pins, but treat all errors as expired
-                    print "Expiring PIN, server response was"; msg.GetResponseCode()
+                    Debug("Expiring PIN, server response was" + tostr(msg.GetResponseCode())
                     screen.SetRegistrationCode("code expired")
                     pollUrl = invalid
                 end if
@@ -173,9 +174,9 @@ Function mpValidateToken(token) As Boolean
         m.IsSignedIn = true
         m.AuthToken = token
 
-        print "Validated myPlex token, corresponds to "; m.EmailAddress
+        Debug("Validated myPlex token, corresponds to " + tostr(m.EmailAddress))
     else
-        print "Failed to validate myPlex token"
+        Debug("Failed to validate myPlex token")
         m.IsSignedIn = false
     end if
 
@@ -219,7 +220,7 @@ Function mpCheckTranscodeServer(showError=false As Boolean) As Boolean
             dlg.Text = "Your Roku needs a bit of help to play this. This video is in a format that your Roku doesn't understand. To play it, you need to connect to your Plex Media Server, which can convert it in real time to a more friendly format."
             dlg.Show()
         end if
-        print "myPlex operation failed due to lack of primary server"
+        Debug("myPlex operation failed due to lack of primary server")
         return false
     end if
 
@@ -264,7 +265,7 @@ Function mpTranscodedImage(queryUrl, imagePath, width, height) As String
     else if Left(imagePath, 4) = "http" then
         return imagePath
     else
-        print "Don't know how to transcode image: "; queryUrl; ", "; imagePath
+        Debug("Don't know how to transcode image: " + tostr(queryUrl) + ", " + tostr(imagePath))
         return ""
     end if
 End Function
@@ -272,7 +273,7 @@ End Function
 Sub mpDelete(id)
     if id <> invalid then
         commandUrl = m.serverUrl + "/pms/playlists/queue/items/" + id
-        print "Executing delete command: "; commandUrl
+        Debug("Executing delete command: " + commandUrl)
         request = m.CreateRequest("", commandUrl)
         request.PostFromString("_method=DELETE")
     end if
@@ -280,7 +281,7 @@ End Sub
 
 Function mpExecuteCommand(commandPath)
     commandUrl = m.serverUrl + "/pms" + commandPath
-    print "Executing command with full command URL: "; commandUrl
+    Debug("Executing command with full command URL: " + commandUrl)
     request = m.CreateRequest("", commandUrl)
     request.AsyncGetToString()
 
@@ -289,7 +290,7 @@ End Function
 
 Function mpExecutePostCommand(commandPath)
     commandUrl = m.serverUrl + "/pms" + commandPath
-    print "Executing POST command with full command URL: "; commandUrl
+    Debug("Executing POST command with full command URL: " + commandUrl)
     request = m.CreateRequest("", commandUrl)
     request.AsyncPostFromString("")
 
@@ -300,11 +301,11 @@ Function mpGetQueryResponse(sourceUrl, key) As Object
     xmlResult = CreateObject("roAssociativeArray")
     xmlResult.server = m
     httpRequest = m.CreateRequest(sourceUrl, key)
-    print "Fetching content from server at query URL:"; httpRequest.GetUrl()
+    Debug("Fetching content from server at query URL:" + tostr(httpRequest.GetUrl()))
     response = GetToStringWithTimeout(httpRequest, 60)
     xml=CreateObject("roXMLElement")
     if not xml.Parse(response) then
-        print "Can't parse feed:";response
+        Debug("Can't parse feed:" + tostr(response))
     endif
 
     xmlResult.xml = xml
@@ -312,4 +313,8 @@ Function mpGetQueryResponse(sourceUrl, key) As Object
 
     return xmlResult
 End Function
+
+Sub mpLog(msg, level, timeout)
+    ' Noop, only defined to implement PlexMediaServer "interface"
+End Sub
 

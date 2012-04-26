@@ -65,9 +65,6 @@ Sub containerParseXml()
 
     nodes = m.xml.GetChildElements()
     for each n in nodes
-        'Print "Processing node of type "; n@type; " and view group: "; m.ViewGroup
-        'Print "Node name = ";n.GetName()
-
         nodeType = firstOf(n@type, m.ViewGroup)
 
         if n@scanner <> invalid then

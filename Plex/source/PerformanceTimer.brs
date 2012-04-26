@@ -17,7 +17,7 @@ Function createPerformanceTimer() As Object
 End Function
 
 Function timerPrintElapsedTime(msg As String, mark=True As Boolean)
-    Print msg; " took: "; itostr(m.timer.TotalMilliseconds()); "ms"
+    Debug(msg + " took: " + itostr(m.timer.TotalMilliseconds()) + "ms")
     if mark then m.timer.Mark()
 End Function
 

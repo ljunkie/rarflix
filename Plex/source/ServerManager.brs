@@ -4,13 +4,13 @@
 ' * Obtain a list of all configured servers. 
 Function PlexMediaServers() As Object
     servers = RegRead("serverList", "servers")
-    print "Registry Server list string: ";servers
+    Debug("Registry Server list string: " + tostr(servers))
     list = CreateObject("roList")
     if servers <> invalid
         ' { is an illegal URL character so use a deliminator
         serverTokens = strTokenize(servers, "{")
         for each token in serverTokens
-            print "Server token:";token
+            Debug("Server token:" + token)
             ' another illegal char to delim IP and name
             serverDetails = strTokenize(token, "\")
             address = serverDetails[0]
@@ -37,14 +37,14 @@ Function RemoveAllServers()
 End Function
 
 Function RemoveServer(index) 
-    print "Removing server with index:";index
+    Debug("Removing server with index:" + tostr(index))
     servers = RegRead("serverList", "servers")
     RemoveAllServers()
     if servers <> invalid
         serverTokens = strTokenize(servers, "{")
         counter = 0
         for each token in serverTokens
-            print "Server token:";token
+            Debug("Server token: " + token)
             serverDetails = strTokenize(token, "\")
             address = serverDetails[0]
             name = serverDetails[1]
@@ -56,7 +56,7 @@ Function RemoveServer(index)
             if counter <> index then
                 AddServer(name, address, machineID)
             else
-                print "Not adding server back to list:";name
+                Debug("Not adding server back to list: " + tostr(name))
                 DeletePlexMediaServer(machineID)
             end if
             counter = counter + 1
@@ -68,9 +68,9 @@ End Function
 ' * time which allows off-line servers to be specified. Checking for dupes,
 ' * usually based on machine ID, should be done by the caller.
 Sub AddServer(name, address, machineID)
-    print "Adding server to saved list: ";name
-    print "With address: ";address
-    print "With machine ID: "; machineID
+    Debug("Adding server to saved list: " + tostr(name))
+    Debug("With address: " + tostr(address))
+    Debug("With machine ID: " + tostr(machineID))
 
     serverStr = address + "\" + name
     if machineID <> invalid then
@@ -93,7 +93,7 @@ Sub AddServer(name, address, machineID)
 End Sub
 
 Function AddUnnamedServer(address) As Boolean
-    print "Adding unnamed server to saved list:";address
+    Debug("Adding unnamed server to saved list:" + address)
 
     validating = CreateObject("roOneLineDialog")
     validating.SetTitle("Validating Plex Media Servers ...")
@@ -105,7 +105,7 @@ Function AddUnnamedServer(address) As Boolean
     addrs = device.GetIPAddrs()
     for each iface in addrs
         ip = addrs[iface]
-        print "Roku IP: "; ip
+        Debug("Roku IP: " + ip)
         if ip = address then
             dialog = createBaseDialog()
             dialog.Facade = validating
@@ -125,17 +125,17 @@ Function AddUnnamedServer(address) As Boolean
         address = address + ":32400"
     end if
 
-    print "Trying to validate server at "; address
+    Debug("Trying to validate server at " + address)
 
     httpRequest = NewHttp(address)
     response = httpRequest.GetToStringWithTimeout(60)
     xml=CreateObject("roXMLElement")
     if xml.Parse(response) then
-        print "Got server response, version "; xml@version
+        Debug("Got server response, version " + tostr(xml@version))
 
         server = GetPlexMediaServer(xml@machineIdentifier)
         if server <> invalid AND server.IsConfigured then
-            print "Duplicate server machine ID, ignoring"
+            Debug("Duplicate server machine ID, ignoring")
             dialog = createBaseDialog()
             dialog.Facade = validating
             dialog.Title = "Error"
@@ -145,7 +145,7 @@ Function AddUnnamedServer(address) As Boolean
             AddServer(xml@friendlyName, address, xml@machineIdentifier)
             return true
         else
-            print "Server version is insufficient"
+            Debug("Server version is insufficient")
             dialog = createBaseDialog()
             dialog.Facade = validating
             dialog.Title = "Error"
@@ -153,7 +153,7 @@ Function AddUnnamedServer(address) As Boolean
             dialog.Show()
         end if
     else
-        print "No response from server"
+        Debug("No response from server")
         dialog = createBaseDialog()
         dialog.Facade = validating
         dialog.Title = "Error"
@@ -175,7 +175,7 @@ Function DiscoverPlexMediaServers()
     gdm = createGDMDiscovery(port)
 
     if gdm = invalid then
-        print "Failed to create GDM Discovery object"
+        Debug("Failed to create GDM Discovery object")
         return 0
     end if
 
@@ -185,7 +185,7 @@ Function DiscoverPlexMediaServers()
     while true
         msg = wait(timeout, port)
         if msg = invalid then
-            print "Canceling GDM discovery after timeout, servers found:"; found
+            Debug("Canceling GDM discovery after timeout, servers found:" + tostr(found))
             gdm.Stop()
             exit while
         else if type(msg) = "roSocketEvent" then
@@ -195,7 +195,7 @@ Function DiscoverPlexMediaServers()
             if server <> invalid then
                 existing = GetPlexMediaServer(server.MachineID)
                 if existing <> invalid AND existing.IsConfigured then
-                    print "GDM discovery ignoring already configured server"
+                    Debug("GDM discovery ignoring already configured server")
                 else
                     AddServer(server.Name, server.Url, server.MachineID)
                     pms = newPlexMediaServer(server.Url, server.Name, server.MachineID)
@@ -234,7 +234,7 @@ Function ServerVersionCompare(versionStr, minVersion) As Boolean
 End Function
 
 Function createGDMDiscovery(port)
-    print "IN GDMFind"
+    Debug("IN GDMFind")
 
     message = "M-SEARCH * HTTP/1.1"+chr(13)+chr(10)+chr(13)+chr(10) 
     success = false
@@ -243,21 +243,21 @@ Function createGDMDiscovery(port)
     while try < 10
         udp = CreateObject("roDatagramSocket")
         udp.setMessagePort(port)
-        print "broadcast"
-        print udp.setBroadcast(true)
+        Debug("broadcast")
+        Debug(tostr(udp.setBroadcast(true)))
         addr = createobject("roSocketAddress") 
-        print addr.SetHostName("239.0.0.250")  
-        print addr.setPort(32414)  
-        print udp.setSendToAddress(addr) ' peer IP and port 
+        Debug(tostr(addr.SetHostName("239.0.0.250")  ))
+        Debug(tostr(addr.setPort(32414)  ))
+        Debug(tostr(udp.setSendToAddress(addr))) ' peer IP and port 
         udp.notifyReadable(true)
-        print udp.sendStr(message) 
+        Debug(tostr(udp.sendStr(message) ))
         success = udp.eOK()                                                   
 
         if success then
             exit while
         else
             sleep(500)
-            print "retrying"
+            Debug("retrying")
             try = try + 1
         end if
     end while
@@ -279,25 +279,25 @@ Function gdmHandleMessage(msg)
         caddr = m.udp.getReceivedFromAddress()
         h_address = caddr.getHostName()
 
-        print "Received message: '"; message; "'"
+        Debug("Received message: '" + tostr(message) + "'")
 
         x = instr(1,message, "Name: ")
         x = x + 6
         y = instr(x, message, chr(13))
         h_name = Mid(message, x, y-x)
-        print h_name
+        Debug(h_name)
 
         x = instr(1, message, "Port: ") 
         x = x + 6
         y = instr(x, message, chr(13))
         h_port = Mid(message, x, y-x)
-        print h_port
+        Debug(h_port)
 
         x = instr(1, message, "Resource-Identifier: ") 
         x = x + 21
         y = instr(x, message, chr(13))
         h_machineID = Mid(message, x, y-x)
-        print h_machineID
+        Debug(h_machineID)
 
         server = {Name: h_name,
             Url: "http://" + h_address + ":" + h_port,
@@ -375,7 +375,7 @@ Function GetPrimaryServer()
     ' TODO(schuyler): Actually define a primary server instead of using an arbitrary one
     for each server in GetOwnedPlexMediaServers()
         if server.owned AND server.online then
-            print "Setting primary server to "; server.name
+            Debug("Setting primary server to " + server.name)
             return server
         end if
     next

@@ -43,7 +43,7 @@ Function newPhotoMetadata(container, item, detailed=true) As Object
         format = firstOf(photo.media[0].container, "JPEG")
         ' JPEG and PNG are documented, GIF appears to work fine
         if format <> "JPEG" AND format <> "PNG" AND format <> "GIF" then
-            print "Transcoding photo to JPEG from "; format
+            Debug("Transcoding photo to JPEG from " + format)
             device = CreateObject("roDeviceInfo")
             size = device.GetDisplaySize()
             photo.Url = photo.server.TranscodedImage("", photo.Url, size.w.toStr(), size.h.toStr())
@@ -77,6 +77,5 @@ Function ParsePhotoMedia(photoItem) As Object
         mediaArray.Push(media)
     next
 
-    'Print "mediaArray = ";mediaArray[0]
     return mediaArray
 End Function

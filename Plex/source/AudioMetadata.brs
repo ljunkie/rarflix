@@ -106,7 +106,7 @@ Function newTrackMetadata(container, item, detailed=true) As Object
     if (codec = invalid OR codec = "") AND key <> invalid then
         ' It's probably the extension on the key, try to be lenient.
         codec = key.Tokenize(".").Peek()
-        print "Audio codec wasn't set, inferred "; codec
+        Debug("Audio codec wasn't set, inferred " + tostr(codec))
     end if
 
     ' If it's a .m4a, we're probably in the iTunes channel, and we don't know

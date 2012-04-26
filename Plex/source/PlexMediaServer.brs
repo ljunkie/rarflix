@@ -60,7 +60,7 @@ End Function
 
 Function issuePostCommand(commandPath)
     commandUrl = m.serverUrl + commandPath
-    print "Executing POST command with full command URL:";commandUrl
+    Debug("Executing POST command with full command URL:" + commandUrl)
     request = m.CreateRequest("", commandUrl)
     request.PostFromString("")
 End Function
@@ -81,7 +81,7 @@ Function unscrobble(key, identifier)
 End Function
 
 Sub pmsDelete(id)
-    print "Delete not implemented for non-queue items"
+    Debug("Delete not implemented for non-queue items")
 End Sub
 
 Function rate(key, identifier, rating)
@@ -96,7 +96,7 @@ End Function
 
 Function issueCommand(commandPath)
     commandUrl = m.serverUrl + commandPath
-    print "Executing command with full command URL:";commandUrl
+    Debug("Executing command with full command URL:" + commandUrl)
     request = m.CreateRequest("", commandUrl)
     request.GetToString()
 End Function
@@ -122,11 +122,11 @@ Function xmlContent(sourceUrl, key) As Object
         xmlResult.sourceUrl = invalid
     else
         httpRequest = m.CreateRequest(sourceUrl, key)
-        print "Fetching content from server at query URL:"; httpRequest.GetUrl()
+        Debug("Fetching content from server at query URL:" + tostr(httpRequest.GetUrl()))
         response = GetToStringWithTimeout(httpRequest, 60)
         xml=CreateObject("roXMLElement")
         if not xml.Parse(response) then
-            print "Can't parse feed:";response
+            Debug("Can't parse feed:" + tostr(response))
         endif
             
         xmlResult.xml = xml
@@ -139,7 +139,7 @@ Function IndirectMediaXml(server, originalKey, postURL)
     if postURL <> invalid then
         crlf = Chr(13) + Chr(10)
 
-        print "Fetching content for indirect video POST URL: "; postURL
+        Debug("Fetching content for indirect video POST URL: " + postURL)
         httpRequest = server.CreateRequest("", postURL)
         if httpRequest.AsyncGetToString() then
             while true
@@ -166,7 +166,7 @@ Function IndirectMediaXml(server, originalKey, postURL)
         end if
 
         if postBody <> invalid then
-            print "Retrieved data from postURL, posting to resolve container"
+            Debug("Retrieved data from postURL, posting to resolve container")
             if instr(1, originalKey, "?") > 0 then
                 url = originalKey + "&postURL=" + HttpEncode(postURL)
             else
@@ -186,17 +186,17 @@ Function IndirectMediaXml(server, originalKey, postURL)
                 end while
             end if
         else
-            print "Failed to retrieve data from postURL"
+            Debug("Failed to retrieve data from postURL")
         end if
     else
         httpRequest = server.CreateRequest("", originalKey)
-        print "Fetching content from server at query URL:"; httpRequest.GetUrl()
+        Debug("Fetching content from server at query URL:" + tostr(httpRequest.GetUrl()))
         response = GetToStringWithTimeout(httpRequest, 60)
     end if
 
     xml=CreateObject("roXMLElement")
     if not xml.Parse(response) then
-        print "Can't parse feed:";response
+        Debug("Can't parse feed:" + tostr(response))
         return invalid
     endif
     return xml
@@ -204,11 +204,11 @@ End Function
         
 Function DirectMediaXml(server, queryUrl) As Object
     httpRequest = server.CreateRequest("", queryUrl)
-    print "Fetching content from server at query URL:"; httpRequest.GetUrl()
+    Debug("Fetching content from server at query URL:" + tostr(httpRequest.GetUrl()))
     response = GetToStringWithTimeout(httpRequest, 60)
     xml=CreateObject("roXMLElement")
     if not xml.Parse(response) then
-        print "Can't parse feed:";response
+        Debug("Can't parse feed:" + tostr(response))
         return originalKey
     endif
     return xml
@@ -244,7 +244,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
         if mediaItem.indirect then
             mediaKeyXml = IndirectMediaXml(m, mediaKey, postURL)
             if mediaKeyXml = invalid then
-                print "Failed to resolve indirect media"
+                Debug("Failed to resolve indirect media")
                 dlg = createBaseDialog()
                 dlg.Title = "Video Unavailable"
                 dlg.Text = "Sorry, but we can't play this video. The original video may no longer be available, or it may be in a format that isn't supported."
@@ -260,7 +260,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
                     value = {}
                     value[arr[0]] = arr[1]
                     headers.Push(value)
-                    print "Indirect video item header: "; value
+                    Debug("Indirect video item header: " + tostr(value))
                 next
             end if
         end if
@@ -269,7 +269,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
     deviceInfo = CreateObject("roDeviceInfo")
     quality = "SD"
     if deviceInfo.GetDisplayType() = "HDTV" then quality = "HD"
-    print "Setting stream quality:";quality
+    Debug("Setting stream quality:" + quality)
     video.StreamQualities = [quality]
 
 	'Setup 1080p metadata 	
@@ -294,10 +294,10 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
 
     if forceDirectPlay then
         if mediaItem = invalid then
-            print "Can't direct play, plugin video has no media item!"
+            Debug("Can't direct play, plugin video has no media item!")
             return invalid
         else if left(mediaKey, 5) = "plex:" then
-            print "Can't direct play plex: URLs: "; mediaKey
+            Debug("Can't direct play plex: URLs: " + tostr(mediaKey))
             return invalid
         else
             video.IndirectHttpHeaders = headers
@@ -305,7 +305,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
             return video
         end if
     else if allowDirectPlay AND mediaItem <> invalid then
-        print "Checking to see if direct play of video is possible"
+        Debug("Checking to see if direct play of video is possible")
         qualityPref = RegRead("quality", "preferences", "7").toInt()
         if qualityPref >= 9 then
             maxResolution = 1080
@@ -316,11 +316,11 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
         else
             maxResolution = 0
         end if
-        print "Max resolution:"; maxResolution
+        Debug("Max resolution:" + tostr(maxResolution))
 
         if (videoCanDirectPlay(mediaItem))
             resolution = firstOf(mediaItem.videoResolution, "0").toInt()
-            print "Media item resolution:"; resolution; ", max is"; maxResolution
+            Debug("Media item resolution:" + tostr(resolution) + ", max is" + tostr(maxResolution))
             if resolution <= maxResolution then
                 video.IndirectHttpHeaders = headers
                 m.AddDirectPlayInfo(video, item, mediaKey)
@@ -349,7 +349,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
     if mediaItem <> invalid then
         part = mediaItem.preferredPart
         if part <> invalid AND part.subtitles <> invalid AND shouldUseSoftSubs(part.subtitles) then
-            print "Disabling subtitle selection temporarily"
+            Debug("Disabling subtitle selection temporarily")
             video.SubtitleUrl = FullUrl(m.serverUrl, "", part.subtitles.key) + "?encoding=utf-8"
             m.UpdateSubtitleStreamSelection(part.id, "")
             item.RestoreSubtitleID = part.subtitles.id
@@ -367,7 +367,7 @@ Function stopTranscode()
         stopTransfer.AddHeader("Cookie", m.Cookie) 
         content = stopTransfer.GetToString()
     else
-        print "Can't send stop request, cookie wasn't set"
+        Debug("Can't send stop request, cookie wasn't set")
     end if
 End Function
 
@@ -378,7 +378,7 @@ Function pingTranscode()
         pingTransfer.AddHeader("Cookie", m.Cookie) 
         content = pingTransfer.GetToString()
     else
-        print "Can't send ping request, cookie wasn't set"
+        Debug("Can't send ping request, cookie wasn't set")
     end if
 End Function
 
@@ -386,10 +386,6 @@ End Function
 '* source URL, and absolute URLs, so
 '* relative to the server URL
 Function FullUrl(serverUrl, sourceUrl, key) As String
-    'print "Full URL"
-    'print "ServerURL:";serverUrl
-    'print "SourceURL:";sourceUrl
-    'print "Key:";key
     finalUrl = ""
     if left(key, 4) = "http" then
         return key
@@ -439,7 +435,6 @@ Function FullUrl(serverUrl, sourceUrl, key) As String
             'endif
         endif
     endif
-    'print "FinalURL:";finalUrl
     return finalUrl
 End Function
 
@@ -454,7 +449,6 @@ Function TranscodedImage(queryUrl, imagePath, width, height) As String
     imageUrl = m.ConvertTranscodeURLToLoopback(imageUrl)
     encodedUrl = HttpEncode(imageUrl)
     image = m.serverUrl + "/photo/:/transcode?url="+encodedUrl+"&width="+width+"&height="+height
-    'print "Final Image URL:";image
     return image
 End Function
 
@@ -473,7 +467,7 @@ End Function
 '* Construct the Plex transcoding URL. 
 '*
 Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As Object)
-    print "Constructing transcoding video URL for "+videoUrl
+    Debug("Constructing transcoding video URL for " + videoUrl)
 
     key = ""
     ratingKey = ""
@@ -485,17 +479,16 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As 
 
     location = ResolveUrl(m.serverUrl, item.sourceUrl, videoUrl)
     location = m.ConvertTranscodeURLToLoopback(location)
-    print "Location:";location
+    Debug("Location:" + tostr(location))
     if len(key) = 0 then
         fullKey = ""
     else
         fullKey = ResolveUrl(m.serverUrl, item.sourceUrl, key)
     end if
-    print "Original key:";key
-    print "Full key:";fullKey
+    Debug("Original key:" + tostr(key))
+    Debug("Full key:" + tostr(fullKey))
     
     if not(RegExists("level", "preferences")) then RegWrite("level", "40", "preferences")
-    print "REG READ LEVEL "; RegRead("level", "preferences")
 
     path = "/video/:/transcode/segmented/start.m3u8?"
 
@@ -526,7 +519,7 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As 
             else if name = "User-Agent" then
                 query = query + "&userAgent=" + HttpEncode(header[name])
             else
-                print "Header can not be passed to transcoder at this time: "; name
+                Debug("Header can not be passed to transcoder at this time: " + name)
             end if
         next
     next
@@ -546,18 +539,18 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As 
     query = query + "&X-Plex-Client-Capabilities=" + HttpEncode(Capabilities())
 
     finalUrl = m.serverUrl + path + query
-    print "Final URL:";finalUrl
+    Debug("Final URL:" + finalUrl)
     return finalUrl
 End Function
 
 Function TranscodingAudioUrl(audioUrl As String, item As Object)
     if NOT m.SupportsAudioTranscoding then return invalid
 
-    print "Constructing transcoding audio URL for "+audioUrl
+    Debug("Constructing transcoding audio URL for " + audioUrl)
 
     location = ResolveUrl(m.serverUrl, item.sourceUrl, audioUrl)
     location = m.ConvertTranscodeURLToLoopback(location)
-    print "Location:";location
+    Debug("Location:" + tostr(location))
     
     path = "/music/:/transcode/generic.mp3?"
 
@@ -572,7 +565,7 @@ Function TranscodingAudioUrl(audioUrl As String, item As Object)
     query = query + "&X-Plex-Client-Capabilities=" + HttpEncode(Capabilities())
 
     finalUrl = m.serverUrl + path + query
-    print "Final URL:";finalUrl
+    Debug("Final URL:" + finalUrl)
     return finalUrl
 End Function
 
@@ -580,12 +573,10 @@ Function ConvertTranscodeURLToLoopback(url) As String
     ' If the URL starts with our serverl URL, replace it with
     ' 127.0.0.1:32400.
 
-    'print "ConvertTranscodeURLToLoopback:: original URL: ";url
     if Left(url, len(m.serverUrl)) = m.serverUrl then
         url = "http://127.0.0.1:32400" + Right(url, len(url) - len(m.serverUrl))
     end if
 
-    'print "ConvertTranscodeURLToLoopback:: processed URL: ";url
     return url
 End Function
 
@@ -596,8 +587,7 @@ Function Capabilities(recompute=false) As String
     end if
 
     protocols = "protocols=http-live-streaming,http-mp4-streaming,http-mp4-video,http-mp4-video-720p,http-streaming-video,http-streaming-video-720p"
-    print "REG READ LEVEL "; RegRead("level", "preferences")
-    level = firstOf(RegRead("level", "preferences"), "40")
+    level = RegRead("level", "preferences", "40")
     'do checks to see if 5.1 is supported, else use stereo
     device = CreateObject("roDeviceInfo")
     audio = "aac"
@@ -606,12 +596,12 @@ Function Capabilities(recompute=false) As String
 
     if device.HasFeature("5.1_surround_sound") and major >= 4 then
         fiveone = RegRead("fivepointone", "preferences", "1")
-        print "5.1 support set to: ";fiveone
+        Debug("5.1 support set to: " + fiveone)
         
         if fiveone <> "2" then
             audio = audio + ",ac3{channels:6}"
         else
-            print "5.1 support disabled via Tweaks"
+            Debug("5.1 support disabled via Tweaks")
         end if
     end if 
 
@@ -624,7 +614,7 @@ Function Capabilities(recompute=false) As String
     if (major >= 4 AND directPlayOptions <> "4") OR directPlayOptions = "3" then
         decoders = "videoDecoders=mpeg4,h264{profile:high&resolution:1080&level:"+ level + "};audioDecoders="+audio
     else
-        print "Disallowing direct streaming in capabilities string"
+        Debug("Disallowing direct streaming in capabilities string")
         decoders = "audioDecoders=" + audio
     end if
 
@@ -632,7 +622,7 @@ Function Capabilities(recompute=false) As String
     'anamorphic = "playsAnamorphic=no"
 
     capaString = protocols+";"+decoders '+";"+anamorphic
-    print "Capabilities: "+capaString
+    Debug("Capabilities: " + capaString)
     GetGlobalAA().AddReplace("capabilities", capaString)
     return capaString
 End Function
@@ -682,7 +672,7 @@ End Sub
 
 Sub pmsAddDirectPlayInfo(video, item, mediaKey)
     mediaFullUrl = FullUrl(m.serverUrl, "", mediaKey)
-    print "Will try to direct play "; mediaFullUrl
+    Debug("Will try to direct play " + tostr(mediaFullUrl))
     video.StreamUrls = [mediaFullUrl]
     video.StreamBitrates = [0]
     video.FrameRate = item.FrameRate

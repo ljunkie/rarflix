@@ -229,7 +229,7 @@ Function showSpringboardScreen() As Integer
             exit while
         else if msg.isButtonPressed() then
             buttonCommand = m.buttonCommands[str(msg.getIndex())]
-            print "Unhandled button press: "; buttonCommand
+            Debug("Unhandled button press: " + tostr(buttonCommand))
         else if msg.isRemoteKeyPressed() then
             '* index=4 -> left ; index=5 -> right
             if msg.getIndex() = 4 then
@@ -342,7 +342,7 @@ End Function
 
 Sub videoGetMediaDetails(content)
     server = content.server
-    print "About to fetch meta-data for Content Type: "; content.contentType
+    Debug("About to fetch meta-data for Content Type: " + tostr(content.contentType))
 
     m.metadata = content.ParseDetails()
     m.media = m.metadata.preferredMediaItem

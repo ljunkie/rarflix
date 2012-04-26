@@ -55,12 +55,12 @@ Function createHomeScreen(viewController) As Object
     if RegRead("autodiscover", "preferences", "1") = "1" then
         obj.GDM = createGDMDiscovery(obj.Screen.Port)
         if obj.GDM = invalid then
-            print "Failed to create GDM discovery object"
+            Debug("Failed to create GDM discovery object")
         end if
     end if
 
     configuredServers = PlexMediaServers()
-    print "Setting up home screen content, server count:"; configuredServers.Count()
+    Debug("Setting up home screen content, server count:"+ tostr(configuredServers.Count()))
     for each server in configuredServers
         obj.CreateServerRequests(server, false, false)
     next
@@ -219,10 +219,10 @@ End Sub
 
 Sub homeAddPendingRequest(request)
     id = request.request.GetIdentity().ToStr()
-    print "Adding pending request "; id; " -> "; request.request.GetUrl()
+    Debug("Adding pending request " + tostr(id) + " -> "+ tostr(request.request.GetUrl()))
 
     if m.PendingRequests.DoesExist(id) then
-        print Chr(10) + "!!! Duplicate pending request ID !!!" + Chr(10)
+        Debug(Chr(10) + "!!! Duplicate pending request ID !!!" + Chr(10))
     end if
     m.PendingRequests[id] = request
 End Sub
@@ -252,7 +252,7 @@ Sub refreshHomeScreen(changes)
     ' If myPlex state changed, we need to update the queue, shared sections,
     ' and any owned servers that were discovered through myPlex.
     if changes.DoesExist("myplex") then
-        print "myPlex status changed"
+        Debug("myPlex status changed")
 
         if m.myplex.IsSignedIn then
             m.CreateMyPlexRequests(true)
@@ -277,7 +277,7 @@ Sub refreshHomeScreen(changes)
         servers = changes["servers"]
         didRemove = false
         for each machineID in servers
-            print "Server "; machineID; " was "; servers[machineID]
+            Debug("Server " + tostr(machineID) + " was " + tostr(servers[machineID]))
             if servers[machineID] = "removed" then
                 DeletePlexMediaServer(machineID)
                 didRemove = true
@@ -314,7 +314,7 @@ Sub homeRemoveFromRowIf(row, predicate)
     next
 
     if modified then
-        print "Removed"; (status.content.Count() - newContent.Count()); " items from row"; row
+        Debug("Removed" + tostr(status.content.Count() - newContent.Count()) + " items from row" + tostr(row))
         status.content = newContent
         m.Screen.OnDataLoaded(row, newContent, 0, newContent.Count(), true)
     end if
@@ -388,10 +388,10 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
 
         status.toLoad.Clear()
 
-        print "Successfully kicked off"; numRequests; " requests for row"; loadingRow; ", pending requests now:"; status.pendingRequests
+        Debug("Successfully kicked off" + tostr(numRequests) + " requests for row" + tostr(loadingRow) + ", pending requests now:" + tostr(status.pendingRequests))
     else if status.pendingRequests > 0 then
         status.loadStatus = 1
-        print "No additional requests to kick off for row"; loadingRow; ", pending request count:"; status.pendingRequests
+        Debug("No additional requests to kick off for row" + tostr(loadingRow) + ", pending request count:" + tostr(status.pendingRequests))
     else
         ' Special case, if we try loading the Misc row and have no servers,
         ' this is probably a first run scenario, try to be helpful.
@@ -405,7 +405,7 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
                 m.LoadingFacade.Show()
             else
                 ' Slightly strange, GDM disabled but no servers configured
-                print "No servers, no GDM, and no myPlex..."
+                Debug("No servers, no GDM, and no myPlex...")
                 ShowHelpScreen()
                 status.loadStatus = 2
                 m.Screen.OnDataLoaded(loadingRow, status.content, 0, status.content.Count(), true)
@@ -432,7 +432,7 @@ Function homeHandleMessage(msg) As Boolean
         end if
 
         if msg.GetResponseCode() <> 200 then
-            print "Got a"; msg.GetResponseCode(); " response from "; request.request.GetUrl(); " - "; msg.GetFailureReason()
+            Debug("Got a" + tostr(msg.GetResponseCode()) + " response from " + tostr(request.request.GetUrl()) + " - " + tostr(msg.GetFailureReason()))
 
             if request.row <> invalid AND status.loadStatus < 2 AND status.pendingRequests = 0 then
                 status.loadStatus = 2
@@ -445,7 +445,7 @@ Function homeHandleMessage(msg) As Boolean
 
             return true
         else
-            print "Got a 200 response from "; request.request.GetUrl(); " (type "; request.requestType; ", row"; request.row; ")"
+            Debug("Got a 200 response from " + tostr(request.request.GetUrl()) + " (type " + tostr(request.requestType) + ", row" + tostr(request.row) + ")")
         end if
 
         xml = CreateObject("roXMLElement")
@@ -480,11 +480,11 @@ Function homeHandleMessage(msg) As Boolean
                 else if item.MachineID <> invalid then
                     server = GetPlexMediaServer(item.MachineID)
                     if server <> invalid then
-                        print "Found a server for the section: "; item.Title; " on "; server.name
+                        Debug("Found a server for the section: " + tostr(item.Title) + " on " + tostr(server.name))
                         item.server = server
                         serverStr = " on " + server.name
                     else
-                        print "Found a shared section for an unknown server: "; item.MachineID
+                        Debug("Found a shared section for an unknown server: " + tostr(item.MachineID))
                         add = false
                     end if
                 end if
@@ -499,7 +499,7 @@ Function homeHandleMessage(msg) As Boolean
                     else if channelType = "video" then
                         item.ShortDescriptionLine2 = "Video channel" + serverStr
                     else
-                        print "Skipping unsupported channel type: "; channelType
+                        Debug("Skipping unsupported channel type: " + tostr(channelType))
                         add = false
                     end if
                 else if item.Type = "movie" then
@@ -511,7 +511,7 @@ Function homeHandleMessage(msg) As Boolean
                 else if item.Type = "photo" then
                     item.ShortDescriptionLine2 = "Photo section" + serverStr
                 else
-                    print "Skipping unsupported section type: "; item.Type
+                    Debug("Skipping unsupported section type: " + tostr(item.Type))
                     add = false
                 end if
 
@@ -555,7 +555,7 @@ Function homeHandleMessage(msg) As Boolean
             end if
 
             if m.Screen.hasBeenFocused = false AND request.row = m.SectionsRow AND type(m.Screen.Screen) = "roGridScreen" AND request.server.machineID = m.lastMachineID then
-                print "Trying to focus last used section"
+                Debug("Trying to focus last used section")
                 for i = 0 to status.content.Count() - 1
                     if status.content[i].key = m.lastSectionKey then
                         m.Screen.Screen.SetFocusedListItem(request.row, i)
@@ -589,9 +589,9 @@ Function homeHandleMessage(msg) As Boolean
             request.server.SupportsAudioTranscoding = (xml@transcoderAudio = "1")
             PutPlexMediaServer(request.server)
 
-            print "Fetched additional server information ("; request.server.name; ", "; request.server.machineID; ")"
-            print "URL: "; request.server.serverUrl
-            print "Server supports audio transcoding: "; request.server.SupportsAudioTranscoding
+            Debug("Fetched additional server information (" + tostr(request.server.name) + ", " + tostr(request.server.machineID) + ")")
+            Debug("URL: " + tostr(request.server.serverUrl))
+            Debug("Server supports audio transcoding: " + tostr(request.server.SupportsAudioTranscoding))
 
             status = m.contentArray[m.MiscRow]
 
@@ -654,25 +654,25 @@ Function homeHandleMessage(msg) As Boolean
                     end if
                     PutPlexMediaServer(server)
 
-                    print "Added shared server: "; server.name
+                    Debug("Added shared server: " + tostr(server.name))
                 end if
             next
         end if
 
-        print "Remaining pending requests:"
+        Debug("Remaining pending requests:")
         for each id in m.PendingRequests
-            print m.PendingRequests[id].request.GetUrl()
+            Debug(m.PendingRequests[id].request.GetUrl())
         next
 
         return true
     else if type(msg) = "roSocketEvent" then
         serverInfo = m.GDM.HandleMessage(msg)
         if serverInfo <> invalid then
-            print "GDM discovery found server at "; serverInfo.Url
+            Debug("GDM discovery found server at " + tostr(serverInfo.Url))
 
             existing = GetPlexMediaServer(serverInfo.MachineID)
             if existing <> invalid AND existing.IsConfigured then
-                print "GDM discovery ignoring already configured server"
+                Debug("GDM discovery ignoring already configured server")
             else
                 AddServer(serverInfo.Name, serverInfo.Url, serverInfo.MachineID)
                 server = newPlexMediaServer(serverInfo.Url, serverInfo.Name, serverInfo.MachineID)
@@ -694,7 +694,7 @@ Function homeHandleMessage(msg) As Boolean
         end if
 
         if RegRead("serverList", "servers") = invalid AND NOT m.myplex.IsSignedIn then
-            print "No servers and no myPlex, appears to be a first run"
+            Debug("No servers and no myPlex, appears to be a first run")
             ShowHelpScreen()
             status = m.contentArray[m.MiscRow]
             status.loadStatus = 2

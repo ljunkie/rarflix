@@ -122,7 +122,7 @@ Function showPosterScreen() As Integer
                 selected = content[index]
                 contentType = selected.ContentType
 
-                print "Content type in poster screen:";contentType
+                Debug("Content type in poster screen:" + tostr(contentType))
 
                 if contentType = "series" OR NOT m.FilterMode then
                     breadcrumbs = [selected.Title]
@@ -196,8 +196,8 @@ Sub posterShowContentList(index)
         m.Screen.SetListDisplayMode(status.listDisplayMode)
     end if
 
-    Print "Showing screen with "; status.content.Count(); " elements"
-    Print "List style is "; status.listStyle; ", "; status.listDisplayMode
+    Debug("Showing screen with " + tostr(status.content.Count()) + " elements")
+    Debug("List style is " + tostr(status.listStyle) + ", " + tostr(status.listDisplayMode))
 
     if status.content.Count() = 0 AND NOT m.FilterMode then
         dialog = createBaseDialog()

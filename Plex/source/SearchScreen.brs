@@ -59,7 +59,7 @@ Function showSearchScreen() As Integer
                 term = msg.GetMessage()
                 m.History.Push(term)
 
-                print "Searching for "; term
+                Debug("Searching for " + term)
 
                 ' Create a dummy item with the key set to the search URL
                 item = CreateObject("roAssociativeArray")

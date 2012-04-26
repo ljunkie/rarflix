@@ -69,7 +69,7 @@ Sub showEnumScreen()
         if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
         else if type(msg) = "roListScreenEvent" then
             if msg.isScreenClosed() then
-                print "Exiting list screen"
+                Debug("Exiting list screen")
                 m.ViewController.PopScreen(m)
                 exit while
             else if msg.isListItemSelected() then

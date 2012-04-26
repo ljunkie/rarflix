@@ -123,7 +123,7 @@ Function dialogShow()
                 exit while
             else if msg.isButtonPressed() then
                 command = m.ButtonCommands[msg.getIndex()]
-                print "Button pressed: "; command
+                Debug("Button pressed: " + tostr(command))
                 done = true
                 if m.HandleButton <> invalid then
                     done = m.HandleButton(command, msg.getData())

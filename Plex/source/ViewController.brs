@@ -48,8 +48,6 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         item = context
     end if
 
-    'print "Item = ";item
-
     contentType = item.ContentType
     viewGroup = item.viewGroup
     if viewGroup = invalid then viewGroup = ""
@@ -119,7 +117,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen = createSettingsScreen(item, m)
     else
         ' Where do we capture channel directory?
-        Print "Creating a default view for contentType=";contentType;", viewGroup=";viewGroup
+        Debug("Creating a default view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
         screen = createPosterScreen(item, m)
     end if
 
@@ -175,13 +173,13 @@ Sub vcPushScreen(screen)
     screen.ScreenID = m.nextId
     m.nextId = m.nextId + 1
 
-    Print "Pushing screen"; screen.ScreenID; " onto view controller stack"
+    Debug("Pushing screen" + tostr(screen.ScreenID) + " onto view controller stack")
     m.screens.Push(screen)
 End Sub
 
 Sub vcPopScreen(screen)
     if screen.ScreenID = -1 then
-        Print "Popping home screen, cleaning up"
+        Debug("Popping home screen, cleaning up")
 
         while m.screens.Count() > 1
             m.PopScreen(m.screens.Peek())
@@ -195,11 +193,11 @@ Sub vcPopScreen(screen)
     screen.MessageHandler = invalid
 
     if screen.ScreenID = invalid OR m.screens.Peek().ScreenID = invalid OR screen.ScreenID <> m.screens.Peek().ScreenID then
-        Print "Trying to pop screen that doesn't match the top of our stack!"
+        Debug("Trying to pop screen that doesn't match the top of our stack!")
         Return
     end if
 
-    Print "Popping screen"; screen.ScreenID; " and cleaning up"; screen.NumBreadcrumbs; " breadcrumbs"
+    Debug("Popping screen" + tostr(screen.ScreenID) + " and cleaning up" + tostr(screen.NumBreadcrumbs) + " breadcrumbs")
     m.screens.Pop()
     for i = 0 to screen.NumBreadcrumbs - 1
         m.breadcrumbs.Pop()
@@ -301,7 +299,7 @@ Sub vcUpdateScreenProperties(screen)
             screen.Screen.SetTitle(bread2)
         end if
     else
-        print "Not sure what to do with breadcrumbs on screen type: "; screenType
+        Debug("Not sure what to do with breadcrumbs on screen type: " + tostr(screenType))
     end if
 End Sub
 
@@ -344,7 +342,7 @@ End Sub
 Sub vcDestroyGlitchyScreens()
     for each screen in m.screens
         if screen.DestroyAndRecreate <> invalid then
-            print "Destroying screen "; screen.ScreenID; " to work around glitch"
+            Debug("Destroying screen " + tostr(screen.ScreenID) + " to work around glitch")
             screen.DestroyAndRecreate()
         end if
     next

@@ -38,8 +38,6 @@ End Function
 Function createBaseMetadata(container, item) As Object
     metadata = CreateObject("roAssociativeArray")
 
-    'print "createBaseMetadata: ";item@key
-
     server = container.server
     if item@machineIdentifier <> invalid then
         server = GetPlexMediaServer(item@machineIdentifier)

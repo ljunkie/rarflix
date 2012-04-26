@@ -5,7 +5,7 @@ Sub RunScreenSaver()
     if mode <> "disabled" then
         DisplayScreenSaver(mode)
     else
-        print "Deferring to system screensaver"
+        Debug("Deferring to system screensaver")
     end if
 End Sub
 
@@ -28,7 +28,7 @@ Sub DisplayScreenSaver(mode)
         canvas.SetLocFunc(screensaverLib_RandomLocation)
         canvas.SetLocUpdatePeriodInMS(0)
     else
-        print "Unrecognized screensaver preference: "; mode
+        Debug("Unrecognized screensaver preference: " + tostr(mode))
         return
     end if
 
@@ -70,11 +70,11 @@ Sub SaveImagesForScreenSaver(url_SD43, url_HD, sizes)
 End Sub
 
 Sub WriteFileHelper(fname, url, width, height)
-    print "Saving image for screensaver: "; url
+    Debug("Saving image for screensaver: " + tostr(url))
     if url <> invalid then
         content = width + "\" + height + "\" + url
-        if (not WriteAsciiFile(fname + "~", content)) then print "WriteAsciiFile() Failed"
-        if (not MoveFile(fname + "~",fname)) then print "MoveFile() failed"
+        if (not WriteAsciiFile(fname + "~", content)) then Debug("WriteAsciiFile() Failed")
+        if (not MoveFile(fname + "~",fname)) then Debug("MoveFile() failed")
     else
         DeleteFile(fname)
     end if

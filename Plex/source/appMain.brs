@@ -26,7 +26,7 @@ Sub initGlobals()
     GetGlobalAA().AddReplace("rokuVersionStr", versionStr)
     GetGlobalAA().AddReplace("rokuVersionArr", [major, minor, build])
 
-    print "Roku version: "; versionStr; " ("; version; ")"
+    Debug("Roku version: " + versionStr + " (" + version + ")")
 
     manifest = ReadAsciiFile("pkg:/manifest")
     lines = manifest.Tokenize(chr(10))
@@ -39,7 +39,7 @@ Sub initGlobals()
     appVersion = firstOf(aa["version"], "Unknown")
     GetGlobalAA().AddReplace("appVersionStr", appVersion)
 
-    print "App version: "; appVersion
+    Debug("App version: " + appVersion)
 
     knownModels = {}
     knownModels["N1050"] = "Roku SD"
@@ -59,7 +59,7 @@ Sub initGlobals()
     model = firstOf(knownModels[device.GetModel()], "Roku " + device.GetModel())
     GetGlobalAA().AddReplace("rokuModel", model)
 
-    print "Roku model: "; model
+    Debug("Roku model: " + model)
 
     GetGlobalAA().AddReplace("rokuUniqueID", device.GetDeviceUniqueId())
 End Sub

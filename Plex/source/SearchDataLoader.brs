@@ -70,7 +70,7 @@ Sub searchStartRequest(server, url, title)
     req.title = firstOf(title, "unknown") + " (" + server.name + ")"
     m.PendingRequests[httpRequest.GetIdentity().tostr()] = req
 
-    print "Kicked off search request for "; req.title
+    Debug("Kicked off search request for " + req.title)
 End Sub
 
 Function searchLoadMoreContent(focusedRow, extraRows=0) As Boolean
@@ -106,17 +106,17 @@ Function searchHandleMessage(msg) As Boolean
         m.PendingRequests.Delete(id.tostr())
 
         if msg.GetResponseCode() <> 200 then
-            print "Got a "; msg.GetResponseCode(); " response from "; request.request.GetUrl(); " - "; msg.GetFailureReason()
+            Debug("Got a " + tostr(msg.GetResponseCode()) + " response from " + tostr(request.request.GetUrl()) + " - " + tostr(msg.GetFailureReason()))
             return true
         end if
 
         xml = CreateObject("roXMLElement")
         if NOT xml.Parse(msg.GetString()) then
-            print "Failed to parse XML from "; request.request.GetUrl()
+            Debug("Failed to parse XML from " + tostr(request.request.GetUrl()))
             return true
         end if
 
-        print "Processing search results for: "; request.title
+        Debug("Processing search results for: " + request.title)
 
         response = CreateObject("roAssociativeArray")
         response.xml = xml
@@ -139,7 +139,7 @@ Function searchHandleMessage(msg) As Boolean
             end if
 
             if item = invalid then
-                print "Ignoring search result for "; typeStr
+                Debug("Ignoring search result for " + tostr(typeStr))
             else
                 if item.sourceTitle <> invalid then
                     item.Description = "(" + item.sourceTitle + ") " + firstOf(item.Description, "")

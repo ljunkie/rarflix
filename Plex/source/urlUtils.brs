@@ -10,7 +10,7 @@ REM so this is a quick and dirty name/value encoder/accumulator
 REM ******************************************************
 
 Function NewHttp(url As String) as Object
-	print "Creating new http transfer object for ";url
+	Debug("Creating new http transfer object for " + url)
     obj = CreateObject("roAssociativeArray")
     obj.Http                        = CreateURLTransferObject(url)
     obj.FirstParam                  = true
@@ -27,7 +27,7 @@ Function NewHttp(url As String) as Object
 End Function
 
 Function CreateURLTransferObject(url As String) as Object
-	print "Creating URL transfer object for ";url
+	Debug("Creating URL transfer object for " + url)
     obj = CreateObject("roUrlTransfer")
     obj.SetPort(CreateObject("roMessagePort"))
     obj.SetUrl(url)
@@ -140,7 +140,6 @@ Function http_get_to_string_with_retry() as String
 
     str = ""
     while num_retries% > 0
-'        print "httpget try " + itostr(num_retries%)
         if (m.Http.AsyncGetToString())
             event = wait(timeout%, m.Http.GetPort())
             if type(event) = "roUrlEvent"
@@ -152,7 +151,7 @@ Function http_get_to_string_with_retry() as String
                 m.Http = CreateURLTransferObject(m.Http.GetUrl())
                 timeout% = 2 * timeout%
             else
-                print "roUrlTransfer::AsyncGetToString(): unknown event"
+                Debug("roUrlTransfer::AsyncGetToString(): unknown event")
             endif
         endif
 
@@ -200,14 +199,14 @@ Function http_post_from_string_with_timeout(val As String, seconds as Integer) a
     if (m.Http.AsyncPostFromString(val))
         event = wait(timeout%, m.Http.GetPort())
         if type(event) = "roUrlEvent"
-			print "1"
+			Debug("1")
 			str = event.GetString()
         elseif event = invalid
-			print "2"
+			Debug("2")
             Dbg("AsyncPostFromString timeout")
             m.Http.AsyncCancel()
         else
-			print "3"
+			Debug("3")
             Dbg("AsyncPostFromString unknown event", event)
         endif
     endif

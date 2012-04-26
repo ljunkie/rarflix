@@ -445,9 +445,9 @@ End Sub
 'Walk an AA and print it
 '******************************************************
 Sub PrintAA(aa as Object)
-    print "---- AA ----"
+    Debug("---- AA ----")
     if aa = invalid
-        print "invalid"
+        Debug("invalid")
         return
     else
         cnt = 0
@@ -460,7 +460,7 @@ Sub PrintAA(aa as Object)
             PrintAny(0, "Nothing from for each. Looks like :", aa)
         endif
     endif
-    print "------------"
+    Debug("------------")
 End Sub
 
 
@@ -468,9 +468,9 @@ End Sub
 'Walk a list and print it
 '******************************************************
 Sub PrintList(list as Object)
-    print "---- list ----"
+    Debug("---- list ----")
     PrintAnyList(0, list)
-    print "--------------"
+    Debug("--------------")
 End Sub
 
 
@@ -502,28 +502,28 @@ End Sub
 '******************************************************
 Sub PrintAny(depth As Integer, prefix As String, any As Dynamic)
     if depth >= 10
-        print "**** TOO DEEP " + itostr(5)
+        Debug("**** TOO DEEP " + itostr(5))
         return
     endif
     prefix = string(depth*2," ") + prefix
     depth = depth + 1
     str = AnyToString(any)
     if str <> invalid
-        print prefix + str
+        Debug(prefix + str)
         return
     endif
     if type(any) = "roAssociativeArray"
-        print prefix + "(assocarr)..."
+        Debug(prefix + "(assocarr)...")
         PrintAnyAA(depth, any)
         return
     endif
     if islist(any) = true
-        print prefix + "(list of " + itostr(any.Count()) + ")..."
+        Debug(prefix + "(list of " + itostr(any.Count()) + ")...")
         PrintAnyList(depth, any)
         return
     endif
 
-    print prefix + "?" + type(any) + "?"
+    Debug(prefix + "?" + type(any) + "?")
 End Sub
 
 
@@ -540,7 +540,7 @@ Sub Dbg(pre As Dynamic, o=invalid As Dynamic)
     if Len(s) > 4000
         s = Left(s, 4000)
     endif
-    print p + s
+    Debug(p + s)
 End Sub
 
 
@@ -602,27 +602,26 @@ End Function
 'Walk an XML tree and print it
 '******************************************************
 Sub PrintXML(element As Object, depth As Integer)
-    print tab(depth*3);"Name: [" + element.GetName() + "]"
+    Debug(tab(depth*3) + "Name: [" + element.GetName() + "]")
     if invalid <> element.GetAttributes() then
-        print tab(depth*3);"Attributes: ";
+        attrStr = tab(depth*3) + "Attributes: "
         for each a in element.GetAttributes()
-            print a;"=";left(element.GetAttributes()[a], 4000);
-            if element.GetAttributes().IsNext() then print ", ";
+            attrStr = attrStr + a + "=" + left(element.GetAttributes()[a], 4000)
+            if element.GetAttributes().IsNext() then attrStr = attrStr + ", "
         next
-        print
+        Debug(attrStr)
     endif
 
     if element.GetBody()=invalid then
-        ' print tab(depth*3);"No Body"
     else if type(element.GetBody())="roString" then
-        print tab(depth*3);"Contains string: [" + left(element.GetBody(), 4000) + "]"
+        Debug(tab(depth*3) + "Contains string: [" + left(element.GetBody(), 4000) + "]")
     else
-        print tab(depth*3);"Contains list:"
+        Debug(tab(depth*3) + "Contains list:")
         for each e in element.GetBody()
             PrintXML(e, depth+1)
         next
     endif
-    print
+    Debug("")
 end sub
 
 
@@ -630,18 +629,18 @@ end sub
 'Dump the bytes of a string
 '******************************************************
 Sub DumpString(str As String)
-    print "DUMP STRING"
-    print "---------------------------"
-    print str
-    print "---------------------------"
+    Debug("DUMP STRING")
+    Debug("---------------------------")
+    Debug(str)
+    Debug("---------------------------")
     l = Len(str)-1
     i = 0
     for i = 0 to l
         c = Mid(str, i)
         val = Asc(c)
-        print itostr(val)
+        Debug(itostr(val))
     next
-    print "---------------------------"
+    Debug("---------------------------")
 End Sub
 
 
@@ -659,7 +658,7 @@ Function validateParam(param As Object, paramType As String,functionName As Stri
         endif
     endif
 
-    print "invalid parameter of type "; type(param); " for "; paramType; " in function "; functionName
+    Debug("invalid parameter of type " + type(param) + " for " + paramType + " in function " + functionName)
     return false
 End Function
 

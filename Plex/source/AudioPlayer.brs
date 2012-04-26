@@ -88,19 +88,19 @@ Function audioHandleMessage(msg) As Boolean
 
     if type(msg) = "roAudioPlayerEvent" then
         if msg.isRequestSucceeded() then
-            Print "Playback of single song completed"
+            Debug("Playback of single song completed")
 
             if m.metadata.ratingKey <> invalid then
-                print "Scrobbling audio track -> "; m.metadata.ratingKey
+                Debug("Scrobbling audio track -> " + tostr(m.metadata.ratingKey))
                 server.Scrobble(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier)
             end if
 
             m.GotoNextItem()
         else if msg.isRequestFailed() then
-            Print "Playback failed"
+            Debug("Playback failed")
             m.GotoNextItem()
         else if msg.isListItemSelected() then
-            Print "Starting to play item"
+            Debug("Starting to play item")
             m.Refresh(true)
             m.progressOffset = 0
             m.progressTimer.Mark()
@@ -112,9 +112,9 @@ Function audioHandleMessage(msg) As Boolean
                 m.Screen.SetProgressIndicatorEnabled(false)
             end if
         else if msg.isStatusMessage() then
-            'Print "Audio player status: "; msg.getMessage()
+            'Debug("Audio player status: " + tostr(msg.getMessage()))
         else if msg.isFullResult() then
-            Print "Playback of entire list finished"
+            Debug("Playback of entire list finished")
             m.setPlayState(0)
             m.Refresh(false)
 
@@ -128,12 +128,12 @@ Function audioHandleMessage(msg) As Boolean
                 dialog = invalid
             end if
         else if msg.isPartialResult() then
-            Print "isPartialResult"
+            Debug("isPartialResult")
         else if msg.isPaused() then
-            Print "Stream paused by user"
+            Debug("Stream paused by user")
             m.progressOffset = m.progressOffset + m.progressTimer.TotalSeconds()
         else if msg.isResumed() then
-            Print "Stream resumed by user"
+            Debug("Stream resumed by user")
             m.progressTimer.Mark()
         end if
         return true
@@ -145,10 +145,10 @@ Function audioHandleMessage(msg) As Boolean
         end if
         return true
     else if msg.isRemoteKeyPressed() then
-        print "audioHandleMessage: current index = ";m.curindex
+        Debug("audioHandleMessage: current index = " + tostr(m.curindex))
 
         button = msg.GetIndex()
-        print "Remote Key button = "; button
+        Debug("Remote Key button = " + tostr(button))
         newstate = m.isPlayState
         if button = 5 or button = 9 ' next
             if m.GotoNextItem() then
@@ -167,7 +167,7 @@ Function audioHandleMessage(msg) As Boolean
         return true
     else if msg.isButtonPressed() then
         button = msg.GetIndex()
-        print "button index="; button
+        Debug("button index=" + tostr(button))
         newstate = m.isPlayState
         if button = 0 then
             newstate = 1
@@ -229,7 +229,7 @@ Function audioDialogHandleButton(command, data) As Boolean
         end if
         m.Refresh()
     else if command = "rate" then
-        Print "audioHandleMessage:: Rate audio for key ";obj.metadata.ratingKey
+        Debug("audioHandleMessage:: Rate audio for key " + tostr(obj.metadata.ratingKey))
         rateValue% = (data /10)
         obj.metadata.UserRating = data
         if obj.metadata.ratingKey <> invalid then

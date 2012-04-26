@@ -5,40 +5,40 @@ Function photoHandleMessage(msg) As Boolean
         if msg.isPlaybackPosition() then
             'm.CurIndex = msg.GetIndex()
         else if msg.isRequestFailed() then
-            print "preload failed:"; msg.GetIndex()
+            Debug("preload failed:" + tostr(msg.GetIndex()))
         else if msg.isRequestInterrupted() then
-            print "preload interrupted:"; msg.GetIndex()
+            Debug("preload interrupted:" + tostr(msg.GetIndex()))
         else if msg.isPaused() then
-            print "paused"
+            Debug("paused")
         else if msg.isResumed() then
-            print "resumed"
+            Debug("resumed")
         end if
 
         return true
     else if msg = invalid then
     else if msg.isButtonPressed() then
         buttonCommand = m.buttonCommands[str(msg.getIndex())]
-        print "Button command: ";buttonCommand
+        Debug("Button command: " + tostr(buttonCommand))
         if buttonCommand = "show" then
-            Print "photoHandleMessage:: Show photo fullscreen"
+            Debug("photoHandleMessage:: Show photo fullscreen")
             m.slideshow = m.CreateSlideShow()
             m.slideshow.AddContent(m.item)
             m.slideshow.SetNext(0, true)
             m.slideshow.Show()
         else if buttonCommand = "slideshow" then
-            Print "photoHandleMessage:: Start slideshow"
+            Debug("photoHandleMessage:: Start slideshow")
             m.slideshow = m.CreateSlideShow()
             m.slideshow.SetContentList(m.Context)
             m.slideshow.SetNext(m.CurIndex, true)
             m.slideshow.Show()
         else if buttonCommand = "next" then
-            Print "photoHandleMessage:: show next photo"
+            Debug("photoHandleMessage:: show next photo")
              m.GotoNextItem()
         else if buttonCommand = "prev" then
-            Print "photoHandleMessage:: show previous photo"
+            Debug("photoHandleMessage:: show previous photo")
              m.GotoPrevItem()
 	    else if buttonCommand = "ratePhoto" then                
-            Print "photoHandleMessage:: Rate photo for key ";m.metadata.ratingKey
+            Debug("photoHandleMessage:: Rate photo for key " + tostr(m.metadata.ratingKey))
 		    rateValue% = (msg.getData() /10)
 		    m.metadata.UserRating = msg.getdata()
             if m.metadata.ratingKey = invalid then

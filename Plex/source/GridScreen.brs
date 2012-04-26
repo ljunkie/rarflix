@@ -3,7 +3,7 @@
 '*
 
 Function createGridScreen(viewController, style="flat-movie") As Object
-    Print "######## Creating Grid Screen ########"
+    Debug("######## Creating Grid Screen ########")
 
     setGridTheme(style)
 
@@ -73,7 +73,7 @@ Function showGridScreen() As Integer
     names = m.Loader.GetNames()
 
     if names.Count() = 0 then
-        print "Nothing to load for grid"
+        Debug("Nothing to load for grid")
         dialog = createBaseDialog()
         dialog.Facade = facade
         dialog.Title = "Content Unavailable"
@@ -107,7 +107,7 @@ Function showGridScreen() As Integer
     end for
 
     for row = 0 to maxRow
-        Print "Loading beginning of row "; row; ", "; names[row]
+        Debug("Loading beginning of row " + tostr(row) + ", " + tostr(names[row]))
         m.Loader.LoadMoreContent(row, 0)
     end for
 
@@ -143,7 +143,7 @@ Function showGridScreen() As Integer
 
                 ' If our screen was destroyed by some child screen, recreate it now
                 if m.Screen = invalid then
-                    print "Recreating grid..."
+                    Debug("Recreating grid...")
                     setGridTheme(m.gridStyle)
                     m.Screen = CreateObject("roGridScreen")
                     m.Screen.SetMessagePort(m.Port)
@@ -189,7 +189,7 @@ Function showGridScreen() As Integer
                 end if
 
                 if m.selectedRow < 0 OR m.selectedRow >= names.Count() then
-                    print "Ignoring grid ListItemFocused event for bogus row:"; msg.GetIndex()
+                    Debug("Ignoring grid ListItemFocused event for bogus row:" + tostr(msg.GetIndex()))
                 else
                     lastUpdatedSize = m.lastUpdatedSize[m.selectedRow]
                     if m.focusedIndex + 10 > lastUpdatedSize AND m.contentArray[m.selectedRow].Count() > lastUpdatedSize then
@@ -216,7 +216,7 @@ Function showGridScreen() As Integer
 End Function
 
 Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count As Integer, finished As Boolean)
-    print "Loaded"; count; " elements in row"; row; ", now have"; data.Count()
+    Debug("Loaded" + tostr(count) + " elements in row" + tostr(row) + ", now have" + tostr(data.Count()))
 
     m.contentArray[row] = data
 
@@ -234,7 +234,7 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
                 end if
             next
             if NOT pendingRows then
-                print "Nothing in any grid rows"
+                Debug("Nothing in any grid rows")
                 dialog = createBaseDialog()
                 dialog.Title = "Section Empty"
                 dialog.Text = "This section doesn't contain any items."
@@ -309,7 +309,7 @@ Sub gridDestroyAndRecreate()
     ' Works around a weird glitch when certain screens (maybe just
     ' an audio player) are shown on top of grids.
     if m.Screen <> invalid then
-        print "Destroying grid..."
+        Debug("Destroying grid...")
         m.Screen.Close()
         m.Screen = invalid
     end if

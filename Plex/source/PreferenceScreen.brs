@@ -40,7 +40,7 @@ Sub showSettingsScreen()
         if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
         else if type(msg) = "roListScreenEvent" then
             if msg.isScreenClosed() then
-                print "Exiting settings screen"
+                Debug("Exiting settings screen")
                 m.ViewController.PopScreen(m)
                 exit while
             else if msg.isListItemSelected() then
@@ -391,7 +391,7 @@ Sub prefsHandleEnumPreference(regKey, index)
     pref = m.Prefs[regKey]
     screen = m.ViewController.CreateEnumInputScreen(pref.values, RegRead(regKey, "preferences", pref.default), pref.heading, [label])
     if screen.SelectedIndex <> invalid then
-        print "Set "; label; " to "; screen.SelectedValue
+        Debug("Set " + label + " to " + screen.SelectedValue)
         RegWrite(regKey, screen.SelectedValue, "preferences")
         m.Changes.AddReplace(regKey, screen.SelectedValue)
         m.AppendValue(index, screen.SelectedLabel)
@@ -458,7 +458,7 @@ Sub showManageServersScreen()
         if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
         else if type(msg) = "roListScreenEvent" then
             if msg.isScreenClosed() then
-                print "Manage servers closed event"
+                Debug("Manage servers closed event")
                 m.ViewController.PopScreen(m)
                 exit while
             else if msg.isListItemSelected() then

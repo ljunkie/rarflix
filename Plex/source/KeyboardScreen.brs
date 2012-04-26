@@ -42,7 +42,7 @@ Sub showKeyboardScreen()
         if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
         else if type(msg) = "roKeyboardScreenEvent" then
             if msg.isScreenClosed() then
-                print "Exiting keyboard screen"
+                Debug("Exiting keyboard screen")
                 m.ViewController.PopScreen(m)
                 exit while
             else if msg.isButtonPressed() then
