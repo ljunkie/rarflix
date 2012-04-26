@@ -100,7 +100,20 @@ Function AddUnnamedServer(address) As Boolean
     validating.ShowBusyAnimation()
     validating.Show()
 
-    ' See if the user misunderstood and entered the Roku's IP
+    ' See if the user misunderstood and entered the Roku's IP or the public IP.
+    subnetRegex = CreateObject("roRegex", "((\d+)\.(\d+)\.(\d+)\.)(\d+)", "")
+    rokuSubnet = ""
+    enteredSubnet = ""
+    subnetMatch = false
+
+    match = subnetRegex.Match(address)
+    if match.Count() > 0 then
+        enteredSubnet = match[1]
+    else
+        ' Must have entered a hostname, pretend like the subnet matched
+        subnetMatch = true
+    end if
+
     device = CreateObject("roDeviceInfo")
     addrs = device.GetIPAddrs()
     for each iface in addrs
@@ -113,6 +126,14 @@ Function AddUnnamedServer(address) As Boolean
             dialog.Text = address + " is the IP address of the Roku, enter the IP address of the Plex Media Server."
             dialog.Show()
             return false
+        end if
+
+        match = subnetRegex.Match(ip)
+        if match.Count() > 0 then
+            rokuSubnet = match[1]
+            if rokuSubnet = enteredSubnet then
+                subnetMatch = true
+            end if
         end if
     next
 
@@ -158,6 +179,12 @@ Function AddUnnamedServer(address) As Boolean
         dialog.Facade = validating
         dialog.Title = "Error"
         dialog.Text = "There was no response from " + orig + "."
+
+        if NOT subnetMatch then
+            Debug("Subnet of entered address didn't match Roku address")
+            dialog.Text = dialog.Text + " Make sure you're entering the local IP address of your Plex Media Server (" + rokuSubnet + "X)"
+        end if
+
         dialog.Show()
     end if
 
