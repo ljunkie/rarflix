@@ -276,16 +276,35 @@ Function videoCanDirectPlay(mediaItem) As Boolean
         subtitleFormat = invalid
     end if
 
-    audioStreamIndex = 0
-    selectedAudioStreamIndex = invalid
+    ' There doesn't seem to be a great way to do this, but we need to see if
+    ' the audio streams will support direct play. We'll assume that if there
+    ' are audio streams with different numbers of channels, they're probably
+    ' the same audio; if there are multiple streams with the same number of
+    ' channels, they're probably something like commentary or another language.
+    ' So if the selected stream is the first stream with that number of
+    ' channels, it might be chosen by the Roku when Direct Playing. We don't
+    ' just check the selected stream though, because if the 5.1 AC3 stream is
+    ' selected and there's also a stereo AAC stream, we can direct play.
+
+    stereoCodec = invalid
+    surroundCodec = invalid
+    secondaryStreamSelected = false
     if mediaItem.preferredPart <> invalid then
         for each stream in mediaItem.preferredPart.streams
             if stream.streamType = "2" then
-                if stream.selected <> invalid then
-                    selectedAudioStreamIndex = audioStreamIndex
-                    exit for
+                if stream.channels = "2" then
+                    if stereoCodec = invalid then
+                        stereoCodec = stream.codec
+                    else if stream.selected <> invalid then
+                        secondaryStreamSelected = true
+                    end if
+                else if stream.channels = "6" then
+                    if surroundCodec = invalid then
+                        surroundCodec = stream.codec
+                    else if stream.selected <> invalid then
+                        secondaryStreamSelected = true
+                    end if
                 end if
-                audioStreamIndex = audioStreamIndex + 1
             end if
         next
     end if
@@ -295,7 +314,9 @@ Function videoCanDirectPlay(mediaItem) As Boolean
     print "Media item video codec: "; mediaItem.videoCodec
     print "Media item audio codec: "; mediaItem.audioCodec
     print "Media item subtitles: "; subtitleFormat
-    print "Media item audio index: "; selectedAudioStreamIndex
+    print "Media item stereo codec: "; stereoCodec
+    print "Media item 5.1 codec: "; surroundCodec
+    print "Secondary audio stream selected: "; secondaryStreamSelected
 
     versionArr = GetGlobal("rokuVersionArr", [0])
     major = versionArr[0]
@@ -305,10 +326,12 @@ Function videoCanDirectPlay(mediaItem) As Boolean
         return false
     end if
 
-    if selectedAudioStreamIndex <> invalid AND selectedAudioStreamIndex > 0 then
+    if secondaryStreamSelected then
         print "videoCanDirectPlay: audio stream selected"
         return false
     end if
+
+    device = CreateObject("roDeviceInfo")
 
     if mediaItem.container = "mp4" OR mediaItem.container = "mov" OR mediaItem.container = "m4v" then
         if (mediaItem.videoCodec <> "h264" AND mediaItem.videoCodec <> "mpeg4") then
@@ -316,13 +339,16 @@ Function videoCanDirectPlay(mediaItem) As Boolean
             return false
         end if
 
-        ' NOTE: ac3 seems to fail for this commenter (though it does at least throw an error)
-        if (mediaItem.audioCodec <> "aac" AND mediaItem.audioCodec <> "ac3") then
-            print "videoCanDirectPlay: ac not aac/ac3"
-            return false
+        if device.hasFeature("5.1_surround_sound") AND surroundCodec <> invalid AND surroundCodec = "ac3" then
+            return true
         end if
 
-        return true
+        if stereoCodec <> invalid AND (stereoCodec = "aac" OR stereoCodec = "ac3") then
+            return true
+        end if
+
+        print "videoCanDirectPlay: ac not aac/ac3"
+        return false
     end if
 
     if mediaItem.container = "wmv" then
@@ -359,12 +385,16 @@ Function videoCanDirectPlay(mediaItem) As Boolean
             return false
         end if
 
-        if (mediaItem.audioCodec <> "aac" AND mediaItem.audioCodec <> "ac3" AND mediaItem.audioCodec <> "mp3") then
-            print "videoCanDirectPlay: ac not aac/ac3/mp3"
-            return false
+        if device.hasFeature("5.1_surround_sound") AND surroundCodec <> invalid AND surroundCodec = "ac3" then
+            return true
         end if
 
-        return true
+        if stereoCodec <> invalid AND (stereoCodec = "aac" OR stereoCodec = "ac3" OR stereoCodec = "mp3") then
+            return true
+        end if
+
+        print "videoCanDirectPlay: ac not aac/ac3/mp3"
+        return false
     end if
 
     if mediaItem.container = "hls" then
