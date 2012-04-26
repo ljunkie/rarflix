@@ -150,6 +150,7 @@ Function AddUnnamedServer(address) As Boolean
 
     httpRequest = NewHttp(address)
     response = httpRequest.GetToStringWithTimeout(60)
+    Debug("Validate server response: " + tostr(httpRequest.ResponseCode))
     xml=CreateObject("roXMLElement")
     if xml.Parse(response) then
         Debug("Got server response, version " + tostr(xml@version))
@@ -182,8 +183,10 @@ Function AddUnnamedServer(address) As Boolean
 
         if NOT subnetMatch then
             Debug("Subnet of entered address didn't match Roku address")
-            dialog.Text = dialog.Text + " Make sure you're entering the local IP address of your Plex Media Server (" + rokuSubnet + "X)"
+            dialog.Text = dialog.Text + " Make sure you're entering the local IP address of your Plex Media Server (" + rokuSubnet + "X)."
         end if
+
+        dialog.Text = dialog.Text + String(2, Chr(10)) + "Error: " + tostr(httpRequest.FailureReason)
 
         dialog.Show()
     end if

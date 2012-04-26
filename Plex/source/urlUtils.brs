@@ -174,6 +174,8 @@ Function http_get_to_string_with_timeout(seconds as Integer) as String
     if (m.Http.AsyncGetToString())
         event = wait(timeout%, m.Http.GetPort())
         if type(event) = "roUrlEvent"
+            m.ResponseCode = event.GetResponseCode()
+            m.FailureReason = event.GetFailureReason()
             str = event.GetString()
         elseif event = invalid
             Dbg("AsyncGetToString timeout")
