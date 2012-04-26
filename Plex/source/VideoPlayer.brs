@@ -159,7 +159,7 @@ Sub playVideo(seekValue=0, directPlayOptions=0)
     videoItem = server.ConstructVideoItem(metadata, seconds, directPlayOptions < 3, directPlayOptions = 1 OR directPlayOptions = 2)
 
     if videoItem = invalid then
-        Debug("Can't play video, server was unable to construct video item")
+        Debug("Can't play video, server was unable to construct video item", server)
         success = false
     else
         port = CreateObject("roMessagePort")
@@ -187,10 +187,17 @@ Sub playVideo(seekValue=0, directPlayOptions=0)
         videoPlayer.SetPositionNotificationPeriod(5)
         videoPlayer.Show()
 
+        if videoItem.IsTranscoded then
+            Debug("Starting to play transcoded video", server)
+        else
+            Debug("Starting to direct play video", server)
+        end if
+
         success = videoMessageLoop(server, metadata, port, videoItem.IsTranscoded)
     end if
 
     if NOT success then
+        Debug("Error occurred while playing video", server)
         if (videoItem <> invalid AND videoItem.IsTranscoded) OR directPlayOptions >= 3 then
             ' Nothing left to fall back to, tell the user
             dialog = createBaseDialog()
