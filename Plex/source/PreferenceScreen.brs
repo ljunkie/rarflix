@@ -230,6 +230,8 @@ Sub showPreferencesScreen()
     m.AddItem({title: "Screensaver"}, "screensaver")
     m.AppendValue(invalid, m.GetEnumValue("screensaver"))
 
+    m.AddItem({title: "Debug Logging"}, "debug")
+
     m.AddItem({title: "Close Preferences"}, "close")
 
     serversBefore = {}
@@ -272,6 +274,11 @@ Sub showPreferencesScreen()
                 else if command = "1080p" then
                     screen = create1080PreferencesScreen(m.ViewController)
                     m.ViewController.InitializeOtherScreen(screen, ["1080p Settings"])
+                    screen.Show()
+                    screen = invalid
+                else if command = "debug" then
+                    screen = createDebugLoggingScreen(m.ViewController)
+                    m.ViewController.InitializeOtherScreen(screen, ["Debug Logging"])
                     screen.Show()
                     screen = invalid
                 else if command = "close" then
@@ -378,6 +385,73 @@ Sub show1080PreferencesScreen()
                 command = m.GetSelectedCommand(msg.GetIndex())
                 if command = "legacy1080p" OR command = "legacy1080pframerate" then
                     m.HandleEnumPreference(command, msg.GetIndex())
+                else if command = "close" then
+                    m.Screen.Close()
+                end if
+            end if
+        end if
+    end while
+End Sub
+
+Function createDebugLoggingScreen(viewController) As Object
+    obj = CreateObject("roAssociativeArray")
+    port = CreateObject("roMessagePort")
+    screen = CreateObject("roListScreen")
+
+    screen.SetMessagePort(port)
+
+    ' Standard properties for all our Screen types
+    obj.Item = invalid
+    obj.Screen = screen
+    obj.Port = port
+    obj.ViewController = viewController
+    obj.MessageHandler = invalid
+    obj.MsgTimeout = 0
+
+    obj.Show = showDebugLoggingScreen
+
+    lsInitBaseListScreen(obj)
+
+    obj.RefreshItems = debugRefreshItems
+    obj.Logger = GetGlobalAA()["logger"]
+
+    return obj
+End Function
+
+Sub debugRefreshItems()
+    m.contentArray.Clear()
+    m.Screen.ClearContent()
+
+    if m.Logger.Enabled then
+        m.AddItem({title: "Disable Logging"}, "disable")
+    else
+        m.AddItem({title: "Enable Logging"}, "enable")
+    end if
+
+    m.AddItem({title: "Close"}, "close")
+End Sub
+
+Sub showDebugLoggingScreen()
+    m.Screen.SetHeader("Debug Logging")
+
+    m.RefreshItems()
+    m.Screen.Show()
+
+    while true
+        msg = wait(m.MsgTimeout, m.Port)
+        if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
+        else if type(msg) = "roListScreenEvent" then
+            if msg.isScreenClosed() then
+                m.ViewController.PopScreen(m)
+                exit while
+            else if msg.isListItemSelected() then
+                command = m.GetSelectedCommand(msg.GetIndex())
+                if command = "enable" then
+                    m.Logger.Enable()
+                    m.RefreshItems()
+                else if command = "disable" then
+                    m.Logger.Disable()
+                    m.RefreshItems()
                 else if command = "close" then
                     m.Screen.Close()
                 end if
