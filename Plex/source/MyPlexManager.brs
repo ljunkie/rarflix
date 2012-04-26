@@ -146,7 +146,7 @@ Function mpShowPinScreen() As Object
                     end if
                 else
                     ' 404 is expected for expired pins, but treat all errors as expired
-                    Debug("Expiring PIN, server response was" + tostr(msg.GetResponseCode())
+                    Debug("Expiring PIN, server response was" + tostr(msg.GetResponseCode()))
                     screen.SetRegistrationCode("code expired")
                     pollUrl = invalid
                 end if

@@ -602,9 +602,9 @@ End Function
 'Walk an XML tree and print it
 '******************************************************
 Sub PrintXML(element As Object, depth As Integer)
-    Debug(tab(depth*3) + "Name: [" + element.GetName() + "]")
+    Debug(String(depth*3, " ") + "Name: [" + element.GetName() + "]")
     if invalid <> element.GetAttributes() then
-        attrStr = tab(depth*3) + "Attributes: "
+        attrStr = String(depth*3, " ") + "Attributes: "
         for each a in element.GetAttributes()
             attrStr = attrStr + a + "=" + left(element.GetAttributes()[a], 4000)
             if element.GetAttributes().IsNext() then attrStr = attrStr + ", "
@@ -614,9 +614,9 @@ Sub PrintXML(element As Object, depth As Integer)
 
     if element.GetBody()=invalid then
     else if type(element.GetBody())="roString" then
-        Debug(tab(depth*3) + "Contains string: [" + left(element.GetBody(), 4000) + "]")
+        Debug(String(depth*3, " ") + "Contains string: [" + left(element.GetBody(), 4000) + "]")
     else
-        Debug(tab(depth*3) + "Contains list:")
+        Debug(String(depth*3, " ") + "Contains list:")
         for each e in element.GetBody()
             PrintXML(e, depth+1)
         next
