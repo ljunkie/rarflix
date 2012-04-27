@@ -287,7 +287,7 @@ Function createGDMDiscovery(port)
             exit while
         else
             sleep(500)
-            Debug("retrying")
+            Debug("retrying, errno " + tostr(udp.status()))
             try = try + 1
         end if
     end while
