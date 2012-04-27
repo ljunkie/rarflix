@@ -129,6 +129,14 @@ Function isint(obj as dynamic) As Boolean
     return true
 End Function
 
+Function validint(obj As Dynamic) As Integer
+    if obj <> invalid and GetInterface(obj, "ifInt") <> invalid then
+        return obj
+    else
+        return 0
+    end if
+End Function
+
 '******************************************************
 ' validstr
 '

@@ -294,7 +294,7 @@ Sub vcUpdateScreenProperties(screen)
         if enableBreadcrumbs then
             screen.Screen.SetBreadcrumbText(bread1, bread2)
         end if
-    else if screenType = "roListScreen" OR screenType = "roKeyboardScreen" then
+    else if screenType = "roListScreen" OR screenType = "roKeyboardScreen" OR screenType = "roParagraphScreen" then
         if enableBreadcrumbs then
             screen.Screen.SetTitle(bread2)
         end if

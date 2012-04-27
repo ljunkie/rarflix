@@ -424,6 +424,7 @@ Sub debugRefreshItems()
 
     if m.Logger.Enabled then
         m.AddItem({title: "Disable Logging"}, "disable")
+        m.AddItem({title: "Download Logs"}, "download")
     else
         m.AddItem({title: "Enable Logging"}, "enable")
     end if
@@ -452,6 +453,10 @@ Sub showDebugLoggingScreen()
                 else if command = "disable" then
                     m.Logger.Disable()
                     m.RefreshItems()
+                else if command = "download" then
+                    screen = createLogDownloadScreen(m.ViewController)
+                    screen.Show()
+                    screen = invalid
                 else if command = "close" then
                     m.Screen.Close()
                 end if

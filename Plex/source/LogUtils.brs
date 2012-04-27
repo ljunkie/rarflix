@@ -26,6 +26,23 @@ Function createLogger() As Object
 
     GetGlobalAA().AddReplace("logger", logger)
 
+    ' TODO(schuyler): Especially if we ever want a web server for something
+    ' else (remote API?), it makes more sense to do this elsewhere. It would
+    ' also be nice if it were always running, but that requires a global
+    ' message port.
+
+    ' Initialize some globals for the web server
+    globals = CreateObject("roAssociativeArray")
+    globals.pkgname = "Plex Debug"
+    globals.maxRequestLength = 4000
+    globals.idletime = 60
+    globals.wwwroot = "tmp:/"
+    globals.index_name = "index.html"
+    globals.serverName = "Plex Debug"
+    AddGlobals(globals)
+    MimeType()
+    HttpTitle()
+
     return logger
 End Function
 
@@ -45,7 +62,7 @@ Sub loggerLog(msg)
     ' available, so this is totally arbitrary.
 
     if m.DebugBuffer.Len() > 8192 then
-        filename = "tmp:/debug_log" + tostr(m.DebugFileNum)
+        filename = "tmp:/debug_log" + tostr(m.DebugFileNum) + ".txt"
         WriteAsciiFile(filename, m.DebugBuffer)
         m.DebugFiles.AddTail(filename)
         m.DebugFileNum = m.DebugFileNum + 1
@@ -76,5 +93,64 @@ Sub loggerDisable()
         DeleteFile(file)
     next
     m.DebugFiles.Clear()
+End Sub
+
+Function createLogDownloadScreen(viewController) As Object
+    obj = CreateObject("roAssociativeArray")
+    port = CreateObject("roMessagePort")
+    screen = CreateObject("roParagraphScreen")
+
+    screen.SetMessagePort(port)
+
+    ' Standard properties for all our Screen types
+    obj.Item = invalid
+    obj.Screen = screen
+    obj.Port = port
+    obj.ViewController = viewController
+    obj.MessageHandler = invalid
+    obj.MsgTimeout = 5000
+
+    obj.Show = showLogDownloadScreen
+
+    obj.Server = InitServer({msgPort: port, port: 8324})
+
+    viewController.InitializeOtherScreen(obj, ["Debug Logging"])
+
+    return obj
+End Function
+
+Sub showLogDownloadScreen()
+    ' If we ask the server's socket what address it's listening on, it'll
+    ' tell us 0.0.0.0, so just grab the first IP from the device info.
+    device = CreateObject("roDeviceInfo")
+    addrs = device.GetIPAddrs()
+    addrs.Reset()
+    ip = addrs[addrs.Next()]
+
+    m.Screen.AddHeaderText("Download Debug Logs")
+    m.Screen.AddParagraph("To download debug logs, on your computer, visit:")
+    m.Screen.AddParagraph(" ")
+    m.Screen.AddParagraph("http://" + ip + ":" + tostr(m.Server.port) + "/logs")
+    m.Screen.AddButton(1, "done")
+
+    m.Screen.Show()
+
+    while true
+        m.Server.prewait()
+        msg = wait(m.MsgTimeout, m.Port)
+        if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
+        else if type(msg) = "roParagraphScreenEvent" then
+            if msg.isScreenClosed() then
+                m.ViewController.PopScreen(m)
+                exit while
+            else if msg.isButtonPressed() then
+                m.Screen.Close()
+            end if
+        else if type(msg) = "roSocketEvent" OR msg = invalid then
+            m.Server.postwait()
+        end if
+    end while
+
+    m.Server.close()
 End Sub
 
