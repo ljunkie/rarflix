@@ -34,6 +34,7 @@ function ClassReply()
         this.class       = "Reply"
         this.GENERATED   = 1
         this.FROMFILE    = 2
+        this.CONCATFILES = 3
         this.source      = 0
         ' members
         this.buf         = invalid
@@ -41,6 +42,7 @@ function ClassReply()
         this.path        = invalid
         this.request     = invalid
         this.id          = 0
+        this.files       = invalid
         ' copy-initializable members
         this.start       = 0
         this.length      = 0
@@ -48,6 +50,7 @@ function ClassReply()
         this.header_sent = 0
         this.header_only = false
         this.buf_start   = 0
+        this.buf_offset  = 0
         this.http_code   = 0
         this.mimetype    = "text/html" ' for errors
         ' functions
@@ -66,6 +69,9 @@ function ClassReply()
         ' html lines
         this.keepAlive = reply_keep_alive
         this.genBy     = reply_generated_by
+        ' handlers for path prefixes
+        this.handlers  = {}
+        this.AddHandler= reply_add_handler
         ' singleton
         m.ClassReply   = this
     end if
@@ -93,14 +99,29 @@ function reply_send(sock as Object, bufsize as Integer) as Integer
             m.buf.ReadFile(m.path,m.buf_start,bufsize)
             info(m,"Read" + Stri(m.buf.count()) + " bytes from source file @" + itostr(m.buf_start))
         end if
+    else if m.source=m.CONCATFILES
+        if m.start + m.sent >= m.buf_offset + m.buf_start + m.buf.count()
+            file = m.files.GetHead()
+            if m.start + m.sent >= m.buf_offset + file.length
+                m.buf_offset = m.buf_offset + file.length
+                m.buf_start = 0
+                m.files.RemoveHead()
+                file = m.files.GetHead()
+            else
+                m.buf_start = m.start + m.sent - m.buf_offset
+            end if
+
+            m.buf.ReadFile(file.path, m.buf_start, bufsize)
+            info(m,"Read" + Stri(m.buf.count()) + " bytes from source file @" + itostr(m.buf_start))
+        end if
     end if
-    buf_pos = m.start + m.sent - m.buf_start
+    buf_pos = m.start + m.sent - m.buf_start - m.buf_offset
     buf_remaining = m.buf.count() - buf_pos
     if buf_remaining=0 then info(m,"source buf is empty")
     req_remaining = m.length - m.sent
     if buf_remaining>req_remaining then buf_remaining = req_remaining
     sent = sock.send(m.buf, buf_pos, buf_remaining)
-    m.log(sent, m.buf_start+buf_pos, m.length)
+    m.log(sent, m.buf_offset+m.buf_start+buf_pos, m.length)
     if sent>0 then m.sent = m.sent + sent
     return sent
 end function
@@ -332,13 +353,24 @@ end function
 function reply_process()
     m.now = rfc1123_date(Now())
     method = m.request.method
+
+    if method = "HEAD" then
+        m.header_only = true
+    end if
+
+    ' See if we've registered a handler for this path
+    path = UrlUnescape(m.request.uri)
+    for each prefix in m.handlers
+        if left(path, len(prefix)) = prefix then
+            m.fn = m.handlers[prefix]
+            return m.fn()
+        end if
+    next
+
     if method=""
         m.default(400, "You sent a request that the server couldn't understand.")
-    else if method="GET"
+    else if method="GET" or method="HEAD"
         m.get()
-    else if method="HEAD"
-        m.get()
-        m.header_only = true
     else if method="OPTIONS" or method="POST" or method="PUT" or method="DELETE" or method="TRACE" or method="CONNECT"
         m.default(501, "The method you specified ("+method+") is not implemented.")
     else
@@ -361,3 +393,7 @@ end function
 function reply_log(recent as Integer,from as Integer, total as Integer)
     info( m, "Sent" + Stri(recent) + " [" + makeRange(from,recent,total) +"]" )
 end function
+
+sub reply_add_handler(prefix as String, fn as Function)
+    m.handlers[prefix] = fn
+end sub

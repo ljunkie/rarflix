@@ -23,6 +23,7 @@ Function createLogger() As Object
     logger.Log = loggerLog
     logger.Enable = loggerEnable
     logger.Disable = loggerDisable
+    logger.Flush = loggerFlush
 
     GetGlobalAA().AddReplace("logger", logger)
 
@@ -42,6 +43,7 @@ Function createLogger() As Object
     AddGlobals(globals)
     MimeType()
     HttpTitle()
+    ClassReply().AddHandler("/logs", ProcessLogsRequest)
 
     return logger
 End Function
@@ -62,16 +64,7 @@ Sub loggerLog(msg)
     ' available, so this is totally arbitrary.
 
     if m.DebugBuffer.Len() > 8192 then
-        filename = "tmp:/debug_log" + tostr(m.DebugFileNum) + ".txt"
-        WriteAsciiFile(filename, m.DebugBuffer)
-        m.DebugFiles.AddTail(filename)
-        m.DebugFileNum = m.DebugFileNum + 1
-        m.DebugBuffer = box("")
-
-        if m.DebugFiles.Count() > 10 then
-            filename = m.DebugFiles.RemoveHead()
-            DeleteFile(filename)
-        end if
+        m.Flush()
     end if
 End Sub
 
@@ -93,6 +86,19 @@ Sub loggerDisable()
         DeleteFile(file)
     next
     m.DebugFiles.Clear()
+End Sub
+
+Sub loggerFlush()
+    filename = "tmp:/debug_log" + tostr(m.DebugFileNum) + ".txt"
+    WriteAsciiFile(filename, m.DebugBuffer)
+    m.DebugFiles.AddTail(filename)
+    m.DebugFileNum = m.DebugFileNum + 1
+    m.DebugBuffer = box("")
+
+    if m.DebugFiles.Count() > 10 then
+        filename = m.DebugFiles.RemoveHead()
+        DeleteFile(filename)
+    end if
 End Sub
 
 Function createLogDownloadScreen(viewController) As Object
@@ -153,4 +159,33 @@ Sub showLogDownloadScreen()
 
     m.Server.close()
 End Sub
+
+Function ProcessLogsRequest() As Boolean
+    logger = GetGlobalAA()["logger"]
+    logger.Flush()
+
+    fs = CreateObject("roFilesystem")
+    m.files = CreateObject("roList")
+    totalLen = 0
+    for each path in logger.DebugFiles
+        stat = fs.stat(path)
+        if stat <> invalid then
+            m.files.AddTail({path: path, length: stat.size})
+            totalLen = totalLen + stat.size
+        end if
+    next
+
+    m.mimetype = "text/plain"
+    m.fileLength = totalLen
+    m.source = m.CONCATFILES
+    m.lastmod = Now()
+
+    ' Not handling range requests...
+    m.start = 0
+    m.length = m.fileLength
+    m.http_code = 200
+
+    m.genHdr()
+    return true
+End Function
 
