@@ -60,7 +60,7 @@ Function createHomeScreen(viewController) As Object
     end if
 
     configuredServers = PlexMediaServers()
-    Debug("Setting up home screen content, server count:"+ tostr(configuredServers.Count()))
+    Debug("Setting up home screen content, server count: " + tostr(configuredServers.Count()))
     for each server in configuredServers
         obj.CreateServerRequests(server, false, false)
     next
@@ -314,7 +314,7 @@ Sub homeRemoveFromRowIf(row, predicate)
     next
 
     if modified then
-        Debug("Removed" + tostr(status.content.Count() - newContent.Count()) + " items from row" + tostr(row))
+        Debug("Removed " + tostr(status.content.Count() - newContent.Count()) + " items from row" + tostr(row))
         status.content = newContent
         m.Screen.OnDataLoaded(row, newContent, 0, newContent.Count(), true)
     end if
@@ -388,10 +388,10 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
 
         status.toLoad.Clear()
 
-        Debug("Successfully kicked off" + tostr(numRequests) + " requests for row" + tostr(loadingRow) + ", pending requests now:" + tostr(status.pendingRequests))
+        Debug("Successfully kicked off " + tostr(numRequests) + " requests for row " + tostr(loadingRow) + ", pending requests now: " + tostr(status.pendingRequests))
     else if status.pendingRequests > 0 then
         status.loadStatus = 1
-        Debug("No additional requests to kick off for row" + tostr(loadingRow) + ", pending request count:" + tostr(status.pendingRequests))
+        Debug("No additional requests to kick off for row " + tostr(loadingRow) + ", pending request count: " + tostr(status.pendingRequests))
     else
         ' Special case, if we try loading the Misc row and have no servers,
         ' this is probably a first run scenario, try to be helpful.
@@ -432,7 +432,7 @@ Function homeHandleMessage(msg) As Boolean
         end if
 
         if msg.GetResponseCode() <> 200 then
-            Debug("Got a" + tostr(msg.GetResponseCode()) + " response from " + tostr(request.request.GetUrl()) + " - " + tostr(msg.GetFailureReason()))
+            Debug("Got a " + tostr(msg.GetResponseCode()) + " response from " + tostr(request.request.GetUrl()) + " - " + tostr(msg.GetFailureReason()))
 
             if request.row <> invalid AND status.loadStatus < 2 AND status.pendingRequests = 0 then
                 status.loadStatus = 2
@@ -445,7 +445,7 @@ Function homeHandleMessage(msg) As Boolean
 
             return true
         else
-            Debug("Got a 200 response from " + tostr(request.request.GetUrl()) + " (type " + tostr(request.requestType) + ", row" + tostr(request.row) + ")")
+            Debug("Got a 200 response from " + tostr(request.request.GetUrl()) + " (type " + tostr(request.requestType) + ", row " + tostr(request.row) + ")")
         end if
 
         xml = CreateObject("roXMLElement")

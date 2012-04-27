@@ -10,7 +10,7 @@ Function PlexMediaServers() As Object
         ' { is an illegal URL character so use a deliminator
         serverTokens = strTokenize(servers, "{")
         for each token in serverTokens
-            Debug("Server token:" + token)
+            Debug("Server token: " + token)
             ' another illegal char to delim IP and name
             serverDetails = strTokenize(token, "\")
             address = serverDetails[0]
@@ -37,7 +37,7 @@ Function RemoveAllServers()
 End Function
 
 Function RemoveServer(index) 
-    Debug("Removing server with index:" + tostr(index))
+    Debug("Removing server with index: " + tostr(index))
     servers = RegRead("serverList", "servers")
     RemoveAllServers()
     if servers <> invalid
@@ -93,7 +93,7 @@ Sub AddServer(name, address, machineID)
 End Sub
 
 Function AddUnnamedServer(address) As Boolean
-    Debug("Adding unnamed server to saved list:" + address)
+    Debug("Adding unnamed server to saved list: " + address)
 
     validating = CreateObject("roOneLineDialog")
     validating.SetTitle("Validating Plex Media Servers ...")
@@ -215,7 +215,7 @@ Function DiscoverPlexMediaServers()
     while true
         msg = wait(timeout, port)
         if msg = invalid then
-            Debug("Canceling GDM discovery after timeout, servers found:" + tostr(found))
+            Debug("Canceling GDM discovery after timeout, servers found: " + tostr(found))
             gdm.Stop()
             exit while
         else if type(msg) = "roSocketEvent" then

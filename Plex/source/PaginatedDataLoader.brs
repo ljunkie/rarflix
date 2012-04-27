@@ -151,7 +151,7 @@ Sub loaderStartRequest(row, startItem, count)
         m.PendingRequests[httpRequest.GetIdentity().tostr()] = request
         status.pendingRequests = status.pendingRequests + 1
     else
-        Debug("Failed to start request for row" + tostr(row) + ": " + tostr(httpRequest.GetUrl()))
+        Debug("Failed to start request for row " + tostr(row) + ": " + tostr(httpRequest.GetUrl()))
     end if
 End Sub
 
@@ -205,7 +205,7 @@ Function loaderHandleMessage(msg) As Boolean
             countLoaded = container.Count()
 
             if startItem <> status.content.Count() then
-                Debug("Received paginated response for index" + tostr(startItem) + " of list with length" + tostr(status.content.Count()))
+                Debug("Received paginated response for index " + tostr(startItem) + " of list with length " + tostr(status.content.Count()))
                 metadata = container.GetMetadata()
                 for i = 0 to countLoaded - 1
                     status.content[startItem + i] = metadata[i]

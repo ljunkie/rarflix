@@ -173,7 +173,7 @@ Sub vcPushScreen(screen)
     screen.ScreenID = m.nextId
     m.nextId = m.nextId + 1
 
-    Debug("Pushing screen" + tostr(screen.ScreenID) + " onto view controller stack")
+    Debug("Pushing screen " + tostr(screen.ScreenID) + " onto view controller stack")
     m.screens.Push(screen)
 End Sub
 
@@ -197,7 +197,7 @@ Sub vcPopScreen(screen)
         Return
     end if
 
-    Debug("Popping screen" + tostr(screen.ScreenID) + " and cleaning up" + tostr(screen.NumBreadcrumbs) + " breadcrumbs")
+    Debug("Popping screen " + tostr(screen.ScreenID) + " and cleaning up " + tostr(screen.NumBreadcrumbs) + " breadcrumbs")
     m.screens.Pop()
     for i = 0 to screen.NumBreadcrumbs - 1
         m.breadcrumbs.Pop()

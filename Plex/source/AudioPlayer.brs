@@ -167,7 +167,7 @@ Function audioHandleMessage(msg) As Boolean
         return true
     else if msg.isButtonPressed() then
         button = msg.GetIndex()
-        Debug("button index=" + tostr(button))
+        Debug("button index: " + tostr(button))
         newstate = m.isPlayState
         if button = 0 then
             newstate = 1

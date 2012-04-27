@@ -117,7 +117,7 @@ Function mpShowPinScreen() As Object
         else if type(msg) = "roUrlEvent" AND msg.GetInt() = 1 then
             if codeRequest <> invalid AND codeRequest.GetIdentity() = msg.GetSourceIdentity() then
                 if msg.GetResponseCode() <> 201 then
-                    Debug("Request for new PIN failed:" + tostr(msg.GetResponseCode()) + " - " + tostr(msg.GetFailureReason()))
+                    Debug("Request for new PIN failed: " + tostr(msg.GetResponseCode()) + " - " + tostr(msg.GetFailureReason()))
                     dialog = createBaseDialog()
                     dialog.Title = "Server unavailable"
                     dialog.Text = "The myPlex server couldn't be reached, please try again later."
@@ -146,7 +146,7 @@ Function mpShowPinScreen() As Object
                     end if
                 else
                     ' 404 is expected for expired pins, but treat all errors as expired
-                    Debug("Expiring PIN, server response was" + tostr(msg.GetResponseCode()))
+                    Debug("Expiring PIN, server response was " + tostr(msg.GetResponseCode()))
                     screen.SetRegistrationCode("code expired")
                     pollUrl = invalid
                 end if
@@ -301,11 +301,11 @@ Function mpGetQueryResponse(sourceUrl, key) As Object
     xmlResult = CreateObject("roAssociativeArray")
     xmlResult.server = m
     httpRequest = m.CreateRequest(sourceUrl, key)
-    Debug("Fetching content from server at query URL:" + tostr(httpRequest.GetUrl()))
+    Debug("Fetching content from server at query URL: " + tostr(httpRequest.GetUrl()))
     response = GetToStringWithTimeout(httpRequest, 60)
     xml=CreateObject("roXMLElement")
     if not xml.Parse(response) then
-        Debug("Can't parse feed:" + tostr(response))
+        Debug("Can't parse feed: " + tostr(response))
     endif
 
     xmlResult.xml = xml

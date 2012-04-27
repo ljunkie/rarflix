@@ -189,7 +189,7 @@ Function showGridScreen() As Integer
                 end if
 
                 if m.selectedRow < 0 OR m.selectedRow >= names.Count() then
-                    Debug("Ignoring grid ListItemFocused event for bogus row:" + tostr(msg.GetIndex()))
+                    Debug("Ignoring grid ListItemFocused event for bogus row: " + tostr(msg.GetIndex()))
                 else
                     lastUpdatedSize = m.lastUpdatedSize[m.selectedRow]
                     if m.focusedIndex + 10 > lastUpdatedSize AND m.contentArray[m.selectedRow].Count() > lastUpdatedSize then
@@ -216,7 +216,7 @@ Function showGridScreen() As Integer
 End Function
 
 Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count As Integer, finished As Boolean)
-    Debug("Loaded" + tostr(count) + " elements in row" + tostr(row) + ", now have" + tostr(data.Count()))
+    Debug("Loaded " + tostr(count) + " elements in row " + tostr(row) + ", now have " + tostr(data.Count()))
 
     m.contentArray[row] = data
 

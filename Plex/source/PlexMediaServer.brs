@@ -60,7 +60,7 @@ End Function
 
 Function issuePostCommand(commandPath)
     commandUrl = m.serverUrl + commandPath
-    Debug("Executing POST command with full command URL:" + commandUrl)
+    Debug("Executing POST command with full command URL: " + commandUrl)
     request = m.CreateRequest("", commandUrl)
     request.PostFromString("")
 End Function
@@ -96,7 +96,7 @@ End Function
 
 Function issueCommand(commandPath)
     commandUrl = m.serverUrl + commandPath
-    Debug("Executing command with full command URL:" + commandUrl)
+    Debug("Executing command with full command URL: " + commandUrl)
     request = m.CreateRequest("", commandUrl)
     request.GetToString()
 End Function
@@ -122,11 +122,11 @@ Function xmlContent(sourceUrl, key) As Object
         xmlResult.sourceUrl = invalid
     else
         httpRequest = m.CreateRequest(sourceUrl, key)
-        Debug("Fetching content from server at query URL:" + tostr(httpRequest.GetUrl()))
+        Debug("Fetching content from server at query URL: " + tostr(httpRequest.GetUrl()))
         response = GetToStringWithTimeout(httpRequest, 60)
         xml=CreateObject("roXMLElement")
         if not xml.Parse(response) then
-            Debug("Can't parse feed:" + tostr(response))
+            Debug("Can't parse feed: " + tostr(response))
         endif
             
         xmlResult.xml = xml
@@ -190,13 +190,13 @@ Function IndirectMediaXml(server, originalKey, postURL)
         end if
     else
         httpRequest = server.CreateRequest("", originalKey)
-        Debug("Fetching content from server at query URL:" + tostr(httpRequest.GetUrl()))
+        Debug("Fetching content from server at query URL: " + tostr(httpRequest.GetUrl()))
         response = GetToStringWithTimeout(httpRequest, 60)
     end if
 
     xml=CreateObject("roXMLElement")
     if not xml.Parse(response) then
-        Debug("Can't parse feed:" + tostr(response))
+        Debug("Can't parse feed: " + tostr(response))
         return invalid
     endif
     return xml
@@ -204,11 +204,11 @@ End Function
         
 Function DirectMediaXml(server, queryUrl) As Object
     httpRequest = server.CreateRequest("", queryUrl)
-    Debug("Fetching content from server at query URL:" + tostr(httpRequest.GetUrl()))
+    Debug("Fetching content from server at query URL: " + tostr(httpRequest.GetUrl()))
     response = GetToStringWithTimeout(httpRequest, 60)
     xml=CreateObject("roXMLElement")
     if not xml.Parse(response) then
-        Debug("Can't parse feed:" + tostr(response))
+        Debug("Can't parse feed: " + tostr(response))
         return originalKey
     endif
     return xml
@@ -269,7 +269,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
     deviceInfo = CreateObject("roDeviceInfo")
     quality = "SD"
     if deviceInfo.GetDisplayType() = "HDTV" then quality = "HD"
-    Debug("Setting stream quality:" + quality)
+    Debug("Setting stream quality: " + quality)
     video.StreamQualities = [quality]
 
 	'Setup 1080p metadata 	
@@ -316,11 +316,11 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
         else
             maxResolution = 0
         end if
-        Debug("Max resolution:" + tostr(maxResolution))
+        Debug("Max resolution: " + tostr(maxResolution))
 
         if (videoCanDirectPlay(mediaItem))
             resolution = firstOf(mediaItem.videoResolution, "0").toInt()
-            Debug("Media item resolution:" + tostr(resolution) + ", max is" + tostr(maxResolution))
+            Debug("Media item resolution: " + tostr(resolution) + ", max is " + tostr(maxResolution))
             if resolution <= maxResolution then
                 video.IndirectHttpHeaders = headers
                 m.AddDirectPlayInfo(video, item, mediaKey)
@@ -479,14 +479,14 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As 
 
     location = ResolveUrl(m.serverUrl, item.sourceUrl, videoUrl)
     location = m.ConvertTranscodeURLToLoopback(location)
-    Debug("Location:" + tostr(location))
+    Debug("Location: " + tostr(location))
     if len(key) = 0 then
         fullKey = ""
     else
         fullKey = ResolveUrl(m.serverUrl, item.sourceUrl, key)
     end if
-    Debug("Original key:" + tostr(key))
-    Debug("Full key:" + tostr(fullKey))
+    Debug("Original key: " + tostr(key))
+    Debug("Full key: " + tostr(fullKey))
     
     if not(RegExists("level", "preferences")) then RegWrite("level", "40", "preferences")
 
@@ -539,7 +539,7 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As 
     query = query + "&X-Plex-Client-Capabilities=" + HttpEncode(Capabilities())
 
     finalUrl = m.serverUrl + path + query
-    Debug("Final URL:" + finalUrl)
+    Debug("Final URL: " + finalUrl)
     return finalUrl
 End Function
 
@@ -550,7 +550,7 @@ Function TranscodingAudioUrl(audioUrl As String, item As Object)
 
     location = ResolveUrl(m.serverUrl, item.sourceUrl, audioUrl)
     location = m.ConvertTranscodeURLToLoopback(location)
-    Debug("Location:" + tostr(location))
+    Debug("Location: " + tostr(location))
     
     path = "/music/:/transcode/generic.mp3?"
 
@@ -565,7 +565,7 @@ Function TranscodingAudioUrl(audioUrl As String, item As Object)
     query = query + "&X-Plex-Client-Capabilities=" + HttpEncode(Capabilities())
 
     finalUrl = m.serverUrl + path + query
-    Debug("Final URL:" + finalUrl)
+    Debug("Final URL: " + finalUrl)
     return finalUrl
 End Function
 

@@ -149,7 +149,7 @@ Sub playVideo(seekValue=0, directPlayOptions=0)
 
     origDirectPlayOptions = RegRead("directplay", "preferences", "0")
     if origDirectPlayOptions <> directPlayOptions.tostr() then
-        Debug("Temporarily overwriting direct play preference to:" + tostr(directPlayOptions))
+        Debug("Temporarily overwriting direct play preference to: " + tostr(directPlayOptions))
         RegWrite("directplay", directPlayOptions.tostr(), "preferences")
         Capabilities(true)
     else
@@ -261,7 +261,7 @@ Function qualityHandleButton(key, data) As Boolean
         end if
 
         if newQuality <> invalid then
-            Debug("New quality:" + tostr(newQuality))
+            Debug("New quality: " + tostr(newQuality))
             RegWrite("quality", newQuality.tostr(), "preferences")
             m.Quality = newQuality.tostr()
         end if
@@ -378,12 +378,12 @@ Function videoCanDirectPlay(mediaItem) As Boolean
 
     if mediaItem.container = "mkv" then
         if major < 4 then
-            Debug("videoCanDirectPlay: mkv not supported by version" + tostr(major))
+            Debug("videoCanDirectPlay: mkv not supported by version " + tostr(major))
             return false
         else
             ' TODO(schuyler): Reenable for 4+ only if/when we can figure out
             ' why so many MKVs fail.
-            Debug("videoCanDirectPlay: mkv (temporarily?) disallowed for version" + tostr(major))
+            Debug("videoCanDirectPlay: mkv (temporarily?) disallowed for version " + tostr(major))
             return false
         end if
 
@@ -602,7 +602,7 @@ Function createVideoOptionsScreen(item, viewController) As Object
     end if
 
     ' Audio streams
-    Debug("Found audio streams:" + tostr(audioStreams.Count()))
+    Debug("Found audio streams: " + tostr(audioStreams.Count()))
     if audioStreams.Count() > 0 then
         obj.Prefs["audio"] = {
             values: audioStreams,
@@ -613,7 +613,7 @@ Function createVideoOptionsScreen(item, viewController) As Object
     end if
 
     ' Subtitle streams
-    Debug("Found subtitle streams:" + tostr(subtitleStreams.Count() - 1))
+    Debug("Found subtitle streams: " + tostr(subtitleStreams.Count() - 1))
     if subtitleStreams.Count() > 1 then
         obj.Prefs["subtitles"] = {
             values: subtitleStreams,

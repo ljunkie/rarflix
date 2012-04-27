@@ -5,9 +5,9 @@ Function photoHandleMessage(msg) As Boolean
         if msg.isPlaybackPosition() then
             'm.CurIndex = msg.GetIndex()
         else if msg.isRequestFailed() then
-            Debug("preload failed:" + tostr(msg.GetIndex()))
+            Debug("preload failed: " + tostr(msg.GetIndex()))
         else if msg.isRequestInterrupted() then
-            Debug("preload interrupted:" + tostr(msg.GetIndex()))
+            Debug("preload interrupted: " + tostr(msg.GetIndex()))
         else if msg.isPaused() then
             Debug("paused")
         else if msg.isResumed() then

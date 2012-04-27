@@ -122,7 +122,7 @@ Function showPosterScreen() As Integer
                 selected = content[index]
                 contentType = selected.ContentType
 
-                Debug("Content type in poster screen:" + tostr(contentType))
+                Debug("Content type in poster screen: " + tostr(contentType))
 
                 if contentType = "series" OR NOT m.FilterMode then
                     breadcrumbs = [selected.Title]
