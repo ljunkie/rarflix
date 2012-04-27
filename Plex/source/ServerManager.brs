@@ -209,7 +209,7 @@ Function DiscoverPlexMediaServers()
         return 0
     end if
 
-    timeout = 5000
+    timeout = 10000
     found = 0
 
     while true
@@ -219,10 +219,10 @@ Function DiscoverPlexMediaServers()
             gdm.Stop()
             exit while
         else if type(msg) = "roSocketEvent" then
-            timeout = 2000
             server = gdm.HandleMessage(msg)
 
             if server <> invalid then
+                timeout = 2000
                 existing = GetPlexMediaServer(server.MachineID)
                 if existing <> invalid AND existing.IsConfigured then
                     Debug("GDM discovery ignoring already configured server")
@@ -276,7 +276,7 @@ Function createGDMDiscovery(port)
         Debug("broadcast")
         Debug(tostr(udp.setBroadcast(true)))
         addr = createobject("roSocketAddress") 
-        Debug(tostr(addr.SetHostName("239.0.0.250")  ))
+        Debug(tostr(addr.SetHostName("255.255.255.255")))
         Debug(tostr(addr.setPort(32414)  ))
         Debug(tostr(udp.setSendToAddress(addr))) ' peer IP and port 
         udp.notifyReadable(true)
@@ -312,6 +312,9 @@ Function gdmHandleMessage(msg)
         Debug("Received message: '" + tostr(message) + "'")
 
         x = instr(1,message, "Name: ")
+        if x <= 0 then
+            return invalid
+        end if
         x = x + 6
         y = instr(x, message, chr(13))
         h_name = Mid(message, x, y-x)
