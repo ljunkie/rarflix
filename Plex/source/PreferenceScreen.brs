@@ -299,6 +299,13 @@ Sub showPreferencesScreen()
         m.Changes["servers"] = {}
     end if
 
+    for each server in GetOwnedPlexMediaServers()
+        if server.IsUpdated = true then
+            m.Changes["servers"].AddReplace(server.MachineID, "updated")
+            server.IsUpdated = invalid
+        end if
+    next
+
     for each machineID in serversAfter
         if NOT serversBefore.Delete(machineID) then
             m.Changes["servers"].AddReplace(machineID, "added")

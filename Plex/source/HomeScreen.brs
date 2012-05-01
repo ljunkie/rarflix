@@ -96,6 +96,7 @@ Function homeCreateRow(name) As Integer
     status.toLoad = CreateObject("roList")
     status.pendingRequests = 0
     status.refreshContent = invalid
+    status.loadedServers = {}
 
     m.contentArray.Push(status)
     m.RowNames.Push(name)
@@ -117,9 +118,6 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
         serverInfo.requestType = "server"
         serverInfo.server = server
         m.AddPendingRequest(serverInfo)
-    else
-        m.contentArray[m.SectionsRow].refreshContent = []
-        m.contentArray[m.ChannelsRow].refreshContent = []
     end if
 
     ' Request sections
@@ -452,23 +450,34 @@ Function homeHandleMessage(msg) As Boolean
         xml.Parse(msg.GetString())
 
         if request.requestType = "row" then
-            response = CreateObject("roAssociativeArray")
-            response.xml = xml
-            response.server = request.server
-            response.sourceUrl = request.request.GetUrl()
-            container = createPlexContainerForXml(response)
             countLoaded = 0
-
             content = firstOf(status.refreshContent, status.content)
             startItem = content.Count()
 
-            if AreMultipleValidatedServers() then
-                serverStr = " on " + request.server.name
+            request.server.IsAvailable = true
+            machineId = tostr(request.server.MachineID)
+
+            if status.loadedServers.DoesExist(machineID) then
+                Debug("Ignoring content for server that was already loaded: " + machineID)
+                items = []
+                request.item = invalid
+                request.emptyItem = invalid
             else
-                serverStr = ""
+                status.loadedServers[machineID] = "1"
+                response = CreateObject("roAssociativeArray")
+                response.xml = xml
+                response.server = request.server
+                response.sourceUrl = request.request.GetUrl()
+                container = createPlexContainerForXml(response)
+                items = container.GetMetadata()
+
+                if AreMultipleValidatedServers() then
+                    serverStr = " on " + request.server.name
+                else
+                    serverStr = ""
+                end if
             end if
 
-            items = container.GetMetadata()
             for each item in items
                 add = true
 
@@ -587,6 +596,7 @@ Function homeHandleMessage(msg) As Boolean
             request.server.owned = true
             request.server.online = true
             request.server.SupportsAudioTranscoding = (xml@transcoderAudio = "1")
+            request.server.IsAvailable = true
             PutPlexMediaServer(request.server)
 
             Debug("Fetched additional server information (" + tostr(request.server.name) + ", " + tostr(request.server.machineID) + ")")
@@ -595,20 +605,24 @@ Function homeHandleMessage(msg) As Boolean
 
             status = m.contentArray[m.MiscRow]
 
-            channelDir = CreateObject("roAssociativeArray")
-            channelDir.server = request.server
-            channelDir.sourceUrl = ""
-            channelDir.key = "/system/appstore"
-            channelDir.Title = "Channel Directory"
-            if AreMultipleValidatedServers() then
-                channelDir.ShortDescriptionLine2 = "Browse channels to install on " + request.server.name
-            else
-                channelDir.ShortDescriptionLine2 = "Browse channels to install"
+            machineId = tostr(request.server.machineID)
+            if NOT status.loadedServers.DoesExist(machineID) then
+                status.loadedServers[machineID] = "1"
+                channelDir = CreateObject("roAssociativeArray")
+                channelDir.server = request.server
+                channelDir.sourceUrl = ""
+                channelDir.key = "/system/appstore"
+                channelDir.Title = "Channel Directory"
+                if AreMultipleValidatedServers() then
+                    channelDir.ShortDescriptionLine2 = "Browse channels to install on " + request.server.name
+                else
+                    channelDir.ShortDescriptionLine2 = "Browse channels to install"
+                end if
+                channelDir.Description = channelDir.ShortDescriptionLine2
+                channelDir.SDPosterURL = "file://pkg:/images/more.png"
+                channelDir.HDPosterURL = "file://pkg:/images/more.png"
+                status.content.Push(channelDir)
             end if
-            channelDir.Description = channelDir.ShortDescriptionLine2
-            channelDir.SDPosterURL = "file://pkg:/images/more.png"
-            channelDir.HDPosterURL = "file://pkg:/images/more.png"
-            status.content.Push(channelDir)
 
             if m.FirstServer then
                 m.FirstServer = false
@@ -636,9 +650,18 @@ Function homeHandleMessage(msg) As Boolean
         else if request.requestType = "servers" then
             for each serverElem in xml.Server
                 ' If we already have a server for this machine ID then disregard
-                if GetPlexMediaServer(serverElem@machineIdentifier) = invalid then
-                    addr = "http://" + serverElem@host + ":" + serverElem@port
-                    server = newPlexMediaServer(addr, serverElem@name, serverElem@machineIdentifier)
+                existing = GetPlexMediaServer(serverElem@machineIdentifier)
+                addr = "http://" + serverElem@host + ":" + serverElem@port
+                if existing <> invalid AND (existing.IsAvailable OR existing.ServerUrl = addr) then
+                    Debug("Ignoring duplicate shared server: " + tostr(serverElem@machineIdentifier))
+                else
+                    if existing = invalid then
+                        server = newPlexMediaServer(addr, serverElem@name, serverElem@machineIdentifier)
+                    else
+                        server = existing
+                        server.ServerUrl = addr
+                    end if
+
                     server.AccessToken = firstOf(serverElem@accessToken, m.myplex.AuthToken)
 
                     if serverElem@owned = "1" then
@@ -671,8 +694,18 @@ Function homeHandleMessage(msg) As Boolean
             Debug("GDM discovery found server at " + tostr(serverInfo.Url))
 
             existing = GetPlexMediaServer(serverInfo.MachineID)
-            if existing <> invalid AND existing.IsConfigured then
-                Debug("GDM discovery ignoring already configured server")
+            if existing <> invalid then
+                if existing.ServerUrl = serverInfo.Url then
+                    Debug("GDM discovery ignoring already configured server")
+                else
+                    Debug("Found new address for " + serverInfo.Name + ": " + existing.ServerUrl + " -> " + serverInfo.Url)
+                    existing.Name = serverInfo.Name
+                    existing.ServerUrl = serverInfo.Url
+                    existing.owned = true
+                    existing.IsConfigured = true
+                    m.CreateServerRequests(existing, true, false)
+                    UpdateServerAddress(existing)
+                end if
             else
                 AddServer(serverInfo.Name, serverInfo.Url, serverInfo.MachineID)
                 server = newPlexMediaServer(serverInfo.Url, serverInfo.Name, serverInfo.MachineID)
@@ -748,6 +781,10 @@ Sub homeRefreshData()
     m.CreateQueueRequests(true)
 
     ' Refresh the sections and channels for all of our owned servers
+    m.contentArray[m.SectionsRow].refreshContent = []
+    m.contentArray[m.SectionsRow].loadedServers.Clear()
+    m.contentArray[m.ChannelsRow].refreshContent = []
+    m.contentArray[m.ChannelsRow].loadedServers.Clear()
     for each server in GetOwnedPlexMediaServers()
         m.CreateServerRequests(server, true, true)
     next

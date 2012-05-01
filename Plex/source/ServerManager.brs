@@ -92,6 +92,36 @@ Sub AddServer(name, address, machineID)
     RegWrite("serverList", allServers, "servers")
 End Sub
 
+Sub UpdateServerAddress(server)
+    serverStr = server.ServerUrl + "\" + server.Name
+    if server.MachineID <> invalid then
+        serverStr = serverStr + "\" + server.MachineID
+    end if
+
+    servers = RegRead("serverList", "servers")
+    newServerStr = ""
+    delim = ""
+    updated = false
+    if servers <> invalid
+        serverTokens = strTokenize(servers, "{")
+        for each token in serverTokens
+            serverDetails = strTokenize(token, "\")
+            if serverDetails[2] = server.MachineID then
+                newServerStr = newServerStr + delim + serverStr
+                updated = true
+            else
+                newServerStr = newServerStr + delim + token
+            end if
+            delim = "{"
+        next
+    end if
+
+    if NOT updated then
+        newServerStr = newServerStr + delim + serverStr
+    end if
+    RegWrite("serverList", newServerStr, "servers")
+End Sub
+
 Function AddUnnamedServer(address) As Boolean
     Debug("Adding unnamed server to saved list: " + address)
 
@@ -156,7 +186,17 @@ Function AddUnnamedServer(address) As Boolean
         Debug("Got server response, version " + tostr(xml@version))
 
         server = GetPlexMediaServer(xml@machineIdentifier)
-        if server <> invalid AND server.IsConfigured then
+        if server <> invalid AND server.ServerUrl <> address then
+            Debug("Updating URL for machine ID, new URL: " + address)
+            server.ServerUrl = address
+            server.Name = xml@friendlyName
+            server.owned = true
+            server.IsConfigured = true
+            server.IsAvailable = true
+            server.IsUpdated = true
+            UpdateServerAddress(server)
+            return true
+        else if server <> invalid then
             Debug("Duplicate server machine ID, ignoring")
             dialog = createBaseDialog()
             dialog.Facade = validating
@@ -224,7 +264,17 @@ Function DiscoverPlexMediaServers()
             if server <> invalid then
                 timeout = 2000
                 existing = GetPlexMediaServer(server.MachineID)
-                if existing <> invalid AND existing.IsConfigured then
+                if existing <> invalid AND existing.ServerUrl <> server.Url then
+                    Debug("Found new address for " + server.Name + ": " + existing.ServerUrl + " -> " + server.Url)
+                    existing.ServerUrl = server.Url
+                    existing.Name = server.Name
+                    existing.owned = true
+                    existing.IsConfigured = true
+                    existing.IsAvailable = true
+                    existing.IsUpdated = true
+                    UpdateServerAddress(existing)
+                    found = found + 1
+                else if existing <> invalid then
                     Debug("GDM discovery ignoring already configured server")
                 else
                     AddServer(server.Name, server.Url, server.MachineID)

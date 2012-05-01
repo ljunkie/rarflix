@@ -39,6 +39,7 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     ' Set to false if a version check fails
     pms.SupportsAudioTranscoding = true
     pms.IsConfigured = false
+    pms.IsAvailable = false
 
     return pms
 End Function
