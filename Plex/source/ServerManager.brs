@@ -325,10 +325,23 @@ Function createGDMDiscovery(port)
         udp.setMessagePort(port)
         Debug("broadcast")
         Debug(tostr(udp.setBroadcast(true)))
-        addr = createobject("roSocketAddress") 
-        Debug(tostr(addr.SetHostName("255.255.255.255")))
-        Debug(tostr(addr.setPort(32414)  ))
-        Debug(tostr(udp.setSendToAddress(addr))) ' peer IP and port 
+
+        ' Make sure the send to address actually takes. It doesn't always,
+        ' and that seems to be a big part of our discovery problem.
+        for i = 0 to 5
+            addr = CreateObject("roSocketAddress")
+            addr.setHostName("255.255.255.255")
+            addr.setPort(32414)
+            udp.setSendToAddress(addr)
+
+            sendTo = udp.getSendToAddress()
+            if sendTo <> invalid AND sendTo.getAddress() = addr.getAddress() then
+                exit for
+            else
+                Debug("Failed to set GDM sendto address")
+            end if
+        next
+
         udp.notifyReadable(true)
         Debug(tostr(udp.sendStr(message) ))
         success = udp.eOK()                                                   
