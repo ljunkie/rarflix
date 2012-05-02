@@ -790,6 +790,6 @@ Sub homeRefreshData()
     next
 
     ' Clear any screensaver images, use the default.
-    SaveImagesForScreenSaver(invalid, invalid, {})
+    SaveImagesForScreenSaver(invalid, {})
 End Sub
 
