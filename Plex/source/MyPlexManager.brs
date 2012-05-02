@@ -314,7 +314,7 @@ Function mpGetQueryResponse(sourceUrl, key) As Object
     return xmlResult
 End Function
 
-Sub mpLog(msg, level, timeout)
+Sub mpLog(msg="", level=3, timeout=0)
     ' Noop, only defined to implement PlexMediaServer "interface"
 End Sub
 
