@@ -296,9 +296,11 @@ Function videoCanDirectPlay(mediaItem) As Boolean
     stereoCodec = invalid
     surroundCodec = invalid
     secondaryStreamSelected = false
+    numAudioStreams = 0
     if mediaItem.preferredPart <> invalid then
         for each stream in mediaItem.preferredPart.streams
             if stream.streamType = "2" then
+                numAudioStreams = numAudioStreams + 1
                 if stream.channels = "2" then
                     if stereoCodec = invalid then
                         stereoCodec = stream.codec
@@ -324,6 +326,11 @@ Function videoCanDirectPlay(mediaItem) As Boolean
     Debug("Media item stereo codec: " + tostr(stereoCodec))
     Debug("Media item 5.1 codec: " + tostr(surroundCodec))
     Debug("Secondary audio stream selected: " + tostr(secondaryStreamSelected))
+
+    ' If no streams are provided, treat the Media audio codec as stereo.
+    if numAudioStreams = 0 then
+        stereoCodec = mediaItem.audioCodec
+    end if
 
     versionArr = GetGlobal("rokuVersionArr", [0])
     major = versionArr[0]
