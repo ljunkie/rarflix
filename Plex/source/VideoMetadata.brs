@@ -245,6 +245,7 @@ Function ParseVideoMedia(videoItem) As Object
             media.container = "hls"
         end if
 
+        media.aspectRatio = val(firstOf(MediaItem@aspectRatio, "0.0"))
         media.optimized = MediaItem@optimizedForStreaming
 		media.parts = CreateObject("roArray", 3, true)
 		for each MediaPart in MediaItem.Part

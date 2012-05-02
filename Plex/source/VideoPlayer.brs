@@ -326,6 +326,7 @@ Function videoCanDirectPlay(mediaItem) As Boolean
     Debug("Media item stereo codec: " + tostr(stereoCodec))
     Debug("Media item 5.1 codec: " + tostr(surroundCodec))
     Debug("Secondary audio stream selected: " + tostr(secondaryStreamSelected))
+    Debug("Media item aspect ratio: " + tostr(mediaItem.aspectRatio))
 
     ' If no streams are provided, treat the Media audio codec as stereo.
     if numAudioStreams = 0 then
@@ -342,6 +343,11 @@ Function videoCanDirectPlay(mediaItem) As Boolean
 
     if secondaryStreamSelected then
         Debug("videoCanDirectPlay: audio stream selected")
+        return false
+    end if
+
+    if mediaItem.aspectRatio > 2.2 AND NOT GetGlobal("playsAnamorphic", false) then
+        Debug("videoCanDirectPlay: anamorphic videos not supported")
         return false
     end if
 

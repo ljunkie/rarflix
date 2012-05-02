@@ -619,10 +619,12 @@ Function Capabilities(recompute=false) As String
         decoders = "audioDecoders=" + audio
     end if
 
-    'anamorphic video causes problems, disable support for it
-    'anamorphic = "playsAnamorphic=no"
+    player = ""
+    if NOT GetGlobal("playsAnamorphic", false) then
+        player = ";videoPlayer={playsAnamorphic:no}"
+    end if
 
-    capaString = protocols+";"+decoders '+";"+anamorphic
+    capaString = protocols+";"+decoders + player
     Debug("Capabilities: " + capaString)
     GetGlobalAA().AddReplace("capabilities", capaString)
     return capaString

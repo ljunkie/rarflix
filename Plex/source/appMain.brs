@@ -62,6 +62,16 @@ Sub initGlobals()
     Debug("Roku model: " + model)
 
     GetGlobalAA().AddReplace("rokuUniqueID", device.GetDeviceUniqueId())
+
+    ' The Roku 1 doesn't seem to like anamorphic videos. It stretches them
+    ' vertically and squishes them horizontally. We should try not to Direct
+    ' Play these videos, and tell the transcoder that we don't support them.
+    ' It doesn't appear to matter how the Roku is configured, even if the
+    ' display type is set to 16:9 Anamorphic the videos are distorted.
+
+    playsAnamorphic = major >= 4
+    Debug("Anamorphic support: " + tostr(playsAnamorphic))
+    GetGlobalAA().AddReplace("playsAnamorphic", playsAnamorphic)
 End Sub
 
 Function GetGlobal(var, default=invalid)
