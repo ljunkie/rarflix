@@ -16,6 +16,9 @@ Sub DisplayScreenSaver(mode)
         m.default_screensaver = {url:"pkg:/images/screensaver-sd.png", SourceRect:{w:248,h:140}, TargetRect:{x:0,y:0}}
     end if
 
+    m.ss_timer = CreateObject("roTimespan")
+    m.ss_last_url = invalid
+
     canvas = CreateScreenSaverCanvas("#FF141414")
     canvas.SetImageFunc(GetScreenSaverImage)
     canvas.SetUpdatePeriodInMS(6000)
@@ -44,6 +47,18 @@ Function GetScreenSaverImage()
         image = {url:tokens[2], SourceRect:{w:width, h:height}, TargetRect:{x:0,y:0}}
     else
         image = m.default_screensaver
+    end if
+
+    ' If we've been on the same screensaver image for a long time, give the
+    ' PMS a break and switch to the default image from the package.
+
+    if m.ss_last_url <> image.url then
+        m.ss_timer.Mark()
+        m.ss_last_url = image.url
+    end if
+
+    if left(image.url, 4) <> "pkg:" AND m.ss_timer.TotalSeconds() > 7200 then
+        SaveImagesForScreenSaver(invalid, {})
     end if
 
     o = CreateObject("roAssociativeArray")
