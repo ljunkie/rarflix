@@ -510,6 +510,11 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As 
         query = query + "&quality=" + currentQuality
     end if
 
+    ' Forcing a longer segment size mitigates some Roku 2 weirdness. The
+    ' initial loading is faster (at least on some builds), and the visual
+    ' artifacts and audio glitches are less frequent.
+    query = query + "&secondsPerSegment=10"
+
     query = query + "&url=" + HttpEncode(location)
     query = query + "&3g=0"
 
