@@ -31,6 +31,7 @@ Function createPlexContainerForXml(xmlResponse) As Object
     c.search = []
     c.settings = []
     c.Parsed = false
+    c.IsError = c.xml = invalid OR c.xml.GetName() = ""
 
     return c
 End Function
@@ -50,6 +51,7 @@ Function createFakePlexContainer(server, names, keys) As Object
     c.search = []
     c.settings = []
     c.Parsed = true
+    c.IsError = false
 
     c.GetNames = containerGetNames
     c.GetKeys = containerGetKeys

@@ -42,6 +42,15 @@ Function showPosterScreen() As Integer
 
     container = createPlexContainerForUrl(server, content.sourceUrl, content.key)
 
+    if container.IsError then
+        dialog = createBaseDialog()
+        dialog.Title = "Content Unavailable"
+        dialog.Text = "An error occurred while trying to load this content, make sure the server is running."
+        dialog.Facade = facade
+        dialog.Show()
+        return 0
+    end if
+
     if m.FilterMode = invalid then m.FilterMode = container.ViewGroup = "secondary"
     if m.FilterMode then
         names = container.GetNames()
@@ -201,8 +210,8 @@ Sub posterShowContentList(index)
 
     if status.content.Count() = 0 AND NOT m.FilterMode then
         dialog = createBaseDialog()
-        dialog.Title = "Content Unavailable"
-        dialog.Text = "An error occurred while trying to load this content, make sure the server is running."
+        dialog.Title = "No items to display"
+        dialog.Text = "This directory appears to be empty."
         dialog.Show()
         m.Screen.Close()
     else
