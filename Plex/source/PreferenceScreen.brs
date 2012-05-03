@@ -587,14 +587,10 @@ Sub manageRefreshServerList(removeOffset)
         m.Screen.RemoveContent(removeOffset)
     end while
 
-    servers = RegRead("serverList", "servers")
-    if servers <> invalid then
-        serverTokens = strTokenize(servers, "{")
-        for each token in serverTokens
-            serverDetails = strTokenize(token, "\")
-            m.AddItem({title: "Remove " + serverDetails[1] + " (" + serverDetails[0] + ")"}, "remove")
-        next
-    end if
+    servers = ParseRegistryServerList()
+    for each server in servers
+        m.AddItem({title: "Remove " + server.Name + " (" + server.Url + ")"}, "remove")
+    next
 
     m.AddItem({title: "Close"}, "close")
 End Sub

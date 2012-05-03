@@ -1,34 +1,67 @@
 ' * Responsible for managing the list of media servers used by the application
 ' *
 
-' * Obtain a list of all configured servers. 
-Function PlexMediaServers() As Object
+Function ParseRegistryServerList() As Object
+    list = []
     servers = RegRead("serverList", "servers")
     Debug("Registry Server list string: " + tostr(servers))
-    list = CreateObject("roList")
+
+    ' strTokenize has an interesting quirk where empty strings aren't
+    ' returned. That's nice when separating the servers, but if a server
+    ' doesn't have a name we don't want the machine ID to become the name.
+    ' So tokenize first, but use a regex for the second split.
+    re = CreateObject("roRegex", "\\", "")
+
     if servers <> invalid
         ' { is an illegal URL character so use a deliminator
         serverTokens = strTokenize(servers, "{")
         for each token in serverTokens
             Debug("Server token: " + token)
-            ' another illegal char to delim IP and name
-            serverDetails = strTokenize(token, "\")
-            address = serverDetails[0]
-            name = serverDetails[1]
-            if serverDetails.Count() > 2 then
-                machineID = serverDetails[2]
-            else
-                machineID = invalid
+            serverDetails = re.split(token)
+            serverInfo = {}
+            serverInfo.Url = serverDetails[0]
+
+            ' This should absolutely never happen, so treat it as exceptional
+            ' and wipe the slate clean.
+            if serverInfo.Url = invalid OR len(serverInfo.Url) = 0 then
+                Debug("Bogus server string in registry, removing all servers")
+                RemoveAllServers()
+                return []
             end if
 
-            ' The server should have been validated when it was added, so
-            ' don't make a blocking validation call here. The home screen
-            ' should be able to handle servers that don't respond.
-            server = newPlexMediaServer(address, name, machineID)
-            server.IsConfigured = true
-            list.AddTail(server)
-        end for
+            ' Make sure the name is always a string.
+            serverInfo.Name = firstOf(serverDetails[1], "")
+
+            ' If the machine ID isn't specified, make sure it's invalid
+            if serverDetails[2] <> "" then
+                serverInfo.MachineID = serverDetails[2]
+            else
+                serverInfo.MachineID = invalid
+            end if
+
+            serverInfo.ToString = function(): return m.Url + "\" + m.Name + "\" + firstOf(m.MachineID, "") :end function
+
+            list.Push(serverInfo)
+        next
     end if
+
+    return list
+End Function
+
+' * Obtain a list of all configured servers. 
+Function PlexMediaServers() As Object
+    infoList = ParseRegistryServerList()
+    list = CreateObject("roList")
+
+    for each serverInfo in infoList
+        ' The server should have been validated when it was added, so
+        ' don't make a blocking validation call here. The home screen
+        ' should be able to handle servers that don't respond.
+        server = newPlexMediaServer(serverInfo.Url, serverInfo.Name, serverInfo.MachineID)
+        server.IsConfigured = true
+        list.AddTail(server)
+    next
+
     return list
 End Function
 
@@ -38,30 +71,18 @@ End Function
 
 Function RemoveServer(index) 
     Debug("Removing server with index: " + tostr(index))
-    servers = RegRead("serverList", "servers")
+    servers = ParseRegistryServerList()
     RemoveAllServers()
-    if servers <> invalid
-        serverTokens = strTokenize(servers, "{")
-        counter = 0
-        for each token in serverTokens
-            Debug("Server token: " + token)
-            serverDetails = strTokenize(token, "\")
-            address = serverDetails[0]
-            name = serverDetails[1]
-            if serverDetails.Count() > 2 then
-                machineID = serverDetails[2]
-            else
-                machineID = invalid
-            end if
-            if counter <> index then
-                AddServer(name, address, machineID)
-            else
-                Debug("Not adding server back to list: " + tostr(name))
-                DeletePlexMediaServer(machineID)
-            end if
-            counter = counter + 1
-        end for
-    end if
+    counter = 0
+    for each serverInfo in servers
+        if counter <> index then
+            AddServer(serverInfo.Name, serverInfo.Url, serverInfo.MachineID)
+        else
+            Debug("Not adding server back to list: " + serverInfo.Name)
+            DeletePlexMediaServer(serverInfo.MachineID)
+        end if
+        counter = counter + 1
+    end for
 End Function
 
 ' * Adds a server to the list used by the application. Not validated at this 
@@ -93,33 +114,25 @@ Sub AddServer(name, address, machineID)
 End Sub
 
 Sub UpdateServerAddress(server)
-    serverStr = server.ServerUrl + "\" + server.Name
-    if server.MachineID <> invalid then
-        serverStr = serverStr + "\" + server.MachineID
-    end if
-
-    servers = RegRead("serverList", "servers")
+    infoList = ParseRegistryServerList()
     newServerStr = ""
     delim = ""
     updated = false
-    if servers <> invalid
-        serverTokens = strTokenize(servers, "{")
-        for each token in serverTokens
-            serverDetails = strTokenize(token, "\")
-            if serverDetails[2] = server.MachineID then
-                newServerStr = newServerStr + delim + serverStr
-                updated = true
-            else
-                newServerStr = newServerStr + delim + token
-            end if
-            delim = "{"
-        next
-    end if
+    for each serverInfo in infoList
+        if serverInfo.MachineID = server.MachineID then
+            serverInfo.Name = server.Name
+            serverInfo.Url = server.ServerUrl
+            updated = true
+        end if
+        newServerStr = newServerStr + delim + serverInfo.ToString()
+        delim = "{"
+    next
 
-    if NOT updated then
-        newServerStr = newServerStr + delim + serverStr
+    if updated then
+        RegWrite("serverList", newServerStr, "servers")
+    else
+        AddServer(server.Name, server.ServerUrl, server.MachineID)
     end if
-    RegWrite("serverList", newServerStr, "servers")
 End Sub
 
 Function AddUnnamedServer(address) As Boolean
@@ -442,7 +455,7 @@ End Function
 
 Sub DeletePlexMediaServer(machineID)
     servers = GetGlobalAA().Lookup("validated_servers")
-    if servers <> invalid then
+    if servers <> invalid AND machineID <> invalid then
         servers.Delete(machineID)
     end if
 End Sub
