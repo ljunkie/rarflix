@@ -229,6 +229,10 @@ Function loaderHandleMessage(msg) As Boolean
             status.content.Pop()
         end while
 
+        if countLoaded > status.content.Count() then
+            countLoaded = status.content.Count()
+        end if
+
         if m.Listener <> invalid then
             m.Listener.OnDataLoaded(request.row, status.content, startItem, countLoaded, status.loadStatus = 2)
         end if

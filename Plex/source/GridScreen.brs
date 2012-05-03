@@ -172,6 +172,8 @@ Function showGridScreen() As Integer
                     m.Screen.SetContentList(m.selectedRow, m.contentArray[m.selectedRow])
                 end if
 
+                m.HasData = false
+                m.Refreshing = true
                 m.Loader.RefreshData()
 
                 facade.Close()
@@ -235,10 +237,21 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
             next
             if NOT pendingRows then
                 Debug("Nothing in any grid rows")
-                dialog = createBaseDialog()
-                dialog.Title = "Section Empty"
-                dialog.Text = "This section doesn't contain any items."
-                dialog.Show()
+
+                ' If there's no data, show a helpful dialog. But if there's no
+                ' data on a refresh, it's a bit of a mess. The dialog is only
+                ' marginally helpful, and there's some sort of race condition
+                ' with the fact that we reset the content list for the current
+                ' row when the screen came back. That can hang the app for
+                ' non-obvious reasons. Even without showing the dialog, closing
+                ' the screen has a bit of an ugly flash.
+
+                if m.Refreshing <> true then
+                    dialog = createBaseDialog()
+                    dialog.Title = "Section Empty"
+                    dialog.Text = "This section doesn't contain any items."
+                    dialog.Show()
+                end if
                 m.Screen.Close()
             end if
         end if
