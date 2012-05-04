@@ -22,10 +22,13 @@ include ../app.mk
 
 APPTITLE = PlexDev
 
-.PHONY: manifest beta dev rel
+.PHONY: manifest beta dev rel test
 
 beta: APPTITLE = PlexBeta
 beta: $(APPNAME)
+
+test: APPTITLE = PlexTest
+test: $(APPNAME)
 
 dev: APPTITLE = PlexDev
 dev: $(APPNAME)
