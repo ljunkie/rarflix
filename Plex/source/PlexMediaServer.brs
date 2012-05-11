@@ -340,6 +340,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
 	printAA(video)
     video.StreamBitrates = [0]
     video.StreamFormat = "hls"
+    video.SwitchingStrategy = "no-adaptation"
     url = m.TranscodingVideoUrl(mediaKey, item, headers)
     if url = invalid then return invalid
     video.StreamUrls = [url]
