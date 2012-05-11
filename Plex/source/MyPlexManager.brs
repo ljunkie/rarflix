@@ -217,7 +217,7 @@ Function mpCheckTranscodeServer(showError=false As Boolean) As Boolean
         if showError then
             dlg = createBaseDialog()
             dlg.Title = "Unsupported Content"
-            dlg.Text = "Your Roku needs a bit of help to play this. This video is in a format that your Roku doesn't understand. To play it, you need to connect to your Plex Media Server, which can convert it in real time to a more friendly format."
+            dlg.Text = "Your Roku needs a bit of help to play this. This video is in a format that your Roku doesn't understand. To play it, you need to connect to your Plex Media Server, which can convert it in real time to a more friendly format. To learn more and install Plex Media Server, visit http://plexapp.com/getplex/"
             dlg.Show()
         end if
         Debug("myPlex operation failed due to lack of primary server")
