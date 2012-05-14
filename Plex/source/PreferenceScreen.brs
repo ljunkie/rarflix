@@ -230,7 +230,7 @@ Sub showPreferencesScreen()
     m.AddItem({title: "Screensaver"}, "screensaver")
     m.AppendValue(invalid, m.GetEnumValue("screensaver"))
 
-    m.AddItem({title: "Debug Logging"}, "debug")
+    m.AddItem({title: "Logging"}, "debug")
 
     m.AddItem({title: "Close Preferences"}, "close")
 
@@ -278,7 +278,7 @@ Sub showPreferencesScreen()
                     screen = invalid
                 else if command = "debug" then
                     screen = createDebugLoggingScreen(m.ViewController)
-                    m.ViewController.InitializeOtherScreen(screen, ["Debug Logging"])
+                    m.ViewController.InitializeOtherScreen(screen, ["Logging"])
                     screen.Show()
                     screen = invalid
                 else if command = "close" then
@@ -440,7 +440,7 @@ Sub debugRefreshItems()
 End Sub
 
 Sub showDebugLoggingScreen()
-    m.Screen.SetHeader("Debug Logging")
+    m.Screen.SetHeader("Logging")
 
     m.RefreshItems()
     m.Screen.Show()

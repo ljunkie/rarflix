@@ -120,7 +120,7 @@ Function createLogDownloadScreen(viewController) As Object
 
     obj.Server = InitServer({msgPort: port, port: 8324})
 
-    viewController.InitializeOtherScreen(obj, ["Debug Logging"])
+    viewController.InitializeOtherScreen(obj, ["Logging"])
 
     return obj
 End Function
@@ -133,8 +133,8 @@ Sub showLogDownloadScreen()
     addrs.Reset()
     ip = addrs[addrs.Next()]
 
-    m.Screen.AddHeaderText("Download Debug Logs")
-    m.Screen.AddParagraph("To download debug logs, on your computer, visit:")
+    m.Screen.AddHeaderText("Download Logs")
+    m.Screen.AddParagraph("To download logs, on your computer, visit:")
     m.Screen.AddParagraph(" ")
     m.Screen.AddParagraph("http://" + ip + ":" + tostr(m.Server.port) + "/logs")
     m.Screen.AddButton(1, "done")
