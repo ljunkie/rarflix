@@ -333,6 +333,12 @@ Function createGDMDiscovery(port)
     success = false
     try = 0
 
+    ' Try to broadcast to 255.255.255.255. We can query our own IP address,
+    ' but nothing about our subnet, so we can't reliably construct a
+    ' broadcast address for our current interface. Try the generic one,
+    ' and if it fails, we'll fall back to the multicast address.
+    ip = "255.255.255.255"
+
     while try < 10
         udp = CreateObject("roDatagramSocket")
         udp.setMessagePort(port)
@@ -343,7 +349,7 @@ Function createGDMDiscovery(port)
         ' and that seems to be a big part of our discovery problem.
         for i = 0 to 5
             addr = CreateObject("roSocketAddress")
-            addr.setHostName("255.255.255.255")
+            addr.setHostName(ip)
             addr.setPort(32414)
             udp.setSendToAddress(addr)
 
@@ -356,8 +362,17 @@ Function createGDMDiscovery(port)
         next
 
         udp.notifyReadable(true)
-        Debug(tostr(udp.sendStr(message) ))
-        success = udp.eOK()                                                   
+        bytesSent = udp.sendStr(message)
+        Debug("Sent " + tostr(bytesSent) + " bytes")
+        if bytesSent > 0 then
+            success = udp.eOK()
+        else
+            success = false
+            if bytesSent = 0 then
+                Debug("Falling back to multicast address")
+                ip = "239.0.0.250"
+            end if
+        end if
 
         if success then
             exit while
