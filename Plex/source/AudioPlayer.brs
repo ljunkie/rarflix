@@ -100,7 +100,7 @@ Function audioHandleMessage(msg) As Boolean
             Debug("Playback failed")
             m.GotoNextItem()
         else if msg.isListItemSelected() then
-            Debug("Starting to play item")
+            Debug("Starting to play item: " + tostr(m.metadata.Url))
             m.Refresh(true)
             m.progressOffset = 0
             m.progressTimer.Mark()
