@@ -371,11 +371,16 @@ Function createGDMDiscovery(port)
             if bytesSent = 0 then
                 Debug("Falling back to multicast address")
                 ip = "239.0.0.250"
+                try = 0
             end if
         end if
 
         if success then
             exit while
+        else if try = 9 AND ip = "255.255.255.255" then
+            Debug("Falling back to multicast address")
+            ip = "239.0.0.250"
+            try = 0
         else
             sleep(500)
             Debug("retrying, errno " + tostr(udp.status()))
