@@ -68,8 +68,12 @@ Sub initGlobals()
     ' Play these videos, and tell the transcoder that we don't support them.
     ' It doesn't appear to matter how the Roku is configured, even if the
     ' display type is set to 16:9 Anamorphic the videos are distorted.
+    ' On the Roku 2, meanwhile, the problems still seem to exist if the
+    ' display type is non-HD.
 
-    playsAnamorphic = major >= 4
+    Debug("Display type: " + tostr(device.GetDisplayType()))
+
+    playsAnamorphic = major >= 4 AND device.GetDisplayType() = "HDTV"
     Debug("Anamorphic support: " + tostr(playsAnamorphic))
     GetGlobalAA().AddReplace("playsAnamorphic", playsAnamorphic)
 End Sub
