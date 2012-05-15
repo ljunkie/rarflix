@@ -354,11 +354,16 @@ Function createGDMDiscovery(port)
             udp.setSendToAddress(addr)
 
             sendTo = udp.getSendToAddress()
-            if sendTo <> invalid AND sendTo.getAddress() = addr.getAddress() then
-                exit for
-            else
-                Debug("Failed to set GDM sendto address")
+            if sendTo <> invalid then
+                sendToStr = tostr(sendTo.getAddress())
+                addrStr = tostr(addr.getAddress())
+                Debug("GDM sendto address: " + sendToStr + " / " + addrStr)
+                if sendToStr = addrStr then
+                    exit for
+                end if
             end if
+
+            Debug("Failed to set GDM sendto address")
         next
 
         udp.notifyReadable(true)
