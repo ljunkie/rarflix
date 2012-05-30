@@ -560,6 +560,9 @@ Function createVideoOptionsScreen(item, viewController) As Object
         { title: "3.0 Mbps, 720p", EnumValue: "7" },
         { title: "4.0 Mbps, 720p", EnumValue: "8" },
         { title: "8.0 Mbps, 1080p", EnumValue: "9"}
+        { title: "10.0 Mbps, 1080p", EnumValue: "10" }
+        { title: "12.0 Mbps, 1080p", EnumValue: "11" }
+        { title: "20.0 Mbps, 1080p", EnumValue: "12" }
     ]
     obj.Prefs["quality"] = {
         values: qualities,
