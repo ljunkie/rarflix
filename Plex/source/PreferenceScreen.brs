@@ -121,6 +121,9 @@ Function createPreferencesScreen(viewController) As Object
         { title: "3.0 Mbps, 720p", EnumValue: "7", ShortDescriptionLine2: "Default" },
         { title: "4.0 Mbps, 720p", EnumValue: "8" },
         { title: "8.0 Mbps, 1080p", EnumValue: "9", ShortDescriptionLine2: "Pushing the limits, requires fast connection." }
+        { title: "10.0 Mbps, 1080p", EnumValue: "10", ShortDescriptionLine2: "May be unstable, not recommended." }
+        { title: "12.0 Mbps, 1080p", EnumValue: "11", ShortDescriptionLine2: "May be unstable, not recommended." }
+        { title: "20.0 Mbps, 1080p", EnumValue: "12", ShortDescriptionLine2: "May be unstable, not recommended." }
     ]
     obj.Prefs["quality"] = {
         values: qualities,
