@@ -705,25 +705,48 @@ Function shouldUseSoftSubs(stream) As Boolean
     if stream.codec <> "srt" then return false
 
     ' TODO(schuyler) If Roku adds support for non-Latin characters, remove
-    ' this hackery. If people start complaining about other languages, add
-    ' to this hackery.
+    ' this hackery. To the extent that we continue using this hackery, it
+    ' seems that the Roku requires UTF-8 subtitles but only supports characters
+    ' from Windows-1252. This should be the full set of languages that are
+    ' completely representable in Windows-1252. PMS should specifically be
+    ' returning ISO 639-2/B language codes.
 
-    if m.HardSubLanguages = invalid then
-        m.HardSubLanguages = {
-            ara: 1,
-            chi: 1,
-            gre: 1,
-            heb: 1,
-            hin: 1,
-            jpn: 1,
-            kor: 1,
-            rus: 1,
-            yid: 1
+    if m.SoftSubLanguages = invalid then
+        m.SoftSubLanguages = {
+            afr: 1,
+            alb: 1,
+            baq: 1,
+            bre: 1,
+            cat: 1,
+            dan: 1,
+            eng: 1,
+            fao: 1,
+            glg: 1,
+            ger: 1,
+            ice: 1,
+            may: 1,
+            gle: 1,
+            ita: 1,
+            lat: 1,
+            ltz: 1,
+            nor: 1,
+            oci: 1,
+            por: 1,
+            roh: 1,
+            gla: 1,
+            spa: 1,
+            swa: 1,
+            swe: 1,
+            wln: 1,
+            est: 1,
+            fin: 1,
+            fre: 1,
+            dut: 1
         }
     end if
 
-    if stream.languageCode <> invalid AND m.HardSubLanguages.DoesExist(stream.languageCode) then return false
+    if stream.languageCode = invalid OR m.SoftSubLanguages.DoesExist(stream.languageCode) then return true
 
-    return true
+    return false
 End Function
 
