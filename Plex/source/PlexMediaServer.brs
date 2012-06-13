@@ -32,7 +32,7 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.ConstructVideoItem = pmsConstructVideoItem
     pms.TranscodingVideoUrl = TranscodingVideoUrl
     pms.TranscodingAudioUrl = TranscodingAudioUrl
-    pms.ConvertTranscodeURLToLoopback = ConvertTranscodeURLToLoopback
+    pms.ConvertURLToLoopback = ConvertURLToLoopback
     pms.AddDirectPlayInfo = pmsAddDirectPlayInfo
     pms.Log = pmsLog
 
@@ -440,15 +440,11 @@ Function FullUrl(serverUrl, sourceUrl, key) As String
     return finalUrl
 End Function
 
-Function ResolveUrl(serverUrl As String, sourceUrl As String, uri As String) As String
-    return FullUrl(serverUrl, sourceUrl, uri)
-End Function
-
 
 '* Constructs an image based on a PMS url with the specific width and height. 
 Function TranscodedImage(queryUrl, imagePath, width, height) As String
     imageUrl = FullUrl(m.serverUrl, queryUrl, imagePath)
-    imageUrl = m.ConvertTranscodeURLToLoopback(imageUrl)
+    imageUrl = m.ConvertURLToLoopback(imageUrl)
     encodedUrl = HttpEncode(imageUrl)
     image = m.serverUrl + "/photo/:/transcode?url="+encodedUrl+"&width="+width+"&height="+height
     return image
@@ -479,13 +475,13 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As 
         ratingKey = item.ratingKey
     end if
 
-    location = ResolveUrl(m.serverUrl, item.sourceUrl, videoUrl)
-    location = m.ConvertTranscodeURLToLoopback(location)
+    location = FullUrl(m.serverUrl, item.sourceUrl, videoUrl)
+    location = m.ConvertURLToLoopback(location)
     Debug("Location: " + tostr(location))
     if len(key) = 0 then
         fullKey = ""
     else
-        fullKey = ResolveUrl(m.serverUrl, item.sourceUrl, key)
+        fullKey = m.ConvertURLToLoopback(FullUrl(m.serverUrl, item.sourceUrl, key))
     end if
     Debug("Original key: " + tostr(key))
     Debug("Full key: " + tostr(fullKey))
@@ -555,8 +551,8 @@ Function TranscodingAudioUrl(audioUrl As String, item As Object)
 
     Debug("Constructing transcoding audio URL for " + audioUrl)
 
-    location = ResolveUrl(m.serverUrl, item.sourceUrl, audioUrl)
-    location = m.ConvertTranscodeURLToLoopback(location)
+    location = FullUrl(m.serverUrl, item.sourceUrl, audioUrl)
+    location = m.ConvertURLToLoopback(location)
     Debug("Location: " + tostr(location))
     
     path = "/music/:/transcode/generic.mp3?"
@@ -576,7 +572,7 @@ Function TranscodingAudioUrl(audioUrl As String, item As Object)
     return finalUrl
 End Function
 
-Function ConvertTranscodeURLToLoopback(url) As String
+Function ConvertURLToLoopback(url) As String
     ' If the URL starts with our serverl URL, replace it with
     ' 127.0.0.1:32400.
 
