@@ -301,7 +301,7 @@ Function videoCanDirectPlay(mediaItem) As Boolean
         for each stream in mediaItem.preferredPart.streams
             if stream.streamType = "2" then
                 numAudioStreams = numAudioStreams + 1
-                if stream.channels = "2" then
+                if stream.channels = "2" OR stream.channels = "1" then
                     if stereoCodec = invalid then
                         stereoCodec = stream.codec
                     else if stream.selected <> invalid then
@@ -313,6 +313,8 @@ Function videoCanDirectPlay(mediaItem) As Boolean
                     else if stream.selected <> invalid then
                         secondaryStreamSelected = true
                     end if
+                else
+                    Debug("Unexpected channels on audio stream: " + tostr(stream.channels))
                 end if
             end if
         next
