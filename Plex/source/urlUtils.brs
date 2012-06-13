@@ -32,8 +32,6 @@ Function CreateURLTransferObject(url As String) as Object
     obj.SetPort(CreateObject("roMessagePort"))
     obj.SetUrl(url)
     obj.AddHeader("Content-Type", "application/x-www-form-urlencoded")
-	obj.AddHeader("X-Plex-Version", "0.9") '* Correct ?
-	obj.AddHeader("X-Plex-Language", "en") '* Anyway to get this from the platform ?
 	obj.AddHeader("X-Plex-Client-Platform", "Roku")
     obj.EnableEncodings(true)
     return obj
