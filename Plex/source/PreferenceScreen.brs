@@ -91,7 +91,7 @@ End Sub
 'Below are the preference Functions for the Global 
 ' Roku channel settings
 '#######################################################
-Function createPreferencesScreen(viewController) As Object
+Function createBasePrefsScreen(viewController) As Object
     obj = CreateObject("roAssociativeArray")
     port = CreateObject("roMessagePort")
     screen = CreateObject("roListScreen")
@@ -106,12 +106,21 @@ Function createPreferencesScreen(viewController) As Object
     obj.MessageHandler = invalid
     obj.MsgTimeout = 0
 
-    obj.Show = showPreferencesScreen
-
     obj.Changes = CreateObject("roAssociativeArray")
     obj.Prefs = CreateObject("roAssociativeArray")
 
     lsInitBaseListScreen(obj)
+
+    obj.HandleEnumPreference = prefsHandleEnumPreference
+    obj.GetEnumValue = prefsGetEnumValue
+
+    return obj
+End Function
+
+Function createPreferencesScreen(viewController) As Object
+    obj = createBasePrefsScreen(viewController)
+
+    obj.Show = showPreferencesScreen
 
     ' Quality settings
     qualities = [
@@ -129,31 +138,6 @@ Function createPreferencesScreen(viewController) As Object
         values: qualities,
         heading: "Higher settings produce better video quality but require more" + Chr(10) + "network bandwidth.",
         default: "7"
-    }
-
-    ' H.264 Level
-    levels = [
-        { title: "Level 4.0 (Supported)", EnumValue: "40" },
-        { title: "Level 4.1", EnumValue: "41", ShortDescriptionLine2: "This level may not be supported well." },
-        { title: "Level 4.2", EnumValue: "42", ShortDescriptionLine2: "This level may not be supported well." },
-        { title: "Level 5.0", EnumValue: "50", ShortDescriptionLine2: "This level may not be supported well." },
-        { title: "Level 5.1", EnumValue: "51", ShortDescriptionLine2: "This level may not be supported well." }
-    ]
-    obj.Prefs["level"] = {
-        values: levels,
-        heading: "Use specific H264 level. Only 4.0 is officially supported.",
-        default: "40"
-    }
-
-    ' 5.1 Support
-    fiveone = [
-        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Try to copy 5.1 audio streams when transcoding." },
-        { title: "Disabled", EnumValue: "2", ShortDescriptionLine2: "Always use 2-channel audio when transcoding." }
-    ]
-    obj.Prefs["fivepointone"] = {
-        values: fiveone,
-        heading: "5.1 audio support for transcoded content",
-        default: "1"
     }
 
     ' Direct play options
@@ -193,9 +177,6 @@ Function createPreferencesScreen(viewController) As Object
         default: "random"
     }
 
-    obj.HandleEnumPreference = prefsHandleEnumPreference
-    obj.GetEnumValue = prefsGetEnumValue
-
     ' This is a slightly evil amount of reaching inside another object...
     obj.myplex = viewController.Home.myplex
 
@@ -214,26 +195,16 @@ Sub showPreferencesScreen()
     m.AddItem({title: getCurrentMyPlexLabel(m.myplex)}, "myplex")
     m.AddItem({title: "Quality"}, "quality")
     m.AppendValue(invalid, m.GetEnumValue("quality"))
-    m.AddItem({title: "H.264"}, "level")
-    m.AppendValue(invalid, m.GetEnumValue("level"))
     m.AddItem({title: "Direct Play"}, "directplay")
     m.AppendValue(invalid, m.GetEnumValue("directplay"))
     m.AddItem({title: "Subtitles"}, "softsubtitles")
     m.AppendValue(invalid, m.GetEnumValue("softsubtitles"))
 
-    if major >= 4 AND device.hasFeature("5.1_surround_sound") then
-        m.AddItem({title: "5.1 Support"}, "fivepointone")
-        m.AppendValue(invalid, m.GetEnumValue("fivepointone"))
-    end if
-
-	if major < 4  and device.hasFeature("1080p_hardware") then
-        m.AddItem({title: "1080p Settings"}, "1080p")
-	end if
-
     m.AddItem({title: "Screensaver"}, "screensaver")
     m.AppendValue(invalid, m.GetEnumValue("screensaver"))
 
     m.AddItem({title: "Logging"}, "debug")
+    m.AddItem({title: "Advanced Preferences"}, "advanced")
 
     m.AddItem({title: "Close Preferences"}, "close")
 
@@ -274,9 +245,9 @@ Sub showPreferencesScreen()
                     m.Screen.SetItem(msg.GetIndex(), {title: getCurrentMyPlexLabel(m.myplex)})
                 else if command = "quality" OR command = "level" OR command = "fivepointone" OR command = "directplay" OR command = "softsubtitles" OR command = "screensaver" then
                     m.HandleEnumPreference(command, msg.GetIndex())
-                else if command = "1080p" then
-                    screen = create1080PreferencesScreen(m.ViewController)
-                    m.ViewController.InitializeOtherScreen(screen, ["1080p Settings"])
+                else if command = "advanced" then
+                    screen = createAdvancedPrefsScreen(m.ViewController)
+                    m.ViewController.InitializeOtherScreen(screen, ["Advanced Preferences"])
                     screen.Show()
                     screen = invalid
                 else if command = "debug" then
@@ -322,27 +293,85 @@ Sub showPreferencesScreen()
     m.ViewController.Home.Refresh(m.Changes)
 End Sub
 
+Function createAdvancedPrefsScreen(viewController) As Object
+    obj = createBasePrefsScreen(viewController)
+
+    obj.Show = showAdvancedPrefsScreen
+
+    ' H.264 Level
+    levels = [
+        { title: "Level 4.0 (Supported)", EnumValue: "40" },
+        { title: "Level 4.1", EnumValue: "41", ShortDescriptionLine2: "This level may not be supported well." },
+        { title: "Level 4.2", EnumValue: "42", ShortDescriptionLine2: "This level may not be supported well." },
+        { title: "Level 5.0", EnumValue: "50", ShortDescriptionLine2: "This level may not be supported well." },
+        { title: "Level 5.1", EnumValue: "51", ShortDescriptionLine2: "This level may not be supported well." }
+    ]
+    obj.Prefs["level"] = {
+        values: levels,
+        heading: "Use specific H264 level. Only 4.0 is officially supported.",
+        default: "40"
+    }
+
+    ' 5.1 Support
+    fiveone = [
+        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Try to copy 5.1 audio streams when transcoding." },
+        { title: "Disabled", EnumValue: "2", ShortDescriptionLine2: "Always use 2-channel audio when transcoding." }
+    ]
+    obj.Prefs["fivepointone"] = {
+        values: fiveone,
+        heading: "5.1 audio support for transcoded content",
+        default: "1"
+    }
+
+    return obj
+End Function
+
+Sub showAdvancedPrefsScreen()
+    device = CreateObject("roDeviceInfo")
+    versionArr = GetGlobalAA().Lookup("rokuVersionArr")
+    major = versionArr[0]
+
+    m.Screen.SetHeader("Advanced preferences don't usually need to be changed")
+
+    m.AddItem({title: "H.264"}, "level")
+    m.AppendValue(invalid, m.GetEnumValue("level"))
+
+    if major >= 4 AND device.hasFeature("5.1_surround_sound") then
+        m.AddItem({title: "5.1 Support"}, "fivepointone")
+        m.AppendValue(invalid, m.GetEnumValue("fivepointone"))
+    end if
+
+    if major < 4  and device.hasFeature("1080p_hardware") then
+        m.AddItem({title: "1080p Settings"}, "1080p")
+    end if
+
+    m.AddItem({title: "Close"}, "close")
+
+    m.Screen.Show()
+
+    while true
+        msg = wait(m.MsgTimeout, m.Port)
+        if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
+        else if type(msg) = "roListScreenEvent" then
+            if msg.isScreenClosed() then
+                m.ViewController.PopScreen(m)
+                exit while
+            else if msg.isListItemSelected() then
+                command = m.GetSelectedCommand(msg.GetIndex())
+                if command = "level" OR command = "fivepointone" then
+                    m.HandleEnumPreference(command, msg.GetIndex())
+                else if command = "close" then
+                    m.Screen.Close()
+                end if
+            end if
+        end if
+    end while
+End Sub
+
 Function create1080PreferencesScreen(viewController) As Object
-    obj = CreateObject("roAssociativeArray")
-    port = CreateObject("roMessagePort")
-    screen = CreateObject("roListScreen")
-
-    screen.SetMessagePort(port)
-
-    ' Standard properties for all our Screen types
-    obj.Item = invalid
-    obj.Screen = screen
-    obj.Port = port
-    obj.ViewController = viewController
-    obj.MessageHandler = invalid
-    obj.MsgTimeout = 0
+    obj = createBasePrefsScreen(viewController)
 
     obj.Show = show1080PreferencesScreen
-
-    obj.Changes = CreateObject("roAssociativeArray")
-    obj.Prefs = CreateObject("roAssociativeArray")
-
-    lsInitBaseListScreen(obj)
 
     ' Legacy 1080p enabled
     options = [
@@ -366,9 +395,6 @@ Function create1080PreferencesScreen(viewController) As Object
         heading: "Select a frame rate to use with 1080p content.",
         default: "auto"
     }
-
-    obj.HandleEnumPreference = prefsHandleEnumPreference
-    obj.GetEnumValue = prefsGetEnumValue
 
     return obj
 End Function
@@ -404,23 +430,9 @@ Sub show1080PreferencesScreen()
 End Sub
 
 Function createDebugLoggingScreen(viewController) As Object
-    obj = CreateObject("roAssociativeArray")
-    port = CreateObject("roMessagePort")
-    screen = CreateObject("roListScreen")
-
-    screen.SetMessagePort(port)
-
-    ' Standard properties for all our Screen types
-    obj.Item = invalid
-    obj.Screen = screen
-    obj.Port = port
-    obj.ViewController = viewController
-    obj.MessageHandler = invalid
-    obj.MsgTimeout = 0
+    obj = createBasePrefsScreen(viewController)
 
     obj.Show = showDebugLoggingScreen
-
-    lsInitBaseListScreen(obj)
 
     obj.RefreshItems = debugRefreshItems
     obj.Logger = GetGlobalAA()["logger"]
@@ -488,28 +500,11 @@ Sub prefsHandleEnumPreference(regKey, index)
 End Sub
 
 Function createManageServersScreen(viewController) As Object
-    obj = CreateObject("roAssociativeArray")
-    port = CreateObject("roMessagePort")
-    screen = CreateObject("roListScreen")
-
-    screen.SetMessagePort(port)
-
-    ' Standard properties for all our Screen types
-    obj.Item = invalid
-    obj.Screen = screen
-    obj.Port = port
-    obj.ViewController = viewController
-    obj.MessageHandler = invalid
-    obj.MsgTimeout = 0
+    obj = createBasePrefsScreen(viewController)
 
     obj.Show = showManageServersScreen
 
     obj.RefreshServerList = manageRefreshServerList
-
-    obj.Changes = CreateObject("roAssociativeArray")
-    obj.Prefs = CreateObject("roAssociativeArray")
-
-    lsInitBaseListScreen(obj)
 
     ' Automatic discovery
     options = [
@@ -521,9 +516,6 @@ Function createManageServersScreen(viewController) As Object
         heading: "Automatically discover Plex Media Servers at startup.",
         default: "1"
     }
-
-    obj.HandleEnumPreference = prefsHandleEnumPreference
-    obj.GetEnumValue = prefsGetEnumValue
 
     return obj
 End Function
