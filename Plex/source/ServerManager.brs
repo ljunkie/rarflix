@@ -326,6 +326,17 @@ Function ServerVersionCompare(versionStr, minVersion) As Boolean
     return true
 End Function
 
+Function GetFirstIPAddress()
+    device = CreateObject("roDeviceInfo")
+    addrs = device.GetIPAddrs()
+    addrs.Reset()
+    if addrs.IsNext() then
+        return addrs[addrs.Next()]
+    else
+        return invalid
+    end if
+End Function
+
 Function createGDMDiscovery(port)
     Debug("IN GDMFind")
 
@@ -333,11 +344,22 @@ Function createGDMDiscovery(port)
     success = false
     try = 0
 
-    ' Try to broadcast to 255.255.255.255. We can query our own IP address,
-    ' but nothing about our subnet, so we can't reliably construct a
-    ' broadcast address for our current interface. Try the generic one,
-    ' and if it fails, we'll fall back to the multicast address.
-    ip = "255.255.255.255"
+    ' Broadcasting to 255.255.255.255 only works on some Rokus, but we
+    ' can't reliably determine the broadcast address for our current
+    ' interface. Try assuming a /24 network, and then fall back to the
+    ' multicast address if that doesn't work.
+
+    multicast = "239.0.0.250"
+    ip = multicast
+    subnetRegex = CreateObject("roRegex", "((\d+)\.(\d+)\.(\d+)\.)(\d+)", "")
+    addr = GetFirstIPAddress()
+    if addr <> invalid then
+        match = subnetRegex.Match(addr)
+        if match.Count() > 0 then
+            ip = match[1] + "255"
+            Debug("Using broadcast address " + ip)
+        end if
+    end if
 
     while try < 10
         udp = CreateObject("roDatagramSocket")
@@ -375,16 +397,16 @@ Function createGDMDiscovery(port)
             success = false
             if bytesSent = 0 then
                 Debug("Falling back to multicast address")
-                ip = "239.0.0.250"
+                ip = multicast
                 try = 0
             end if
         end if
 
         if success then
             exit while
-        else if try = 9 AND ip = "255.255.255.255" then
+        else if try = 9 AND ip <> multicast then
             Debug("Falling back to multicast address")
-            ip = "239.0.0.250"
+            ip = multicast
             try = 0
         else
             sleep(500)

@@ -128,10 +128,7 @@ End Function
 Sub showLogDownloadScreen()
     ' If we ask the server's socket what address it's listening on, it'll
     ' tell us 0.0.0.0, so just grab the first IP from the device info.
-    device = CreateObject("roDeviceInfo")
-    addrs = device.GetIPAddrs()
-    addrs.Reset()
-    ip = addrs[addrs.Next()]
+    ip = GetFirstIPAddress()
 
     m.Screen.AddHeaderText("Download Logs")
     m.Screen.AddParagraph("To download logs, on your computer, visit:")
