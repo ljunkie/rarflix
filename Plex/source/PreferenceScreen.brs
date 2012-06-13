@@ -28,8 +28,7 @@ Sub showSettingsScreen()
 
     for each setting in settings
         setting.title = setting.label
-        m.AddItem(setting, "setting")
-        m.AppendValue(invalid, setting.GetValueString())
+        m.AddItem(setting, "setting", setting.GetValueString())
     next
     m.AddItem({title: "Close"}, "close")
 
@@ -193,16 +192,10 @@ Sub showPreferencesScreen()
 
     m.AddItem({title: "Plex Media Servers"}, "servers")
     m.AddItem({title: getCurrentMyPlexLabel(m.myplex)}, "myplex")
-    m.AddItem({title: "Quality"}, "quality")
-    m.AppendValue(invalid, m.GetEnumValue("quality"))
-    m.AddItem({title: "Direct Play"}, "directplay")
-    m.AppendValue(invalid, m.GetEnumValue("directplay"))
-    m.AddItem({title: "Subtitles"}, "softsubtitles")
-    m.AppendValue(invalid, m.GetEnumValue("softsubtitles"))
-
-    m.AddItem({title: "Screensaver"}, "screensaver")
-    m.AppendValue(invalid, m.GetEnumValue("screensaver"))
-
+    m.AddItem({title: "Quality"}, "quality", m.GetEnumValue("quality"))
+    m.AddItem({title: "Direct Play"}, "directplay", m.GetEnumValue("directplay"))
+    m.AddItem({title: "Subtitles"}, "softsubtitles", m.GetEnumValue("softsubtitles"))
+    m.AddItem({title: "Screensaver"}, "screensaver", m.GetEnumValue("screensaver"))
     m.AddItem({title: "Logging"}, "debug")
     m.AddItem({title: "Advanced Preferences"}, "advanced")
 
@@ -323,6 +316,18 @@ Function createAdvancedPrefsScreen(viewController) As Object
         default: "1"
     }
 
+    ' HLS seconds per segment
+    lengths = [
+        { title: "Automatic", EnumValue: "auto", ShortDescriptionLine2: "Chooses based on quality." },
+        { title: "4 seconds", EnumValue: "4" },
+        { title: "10 seconds", EnumValue: "10" }
+    ]
+    obj.Prefs["segment_length"] = {
+        values: lengths,
+        heading: "Seconds per HLS segment. Longer segments may load faster.",
+        default: "10"
+    }
+
     return obj
 End Function
 
@@ -333,18 +338,17 @@ Sub showAdvancedPrefsScreen()
 
     m.Screen.SetHeader("Advanced preferences don't usually need to be changed")
 
-    m.AddItem({title: "H.264"}, "level")
-    m.AppendValue(invalid, m.GetEnumValue("level"))
+    m.AddItem({title: "H.264"}, "level", m.GetEnumValue("level"))
 
     if major >= 4 AND device.hasFeature("5.1_surround_sound") then
-        m.AddItem({title: "5.1 Support"}, "fivepointone")
-        m.AppendValue(invalid, m.GetEnumValue("fivepointone"))
+        m.AddItem({title: "5.1 Support"}, "fivepointone", m.GetEnumValue("fivepointone"))
     end if
 
     if major < 4  and device.hasFeature("1080p_hardware") then
         m.AddItem({title: "1080p Settings"}, "1080p")
     end if
 
+    m.AddItem({title: "HLS Segment Length"}, "segment_length", m.GetEnumValue("segment_length"))
     m.AddItem({title: "Close"}, "close")
 
     m.Screen.Show()
@@ -358,7 +362,7 @@ Sub showAdvancedPrefsScreen()
                 exit while
             else if msg.isListItemSelected() then
                 command = m.GetSelectedCommand(msg.GetIndex())
-                if command = "level" OR command = "fivepointone" then
+                if command = "level" OR command = "fivepointone" OR command = "segment_length" then
                     m.HandleEnumPreference(command, msg.GetIndex())
                 else if command = "close" then
                     m.Screen.Close()
@@ -402,10 +406,8 @@ End Function
 Sub show1080PreferencesScreen()
     m.Screen.SetHeader("1080p settings (Roku 1 only)")
 
-    m.AddItem({title: "1080p Support"}, "legacy1080p")
-    m.AppendValue(invalid, m.GetEnumValue("legacy1080p"))
-    m.AddItem({title: "Frame Rate Override"}, "legacy1080pframerate")
-    m.AppendValue(invalid, m.GetEnumValue("legacy1080pframerate"))
+    m.AddItem({title: "1080p Support"}, "legacy1080p", m.GetEnumValue("legacy1080p"))
+    m.AddItem({title: "Frame Rate Override"}, "legacy1080pframerate", m.GetEnumValue("legacy1080pframerate"))
     m.AddItem({title: "Close"}, "close")
 
     m.Screen.Show()
@@ -525,8 +527,7 @@ Sub showManageServersScreen()
 
     m.AddItem({title: "Add Server Manually"}, "manual")
     m.AddItem({title: "Discover Servers"}, "discover")
-    m.AddItem({title: "Discover at Startup"}, "autodiscover")
-    m.AppendValue(invalid, m.GetEnumValue("autodiscover"))
+    m.AddItem({title: "Discover at Startup"}, "autodiscover", m.GetEnumValue("autodiscover"))
     m.AddItem({title: "Remove All Servers"}, "removeall")
 
     removeOffset = m.contentArray.Count()

@@ -507,10 +507,13 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As 
         query = query + "&quality=" + currentQuality
     end if
 
-    ' Forcing a longer segment size mitigates some Roku 2 weirdness. The
-    ' initial loading is faster (at least on some builds), and the visual
-    ' artifacts and audio glitches are less frequent.
-    query = query + "&secondsPerSegment=10"
+    ' Forcing longer segment sizes usually mitigates some Roku 2 weirdness
+    ' and makes videos load faster. Depending on the speed of the network
+    ' and transcoding server though, it could be slower in some cases.
+    segmentLength = RegRead("segment_length", "preferences", "10")
+    if segmentLength <> "auto" then
+        query = query + "&secondsPerSegment=" + segmentLength
+    end if
 
     query = query + "&url=" + HttpEncode(location)
     query = query + "&3g=0"

@@ -13,7 +13,7 @@ Sub lsInitBaseListScreen(obj)
     obj.GetSelectedCommand = lsGetSelectedCommand
 End Sub
 
-Sub lsAddItem(item, command=invalid)
+Sub lsAddItem(item, command=invalid, value=invalid)
     if item.SDPosterURL = invalid then
         item.SDPosterURL = "file://pkg:/images/gear.png"
         item.HDPosterURL = "file://pkg:/images/gear.png"
@@ -21,6 +21,10 @@ Sub lsAddItem(item, command=invalid)
 
     item.OrigTitle = item.Title
     item.CommandName = command
+
+    if value <> invalid and value <> "" then
+        item.Title = item.OrigTitle + ": " + value
+    end if
 
     m.contentArray.Push(item)
     m.Screen.AddContent(item)
