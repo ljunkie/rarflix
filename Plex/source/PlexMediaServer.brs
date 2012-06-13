@@ -259,7 +259,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
                 for each token in tokens
                     arr = strTokenize(token, "=")
                     value = {}
-                    value[arr[0]] = arr[1]
+                    value[arr[0]] = firstOf(arr[1], " ")
                     headers.Push(value)
                     Debug("Indirect video item header: " + tostr(value))
                 next
