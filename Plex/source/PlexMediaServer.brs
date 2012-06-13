@@ -530,9 +530,8 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As 
         next
     next
 
-    ' TODO(schuyler): The subtitle size for burned in subs should be configurable,
-    ' but in the meantime, ask for something a little bigger than the default.
-    query = query + "&subtitleSize=125"
+    subtitleSize = RegRead("subtitle_size", "preferences", "125")
+    query = query + "&subtitleSize=" + subtitleSize
 
     publicKey = "KQMIY6GATPC63AIMC4R2"
     time = LinuxTime().tostr()

@@ -328,6 +328,20 @@ Function createAdvancedPrefsScreen(viewController) As Object
         default: "10"
     }
 
+    ' Subtitle size (burned in only)
+    sizes = [
+        { title: "Tiny", EnumValue: "75" },
+        { title: "Small", EnumValue: "90" },
+        { title: "Normal", EnumValue: "125" },
+        { title: "Large", EnumValue: "175" },
+        { title: "Huge", EnumValue: "250" }
+    ]
+    obj.Prefs["subtitle_size"] = {
+        values: sizes,
+        heading: "Burned-in subtitle size",
+        default: "125"
+    }
+
     return obj
 End Function
 
@@ -349,6 +363,7 @@ Sub showAdvancedPrefsScreen()
     end if
 
     m.AddItem({title: "HLS Segment Length"}, "segment_length", m.GetEnumValue("segment_length"))
+    m.AddItem({title: "Subtitle Size"}, "subtitle_size", m.GetEnumValue("subtitle_size"))
     m.AddItem({title: "Close"}, "close")
 
     m.Screen.Show()
@@ -362,7 +377,7 @@ Sub showAdvancedPrefsScreen()
                 exit while
             else if msg.isListItemSelected() then
                 command = m.GetSelectedCommand(msg.GetIndex())
-                if command = "level" OR command = "fivepointone" OR command = "segment_length" then
+                if command = "level" OR command = "fivepointone" OR command = "segment_length" OR command = "subtitle_size" then
                     m.HandleEnumPreference(command, msg.GetIndex())
                 else if command = "close" then
                     m.Screen.Close()
