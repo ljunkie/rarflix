@@ -176,8 +176,7 @@ Function createPreferencesScreen(viewController) As Object
         default: "random"
     }
 
-    ' This is a slightly evil amount of reaching inside another object...
-    obj.myplex = viewController.Home.myplex
+    obj.myplex = GetGlobalAA().Lookup("myplex")
 
     return obj
 End Function
@@ -546,6 +545,12 @@ Sub debugRefreshItems()
 
     if m.Logger.Enabled then
         m.AddItem({title: "Disable Logging"}, "disable")
+
+        myPlex = GetGlobalAA().Lookup("myplex")
+        if myPlex <> invalid AND myPlex.IsSignedIn then
+            m.AddItem({title: "Enable Remote Logging"}, "remote")
+        end if
+
         m.AddItem({title: "Download Logs"}, "download")
     else
         m.AddItem({title: "Enable Logging"}, "enable")
@@ -579,6 +584,10 @@ Sub showDebugLoggingScreen()
                     screen = createLogDownloadScreen(m.ViewController)
                     screen.Show()
                     screen = invalid
+                else if command = "remote" then
+                    ' TODO(schuyler) What if we want to debug something related
+                    ' to a non-primary server?
+                    m.Logger.EnablePapertrail(20, GetPrimaryServer())
                 else if command = "close" then
                     m.Screen.Close()
                 end if

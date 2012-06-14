@@ -25,6 +25,9 @@ Function createLogger() As Object
     logger.Disable = loggerDisable
     logger.Flush = loggerFlush
 
+    logger.EnablePapertrail = loggerEnablePapertrail
+    logger.LogToPapertrail = loggerLogToPapertrail
+
     GetGlobalAA().AddReplace("logger", logger)
 
     ' TODO(schuyler): Especially if we ever want a web server for something
@@ -65,6 +68,20 @@ Sub loggerLog(msg)
 
     if m.DebugBuffer.Len() > 8192 then
         m.Flush()
+    end if
+
+    ' Check on papertrail logging. If it's enabled, we need to make sure
+    ' time hasn't elapsed yet, and then log the message.
+
+    if m.RemoteLoggingTimer <> invalid then
+        if m.RemoteLoggingTimer.TotalSeconds() > m.RemoteLoggingSeconds then
+            m.SyslogSocket.Close()
+            m.SyslogSocket = invalid
+            m.SyslogPackets = invalid
+            m.RemoteLoggingTimer = invalid
+        else
+            m.LogToPapertrail(msg)
+        end if
     end if
 End Sub
 
@@ -185,4 +202,65 @@ Function ProcessLogsRequest() As Boolean
     m.genHdr()
     return true
 End Function
+
+Sub loggerEnablePapertrail(minutes=20, pms=invalid)
+    myPlex = GetGlobalAA().Lookup("myplex")
+    if myPlex = invalid OR NOT myPlex.IsSignedIn then return
+
+    ' Create the remote syslog socket
+
+    port = CreateObject("roMessagePort")
+    addr = CreateObject("roSocketAddress")
+    udp = CreateObject("roDatagramSocket")
+
+    ' We're never going to wait on this message port, but we still need to
+    ' set it to make the socket async.
+    udp.setMessagePort(port)
+
+    addr.setHostname("logs.papertrailapp.com")
+    addr.setPort(60969)
+    udp.setSendToAddress(addr)
+
+    m.SyslogSocket = udp
+    m.SyslogPackets = CreateObject("roList")
+
+    m.RemoteLoggingSeconds = minutes * 60
+    m.RemoteLoggingTimer = CreateObject("roTimespan")
+
+    ' We always need to send a myPlex username, so cache the username now. If
+    ' the user happens to disconnect the myPlex account while remote logging is
+    ' enabled, the logs will continue to be associated with the original
+    ' account.
+
+    m.SyslogHeader = "<135> PlexForRoku: [" + myPlex.Username + "] "
+
+    ' Enable papertrail logging for the PMS, too.
+    if pms <> invalid then
+        pms.ExecuteCommand("/log/networked?minutes=" + tostr(minutes))
+    end if
+End Sub
+
+Sub loggerLogToPapertrail(msg)
+    ' Just about the simplest syslog packet possible without being empty.
+    ' We're using the local0 facility and logging everything as debug, so
+    ' <135>. We simply skip the timestamp and hostname, the receiving
+    ' timestamp will be used and is good enough to avoid writing strftime
+    ' in brightscript. Then we hardcode PlexForRoku as the TAG field and
+    ' include the myPlex username in the CONTENT. Finally, we make sure
+    ' the whole thing isn't too long.
+
+    bytesLeft = 1024 - Len(m.SyslogHeader)
+    if bytesLeft > Len(msg) then
+        packet = m.SyslogHeader + msg
+    else
+        packet = m.SyslogHeader + Left(msg, bytesLeft)
+    end if
+
+    m.SyslogPackets.AddTail(packet)
+
+    ' If we have anything backed up, try to send it now.
+    while m.SyslogSocket.isWritable() AND m.SyslogPackets.Count() > 0
+        m.SyslogSocket.sendStr(m.SyslogPackets.RemoveHead())
+    end while
+End Sub
 

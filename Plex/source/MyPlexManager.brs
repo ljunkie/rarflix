@@ -54,6 +54,9 @@ Function createMyPlexManager(viewController) As Object
     obj.TranscodeServer = invalid
     obj.CheckTranscodeServer = mpCheckTranscodeServer
 
+    ' Stash a copy in the global AA
+    GetGlobalAA().AddReplace("myplex", obj)
+
     return obj
 End Function
 
@@ -170,11 +173,12 @@ Function mpValidateToken(token) As Boolean
     if type(event) = "roUrlEvent" AND event.GetInt() = 1 AND event.GetResponseCode() = 201 then
         xml = CreateObject("roXMLElement")
         xml.Parse(event.GetString())
+        m.Username = xml.username.GetText()
         m.EmailAddress = xml.email.GetText()
         m.IsSignedIn = true
         m.AuthToken = token
 
-        Debug("Validated myPlex token, corresponds to " + tostr(m.EmailAddress))
+        Debug("Validated myPlex token, corresponds to " + tostr(m.Username))
     else
         Debug("Failed to validate myPlex token")
         m.IsSignedIn = false
