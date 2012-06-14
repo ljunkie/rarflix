@@ -3,7 +3,16 @@
 ' **
 ' ********************************************************************
 
-Sub Main()
+Sub Main(args)
+    ' Process any launch args (set registry values)
+    for each arg in args
+        if Left(arg, 5) = "pref!" then
+            pref = Mid(arg, 6)
+            Debug("Setting preference from launch param: " + pref + " = " + args[arg])
+            RegWrite(pref, args[arg], "preferences")
+        end if
+    next
+
     'initialize theme attributes like titles, logos and overhang color
     initTheme()
 
