@@ -195,6 +195,7 @@ Sub showPreferencesScreen()
     m.AddItem({title: "Quality"}, "quality", m.GetEnumValue("quality"))
     m.AddItem({title: "Direct Play"}, "directplay", m.GetEnumValue("directplay"))
     m.AddItem({title: "Subtitles"}, "softsubtitles", m.GetEnumValue("softsubtitles"))
+    m.AddItem({title: "Slideshow"}, "slideshow")
     m.AddItem({title: "Screensaver"}, "screensaver", m.GetEnumValue("screensaver"))
     m.AddItem({title: "Logging"}, "debug")
     m.AddItem({title: "Advanced Preferences"}, "advanced")
@@ -238,6 +239,11 @@ Sub showPreferencesScreen()
                     m.Screen.SetItem(msg.GetIndex(), {title: getCurrentMyPlexLabel(m.myplex)})
                 else if command = "quality" OR command = "level" OR command = "fivepointone" OR command = "directplay" OR command = "softsubtitles" OR command = "screensaver" then
                     m.HandleEnumPreference(command, msg.GetIndex())
+                else if command = "slideshow" then
+                    screen = createSlideshowPrefsScreen(m.ViewController)
+                    m.ViewController.InitializeOtherScreen(screen, ["Slideshow Preferences"])
+                    screen.Show()
+                    screen = invalid
                 else if command = "advanced" then
                     screen = createAdvancedPrefsScreen(m.ViewController)
                     m.ViewController.InitializeOtherScreen(screen, ["Advanced Preferences"])
@@ -284,6 +290,67 @@ Sub showPreferencesScreen()
     next
 
     m.ViewController.Home.Refresh(m.Changes)
+End Sub
+
+Function createSlideshowPrefsScreen(viewController) As Object
+    obj = createBasePrefsScreen(viewController)
+
+    obj.Show = showSlideshowPrefsScreen
+
+    ' Photo duration
+    values = [
+        { title: "Slow", EnumValue: "10" },
+        { title: "Normal", EnumValue: "6" },
+        { title: "Fast", EnumValue: "3" }
+    ]
+    obj.Prefs["slideshow_period"] = {
+        values: values,
+        heading: "Slideshow speed",
+        default: "6"
+    }
+
+    ' Overlay duration
+    values = [
+        { title: "None", EnumValue: "0" }
+        { title: "Slow", EnumValue: "10000" },
+        { title: "Normal", EnumValue: "2500" },
+        { title: "Fast", EnumValue: "1000" }
+    ]
+    obj.Prefs["slideshow_overlay"] = {
+        values: values,
+        heading: "Text overlay duration",
+        default: "2500"
+    }
+
+    return obj
+End Function
+
+Sub showSlideshowPrefsScreen()
+    m.Screen.SetHeader("Slideshow display preferences")
+
+    m.AddItem({title: "Speed"}, "slideshow_period", m.GetEnumValue("slideshow_period"))
+    m.AddItem({title: "Text Overlay"}, "slideshow_overlay", m.GetEnumValue("slideshow_overlay"))
+    m.AddItem({title: "Close"}, "close")
+
+    m.Screen.Show()
+
+    while true
+        msg = wait(m.MsgTimeout, m.Port)
+        if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
+        else if type(msg) = "roListScreenEvent" then
+            if msg.isScreenClosed() then
+                m.ViewController.PopScreen(m)
+                exit while
+            else if msg.isListItemSelected() then
+                command = m.GetSelectedCommand(msg.GetIndex())
+                if command = "slideshow_period" OR command = "slideshow_overlay" then
+                    m.HandleEnumPreference(command, msg.GetIndex())
+                else if command = "close" then
+                    m.Screen.Close()
+                end if
+            end if
+        end if
+    end while
 End Sub
 
 Function createAdvancedPrefsScreen(viewController) As Object

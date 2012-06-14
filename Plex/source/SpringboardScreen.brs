@@ -73,11 +73,10 @@ Function photoCreateSlideShow() As Object
     slideshow = CreateObject("roSlideShow")
     slideshow.SetMessagePort(m.Port)
     slideshow.SetUnderscan(2.5)
-    'slideshow.SetBorderColor("#6b4226")
     slideshow.SetMaxUpscale(8.0)
     slideshow.SetDisplayMode("photo-fit")
-    slideshow.SetPeriod(6)
-    slideshow.SetTextOverlayHoldTime(2500)
+    slideshow.SetPeriod(RegRead("slideshow_period", "preferences", "6").toInt())
+    slideshow.SetTextOverlayHoldTime(RegRead("slideshow_overlay", "preferences", "2500").toInt())
     if m.Item.server.AccessToken <> invalid then
         slideshow.AddHeader("X-Plex-Token", m.Item.server.AccessToken)
     end if
