@@ -65,7 +65,11 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if contentType = "clip" then
         screen = createVideoSpringboardScreen(context, contextIndex, m)
     else if contentType = "series" then
-        screen = createPosterScreen(item, m)
+        if RegRead("use_grid_for_series", "preferences", "") <> "" then
+            screen = createGridScreenForItem(item, m, "flat-16X9")
+        else
+            screen = createPosterScreen(item, m)
+        end if
     else if contentType = "artist" then
         ' TODO: Poster, poster with filters, or grid?
         screen = createPosterScreen(item, m)
