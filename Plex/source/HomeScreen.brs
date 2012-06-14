@@ -591,61 +591,73 @@ Function homeHandleMessage(msg) As Boolean
 
             m.Screen.OnDataLoaded(request.row, status.content, 0, status.content.Count(), true)
         else if request.requestType = "server" then
-            request.server.name = xml@friendlyName
-            request.server.machineID = xml@machineIdentifier
-            request.server.owned = true
-            request.server.online = true
-            request.server.SupportsAudioTranscoding = (xml@transcoderAudio = "1")
-            request.server.IsAvailable = true
-            PutPlexMediaServer(request.server)
+            ' If the machine ID doesn't match what we expected then disregard,
+            ' it was probably a myPlex local address that hasn't been updated.
+            ' If we already have a server then disregard, we might have made
+            ' multiple requests for local addresses and the first one back wins.
 
-            Debug("Fetched additional server information (" + tostr(request.server.name) + ", " + tostr(request.server.machineID) + ")")
-            Debug("URL: " + tostr(request.server.serverUrl))
-            Debug("Server supports audio transcoding: " + tostr(request.server.SupportsAudioTranscoding))
-
-            status = m.contentArray[m.MiscRow]
-
-            machineId = tostr(request.server.machineID)
-            if NOT status.loadedServers.DoesExist(machineID) then
-                status.loadedServers[machineID] = "1"
-                channelDir = CreateObject("roAssociativeArray")
-                channelDir.server = request.server
-                channelDir.sourceUrl = ""
-                channelDir.key = "/system/appstore"
-                channelDir.Title = "Channel Directory"
-                if AreMultipleValidatedServers() then
-                    channelDir.ShortDescriptionLine2 = "Browse channels to install on " + request.server.name
-                else
-                    channelDir.ShortDescriptionLine2 = "Browse channels to install"
-                end if
-                channelDir.Description = channelDir.ShortDescriptionLine2
-                channelDir.SDPosterURL = "file://pkg:/images/more.png"
-                channelDir.HDPosterURL = "file://pkg:/images/more.png"
-                status.content.Push(channelDir)
-            end if
-
-            if m.FirstServer then
-                m.FirstServer = false
-
-                if m.LoadingFacade <> invalid then
-                    m.LoadingFacade.Close()
-                    m.LoadingFacade = invalid
-                end if
-
-                ' Add universal search now that we have a server
-                univSearch = CreateObject("roAssociativeArray")
-                univSearch.sourceUrl = ""
-                univSearch.ContentType = "search"
-                univSearch.Key = "globalsearch"
-                univSearch.Title = "Search"
-                univSearch.Description = "Search for items across all your sections and channels"
-                univSearch.ShortDescriptionLine2 = univSearch.Description
-                univSearch.SDPosterURL = "file://pkg:/images/search.png"
-                univSearch.HDPosterURL = "file://pkg:/images/search.png"
-                status.content.Unshift(univSearch)
-                m.Screen.OnDataLoaded(m.MiscRow, status.content, 0, status.content.Count(), true)
+            existing = GetPlexMediaServer(xml@machineIdentifier)
+            if request.server.machineID <> invalid AND request.server.machineID <> xml@machineIdentifier then
+                Debug("Ignoring server response from unexpected machine ID")
+            else if existing <> invalid AND existing.online then
+                Debug("Ignoring server response from already configured address (" + request.server.serverUrl + " / " + existing.serverUrl + ")")
             else
-                m.Screen.OnDataLoaded(m.MiscRow, status.content, status.content.Count() - 1, 1, true)
+                request.server.name = xml@friendlyName
+                request.server.machineID = xml@machineIdentifier
+                request.server.owned = true
+                request.server.online = true
+                request.server.SupportsAudioTranscoding = (xml@transcoderAudio = "1")
+                request.server.IsAvailable = true
+                PutPlexMediaServer(request.server)
+
+                Debug("Fetched additional server information (" + tostr(request.server.name) + ", " + tostr(request.server.machineID) + ")")
+                Debug("URL: " + tostr(request.server.serverUrl))
+                Debug("Server supports audio transcoding: " + tostr(request.server.SupportsAudioTranscoding))
+
+                status = m.contentArray[m.MiscRow]
+
+                machineId = tostr(request.server.machineID)
+                if NOT status.loadedServers.DoesExist(machineID) then
+                    status.loadedServers[machineID] = "1"
+                    channelDir = CreateObject("roAssociativeArray")
+                    channelDir.server = request.server
+                    channelDir.sourceUrl = ""
+                    channelDir.key = "/system/appstore"
+                    channelDir.Title = "Channel Directory"
+                    if AreMultipleValidatedServers() then
+                        channelDir.ShortDescriptionLine2 = "Browse channels to install on " + request.server.name
+                    else
+                        channelDir.ShortDescriptionLine2 = "Browse channels to install"
+                    end if
+                    channelDir.Description = channelDir.ShortDescriptionLine2
+                    channelDir.SDPosterURL = "file://pkg:/images/more.png"
+                    channelDir.HDPosterURL = "file://pkg:/images/more.png"
+                    status.content.Push(channelDir)
+                end if
+
+                if m.FirstServer then
+                    m.FirstServer = false
+
+                    if m.LoadingFacade <> invalid then
+                        m.LoadingFacade.Close()
+                        m.LoadingFacade = invalid
+                    end if
+
+                    ' Add universal search now that we have a server
+                    univSearch = CreateObject("roAssociativeArray")
+                    univSearch.sourceUrl = ""
+                    univSearch.ContentType = "search"
+                    univSearch.Key = "globalsearch"
+                    univSearch.Title = "Search"
+                    univSearch.Description = "Search for items across all your sections and channels"
+                    univSearch.ShortDescriptionLine2 = univSearch.Description
+                    univSearch.SDPosterURL = "file://pkg:/images/search.png"
+                    univSearch.HDPosterURL = "file://pkg:/images/search.png"
+                    status.content.Unshift(univSearch)
+                    m.Screen.OnDataLoaded(m.MiscRow, status.content, 0, status.content.Count(), true)
+                else
+                    m.Screen.OnDataLoaded(m.MiscRow, status.content, status.content.Count() - 1, 1, true)
+                end if
             end if
         else if request.requestType = "servers" then
             for each serverElem in xml.Server
@@ -665,6 +677,18 @@ Function homeHandleMessage(msg) As Boolean
                     server.AccessToken = firstOf(serverElem@accessToken, m.myplex.AuthToken)
 
                     if serverElem@owned = "1" then
+                        ' If we got local addresses, kick off simultaneous requests for all
+                        ' of them. The first one back will win, so we should always use the
+                        ' most efficient connection.
+                        localAddresses = strTokenize(serverElem@localAddresses, ",")
+                        for each localAddress in localAddresses
+                            localServer = newPlexMediaServer("http://" + localAddress + ":32400", serverElem@name, serverElem@machineIdentifier)
+                            localServer.name = serverElem@name
+                            localServer.owned = true
+                            localServer.AccessToken = firstOf(serverElem@accessToken, m.myplex.AuthToken)
+                            m.CreateServerRequests(localServer, true, false)
+                        next
+
                         server.name = serverElem@name
                         server.owned = true
 

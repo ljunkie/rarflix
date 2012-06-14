@@ -469,6 +469,7 @@ Sub gdmStop()
 End Sub
 
 Function GetPlexMediaServer(machineID)
+    if machineID = invalid then return invalid
     servers = GetGlobalAA().Lookup("validated_servers")
     if servers <> invalid then
         return servers[machineID]
