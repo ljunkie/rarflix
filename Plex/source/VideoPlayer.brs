@@ -111,14 +111,16 @@ Function videoHandleMessage(msg) As Boolean
 
             if screen.Changes.DoesExist("quality") then
                 RegWrite("quality", screen.Changes["quality"], "preferences")
-                m.metadata.preferredMediaItem = PickMediaItem(m.metadata.media)
+                m.metadata.preferredMediaItem = PickMediaItem(m.metadata.media, m.metadata.HasDetails)
             end if
 
             if screen.Changes.DoesExist("audio") then
+                m.media.canDirectPlay = invalid
                 server.UpdateAudioStreamSelection(m.media.preferredPart.id, screen.Changes["audio"])
             end if
 
             if screen.Changes.DoesExist("subtitles") then
+                m.media.canDirectPlay = invalid
                 server.UpdateSubtitleStreamSelection(m.media.preferredPart.id, screen.Changes["subtitles"])
             end if
 
@@ -235,7 +237,7 @@ Sub playVideo(seekValue=0, directPlayOptions=0)
         dialog.Show()
 
         if m.OrigQuality <> dialog.Quality then
-            m.metadata.preferredMediaItem = PickMediaItem(m.metadata.media)
+            m.metadata.preferredMediaItem = PickMediaItem(m.metadata.media, m.metadata.HasDetails)
             m.OrigQuality = dialog.Quality
         end if
     end if
@@ -274,6 +276,11 @@ Function videoCanDirectPlay(mediaItem) As Boolean
         Debug("Media item has no Video object, can't direct play")
         return false
     end if
+
+    if mediaItem.canDirectPlay <> invalid then
+        return mediaItem.canDirectPlay
+    end if
+    mediaItem.canDirectPlay = false
 
     if mediaItem.preferredPart <> invalid AND mediaItem.preferredPart.subtitles <> invalid then
         subtitleStream = mediaItem.preferredPart.subtitles
@@ -362,10 +369,12 @@ Function videoCanDirectPlay(mediaItem) As Boolean
         end if
 
         if device.hasFeature("5.1_surround_sound") AND surroundCodec <> invalid AND surroundCodec = "ac3" then
+            mediaItem.canDirectPlay = true
             return true
         end if
 
         if stereoCodec <> invalid AND (stereoCodec = "aac" OR stereoCodec = "ac3") then
+            mediaItem.canDirectPlay = true
             return true
         end if
 
@@ -388,6 +397,7 @@ Function videoCanDirectPlay(mediaItem) As Boolean
             return false
         end if
 
+        mediaItem.canDirectPlay = true
         return true
     end if
 
@@ -408,10 +418,12 @@ Function videoCanDirectPlay(mediaItem) As Boolean
         end if
 
         if device.hasFeature("5.1_surround_sound") AND surroundCodec <> invalid AND surroundCodec = "ac3" then
+            mediaItem.canDirectPlay = true
             return true
         end if
 
         if stereoCodec <> invalid AND (stereoCodec = "aac" OR stereoCodec = "ac3" OR stereoCodec = "mp3") then
+            mediaItem.canDirectPlay = true
             return true
         end if
 
@@ -430,6 +442,7 @@ Function videoCanDirectPlay(mediaItem) As Boolean
             return false
         end if
 
+        mediaItem.canDirectPlay = true
         return true
     end if
 

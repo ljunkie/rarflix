@@ -40,7 +40,7 @@ Function newVideoMetadata(container, item, detailed=false) As Object
         video.ParseDetails()
     else
         video.media = ParseVideoMedia(item)
-        video.preferredMediaItem = PickMediaItem(video.media)
+        video.preferredMediaItem = PickMediaItem(video.media, false)
 
         if video.preferredMediaItem = invalid then
             video.HasDetails = true
@@ -221,7 +221,7 @@ Sub setVideoDetails(video, container, videoItemXml)
     next
 
     video.media = ParseVideoMedia(videoItemXml)
-    video.preferredMediaItem = PickMediaItem(video.media)
+    video.preferredMediaItem = PickMediaItem(video.media, true)
 End Sub
 
 Function ParseVideoMedia(videoItem) As Object
@@ -281,7 +281,7 @@ Function ParseVideoMedia(videoItem) As Object
 End Function
 
 '* Logic for choosing which Media item to use from the collection of possibles.
-Function PickMediaItem(mediaItems) As Object
+Function PickMediaItem(mediaItems, hasDetails) As Object
     quality = RegRead("quality", "preferences", "7").toInt()
     if quality >= 9 then
         maxResolution = 1080
@@ -293,18 +293,57 @@ Function PickMediaItem(mediaItems) As Object
         maxResolution = 0
     end if
 
-    best = invalid
-    for each mediaItem in mediaItems
-        resolution = firstOf(mediaItem.videoResolution, "0").toInt()
-        if resolution <= maxResolution then
-            if best = invalid then best = mediaItem
+    major = GetGlobal("rokuVersionArr", [0])[0]
+    device = CreateObject("roDeviceInfo")
+    supportsSurround = major >= 4 AND device.hasFeature("5.1_surround_sound") AND RegRead("fivepointone", "preferences", "1") <> "2"
 
-            ' If it looks like direct play would work, return it immediately
-            if mediaItem.container = "mp4" AND mediaItem.videoCodec = "h264" AND (mediaItem.audioCodec = "aac" OR mediaItem.audioCodec = "mp3") then
-                return mediaItem
-            end if
+    best = invalid
+    bestScore = 0
+
+    for each mediaItem in mediaItems
+        score = 0
+        resolution = firstOf(mediaItem.videoResolution, "0").toInt()
+
+        ' If we'll be able to direct play, exit immediately
+        if resolution <= maxResolution AND hasDetails = true AND videoCanDirectPlay(mediaItem) then
+            best = mediaItem
+            bestScore = 100
+            exit for
+        end if
+
+        ' We can't direct play, so give points based on streams that we
+        ' might be able to copy.
+
+        if resolution <= maxResolution then
+            score = score + 5
+        end if
+
+        if mediaItem.preferredPart <> invalid then
+            for each stream in mediaItem.preferredPart.streams
+                if stream.streamType = "1" then
+                    ' Video can be copied if it's H.264 and an ok resolution
+                    if resolution <= maxResolution AND stream.codec = "h264" then
+                        score = score + 20
+                    end if
+                else if stream.streamType = "2" then
+                    channels = firstOf(stream.channels, "2").toInt()
+
+                    if (stream.codec = "aac" AND channels <= 2) OR (stream.codec = "ac3" AND supportsSurround) then
+                        score = score + 10
+                    end if
+                end if
+            next
+        end if
+
+        if score > bestScore then
+            bestScore = score
+            best = mediaItem
         end if
     next
+
+    if hasDetails = true then
+        Debug("Picking best media item with score " + tostr(bestScore))
+    end if
 
     return firstOf(best, mediaItems[0])
 End Function
