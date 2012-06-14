@@ -533,6 +533,11 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As 
     subtitleSize = RegRead("subtitle_size", "preferences", "125")
     query = query + "&subtitleSize=" + subtitleSize
 
+    audioBoost = RegRead("audio_boost", "preferences", "100")
+    if audioBoost <> "100" then
+        query = query + "&audioBoost=" + audioBoost
+    end if
+
     publicKey = "KQMIY6GATPC63AIMC4R2"
     time = LinuxTime().tostr()
     msg = path + query + "@" + time

@@ -342,6 +342,21 @@ Function createAdvancedPrefsScreen(viewController) As Object
         default: "125"
     }
 
+    ' Audio boost for transcoded content. Transcoded content is quiet by
+    ' default, but if we set a default boost then audio will never be remuxed.
+    ' These values are based on iOS.
+    values = [
+        { title: "None", EnumValue: "100" },
+        { title: "Small", EnumValue: "175" },
+        { title: "Large", EnumValue: "225" },
+        { title: "Huge", EnumValue: "300" }
+    ]
+    obj.Prefs["audio_boost"] = {
+        values: values,
+        heading: "Audio boost for transcoded video",
+        default: "100"
+    }
+
     return obj
 End Function
 
@@ -364,6 +379,7 @@ Sub showAdvancedPrefsScreen()
 
     m.AddItem({title: "HLS Segment Length"}, "segment_length", m.GetEnumValue("segment_length"))
     m.AddItem({title: "Subtitle Size"}, "subtitle_size", m.GetEnumValue("subtitle_size"))
+    m.AddItem({title: "Audio Boost"}, "audio_boost", m.GetEnumValue("audio_boost"))
     m.AddItem({title: "Close"}, "close")
 
     m.Screen.Show()
@@ -377,7 +393,7 @@ Sub showAdvancedPrefsScreen()
                 exit while
             else if msg.isListItemSelected() then
                 command = m.GetSelectedCommand(msg.GetIndex())
-                if command = "level" OR command = "fivepointone" OR command = "segment_length" OR command = "subtitle_size" then
+                if command = "level" OR command = "fivepointone" OR command = "segment_length" OR command = "subtitle_size" OR command = "audio_boost" then
                     m.HandleEnumPreference(command, msg.GetIndex())
                 else if command = "close" then
                     m.Screen.Close()
