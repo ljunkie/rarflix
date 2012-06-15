@@ -228,13 +228,22 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
         m.Screen.SetContentList(row, data)
 
         if NOT m.hasData then
-            pendingRows = false
-            for i = 0 to m.contentArray.Count() - 1
-                if m.Loader.GetLoadStatus(i) < 2 then
-                    pendingRows = true
-                    exit for
-                end if
-            next
+            if m.Loader.PendingRequests <> invalid then
+                m.Loader.PendingRequests.Reset()
+                pendingRows = m.Loader.PendingRequests.IsNext()
+            else
+                pendingRows = false
+            end if
+
+            if NOT pendingRows then
+                for i = 0 to m.contentArray.Count() - 1
+                    if m.Loader.GetLoadStatus(i) < 2 then
+                        pendingRows = true
+                        exit for
+                    end if
+                next
+            end if
+
             if NOT pendingRows then
                 Debug("Nothing in any grid rows")
 
