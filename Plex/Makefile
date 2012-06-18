@@ -17,7 +17,7 @@
 ##########################################################################  
 APPNAME = Plex
 APPDEPS = manifest
-ZIP_EXCLUDE = -x .git\* -x manifest.template -x \*.swp -x \*.DS_Store
+ZIP_EXCLUDE = -x .git\* -x manifest.template -x \*.swp -x \*.DS_Store -x \*.py
 include ../app.mk
 
 APPTITLE = PlexDev
