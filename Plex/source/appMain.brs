@@ -8,8 +8,13 @@ Sub Main(args)
     for each arg in args
         if Left(arg, 5) = "pref!" then
             pref = Mid(arg, 6)
-            Debug("Setting preference from launch param: " + pref + " = " + args[arg])
-            RegWrite(pref, args[arg], "preferences")
+            value = args[arg]
+            Debug("Setting preference from launch param: " + pref + " = " + value)
+            if value <> "" then
+                RegWrite(pref, value, "preferences")
+            else
+                RegDelete(pref, "preferences")
+            end if
         end if
     next
 
