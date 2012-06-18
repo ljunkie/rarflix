@@ -7,11 +7,10 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize)
 
     ' Reorder container sections so that frequently accessed sections
     ' are displayed first.
-    container.MoveKeyToHead("newest")
-    container.MoveKeyToHead("recentlyAdded")
-    container.MoveKeyToHead("recentlyViewedShows")
-    container.MoveKeyToHead("onDeck")
-    container.MoveKeyToHead("all")
+    priorityKeys = RegRead("priority_keys", "preferences", "newest,recentlyAdded,recentlyViewedShows,onDeck,all").Tokenize(",")
+    for each key in priorityKeys
+        container.MoveKeyToHead(key)
+    next
 
     loader = CreateObject("roAssociativeArray")
 
