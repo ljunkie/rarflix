@@ -461,6 +461,11 @@ Sub showAdvancedPrefsScreen()
                 command = m.GetSelectedCommand(msg.GetIndex())
                 if command = "level" OR command = "fivepointone" OR command = "segment_length" OR command = "subtitle_size" OR command = "audio_boost" then
                     m.HandleEnumPreference(command, msg.GetIndex())
+                else if command = "1080p" then
+                    screen = create1080PreferencesScreen(m.ViewController)
+                    m.ViewController.InitializeOtherScreen(screen, ["1080p Settings"])
+                    screen.Show()
+                    screen = invalid
                 else if command = "close" then
                     m.Screen.Close()
                 end if
