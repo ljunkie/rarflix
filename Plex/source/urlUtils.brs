@@ -223,6 +223,9 @@ Function GetToStringWithTimeout(request As Object, seconds as Integer) as String
         event = wait(timeout%, request.GetPort())
         if type(event) = "roUrlEvent"
             str = event.GetString()
+            if event.GetResponseCode() <> 200 then
+                Debug("GET returned: " + tostr(event.GetResponseCode()) + " - " + event.GetFailureReason())
+            end if
         elseif event = invalid
             Dbg("AsyncGetToString timeout")
             request.AsyncCancel()
