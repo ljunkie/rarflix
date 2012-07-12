@@ -272,9 +272,19 @@ Function ParseVideoMedia(videoItem) As Object
 				stream.selected = StreamItem@selected
 				stream.channels = StreamItem@channels
                 stream.key = StreamItem@key
+
                 if stream.selected <> invalid AND stream.streamType = "3" then
                     part.subtitles = stream
                 end if
+
+                if stream.streamType = "1" then
+                    stream.cabac = StreamItem@cabac
+                    stream.frameRate = StreamItem@frameRate
+                    stream.level = StreamItem@level
+                    stream.profile = StreamItem@profile
+                    stream.refFrames = StreamItem@refFrames
+                end if
+
 				part.streams.Push(stream)
 			next
 			media.parts.Push(part)

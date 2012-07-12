@@ -149,6 +149,10 @@ Sub playVideo(seekValue=0, directPlayOptions=0)
 	Debug("MediaPlayer::playVideo: Displaying video: " + tostr(metadata.title))
 	seconds = int(seekValue/1000)
 
+    if (directPlayOptions <> 1 AND directPlayOptions <> 2) AND metadata.preferredMediaItem.forceTranscode <> invalid then
+        directPlayOptions = 4
+    end if
+
     origDirectPlayOptions = RegRead("directplay", "preferences", "0")
     if origDirectPlayOptions <> directPlayOptions.tostr() then
         Debug("Temporarily overwriting direct play preference to: " + tostr(directPlayOptions))
@@ -304,6 +308,7 @@ Function videoCanDirectPlay(mediaItem) As Boolean
     surroundCodec = invalid
     secondaryStreamSelected = false
     numAudioStreams = 0
+    videoStream = invalid
     if mediaItem.preferredPart <> invalid then
         for each stream in mediaItem.preferredPart.streams
             if stream.streamType = "2" then
@@ -323,6 +328,8 @@ Function videoCanDirectPlay(mediaItem) As Boolean
                 else
                     Debug("Unexpected channels on audio stream: " + tostr(stream.channels))
                 end if
+            elseif stream.streamType = "1" AND videoStream = invalid then
+                videoStream = stream
             end if
         next
     end if
@@ -365,6 +372,14 @@ Function videoCanDirectPlay(mediaItem) As Boolean
     if mediaItem.container = "mp4" OR mediaItem.container = "mov" OR mediaItem.container = "m4v" then
         if (mediaItem.videoCodec <> "h264" AND mediaItem.videoCodec <> "mpeg4") then
             Debug("videoCanDirectPlay: vc not h264/mpeg4")
+            return false
+        end if
+
+        if videoStream <> invalid AND firstOf(videoStream.refFrames, "0").toInt() > GetGlobal("maxRefFrames", 0) then
+            ' Not only can we not Direct Play, but we want to make sure we
+            ' don't try to Direct Stream.
+            mediaItem.forceTranscode = true
+            Debug("videoCanDirectPlay: too many ReFrames: " + tostr(videoStream.refFrames))
             return false
         end if
 
