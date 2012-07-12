@@ -386,8 +386,8 @@ Function videoCanDirectPlay(mediaItem) As Boolean
         ' TODO: What exactly should we check here?
 
         ' Based on docs, only WMA9.2 is supported for audio
-        if Left(mediaItem.audioCodec, 3) <> "wma" then
-            Debug("videoCanDirectPlay: ac not wmav2")
+        if stereoCodec = invalid OR Left(stereoCodec, 3) <> "wma" then
+            Debug("videoCanDirectPlay: ac not stereo wmav2")
             return false
         end if
 
