@@ -15,7 +15,6 @@ Function createMyPlexManager(viewController) As Object
     obj.ExtraHeaders["X-Plex-Platform-Version"] = GetGlobal("rokuVersionStr", "unknown")
     obj.ExtraHeaders["X-Plex-Provides"] = "player"
     obj.ExtraHeaders["X-Plex-Product"] = "Plex for Roku"
-    obj.ExtraHeaders["X-Plex-Version"] = GetGlobal("appVersionStr")
     obj.ExtraHeaders["X-Plex-Device"] = GetGlobal("rokuModel")
     obj.ExtraHeaders["X-Plex-Client-Identifier"] = GetGlobal("rokuUniqueID")
 

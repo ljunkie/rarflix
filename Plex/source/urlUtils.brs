@@ -33,6 +33,7 @@ Function CreateURLTransferObject(url As String) as Object
     obj.SetUrl(url)
     obj.AddHeader("Content-Type", "application/x-www-form-urlencoded")
 	obj.AddHeader("X-Plex-Client-Platform", "Roku")
+    obj.AddHeader("X-Plex-Version", GetGlobal("appVersionStr"))
     obj.EnableEncodings(true)
     return obj
 End Function
