@@ -264,6 +264,19 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
                     Debug("Indirect video item header: " + tostr(value))
                 next
             end if
+
+            ' HACK
+            ' Nothing interesting about the media should have changed while
+            ' resolving the indirect, but some plugins use indirect to
+            ' optimistically say they'll be MP4s and then wind up being RTMP.
+            ' So we do a special check for that that avoids a failed direct
+            ' play.
+            newContainer = firstOf(parseMediaContainer(mediaKeyXml.Video.Media), mediaItem.container)
+            if newContainer <> mediaItem.container then
+                mediaItem.container = newContainer
+                mediaItem.canDirectPlay = invalid
+                Debug("After resolving indirect, set format to " + newContainer)
+            end if
         end if
     end if
 
@@ -389,7 +402,7 @@ End Function
 '* relative to the server URL
 Function FullUrl(serverUrl, sourceUrl, key) As String
     finalUrl = ""
-    if left(key, 4) = "http" then
+    if left(key, 4) = "http" OR left(key, 5) = "rtmp:" then
         return key
     else if left(key, 4) = "plex" then
         url_start = Instr(1, key, "url=") + 4

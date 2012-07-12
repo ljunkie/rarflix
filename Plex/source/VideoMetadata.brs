@@ -224,6 +224,21 @@ Sub setVideoDetails(video, container, videoItemXml)
     video.preferredMediaItem = PickMediaItem(video.media, true)
 End Sub
 
+Function parseMediaContainer(MediaItem)
+    container = MediaItem@container
+
+    ' Translate any containers that Roku expects to see with a different name
+    if container = "asf" then container = "wmv"
+
+    if MediaItem@protocol = "hls" then
+        container = "hls"
+    elseif MediaItem@protocol = "rtmp" then
+        container = "rtmp"
+    end if
+
+    return container
+End Function
+
 Function ParseVideoMedia(videoItem) As Object
     mediaArray = CreateObject("roArray", 5, true)
 	for each MediaItem in videoItem.Media
@@ -236,15 +251,7 @@ Function ParseVideoMedia(videoItem) As Object
 		media.audioCodec = MediaItem@audioCodec
 		media.videoCodec = MediaItem@videoCodec
 		media.videoResolution = MediaItem@videoResolution
-		media.container = MediaItem@container
-
-        ' Translate any containers that Roku expects to see with a different name
-        if media.container = "asf" then media.container = "wmv"
-
-        if MediaItem@protocol = "hls" then
-            media.container = "hls"
-        end if
-
+        media.container = parseMediaContainer(MediaItem)
         media.aspectRatio = val(firstOf(MediaItem@aspectRatio, "0.0"))
         media.optimized = MediaItem@optimizedForStreaming
 		media.parts = CreateObject("roArray", 3, true)
