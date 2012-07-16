@@ -173,8 +173,10 @@ Sub playVideo(seekValue=0, directPlayOptions=0)
         videoPlayer.SetMessagePort(port)
         videoPlayer.SetContent(videoItem)
 
-        if server.AccessToken <> invalid then
-            videoPlayer.AddHeader("X-Plex-Token", server.AccessToken)
+        ' If we're playing the video from the server, add appropriate X-Plex
+        ' headers.
+        if server.IsRequestToServer(videoItem.StreamUrls[0]) then
+            AddPlexHeaders(videoPlayer, server.AccessToken)
         end if
 
         if videoItem.IsTranscoded then

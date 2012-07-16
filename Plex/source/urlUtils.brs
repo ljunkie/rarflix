@@ -32,11 +32,19 @@ Function CreateURLTransferObject(url As String) as Object
     obj.SetPort(CreateObject("roMessagePort"))
     obj.SetUrl(url)
     obj.AddHeader("Content-Type", "application/x-www-form-urlencoded")
-	obj.AddHeader("X-Plex-Client-Platform", "Roku")
-    obj.AddHeader("X-Plex-Version", GetGlobal("appVersionStr"))
+    AddPlexHeaders(obj)
     obj.EnableEncodings(true)
     return obj
 End Function
+
+Sub AddPlexHeaders(transferObj, token=invalid)
+    transferObj.AddHeader("X-Plex-Client-Platform", "Roku")
+    transferObj.AddHeader("X-Plex-Version", GetGlobal("appVersionStr"))
+
+    if token <> invalid then
+        transferObj.AddHeader("X-Plex-Token", token)
+    end if
+End Sub
 
 
 REM ******************************************************

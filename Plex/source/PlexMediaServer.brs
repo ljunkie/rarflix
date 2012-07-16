@@ -33,6 +33,7 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.TranscodingVideoUrl = TranscodingVideoUrl
     pms.TranscodingAudioUrl = TranscodingAudioUrl
     pms.ConvertURLToLoopback = ConvertURLToLoopback
+    pms.IsRequestToServer = pmsIsRequestToServer
     pms.AddDirectPlayInfo = pmsAddDirectPlayInfo
     pms.Log = pmsLog
 
@@ -596,11 +597,15 @@ Function ConvertURLToLoopback(url) As String
     ' If the URL starts with our serverl URL, replace it with
     ' 127.0.0.1:32400.
 
-    if Left(url, len(m.serverUrl)) = m.serverUrl then
+    if m.IsRequestToServer(url) then
         url = "http://127.0.0.1:32400" + Right(url, len(url) - len(m.serverUrl))
     end if
 
     return url
+End Function
+
+Function pmsIsRequestToServer(url) As Boolean
+    return (Left(url, len(m.serverUrl)) = m.serverUrl)
 End Function
 
 Function Capabilities(recompute=false) As String

@@ -36,6 +36,7 @@ Function createMyPlexManager(viewController) As Object
     obj.ConstructVideoItem = pmsConstructVideoItem
     obj.GetQueryResponse = mpGetQueryResponse
     obj.AddDirectPlayInfo = pmsAddDirectPlayInfo
+    obj.IsRequestToServer = pmsIsRequestToServer
     obj.Log = mpLog
 
     ' Commands, mostly use the PMS functions
