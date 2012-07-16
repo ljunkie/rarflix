@@ -18,6 +18,15 @@ Sub Main(args)
         end if
     next
 
+    ' If necessary, restore the direct play preference. It's possible for a
+    ' temporary value to persist if the video player crashes.
+    directPlay = RegRead("directplay_restore", "preferences")
+    if directPlay <> invalid then
+        Debug("Restoring direct play options to: " + tostr(directPlay))
+        RegWrite("directplay", directPlay, "preferences")
+        RegDelete("directplay_restore", "preferences")
+    end if
+
     'initialize theme attributes like titles, logos and overhang color
     initTheme()
 

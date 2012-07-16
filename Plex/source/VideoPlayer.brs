@@ -157,6 +157,7 @@ Sub playVideo(seekValue=0, directPlayOptions=0)
     if origDirectPlayOptions <> directPlayOptions.tostr() then
         Debug("Temporarily overwriting direct play preference to: " + tostr(directPlayOptions))
         RegWrite("directplay", directPlayOptions.tostr(), "preferences")
+        RegWrite("directplay_restore", origDirectPlayOptions, "preferences")
         Capabilities(true)
     else
         origDirectPlayOptions = invalid
@@ -226,6 +227,7 @@ Sub playVideo(seekValue=0, directPlayOptions=0)
     if origDirectPlayOptions <> invalid then
         Debug("Restoring direct play options to: " + tostr(origDirectPlayOptions))
         RegWrite("directplay", origDirectPlayOptions, "preferences")
+        RegDelete("directplay_restore", "preferences")
         Capabilities(true)
     end if
 
