@@ -9,3 +9,16 @@ To put back in Normal mode:
    a) Same sequence as above
 
    b) choose to Disable the Installer
+
+To install a "dev" release of Plex on Roku:
+
+   a) export ROKU_DEV_TARGET=192.168.1.xxx    # ip of Roku device
+
+   b) cd Plex
+
+   c) make dev install
+
+To see debug console:
+
+   telnet ROKU_DEV_TARGET 8085
+
