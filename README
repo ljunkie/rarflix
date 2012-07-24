@@ -20,5 +20,5 @@ To install a "dev" release of Plex on Roku:
 
 To see debug console:
 
-   telnet ROKU_DEV_TARGET 8085
+   telnet $ROKU_DEV_TARGET 8085
 
