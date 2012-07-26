@@ -149,7 +149,7 @@ Sub playVideo(seekValue=0, directPlayOptions=0)
 	Debug("MediaPlayer::playVideo: Displaying video: " + tostr(metadata.title))
 	seconds = int(seekValue/1000)
 
-    if (directPlayOptions <> 1 AND directPlayOptions <> 2) AND metadata.preferredMediaItem.forceTranscode <> invalid then
+    if (metadata.preferredMediaItem <> invalid AND metadata.preferredMediaItem.forceTranscode <> invalid) AND (directPlayOptions <> 1 AND directPlayOptions <> 2) then
         directPlayOptions = 4
     end if
 
