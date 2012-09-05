@@ -721,7 +721,7 @@ Sub showVideoOptionsScreen()
     end while
 End Sub
 
-Function videoGetEnumValue(key) As String
+Function videoGetEnumValue(key)
     pref = m.Prefs[key]
     for each item in pref.values
         if item.EnumValue = pref.default then
