@@ -257,6 +257,9 @@ Sub vcPopScreen(screen)
         m.TimersByScreen.Delete(screenID)
     end if
 
+    ' Let the new top of the stack know that it's visible again.
+    m.screens.Peek().Activate()
+
     if m.screens.Count() = 0 then
         m.Home.CreateQueueRequests(true)
     end if
@@ -274,7 +277,14 @@ Sub vcShow()
     while m.screens.Count() > 0
         msg = wait(timeout, m.GlobalMessagePort)
         if msg <> invalid then
-            for i = m.screens.Count() - 1 to 0
+            ' Printing debug information about every message may be overkill
+            ' regardless, but note that URL events don't play by the same rules,
+            ' and there's no ifEvent interface to check for. Sigh.
+            'if GetInterface(msg, "ifUrlEvent") = invalid then
+            '    Debug("Processing " + type(msg) + ": " + tostr(msg.GetType()) + ", " + tostr(msg.GetIndex()) + ", " + tostr(msg.GetMessage()))
+            'end if
+
+            for i = m.screens.Count() - 1 to 0 step -1
                 if m.screens[i].HandleMessage(msg) then exit for
             end for
 

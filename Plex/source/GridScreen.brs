@@ -26,6 +26,7 @@ Function createGridScreen(viewController, style="flat-movie") As Object
     screen.DestroyAndRecreate = gridDestroyAndRecreate
     screen.Show = showGridScreen
     screen.HandleMessage = gridHandleMessage
+    screen.Activate = gridActivate
 
     screen.SetUpBehaviorAtTopRow = setUpBehavior
 
@@ -132,48 +133,10 @@ Function gridHandleMessage(msg) As Boolean
                 breadcrumbs = [m.Loader.GetNames()[msg.GetIndex()], item.Title]
             end if
 
-            facade = CreateObject("roGridScreen")
-            facade.Show()
+            m.Facade = CreateObject("roGridScreen")
+            m.Facade.Show()
 
             m.ViewController.CreateScreenForItem(context, index, breadcrumbs)
-
-            ' If our screen was destroyed by some child screen, recreate it now
-            if m.Screen = invalid then
-                Debug("Recreating grid...")
-                setGridTheme(m.gridStyle)
-                m.Screen = CreateObject("roGridScreen")
-                m.Screen.SetMessagePort(m.Port)
-                m.Screen.SetDisplayMode("scale-to-fit")
-                m.Screen.SetGridStyle(m.gridStyle)
-                m.Screen.SetUpBehaviorAtTopRow(m.upBehavior)
-
-                names = m.Loader.GetNames()
-                m.Screen.SetupLists(names.Count())
-                m.Screen.SetListNames(names)
-
-                m.ViewController.UpdateScreenProperties(m)
-
-                for row = 0 to names.Count() - 1
-                    m.Screen.SetContentList(row, m.contentArray[row])
-                    if m.contentArray[row].Count() = 0 AND m.Loader.GetLoadStatus(row) = 2 then
-                        m.Screen.SetListVisible(row, false)
-                    end if
-                end for
-                m.Screen.SetFocusedListItem(m.selectedRow, m.focusedIndex)
-
-                m.Screen.Show()
-            else
-                ' Regardless, reset the current row in case the currently
-                ' selected item had metadata changed that would affect its
-                ' display in the grid.
-                m.Screen.SetContentList(m.selectedRow, m.contentArray[m.selectedRow])
-            end if
-
-            m.HasData = false
-            m.Refreshing = true
-            m.Loader.RefreshData()
-
-            facade.Close()
         else if msg.isListItemFocused() then
             ' If the user is getting close to the limit of what we've
             ' preloaded, make sure we kick off another update.
@@ -320,4 +283,44 @@ Sub gridDestroyAndRecreate()
         m.Screen.Close()
         m.Screen = invalid
     end if
+End Sub
+
+Sub gridActivate()
+    ' If our screen was destroyed by some child screen, recreate it now
+    if m.Screen = invalid then
+        Debug("Recreating grid...")
+        setGridTheme(m.gridStyle)
+        m.Screen = CreateObject("roGridScreen")
+        m.Screen.SetMessagePort(m.Port)
+        m.Screen.SetDisplayMode("scale-to-fit")
+        m.Screen.SetGridStyle(m.gridStyle)
+        m.Screen.SetUpBehaviorAtTopRow(m.upBehavior)
+
+        names = m.Loader.GetNames()
+        m.Screen.SetupLists(names.Count())
+        m.Screen.SetListNames(names)
+
+        m.ViewController.UpdateScreenProperties(m)
+
+        for row = 0 to names.Count() - 1
+            m.Screen.SetContentList(row, m.contentArray[row])
+            if m.contentArray[row].Count() = 0 AND m.Loader.GetLoadStatus(row) = 2 then
+                m.Screen.SetListVisible(row, false)
+            end if
+        end for
+        m.Screen.SetFocusedListItem(m.selectedRow, m.focusedIndex)
+
+        m.Screen.Show()
+    else
+        ' Regardless, reset the current row in case the currently
+        ' selected item had metadata changed that would affect its
+        ' display in the grid.
+        m.Screen.SetContentList(m.selectedRow, m.contentArray[m.selectedRow])
+    end if
+
+    m.HasData = false
+    m.Refreshing = true
+    m.Loader.RefreshData()
+
+    m.Facade.Close()
 End Sub
