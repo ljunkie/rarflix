@@ -48,7 +48,7 @@ Function ParseRegistryServerList() As Object
     return list
 End Function
 
-' * Obtain a list of all configured servers. 
+' * Obtain a list of all configured servers.
 Function PlexMediaServers() As Object
     infoList = ParseRegistryServerList()
     list = CreateObject("roList")
@@ -69,7 +69,7 @@ Function RemoveAllServers()
     RegDelete("serverList", "servers")
 End Function
 
-Function RemoveServer(index) 
+Function RemoveServer(index)
     Debug("Removing server with index: " + tostr(index))
     servers = ParseRegistryServerList()
     RemoveAllServers()
@@ -85,7 +85,7 @@ Function RemoveServer(index)
     end for
 End Function
 
-' * Adds a server to the list used by the application. Not validated at this 
+' * Adds a server to the list used by the application. Not validated at this
 ' * time which allows off-line servers to be specified. Checking for dupes,
 ' * usually based on machine ID, should be done by the caller.
 Sub AddServer(name, address, machineID)
@@ -337,10 +337,10 @@ Function GetFirstIPAddress()
     end if
 End Function
 
-Function createGDMDiscovery(port)
+Function createGDMDiscovery(port, listener=invalid)
     Debug("IN GDMFind")
 
-    message = "M-SEARCH * HTTP/1.1"+chr(13)+chr(10)+chr(13)+chr(10) 
+    message = "M-SEARCH * HTTP/1.1"+chr(13)+chr(10)+chr(13)+chr(10)
     success = false
     try = 0
 
@@ -420,6 +420,11 @@ Function createGDMDiscovery(port)
         gdm.udp = udp
         gdm.HandleMessage = gdmHandleMessage
         gdm.Stop = gdmStop
+        if listener <> invalid then
+            gdm.Listener = listener
+            gdm.OnSocketEvent = gdmOnSocketEvent
+            GetViewController().AddSocketListener(udp, gdm)
+        end if
         return gdm
     else
         return invalid
@@ -428,7 +433,7 @@ End Function
 
 Function gdmHandleMessage(msg)
     if type(msg) = "roSocketEvent" AND msg.getSocketID() = m.udp.getID() AND m.udp.isReadable() then
-        message = m.udp.receiveStr(4096) ' max 4096 characters  
+        message = m.udp.receiveStr(4096) ' max 4096 characters
         caddr = m.udp.getReceivedFromAddress()
         h_address = caddr.getHostName()
 
@@ -443,13 +448,13 @@ Function gdmHandleMessage(msg)
         h_name = Mid(message, x, y-x)
         Debug(h_name)
 
-        x = instr(1, message, "Port: ") 
+        x = instr(1, message, "Port: ")
         x = x + 6
         y = instr(x, message, chr(13))
         h_port = Mid(message, x, y-x)
         Debug(h_port)
 
-        x = instr(1, message, "Resource-Identifier: ") 
+        x = instr(1, message, "Resource-Identifier: ")
         x = x + 21
         y = instr(x, message, chr(13))
         h_machineID = Mid(message, x, y-x)
@@ -463,6 +468,13 @@ Function gdmHandleMessage(msg)
 
     return invalid
 End Function
+
+Sub gdmOnSocketEvent(msg)
+    serverInfo = m.HandleMessage(msg)
+    if serverInfo <> invalid then
+        m.Listener.OnServerDiscovered(serverInfo)
+    end if
+End Sub
 
 Sub gdmStop()
     m.udp.Close()

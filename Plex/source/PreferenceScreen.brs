@@ -34,7 +34,7 @@ Sub showSettingsScreen()
 
     m.Screen.Show()
 
-	while true 
+	while true
         msg = wait(m.MsgTimeout, m.Port)
         if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
         else if type(msg) = "roListScreenEvent" then
@@ -87,7 +87,7 @@ End Sub
 
 
 '#######################################################
-'Below are the preference Functions for the Global 
+'Below are the preference Functions for the Global
 ' Roku channel settings
 '#######################################################
 Function createBasePrefsScreen(viewController) As Object
@@ -190,7 +190,7 @@ Sub showPreferencesScreen()
     m.Screen.SetHeader("Set Plex Channel Preferences")
 
     m.AddItem({title: "Plex Media Servers"}, "servers")
-    m.AddItem({title: getCurrentMyPlexLabel(m.myplex)}, "myplex")
+    m.AddItem({title: getCurrentMyPlexLabel()}, "myplex")
     m.AddItem({title: "Quality"}, "quality", m.GetEnumValue("quality"))
     m.AddItem({title: "Direct Play"}, "directplay", m.GetEnumValue("directplay"))
     m.AddItem({title: "Subtitles"}, "softsubtitles", m.GetEnumValue("softsubtitles"))
@@ -235,7 +235,7 @@ Sub showPreferencesScreen()
                             m.Changes["myplex"] = "connected"
                         end if
                     end if
-                    m.Screen.SetItem(msg.GetIndex(), {title: getCurrentMyPlexLabel(m.myplex)})
+                    m.Screen.SetItem(msg.GetIndex(), {title: getCurrentMyPlexLabel()})
                 else if command = "quality" OR command = "level" OR command = "fivepointone" OR command = "directplay" OR command = "softsubtitles" OR command = "screensaver" then
                     m.HandleEnumPreference(command, msg.GetIndex())
                 else if command = "slideshow" then
@@ -715,3 +715,11 @@ Function prefsGetEnumValue(regKey)
     return invalid
 End Function
 
+Function getCurrentMyPlexLabel() As String
+    myplex = GetMyPlexManager()
+    if myplex.IsSignedIn then
+        return "Disconnect myPlex account (" + myplex.EmailAddress + ")"
+    else
+        return "Connect myPlex account"
+    end if
+End Function

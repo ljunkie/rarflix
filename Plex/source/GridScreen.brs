@@ -29,7 +29,7 @@ Function createGridScreen(viewController, style="flat-movie") As Object
 
     screen.SetUpBehaviorAtTopRow = setUpBehavior
 
-    screen.timer = createPerformanceTimer()
+    screen.timer = createTimer()
     screen.selectedRow = 0
     screen.focusedIndex = 0
     screen.contentArray = []
@@ -63,7 +63,7 @@ Function showGridScreen() As Integer
     facade = CreateObject("roGridScreen")
     facade.Show()
 
-    totalTimer = createPerformanceTimer()
+    totalTimer = createTimer()
 
     names = m.Loader.GetNames()
 

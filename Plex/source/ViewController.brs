@@ -31,7 +31,8 @@ Function createViewController() As Object
     controller.facade = CreateObject("roGridScreen")
     controller.facade.Show()
 
-    controller.nextId = 1
+    controller.nextScreenId = 1
+    controller.nextTimerId = 1
 
     controller.InitThemes = vcInitThemes
     controller.PushTheme = vcPushTheme
@@ -45,14 +46,26 @@ Function createViewController() As Object
     controller.StartRequest = vcStartRequest
     controller.CancelRequests = vcCancelRequests
 
+    controller.SocketListeners = {}
+    controller.AddSocketListener = vcAddSocketListener
+
+    controller.Timers = {}
+    controller.TimersByScreen = {}
+    controller.AddTimer = vcAddTimer
+
     ' Stuff the controller into the global object
     m.ViewController = controller
+    controller.myplex = createMyPlexManager(controller)
 
     return controller
 End Function
 
 Function GetViewController()
     return m.ViewController
+End Function
+
+Function GetMyPlexManager()
+    return GetViewController().myplex
 End Function
 
 Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As Dynamic
@@ -188,10 +201,10 @@ End Sub
 
 Sub vcPushScreen(screen)
     ' Set an ID on the screen so we can sanity check before popping
-    screen.ScreenID = m.nextId
-    m.nextId = m.nextId + 1
-
-    m.RequestsByScreen[screen.ScreenID.tostr()] = []
+    if screen.ScreenID = invalid then
+        screen.ScreenID = m.nextScreenId
+        m.nextScreenId = m.nextScreenId + 1
+    end if
 
     Debug("Pushing screen " + tostr(screen.ScreenID) + " onto view controller stack")
     m.screens.Push(screen)
@@ -222,13 +235,27 @@ Sub vcPopScreen(screen)
         Return
     end if
 
-    Debug("Popping screen " + tostr(screen.ScreenID) + " and cleaning up " + tostr(screen.NumBreadcrumbs) + " breadcrumbs")
+    screenID = screen.ScreenID.tostr()
+
+    Debug("Popping screen " + screenID + " and cleaning up " + tostr(screen.NumBreadcrumbs) + " breadcrumbs")
     m.screens.Pop()
     for i = 0 to screen.NumBreadcrumbs - 1
         m.breadcrumbs.Pop()
     next
 
+    ' Clean up any requests initiated by this screen
     m.CancelRequests(screen.ScreenID)
+
+    ' Clean up any timers initiated by this screen
+    timers = m.TimersByScreen[screenID]
+    if timers <> invalid then
+        for each timer in timers
+            timer.Active = false
+            timer.Listener = invalid
+            m.Timers.Delete(timer.ID)
+        next
+        m.TimersByScreen.Delete(screenID)
+    end if
 
     if m.screens.Count() = 0 then
         m.Home.CreateQueueRequests(true)
@@ -236,25 +263,16 @@ Sub vcPopScreen(screen)
 End Sub
 
 Sub vcShow()
-    ' TODO(schuyler): This is a temporary hack to show a plain grid screen.
-    ' The home screen is more complicated to get working with a global message port.
-    'm.Home = createHomeScreen(m)
-    'm.Home.Screen.ScreenID = -1
-    'm.screens.Push(m.Home.Screen)
-    'm.Home.Show()
-
-    item = CreateObject("roAssociativeArray")
-    item.sourceUrl = ""
-    item.key = "/library/sections/21"
-    item.server = newPlexMediaServer("http://10.0.1.36:32400", "Testing", "deadbeef")
-    grid = createGridScreenForItem(item, m, "flat-movie")
-    m.InitializeOtherScreen(grid, invalid)
-    grid.Show()
+    m.Home = createHomeScreen(m)
+    m.Home.ScreenID = -1
+    m.InitializeOtherScreen(m.Home, invalid)
+    m.Home.Show()
 
     Debug("Starting global message loop")
 
+    timeout = 0
     while m.screens.Count() > 0
-        msg = wait(0, m.GlobalMessagePort)
+        msg = wait(timeout, m.GlobalMessagePort)
         if msg <> invalid then
             for i = m.screens.Count() - 1 to 0
                 if m.screens[i].HandleMessage(msg) then exit for
@@ -269,8 +287,28 @@ Sub vcShow()
                     m.PendingRequests.Delete(id)
                     requestContext.Listener.OnUrlEvent(msg, requestContext)
                 end if
+            else if type(msg) = "roSocketEvent"
+                listener = m.SocketListeners[msg.getSocketID().tostr()]
+                if listener <> invalid then
+                    listener.OnSocketEvent(msg)
+                end if
             end if
         end if
+
+        ' Check for any expired timers
+        timeout = 0
+        for each timerID in m.Timers
+            timer = m.Timers[timerID]
+            if timer.IsExpired() then
+                timer.Listener.OnTimerExpired(timer)
+            end if
+
+            ' Make sure we set a timeout on the wait so we'll catch the next timer
+            remaining = timer.RemainingMillis()
+            if remaining > 0 AND (timeout = 0 OR remaining < timeout) then
+                timeout = remaining
+            end if
+        next
     end while
 
     Debug("Finished global message loop")
@@ -417,7 +455,11 @@ Function vcStartRequest(request, listener, context) As Boolean
     if request.AsyncGetToString() then
         id = request.GetIdentity().tostr()
         m.PendingRequests[id] = context
-        m.RequestsByScreen[listener.ScreenID.tostr()].Push(id)
+        screenID = listener.ScreenID.tostr()
+        if NOT m.RequestsByScreen.DoesExist(screenID) then
+            m.RequestsByScreen[screenID] = []
+        end if
+        m.RequestsByScreen[screenID].Push(id)
         return true
     else
         return false
@@ -434,4 +476,21 @@ Sub vcCancelRequests(screenID)
         next
         m.RequestsByScreen.Delete(screenID.tostr())
     end if
+End Sub
+
+Sub vcAddSocketListener(socket, listener)
+    m.SocketListeners[socket.GetID().tostr()] = listener
+End Sub
+
+Sub vcAddTimer(timer, listener)
+    timer.ID = m.nextTimerId.tostr()
+    m.nextTimerId = m.NextTimerId + 1
+    timer.Listener = listener
+    m.Timers[timer.ID] = timer
+
+    screenID = listener.ScreenID.tostr()
+    if NOT m.TimersByScreen.DoesExist(screenID) then
+        m.TimersByScreen[screenID] = []
+    end if
+    m.TimersByScreen[screenID].Push(timer.ID)
 End Sub
