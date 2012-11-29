@@ -8,10 +8,11 @@ Function createGridScreen(viewController, style="flat-movie") As Object
     setGridTheme(style)
 
     screen = CreateObject("roAssociativeArray")
-    port = CreateObject("roMessagePort")
-    grid = CreateObject("roGridScreen")
 
-    grid.SetMessagePort(port)
+    initBaseScreen(screen, viewController)
+
+    grid = CreateObject("roGridScreen")
+    grid.SetMessagePort(screen.Port)
 
     ' If we don't know exactly what we're displaying, scale-to-fit looks the
     ' best. Anything else makes something look horrible when the grid has
@@ -21,15 +22,11 @@ Function createGridScreen(viewController, style="flat-movie") As Object
     grid.SetUpBehaviorAtTopRow("exit")
 
     ' Standard properties for all our Screen types
-    screen.Item = invalid
     screen.Screen = grid
-    screen.Port = port
-    screen.ViewController = viewController
-    screen.MessageHandler = invalid
-    screen.MsgTimeout = 0
     screen.DestroyAndRecreate = gridDestroyAndRecreate
-
     screen.Show = showGridScreen
+    screen.HandleMessage = gridHandleMessage
+
     screen.SetUpBehaviorAtTopRow = setUpBehavior
 
     screen.timer = createPerformanceTimer()
@@ -58,8 +55,6 @@ Function createGridScreenForItem(item, viewController, style) As Object
     container.SeparateSearchItems = true
     obj.Loader = createPaginatedLoader(container, 8, 75)
     obj.Loader.Listener = obj
-    obj.Loader.Port = obj.Port
-    obj.MessageHandler = obj.Loader
 
     return obj
 End Function
@@ -80,14 +75,11 @@ Function showGridScreen() As Integer
         dialog.Text = "An error occurred while trying to load this content, make sure the server is running."
         dialog.Show()
 
-        m.Loader.Listener = invalid
-        m.Loader = invalid
-        m.MessageHandler = invalid
         m.ViewController.PopScreen(m)
         return -1
     end if
 
-    m.Screen.SetupLists(names.Count()) 
+    m.Screen.SetupLists(names.Count())
     m.Screen.SetListNames(names)
 
     m.Screen.Show()
@@ -113,108 +105,106 @@ Function showGridScreen() As Integer
 
     totalTimer.PrintElapsedTime("Total initial grid load")
 
-    while true
-        msg = wait(m.MsgTimeout, m.port)
-        if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
-        else if type(msg) = "roGridScreenEvent" then
-            if msg.isListItemSelected() then
-                context = m.contentArray[msg.GetIndex()]
-                index = msg.GetData()
-
-                ' TODO(schuyler): How many levels of breadcrumbs do we want to
-                ' include here. For example, if I'm in a TV section and select
-                ' a series from Recently Viewed Shows, should the breadcrumbs
-                ' on the next screen be "Section - Show Name" or "Recently
-                ' Viewed Shows - Show Name"?
-
-                item = context[index]
-                if item.ContentType = "series" then
-                    breadcrumbs = [item.Title]
-                else if item.ContentType = "section" then
-                    breadcrumbs = [item.server.name, item.Title]
-                else
-                    breadcrumbs = [names[msg.GetIndex()], item.Title]
-                end if
-
-                facade = CreateObject("roGridScreen")
-                facade.Show()
-
-                m.ViewController.CreateScreenForItem(context, index, breadcrumbs)
-
-                ' If our screen was destroyed by some child screen, recreate it now
-                if m.Screen = invalid then
-                    Debug("Recreating grid...")
-                    setGridTheme(m.gridStyle)
-                    m.Screen = CreateObject("roGridScreen")
-                    m.Screen.SetMessagePort(m.Port)
-                    m.Screen.SetDisplayMode("scale-to-fit")
-                    m.Screen.SetGridStyle(m.gridStyle)
-                    m.Screen.SetUpBehaviorAtTopRow(m.upBehavior)
-
-                    m.Screen.SetupLists(names.Count())
-                    m.Screen.SetListNames(names)
-
-                    m.ViewController.UpdateScreenProperties(m)
-
-                    for row = 0 to names.Count() - 1
-                        m.Screen.SetContentList(row, m.contentArray[row])
-                        if m.contentArray[row].Count() = 0 AND m.Loader.GetLoadStatus(row) = 2 then
-                            m.Screen.SetListVisible(row, false)
-                        end if
-                    end for
-                    m.Screen.SetFocusedListItem(m.selectedRow, m.focusedIndex)
-
-                    m.Screen.Show()
-                else
-                    ' Regardless, reset the current row in case the currently
-                    ' selected item had metadata changed that would affect its
-                    ' display in the grid.
-                    m.Screen.SetContentList(m.selectedRow, m.contentArray[m.selectedRow])
-                end if
-
-                m.HasData = false
-                m.Refreshing = true
-                m.Loader.RefreshData()
-
-                facade.Close()
-            else if msg.isListItemFocused() then
-                ' If the user is getting close to the limit of what we've
-                ' preloaded, make sure we kick off another update.
-
-                m.selectedRow = msg.GetIndex()
-                m.focusedIndex = msg.GetData()
-
-                if m.ignoreNextFocus then
-                    m.ignoreNextFocus = false
-                else
-                    m.hasBeenFocused = true
-                end if
-
-                if m.selectedRow < 0 OR m.selectedRow >= names.Count() then
-                    Debug("Ignoring grid ListItemFocused event for bogus row: " + tostr(msg.GetIndex()))
-                else
-                    lastUpdatedSize = m.lastUpdatedSize[m.selectedRow]
-                    if m.focusedIndex + 10 > lastUpdatedSize AND m.contentArray[m.selectedRow].Count() > lastUpdatedSize then
-                        data = m.contentArray[m.selectedRow]
-                        m.Screen.SetContentListSubset(m.selectedRow, data, lastUpdatedSize, data.Count() - lastUpdatedSize)
-                        m.lastUpdatedSize[m.selectedRow] = data.Count()
-                    end if
-
-                    m.Loader.LoadMoreContent(m.selectedRow, 2)
-                end if
-            else if msg.isScreenClosed() then
-                ' Make sure we don't hang onto circular references
-                m.Loader.Listener = invalid
-                m.Loader = invalid
-                m.MessageHandler = invalid
-
-                m.ViewController.PopScreen(m)
-                return -1
-            end if
-        end if
-    end while
-
     return 0
+End Function
+
+Function gridHandleMessage(msg) As Boolean
+    handled = false
+
+    if type(msg) = "roGridScreenEvent" then
+        handled = true
+        if msg.isListItemSelected() then
+            context = m.contentArray[msg.GetIndex()]
+            index = msg.GetData()
+
+            ' TODO(schuyler): How many levels of breadcrumbs do we want to
+            ' include here. For example, if I'm in a TV section and select
+            ' a series from Recently Viewed Shows, should the breadcrumbs
+            ' on the next screen be "Section - Show Name" or "Recently
+            ' Viewed Shows - Show Name"?
+
+            item = context[index]
+            if item.ContentType = "series" then
+                breadcrumbs = [item.Title]
+            else if item.ContentType = "section" then
+                breadcrumbs = [item.server.name, item.Title]
+            else
+                breadcrumbs = [m.Loader.GetNames()[msg.GetIndex()], item.Title]
+            end if
+
+            facade = CreateObject("roGridScreen")
+            facade.Show()
+
+            m.ViewController.CreateScreenForItem(context, index, breadcrumbs)
+
+            ' If our screen was destroyed by some child screen, recreate it now
+            if m.Screen = invalid then
+                Debug("Recreating grid...")
+                setGridTheme(m.gridStyle)
+                m.Screen = CreateObject("roGridScreen")
+                m.Screen.SetMessagePort(m.Port)
+                m.Screen.SetDisplayMode("scale-to-fit")
+                m.Screen.SetGridStyle(m.gridStyle)
+                m.Screen.SetUpBehaviorAtTopRow(m.upBehavior)
+
+                names = m.Loader.GetNames()
+                m.Screen.SetupLists(names.Count())
+                m.Screen.SetListNames(names)
+
+                m.ViewController.UpdateScreenProperties(m)
+
+                for row = 0 to names.Count() - 1
+                    m.Screen.SetContentList(row, m.contentArray[row])
+                    if m.contentArray[row].Count() = 0 AND m.Loader.GetLoadStatus(row) = 2 then
+                        m.Screen.SetListVisible(row, false)
+                    end if
+                end for
+                m.Screen.SetFocusedListItem(m.selectedRow, m.focusedIndex)
+
+                m.Screen.Show()
+            else
+                ' Regardless, reset the current row in case the currently
+                ' selected item had metadata changed that would affect its
+                ' display in the grid.
+                m.Screen.SetContentList(m.selectedRow, m.contentArray[m.selectedRow])
+            end if
+
+            m.HasData = false
+            m.Refreshing = true
+            m.Loader.RefreshData()
+
+            facade.Close()
+        else if msg.isListItemFocused() then
+            ' If the user is getting close to the limit of what we've
+            ' preloaded, make sure we kick off another update.
+
+            m.selectedRow = msg.GetIndex()
+            m.focusedIndex = msg.GetData()
+
+            if m.ignoreNextFocus then
+                m.ignoreNextFocus = false
+            else
+                m.hasBeenFocused = true
+            end if
+
+            if m.selectedRow < 0 OR m.selectedRow >= m.contentArray.Count() then
+                Debug("Ignoring grid ListItemFocused event for bogus row: " + tostr(msg.GetIndex()))
+            else
+                lastUpdatedSize = m.lastUpdatedSize[m.selectedRow]
+                if m.focusedIndex + 10 > lastUpdatedSize AND m.contentArray[m.selectedRow].Count() > lastUpdatedSize then
+                    data = m.contentArray[m.selectedRow]
+                    m.Screen.SetContentListSubset(m.selectedRow, data, lastUpdatedSize, data.Count() - lastUpdatedSize)
+                    m.lastUpdatedSize[m.selectedRow] = data.Count()
+                end if
+
+                m.Loader.LoadMoreContent(m.selectedRow, 2)
+            end if
+        else if msg.isScreenClosed() then
+            m.ViewController.PopScreen(m)
+        end if
+    end if
+
+    return handled
 End Function
 
 Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count As Integer, finished As Boolean)
@@ -228,12 +218,7 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
         m.Screen.SetContentList(row, data)
 
         if NOT m.hasData then
-            if m.Loader.PendingRequests <> invalid then
-                m.Loader.PendingRequests.Reset()
-                pendingRows = m.Loader.PendingRequests.IsNext()
-            else
-                pendingRows = false
-            end if
+            pendingRows = (m.Loader.GetPendingRequestCount() > 0)
 
             if NOT pendingRows then
                 for i = 0 to m.contentArray.Count() - 1
@@ -336,4 +321,3 @@ Sub gridDestroyAndRecreate()
         m.Screen = invalid
     end if
 End Sub
-

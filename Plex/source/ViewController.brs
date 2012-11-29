@@ -12,6 +12,8 @@ Function createViewController() As Object
     controller.breadcrumbs = CreateObject("roArray", 10, true)
     controller.screens = CreateObject("roArray", 10, true)
 
+    controller.GlobalMessagePort = CreateObject("roMessagePort")
+
     controller.CreateScreenForItem = vcCreateScreenForItem
     controller.CreateTextInputScreen = vcCreateTextInputScreen
     controller.CreateEnumInputScreen = vcCreateEnumInputScreen
@@ -19,7 +21,7 @@ Function createViewController() As Object
     controller.PushScreen = vcPushScreen
     controller.PopScreen = vcPopScreen
 
-    controller.ShowHomeScreen = vcShowHomeScreen
+    controller.Show = vcShow
     controller.RefreshHomeScreen = vcRefreshHomeScreen
     controller.UpdateScreenProperties = vcUpdateScreenProperties
     controller.AddBreadcrumbs = vcAddBreadcrumbs
@@ -38,7 +40,19 @@ Function createViewController() As Object
 
     controller.InitThemes()
 
+    controller.PendingRequests = {}
+    controller.RequestsByScreen = {}
+    controller.StartRequest = vcStartRequest
+    controller.CancelRequests = vcCancelRequests
+
+    ' Stuff the controller into the global object
+    m.ViewController = controller
+
     return controller
+End Function
+
+Function GetViewController()
+    return m.ViewController
 End Function
 
 Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As Dynamic
@@ -87,7 +101,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if contentType = "photo" then
         if right(item.key, 8) = "children" then
             screen = createPosterScreen(item, m)
-        else 
+        else
             screen = createPhotoSpringboardScreen(context, contextIndex, m)
         end if
     else if contentType = "search" then
@@ -177,6 +191,8 @@ Sub vcPushScreen(screen)
     screen.ScreenID = m.nextId
     m.nextId = m.nextId + 1
 
+    m.RequestsByScreen[screen.ScreenID.tostr()] = []
+
     Debug("Pushing screen " + tostr(screen.ScreenID) + " onto view controller stack")
     m.screens.Push(screen)
 End Sub
@@ -194,7 +210,12 @@ Sub vcPopScreen(screen)
         return
     end if
 
+    ' Try to clean up some potential circular references
     screen.MessageHandler = invalid
+    if screen.Loader <> invalid then
+        screen.Loader.Listener = invalid
+        screen.Loader = invalid
+    end if
 
     if screen.ScreenID = invalid OR m.screens.Peek().ScreenID = invalid OR screen.ScreenID <> m.screens.Peek().ScreenID then
         Debug("Trying to pop screen that doesn't match the top of our stack!")
@@ -207,16 +228,52 @@ Sub vcPopScreen(screen)
         m.breadcrumbs.Pop()
     next
 
+    m.CancelRequests(screen.ScreenID)
+
     if m.screens.Count() = 0 then
         m.Home.CreateQueueRequests(true)
     end if
 End Sub
 
-Sub vcShowHomeScreen()
-    m.Home = createHomeScreen(m)
-    m.Home.Screen.ScreenID = -1
-    m.screens.Push(m.Home.Screen)
-    m.Home.Show()
+Sub vcShow()
+    ' TODO(schuyler): This is a temporary hack to show a plain grid screen.
+    ' The home screen is more complicated to get working with a global message port.
+    'm.Home = createHomeScreen(m)
+    'm.Home.Screen.ScreenID = -1
+    'm.screens.Push(m.Home.Screen)
+    'm.Home.Show()
+
+    item = CreateObject("roAssociativeArray")
+    item.sourceUrl = ""
+    item.key = "/library/sections/21"
+    item.server = newPlexMediaServer("http://10.0.1.36:32400", "Testing", "deadbeef")
+    grid = createGridScreenForItem(item, m, "flat-movie")
+    m.InitializeOtherScreen(grid, invalid)
+    grid.Show()
+
+    Debug("Starting global message loop")
+
+    while m.screens.Count() > 0
+        msg = wait(0, m.GlobalMessagePort)
+        if msg <> invalid then
+            for i = m.screens.Count() - 1 to 0
+                if m.screens[i].HandleMessage(msg) then exit for
+            end for
+
+            ' Process URL events. Look up the request context and call a
+            ' function on the listener.
+            if type(msg) = "roUrlEvent" AND msg.GetInt() = 1 then
+                id = msg.GetSourceIdentity().tostr()
+                requestContext = m.PendingRequests[id]
+                if requestContext <> invalid then
+                    m.PendingRequests.Delete(id)
+                    requestContext.Listener.OnUrlEvent(msg, requestContext)
+                end if
+            end if
+        end if
+    end while
+
+    Debug("Finished global message loop")
 End Sub
 
 Sub vcRefreshHomeScreen()
@@ -352,3 +409,29 @@ Sub vcDestroyGlitchyScreens()
     next
 End Sub
 
+Function vcStartRequest(request, listener, context) As Boolean
+    request.SetPort(m.GlobalMessagePort)
+    context.Listener = listener
+    context.Request = request
+
+    if request.AsyncGetToString() then
+        id = request.GetIdentity().tostr()
+        m.PendingRequests[id] = context
+        m.RequestsByScreen[listener.ScreenID.tostr()].Push(id)
+        return true
+    else
+        return false
+    end if
+End Function
+
+Sub vcCancelRequests(screenID)
+    requests = m.RequestsByScreen[screenID.tostr()]
+    if requests <> invalid then
+        for each requestID in requests
+            request = m.PendingRequests[requestID]
+            if request <> invalid then request.Request.AsyncCancel()
+            m.PendingRequests.Delete(requestID)
+        next
+        m.RequestsByScreen.Delete(screenID.tostr())
+    end if
+End Sub

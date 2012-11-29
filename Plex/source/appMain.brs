@@ -34,7 +34,7 @@ Sub Main(args)
 
     'prepare the screen for display and get ready to begin
     controller = createViewController()
-    controller.ShowHomeScreen()
+    controller.Show()
 End Sub
 
 Sub initGlobals()
@@ -120,7 +120,7 @@ End Function
 
 '*************************************************************
 '** Set the configurable theme attributes for the application
-'** 
+'**
 '** Configure the custom overhang and Logo attributes
 '** Theme attributes affect the branding of the application
 '** and are artwork, colors and offsets specific to the app
