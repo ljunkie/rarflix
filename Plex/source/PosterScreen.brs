@@ -2,20 +2,18 @@
 
 Function createPosterScreen(item, viewController) As Object
     obj = CreateObject("roAssociativeArray")
-    port = CreateObject("roMessagePort")
+    initBaseScreen(obj, viewController)
+
     screen = CreateObject("roPosterScreen")
-    screen.SetMessagePort(port)
+    screen.SetMessagePort(obj.Port)
 
     ' Standard properties for all our screen types
     obj.Item = item
     obj.Screen = screen
-    obj.Port = port
-    obj.ViewController = viewController
-    obj.MessageHandler = invalid
-    obj.MsgTimeout = 0
 
     obj.Show = showPosterScreen
     obj.ShowList = posterShowContentList
+    obj.HandleMessage = posterHandleMessage
     obj.SetListStyle = posterSetListStyle
 
     obj.UseDefaultStyles = true
@@ -27,6 +25,7 @@ Function createPosterScreen(item, viewController) As Object
 
     obj.contentArray = []
     obj.focusedList = 0
+    obj.names = []
 
     return obj
 End Function
@@ -53,22 +52,20 @@ Function showPosterScreen() As Integer
 
     if m.FilterMode = invalid then m.FilterMode = container.ViewGroup = "secondary"
     if m.FilterMode then
-        names = container.GetNames()
+        m.names = container.GetNames()
         keys = container.GetKeys()
     else
-        names = []
+        m.names = []
         keys = []
     end if
 
-    m.FilterMode = names.Count() > 0
+    m.FilterMode = m.names.Count() > 0
 
     if m.FilterMode then
         m.Loader = createPaginatedLoader(container, 25, 25)
         m.Loader.Listener = m
-        m.Loader.Port = m.Port
-        m.MessageHandler = m.Loader
 
-        m.Screen.SetListNames(names)
+        m.Screen.SetListNames(m.names)
         m.Screen.SetFocusedList(0)
 
         for index = 0 to keys.Count() - 1
@@ -116,55 +113,54 @@ Function showPosterScreen() As Integer
     m.ShowList(0)
     facade.Close()
 
-    while true
-        msg = wait(m.MsgTimeout, m.Port)
-        if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
-        else if type(msg) = "roPosterScreenEvent" then
-            '* Focus change on the filter bar causes content change
-            if msg.isListFocused() then
-                m.focusedList = msg.GetIndex()
-                m.ShowList(m.focusedList)
-                m.Loader.LoadMoreContent(m.focusedList, 0)
-            else if msg.isListItemSelected() then
-                index = msg.GetIndex()
-                content = m.contentArray[m.focusedList].content
-                selected = content[index]
-                contentType = selected.ContentType
-
-                Debug("Content type in poster screen: " + tostr(contentType))
-
-                if contentType = "series" OR NOT m.FilterMode then
-                    breadcrumbs = [selected.Title]
-                else
-                    breadcrumbs = [names[m.focusedList], selected.Title]
-                end if
-
-                m.ViewController.CreateScreenForItem(content, index, breadcrumbs)
-            else if msg.isScreenClosed() then
-                ' Make sure we don't have hang onto circular references
-                m.Loader.Listener = invalid
-                m.Loader = invalid
-                m.MessageHandler = invalid
-
-                m.ViewController.PopScreen(m)
-                exit while
-            else if msg.isListItemFocused() then
-                ' We don't immediately update the screen's content list when
-                ' we get more data because the poster screen doesn't perform
-                ' as well as the grid screen (which has an actual method for
-                ' refreshing part of the list). Instead, if the user has
-                ' focused toward the end of the list, update the content.
-
-                status = m.contentArray[m.focusedList]
-                status.focusedIndex = msg.GetIndex()
-                if status.focusedIndex + 10 > status.lastUpdatedSize AND status.content.Count() > status.lastUpdatedSize then
-                    m.Screen.SetContentList(status.content)
-                    status.lastUpdatedSize = status.content.Count()
-                end if
-            end if
-        end If
-    end while
     return 0
+End Function
+
+Function posterHandleMessage(msg) As Boolean
+    handled = false
+
+    if type(msg) = "roPosterScreenEvent" then
+        handled = true
+
+        '* Focus change on the filter bar causes content change
+        if msg.isListFocused() then
+            m.focusedList = msg.GetIndex()
+            m.ShowList(m.focusedList)
+            m.Loader.LoadMoreContent(m.focusedList, 0)
+        else if msg.isListItemSelected() then
+            index = msg.GetIndex()
+            content = m.contentArray[m.focusedList].content
+            selected = content[index]
+            contentType = selected.ContentType
+
+            Debug("Content type in poster screen: " + tostr(contentType))
+
+            if contentType = "series" OR NOT m.FilterMode then
+                breadcrumbs = [selected.Title]
+            else
+                breadcrumbs = [m.names[m.focusedList], selected.Title]
+            end if
+
+            m.ViewController.CreateScreenForItem(content, index, breadcrumbs)
+        else if msg.isScreenClosed() then
+            m.ViewController.PopScreen(m)
+        else if msg.isListItemFocused() then
+            ' We don't immediately update the screen's content list when
+            ' we get more data because the poster screen doesn't perform
+            ' as well as the grid screen (which has an actual method for
+            ' refreshing part of the list). Instead, if the user has
+            ' focused toward the end of the list, update the content.
+
+            status = m.contentArray[m.focusedList]
+            status.focusedIndex = msg.GetIndex()
+            if status.focusedIndex + 10 > status.lastUpdatedSize AND status.content.Count() > status.lastUpdatedSize then
+                m.Screen.SetContentList(status.content)
+                status.lastUpdatedSize = status.content.Count()
+            end if
+        end if
+    end If
+
+    return handled
 End Function
 
 Sub posterOnDataLoaded(row As Integer, data As Object, startItem as Integer, count As Integer, finished As Boolean)
