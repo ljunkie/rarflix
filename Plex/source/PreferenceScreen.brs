@@ -648,6 +648,7 @@ End Function
 Function createManageServersScreen(viewController) As Object
     obj = createBasePrefsScreen(viewController)
 
+    obj.superOnUserInput = obj.OnUserInput
     obj.HandleMessage = prefsServersHandleMessage
     obj.OnUserInput = prefsServersOnUserInput
     obj.RefreshServerList = manageRefreshServerList
@@ -715,7 +716,11 @@ Function prefsServersHandleMessage(msg) As Boolean
 End Function
 
 Sub prefsServersOnUserInput(value, screen)
-    m.RefreshServerList(m.removeOffset)
+    if type(screen.Screen) = "roKeyboardScreen" then
+        m.RefreshServerList(m.removeOffset)
+    else
+        m.superOnUserInput(value, screen)
+    end if
 End Sub
 
 Sub manageRefreshServerList(removeOffset)

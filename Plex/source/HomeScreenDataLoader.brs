@@ -16,6 +16,7 @@ Function createHomeScreenDataLoader(listener)
     loader.GetPendingRequestCount = loaderGetPendingRequestCount
     loader.RefreshData = homeRefreshData
     loader.OnUrlEvent = homeOnUrlEvent
+    loader.OnServerDiscovered = homeOnServerDiscovered
     loader.OnMyPlexChange = homeOnMyPlexChange
     loader.RemoveInvalidServers = homeRemoveInvalidServers
 
