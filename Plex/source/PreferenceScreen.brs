@@ -52,11 +52,16 @@ Function settingsHandleMessage(msg) As Boolean
                     screen = m.ViewController.CreateTextInputScreen("Enter " + m.setting.label, [], false)
                     screen.Screen.SetText(m.setting.value)
                     screen.Screen.SetSecureText(m.setting.hidden OR m.setting.secure)
+                    screen.Listener = m
                     screen.Show()
                 else if m.setting.type = "bool" then
-                    screen = m.ViewController.CreateEnumInputScreen(["true", "false"], m.setting.value, m.setting.label, [])
+                    screen = m.ViewController.CreateEnumInputScreen(["true", "false"], m.setting.value, m.setting.label, [], false)
+                    screen.Listener = m
+                    screen.Show()
                 else if m.setting.type = "enum" then
-                    screen = m.ViewController.CreateEnumInputScreen(m.setting.values, m.setting.value.toint(), m.setting.label, [])
+                    screen = m.ViewController.CreateEnumInputScreen(m.setting.values, m.setting.value.toint(), m.setting.label, [], false)
+                    screen.Listener = m
+                    screen.Show()
                 end if
             else if command = "close" then
                 m.Screen.Close()
@@ -85,18 +90,13 @@ End Sub
 '#######################################################
 Function createBasePrefsScreen(viewController) As Object
     obj = CreateObject("roAssociativeArray")
-    port = CreateObject("roMessagePort")
-    screen = CreateObject("roListScreen")
+    initBaseScreen(obj, viewController)
 
-    screen.SetMessagePort(port)
+    screen = CreateObject("roListScreen")
+    screen.SetMessagePort(m.Port)
 
     ' Standard properties for all our Screen types
-    obj.Item = invalid
     obj.Screen = screen
-    obj.Port = port
-    obj.ViewController = viewController
-    obj.MessageHandler = invalid
-    obj.MsgTimeout = 0
 
     obj.Changes = CreateObject("roAssociativeArray")
     obj.Prefs = CreateObject("roAssociativeArray")
@@ -104,15 +104,51 @@ Function createBasePrefsScreen(viewController) As Object
     lsInitBaseListScreen(obj)
 
     obj.HandleEnumPreference = prefsHandleEnumPreference
+    obj.OnUserInput = prefsOnUserInput
     obj.GetEnumValue = prefsGetEnumValue
 
     return obj
 End Function
 
+Sub prefsHandleEnumPreference(regKey, index)
+    m.currentIndex = index
+    m.currentRegKey = regKey
+    label = m.contentArray[index].OrigTitle
+    pref = m.Prefs[regKey]
+    screen = m.ViewController.CreateEnumInputScreen(pref.values, RegRead(regKey, "preferences", pref.default), pref.heading, [label], false)
+    screen.Listener = m
+    screen.Show()
+End Sub
+
+Sub prefsOnUserInput(value, screen)
+    label = m.contentArray[m.currentIndex].OrigTitle
+    if screen.SelectedIndex <> invalid then
+        Debug("Set " + label + " to " + screen.SelectedValue)
+        RegWrite(m.currentRegKey, screen.SelectedValue, "preferences")
+        m.Changes.AddReplace(m.currentRegKey, screen.SelectedValue)
+        m.AppendValue(m.currentIndex, screen.SelectedLabel)
+    end if
+End Sub
+
+Function prefsGetEnumValue(regKey)
+    pref = m.Prefs[regKey]
+    value = RegRead(regKey, "preferences", pref.default)
+    for each item in pref.values
+        if value = item.EnumValue then
+            return item.title
+        end if
+    next
+
+    return invalid
+End Function
+
+'*** Main Preferences ***
+
 Function createPreferencesScreen(viewController) As Object
     obj = createBasePrefsScreen(viewController)
 
     obj.Show = showPreferencesScreen
+    obj.HandleMessage = prefsMainHandleMessage
 
     ' Quality settings
     qualities = [
@@ -194,100 +230,104 @@ Sub showPreferencesScreen()
 
     m.AddItem({title: "Close Preferences"}, "close")
 
-    serversBefore = {}
+    m.serversBefore = {}
     for each server in PlexMediaServers()
         if server.machineID <> invalid then
-            serversBefore[server.machineID] = ""
+            m.serversBefore[server.machineID] = ""
         end if
     next
 
     m.Screen.Show()
+End Sub
 
-    while true
-        msg = wait(m.MsgTimeout, m.Port)
-        if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
-        else if type(msg) = "roListScreenEvent" then
-            if msg.isScreenClosed() then
-                m.ViewController.PopScreen(m)
-                exit while
-            else if msg.isListItemSelected() then
-                command = m.GetSelectedCommand(msg.GetIndex())
-                if command = "servers" then
-                    screen = createManageServersScreen(m.ViewController)
-                    m.ViewController.InitializeOtherScreen(screen, ["Plex Media Servers"])
-                    screen.Show()
-                    m.Changes.Append(screen.Changes)
-                    screen = invalid
-                else if command = "myplex" then
-                    if m.myplex.IsSignedIn then
-                        m.myplex.Disconnect()
-                        m.Changes["myplex"] = "disconnected"
-                    else
-                        m.myplex.ShowPinScreen()
-                        if m.myplex.IsSignedIn then
-                            m.Changes["myplex"] = "connected"
-                        end if
-                    end if
-                    m.Screen.SetItem(msg.GetIndex(), {title: getCurrentMyPlexLabel()})
-                else if command = "quality" OR command = "level" OR command = "fivepointone" OR command = "directplay" OR command = "softsubtitles" OR command = "screensaver" then
-                    m.HandleEnumPreference(command, msg.GetIndex())
-                else if command = "slideshow" then
-                    screen = createSlideshowPrefsScreen(m.ViewController)
-                    m.ViewController.InitializeOtherScreen(screen, ["Slideshow Preferences"])
-                    screen.Show()
-                    screen = invalid
-                else if command = "advanced" then
-                    screen = createAdvancedPrefsScreen(m.ViewController)
-                    m.ViewController.InitializeOtherScreen(screen, ["Advanced Preferences"])
-                    screen.Show()
-                    screen = invalid
-                else if command = "debug" then
-                    screen = createDebugLoggingScreen(m.ViewController)
-                    m.ViewController.InitializeOtherScreen(screen, ["Logging"])
-                    screen.Show()
-                    screen = invalid
-                else if command = "close" then
-                    m.Screen.Close()
+Function prefsMainHandleMessage(msg) As Boolean
+    handled = false
+
+    if type(msg) = "roListScreenEvent" then
+        handled = true
+
+        if msg.isScreenClosed() then
+            ' Figure out everything that changed and refresh the home screen.
+            serversBefore = m.serversBefore
+            serversAfter = {}
+            for each server in PlexMediaServers()
+                if server.machineID <> invalid then
+                    serversAfter[server.machineID] = ""
                 end if
+            next
+
+            if NOT m.Changes.DoesExist("servers") then
+                m.Changes["servers"] = {}
+            end if
+
+            for each server in GetOwnedPlexMediaServers()
+                if server.IsUpdated = true then
+                    m.Changes["servers"].AddReplace(server.MachineID, "updated")
+                    server.IsUpdated = invalid
+                end if
+            next
+
+            for each machineID in serversAfter
+                if NOT serversBefore.Delete(machineID) then
+                    m.Changes["servers"].AddReplace(machineID, "added")
+                end if
+            next
+
+            for each machineID in serversBefore
+                m.Changes["servers"].AddReplace(machineID, "removed")
+            next
+
+            m.ViewController.PopScreen(m)
+            m.ViewController.Home.Refresh(m.Changes)
+        else if msg.isListItemSelected() then
+            command = m.GetSelectedCommand(msg.GetIndex())
+            if command = "servers" then
+                screen = createManageServersScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["Plex Media Servers"])
+                screen.Changes = m.Changes
+                screen.Show()
+            else if command = "myplex" then
+                if m.myplex.IsSignedIn then
+                    m.myplex.Disconnect()
+                    m.Changes["myplex"] = "disconnected"
+                else
+                    ' TODO(schuyler): Figure this stuff out when the pin screen
+                    ' uses the global message port...
+                    m.myplex.ShowPinScreen()
+                    if m.myplex.IsSignedIn then
+                        m.Changes["myplex"] = "connected"
+                    end if
+                end if
+                m.Screen.SetItem(msg.GetIndex(), {title: getCurrentMyPlexLabel()})
+            else if command = "quality" OR command = "level" OR command = "fivepointone" OR command = "directplay" OR command = "softsubtitles" OR command = "screensaver" then
+                m.HandleEnumPreference(command, msg.GetIndex())
+            else if command = "slideshow" then
+                screen = createSlideshowPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["Slideshow Preferences"])
+                screen.Show()
+            else if command = "advanced" then
+                screen = createAdvancedPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["Advanced Preferences"])
+                screen.Show()
+            else if command = "debug" then
+                screen = createDebugLoggingScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["Logging"])
+                screen.Show()
+            else if command = "close" then
+                m.Screen.Close()
             end if
         end if
-    end while
-
-    serversAfter = {}
-    for each server in PlexMediaServers()
-        if server.machineID <> invalid then
-            serversAfter[server.machineID] = ""
-        end if
-    next
-
-    if NOT m.Changes.DoesExist("servers") then
-        m.Changes["servers"] = {}
     end if
 
-    for each server in GetOwnedPlexMediaServers()
-        if server.IsUpdated = true then
-            m.Changes["servers"].AddReplace(server.MachineID, "updated")
-            server.IsUpdated = invalid
-        end if
-    next
+    return handled
+End Function
 
-    for each machineID in serversAfter
-        if NOT serversBefore.Delete(machineID) then
-            m.Changes["servers"].AddReplace(machineID, "added")
-        end if
-    next
-
-    for each machineID in serversBefore
-        m.Changes["servers"].AddReplace(machineID, "removed")
-    next
-
-    m.ViewController.Home.Refresh(m.Changes)
-End Sub
+'*** Slideshow Preferences ***
 
 Function createSlideshowPrefsScreen(viewController) As Object
     obj = createBasePrefsScreen(viewController)
 
-    obj.Show = showSlideshowPrefsScreen
+    obj.HandleMessage = prefsSlideshowHandleMessage
 
     ' Photo duration
     values = [
@@ -314,41 +354,42 @@ Function createSlideshowPrefsScreen(viewController) As Object
         default: "2500"
     }
 
+    obj.Screen.SetHeader("Slideshow display preferences")
+
+    obj.AddItem({title: "Speed"}, "slideshow_period", obj.GetEnumValue("slideshow_period"))
+    obj.AddItem({title: "Text Overlay"}, "slideshow_overlay", obj.GetEnumValue("slideshow_overlay"))
+    obj.AddItem({title: "Close"}, "close")
+
     return obj
 End Function
 
-Sub showSlideshowPrefsScreen()
-    m.Screen.SetHeader("Slideshow display preferences")
+Function prefsSlideshowHandleMessage(msg) As Boolean
+    handled = false
 
-    m.AddItem({title: "Speed"}, "slideshow_period", m.GetEnumValue("slideshow_period"))
-    m.AddItem({title: "Text Overlay"}, "slideshow_overlay", m.GetEnumValue("slideshow_overlay"))
-    m.AddItem({title: "Close"}, "close")
+    if type(msg) = "roListScreenEvent" then
+        handled = true
 
-    m.Screen.Show()
-
-    while true
-        msg = wait(m.MsgTimeout, m.Port)
-        if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
-        else if type(msg) = "roListScreenEvent" then
-            if msg.isScreenClosed() then
-                m.ViewController.PopScreen(m)
-                exit while
-            else if msg.isListItemSelected() then
-                command = m.GetSelectedCommand(msg.GetIndex())
-                if command = "slideshow_period" OR command = "slideshow_overlay" then
-                    m.HandleEnumPreference(command, msg.GetIndex())
-                else if command = "close" then
-                    m.Screen.Close()
-                end if
+        if msg.isScreenClosed() then
+            m.ViewController.PopScreen(m)
+        else if msg.isListItemSelected() then
+            command = m.GetSelectedCommand(msg.GetIndex())
+            if command = "slideshow_period" OR command = "slideshow_overlay" then
+                m.HandleEnumPreference(command, msg.GetIndex())
+            else if command = "close" then
+                m.Screen.Close()
             end if
         end if
-    end while
-End Sub
+    end if
+
+    return handled
+End Function
+
+'*** Advanced Preferences ***
 
 Function createAdvancedPrefsScreen(viewController) As Object
     obj = createBasePrefsScreen(viewController)
 
-    obj.Show = showAdvancedPrefsScreen
+    obj.HandleMessage = prefsAdvancedHandleMessage
 
     ' H.264 Level
     levels = [
@@ -416,61 +457,61 @@ Function createAdvancedPrefsScreen(viewController) As Object
         default: "100"
     }
 
-    return obj
-End Function
-
-Sub showAdvancedPrefsScreen()
     device = CreateObject("roDeviceInfo")
     versionArr = GetGlobalAA().Lookup("rokuVersionArr")
     major = versionArr[0]
 
-    m.Screen.SetHeader("Advanced preferences don't usually need to be changed")
+    obj.Screen.SetHeader("Advanced preferences don't usually need to be changed")
 
-    m.AddItem({title: "H.264"}, "level", m.GetEnumValue("level"))
+    obj.AddItem({title: "H.264"}, "level", obj.GetEnumValue("level"))
 
     if major >= 4 AND device.hasFeature("5.1_surround_sound") then
-        m.AddItem({title: "5.1 Support"}, "fivepointone", m.GetEnumValue("fivepointone"))
+        obj.AddItem({title: "5.1 Support"}, "fivepointone", obj.GetEnumValue("fivepointone"))
     end if
 
     if major < 4  and device.hasFeature("1080p_hardware") then
-        m.AddItem({title: "1080p Settings"}, "1080p")
+        obj.AddItem({title: "1080p Settings"}, "1080p")
     end if
 
-    m.AddItem({title: "HLS Segment Length"}, "segment_length", m.GetEnumValue("segment_length"))
-    m.AddItem({title: "Subtitle Size"}, "subtitle_size", m.GetEnumValue("subtitle_size"))
-    m.AddItem({title: "Audio Boost"}, "audio_boost", m.GetEnumValue("audio_boost"))
-    m.AddItem({title: "Close"}, "close")
+    obj.AddItem({title: "HLS Segment Length"}, "segment_length", obj.GetEnumValue("segment_length"))
+    obj.AddItem({title: "Subtitle Size"}, "subtitle_size", obj.GetEnumValue("subtitle_size"))
+    obj.AddItem({title: "Audio Boost"}, "audio_boost", obj.GetEnumValue("audio_boost"))
+    obj.AddItem({title: "Close"}, "close")
 
-    m.Screen.Show()
+    return obj
+End Function
 
-    while true
-        msg = wait(m.MsgTimeout, m.Port)
-        if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
-        else if type(msg) = "roListScreenEvent" then
-            if msg.isScreenClosed() then
-                m.ViewController.PopScreen(m)
-                exit while
-            else if msg.isListItemSelected() then
-                command = m.GetSelectedCommand(msg.GetIndex())
-                if command = "level" OR command = "fivepointone" OR command = "segment_length" OR command = "subtitle_size" OR command = "audio_boost" then
-                    m.HandleEnumPreference(command, msg.GetIndex())
-                else if command = "1080p" then
-                    screen = create1080PreferencesScreen(m.ViewController)
-                    m.ViewController.InitializeOtherScreen(screen, ["1080p Settings"])
-                    screen.Show()
-                    screen = invalid
-                else if command = "close" then
-                    m.Screen.Close()
-                end if
+Function prefsAdvancedHandleMessage(msg) As Boolean
+    handled = false
+
+    if type(msg) = "roListScreenEvent" then
+        handled = true
+
+        if msg.isScreenClosed() then
+            m.ViewController.PopScreen(m)
+        else if msg.isListItemSelected() then
+            command = m.GetSelectedCommand(msg.GetIndex())
+            if command = "level" OR command = "fivepointone" OR command = "segment_length" OR command = "subtitle_size" OR command = "audio_boost" then
+                m.HandleEnumPreference(command, msg.GetIndex())
+            else if command = "1080p" then
+                screen = create1080PreferencesScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["1080p Settings"])
+                screen.Show()
+            else if command = "close" then
+                m.Screen.Close()
             end if
         end if
-    end while
-End Sub
+    end if
+
+    return handled
+End Function
+
+'*** Legacy 1080p Preferences ***
 
 Function create1080PreferencesScreen(viewController) As Object
     obj = createBasePrefsScreen(viewController)
 
-    obj.Show = show1080PreferencesScreen
+    obj.HandleMessage = prefs1080HandleMessage
 
     ' Legacy 1080p enabled
     options = [
@@ -495,44 +536,48 @@ Function create1080PreferencesScreen(viewController) As Object
         default: "auto"
     }
 
+    obj.Screen.SetHeader("1080p settings (Roku 1 only)")
+
+    obj.AddItem({title: "1080p Support"}, "legacy1080p", obj.GetEnumValue("legacy1080p"))
+    obj.AddItem({title: "Frame Rate Override"}, "legacy1080pframerate", obj.GetEnumValue("legacy1080pframerate"))
+    obj.AddItem({title: "Close"}, "close")
+
     return obj
 End Function
 
-Sub show1080PreferencesScreen()
-    m.Screen.SetHeader("1080p settings (Roku 1 only)")
+Function prefs1080HandleMessage(msg) As Boolean
+    handled = false
 
-    m.AddItem({title: "1080p Support"}, "legacy1080p", m.GetEnumValue("legacy1080p"))
-    m.AddItem({title: "Frame Rate Override"}, "legacy1080pframerate", m.GetEnumValue("legacy1080pframerate"))
-    m.AddItem({title: "Close"}, "close")
+    if type(msg) = "roListScreenEvent" then
+        handled = true
 
-    m.Screen.Show()
-
-    while true
-        msg = wait(m.MsgTimeout, m.Port)
-        if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
-        else if type(msg) = "roListScreenEvent" then
-            if msg.isScreenClosed() then
-                m.ViewController.PopScreen(m)
-                exit while
-            else if msg.isListItemSelected() then
-                command = m.GetSelectedCommand(msg.GetIndex())
-                if command = "legacy1080p" OR command = "legacy1080pframerate" then
-                    m.HandleEnumPreference(command, msg.GetIndex())
-                else if command = "close" then
-                    m.Screen.Close()
-                end if
+        if msg.isScreenClosed() then
+            m.ViewController.PopScreen(m)
+        else if msg.isListItemSelected() then
+            command = m.GetSelectedCommand(msg.GetIndex())
+            if command = "legacy1080p" OR command = "legacy1080pframerate" then
+                m.HandleEnumPreference(command, msg.GetIndex())
+            else if command = "close" then
+                m.Screen.Close()
             end if
         end if
-    end while
-End Sub
+    end if
+
+    return false
+End Function
+
+'*** Debug Logging Preferences ***
 
 Function createDebugLoggingScreen(viewController) As Object
     obj = createBasePrefsScreen(viewController)
 
-    obj.Show = showDebugLoggingScreen
+    obj.HandleMessage = prefsDebugHandleMessage
 
     obj.RefreshItems = debugRefreshItems
     obj.Logger = GetGlobalAA()["logger"]
+
+    obj.Screen.SetHeader("Logging")
+    obj.RefreshItems()
 
     return obj
 End Function
@@ -557,60 +602,45 @@ Sub debugRefreshItems()
     m.AddItem({title: "Close"}, "close")
 End Sub
 
-Sub showDebugLoggingScreen()
-    m.Screen.SetHeader("Logging")
+Function prefsDebugHandleMessage(msg) As Boolean
+    handled = false
 
-    m.RefreshItems()
-    m.Screen.Show()
+    if type(msg) = "roListScreenEvent" then
+        handled = true
 
-    while true
-        msg = wait(m.MsgTimeout, m.Port)
-        if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
-        else if type(msg) = "roListScreenEvent" then
-            if msg.isScreenClosed() then
-                m.ViewController.PopScreen(m)
-                exit while
-            else if msg.isListItemSelected() then
-                command = m.GetSelectedCommand(msg.GetIndex())
-                if command = "enable" then
-                    m.Logger.Enable()
-                    m.RefreshItems()
-                else if command = "disable" then
-                    m.Logger.Disable()
-                    m.RefreshItems()
-                else if command = "download" then
-                    screen = createLogDownloadScreen(m.ViewController)
-                    screen.Show()
-                    screen = invalid
-                else if command = "remote" then
-                    ' TODO(schuyler) What if we want to debug something related
-                    ' to a non-primary server?
-                    m.Logger.EnablePapertrail(20, GetPrimaryServer())
-                else if command = "close" then
-                    m.Screen.Close()
-                end if
+        if msg.isScreenClosed() then
+            m.ViewController.PopScreen(m)
+        else if msg.isListItemSelected() then
+            command = m.GetSelectedCommand(msg.GetIndex())
+            if command = "enable" then
+                m.Logger.Enable()
+                m.RefreshItems()
+            else if command = "disable" then
+                m.Logger.Disable()
+                m.RefreshItems()
+            else if command = "download" then
+                screen = createLogDownloadScreen(m.ViewController)
+                screen.Show()
+            else if command = "remote" then
+                ' TODO(schuyler) What if we want to debug something related
+                ' to a non-primary server?
+                m.Logger.EnablePapertrail(20, GetPrimaryServer())
+            else if command = "close" then
+                m.Screen.Close()
             end if
         end if
-    end while
-End Sub
-
-Sub prefsHandleEnumPreference(regKey, index)
-    label = m.contentArray[index].OrigTitle
-    pref = m.Prefs[regKey]
-    screen = m.ViewController.CreateEnumInputScreen(pref.values, RegRead(regKey, "preferences", pref.default), pref.heading, [label])
-    if screen.SelectedIndex <> invalid then
-        Debug("Set " + label + " to " + screen.SelectedValue)
-        RegWrite(regKey, screen.SelectedValue, "preferences")
-        m.Changes.AddReplace(regKey, screen.SelectedValue)
-        m.AppendValue(index, screen.SelectedLabel)
     end if
-End Sub
+
+    return handled
+End Function
+
+'*** Manage Servers Preferences ***
 
 Function createManageServersScreen(viewController) As Object
     obj = createBasePrefsScreen(viewController)
 
-    obj.Show = showManageServersScreen
-
+    obj.HandleMessage = prefsServersHandleMessage
+    obj.OnUserInput = prefsServersOnUserInput
     obj.RefreshServerList = manageRefreshServerList
 
     ' Automatic discovery
@@ -624,62 +654,59 @@ Function createManageServersScreen(viewController) As Object
         default: "1"
     }
 
+    obj.Screen.SetHeader("Manage Plex Media Servers")
+
+    obj.AddItem({title: "Add Server Manually"}, "manual")
+    obj.AddItem({title: "Discover Servers"}, "discover")
+    obj.AddItem({title: "Discover at Startup"}, "autodiscover", obj.GetEnumValue("autodiscover"))
+    obj.AddItem({title: "Remove All Servers"}, "removeall")
+
+    obj.removeOffset = obj.contentArray.Count()
+    obj.RefreshServerList(obj.removeOffset)
+
     return obj
 End Function
 
-Sub showManageServersScreen()
-    m.Screen.SetHeader("Manage Plex Media Servers")
+Function prefsServersHandleMessage(msg) As Boolean
+    handled = false
 
-    m.AddItem({title: "Add Server Manually"}, "manual")
-    m.AddItem({title: "Discover Servers"}, "discover")
-    m.AddItem({title: "Discover at Startup"}, "autodiscover", m.GetEnumValue("autodiscover"))
-    m.AddItem({title: "Remove All Servers"}, "removeall")
+    if type(msg) = "roListScreenEvent" then
+        handled = true
 
-    removeOffset = m.contentArray.Count()
-    m.RefreshServerList(removeOffset)
-
-    m.Screen.Show()
-
-    while true
-        msg = wait(m.MsgTimeout, m.Port)
-        if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
-        else if type(msg) = "roListScreenEvent" then
-            if msg.isScreenClosed() then
-                Debug("Manage servers closed event")
-                m.ViewController.PopScreen(m)
-                exit while
-            else if msg.isListItemSelected() then
-                command = m.GetSelectedCommand(msg.GetIndex())
-                if command = "manual" then
-                    screen = m.ViewController.CreateTextInputScreen("Enter Host Name or IP without http:// or :32400", ["Add Server Manually"], false)
-                    screen.Screen.SetMaxLength(80)
-                    screen.ValidateText = AddUnnamedServer
-                    screen.Show()
-
-                    if screen.Text <> invalid then
-                        m.RefreshServerList(removeOffset)
-                    end if
-
-                    screen = invalid
-                else if command = "discover" then
-                    DiscoverPlexMediaServers()
-                    m.RefreshServerList(removeOffset)
-                else if command = "autodiscover" then
-                    m.HandleEnumPreference(command, msg.GetIndex())
-                else if command = "removeall" then
-                    RemoveAllServers()
-                    ClearPlexMediaServers()
-                    m.RefreshServerList(removeOffset)
-                else if command = "remove" then
-                    RemoveServer(msg.GetIndex() - removeOffset)
-                    m.contentArray.Delete(msg.GetIndex())
-                    m.Screen.RemoveContent(msg.GetIndex())
-                else if command = "close" then
-                    m.Screen.Close()
-                end if
+        if msg.isScreenClosed() then
+            Debug("Manage servers closed event")
+            m.ViewController.PopScreen(m)
+        else if msg.isListItemSelected() then
+            command = m.GetSelectedCommand(msg.GetIndex())
+            if command = "manual" then
+                screen = m.ViewController.CreateTextInputScreen("Enter Host Name or IP without http:// or :32400", ["Add Server Manually"], false)
+                screen.Screen.SetMaxLength(80)
+                screen.ValidateText = AddUnnamedServer
+                screen.Show()
+            else if command = "discover" then
+                DiscoverPlexMediaServers()
+                m.RefreshServerList(m.removeOffset)
+            else if command = "autodiscover" then
+                m.HandleEnumPreference(command, msg.GetIndex())
+            else if command = "removeall" then
+                RemoveAllServers()
+                ClearPlexMediaServers()
+                m.RefreshServerList(m.removeOffset)
+            else if command = "remove" then
+                RemoveServer(msg.GetIndex() - m.removeOffset)
+                m.contentArray.Delete(msg.GetIndex())
+                m.Screen.RemoveContent(msg.GetIndex())
+            else if command = "close" then
+                m.Screen.Close()
             end if
         end if
-    end while
+    end if
+
+    return handled
+End Function
+
+Sub prefsServersOnUserInput(value, screen)
+    m.RefreshServerList(m.removeOffset)
 End Sub
 
 Sub manageRefreshServerList(removeOffset)
@@ -696,17 +723,7 @@ Sub manageRefreshServerList(removeOffset)
     m.AddItem({title: "Close"}, "close")
 End Sub
 
-Function prefsGetEnumValue(regKey)
-    pref = m.Prefs[regKey]
-    value = RegRead(regKey, "preferences", pref.default)
-    for each item in pref.values
-        if value = item.EnumValue then
-            return item.title
-        end if
-    next
-
-    return invalid
-End Function
+'*** Helper functions ***
 
 Function getCurrentMyPlexLabel() As String
     myplex = GetMyPlexManager()
