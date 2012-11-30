@@ -305,7 +305,7 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
     else
         ' Special case, if we try loading the Misc row and have no servers,
         ' this is probably a first run scenario, try to be helpful.
-        if loadingRow = m.MiscRow AND RegRead("serverList", "servers") = invalid AND NOT m.myplex.IsSignedIn then
+        if loadingRow = m.MiscRow AND RegRead("serverList", "servers") = invalid AND NOT myPlex.IsSignedIn then
             if RegRead("autodiscover", "preferences", "1") = "1" then
                 ' Give GDM discovery a chance...
                 m.LoadingFacade = CreateObject("roOneLineDialog")

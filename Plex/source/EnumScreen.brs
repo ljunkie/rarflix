@@ -8,7 +8,7 @@ Function createEnumScreen(options, selected, viewController) As Object
     initBaseScreen(obj, viewController)
 
     screen = CreateObject("roListScreen")
-    screen.SetMessagePort(m.Port)
+    screen.SetMessagePort(obj.Port)
 
     ' Standard properties for all our screen types
     obj.Screen = screen

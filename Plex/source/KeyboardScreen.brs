@@ -7,7 +7,7 @@ Function createKeyboardScreen(viewController As Object) As Object
     initBaseScreen(obj, viewController)
 
     screen = CreateObject("roKeyboardScreen")
-    screen.SetMessagePort(m.Port)
+    screen.SetMessagePort(obj.Port)
 
     screen.AddButton(1, "done")
     screen.AddButton(2, "back")

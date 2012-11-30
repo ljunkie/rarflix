@@ -197,6 +197,8 @@ End Function
 Function vcCreateMyPlexPinScreen(show=true)
     screen = createMyPlexPinScreen(m)
 
+    m.AddBreadcrumbs(screen, invalid)
+    m.UpdateScreenProperties(screen)
     m.PushScreen(screen)
 
     if show then screen.Show()
@@ -261,10 +263,11 @@ Sub vcPopScreen(screen)
     ' Clean up any timers initiated by this screen
     timers = m.TimersByScreen[screenID]
     if timers <> invalid then
-        for each timer in timers
+        for each timerID in timers
+            timer = m.Timers[timerID]
             timer.Active = false
             timer.Listener = invalid
-            m.Timers.Delete(timer.ID)
+            m.Timers.Delete(timerID)
         next
         m.TimersByScreen.Delete(screenID)
     end if

@@ -7,7 +7,7 @@ Function createMyPlexPinScreen(viewController As Object) As Object
     initBaseScreen(obj, viewController)
 
     screen = CreateObject("roCodeRegistrationScreen")
-    screen.SetMessagePort(m.Port)
+    screen.SetMessagePort(obj.Port)
 
     screen.SetTitle("Connect myPlex account")
     screen.AddParagraph("To access your shared sections and queue, link your Roku player to your myPlex account.")
@@ -31,6 +31,8 @@ Function createMyPlexPinScreen(viewController As Object) As Object
 
     obj.myPlex = GetMyPlexManager()
     obj.pollUrl = invalid
+
+    return obj
 End Function
 
 Sub pinShow()
