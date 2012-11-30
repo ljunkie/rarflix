@@ -458,12 +458,18 @@ Sub vcDestroyGlitchyScreens()
     next
 End Sub
 
-Function vcStartRequest(request, listener, context) As Boolean
+Function vcStartRequest(request, listener, context, body=invalid) As Boolean
     request.SetPort(m.GlobalMessagePort)
     context.Listener = listener
     context.Request = request
 
-    if request.AsyncGetToString() then
+    if body = invalid then
+        started = request.AsyncGetToString()
+    else
+        started = request.AsyncPostFromString(body)
+    end if
+
+    if started then
         id = request.GetIdentity().tostr()
         m.PendingRequests[id] = context
         screenID = listener.ScreenID.tostr()
