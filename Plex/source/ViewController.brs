@@ -225,6 +225,7 @@ Sub vcPopScreen(screen)
 
     ' Try to clean up some potential circular references
     screen.MessageHandler = invalid
+    screen.Listener = invalid
     if screen.Loader <> invalid then
         screen.Loader.Listener = invalid
         screen.Loader = invalid

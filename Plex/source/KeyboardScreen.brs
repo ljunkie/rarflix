@@ -48,7 +48,7 @@ Function kbHandleMessage(msg) As Boolean
                 if m.ValidateText = invalid OR m.ValidateText(m.Screen.GetText()) then
                     m.Text = m.Screen.GetText()
                     if m.Listener <> invalid then
-                        m.Listener.OnUserInput(m.Text)
+                        m.Listener.OnUserInput(m.Text, m)
                     end if
                     m.Screen.Close()
                 end if

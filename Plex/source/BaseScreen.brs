@@ -12,6 +12,7 @@ Sub initBaseScreen(screen, viewController)
     screen.Port = viewController.GlobalMessagePort
     screen.ViewController = viewController
     screen.Loader = invalid
+    screen.Listener = invalid
 
     screen.Activate = baseActivate
     screen.Show = baseShow

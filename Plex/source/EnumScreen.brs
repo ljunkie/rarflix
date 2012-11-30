@@ -5,20 +5,14 @@
 
 Function createEnumScreen(options, selected, viewController) As Object
     obj = CreateObject("roAssociativeArray")
-    port = CreateObject("roMessagePort")
-    screen = CreateObject("roListScreen")
+    initBaseScreen(obj, viewController)
 
-    screen.SetMessagePort(port)
+    screen = CreateObject("roListScreen")
+    screen.SetMessagePort(m.Port)
 
     ' Standard properties for all our screen types
-    obj.Item = invalid
     obj.Screen = screen
-    obj.Port = port
-    obj.ViewController = viewController
-    obj.MessageHandler = invalid
-    obj.MsgTimeout = 0
-
-    obj.Show = showEnumScreen
+    obj.HandleMessage = enumHandleMessage
 
     if type(selected) = "Integer" then
         focusedIndex = selected
@@ -61,27 +55,28 @@ Function createEnumScreen(options, selected, viewController) As Object
     return obj
 End Function
 
-Sub showEnumScreen()
-    m.Screen.Show()
+Function enumHandleMessage(msg) As Boolean
+    handled = false
 
-    while true
-        msg = wait(m.MsgTimeout, m.Port)
-        if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
-        else if type(msg) = "roListScreenEvent" then
-            if msg.isScreenClosed() then
-                Debug("Exiting list screen")
-                m.ViewController.PopScreen(m)
-                exit while
-            else if msg.isListItemSelected() then
-                option = m.contentArray[msg.GetIndex()]
-                if option <> invalid then
-                    m.SelectedIndex = msg.GetIndex()
-                    m.SelectedValue = option.EnumValue
-                    m.SelectedLabel = option.title
+    if type(msg) = "roListScreenEvent" then
+        handled = true
+
+        if msg.isScreenClosed() then
+            Debug("Exiting list screen")
+            m.ViewController.PopScreen(m)
+        else if msg.isListItemSelected() then
+            option = m.contentArray[msg.GetIndex()]
+            if option <> invalid then
+                m.SelectedIndex = msg.GetIndex()
+                m.SelectedValue = option.EnumValue
+                m.SelectedLabel = option.title
+                if m.Listener <> invalid then
+                    m.Listener.OnUserInput(m.SelectedValue, m)
                 end if
-                m.Screen.Close()
             end if
+            m.Screen.Close()
         end if
-    end while
-End Sub
+    end if
 
+    return handled
+End Function
