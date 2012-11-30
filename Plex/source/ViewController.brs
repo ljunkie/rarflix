@@ -18,6 +18,9 @@ Function createViewController() As Object
     controller.CreateTextInputScreen = vcCreateTextInputScreen
     controller.CreateEnumInputScreen = vcCreateEnumInputScreen
     controller.CreateMyPlexPinScreen = vcCreateMyPlexPinScreen
+
+    controller.CreatePhotoPlayer = vcCreatePhotoPlayer
+
     controller.InitializeOtherScreen = vcInitializeOtherScreen
     controller.PushScreen = vcPushScreen
     controller.PopScreen = vcPopScreen
@@ -196,6 +199,18 @@ End Function
 
 Function vcCreateMyPlexPinScreen(show=true)
     screen = createMyPlexPinScreen(m)
+
+    m.AddBreadcrumbs(screen, invalid)
+    m.UpdateScreenProperties(screen)
+    m.PushScreen(screen)
+
+    if show then screen.Show()
+
+    return screen
+End Function
+
+Function vcCreatePhotoPlayer(context, contextIndex=invalid, show=true)
+    screen = createPhotoPlayerScreen(context, contextIndex, m)
 
     m.AddBreadcrumbs(screen, invalid)
     m.UpdateScreenProperties(screen)
