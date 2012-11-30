@@ -149,6 +149,7 @@ Function createPreferencesScreen(viewController) As Object
 
     obj.Show = showPreferencesScreen
     obj.HandleMessage = prefsMainHandleMessage
+    obj.Activate = prefsMainActivate
 
     ' Quality settings
     qualities = [
@@ -206,6 +207,7 @@ Function createPreferencesScreen(viewController) As Object
     }
 
     obj.myplex = GetGlobalAA().Lookup("myplex")
+    obj.checkMyPlexOnActivate = false
 
     return obj
 End Function
@@ -290,15 +292,12 @@ Function prefsMainHandleMessage(msg) As Boolean
                 if m.myplex.IsSignedIn then
                     m.myplex.Disconnect()
                     m.Changes["myplex"] = "disconnected"
+                    m.Screen.SetItem(msg.GetIndex(), {title: getCurrentMyPlexLabel()})
                 else
-                    ' TODO(schuyler): Figure this stuff out when the pin screen
-                    ' uses the global message port...
-                    m.myplex.ShowPinScreen()
-                    if m.myplex.IsSignedIn then
-                        m.Changes["myplex"] = "connected"
-                    end if
+                    m.checkMyPlexOnActivate = true
+                    m.myPlexIndex = msg.GetIndex()
+                    m.ViewController.CreateMyPlexPinScreen()
                 end if
-                m.Screen.SetItem(msg.GetIndex(), {title: getCurrentMyPlexLabel()})
             else if command = "quality" OR command = "level" OR command = "fivepointone" OR command = "directplay" OR command = "softsubtitles" OR command = "screensaver" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "slideshow" then
@@ -321,6 +320,16 @@ Function prefsMainHandleMessage(msg) As Boolean
 
     return handled
 End Function
+
+Sub prefsMainActivate()
+    if m.checkMyPlexOnActivate then
+        m.checkMyPlexOnActivate = false
+        if m.myplex.IsSignedIn then
+            m.Changes["myplex"] = "connected"
+        end if
+        m.Screen.SetItem(m.myPlexIndex, {title: getCurrentMyPlexLabel()})
+    end if
+End Sub
 
 '*** Slideshow Preferences ***
 

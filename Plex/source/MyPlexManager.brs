@@ -6,7 +6,6 @@ Function createMyPlexManager(viewController) As Object
     obj = CreateObject("roAssociativeArray")
 
     obj.CreateRequest = mpCreateRequest
-    obj.ShowPinScreen = mpShowPinScreen
     obj.ValidateToken = mpValidateToken
     obj.Disconnect = mpDisconnect
 
@@ -66,102 +65,6 @@ Sub mpCheckAuthentication()
         m.ValidateToken(RegRead("AuthToken", "myplex"))
     end if
 End Sub
-
-Function mpShowPinScreen() As Object
-    port = CreateObject("roMessagePort")
-    screen = CreateObject("roCodeRegistrationScreen")
-    screen.SetMessagePort(port)
-
-    screen.SetTitle("Connect myPlex account")
-    screen.AddParagraph("To access your shared sections and queue, link your Roku player to your myPlex account.")
-    screen.AddParagraph(" ")
-    screen.AddFocalText("From your computer,", "spacing-dense")
-    screen.AddFocalText("go to my.plexapp.com/pin", "spacing-dense")
-    screen.AddFocalText("and enter this code:", "spacing-dense")
-    screen.SetRegistrationCode("retrieving code...")
-    screen.AddParagraph(" ")
-    screen.AddParagraph("This screen will automatically update once your Roku player has been linked to your myPlex account.")
-
-    screen.AddButton(0, "get a new code")
-    screen.AddButton(1, "back")
-
-    screen.Show()
-
-    ' Kick off a request for the real pin
-    codeRequest = m.CreateRequest("", "/pins.xml")
-    codeRequest.SetPort(port)
-    codeRequest.AsyncPostFromString("")
-
-    pollRequest = invalid
-    pollUrl = invalid
-
-    while true
-        msg = wait(5000, port)
-        if msg = invalid AND pollRequest = invalid AND pollUrl <> invalid then
-            ' Our 5 second timeout, check the server
-            Debug("Polling for myPlex PIN update at " + pollUrl)
-            pollRequest = m.CreateRequest("", pollUrl)
-            pollRequest.SetPort(port)
-            pollRequest.AsyncGetToString()
-        else if type(msg) = "roCodeRegistrationScreenEvent" then
-            if msg.isScreenClosed()
-                exit while
-            else if msg.isButtonPressed()
-                if msg.GetIndex() = 0 then
-                    ' Get new code
-                    screen.SetRegistrationCode("retrieving code...")
-                    codeRequest = m.CreateRequest("", "/pins.xml")
-                    codeRequest.SetPort(port)
-                    codeRequest.AsyncPostFromString("")
-                else
-                    exit while
-                end if
-            end if
-        else if type(msg) = "roUrlEvent" AND msg.GetInt() = 1 then
-            if codeRequest <> invalid AND codeRequest.GetIdentity() = msg.GetSourceIdentity() then
-                if msg.GetResponseCode() <> 201 then
-                    Debug("Request for new PIN failed: " + tostr(msg.GetResponseCode()) + " - " + tostr(msg.GetFailureReason()))
-                    dialog = createBaseDialog()
-                    dialog.Title = "Server unavailable"
-                    dialog.Text = "The myPlex server couldn't be reached, please try again later."
-                    dialog.Show()
-                else
-                    pollUrl = msg.GetResponseHeaders().Location
-                    xml = CreateObject("roXMLElement")
-                    xml.Parse(msg.GetString())
-                    screen.SetRegistrationCode(xml.code.GetText())
-
-                    Debug("Got a PIN (" + tostr(xml.code.GetText()) + ") that expires at " + tostr(xml.GetNamedElements("expires-at").GetText()))
-                end if
-
-                codeRequest = invalid
-            else if pollRequest <> invalid AND pollRequest.GetIdentity() = msg.GetSourceIdentity() then
-                if msg.GetResponseCode() = 200 then
-                    xml = CreateObject("roXMLElement")
-                    xml.Parse(msg.GetString())
-                    token = xml.auth_token.GetText()
-                    if len(token) > 0 then
-                        Debug("Got a myPlex token")
-                        if m.ValidateToken(token) then
-                            RegWrite("AuthToken", token, "myplex")
-                        end if
-                        exit while
-                    end if
-                else
-                    ' 404 is expected for expired pins, but treat all errors as expired
-                    Debug("Expiring PIN, server response was " + tostr(msg.GetResponseCode()))
-                    screen.SetRegistrationCode("code expired")
-                    pollUrl = invalid
-                end if
-
-                pollRequest = invalid
-            end if
-        end if
-    end while
-
-    if codeRequest <> invalid then codeRequest.AsyncCancel()
-    if pollRequest <> invalid then pollRequest.AsyncCancel()
-End Function
 
 Function mpValidateToken(token) As Boolean
     req = m.CreateRequest("", "/users/sign_in.xml", false)
