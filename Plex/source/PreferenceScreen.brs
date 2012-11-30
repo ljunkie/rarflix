@@ -292,7 +292,7 @@ Function prefsMainHandleMessage(msg) As Boolean
                 if m.myplex.IsSignedIn then
                     m.myplex.Disconnect()
                     m.Changes["myplex"] = "disconnected"
-                    m.Screen.SetItem(msg.GetIndex(), {title: getCurrentMyPlexLabel()})
+                    m.SetTitle(msg.GetIndex(), getCurrentMyPlexLabel())
                 else
                     m.checkMyPlexOnActivate = true
                     m.myPlexIndex = msg.GetIndex()
@@ -327,7 +327,7 @@ Sub prefsMainActivate()
         if m.myplex.IsSignedIn then
             m.Changes["myplex"] = "connected"
         end if
-        m.Screen.SetItem(m.myPlexIndex, {title: getCurrentMyPlexLabel()})
+        m.SetTitle(m.myPlexIndex, getCurrentMyPlexLabel())
     end if
 End Sub
 
