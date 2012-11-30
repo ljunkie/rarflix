@@ -1,27 +1,25 @@
 Function createSettingsScreen(item, viewController) As Object
     obj = CreateObject("roAssociativeArray")
-    port = CreateObject("roMessagePort")
-    screen = CreateObject("roListScreen")
+    initBaseScreen(obj, viewController)
 
-    screen.SetMessagePort(port)
+    screen = CreateObject("roListScreen")
+    screen.SetMessagePort(obj.Port)
     screen.SetHeader(item.Title)
 
     ' Standard properties for all our screen types
     obj.Item = item
     obj.Screen = screen
-    obj.Port = port
-    obj.ViewController = viewController
-    obj.MessageHandler = invalid
-    obj.MsgTimeout = 0
 
-    obj.Show = showSettingsScreen
+    obj.Show = settingsShow
+    obj.HandleMessage = settingsHandleMessage
+    obj.OnUserInput = settingsOnUserInput
 
     lsInitBaseListScreen(obj)
 
     return obj
 End Function
 
-Sub showSettingsScreen()
+Sub settingsShow()
     server = m.Item.server
     container = createPlexContainerForUrl(server, m.Item.sourceUrl, m.Item.key)
     settings = container.GetSettings()
@@ -33,58 +31,53 @@ Sub showSettingsScreen()
     m.AddItem({title: "Close"}, "close")
 
     m.Screen.Show()
-
-	while true
-        msg = wait(m.MsgTimeout, m.Port)
-        if m.MessageHandler <> invalid AND m.MessageHandler.HandleMessage(msg) then
-        else if type(msg) = "roListScreenEvent" then
-            if msg.isScreenClosed() then
-                Debug("Exiting settings screen")
-                m.ViewController.PopScreen(m)
-                exit while
-            else if msg.isListItemSelected() then
-                command = m.GetSelectedCommand(msg.GetIndex())
-                if command = "setting" then
-                    setting = m.contentArray[msg.GetIndex()]
-
-                    modified = false
-
-                    if setting.type = "text" then
-                        screen = m.ViewController.CreateTextInputScreen("Enter " + setting.label, [], false)
-                        screen.Screen.SetText(setting.value)
-                        screen.Screen.SetSecureText(setting.hidden OR setting.secure)
-                        screen.Show()
-
-                        if screen.Text <> invalid then
-                            setting.value = screen.Text
-                            modified = true
-                        end if
-                    else if setting.type = "bool" then
-                        screen = m.ViewController.CreateEnumInputScreen(["true", "false"], setting.value, setting.label, [])
-                        if screen.SelectedValue <> invalid then
-                            setting.value = screen.SelectedValue
-                            modified = true
-                        end if
-                    else if setting.type = "enum" then
-                        screen = m.ViewController.CreateEnumInputScreen(setting.values, setting.value.toint(), setting.label, [])
-                        if screen.SelectedIndex <> invalid then
-                            setting.value = screen.SelectedIndex.tostr()
-                            modified = true
-                        end if
-                    end if
-
-                    if modified then
-                        server.SetPref(m.Item.key, setting.id, setting.value)
-                        m.AppendValue(msg.GetIndex(), setting.GetValueString())
-                    end if
-                else if command = "close" then
-                    m.Screen.Close()
-                end if
-            end if
-        end if
-	end while
 End Sub
 
+Function settingsHandleMessage(msg) As Boolean
+    handled = false
+
+    if type(msg) = "roListScreenEvent" then
+        handled = true
+
+        if msg.isScreenClosed() then
+            Debug("Exiting settings screen")
+            m.ViewController.PopScreen(m)
+        else if msg.isListItemSelected() then
+            command = m.GetSelectedCommand(msg.GetIndex())
+            if command = "setting" then
+                m.currentIndex = msg.GetIndex()
+                setting = m.contentArray[msg.GetIndex()]
+
+                if m.setting.type = "text" then
+                    screen = m.ViewController.CreateTextInputScreen("Enter " + m.setting.label, [], false)
+                    screen.Screen.SetText(m.setting.value)
+                    screen.Screen.SetSecureText(m.setting.hidden OR m.setting.secure)
+                    screen.Show()
+                else if m.setting.type = "bool" then
+                    screen = m.ViewController.CreateEnumInputScreen(["true", "false"], m.setting.value, m.setting.label, [])
+                else if m.setting.type = "enum" then
+                    screen = m.ViewController.CreateEnumInputScreen(m.setting.values, m.setting.value.toint(), m.setting.label, [])
+                end if
+            else if command = "close" then
+                m.Screen.Close()
+            end if
+        end if
+    end if
+
+    return handled
+End Function
+
+Sub settingsOnUserInput(value, screen)
+    setting = m.contentArray[m.currentIndex]
+    if setting.type = "enum" then
+        setting.value = screen.SelectedIndex.tostr()
+    else
+        setting.value = value
+    end if
+
+    server.SetPref(m.Item.key, setting.id, setting.value)
+    m.AppendValue(m.currentIndex, setting.GetValueString())
+End Sub
 
 '#######################################################
 'Below are the preference Functions for the Global
