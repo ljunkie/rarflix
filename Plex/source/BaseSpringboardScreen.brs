@@ -41,12 +41,21 @@ Function createBaseSpringboardScreen(context, index, viewController, includePred
     obj.CurIndex = index
     obj.AllowLeftRight = contextCopy.Count() > 1
     obj.WrapLeftRight = obj.AllowLeftRight
+
+    obj.IsShuffled = false
     obj.Shuffle = sbShuffle
     obj.Unshuffle = sbUnshuffle
 
     obj.Refresh = sbRefresh
     obj.GotoNextItem = sbGotoNextItem
     obj.GotoPrevItem = sbGotoPrevItem
+
+    ' Properties/methods to facilitate setting up buttons in the UI
+    obj.buttonCommands = invalid
+    obj.buttonCount = 0
+    obj.ClearButtons = sbClearButtons
+    obj.AddButton = sbAddButton
+    obj.AddRatingButton = sbAddRatingButton
 
     ' Methods that will need to be provided by subclasses
     obj.SetupButtons = invalid
@@ -222,3 +231,21 @@ Function sbGotoPrevItem() As Boolean
 
     return false
 End Function
+
+Sub sbClearButtons()
+    m.buttonCommands = CreateObject("roAssociativeArray")
+    m.Screen.ClearButtons()
+    m.buttonCount = 0
+End Sub
+
+Sub sbAddButton(label, command)
+    m.Screen.AddButton(m.buttonCount, label)
+    m.buttonCommands[str(m.buttonCount)] = command
+    m.buttonCount = m.buttonCount + 1
+End Sub
+
+Sub sbAddRatingButton(userRating, rating, command)
+    m.Screen.AddRatingButton(m.buttonCount, userRating, rating)
+    m.buttonCommands[str(m.buttonCount)] = command
+    m.buttonCount = m.buttonCount + 1
+End Sub

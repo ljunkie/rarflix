@@ -11,6 +11,7 @@ Function createTimer() As Object
     timer.timer = CreateObject("roTimespan")
     timer.PrintElapsedTime = timerPrintElapsedTime
     timer.GetElapsedMillis = timerGetElapsedMillis
+    timer.GetElapsedSeconds = timerGetElapsedSeconds
     timer.Mark = timerMark
     timer.SetDuration = timerSetDuration
     timer.IsExpired = timerIsExpired
@@ -33,6 +34,10 @@ End Sub
 
 Function timerGetElapsedMillis() As Integer
     return m.timer.TotalMilliseconds()
+End Function
+
+Function timerGetElapsedSeconds() As Integer
+    return m.timer.TotalSeconds()
 End Function
 
 Sub timerMark()

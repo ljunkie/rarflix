@@ -18,6 +18,8 @@ Sub initBaseScreen(screen, viewController)
     screen.Show = baseShow
     screen.HandleMessage = baseHandleMessage
     screen.DestroyAndRecreate = invalid
+
+    viewController.AssignScreenID(screen)
 End Sub
 
 Sub baseActivate()

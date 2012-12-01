@@ -15,25 +15,12 @@ Function createPhotoSpringboardScreen(context, index, viewController) As Object
 End Function
 
 Sub photoSetupButtons()
-    m.buttonCommands = CreateObject("roAssociativeArray")
-    m.Screen.ClearButtons()
-    buttonCount = 0
+    m.ClearButtons()
 
-    m.Screen.AddButton(buttonCount, "Show")
-    m.buttonCommands[str(buttonCount)] = "show"
-    buttonCount = buttonCount + 1
-
-    m.Screen.AddButton(buttonCount, "Slideshow")
-    m.buttonCommands[str(buttonCount)] = "slideshow"
-    buttonCount = buttonCount + 1
-
-    m.Screen.AddButton(buttonCount, "Next Photo")
-    m.buttonCommands[str(buttonCount)] = "next"
-    buttonCount = buttonCount + 1
-
-    m.Screen.AddButton(buttonCount, "Previous Photo")
-    m.buttonCommands[str(buttonCount)] = "prev"
-    buttonCount = buttonCount + 1
+    m.AddButton("Show", "show")
+    m.AddButton("Slideshow", "slideshow")
+    m.AddButton("Next Photo", "next")
+    m.AddButton("Previous Photo", "prev")
 
     if m.metadata.UserRating = invalid then
         m.metadata.UserRating = 0
@@ -41,9 +28,7 @@ Sub photoSetupButtons()
     if m.metadata.StarRating = invalid then
         m.metadata.StarRating = 0
     endif
-    m.Screen.AddRatingButton(buttonCount, m.metadata.UserRating, m.metadata.StarRating)
-    m.buttonCommands[str(buttonCount)] = "ratePhoto"
-    buttonCount = buttonCount + 1
+    m.AddRatingButton(m.metadata.UserRating, m.metadata.StarRating, "ratePhoto")
 End Sub
 
 Sub photoGetMediaDetails(content)

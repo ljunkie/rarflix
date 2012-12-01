@@ -86,7 +86,7 @@ Function showPosterScreen() As Integer
         status = CreateObject("roAssociativeArray")
         status.content = container.GetMetadata()
 
-        m.Loader = createDummyLoader(status.content)
+        m.Loader = createDummyLoader()
 
         if container.Count() > 0 then
             contentType = container.GetMetadata()[0].ContentType

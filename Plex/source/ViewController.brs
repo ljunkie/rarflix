@@ -22,6 +22,7 @@ Function createViewController() As Object
     controller.CreatePhotoPlayer = vcCreatePhotoPlayer
 
     controller.InitializeOtherScreen = vcInitializeOtherScreen
+    controller.AssignScreenID = vcAssignScreenID
     controller.PushScreen = vcPushScreen
     controller.PopScreen = vcPopScreen
 
@@ -60,6 +61,7 @@ Function createViewController() As Object
     ' Stuff the controller into the global object
     m.ViewController = controller
     controller.myplex = createMyPlexManager(controller)
+    controller.AudioPlayer = createAudioPlayer(controller)
 
     return controller
 End Function
@@ -227,13 +229,15 @@ Sub vcInitializeOtherScreen(screen, breadcrumbs)
     m.PushScreen(screen)
 End Sub
 
-Sub vcPushScreen(screen)
-    ' Set an ID on the screen so we can sanity check before popping
+Sub vcAssignScreenID(screen)
     if screen.ScreenID = invalid then
         screen.ScreenID = m.nextScreenId
         m.nextScreenId = m.nextScreenId + 1
     end if
+End Sub
 
+Sub vcPushScreen(screen)
+    m.AssignScreenID(screen)
     Debug("Pushing screen " + tostr(screen.ScreenID) + " onto view controller stack")
     m.screens.Push(screen)
 End Sub
