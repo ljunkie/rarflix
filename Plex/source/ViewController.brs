@@ -331,11 +331,13 @@ Sub vcShow()
                     m.PendingRequests.Delete(id)
                     requestContext.Listener.OnUrlEvent(msg, requestContext)
                 end if
-            else if type(msg) = "roSocketEvent"
+            else if type(msg) = "roSocketEvent" then
                 listener = m.SocketListeners[msg.getSocketID().tostr()]
                 if listener <> invalid then
                     listener.OnSocketEvent(msg)
                 end if
+            else if type(msg) = "roAudioPlayerEvent" then
+                m.AudioPlayer.HandleMessage(msg)
             end if
         end if
 
