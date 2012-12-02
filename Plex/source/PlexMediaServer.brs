@@ -2,9 +2,9 @@
 '* Facade to a PMS server responsible for fetching PMS meta-data and
 '* formatting into Roku format as well providing the interface to the
 '* streaming media
-'* 
+'*
 
-'* Constructor for a specific PMS instance identified via the URL and 
+'* Constructor for a specific PMS instance identified via the URL and
 '* human readable name, which can be used in section names
 Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms = CreateObject("roAssociativeArray")
@@ -130,7 +130,7 @@ Function xmlContent(sourceUrl, key) As Object
         if not xml.Parse(response) then
             Debug("Can't parse feed: " + tostr(response))
         endif
-            
+
         xmlResult.xml = xml
         xmlResult.sourceUrl = httpRequest.GetUrl()
     endif
@@ -203,7 +203,7 @@ Function IndirectMediaXml(server, originalKey, postURL)
     endif
     return xml
 End Function
-        
+
 Function DirectMediaXml(server, queryUrl) As Object
     httpRequest = server.CreateRequest("", queryUrl)
     Debug("Fetching content from server at query URL: " + tostr(httpRequest.GetUrl()))
@@ -250,7 +250,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
                 dlg = createBaseDialog()
                 dlg.Title = "Video Unavailable"
                 dlg.Text = "Sorry, but we can't play this video. The original video may no longer be available, or it may be in a format that isn't supported."
-                dlg.Show()
+                dlg.Show(true)
                 return invalid
             end if
             mediaKey = mediaKeyXml.Video.Media.Part[0]@key
@@ -287,7 +287,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
     Debug("Setting stream quality: " + quality)
     video.StreamQualities = [quality]
 
-	'Setup 1080p metadata 	
+	'Setup 1080p metadata
     if videoRes = "1080" then
         versionArr = GetGlobal("rokuVersionArr", [0])
         major = versionArr[0]
@@ -298,11 +298,11 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
 				frSetting = RegRead("legacy1080pframerate","preferences")
 				if frSetting = "24" then
 					video.framerate = 24
-				else if frSetting = "auto" and item.framerate = "24"					
+				else if frSetting = "auto" and item.framerate = "24"
 					video.framerate = 24
 				end if
 			end if
-		else 
+		else
 			video.fullHD = true
 		endif
 	endif
@@ -345,12 +345,12 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
     end if
 
     video.IsTranscoded = true
-    
+
 	'We are transcoding, don't set fullHD if quality isn't 1080p
     if RegRead("quality", "preferences") <> "9" then
         video.fullHD = False
 	endif
-	
+
 	printAA(video)
     video.StreamBitrates = [0]
     video.StreamFormat = "hls"
@@ -380,7 +380,7 @@ Function stopTranscode()
     if m.Cookie <> invalid then
         stopTransfer = CreateObject("roUrlTransfer")
         stopTransfer.SetUrl(m.serverUrl + "/video/:/transcode/segmented/stop")
-        stopTransfer.AddHeader("Cookie", m.Cookie) 
+        stopTransfer.AddHeader("Cookie", m.Cookie)
         content = stopTransfer.GetToString()
     else
         Debug("Can't send stop request, cookie wasn't set")
@@ -391,14 +391,14 @@ Function pingTranscode()
     if m.Cookie <> invalid then
         pingTransfer = CreateObject("roUrlTransfer")
         pingTransfer.SetUrl(m.serverUrl + "/video/:/transcode/segmented/ping")
-        pingTransfer.AddHeader("Cookie", m.Cookie) 
+        pingTransfer.AddHeader("Cookie", m.Cookie)
         content = pingTransfer.GetToString()
     else
         Debug("Can't send ping request, cookie wasn't set")
     end if
 End Function
 
-'* Constructs a Full URL taking into account relative/absolute. Relative to the 
+'* Constructs a Full URL taking into account relative/absolute. Relative to the
 '* source URL, and absolute URLs, so
 '* relative to the server URL
 Function FullUrl(serverUrl, sourceUrl, key) As String
@@ -424,7 +424,7 @@ Function FullUrl(serverUrl, sourceUrl, key) As String
         else
             sourceUrlTokens.Push("")
         endif
-    
+
         if keyTokens[0] = "" AND sourceUrlTokens[0] = "" then
             finalUrl = serverUrl
         else if keyTokens[0] = "" AND serverUrl = "" then
@@ -455,7 +455,7 @@ Function FullUrl(serverUrl, sourceUrl, key) As String
 End Function
 
 
-'* Constructs an image based on a PMS url with the specific width and height. 
+'* Constructs an image based on a PMS url with the specific width and height.
 Function TranscodedImage(queryUrl, imagePath, width, height) As String
     imageUrl = FullUrl(m.serverUrl, queryUrl, imagePath)
     imageUrl = m.ConvertURLToLoopback(imageUrl)
@@ -476,7 +476,7 @@ Function StartTranscodingSession(videoUrl)
 End Function
 
 '*
-'* Construct the Plex transcoding URL. 
+'* Construct the Plex transcoding URL.
 '*
 Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As Object)
     Debug("Constructing transcoding video URL for " + videoUrl)
@@ -499,7 +499,7 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As 
     end if
     Debug("Original key: " + tostr(key))
     Debug("Full key: " + tostr(fullKey))
-    
+
     if not(RegExists("level", "preferences")) then RegWrite("level", "40", "preferences")
 
     path = "/video/:/transcode/segmented/start.m3u8?"
@@ -575,7 +575,7 @@ Function TranscodingAudioUrl(audioUrl As String, item As Object)
     location = FullUrl(m.serverUrl, item.sourceUrl, audioUrl)
     location = m.ConvertURLToLoopback(location)
     Debug("Location: " + tostr(location))
-    
+
     path = "/music/:/transcode/generic.mp3?"
 
     query = "offset=0"
@@ -625,13 +625,13 @@ Function Capabilities(recompute=false) As String
     if device.HasFeature("5.1_surround_sound") and major >= 4 then
         fiveone = RegRead("fivepointone", "preferences", "1")
         Debug("5.1 support set to: " + fiveone)
-        
+
         if fiveone <> "2" then
             audio = audio + ",ac3{channels:6}"
         else
             Debug("5.1 support disabled via Tweaks")
         end if
-    end if 
+    end if
 
     ' The Roku1 seems to be pretty picky about h.264 streams inside HLS, it
     ' will show very blocky video for certain streams that work fine in MP4.
@@ -659,15 +659,15 @@ End Function
 
 '*
 '* HMAC encode the message
-'* 
+'*
 Function HMACHash(msg As String) As String
-    hmac = CreateObject("roHMAC") 
-    privateKey = CreateObject("roByteArray") 
+    hmac = CreateObject("roHMAC")
+    privateKey = CreateObject("roByteArray")
     privateKey.fromBase64String("k3U6GLkZOoNIoSgjDshPErvqMIFdE0xMTx8kgsrhnC0=")
     result = hmac.setup("sha256", privateKey)
     if result = 0
-        message = CreateObject("roByteArray") 
-        message.fromAsciiString(msg) 
+        message = CreateObject("roByteArray")
+        message.fromAsciiString(msg)
         result = hmac.process(message)
         return result.toBase64String()
     end if

@@ -76,7 +76,7 @@ Function showGridScreen() As Integer
         dialog.Text = "An error occurred while trying to load this content, make sure the server is running."
         dialog.Show()
 
-        m.ViewController.PopScreen(m)
+        m.popOnActivate = true
         return -1
     end if
 
@@ -208,8 +208,12 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
                     dialog.Title = "Section Empty"
                     dialog.Text = "This section doesn't contain any items."
                     dialog.Show()
+                    m.closeOnActivate = true
+                else
+                    m.Screen.Close()
                 end if
-                m.Screen.Close()
+
+                return
             end if
         end if
 
@@ -286,6 +290,18 @@ Sub gridDestroyAndRecreate()
 End Sub
 
 Sub gridActivate(priorScreen)
+    if m.popOnActivate then
+        m.ViewController.PopScreen(m)
+        return
+    else if m.closeOnActivate then
+        if m.Screen <> invalid then
+            m.Screen.Close()
+        else
+            m.ViewController.PopScreen(m)
+        end if
+        return
+    end if
+
     ' If our screen was destroyed by some child screen, recreate it now
     if m.Screen = invalid then
         Debug("Recreating grid...")

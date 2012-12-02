@@ -268,6 +268,8 @@ Sub vcPopScreen(screen)
         return
     end if
 
+    if screen.Cleanup <> invalid then screen.Cleanup()
+
     ' Try to clean up some potential circular references
     screen.MessageHandler = invalid
     screen.Listener = invalid
@@ -327,8 +329,8 @@ Sub vcShow()
             ' Printing debug information about every message may be overkill
             ' regardless, but note that URL events don't play by the same rules,
             ' and there's no ifEvent interface to check for. Sigh.
-            'if GetInterface(msg, "ifUrlEvent") = invalid then
-            '    Debug("Processing " + type(msg) + ": " + tostr(msg.GetType()) + ", " + tostr(msg.GetIndex()) + ", " + tostr(msg.GetMessage()))
+            'if GetInterface(msg, "ifUrlEvent") = invalid AND GetInterface(msg, "ifSocketEvent") = invalid then
+                'Debug("Processing " + type(msg) + " (top of stack " + type(m.screens.Peek().Screen) + "): " + tostr(msg.GetType()) + ", " + tostr(msg.GetIndex()) + ", " + tostr(msg.GetMessage()))
             'end if
 
             for i = m.screens.Count() - 1 to 0 step -1

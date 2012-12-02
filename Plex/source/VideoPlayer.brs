@@ -11,6 +11,7 @@ Function createVideoPlayerScreen(metadata, seekValue, directPlayOptions, viewCon
     obj.Show = videoPlayerShow
     obj.HandleMessage = videoPlayerHandleMessage
     obj.OnTimerExpired = videoPlayerOnTimerExpired
+    obj.Cleanup = videoPlayerCleanup
 
     obj.SeekValue = seekValue
     obj.DirectPlayOptions = directPlayOptions
@@ -22,7 +23,6 @@ Function createVideoPlayerScreen(metadata, seekValue, directPlayOptions, viewCon
     obj.playbackError = false
     obj.underrunCount = 0
 
-    obj.Cleanup = videoPlayerCleanup
     obj.ShowPlaybackError = videoPlayerShowPlaybackError
 
     return obj
@@ -38,6 +38,7 @@ Sub videoPlayerShow()
         Debug("Error while playing video, nothing left to fall back to")
         m.ShowPlaybackError()
         m.Screen = invalid
+        m.popOnActivate = true
     end if
 
     if m.Screen <> invalid then
@@ -60,7 +61,6 @@ Sub videoPlayerShow()
         m.Screen.Show()
     else
         m.ViewController.PopScreen(m)
-        m.Cleanup()
     end if
 End Sub
 
@@ -147,12 +147,8 @@ Sub videoPlayerCleanup()
         dialog.SetButton("quality", "Lower the quality setting now")
         dialog.HandleButton = qualityHandleButton
         dialog.Quality = m.OrigQuality
+        dialog.Item = m.Item
         dialog.Show()
-
-        if m.OrigQuality <> dialog.Quality then
-            m.Item.preferredMediaItem = PickMediaItem(m.Item.media, m.Item.HasDetails)
-            m.OrigQuality = dialog.Quality
-        end if
     end if
 
     if m.Item.RestoreSubtitleID <> invalid then
@@ -201,7 +197,6 @@ Function videoPlayerHandleMessage(msg) As Boolean
                 m.Show()
             else
                 m.ViewController.PopScreen(m)
-                m.Cleanup()
             end if
         else if msg.isPlaybackPosition() then
             m.lastPosition = msg.GetIndex()
@@ -279,6 +274,7 @@ Function qualityHandleButton(key, data) As Boolean
             Debug("New quality: " + tostr(newQuality))
             RegWrite("quality", newQuality.tostr(), "preferences")
             m.Quality = newQuality.tostr()
+            m.Item.preferredMediaItem = PickMediaItem(m.Item.media, m.Item.HasDetails)
         end if
     end if
     return true

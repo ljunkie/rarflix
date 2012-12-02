@@ -20,6 +20,7 @@ Function createPosterScreen(item, viewController) As Object
     obj.ListStyle = invalid
     obj.ListDisplayMode = invalid
     obj.FilterMode = invalid
+    obj.Facade = invalid
 
     obj.OnDataLoaded = posterOnDataLoaded
 
@@ -33,8 +34,8 @@ End Function
 Function showPosterScreen() As Integer
     ' Show a facade immediately to get the background 'retrieving' instead of
     ' using a one line dialog.
-    facade = CreateObject("roPosterScreen")
-    facade.Show()
+    m.Facade = CreateObject("roPosterScreen")
+    m.Facade.Show()
 
     content = m.Item
     server = content.server
@@ -45,8 +46,10 @@ Function showPosterScreen() As Integer
         dialog = createBaseDialog()
         dialog.Title = "Content Unavailable"
         dialog.Text = "An error occurred while trying to load this content, make sure the server is running."
-        dialog.Facade = facade
+        dialog.Facade = m.Facade
         dialog.Show()
+        m.closeOnActivate = true
+        m.Facade = invalid
         return 0
     end if
 
@@ -111,7 +114,7 @@ Function showPosterScreen() As Integer
 
     m.focusedList = 0
     m.ShowList(0)
-    facade.Close()
+    if m.Facade <> invalid then m.Facade.Close()
 
     return 0
 End Function
@@ -206,10 +209,12 @@ Sub posterShowContentList(index)
 
     if status.content.Count() = 0 AND NOT m.FilterMode then
         dialog = createBaseDialog()
+        dialog.Facade = m.Facade
         dialog.Title = "No items to display"
         dialog.Text = "This directory appears to be empty."
         dialog.Show()
-        m.Screen.Close()
+        m.Facade = invalid
+        m.closeOnActivate = true
     else
         m.Screen.Show()
         m.Screen.SetFocusedListItem(status.focusedIndex)

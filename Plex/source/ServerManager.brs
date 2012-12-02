@@ -167,7 +167,7 @@ Function AddUnnamedServer(address) As Boolean
             dialog.Facade = validating
             dialog.Title = "Error"
             dialog.Text = address + " is the IP address of the Roku, enter the IP address of the Plex Media Server."
-            dialog.Show()
+            dialog.Show(true)
             return false
         end if
 
@@ -215,7 +215,7 @@ Function AddUnnamedServer(address) As Boolean
             dialog.Facade = validating
             dialog.Title = "Error"
             dialog.Text = "The Plex Media Server at " + orig + " is already configured (" + server.name + ")."
-            dialog.Show()
+            dialog.Show(true)
         else if ServerVersionCompare(xml@version, [0, 9, 2, 7]) then
             AddServer(xml@friendlyName, address, xml@machineIdentifier)
             return true
@@ -225,7 +225,7 @@ Function AddUnnamedServer(address) As Boolean
             dialog.Facade = validating
             dialog.Title = "Error"
             dialog.Text = "The Plex Media Server at " + orig + " is running too old a version, please upgrade to the latest release."
-            dialog.Show()
+            dialog.Show(true)
         end if
     else
         Debug("No response from server")
@@ -241,7 +241,7 @@ Function AddUnnamedServer(address) As Boolean
 
         dialog.Text = dialog.Text + String(2, Chr(10)) + "Error: " + tostr(httpRequest.FailureReason)
 
-        dialog.Show()
+        dialog.Show(true)
     end if
 
     return false

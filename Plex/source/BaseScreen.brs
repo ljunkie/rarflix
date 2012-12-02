@@ -18,13 +18,27 @@ Sub initBaseScreen(screen, viewController)
     screen.Show = baseShow
     screen.HandleMessage = baseHandleMessage
     screen.DestroyAndRecreate = invalid
+    screen.Cleanup = invalid
+
+    screen.popOnActivate = false
+    screen.closeOnActivate = false
 
     viewController.AssignScreenID(screen)
 End Sub
 
 Sub baseActivate(priorScreen)
     ' Called when the screen becomes active again, after whatever was opened
-    ' after it has been popped. Nothing to do here in most cases.
+    ' after it has been popped.
+
+    if m.popOnActivate then
+        m.ViewController.PopScreen(m)
+    else if m.closeOnActivate then
+        if m.Screen <> invalid then
+            m.Screen.Close()
+        else
+            m.ViewController.PopScreen(m)
+        end if
+    end if
 End Sub
 
 Sub baseShow()

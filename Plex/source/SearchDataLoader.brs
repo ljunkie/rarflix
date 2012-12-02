@@ -178,7 +178,7 @@ Sub searchOnUrlEvent(msg, requestContext)
             dialog = createBaseDialog()
             dialog.Title = "No Results"
             dialog.Text = "Sorry, we couldn't find anything for '" + m.SearchTerm + "'"
-            dialog.Show()
+            dialog.Show(true)
             m.Listener.Screen.Close()
         end if
     end if

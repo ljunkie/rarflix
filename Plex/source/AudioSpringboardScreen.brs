@@ -125,22 +125,20 @@ Function audioHandleMessage(msg) As Boolean
                     audioPlayer.Prev()
                 end if
             else if buttonCommand = "more" then
-                m.dialog = createBaseDialog()
-                m.dialog.Title = ""
-                m.dialog.Text = ""
-                m.dialog.Item = m.metadata
+                dialog = createBaseDialog()
+                dialog.Title = ""
+                dialog.Text = ""
+                dialog.Item = m.metadata
                 if m.IsShuffled then
-                    m.dialog.SetButton("shuffle", "Shuffle: On")
+                    dialog.SetButton("shuffle", "Shuffle: On")
                 else
-                    m.dialog.SetButton("shuffle", "Shuffle: Off")
+                    dialog.SetButton("shuffle", "Shuffle: Off")
                 end if
-                m.dialog.SetButton("rate", "_rate_")
-                m.dialog.SetButton("close", "Back")
-                m.dialog.HandleButton = audioDialogHandleButton
-                m.dialog.ParentScreen = m
-                m.dialog.Show()
-                m.dialog.ParentScreen = invalid
-                m.dialog = invalid
+                dialog.SetButton("rate", "_rate_")
+                dialog.SetButton("close", "Back")
+                dialog.HandleButton = audioDialogHandleButton
+                dialog.ParentScreen = m
+                dialog.Show()
             else
                 handled = false
             end if
