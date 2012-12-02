@@ -737,6 +737,181 @@ Sub manageRefreshServerList(removeOffset)
     m.AddItem({title: "Close"}, "close")
 End Sub
 
+'*** Video Playback Options ***
+
+Function createVideoOptionsScreen(item, viewController) As Object
+    obj = createBasePrefsScreen(viewController)
+
+    obj.Item = item
+
+    obj.OnUserInput = videoOptionsOnUserInput
+    obj.HandleMessage = videoOptionsHandleMessage
+    obj.GetEnumValue = videoOptionsGetEnumValue
+
+    ' Transcoding vs. direct play
+    options = [
+        { title: "Automatic", EnumValue: "0" },
+        { title: "Direct Play", EnumValue: "1" },
+        { title: "Direct Play w/ Fallback", EnumValue: "2" },
+        { title: "Direct Stream/Transcode", EnumValue: "3" },
+        { title: "Transcode", EnumValue: "4" }
+    ]
+    obj.Prefs["playback"] = {
+        values: options,
+        label: "Transcoding",
+        heading: "Should this video be transcoded or use Direct Play?",
+        default: RegRead("directplay", "preferences", "0")
+    }
+
+    ' Quality
+    qualities = [
+        { title: "720 kbps, 320p", EnumValue: "4" },
+        { title: "1.5 Mbps, 480p", EnumValue: "5" },
+        { title: "2.0 Mbps, 720p", EnumValue: "6" },
+        { title: "3.0 Mbps, 720p", EnumValue: "7" },
+        { title: "4.0 Mbps, 720p", EnumValue: "8" },
+        { title: "8.0 Mbps, 1080p", EnumValue: "9"}
+        { title: "10.0 Mbps, 1080p", EnumValue: "10" }
+        { title: "12.0 Mbps, 1080p", EnumValue: "11" }
+        { title: "20.0 Mbps, 1080p", EnumValue: "12" }
+    ]
+    obj.Prefs["quality"] = {
+        values: qualities,
+        label: "Quality",
+        heading: "Higher settings require more bandwidth and may buffer",
+        default: RegRead("quality", "preferences", "7")
+    }
+
+    audioStreams = []
+    subtitleStreams = []
+    defaultAudio = ""
+    defaultSubtitle = ""
+
+    subtitleStreams.Push({ title: "No Subtitles", EnumValue: "" })
+
+    if item.preferredMediaItem <> invalid AND item.preferredMediaItem.preferredPart <> invalid then
+        for each stream in item.preferredMediaItem.preferredPart.streams
+            if stream.streamType = "2" then
+                language = firstOf(stream.Language, "Unknown")
+                format = ucase(firstOf(stream.Codec, ""))
+                if format = "DCA" then format = "DTS"
+                if stream.Channels <> invalid then
+                    if stream.Channels = "2" then
+                        format = format + " Stereo"
+                    else if stream.Channels = "6" then
+                        format = format + " 5.1"
+                    else if stream.Channels = "8" then
+                        format = format + " 7.1"
+                    end if
+                end if
+                if format <> "" then
+                    title = language + " (" + format + ")"
+                else
+                    title = language
+                end if
+                if stream.selected <> invalid then
+                    defaultAudio = stream.Id
+                end if
+
+                audioStreams.Push({ title: title, EnumValue: stream.Id })
+            else if stream.streamType = "3" then
+                language = firstOf(stream.Language, "Unknown")
+                if stream.Codec = "srt" then
+                    language = language + " (*)"
+                end if
+                if stream.selected <> invalid then
+                    defaultSubtitle = stream.Id
+                end if
+
+                subtitleStreams.Push({ title: language, EnumValue: stream.Id })
+            end if
+        next
+    end if
+
+    ' Audio streams
+    Debug("Found audio streams: " + tostr(audioStreams.Count()))
+    if audioStreams.Count() > 0 then
+        obj.Prefs["audio"] = {
+            values: audioStreams,
+            label: "Audio Stream",
+            heading: "Select an audio stream",
+            default: defaultAudio
+        }
+    end if
+
+    ' Subtitle streams
+    Debug("Found subtitle streams: " + tostr(subtitleStreams.Count() - 1))
+    if subtitleStreams.Count() > 1 then
+        obj.Prefs["subtitles"] = {
+            values: subtitleStreams,
+            label: "Subtitle Stream",
+            heading: "Select a subtitle stream",
+            default: defaultSubtitle
+        }
+    end if
+
+    obj.Screen.SetHeader("Video playback options")
+
+    possiblePrefs = ["playback", "quality", "audio", "subtitles"]
+    for each key in possiblePrefs
+        pref = obj.Prefs[key]
+        if pref <> invalid then
+            obj.AddItem({title: pref.label}, key)
+            obj.AppendValue(invalid, obj.GetEnumValue(key))
+        end if
+    next
+
+    obj.AddItem({title: "Close"}, "close")
+
+    return obj
+End Function
+
+Function videoOptionsHandleMessage(msg) As Boolean
+    handled = false
+
+    if type(msg) = "roListScreenEvent" then
+        handled = true
+
+        if msg.isScreenClosed() then
+            Debug("Closing video options screen")
+            m.ViewController.PopScreen(m)
+        else if msg.isListItemSelected() then
+            command = m.GetSelectedCommand(msg.GetIndex())
+            if command = "playback" OR command = "audio" OR command = "subtitles" OR command = "quality" then
+                pref = m.Prefs[command]
+                m.currentIndex = msg.GetIndex()
+                m.currentEnumKey = command
+                screen = m.ViewController.CreateEnumInputScreen(pref.values, pref.default, pref.heading, [pref.label], false)
+                screen.Listener = m
+                screen.Show()
+            else if command = "close" then
+                m.Screen.Close()
+            end if
+        end if
+    end if
+
+    return handled
+End Function
+
+Sub videoOptionsOnUserInput(value, screen)
+    if screen.SelectedIndex <> invalid then
+        m.Changes.AddReplace(m.currentEnumKey, screen.SelectedValue)
+        m.Prefs[m.currentEnumKey].default = screen.SelectedValue
+        m.AppendValue(m.currentIndex, screen.SelectedLabel)
+    end if
+End Sub
+
+Function videoOptionsGetEnumValue(key)
+    pref = m.Prefs[key]
+    for each item in pref.values
+        if item.EnumValue = pref.default then
+            return item.title
+        end if
+    next
+
+    return invalid
+End Function
+
 '*** Helper functions ***
 
 Function getCurrentMyPlexLabel() As String
