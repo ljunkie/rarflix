@@ -52,6 +52,7 @@ Function ssHandleMessage(msg) As Boolean
                 end if
                 m.ProgressiveTimer.Mark()
                 m.ProgressiveTimer.Active = true
+                m.ViewController.AddTimer(m.ProgressiveTimer, m)
                 m.SearchTerm = msg.GetMessage()
             end if
         else if msg.isFullResult() then
