@@ -321,7 +321,7 @@ Function prefsMainHandleMessage(msg) As Boolean
     return handled
 End Function
 
-Sub prefsMainActivate()
+Sub prefsMainActivate(priorScreen)
     if m.checkMyPlexOnActivate then
         m.checkMyPlexOnActivate = false
         if m.myplex.IsSignedIn then

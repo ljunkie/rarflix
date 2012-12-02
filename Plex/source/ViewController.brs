@@ -20,6 +20,7 @@ Function createViewController() As Object
     controller.CreateMyPlexPinScreen = vcCreateMyPlexPinScreen
 
     controller.CreatePhotoPlayer = vcCreatePhotoPlayer
+    controller.CreateVideoPlayer = vcCreateVideoPlayer
 
     controller.InitializeOtherScreen = vcInitializeOtherScreen
     controller.AssignScreenID = vcAssignScreenID
@@ -223,6 +224,18 @@ Function vcCreatePhotoPlayer(context, contextIndex=invalid, show=true)
     return screen
 End Function
 
+Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=true)
+    screen = createVideoPlayerScreen(metadata, seekValue, directPlayOptions, m)
+
+    m.AddBreadcrumbs(screen, invalid)
+    m.UpdateScreenProperties(screen)
+    m.PushScreen(screen)
+
+    if show then screen.Show()
+
+    return screen
+End Function
+
 Sub vcInitializeOtherScreen(screen, breadcrumbs)
     m.AddBreadcrumbs(screen, breadcrumbs)
     m.UpdateScreenProperties(screen)
@@ -238,7 +251,7 @@ End Sub
 
 Sub vcPushScreen(screen)
     m.AssignScreenID(screen)
-    Debug("Pushing screen " + tostr(screen.ScreenID) + " onto view controller stack")
+    Debug("Pushing screen " + tostr(screen.ScreenID) + " onto view controller stack - " + type(screen.Screen))
     m.screens.Push(screen)
 End Sub
 
@@ -292,7 +305,7 @@ Sub vcPopScreen(screen)
     end if
 
     ' Let the new top of the stack know that it's visible again.
-    m.screens.Peek().Activate()
+    m.screens.Peek().Activate(screen)
 
     if m.screens.Count() = 0 then
         m.Home.CreateQueueRequests(true)

@@ -1,231 +1,136 @@
-Function videoAddButtons(obj) As Object
-    screen = obj.Screen
-    metadata = obj.metadata
-    media = obj.media
+'*
+'* A wrapper around a video player that implements are screen interface.
+'*
 
-    buttonCommands = CreateObject("roAssociativeArray")
-    screen.ClearButtons()
-    buttonCount = 0
-    if metadata.viewOffset <> invalid then
-        intervalInSeconds = fix(val(metadata.viewOffset)/(1000))
-        resumeTitle = "Resume from "+TimeDisplay(intervalInSeconds)
-        screen.AddButton(buttonCount, resumeTitle)
-        buttonCommands[str(buttonCount)] = "resume"
-        buttonCount = buttonCount + 1
-    endif
-    screen.AddButton(buttonCount, m.PlayButtonStates[m.PlayButtonState].label)
-    buttonCommands[str(buttonCount)] = "play"
-    buttonCount = buttonCount + 1
+Function createVideoPlayerScreen(metadata, seekValue, directPlayOptions, viewController)
+    obj = CreateObject("roAssociativeArray")
+    initBaseScreen(obj, viewController)
 
-    Debug("Media = " + tostr(media))
-    Debug("Can direct play = " + tostr(videoCanDirectPlay(media)))
+    obj.Item = metadata
 
-    supportedIdentifier = (m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
-    if supportedIdentifier then
-        if metadata.viewCount <> invalid AND val(metadata.viewCount) > 0 then
-            screen.AddButton(buttonCount, "Mark as unwatched")
-            buttonCommands[str(buttonCount)] = "unscrobble"
-            buttonCount = buttonCount + 1
-        else
-            if metadata.viewOffset <> invalid AND val(metadata.viewOffset) > 0 then
-                screen.AddButton(buttonCount, "Mark as unwatched")
-                buttonCommands[str(buttonCount)] = "unscrobble"
-                buttonCount = buttonCount + 1
-            end if
-            screen.AddButton(buttonCount, "Mark as watched")
-            buttonCommands[str(buttonCount)] = "scrobble"
-            buttonCount = buttonCount + 1
-        end if
-    end if
+    obj.Show = videoPlayerShow
+    obj.HandleMessage = videoPlayerHandleMessage
+    obj.OnTimerExpired = videoPlayerOnTimerExpired
 
-    if m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex" AND m.metadata.id <> invalid then
-        screen.AddButton(buttonCount, "Delete from queue")
-        buttonCommands[str(buttonCount)] = "delete"
-        buttonCount = buttonCount + 1
-    end if
+    obj.SeekValue = seekValue
+    obj.DirectPlayOptions = directPlayOptions
+    obj.CreateVideoPlayer = videoPlayerCreateVideoPlayer
 
-    screen.AddButton(buttonCount, "Playback options")
-    buttonCommands[str(buttonCount)] = "options"
-    buttonCount = buttonCount + 1
+    obj.pingTimer = invalid
+    obj.lastPosition = 0
+    obj.isPlayed = false
+    obj.playbackError = false
+    obj.underrunCount = 0
 
-    if supportedIdentifier then
-        if metadata.UserRating = invalid then
-            metadata.UserRating = 0
-        endif
-        if metadata.StarRating = invalid then
-            metadata.StarRating = 0
-        endif
-        screen.AddRatingButton(buttonCount, metadata.UserRating, metadata.StarRating)
-        buttonCommands[str(buttonCount)] = "rateVideo"
-        buttonCount = buttonCount + 1
-    end if
-    return buttonCommands
+    obj.Cleanup = videoPlayerCleanup
+    obj.ShowPlaybackError = videoPlayerShowPlaybackError
+
+    return obj
 End Function
 
-Function videoHandleMessage(msg) As Boolean
+Sub videoPlayerShow()
+    if NOT m.playbackError then
+        m.Screen = m.CreateVideoPlayer()
+    else if m.DirectPlayOptions = 0 OR m.DirectPlayOptions = 2 then
+        m.DirectPlayOptions = 3
+        m.Screen = m.CreateVideoPlayer()
+    else
+        Debug("Error while playing video, nothing left to fall back to")
+        m.ShowPlaybackError()
+        m.Screen = invalid
+    end if
+
+    if m.Screen <> invalid then
+        if m.IsTranscoded then
+            Debug("Starting to play transcoded video", m.Item.server)
+
+            if m.pingTimer = invalid then
+                m.pingTimer = createTimer()
+                m.pingTimer.Name = "ping"
+                m.pingTimer.SetDuration(60005, true)
+                m.ViewController.AddTimer(m.pingTimer, m)
+            end if
+
+            m.pingTimer.Active = true
+            m.pingTimer.Mark()
+        else
+            Debug("Starting to direct play video", m.Item.server)
+        end if
+
+        m.Screen.Show()
+    else
+        m.ViewController.PopScreen(m)
+        m.Cleanup()
+    end if
+End Sub
+
+Function videoPlayerCreateVideoPlayer()
+    Debug("MediaPlayer::playVideo: Displaying video: " + tostr(m.Item.title))
+    seconds = int(m.SeekValue/1000)
     server = m.Item.server
 
-    if msg = invalid then
-        m.msgTimeout = 0
-        m.Refresh(true)
-        return true
-    else if msg.isScreenClosed() then
-        RegWrite("quality", m.OrigQuality, "preferences")
-        return false
-    else if msg.isButtonPressed() then
-        buttonCommand = m.buttonCommands[str(msg.getIndex())]
-        Debug("Button command: " + tostr(buttonCommand))
-        if buttonCommand = "play" OR buttonCommand = "resume" then
-            startTime = 0
-            if buttonCommand = "resume" then
-                startTime = int(val(m.metadata.viewOffset))
-            endif
-            directPlayOptions = m.PlayButtonStates[m.PlayButtonState]
-            Debug("Playing video with Direct Play options set to: " + directPlayOptions.label)
-            m.PlayVideo(startTime, directPlayOptions.value)
-            '* Refresh play data after playing, but only after a timeout,
-            '* otherwise we may leak objects if the play ended because the
-            '* springboard was closed.
-            m.msgTimeout = 1
-        else if buttonCommand = "scrobble" then
-            'scrobble key here
-            server.Scrobble(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier)
-            '* Refresh play data after scrobbling
-            m.Refresh(true)
-        else if buttonCommand = "unscrobble" then
-            'unscrobble key here
-            server.Unscrobble(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier)
-            '* Refresh play data after unscrobbling
-            m.Refresh(true)
-        else if buttonCommand = "delete" then
-            server.Delete(m.metadata.id)
-            m.Screen.Close()
-        else if buttonCommand = "options" then
-            screen = createVideoOptionsScreen(m.metadata, m.ViewController)
-            m.ViewController.InitializeOtherScreen(screen, ["Video Playback Options"])
-            screen.Show()
-
-            if screen.Changes.DoesExist("playback") then
-                m.PlayButtonState = screen.Changes["playback"].toint()
-            end if
-
-            if screen.Changes.DoesExist("quality") then
-                RegWrite("quality", screen.Changes["quality"], "preferences")
-                m.metadata.preferredMediaItem = PickMediaItem(m.metadata.media, m.metadata.HasDetails)
-            end if
-
-            if screen.Changes.DoesExist("audio") then
-                m.media.canDirectPlay = invalid
-                server.UpdateAudioStreamSelection(m.media.preferredPart.id, screen.Changes["audio"])
-            end if
-
-            if screen.Changes.DoesExist("subtitles") then
-                m.media.canDirectPlay = invalid
-                server.UpdateSubtitleStreamSelection(m.media.preferredPart.id, screen.Changes["subtitles"])
-            end if
-
-            if NOT screen.Changes.IsEmpty() then
-                m.Refresh(true)
-            end if
-            screen = invalid
-	    else if buttonCommand = "rateVideo" then                
-		    rateValue% = msg.getData() /10
-		    m.metadata.UserRating = msg.getdata()
-		    server.Rate(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier,rateValue%.ToStr())
-        else
-            return false
-        endif
-
-        return true
-    end if
-
-    return false
-End Function
-
-Sub playVideo(seekValue=0, directPlayOptions=0)
-    metadata = m.metadata
-    server = metadata.server
-
-	Debug("MediaPlayer::playVideo: Displaying video: " + tostr(metadata.title))
-	seconds = int(seekValue/1000)
-
-    if (metadata.preferredMediaItem <> invalid AND metadata.preferredMediaItem.forceTranscode <> invalid) AND (directPlayOptions <> 1 AND directPlayOptions <> 2) then
-        directPlayOptions = 4
+    if (m.Item.preferredMediaItem <> invalid AND m.Item.preferredMediaItem.forceTranscode <> invalid) AND (m.DirectPlayOptions <> 1 AND m.DirectPlayOptions <> 2) then
+        m.DirectPlayOptions = 4
     end if
 
     origDirectPlayOptions = RegRead("directplay", "preferences", "0")
-    if origDirectPlayOptions <> directPlayOptions.tostr() then
-        Debug("Temporarily overwriting direct play preference to: " + tostr(directPlayOptions))
-        RegWrite("directplay", directPlayOptions.tostr(), "preferences")
+    if origDirectPlayOptions <> m.DirectPlayOptions.tostr() then
+        Debug("Temporarily overwriting direct play preference to: " + tostr(m.DirectPlayOptions))
+        RegWrite("directplay", m.DirectPlayOptions.tostr(), "preferences")
         RegWrite("directplay_restore", origDirectPlayOptions, "preferences")
         Capabilities(true)
     else
         origDirectPlayOptions = invalid
     end if
 
-    videoItem = server.ConstructVideoItem(metadata, seconds, directPlayOptions < 3, directPlayOptions = 1 OR directPlayOptions = 2)
+    videoItem = server.ConstructVideoItem(m.Item, seconds, m.DirectPlayOptions < 3, m.DirectPlayOptions = 1 OR m.DirectPlayOptions = 2)
 
     if videoItem = invalid then
         Debug("Can't play video, server was unable to construct video item", server)
-        success = false
-    else
-        port = CreateObject("roMessagePort")
-        videoPlayer = CreateObject("roVideoScreen")
-        videoPlayer.SetMessagePort(port)
-        videoPlayer.SetContent(videoItem)
-
-        ' If we're playing the video from the server, add appropriate X-Plex
-        ' headers.
-        if server.IsRequestToServer(videoItem.StreamUrls[0]) then
-            AddPlexHeaders(videoPlayer, server.AccessToken)
-        end if
-
-        if videoItem.IsTranscoded then
-            cookie = server.StartTranscode(videoItem.StreamUrls[0])
-            if cookie <> invalid then
-                videoPlayer.AddHeader("Cookie", cookie)
-            end if
-        else
-            for each header in videoItem.IndirectHttpHeaders
-                for each name in header
-                    videoPlayer.AddHeader(name, header[name])
-                next
-            next
-        end if
-
-        videoPlayer.SetPositionNotificationPeriod(5)
-        videoPlayer.Show()
-
-        if videoItem.IsTranscoded then
-            Debug("Starting to play transcoded video", server)
-        else
-            Debug("Starting to direct play video", server)
-        end if
-
-        success = videoMessageLoop(server, metadata, port, videoItem.IsTranscoded)
-    end if
-
-    if NOT success then
-        Debug("Error occurred while playing video", server)
-        if (videoItem <> invalid AND videoItem.IsTranscoded) OR directPlayOptions >= 3 then
-            ' Nothing left to fall back to, tell the user
-            dialog = createBaseDialog()
-            dialog.Title = "Video Unavailable"
-            dialog.Text = "We're unable to play this video, make sure the server is running and has access to this video."
-            dialog.Show()
-        else if directPlayOptions = 1 then
-            dialog = createBaseDialog()
-            dialog.Title = "Direct Play Unavailable"
-            dialog.Text = "This video isn't supported for Direct Play."
-            dialog.Show()
+        if m.DirectPlayOptions >= 3 OR m.DirectPlayOptions = 1 then
+            m.ShowPlaybackError()
+            return invalid
         else
             ' Force transcoding this time
-            m.PlayVideo(seekValue, 3)
+            m.DirectPlayOptions = 3
+            return m.CreateVideoPlayer()
         end if
     end if
 
+    videoPlayer = CreateObject("roVideoScreen")
+    videoPlayer.SetMessagePort(m.Port)
+    videoPlayer.SetContent(videoItem)
+
+    ' If we're playing the video from the server, add appropriate X-Plex
+    ' headers.
+    if server.IsRequestToServer(videoItem.StreamUrls[0]) then
+        AddPlexHeaders(videoPlayer, server.AccessToken)
+    end if
+
+    if videoItem.IsTranscoded then
+        cookie = server.StartTranscode(videoItem.StreamUrls[0])
+        if cookie <> invalid then
+            videoPlayer.AddHeader("Cookie", cookie)
+        end if
+    else
+        for each header in videoItem.IndirectHttpHeaders
+            for each name in header
+                videoPlayer.AddHeader(name, header[name])
+            next
+        next
+    end if
+
+    videoPlayer.SetPositionNotificationPeriod(5)
+
+    m.IsTranscoded = videoItem.IsTranscoded
+
+    return videoPlayer
+End Function
+
+Sub videoPlayerCleanup()
+    origDirectPlayOptions = RegRead("directplay_restore", "preferences", invalid)
     if origDirectPlayOptions <> invalid then
-        Debug("Restoring direct play options to: " + tostr(origDirectPlayOptions))
+        Debug("Restoring direct play options to: " + origDirectPlayOptions)
         RegWrite("directplay", origDirectPlayOptions, "preferences")
         RegDelete("directplay_restore", "preferences")
         Capabilities(true)
@@ -245,14 +150,114 @@ Sub playVideo(seekValue=0, directPlayOptions=0)
         dialog.Show()
 
         if m.OrigQuality <> dialog.Quality then
-            m.metadata.preferredMediaItem = PickMediaItem(m.metadata.media, m.metadata.HasDetails)
+            m.Item.preferredMediaItem = PickMediaItem(m.Item.media, m.Item.HasDetails)
             m.OrigQuality = dialog.Quality
         end if
     end if
 
-    if m.metadata.RestoreSubtitleID <> invalid then
+    if m.Item.RestoreSubtitleID <> invalid then
         Debug("Restoring subtitle selection")
-        server.UpdateSubtitleStreamSelection(m.metadata.RestoreSubtitlePartID, m.metadata.RestoreSubtitleID)
+        m.Item.server.UpdateSubtitleStreamSelection(m.Item.RestoreSubtitlePartID, m.Item.RestoreSubtitleID)
+    end if
+End Sub
+
+Sub videoPlayerShowPlaybackError()
+    if m.DirectPlayOptions >= 3 then
+        ' Nothing left to fall back to, tell the user
+        dialog = createBaseDialog()
+        dialog.Title = "Video Unavailable"
+        dialog.Text = "We're unable to play this video, make sure the server is running and has access to this video."
+        dialog.Show()
+    else if m.DirectPlayOptions = 1 then
+        dialog = createBaseDialog()
+        dialog.Title = "Direct Play Unavailable"
+        dialog.Text = "This video isn't supported for Direct Play."
+        dialog.Show()
+    end if
+End Sub
+
+Function videoPlayerHandleMessage(msg) As Boolean
+    handled = false
+    server = m.Item.server
+
+    Debug("MediaPlayer::playVideo: Reacting to video screen event message -> " + tostr(msg))
+
+    if type(msg) = "roVideoScreenEvent" then
+        handled = true
+
+        if msg.isScreenClosed() then
+            Debug("MediaPlayer::playVideo::VideoScreenEvent::isScreenClosed: position -> " + tostr(m.lastPosition))
+            if m.Item.ratingKey <> invalid then
+                if m.isPlayed then
+                    Debug("MediaPlayer::playVideo::VideoScreenEvent::isScreenClosed: scrobbling media -> " + tostr(m.Item.ratingKey))
+                    server.Scrobble(m.Item.ratingKey, m.Item.mediaContainerIdentifier)
+                else
+                    server.SetProgress(m.Item.ratingKey, m.Item.mediaContainerIdentifier, 1000 * m.lastPosition)
+                end if
+            end if
+            if m.IsTranscoded then server.StopVideo()
+
+            if m.playbackError then
+                m.Show()
+            else
+                m.ViewController.PopScreen(m)
+                m.Cleanup()
+            end if
+        else if msg.isPlaybackPosition() then
+            m.lastPosition = msg.GetIndex()
+            if m.pingTimer <> invalid then m.pingTimer.Mark()
+            if m.Item.ratingKey <> invalid then
+                if m.Item.Length <> invalid AND m.Item.Length > 0 then
+                    playedFraction = m.lastPosition/m.Item.Length
+                    Debug("MediaPlayer::playVideo::VideoScreenEvent::isPlaybackPosition: position -> " + tostr(m.lastPosition) + " playedFraction -> " + tostr(playedFraction))
+                    if playedFraction > 0.90 then
+                        m.isPlayed = true
+                    end if
+                end if
+                Debug("MediaPlayer::playVideo::VideoScreenEvent::isPlaybackPosition: set progress -> " + tostr(1000*m.lastPosition))
+                server.SetProgress(m.Item.ratingKey, m.Item.mediaContainerIdentifier, 1000*m.lastPosition)
+            end if
+        else if msg.isRequestFailed() then
+            Debug("MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed - message = " + tostr(msg.GetMessage()))
+            Debug("MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed - data = " + tostr(msg.GetData()))
+            Debug("MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed - index = " + tostr(msg.GetIndex()))
+            m.playbackError = true
+        else if msg.isPaused() then
+            Debug("MediaPlayer::playVideo::VideoScreenEvent::isPaused: position -> " + tostr(m.lastPosition))
+        else if msg.isPartialResult() then
+            if m.Item.Length <> invalid AND m.Item.Length > 0 then
+                playedFraction = m.lastPosition/m.Item.Length
+                Debug("MediaPlayer::playVideo::VideoScreenEvent::isPartialResult: position -> " + tostr(m.lastPosition) + " playedFraction -> " + tostr(playedFraction))
+                if playedFraction > 0.90 then
+                    m.isPlayed = true
+                end if
+            end if
+            if m.IsTranscoded then server.StopVideo()
+        else if msg.isFullResult() then
+            Debug("MediaPlayer::playVideo::VideoScreenEvent::isFullResult: position -> " + tostr(m.lastPosition))
+            m.isPlayed = true
+            if m.IsTranscoded then server.StopVideo()
+        else if msg.isStreamStarted() then
+            Debug("MediaPlayer::playVideo::VideoScreenEvent::isStreamStarted: position -> " + tostr(m.lastPosition))
+            Debug("Message data -> " + tostr(msg.GetInfo()))
+
+            if msg.GetInfo().IsUnderrun = true then
+                m.underrunCount = m.underrunCount + 1
+                if m.underrunCount = 4 and not GetGlobalAA().DoesExist("underrun_warning_shown") then
+                    GetGlobalAA().AddReplace("show_underrun_warning", "1")
+                end if
+            end if
+        else
+            Debug("Unknown event: " + tostr(msg.GetType()) + " msg: " + tostr(msg.GetMessage()))
+        end if
+    end if
+
+    return handled
+End Function
+
+Sub videoPlayerOnTimerExpired(timer)
+    if m.IsTranscoded then
+        m.Item.server.PingTranscode()
     end if
 End Sub
 
@@ -466,87 +471,6 @@ Function videoCanDirectPlay(mediaItem) As Boolean
     end if
 
     return false
-End Function
-
-Function videoMessageLoop(server, metadata, messagePort, transcoded) As Boolean
-    scrobbleThreshold = 0.90
-    lastPosition = 0
-    played = false
-    success = true
-    underrunCount = 0
-
-    while true
-    	' Time out after 60 seconds causing invalid event allowing ping to be sent during 
-    	' long running periods with no video events (e.g. user pause). Note that this timeout
-    	' has to be bigger than the SetPositionNotificationPeriod above to allow actual
-    	' video screen isPlaybackPosition events to be generated and reacted to
-        msg = wait(60005, messagePort)
-        Debug("MediaPlayer::playVideo: Reacting to video screen event message -> " + tostr(msg))
-        if transcoded then server.PingTranscode()
-        if type(msg) = "roVideoScreenEvent"
-            if msg.isScreenClosed() then
-                Debug("MediaPlayer::playVideo::VideoScreenEvent::isScreenClosed: position -> " + tostr(lastPosition))
-                if metadata.ratingKey <> invalid then
-                    if played then
-                        Debug("MediaPlayer::playVideo::VideoScreenEvent::isScreenClosed: scrobbling media -> " + tostr(metadata.ratingKey))
-                        server.Scrobble(metadata.ratingKey, metadata.mediaContainerIdentifier)
-                    else
-                        server.SetProgress(metadata.ratingKey, metadata.mediaContainerIdentifier, 1000*lastPosition)
-                    end if
-                end if
-                if transcoded then server.StopVideo()
-                exit while
-            else if msg.isPlaybackPosition() then
-                lastPosition = msg.GetIndex()
-                if metadata.ratingKey <> invalid then
-                    if metadata.Length <> invalid AND metadata.Length > 0 then
-                        playedFraction = lastPosition/metadata.Length
-                        Debug("MediaPlayer::playVideo::VideoScreenEvent::isPlaybackPosition: position -> " + tostr(lastPosition) + " playedFraction -> " + tostr(playedFraction))
-                        if playedFraction > scrobbleThreshold then
-                            played = true
-                        end if
-                    end if
-                    Debug("MediaPlayer::playVideo::VideoScreenEvent::isPlaybackPosition: set progress -> " + tostr(1000*lastPosition))
-                    server.SetProgress(metadata.ratingKey, metadata.mediaContainerIdentifier, 1000*lastPosition)
-                end if
-            else if msg.isRequestFailed() then
-                Debug("MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed - message = " + tostr(msg.GetMessage()))
-                Debug("MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed - data = " + tostr(msg.GetData()))
-                Debug("MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed - index = " + tostr(msg.GetIndex()))
-                success = false
-            else if msg.isPaused() then
-                Debug("MediaPlayer::playVideo::VideoScreenEvent::isPaused: position -> " + tostr(lastPosition))
-            else if msg.isPartialResult() then
-                if metadata.Length <> invalid AND metadata.Length > 0 then
-                	playedFraction = lastPosition/metadata.Length
-                	Debug("MediaPlayer::playVideo::VideoScreenEvent::isPartialResult: position -> " + tostr(lastPosition) + " playedFraction -> " + tostr(playedFraction))
-            		if playedFraction > scrobbleThreshold then
-            			played = true
-            		end if
-            	end if
-                if transcoded then server.StopVideo()
-            else if msg.isFullResult() then
-            	Debug("MediaPlayer::playVideo::VideoScreenEvent::isFullResult: position -> " + tostr(lastPosition))
-    			played = true
-                if transcoded then server.StopVideo()
-                success = true
-            else if msg.isStreamStarted() then
-            	Debug("MediaPlayer::playVideo::VideoScreenEvent::isStreamStarted: position -> " + tostr(lastPosition))
-            	Debug("Message data -> " + tostr(msg.GetInfo()))
-
-                if msg.GetInfo().IsUnderrun = true then
-                    underrunCount = underrunCount + 1
-                    if underrunCount = 4 and not GetGlobalAA().DoesExist("underrun_warning_shown") then
-                        GetGlobalAA().AddReplace("show_underrun_warning", "1")
-                    end if
-                end if
-            else
-                Debug("Unknown event: " + tostr(msg.GetType()) + " msg: " + tostr(msg.GetMessage()))
-            endif
-        end if
-    end while
-
-    return success
 End Function
 
 Function createVideoOptionsScreen(item, viewController) As Object

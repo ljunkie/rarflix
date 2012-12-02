@@ -22,7 +22,7 @@ Sub initBaseScreen(screen, viewController)
     viewController.AssignScreenID(screen)
 End Sub
 
-Sub baseActivate()
+Sub baseActivate(priorScreen)
     ' Called when the screen becomes active again, after whatever was opened
     ' after it has been popped. Nothing to do here in most cases.
 End Sub

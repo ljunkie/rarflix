@@ -285,7 +285,7 @@ Sub gridDestroyAndRecreate()
     end if
 End Sub
 
-Sub gridActivate()
+Sub gridActivate(priorScreen)
     ' If our screen was destroyed by some child screen, recreate it now
     if m.Screen = invalid then
         Debug("Recreating grid...")
