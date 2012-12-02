@@ -59,6 +59,8 @@ Function createViewController() As Object
     controller.TimersByScreen = {}
     controller.AddTimer = vcAddTimer
 
+    InitWebServer(controller)
+
     ' Stuff the controller into the global object
     m.ViewController = controller
     controller.myplex = createMyPlexManager(controller)
@@ -324,6 +326,7 @@ Sub vcShow()
 
     timeout = 0
     while m.screens.Count() > 0
+        m.WebServer.prewait()
         msg = wait(timeout, m.GlobalMessagePort)
         if msg <> invalid then
             ' Printing debug information about every message may be overkill
@@ -350,6 +353,9 @@ Sub vcShow()
                 listener = m.SocketListeners[msg.getSocketID().tostr()]
                 if listener <> invalid then
                     listener.OnSocketEvent(msg)
+                else
+                    ' Assume it was for the web server (it won't hurt if it wasn't)
+                    m.WebServer.postwait()
                 end if
             else if type(msg) = "roAudioPlayerEvent" then
                 m.AudioPlayer.HandleMessage(msg)
@@ -560,4 +566,21 @@ Sub vcAddTimer(timer, listener)
         m.TimersByScreen[screenID] = []
     end if
     m.TimersByScreen[screenID].Push(timer.ID)
+End Sub
+
+Sub InitWebServer(vc)
+    ' Initialize some globals for the web server
+    globals = CreateObject("roAssociativeArray")
+    globals.pkgname = "Plex/Roku"
+    globals.maxRequestLength = 4000
+    globals.idletime = 60
+    globals.wwwroot = "tmp:/"
+    globals.index_name = "index.html"
+    globals.serverName = "Plex/Roku"
+    AddGlobals(globals)
+    MimeType()
+    HttpTitle()
+    ClassReply().AddHandler("/logs", ProcessLogsRequest)
+
+    vc.WebServer = InitServer({msgPort: vc.GlobalMessagePort, port: 8324})
 End Sub
