@@ -60,23 +60,14 @@ Sub refreshHomeScreen(changes)
 End Sub
 
 Sub ShowHelpScreen()
-    port = CreateObject("roMessagePort")
-    screen = CreateObject("roParagraphScreen")
-    screen.SetMessagePort(port)
-    screen.AddHeaderText("Welcome to Plex for Roku!")
-    screen.AddParagraph("Plex for Roku automatically connects to Plex Media Servers on your local network and also works with myPlex to view queued items and connect to your published and shared servers.")
-    screen.AddParagraph("To download and install Plex Media Server on your computer, visit http://plexapp.com/getplex")
-    screen.AddParagraph("For more information on getting started, visit http://plexapp.com/roku")
-    screen.AddButton(1, "close")
+    header = "Welcome to Plex for Roku!"
+    paragraphs = []
+    paragraphs.Push("Plex for Roku automatically connects to Plex Media Servers on your local network and also works with myPlex to view queued items and connect to your published and shared servers.")
+    paragraphs.Push("To download and install Plex Media Server on your computer, visit http://plexapp.com/getplex")
+    paragraphs.Push("For more information on getting started, visit http://plexapp.com/roku")
+
+    screen = createParagraphScreen(header, paragraphs, GetViewController())
+    GetViewController().InitializeOtherScreen(screen, invalid)
 
     screen.Show()
-
-    while true
-        msg = wait(0, port)
-        if type(msg) = "roParagraphScreenEvent" then
-            if msg.isButtonPressed() OR msg.isScreenClosed() then
-                exit while
-            end if
-        end if
-    end while
 End Sub
