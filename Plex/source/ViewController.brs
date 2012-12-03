@@ -59,11 +59,14 @@ Function createViewController() As Object
     controller.TimersByScreen = {}
     controller.AddTimer = vcAddTimer
 
-    InitWebServer(controller)
 
     ' Stuff the controller into the global object
     m.ViewController = controller
     controller.myplex = createMyPlexManager(controller)
+
+    ' Initialize things that run in the background
+    InitWebServer(controller)
+    createGDMAdvertiser(controller)
     controller.AudioPlayer = createAudioPlayer(controller)
 
     return controller

@@ -146,3 +146,99 @@ End Sub
 Sub gdmStop()
     m.udp.Close()
 End Sub
+
+'*** GDM Player Advertiser ***
+
+Function createGDMAdvertiser(viewController)
+    obj = CreateObject("roAssociativeArray")
+
+    groupAddr = CreateObject("roSocketAddress")
+    groupAddr.setHostName("239.0.0.250")
+    groupAddr.setPort(32412)
+
+    listenAddr = CreateObject("roSocketAddress")
+    listenAddr.setPort(32412)
+    listenAddr.setAddress("0.0.0.0")
+
+    udp = CreateObject("roDatagramSocket")
+
+    if not udp.setAddress(listenAddr) then
+        Debug("Failed to set address on GDM advertiser socket")
+        return invalid
+    end if
+
+    if not udp.joinGroup(groupAddr) then
+        Debug("Failed to join multicast group on GDM advertiser socket")
+        return invalid
+    end if
+
+    udp.setMulticastLoop(false)
+    udp.notifyReadable(true)
+    udp.setMessagePort(viewController.GlobalMessagePort)
+
+    obj.socket = udp
+
+    obj.OnSocketEvent = gdmAdvertiserOnSocketEvent
+
+    obj.responseString = invalid
+    obj.GetResponseString = gdmAdvertiserGetResponseString
+
+    viewController.AddSocketListener(udp, obj)
+
+    Debug("Created GDM player advertiser")
+
+    return obj
+End Function
+
+Sub gdmAdvertiserOnSocketEvent(msg)
+    ' PMS polls every five seconds, so this is chatty when not debugging.
+    'Debug("Got a GDM advertiser socket event, is readable: " + tostr(m.socket.isReadable()))
+
+    if m.socket.isReadable() then
+        message = m.socket.receiveStr(4096)
+        endIndex = instr(1, message, chr(13)) - 1
+        if endIndex <= 0 then endIndex = message.Len()
+        line = Mid(message, 1, endIndex)
+
+        if line = "M-SEARCH * HTTP/1.1" then
+            response = m.GetResponseString()
+
+            ' Respond directly to whoever sent the search message.
+            sock = CreateObject("roDatagramSocket")
+            sock.setSendToAddress(m.socket.getReceivedFromAddress())
+            bytesSent = sock.sendStr(response)
+            sock.Close()
+            if bytesSent <> Len(response) then
+                Debug("GDM player response only sent " + tostr(bytesSent) + " bytes out of " + tostr(Len(response)))
+            end if
+        else
+            Debug("Received unexpected message on GDM advertiser socket: " + tostr(line) + ";")
+        end if
+    end if
+End Sub
+
+Function gdmAdvertiserGetResponseString() As String
+    if m.responseString = invalid then
+        buf = box("HELLO * HTTP/1.0" + Chr(10))
+
+        ' TODO(schuyler): Allow the name to be configured, so users don't have 4 "Roku 2 XS" options
+        appendNameValue(buf, "Name", GetGlobalAA().Lookup("rokuModel"))
+        appendNameValue(buf, "Port", GetViewController().WebServer.port.tostr())
+        appendNameValue(buf, "Product", "Plex/Roku")
+        appendNameValue(buf, "Content-Type", "plex/media-player")
+        appendNameValue(buf, "Protocol", "roku")
+        appendNameValue(buf, "Version", GetGlobalAA().Lookup("appVersionStr"))
+        appendNameValue(buf, "Resource-Identifier", GetGlobalAA().Lookup("rokuUniqueID"))
+
+        m.responseString = buf
+
+        Debug("Built GDM player response:" + m.responseString)
+    end if
+
+    return m.responseString
+End Function
+
+Sub appendNameValue(buf, name, value)
+    line = name + ": " + value + Chr(10)
+    buf.AppendString(line, Len(line))
+End Sub
