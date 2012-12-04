@@ -162,6 +162,12 @@ Function gridHandleMessage(msg) As Boolean
 
                 m.Loader.LoadMoreContent(m.selectedRow, 2)
             end if
+        else if msg.isRemoteKeyPressed() then
+            if msg.GetIndex() = 13 then
+                Debug("Playing item directly from grid")
+                context = m.contentArray[m.selectedRow]
+                m.ViewController.CreatePlayerForItem(context, m.focusedIndex)
+            end if
         else if msg.isScreenClosed() then
             m.ViewController.PopScreen(m)
         end if

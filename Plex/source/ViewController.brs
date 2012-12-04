@@ -21,6 +21,7 @@ Function createViewController() As Object
 
     controller.CreatePhotoPlayer = vcCreatePhotoPlayer
     controller.CreateVideoPlayer = vcCreateVideoPlayer
+    controller.CreatePlayerForItem = vcCreatePlayerForItem
 
     controller.InitializeOtherScreen = vcInitializeOtherScreen
     controller.AssignScreenID = vcAssignScreenID
@@ -239,6 +240,22 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
     if show then screen.Show()
 
     return screen
+End Function
+
+Function vcCreatePlayerForItem(context, contextIndex, seekValue=0)
+    item = context[contextIndex]
+
+    if item.ContentType = "photo" then
+        return m.CreatePhotoPlayer(context, contextIndex)
+    else if item.ContentType = "audio" then
+        return m.CreateScreenForItem(context, contextIndex, invalid)
+    else if item.ContentType = "movie" OR item.ContentType = "episode" OR item.ContentType = "clip" then
+        directplay = RegRead("directplay", "preferences", "0").toint()
+        return m.CreateVideoPlayer(item, seekValue, directplay)
+    else
+        Debug("Not sure how to play item of type " + tostr(item.ContentType))
+        return m.CreateScreenForItem(context, contextIndex, invalid)
+    end if
 End Function
 
 Sub vcInitializeOtherScreen(screen, breadcrumbs)

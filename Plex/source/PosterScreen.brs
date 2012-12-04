@@ -160,6 +160,12 @@ Function posterHandleMessage(msg) As Boolean
                 m.Screen.SetContentList(status.content)
                 status.lastUpdatedSize = status.content.Count()
             end if
+        else if msg.isRemoteKeyPressed() then
+            if msg.GetIndex() = 13 then
+                Debug("Playing item directly from poster screen")
+                status = m.contentArray[m.focusedList]
+                m.ViewController.CreatePlayerForItem(status.content, status.focusedIndex)
+            end if
         end if
     end If
 

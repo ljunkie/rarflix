@@ -42,25 +42,13 @@ Function ProcessPlayMediaRequest() As Boolean
     end for
 
     if matchIndex <> invalid then
-        item = children[matchIndex]
-        vc = GetViewController()
-
-        if item.ContentType = "photo" then
-            vc.CreatePhotoPlayer(children, matchIndex)
-        else if item.ContentType = "audio" then
-            GetViewController().CreateScreenForItem(children, matchIndex, invalid)
-        else if item.ContentType = "movie" OR item.ContentType = "episode" OR item.ContentType = "clip" then
-            if m.request.fields.DoesExist("X-Plex-Arg-ViewOffset") then
-                seek = m.request.fields["X-Plex-Arg-ViewOffset"].toint()
-            else
-                seek = 0
-            end if
-            directplay = RegRead("directplay", "preferences", "0").toint()
-            vc.CreateVideoPlayer(item, seek, directplay)
+        if m.request.fields.DoesExist("X-Plex-Arg-ViewOffset") then
+            seek = m.request.fields["X-Plex-Arg-ViewOffset"].toint()
         else
-            Debug("Not sure how to play item of type " + tostr(item.ContentType))
-            GetViewController().CreateScreenForItem(children, matchIndex, invalid)
+            seek = 0
         end if
+
+        GetViewController.CreatePlayerForItem(children, matchIndex, seek)
 
         m.http_code = 200
     else
