@@ -12,9 +12,6 @@ Function ProcessPlayMediaRequest() As Boolean
         Debug("  " + name + ": " + UrlUnescape(m.request.fields[name]))
     next
 
-    ' TODO(schuyler): Infer the server from the path instead of assuming the
-    ' primary will work.
-
     ' Fetch the container for the path and then look for a matching key. This
     ' allows us to set the context correctly so we can do things like play an
     ' entire album or slideshow.
@@ -22,7 +19,13 @@ Function ProcessPlayMediaRequest() As Boolean
     url = UrlUnescape(m.request.fields["X-Plex-Arg-Path"])
     key = UrlUnescape(m.request.fields["X-Plex-Arg-Key"])
 
-    container = createPlexContainerForUrl(GetPrimaryServer(), path, "")
+    server = GetServerForUrl(url)
+    if server = invalid then
+        Debug("Not sure which server to use for " + tostr(url) + ", falling back to primary")
+        server = GetPrimaryServer()
+    end if
+
+    container = createPlexContainerForUrl(server, url, "")
     children = container.GetMetadata()
     matchIndex = invalid
     for i = 0 to children.Count() - 1

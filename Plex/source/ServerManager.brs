@@ -355,6 +355,7 @@ Sub PutPlexMediaServer(server)
             GetGlobalAA().AddReplace("validated_servers", servers)
         end if
         servers[server.machineID] = server
+        if server.serverUrl <> invalid then SetServerForHost(server.serverUrl + "/", server)
     end if
 End Sub
 
@@ -409,3 +410,47 @@ Function GetPrimaryServer()
     return invalid
 End Function
 
+Sub SetServerForHost(hostname, server)
+    servers = GetGlobalAA().Lookup("servers_by_host")
+    if servers = invalid then
+        servers = {}
+        GetGlobalAA().AddReplace("servers_by_host", servers)
+        servers["https://my.plexapp.com/"] = GetMyPlexManager()
+        servers["https://my.plexapp.com:443/"] = GetMyPlexManager()
+    end if
+
+    servers[hostname] = server
+End Sub
+
+Function GetServerForUrl(url)
+    servers = GetGlobalAA().Lookup("servers_by_host")
+    if servers = invalid then
+        servers = {}
+        GetGlobalAA().AddReplace("servers_by_host", servers)
+        servers["https://my.plexapp.com/"] = GetMyPlexManager()
+        servers["https://my.plexapp.com:443/"] = GetMyPlexManager()
+    end if
+
+    index = instr(10, url, "/")
+    if index <= 0 then return invalid
+    hostname = Left(url, index)
+
+    if servers.DoesExist(hostname) then
+        return servers[hostname]
+    end if
+
+    Debug("Looking up identity for " + tostr(hostname))
+
+    httpRequest = NewHttp(hostname + "identity")
+    response = httpRequest.GetToStringWithTimeout(60)
+    xml=CreateObject("roXMLElement")
+    if xml.Parse(response) then
+        server = GetPlexMediaServer(xml@machineIdentifier)
+        if server <> invalid then
+            SetServerForHost(hostname, server)
+            return server
+        end if
+    end if
+
+    return invalid
+End Function
