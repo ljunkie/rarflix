@@ -104,8 +104,10 @@ Function createBasePrefsScreen(viewController) As Object
     lsInitBaseListScreen(obj)
 
     obj.HandleEnumPreference = prefsHandleEnumPreference
+    obj.HandleTextPreference = prefsHandleTextPreference
     obj.OnUserInput = prefsOnUserInput
     obj.GetEnumValue = prefsGetEnumValue
+    obj.GetPrefValue = prefsGetPrefValue
 
     return obj
 End Function
@@ -120,13 +122,31 @@ Sub prefsHandleEnumPreference(regKey, index)
     screen.Show()
 End Sub
 
+Sub prefsHandleTextPreference(regKey, index)
+    m.currentIndex = index
+    m.currentRegKey = regKey
+    label = m.contentArray[index].OrigTitle
+    pref = m.Prefs[regKey]
+    screen = m.ViewController.CreateTextInputScreen(pref.heading, [label], false)
+    screen.Text = RegRead(regKey, "preferences", pref.default)
+    screen.Screen.SetMaxLength(80)
+    screen.Listener = m
+    screen.Show()
+End Sub
+
 Sub prefsOnUserInput(value, screen)
-    label = m.contentArray[m.currentIndex].OrigTitle
-    if screen.SelectedIndex <> invalid then
-        Debug("Set " + label + " to " + screen.SelectedValue)
-        RegWrite(m.currentRegKey, screen.SelectedValue, "preferences")
-        m.Changes.AddReplace(m.currentRegKey, screen.SelectedValue)
-        m.AppendValue(m.currentIndex, screen.SelectedLabel)
+    if type(screen.Screen) = "roKeyboardScreen" then
+        RegWrite(m.currentRegKey, value, "preferences")
+        m.Changes.AddReplace(m.currentRegKey, value)
+        m.AppendValue(m.currentIndex, value)
+    else
+        label = m.contentArray[m.currentIndex].OrigTitle
+        if screen.SelectedIndex <> invalid then
+            Debug("Set " + label + " to " + screen.SelectedValue)
+            RegWrite(m.currentRegKey, screen.SelectedValue, "preferences")
+            m.Changes.AddReplace(m.currentRegKey, screen.SelectedValue)
+            m.AppendValue(m.currentIndex, screen.SelectedLabel)
+        end if
     end if
 End Sub
 
@@ -140,6 +160,11 @@ Function prefsGetEnumValue(regKey)
     next
 
     return invalid
+End Function
+
+Function prefsGetPrefValue(regKey)
+    pref = m.Prefs[regKey]
+    return RegRead(regKey, "preferences", pref.default)
 End Function
 
 '*** Main Preferences ***
@@ -226,6 +251,7 @@ Sub showPreferencesScreen()
     m.AddItem({title: "Direct Play"}, "directplay", m.GetEnumValue("directplay"))
     m.AddItem({title: "Subtitles"}, "softsubtitles", m.GetEnumValue("softsubtitles"))
     m.AddItem({title: "Slideshow"}, "slideshow")
+    m.AddItem({title: "Remote Control"}, "remotecontrol")
     m.AddItem({title: "Screensaver"}, "screensaver", m.GetEnumValue("screensaver"))
     m.AddItem({title: "Logging"}, "debug")
     m.AddItem({title: "Advanced Preferences"}, "advanced")
@@ -303,6 +329,10 @@ Function prefsMainHandleMessage(msg) As Boolean
             else if command = "slideshow" then
                 screen = createSlideshowPrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["Slideshow Preferences"])
+                screen.Show()
+            else if command = "remotecontrol" then
+                screen = createRemoteControlPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["Remote Control Preferences"])
                 screen.Show()
             else if command = "advanced" then
                 screen = createAdvancedPrefsScreen(m.ViewController)
@@ -910,6 +940,63 @@ Function videoOptionsGetEnumValue(key)
     next
 
     return invalid
+End Function
+
+'*** Remote Control Preferences ***
+
+Function createRemoteControlPrefsScreen(viewController) As Object
+    obj = createBasePrefsScreen(viewController)
+
+    obj.HandleMessage = prefsRemoteControlHandleMessage
+
+    ' Enabled
+    options = [
+        { title: "Enabled", EnumValue: "1" },
+        { title: "Disabled", EnumValue: "0" }
+    ]
+    obj.Prefs["remotecontrol"] = {
+        values: options,
+        heading: "Allow other clients to control this Roku.",
+        default: "1"
+    }
+
+    obj.Prefs["player_name"] = {
+        heading: "A name that will identify this Roku on your remote controls",
+        default: GetGlobalAA().Lookup("rokuModel")
+    }
+
+    obj.Screen.SetHeader("Remote control preferences")
+
+    obj.AddItem({title: "Remote Control"}, "remotecontrol", obj.GetEnumValue("remotecontrol"))
+    obj.AddItem({title: "Name"}, "player_name", obj.GetPrefValue("player_name"))
+    obj.AddItem({title: "Close"}, "close")
+
+    return obj
+End Function
+
+Function prefsRemoteControlHandleMessage(msg) As Boolean
+    handled = false
+
+    if type(msg) = "roListScreenEvent" then
+        handled = true
+
+        if msg.isScreenClosed() then
+            Debug("Remote control closed event")
+            m.ViewController.GdmAdvertiser.Refresh()
+            m.ViewController.PopScreen(m)
+        else if msg.isListItemSelected() then
+            command = m.GetSelectedCommand(msg.GetIndex())
+            if command = "player_name" then
+                m.HandleTextPreference(command, msg.GetIndex())
+            else if command = "remotecontrol" then
+                m.HandleEnumPreference(command, msg.GetIndex())
+            else if command = "close" then
+                m.Screen.Close()
+            end if
+        end if
+    end if
+
+    return handled
 End Function
 
 '*** Helper functions ***

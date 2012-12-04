@@ -7,6 +7,11 @@
 Function ProcessPlayMediaRequest() As Boolean
     ' Note that we're evaluated in the context of a Reply object.
 
+    if RegRead("remotecontrol", "preferences", "1") <> "1" then
+        m.default(404, "Remote control is disabled for this device")
+        return true
+    end if
+
     Debug("Processing PlayMedia request")
     for each name in m.request.fields
         Debug("  " + name + ": " + UrlUnescape(m.request.fields[name]))
@@ -69,4 +74,6 @@ Function ProcessPlayMediaRequest() As Boolean
     m.length = m.buf.count()
     m.genHdr(true)
     m.source = m.GENERATED
+
+    return true
 End Function

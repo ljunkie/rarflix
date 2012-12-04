@@ -66,7 +66,7 @@ Function createViewController() As Object
 
     ' Initialize things that run in the background
     InitWebServer(controller)
-    createGDMAdvertiser(controller)
+    controller.GdmAdvertiser = createGDMAdvertiser(controller)
     controller.AudioPlayer = createAudioPlayer(controller)
 
     return controller

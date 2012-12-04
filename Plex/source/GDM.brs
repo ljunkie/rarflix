@@ -152,6 +152,23 @@ End Sub
 Function createGDMAdvertiser(viewController)
     obj = CreateObject("roAssociativeArray")
 
+    obj.ViewController = viewController
+
+    obj.OnSocketEvent = gdmAdvertiserOnSocketEvent
+
+    obj.responseString = invalid
+    obj.GetResponseString = gdmAdvertiserGetResponseString
+
+    obj.CreateSocket = gdmAdvertiserCreateSocket
+    obj.Close = gdmAdvertiserClose
+    obj.Refresh = gdmAdvertiserRefresh
+
+    obj.Refresh()
+
+    return obj
+End Function
+
+Sub gdmAdvertiserCreateSocket()
     groupAddr = CreateObject("roSocketAddress")
     groupAddr.setHostName("239.0.0.250")
     groupAddr.setPort(32412)
@@ -164,31 +181,44 @@ Function createGDMAdvertiser(viewController)
 
     if not udp.setAddress(listenAddr) then
         Debug("Failed to set address on GDM advertiser socket")
-        return invalid
+        return
     end if
 
     if not udp.joinGroup(groupAddr) then
         Debug("Failed to join multicast group on GDM advertiser socket")
-        return invalid
+        return
     end if
 
     udp.setMulticastLoop(false)
     udp.notifyReadable(true)
-    udp.setMessagePort(viewController.GlobalMessagePort)
+    udp.setMessagePort(m.ViewController.GlobalMessagePort)
 
-    obj.socket = udp
+    m.socket = udp
 
-    obj.OnSocketEvent = gdmAdvertiserOnSocketEvent
-
-    obj.responseString = invalid
-    obj.GetResponseString = gdmAdvertiserGetResponseString
-
-    viewController.AddSocketListener(udp, obj)
+    m.ViewController.AddSocketListener(udp, m)
 
     Debug("Created GDM player advertiser")
+End Sub
 
-    return obj
-End Function
+Sub gdmAdvertiserClose()
+    if m.socket <> invalid then
+        m.socket.Close()
+        m.socket = invalid
+    end if
+End Sub
+
+Sub gdmAdvertiserRefresh()
+    ' Always regenerate our response, even if it might not have changed, it's
+    ' just not that expensive.
+    m.responseString = invalid
+
+    enabled = (RegRead("remotecontrol", "preferences", "1") = "1")
+    if enabled AND m.socket = invalid then
+        m.CreateSocket()
+    else if not enabled AND m.socket <> invalid then
+        m.Close()
+    end if
+End Sub
 
 Sub gdmAdvertiserOnSocketEvent(msg)
     ' PMS polls every five seconds, so this is chatty when not debugging.
@@ -221,9 +251,8 @@ Function gdmAdvertiserGetResponseString() As String
     if m.responseString = invalid then
         buf = box("HELLO * HTTP/1.0" + Chr(10))
 
-        ' TODO(schuyler): Allow the name to be configured, so users don't have 4 "Roku 2 XS" options
-        appendNameValue(buf, "Name", GetGlobalAA().Lookup("rokuModel"))
-        appendNameValue(buf, "Port", GetViewController().WebServer.port.tostr())
+        appendNameValue(buf, "Name", RegRead("player_name", "preferences", GetGlobalAA().Lookup("rokuModel")))
+        appendNameValue(buf, "Port", m.ViewController.WebServer.port.tostr())
         appendNameValue(buf, "Product", "Plex/Roku")
         appendNameValue(buf, "Content-Type", "plex/media-player")
         appendNameValue(buf, "Protocol", "roku")
