@@ -190,7 +190,7 @@ Function createPreferencesScreen(viewController) As Object
     ]
     obj.Prefs["quality"] = {
         values: qualities,
-        heading: "Higher settings produce better video quality but require more" + Chr(10) + "network bandwidth.",
+        heading: "Higher settings produce better video quality but require more" + Chr(10) + "network bandwidth. (Current reported bandwidth is " + tostr(GetGlobalAA().Lookup("bandwidth")) + "kbps)",
         default: "7"
     }
 

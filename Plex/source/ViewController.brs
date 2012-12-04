@@ -60,6 +60,10 @@ Function createViewController() As Object
     controller.TimersByScreen = {}
     controller.AddTimer = vcAddTimer
 
+    controller.SystemLog = CreateObject("roSystemLog")
+    controller.SystemLog.SetMessagePort(controller.GlobalMessagePort)
+    controller.SystemLog.EnableType("bandwidth.minute")
+
 
     ' Stuff the controller into the global object
     m.ViewController = controller
@@ -381,6 +385,11 @@ Sub vcShow()
                 end if
             else if type(msg) = "roAudioPlayerEvent" then
                 m.AudioPlayer.HandleMessage(msg)
+            else if type(msg) = "roSystemLogEvent" then
+                msgInfo = msg.GetInfo()
+                if msgInfo.LogType = "bandwidth.minute" then
+                    GetGlobalAA().AddReplace("bandwidth", msgInfo.Bandwidth)
+                end if
             end if
         end if
 
