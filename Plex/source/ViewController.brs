@@ -124,6 +124,8 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         RegWrite("lastMachineID", item.server.machineID)
         RegWrite("lastSectionKey", item.key)
         screen = createGridScreenForItem(item, m, "flat-movie")
+    else if contentType = "playlists" then
+        screen = createGridScreenForItem(item, m, "flat-16X9")
     else if contentType = "photo" then
         if right(item.key, 8) = "children" then
             screen = createPosterScreen(item, m)
@@ -332,7 +334,7 @@ Sub vcPopScreen(screen)
     m.screens.Peek().Activate(screen)
 
     if m.screens.Count() = 0 then
-        m.Home.CreateQueueRequests(true)
+        m.Home.CreateAllPlaylistRequests(true)
     end if
 End Sub
 

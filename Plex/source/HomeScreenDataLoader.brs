@@ -23,7 +23,8 @@ Function createHomeScreenDataLoader(listener)
     loader.CreateRow = homeCreateRow
     loader.CreateServerRequests = homeCreateServerRequests
     loader.CreateMyPlexRequests = homeCreateMyPlexRequests
-    loader.CreateQueueRequests = homeCreateQueueRequests
+    loader.CreatePlaylistRequests = homeCreatePlaylistRequests
+    loader.CreateAllPlaylistRequests = homeCreateAllPlaylistRequests
     loader.RemoveFromRowIf = homeRemoveFromRowIf
     loader.AddOrStartRequest = homeAddOrStartRequest
 
@@ -35,6 +36,7 @@ Function createHomeScreenDataLoader(listener)
     loader.ChannelsRow = loader.CreateRow("Channels")
     loader.SectionsRow = loader.CreateRow("Library Sections")
     loader.QueueRow = loader.CreateRow("Queue")
+    loader.RecommendationsRow = loader.CreateRow("Recommendations")
     loader.SharedSectionsRow = loader.CreateRow("Shared Library Sections")
     loader.MiscRow = loader.CreateRow("Miscellaneous")
 
@@ -148,8 +150,8 @@ Sub homeCreateMyPlexRequests(startRequests As Boolean)
     context.requestType = "servers"
     GetViewController().StartRequest(httpRequest, m, context)
 
-    ' Queue request
-    m.CreateQueueRequests(startRequests)
+    ' Queue and recommendations requests
+    m.CreateAllPlaylistRequests(startRequests)
 
     ' Shared sections request
     shared = CreateObject("roAssociativeArray")
@@ -158,32 +160,35 @@ Sub homeCreateMyPlexRequests(startRequests As Boolean)
     m.AddOrStartRequest(shared, m.SharedSectionsRow, startRequests)
 End Sub
 
-Sub homeCreateQueueRequests(startRequests As Boolean)
-    myPlex = GetMyPlexManager()
+Sub homeCreateAllPlaylistRequests(startRequests As Boolean)
+    if NOT GetMyPlexManager().IsSignedIn then return
 
-    if NOT myPlex.IsSignedIn then return
+    m.CreatePlaylistRequests("queue", "All Queued Items", "All queued items, including already watched items", m.QueueRow, startRequests)
+    m.CreatePlaylistRequests("recommendations", "All Recommended Items", "All recommended items, including already watched items", m.RecommendationsRow, startRequests)
+End Sub
 
-    ' Unwatched queue items
-    queue = CreateObject("roAssociativeArray")
-    queue.server = myPlex
-    queue.requestType = "queue"
-    queue.key = "/pms/playlists/queue/unwatched"
+Sub homeCreatePlaylistRequests(name, title, description, row, startRequests)
+    ' Unwatched recommended items
+    currentItems = CreateObject("roAssociativeArray")
+    currentItems.server = GetMyPlexManager()
+    currentItems.requestType = "playlist"
+    currentItems.key = "/pms/playlists/" + name + "/unwatched"
 
-    ' A dummy item to pull up the full queue
-    allQueue = CreateObject("roAssociativeArray")
-    allQueue.Title = "All Queued Items"
-    allQueue.Description = "All queued items, including already watched items"
-    allQueue.ShortDescriptionLine2 = allQueue.Description
-    allQueue.server = myPlex
-    allQueue.sourceUrl = ""
-    allQueue.Key = "/pms/playlists/queue"
-    allQueue.SDPosterURL = "file://pkg:/images/more.png"
-    allQueue.HDPosterURL = "file://pkg:/images/more.png"
-    allQueue.ContentType = "series"
-    queue.item = allQueue
-    queue.emptyItem = allQueue
+    ' A dummy item to pull up the varieties (e.g. all and watched)
+    allItems = CreateObject("roAssociativeArray")
+    allItems.Title = title
+    allItems.Description = description
+    allItems.ShortDescriptionLine2 = allItems.Description
+    allItems.server = currentItems.server
+    allItems.sourceUrl = ""
+    allItems.Key = "/pms/playlists/" + name
+    allItems.SDPosterURL = "file://pkg:/images/more.png"
+    allItems.HDPosterURL = "file://pkg:/images/more.png"
+    allItems.ContentType = "playlists"
+    currentItems.item = allItems
+    currentItems.emptyItem = allItems
 
-    m.AddOrStartRequest(queue, m.QueueRow, startRequests)
+    m.AddOrStartRequest(currentItems, row, startRequests)
 End Sub
 
 Sub homeAddOrStartRequest(request As Object, row As Integer, startRequests As Boolean)
@@ -247,6 +252,7 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
         m.FirstLoad = false
         if NOT myPlex.IsSignedIn then
             m.Listener.OnDataLoaded(m.QueueRow, [], 0, 0, true)
+            m.Listener.OnDataLoaded(m.RecommendationsRow, [], 0, 0, true)
             m.Listener.OnDataLoaded(m.SharedSectionsRow, [], 0, 0, true)
         else
             ' It'll be made visible if we get any data.
@@ -487,7 +493,7 @@ Sub homeOnUrlEvent(msg, requestContext)
                 end if
             next
         end if
-    else if requestContext.requestType = "queue" then
+    else if requestContext.requestType = "playlist" then
         response = CreateObject("roAssociativeArray")
         response.xml = xml
         response.server = server
@@ -660,7 +666,7 @@ End Function
 
 Sub homeRefreshData()
     ' Refresh the queue
-    m.CreateQueueRequests(true)
+    m.CreateAllPlaylistRequests(true)
 
     ' Refresh the sections and channels for all of our owned servers
     m.contentArray[m.SectionsRow].refreshContent = []
@@ -686,6 +692,7 @@ Sub homeOnMyPlexChange()
         m.RemoveFromRowIf(m.ChannelsRow, IsMyPlexServer)
         m.RemoveFromRowIf(m.MiscRow, IsMyPlexServer)
         m.RemoveFromRowIf(m.QueueRow, AlwaysTrue)
+        m.RemoveFromRowIf(m.RecommendationsRow, AlwaysTrue)
         m.RemoveFromRowIf(m.SharedSectionsRow, AlwaysTrue)
     end if
 End Sub
