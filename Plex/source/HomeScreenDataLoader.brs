@@ -36,6 +36,7 @@ Function createHomeScreenDataLoader(listener)
 
     loader.ChannelsRow = loader.CreateRow("Channels")
     loader.SectionsRow = loader.CreateRow("Library Sections")
+    loader.RecentsRow = loader.CreateRow("Recently Added")
     loader.QueueRow = loader.CreateRow("Queue")
     loader.RecommendationsRow = loader.CreateRow("Recommendations")
     loader.SharedSectionsRow = loader.CreateRow("Shared Library Sections")
@@ -138,6 +139,13 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
     allChannels.HDPosterURL = "file://pkg:/images/more.png"
     channels.item = allChannels
     m.AddOrStartRequest(channels, m.ChannelsRow, startRequests)
+
+    ' Request recently added
+    recents = CreateObject("roAssociativeArray")
+    recents.server = server
+    recents.key = "/library/recentlyAdded"
+    recents.requestType = "media"
+    m.AddOrStartRequest(recents, m.RecentsRow, startRequests)
 End Sub
 
 Sub homeCreateMyPlexRequests(startRequests As Boolean)
@@ -500,6 +508,56 @@ Sub homeOnUrlEvent(msg, requestContext)
                 end if
             next
         end if
+    else if requestContext.requestType = "media" then
+        countLoaded = 0
+        content = firstOf(status.refreshContent, status.content)
+        startItem = content.Count()
+
+        server.IsAvailable = true
+        machineId = tostr(server.MachineID)
+
+        if status.loadedServers.DoesExist(machineID) then
+            Debug("Ignoring content for server that was already loaded: " + machineID)
+            items = []
+            requestContext.item = invalid
+            requestContext.emptyItem = invalid
+        else
+            status.loadedServers[machineID] = "1"
+            response = CreateObject("roAssociativeArray")
+            response.xml = xml
+            response.server = server
+            response.sourceUrl = url
+            container = createPlexContainerForXml(response)
+            items = container.GetMetadata()
+        end if
+
+        for each item in items
+            ' Normally thumbnail requests will have an X-Plex-Token header
+            ' added as necessary by the screen, but we can't do that on the
+            ' home screen because we're showing content from multiple
+            ' servers.
+            if item.SDPosterURL <> invalid AND Left(item.SDPosterURL, 4) = "http" AND item.server <> invalid AND item.server.AccessToken <> invalid then
+                item.SDPosterURL = item.SDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
+                item.HDPosterURL = item.HDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
+            end if
+
+            content.Push(item)
+            countLoaded = countLoaded + 1
+        next
+
+        if status.toLoad.Count() = 0 AND status.pendingRequests = 0 then
+            status.loadStatus = 2
+        end if
+
+        if status.refreshContent <> invalid then
+            if status.toLoad.Count() = 0 AND status.pendingRequests = 0 then
+                status.content = status.refreshContent
+                status.refreshContent = invalid
+                m.Listener.OnDataLoaded(requestContext.row, status.content, 0, status.content.Count(), true)
+            end if
+        else
+            m.Listener.OnDataLoaded(requestContext.row, status.content, startItem, countLoaded, true)
+        end if
     else if requestContext.requestType = "playlist" then
         response = CreateObject("roAssociativeArray")
         response.xml = xml
@@ -680,6 +738,8 @@ Sub homeRefreshData()
     m.contentArray[m.SectionsRow].loadedServers.Clear()
     m.contentArray[m.ChannelsRow].refreshContent = []
     m.contentArray[m.ChannelsRow].loadedServers.Clear()
+    m.contentArray[m.RecentsRow].refreshContent = []
+    m.contentArray[m.RecentsRow].loadedServers.Clear()
 
     for each server in GetOwnedPlexMediaServers()
         m.CreateServerRequests(server, true, true)
@@ -697,6 +757,7 @@ Sub homeOnMyPlexChange()
     else
         m.RemoveFromRowIf(m.SectionsRow, IsMyPlexServer)
         m.RemoveFromRowIf(m.ChannelsRow, IsMyPlexServer)
+        m.RemoveFromRowIf(m.RecentsRow, IsMyPlexServer)
         m.RemoveFromRowIf(m.MiscRow, IsMyPlexServer)
         m.RemoveFromRowIf(m.QueueRow, AlwaysTrue)
         m.RemoveFromRowIf(m.RecommendationsRow, AlwaysTrue)
@@ -707,6 +768,7 @@ End Sub
 Sub homeRemoveInvalidServers()
     m.RemoveFromRowIf(m.SectionsRow, IsInvalidServer)
     m.RemoveFromRowIf(m.ChannelsRow, IsInvalidServer)
+    m.RemoveFromRowIf(m.RecentsRow, IsInvalidServer)
     m.RemoveFromRowIf(m.MiscRow, IsInvalidServer)
 End Sub
 
