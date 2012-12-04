@@ -242,6 +242,10 @@ Function videoPlayerHandleMessage(msg) As Boolean
                     GetGlobalAA().AddReplace("show_underrun_warning", "1")
                 end if
             end if
+        else if msg.GetType() = 27 then
+            ' This is an HLS Segment Info event. We don't really need to do
+            ' anything with it. It includes info like the stream bandwidth,
+            ' sequence, URL, and start time.
         else
             Debug("Unknown event: " + tostr(msg.GetType()) + " msg: " + tostr(msg.GetMessage()))
         end if
