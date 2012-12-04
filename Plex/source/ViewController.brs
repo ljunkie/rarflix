@@ -584,6 +584,7 @@ Sub InitWebServer(vc)
     MimeType()
     HttpTitle()
     ClassReply().AddHandler("/logs", ProcessLogsRequest)
+    ClassReply().AddHandler("/application/PlayMedia", ProcessPlayMediaRequest)
 
     vc.WebServer = InitServer({msgPort: vc.GlobalMessagePort, port: 8324})
 End Sub
