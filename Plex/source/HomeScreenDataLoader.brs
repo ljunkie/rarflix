@@ -9,6 +9,7 @@ Function createHomeScreenDataLoader(listener)
     ' TODO(schuyler): This feels like cheating...
     loader.ScreenID = -1
     loader.Listener = listener
+    listener.Loader = loader
 
     loader.LoadMoreContent = homeLoadMoreContent
     loader.GetNames = homeGetNames
@@ -168,11 +169,17 @@ Sub homeCreateAllPlaylistRequests(startRequests As Boolean)
 End Sub
 
 Sub homeCreatePlaylistRequests(name, title, description, row, startRequests)
+    view = RegRead("playlist_view_" + name, "preferences", "unwatched")
+    if view = "hidden" then
+        m.Listener.OnDataLoaded(row, [], 0, 0, true)
+        return
+    end if
+
     ' Unwatched recommended items
     currentItems = CreateObject("roAssociativeArray")
     currentItems.server = GetMyPlexManager()
     currentItems.requestType = "playlist"
-    currentItems.key = "/pms/playlists/" + name + "/unwatched"
+    currentItems.key = "/pms/playlists/" + name + "/" + view
 
     ' A dummy item to pull up the varieties (e.g. all and watched)
     allItems = CreateObject("roAssociativeArray")

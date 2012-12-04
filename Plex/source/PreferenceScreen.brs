@@ -496,6 +496,24 @@ Function createAdvancedPrefsScreen(viewController) As Object
         default: "100"
     }
 
+    ' Default view for queue and recommendations
+    values = [
+        { title: "All", EnumValue: "all" },
+        { title: "Unwatched", EnumValue: "unwatched" },
+        { title: "Watched", EnumValue: "watched" },
+        { title: "Hidden", EnumValue: "hidden" }
+    ]
+    obj.Prefs["playlist_view_queue"] = {
+        values: values,
+        heading: "Default view for Queue on the home screen",
+        default: "unwatched"
+    }
+    obj.Prefs["playlist_view_recommendations"] = {
+        values: values,
+        heading: "Default view for Recommendations on the home screen",
+        default: "unwatched"
+    }
+
     device = CreateObject("roDeviceInfo")
     versionArr = GetGlobalAA().Lookup("rokuVersionArr")
     major = versionArr[0]
@@ -515,6 +533,8 @@ Function createAdvancedPrefsScreen(viewController) As Object
     obj.AddItem({title: "HLS Segment Length"}, "segment_length", obj.GetEnumValue("segment_length"))
     obj.AddItem({title: "Subtitle Size"}, "subtitle_size", obj.GetEnumValue("subtitle_size"))
     obj.AddItem({title: "Audio Boost"}, "audio_boost", obj.GetEnumValue("audio_boost"))
+    obj.AddItem({title: "Queue"}, "playlist_view_queue", obj.GetEnumValue("playlist_view_queue"))
+    obj.AddItem({title: "Recommendations"}, "playlist_view_recommendations", obj.GetEnumValue("playlist_view_recommendations"))
     obj.AddItem({title: "Close"}, "close")
 
     return obj
@@ -530,7 +550,7 @@ Function prefsAdvancedHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "level" OR command = "fivepointone" OR command = "segment_length" OR command = "subtitle_size" OR command = "audio_boost" then
+            if command = "level" OR command = "fivepointone" OR command = "segment_length" OR command = "subtitle_size" OR command = "audio_boost" OR command = "playlist_view_queue" OR command = "playlist_view_recommendations" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "1080p" then
                 screen = create1080PreferencesScreen(m.ViewController)
