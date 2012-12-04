@@ -30,6 +30,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize)
         status.loadStatus = 0 ' 0:Not loaded, 1:Partially loaded, 2:Fully loaded
         status.key = keys[index]
         status.pendingRequests = 0
+        status.countLoaded = 0
 
         loader.contentArray[index] = status
     end for
@@ -44,6 +45,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize)
         status.loadStatus = 0
         status.key = invalid
         status.pendingRequests = 0
+        status.countLoaded = 0
 
         loader.contentArray.Push(status)
     end if
@@ -54,6 +56,14 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize)
     loader.StartRequest = loaderStartRequest
     loader.OnUrlEvent = loaderOnUrlEvent
     loader.GetPendingRequestCount = loaderGetPendingRequestCount
+
+    ' When we know the full size of a container, we'll populate an array with
+    ' dummy items so that the counts show up correctly on grid screens. It
+    ' should generally provide a smoother loading experience. This is the
+    ' metadata that will be used for pending items.
+    loader.LoadingItem = {
+        title: "Loading..."
+    }
 
     return loader
 End Function
@@ -93,7 +103,7 @@ Function loaderLoadMoreContent(focusedIndex, extraRows=0)
         return extraRowsAlreadyLoaded
     end if
 
-    startItem = status.content.Count()
+    startItem = status.countLoaded
     if startItem = 0 then
         count = m.initialLoadSize
     else
@@ -166,6 +176,7 @@ Sub loaderOnUrlEvent(msg, requestContext)
         status.loadStatus = 2
         startItem = 0
         countLoaded = status.content.Count()
+        status.countLoaded = countLoaded
     else
         startItem = firstOf(response.xml@offset, msg.GetResponseHeaders()["X-Plex-Container-Start"], "0").toInt()
 
@@ -181,11 +192,26 @@ Sub loaderOnUrlEvent(msg, requestContext)
             status.content.Append(container.GetMetadata())
         end if
 
+        if totalSize > status.content.Count() then
+            ' We could easily fill the entire array with our dummy loading item,
+            ' but it's usually just wasted cycles at a time when we care about
+            ' the app feeling responsive. So make the first and last item use
+            ' our dummy metadata and everything in between will be blank.
+            status.content.Push(m.LoadingItem)
+            status.content[totalSize - 1] = m.LoadingItem
+        end if
+
+        if status.loadStatus <> 2 then
+            status.countLoaded = startItem + countLoaded
+        end if
+
+        Debug("Count loaded is now " + tostr(status.countLoaded) + " out of " + tostr(totalSize))
+
         if status.loadStatus = 2 AND startItem + countLoaded < totalSize then
             ' We're in the middle of refreshing the row, kick off the
             ' next request.
             m.StartRequest(requestContext.row, startItem + countLoaded, m.pageSize)
-        else if status.content.Count() < totalSize then
+        else if status.countLoaded < totalSize then
             status.loadStatus = 1
         else
             status.loadStatus = 2
@@ -198,6 +224,10 @@ Sub loaderOnUrlEvent(msg, requestContext)
 
     if countLoaded > status.content.Count() then
         countLoaded = status.content.Count()
+    end if
+
+    if status.countLoaded > status.content.Count() then
+        status.countLoaded = status.content.Count()
     end if
 
     if m.Listener <> invalid then
