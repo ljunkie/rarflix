@@ -345,7 +345,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
     end if
 
     video.IsTranscoded = true
-    video.HDBranded = item.HDBranded OR resolution > 480
+    video.HDBranded = item.HDBranded
 
 	'We are transcoding, don't set fullHD if quality isn't 1080p
     if RegRead("quality", "preferences") <> "9" then

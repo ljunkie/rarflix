@@ -36,6 +36,7 @@ Function createHomeScreenDataLoader(listener)
 
     loader.ChannelsRow = loader.CreateRow("Channels")
     loader.SectionsRow = loader.CreateRow("Library Sections")
+    loader.OnDeckRow = loader.CreateRow("On Deck")
     loader.RecentsRow = loader.CreateRow("Recently Added")
     loader.QueueRow = loader.CreateRow("Queue")
     loader.RecommendationsRow = loader.CreateRow("Recommendations")
@@ -139,6 +140,13 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
     allChannels.HDPosterURL = "file://pkg:/images/more.png"
     channels.item = allChannels
     m.AddOrStartRequest(channels, m.ChannelsRow, startRequests)
+
+    ' Request global on deck
+    onDeck = CreateObject("roAssociativeArray")
+    onDeck.server = server
+    onDeck.key = "/library/onDeck"
+    onDeck.requestType = "media"
+    m.AddOrStartRequest(onDeck, m.OnDeckRow, startRequests)
 
     ' Request recently added
     recents = CreateObject("roAssociativeArray")
@@ -738,6 +746,8 @@ Sub homeRefreshData()
     m.contentArray[m.SectionsRow].loadedServers.Clear()
     m.contentArray[m.ChannelsRow].refreshContent = []
     m.contentArray[m.ChannelsRow].loadedServers.Clear()
+    m.contentArray[m.OnDeckRow].refreshContent = []
+    m.contentArray[m.OnDeckRow].loadedServers.Clear()
     m.contentArray[m.RecentsRow].refreshContent = []
     m.contentArray[m.RecentsRow].loadedServers.Clear()
 
@@ -757,6 +767,7 @@ Sub homeOnMyPlexChange()
     else
         m.RemoveFromRowIf(m.SectionsRow, IsMyPlexServer)
         m.RemoveFromRowIf(m.ChannelsRow, IsMyPlexServer)
+        m.RemoveFromRowIf(m.OnDeckRow, IsMyPlexServer)
         m.RemoveFromRowIf(m.RecentsRow, IsMyPlexServer)
         m.RemoveFromRowIf(m.MiscRow, IsMyPlexServer)
         m.RemoveFromRowIf(m.QueueRow, AlwaysTrue)
@@ -768,6 +779,7 @@ End Sub
 Sub homeRemoveInvalidServers()
     m.RemoveFromRowIf(m.SectionsRow, IsInvalidServer)
     m.RemoveFromRowIf(m.ChannelsRow, IsInvalidServer)
+    m.RemoveFromRowIf(m.OnDeckRow, IsInvalidServer)
     m.RemoveFromRowIf(m.RecentsRow, IsInvalidServer)
     m.RemoveFromRowIf(m.MiscRow, IsInvalidServer)
 End Sub
