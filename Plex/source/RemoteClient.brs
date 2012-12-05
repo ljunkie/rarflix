@@ -48,7 +48,23 @@ Function ProcessPlayMediaRequest() As Boolean
             seek = 0
         end if
 
-        GetViewController().CreatePlayerForItem(children, matchIndex, seek)
+        ' If we currently have a video playing, things are tricky. We can't
+        ' play anything on top of video or Bad Things happen. But we also
+        ' can't quickly close the screen and throw up a new video player
+        ' because the new video screen will see the isScreenClosed event
+        ' meant for the old video player. So we have to register a callback,
+        ' which is always awkward.
+
+        if GetViewController().IsVideoPlaying() then
+            callback = CreateObject("roAssociativeArray")
+            callback.context = children
+            callback.contextIndex = matchIndex
+            callback.seekValue = seek
+            callback.OnAfterClose = createPlayerAfterClose
+            GetViewController().CloseScreenWithCallback(callback)
+        else
+            GetViewController().CreatePlayerForItem(children, matchIndex, seek)
+        end if
 
         m.http_code = 200
     else
@@ -65,3 +81,7 @@ Function ProcessPlayMediaRequest() As Boolean
 
     return true
 End Function
+
+Sub createPlayerAfterClose()
+    GetViewController().CreatePlayerForItem(m.context, m.contextIndex, m.seekValue)
+End Sub

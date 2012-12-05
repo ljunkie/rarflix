@@ -24,11 +24,15 @@ Function createViewController() As Object
     controller.CreatePhotoPlayer = vcCreatePhotoPlayer
     controller.CreateVideoPlayer = vcCreateVideoPlayer
     controller.CreatePlayerForItem = vcCreatePlayerForItem
+    controller.IsVideoPlaying = vcIsVideoPlaying
 
     controller.InitializeOtherScreen = vcInitializeOtherScreen
     controller.AssignScreenID = vcAssignScreenID
     controller.PushScreen = vcPushScreen
     controller.PopScreen = vcPopScreen
+
+    controller.afterCloseCallback = invalid
+    controller.CloseScreenWithCallback = vcCloseScreenWithCallback
 
     controller.Show = vcShow
     controller.RefreshHomeScreen = vcRefreshHomeScreen
@@ -292,6 +296,10 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=0)
     end if
 End Function
 
+Function vcIsVideoPlaying() As Boolean
+    return type(m.screens.Peek().Screen) = "roVideoScreen"
+End Function
+
 Sub vcInitializeOtherScreen(screen, breadcrumbs)
     m.AddBreadcrumbs(screen, breadcrumbs)
     m.UpdateScreenProperties(screen)
@@ -387,6 +395,17 @@ Sub vcPopScreen(screen)
     if m.screens.Count() = 0 then
         m.Home.CreateAllPlaylistRequests(true)
     end if
+
+    ' If some other screen requested this close, let it know.
+    if m.afterCloseCallback <> invalid then
+        m.afterCloseCallback.OnAfterClose()
+        m.afterCloseCallback = invalid
+    end if
+End Sub
+
+Sub vcCloseScreenWithCallback(callback)
+    m.afterCloseCallback = callback
+    m.screens.Peek().Screen.Close()
 End Sub
 
 Sub vcShow()
