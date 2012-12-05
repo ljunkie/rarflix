@@ -202,7 +202,7 @@ Function AddUnnamedServer(address) As Boolean
         if server <> invalid AND server.ServerUrl <> address then
             Debug("Updating URL for machine ID, new URL: " + address)
             server.ServerUrl = address
-            server.Name = xml@friendlyName
+            server.Name = firstOf(xml@friendlyName, "Unknown")
             server.owned = true
             server.IsConfigured = true
             server.IsAvailable = true
