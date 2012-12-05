@@ -9,7 +9,7 @@
 Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms = CreateObject("roAssociativeArray")
     pms.serverUrl = pmsUrl
-    pms.name = pmsName
+    pms.name = firstOf(pmsName, "Unknown")
     pms.machineID = machineID
     pms.owned = true
     pms.online = false
