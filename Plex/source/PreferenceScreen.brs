@@ -224,17 +224,6 @@ Function createPreferencesScreen(viewController) As Object
         default: "0"
     }
 
-    ' Subtitle options
-    softsubtitles = [
-        { title: "Soft", EnumValue: "1", ShortDescriptionLine2: "Use soft subtitles whenever possible." },
-        { title: "Burned In", EnumValue: "0", ShortDescriptionLine2: "Always burn in selected subtitles." }
-    ]
-    obj.Prefs["softsubtitles"] = {
-        values: softsubtitles,
-        heading: "Allow Roku to show soft subtitles itself, or burn them in to videos?",
-        default: "1"
-    }
-
     ' Screensaver options
     screensaver = [
         { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Use the system screensaver" },
@@ -265,10 +254,10 @@ Sub showPreferencesScreen()
     m.AddItem({title: getCurrentMyPlexLabel()}, "myplex")
     m.AddItem({title: "Quality"}, "quality", m.GetEnumValue("quality"))
     m.AddItem({title: "Direct Play"}, "directplay", m.GetEnumValue("directplay"))
-    m.AddItem({title: "Subtitles"}, "softsubtitles", m.GetEnumValue("softsubtitles"))
-    m.AddItem({title: "Slideshow"}, "slideshow")
-    m.AddItem({title: "Remote Control"}, "remotecontrol")
     m.AddItem({title: "Home Screen"}, "homescreen")
+    m.AddItem({title: "Remote Control"}, "remotecontrol")
+    m.AddItem({title: "Subtitles"}, "subtitles")
+    m.AddItem({title: "Slideshow"}, "slideshow")
     m.AddItem({title: "Screensaver"}, "screensaver", m.GetEnumValue("screensaver"))
     m.AddItem({title: "Logging"}, "debug")
     m.AddItem({title: "Advanced Preferences"}, "advanced")
@@ -341,11 +330,15 @@ Function prefsMainHandleMessage(msg) As Boolean
                     m.myPlexIndex = msg.GetIndex()
                     m.ViewController.CreateMyPlexPinScreen()
                 end if
-            else if command = "quality" OR command = "level" OR command = "fivepointone" OR command = "directplay" OR command = "softsubtitles" OR command = "screensaver" then
+            else if command = "quality" OR command = "level" OR command = "fivepointone" OR command = "directplay" OR command = "screensaver" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "slideshow" then
                 screen = createSlideshowPrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["Slideshow Preferences"])
+                screen.Show()
+            else if command = "subtitles" then
+                screen = createSubtitlePrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["Subtitle Preferences"])
                 screen.Show()
             else if command = "remotecontrol" then
                 screen = createRemoteControlPrefsScreen(m.ViewController)
@@ -444,6 +437,86 @@ Function prefsSlideshowHandleMessage(msg) As Boolean
     return handled
 End Function
 
+'*** Subtitle Preferences ***
+
+Function createSubtitlePrefsScreen(viewController) As Object
+    obj = createBasePrefsScreen(viewController)
+
+    obj.HandleMessage = prefsSubtitleHandleMessage
+
+    ' Enable soft subtitles
+    softsubtitles = [
+        { title: "Soft", EnumValue: "1", ShortDescriptionLine2: "Use soft subtitles whenever possible." },
+        { title: "Burned In", EnumValue: "0", ShortDescriptionLine2: "Always burn in selected subtitles." }
+    ]
+    obj.Prefs["softsubtitles"] = {
+        values: softsubtitles,
+        heading: "Allow Roku to show soft subtitles itself, or burn them in to videos?",
+        default: "1"
+    }
+
+    ' Subtitle size (burned in only)
+    sizes = [
+        { title: "Tiny", EnumValue: "75" },
+        { title: "Small", EnumValue: "90" },
+        { title: "Normal", EnumValue: "125" },
+        { title: "Large", EnumValue: "175" },
+        { title: "Huge", EnumValue: "250" }
+    ]
+    obj.Prefs["subtitle_size"] = {
+        values: sizes,
+        heading: "Burned-in subtitle size",
+        default: "125"
+    }
+
+    ' Subtitle color (soft only)
+    colors = [
+        { title: "Default", EnumValue: "" },
+        { title: "Yellow", EnumValue: "#FFFF00" },
+        { title: "White", EnumValue: "#FFFFFF" },
+        { title: "Black", EnumValue: "#000000" }
+    ]
+    obj.Prefs["subtitle_color"] = {
+        values: colors,
+        heading: "Soft subtitle color",
+        default: ""
+    }
+
+    obj.Screen.SetHeader("Subtitle Preferences")
+
+    obj.AddItem({title: "Subtitles"}, "softsubtitles", obj.GetEnumValue("softsubtitles"))
+    obj.AddItem({title: "Subtitle Size"}, "subtitle_size", obj.GetEnumValue("subtitle_size"))
+    obj.AddItem({title: "Subtitle Color"}, "subtitle_color", obj.GetEnumValue("subtitle_color"))
+    obj.AddItem({title: "Close"}, "close")
+
+    return obj
+End Function
+
+Function prefsSubtitleHandleMessage(msg) As Boolean
+    handled = false
+
+    if type(msg) = "roListScreenEvent" then
+        handled = true
+
+        if msg.isScreenClosed() then
+            m.ViewController.PopScreen(m)
+            if m.Changes.DoesExist("subtitle_color") then
+                app = CreateObject("roAppManager")
+                app.SetThemeAttribute("SubtitleColor", m.Changes["subtitle_color"])
+            end if
+        else if msg.isListItemSelected() then
+            command = m.GetSelectedCommand(msg.GetIndex())
+            if command = "softsubtitles" OR command = "subtitle_size" OR command = "subtitle_color" then
+                m.HandleEnumPreference(command, msg.GetIndex())
+            else if command = "close" then
+                m.Screen.Close()
+            end if
+        end if
+    end if
+
+    return handled
+End Function
+
 '*** Advanced Preferences ***
 
 Function createAdvancedPrefsScreen(viewController) As Object
@@ -488,20 +561,6 @@ Function createAdvancedPrefsScreen(viewController) As Object
         default: "10"
     }
 
-    ' Subtitle size (burned in only)
-    sizes = [
-        { title: "Tiny", EnumValue: "75" },
-        { title: "Small", EnumValue: "90" },
-        { title: "Normal", EnumValue: "125" },
-        { title: "Large", EnumValue: "175" },
-        { title: "Huge", EnumValue: "250" }
-    ]
-    obj.Prefs["subtitle_size"] = {
-        values: sizes,
-        heading: "Burned-in subtitle size",
-        default: "125"
-    }
-
     ' Audio boost for transcoded content. Transcoded content is quiet by
     ' default, but if we set a default boost then audio will never be remuxed.
     ' These values are based on iOS.
@@ -534,7 +593,6 @@ Function createAdvancedPrefsScreen(viewController) As Object
     end if
 
     obj.AddItem({title: "HLS Segment Length"}, "segment_length", obj.GetEnumValue("segment_length"))
-    obj.AddItem({title: "Subtitle Size"}, "subtitle_size", obj.GetEnumValue("subtitle_size"))
     obj.AddItem({title: "Audio Boost"}, "audio_boost", obj.GetEnumValue("audio_boost"))
     obj.AddItem({title: "Close"}, "close")
 
@@ -551,7 +609,7 @@ Function prefsAdvancedHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "level" OR command = "fivepointone" OR command = "segment_length" OR command = "subtitle_size" OR command = "audio_boost" then
+            if command = "level" OR command = "fivepointone" OR command = "segment_length" OR command = "audio_boost" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "1080p" then
                 screen = create1080PreferencesScreen(m.ViewController)

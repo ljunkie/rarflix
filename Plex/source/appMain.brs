@@ -215,6 +215,9 @@ Sub initTheme()
     theme.SpringboardSynopsisText = normalText
     theme.EpisodeSynopsisText = normalText
 
+    subtitleColor = RegRead("subtitle_color", "preferences", "")
+    if subtitleColor <> "" then theme.SubtitleColor = subtitleColor
+
     app.SetTheme(theme)
 
 End Sub
