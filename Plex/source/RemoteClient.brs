@@ -82,6 +82,34 @@ Function ProcessPlayMediaRequest() As Boolean
     return true
 End Function
 
+Function ProcessStopMediaRequest() As Boolean
+    ' Note that we're evaluated in the context of a Reply object.
+
+    if RegRead("remotecontrol", "preferences", "1") <> "1" then
+        m.default(404, "Remote control is disabled for this device")
+        return true
+    end if
+
+    ' If we're playing a video, close it. Otherwise assume this is destined for
+    ' the audio player, which will respond appropriately whatever state it's in.
+    vc = GetViewController()
+    if vc.IsVideoPlaying() then
+        vc.CloseScreenWithCallback(invalid)
+    else
+        vc.AudioPlayer.Stop()
+    end if
+
+    ' Always return an empty body
+    body = ""
+    m.buf.fromasciistring(body)
+    m.length = m.buf.count()
+    m.http_code = 200
+    m.genHdr(true)
+    m.source = m.GENERATED
+
+    return true
+End Function
+
 Sub createPlayerAfterClose()
     GetViewController().CreatePlayerForItem(m.context, m.contextIndex, m.seekValue)
 End Sub
