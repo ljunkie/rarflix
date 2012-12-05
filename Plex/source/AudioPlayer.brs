@@ -35,6 +35,8 @@ Function createAudioPlayer(viewController)
 
     obj.ShowContextMenu = audioPlayerShowContextMenu
 
+    obj.PlayThemeMusic = audioPlayerPlayThemeMusic
+
     obj.IsPlaying = false
     obj.IsPaused = false
 
@@ -160,14 +162,19 @@ Sub audioPlayerSetContext(context, contextIndex, screen)
 
     m.Context = context
     m.CurIndex = contextIndex
-    m.ContextScreenID = screen.ScreenID
+
+    if screen <> invalid then
+        m.ContextScreenID = screen.ScreenID
+    else
+        m.ContextScreenID = invalid
+    end if
 
     if item.server <> invalid AND item.server.AccessToken <> invalid then
         m.audioPlayer.AddHeader("X-Plex-Token", item.server.AccessToken)
     end if
 
     ' TODO: Do we want to loop? Always/Sometimes/Never/Preference?
-    m.audioPlayer.SetLoop(context.Count() > 1)
+    m.audioPlayer.SetLoop(context.Count() > 1 OR screen = invalid)
 
     m.audioPlayer.SetContentList(context)
     m.audioPlayer.SetNext(contextIndex)
@@ -242,3 +249,17 @@ Function audioPlayerMenuHandleButton(command, data) As Boolean
     ' refresh the buttons based on the new state.
     return true
 End Function
+
+Sub audioPlayerPlayThemeMusic(item)
+    themeItem = CreateObject("roAssociativeArray")
+    themeItem.Url = item.server.serverUrl + item.theme
+    themeItem.Title = item.Title + " Theme"
+    themeItem.HasDetails = true
+    themeItem.Type = "track"
+    themeItem.ContentType = "audio"
+    themeItem.StreamFormat = "mp3"
+    themeItem.server = item.server
+
+    m.SetContext([themeItem], 0, invalid)
+    m.Play()
+End Sub

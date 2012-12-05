@@ -28,6 +28,11 @@ Function createPosterScreen(item, viewController) As Object
     obj.focusedList = 0
     obj.names = []
 
+    if item.theme <> invalid AND NOT obj.ViewController.AudioPlayer.IsPlaying then
+        obj.ViewController.AudioPlayer.PlayThemeMusic(item)
+        obj.Cleanup = baseStopAudioPlayer
+    end if
+
     return obj
 End Function
 

@@ -6,6 +6,7 @@ Function newDirectoryMetadata(container, item) As Object
     if directory.ContentType = "show" then
         directory.Rating = item@contentRating
         directory.ContentType = "series"
+        directory.Theme = item@theme
     else if directory.ContentType = invalid then
         directory.ContentType = "appClip"
     endif
