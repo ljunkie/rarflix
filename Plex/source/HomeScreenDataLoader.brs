@@ -31,17 +31,25 @@ Function createHomeScreenDataLoader(listener)
 
     loader.contentArray = []
     loader.RowNames = []
+    loader.RowIndexes = {}
     loader.FirstLoad = true
     loader.FirstServer = true
 
-    loader.ChannelsRow = loader.CreateRow("Channels")
-    loader.SectionsRow = loader.CreateRow("Library Sections")
-    loader.OnDeckRow = loader.CreateRow("On Deck")
-    loader.RecentsRow = loader.CreateRow("Recently Added")
-    loader.QueueRow = loader.CreateRow("Queue")
-    loader.RecommendationsRow = loader.CreateRow("Recommendations")
-    loader.SharedSectionsRow = loader.CreateRow("Shared Library Sections")
-    loader.MiscRow = loader.CreateRow("Miscellaneous")
+    rows = [
+        { title: "Channels", key: "channels" },
+        { title: "Library Sections", key: "sections" },
+        { title: "On Deck", key: "on_deck" },
+        { title: "Recently Added", key: "recently_added" },
+        { title: "Queue", key: "queue" },
+        { title: "Recommendations", key: "recommendations" },
+        { title: "Shared Library Sections", key: "shared_sections" },
+        { title: "Miscellaneous", key: "misc" }
+    ]
+    ReorderItemsByKeyPriority(rows, RegRead("home_row_order", "preferences", ""))
+
+    for each row in rows
+        loader.RowIndexes[row.key] = loader.CreateRow(row.title)
+    next
 
     ' Kick off an asynchronous GDM discover.
     if RegRead("autodiscover", "preferences", "1") = "1" then
@@ -74,7 +82,7 @@ Function createHomeScreenDataLoader(listener)
     prefs.ShortDescriptionLine1 = "Preferences"
     prefs.SDPosterURL = "file://pkg:/images/gear.png"
     prefs.HDPosterURL = "file://pkg:/images/gear.png"
-    loader.contentArray[loader.MiscRow].content.Push(prefs)
+    loader.contentArray[loader.RowIndexes["misc"]].content.Push(prefs)
 
     loader.lastMachineID = RegRead("lastMachineID")
     loader.lastSectionKey = RegRead("lastSectionKey")
@@ -118,7 +126,7 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
     sections = CreateObject("roAssociativeArray")
     sections.server = server
     sections.key = "/library/sections"
-    m.AddOrStartRequest(sections, m.SectionsRow, startRequests)
+    m.AddOrStartRequest(sections, m.RowIndexes["sections"], startRequests)
 
     ' Request recently used channels
     channels = CreateObject("roAssociativeArray")
@@ -139,21 +147,21 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
     allChannels.SDPosterURL = "file://pkg:/images/more.png"
     allChannels.HDPosterURL = "file://pkg:/images/more.png"
     channels.item = allChannels
-    m.AddOrStartRequest(channels, m.ChannelsRow, startRequests)
+    m.AddOrStartRequest(channels, m.RowIndexes["channels"], startRequests)
 
     ' Request global on deck
     onDeck = CreateObject("roAssociativeArray")
     onDeck.server = server
     onDeck.key = "/library/onDeck"
     onDeck.requestType = "media"
-    m.AddOrStartRequest(onDeck, m.OnDeckRow, startRequests)
+    m.AddOrStartRequest(onDeck, m.RowIndexes["on_deck"], startRequests)
 
     ' Request recently added
     recents = CreateObject("roAssociativeArray")
     recents.server = server
     recents.key = "/library/recentlyAdded"
     recents.requestType = "media"
-    m.AddOrStartRequest(recents, m.RecentsRow, startRequests)
+    m.AddOrStartRequest(recents, m.RowIndexes["recently_added"], startRequests)
 End Sub
 
 Sub homeCreateMyPlexRequests(startRequests As Boolean)
@@ -174,14 +182,14 @@ Sub homeCreateMyPlexRequests(startRequests As Boolean)
     shared = CreateObject("roAssociativeArray")
     shared.server = myPlex
     shared.key = "/pms/system/library/sections"
-    m.AddOrStartRequest(shared, m.SharedSectionsRow, startRequests)
+    m.AddOrStartRequest(shared, m.RowIndexes["shared_sections"], startRequests)
 End Sub
 
 Sub homeCreateAllPlaylistRequests(startRequests As Boolean)
     if NOT GetMyPlexManager().IsSignedIn then return
 
-    m.CreatePlaylistRequests("queue", "All Queued Items", "All queued items, including already watched items", m.QueueRow, startRequests)
-    m.CreatePlaylistRequests("recommendations", "All Recommended Items", "All recommended items, including already watched items", m.RecommendationsRow, startRequests)
+    m.CreatePlaylistRequests("queue", "All Queued Items", "All queued items, including already watched items", m.RowIndexes["queue"], startRequests)
+    m.CreatePlaylistRequests("recommendations", "All Recommended Items", "All recommended items, including already watched items", m.RowIndexes["recommendations"], startRequests)
 End Sub
 
 Sub homeCreatePlaylistRequests(name, title, description, row, startRequests)
@@ -274,21 +282,21 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
     if m.FirstLoad then
         m.FirstLoad = false
         if NOT myPlex.IsSignedIn then
-            m.Listener.OnDataLoaded(m.QueueRow, [], 0, 0, true)
-            m.Listener.OnDataLoaded(m.RecommendationsRow, [], 0, 0, true)
-            m.Listener.OnDataLoaded(m.SharedSectionsRow, [], 0, 0, true)
+            m.Listener.OnDataLoaded(m.RowIndexes["queue"], [], 0, 0, true)
+            m.Listener.OnDataLoaded(m.RowIndexes["recommendations"], [], 0, 0, true)
+            m.Listener.OnDataLoaded(m.RowIndexes["shared_sections"], [], 0, 0, true)
         else
             ' It'll be made visible if we get any data.
-            m.Listener.Screen.SetListVisible(m.SharedSectionsRow, false)
+            m.Listener.Screen.SetListVisible(m.RowIndexes["shared_sections"], false)
         end if
 
         m.Listener.hasBeenFocused = false
         m.Listener.ignoreNextFocus = true
 
         if type(m.Listener.Screen) = "roGridScreen" then
-            m.Listener.Screen.SetFocusedListItem(m.SectionsRow, 0)
+            m.Listener.Screen.SetFocusedListItem(m.RowIndexes["sections"], 0)
         else
-            m.Listener.Screen.SetFocusedListItem(m.SectionsRow)
+            m.Listener.Screen.SetFocusedListItem(m.RowIndexes["sections"])
         end if
     end if
 
@@ -335,7 +343,7 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
     else
         ' Special case, if we try loading the Misc row and have no servers,
         ' this is probably a first run scenario, try to be helpful.
-        if loadingRow = m.MiscRow AND RegRead("serverList", "servers") = invalid AND NOT myPlex.IsSignedIn then
+        if loadingRow = m.RowIndexes["misc"] AND RegRead("serverList", "servers") = invalid AND NOT myPlex.IsSignedIn then
             if RegRead("autodiscover", "preferences", "1") = "1" then
                 ' Give GDM discovery a chance...
                 m.LoadingFacade = CreateObject("roOneLineDialog")
@@ -507,7 +515,7 @@ Sub homeOnUrlEvent(msg, requestContext)
             m.Listener.OnDataLoaded(requestContext.row, status.content, startItem, countLoaded, true)
         end if
 
-        if m.Listener.hasBeenFocused = false AND requestContext.row = m.SectionsRow AND type(m.Listener.Screen) = "roGridScreen" AND server.machineID = m.lastMachineID then
+        if m.Listener.hasBeenFocused = false AND requestContext.row = m.RowIndexes["sections"] AND type(m.Listener.Screen) = "roGridScreen" AND server.machineID = m.lastMachineID then
             Debug("Trying to focus last used section")
             for i = 0 to status.content.Count() - 1
                 if status.content[i].key = m.lastSectionKey then
@@ -608,7 +616,7 @@ Sub homeOnUrlEvent(msg, requestContext)
             Debug("URL: " + tostr(server.serverUrl))
             Debug("Server supports audio transcoding: " + tostr(server.SupportsAudioTranscoding))
 
-            status = m.contentArray[m.MiscRow]
+            status = m.contentArray[m.RowIndexes["misc"]]
 
             machineId = tostr(server.machineID)
             if NOT status.loadedServers.DoesExist(machineID) then
@@ -650,9 +658,9 @@ Sub homeOnUrlEvent(msg, requestContext)
                 univSearch.SDPosterURL = "file://pkg:/images/search.png"
                 univSearch.HDPosterURL = "file://pkg:/images/search.png"
                 status.content.Unshift(univSearch)
-                m.Listener.OnDataLoaded(m.MiscRow, status.content, 0, status.content.Count(), true)
+                m.Listener.OnDataLoaded(m.RowIndexes["misc"], status.content, 0, status.content.Count(), true)
             else
-                m.Listener.OnDataLoaded(m.MiscRow, status.content, status.content.Count() - 1, 1, true)
+                m.Listener.OnDataLoaded(m.RowIndexes["misc"], status.content, status.content.Count() - 1, 1, true)
             end if
         end if
     else if requestContext.requestType = "servers" then
@@ -742,14 +750,14 @@ Sub homeRefreshData()
     m.CreateAllPlaylistRequests(true)
 
     ' Refresh the sections and channels for all of our owned servers
-    m.contentArray[m.SectionsRow].refreshContent = []
-    m.contentArray[m.SectionsRow].loadedServers.Clear()
-    m.contentArray[m.ChannelsRow].refreshContent = []
-    m.contentArray[m.ChannelsRow].loadedServers.Clear()
-    m.contentArray[m.OnDeckRow].refreshContent = []
-    m.contentArray[m.OnDeckRow].loadedServers.Clear()
-    m.contentArray[m.RecentsRow].refreshContent = []
-    m.contentArray[m.RecentsRow].loadedServers.Clear()
+    m.contentArray[m.RowIndexes["sections"]].refreshContent = []
+    m.contentArray[m.RowIndexes["sections"]].loadedServers.Clear()
+    m.contentArray[m.RowIndexes["channels"]].refreshContent = []
+    m.contentArray[m.RowIndexes["channels"]].loadedServers.Clear()
+    m.contentArray[m.RowIndexes["on_deck"]].refreshContent = []
+    m.contentArray[m.RowIndexes["on_deck"]].loadedServers.Clear()
+    m.contentArray[m.RowIndexes["recently_added"]].refreshContent = []
+    m.contentArray[m.RowIndexes["recently_added"]].loadedServers.Clear()
 
     for each server in GetOwnedPlexMediaServers()
         m.CreateServerRequests(server, true, true)
@@ -765,23 +773,23 @@ Sub homeOnMyPlexChange()
     if GetMyPlexManager().IsSignedIn then
         m.CreateMyPlexRequests(true)
     else
-        m.RemoveFromRowIf(m.SectionsRow, IsMyPlexServer)
-        m.RemoveFromRowIf(m.ChannelsRow, IsMyPlexServer)
-        m.RemoveFromRowIf(m.OnDeckRow, IsMyPlexServer)
-        m.RemoveFromRowIf(m.RecentsRow, IsMyPlexServer)
-        m.RemoveFromRowIf(m.MiscRow, IsMyPlexServer)
-        m.RemoveFromRowIf(m.QueueRow, AlwaysTrue)
-        m.RemoveFromRowIf(m.RecommendationsRow, AlwaysTrue)
-        m.RemoveFromRowIf(m.SharedSectionsRow, AlwaysTrue)
+        m.RemoveFromRowIf(m.RowIndexes["sections"], IsMyPlexServer)
+        m.RemoveFromRowIf(m.RowIndexes["channels"], IsMyPlexServer)
+        m.RemoveFromRowIf(m.RowIndexes["on_deck"], IsMyPlexServer)
+        m.RemoveFromRowIf(m.RowIndexes["recently_added"], IsMyPlexServer)
+        m.RemoveFromRowIf(m.RowIndexes["misc"], IsMyPlexServer)
+        m.RemoveFromRowIf(m.RowIndexes["queue"], AlwaysTrue)
+        m.RemoveFromRowIf(m.RowIndexes["recommendations"], AlwaysTrue)
+        m.RemoveFromRowIf(m.RowIndexes["shared_sections"], AlwaysTrue)
     end if
 End Sub
 
 Sub homeRemoveInvalidServers()
-    m.RemoveFromRowIf(m.SectionsRow, IsInvalidServer)
-    m.RemoveFromRowIf(m.ChannelsRow, IsInvalidServer)
-    m.RemoveFromRowIf(m.OnDeckRow, IsInvalidServer)
-    m.RemoveFromRowIf(m.RecentsRow, IsInvalidServer)
-    m.RemoveFromRowIf(m.MiscRow, IsInvalidServer)
+    m.RemoveFromRowIf(m.RowIndexes["sections"], IsInvalidServer)
+    m.RemoveFromRowIf(m.RowIndexes["channels"], IsInvalidServer)
+    m.RemoveFromRowIf(m.RowIndexes["on_deck"], IsInvalidServer)
+    m.RemoveFromRowIf(m.RowIndexes["recently_added"], IsInvalidServer)
+    m.RemoveFromRowIf(m.RowIndexes["misc"], IsInvalidServer)
 End Sub
 
 Sub homeOnTimerExpired(timer)
@@ -798,9 +806,9 @@ Sub homeOnTimerExpired(timer)
         if RegRead("serverList", "servers") = invalid AND NOT GetMyPlexManager().IsSignedIn then
             Debug("No servers and no myPlex, appears to be a first run")
             ShowHelpScreen()
-            status = m.contentArray[m.MiscRow]
+            status = m.contentArray[m.RowIndexes["misc"]]
             status.loadStatus = 2
-            m.Listener.OnDataLoaded(m.MiscRow, status.content, 0, status.content.Count(), true)
+            m.Listener.OnDataLoaded(m.RowIndexes["misc"], status.content, 0, status.content.Count(), true)
         end if
     end if
 End Sub

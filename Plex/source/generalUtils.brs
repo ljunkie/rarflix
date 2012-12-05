@@ -1,5 +1,5 @@
 '**********************************************************
-'**  Video Player Example Application - General Utilities 
+'**  Video Player Example Application - General Utilities
 '**  November 2009
 '**  Copyright (c) 2009 Roku Inc. All Rights Reserved.
 '**********************************************************
@@ -693,3 +693,24 @@ Function firstOf(first, second, third=invalid, fourth=invalid)
     if third <> invalid then return third
     return fourth
 End Function
+
+'******************************************************
+'Given an array of items and a list of keys in priority order, reorder the
+'array so that the priority items are at the beginning.
+'******************************************************
+Sub ReorderItemsByKeyPriority(items, keys)
+    ' Accept keys either as comma delimited list or already separated into an array.
+    if isstr(keys) then keys = keys.Tokenize(",")
+
+    for j = keys.Count() - 1 to 0 step -1
+        key = keys[j]
+        for i = 0 to items.Count() - 1
+            if items[i].key = key then
+                item = items[i]
+                items.Delete(i)
+                items.Unshift(item)
+                exit for
+            end if
+        end for
+    next
+End Sub

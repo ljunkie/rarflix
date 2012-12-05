@@ -45,20 +45,7 @@ Sub reorderShow()
 End Sub
 
 Sub reorderInitializeOrder(keys)
-    ' Accept keys either as comma delimited list or already separated into an array.
-    if isstr(keys) then keys = keys.Tokenize(",")
-
-    for j = keys.Count() - 1 to 0 step -1
-        key = keys[j]
-        for i = 0 to m.contentArray.Count() - 1
-            if m.contentArray[i].key = key then
-                item = m.contentArray[i]
-                m.contentArray.Delete(i)
-                m.contentArray.Unshift(item)
-                exit for
-            end if
-        end for
-    next
+    ReorderItemsByKeyPriority(m.contentArray, keys)
 End Sub
 
 Sub reorderSwap(index1, index2)
