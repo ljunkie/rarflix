@@ -33,10 +33,7 @@ End Function
 Sub videoSetupButtons()
     m.ClearButtons()
 
-    if m.metadata.viewOffset <> invalid then
-        intervalInSeconds = fix(val(m.metadata.viewOffset)/(1000))
-        m.AddButton("Resume from " + TimeDisplay(intervalInSeconds), "resume")
-    endif
+    m.offerResume = m.metadata.viewOffset <> invalid
 
     m.AddButton(m.PlayButtonStates[m.PlayButtonState].label, "play")
     Debug("Media = " + tostr(m.media))
@@ -94,9 +91,19 @@ Function videoHandleMessage(msg) As Boolean
 
             if buttonCommand = "play" OR buttonCommand = "resume" then
                 startTime = 0
-                if buttonCommand = "resume" then
-                    startTime = int(val(m.metadata.viewOffset))
+
+                if m.offerResume then
+                    intervalInSeconds = fix(val(m.metadata.viewOffset)/(1000))
+
+                    dlg = createBaseDialog()
+                    dlg.Title = "Play Video"
+                    dlg.SetButton("play", "Play from beginning")
+                    dlg.SetButton("resume", "Resume from " + TimeDisplay(intervalInSeconds))
+                    dlg.Show(true)
+
+                    if dlg.Result = "resume" then startTime = int(val(m.metadata.viewOffset))
                 end if
+
                 directPlayOptions = m.PlayButtonStates[m.PlayButtonState]
                 Debug("Playing video with Direct Play options set to: " + directPlayOptions.label)
                 m.ViewController.CreateVideoPlayer(m.metadata, startTime, directPlayOptions.value)

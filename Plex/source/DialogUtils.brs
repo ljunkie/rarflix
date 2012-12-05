@@ -19,6 +19,8 @@ Function createBaseDialog() As Object
     obj.Text = invalid
     obj.Item = invalid
 
+    obj.Result = invalid
+
     obj.ScreensToClose = []
 
     return obj
@@ -126,6 +128,7 @@ Function dialogHandleMessage(msg) As Boolean
                 done = m.HandleButton(command, msg.getData())
             end if
             if done then
+                m.Result = command
                 m.ScreensToClose.Push(m.Screen)
                 closeScreens = true
             end if
