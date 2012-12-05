@@ -19,6 +19,7 @@ Function createViewController() As Object
     controller.CreateEnumInputScreen = vcCreateEnumInputScreen
     controller.CreateReorderScreen = vcCreateReorderScreen
     controller.CreateMyPlexPinScreen = vcCreateMyPlexPinScreen
+    controller.CreateContextMenu = vcCreateContextMenu
 
     controller.CreatePhotoPlayer = vcCreatePhotoPlayer
     controller.CreateVideoPlayer = vcCreateVideoPlayer
@@ -241,6 +242,13 @@ Function vcCreateMyPlexPinScreen(show=true)
     return screen
 End Function
 
+Function vcCreateContextMenu()
+    ' Our context menu is only relevant if the audio player has content.
+    if m.AudioPlayer.Context = invalid then return invalid
+
+    return m.AudioPlayer.ShowContextMenu()
+End Function
+
 Function vcCreatePhotoPlayer(context, contextIndex=invalid, show=true)
     screen = createPhotoPlayerScreen(context, contextIndex, m)
 
@@ -323,18 +331,37 @@ Sub vcPopScreen(screen)
         screen.Loader = invalid
     end if
 
-    if screen.ScreenID = invalid OR m.screens.Peek().ScreenID = invalid OR screen.ScreenID <> m.screens.Peek().ScreenID then
-        Debug("Trying to pop screen that doesn't match the top of our stack!")
+    if screen.ScreenID = invalid OR m.screens.Peek().ScreenID = invalid then
+        Debug("Trying to pop screen a screen without a screen ID!")
         Return
     end if
 
+    callActivate = true
     screenID = screen.ScreenID.tostr()
-
-    Debug("Popping screen " + screenID + " and cleaning up " + tostr(screen.NumBreadcrumbs) + " breadcrumbs")
-    m.screens.Pop()
-    for i = 0 to screen.NumBreadcrumbs - 1
-        m.breadcrumbs.Pop()
-    next
+    if screen.ScreenID <> m.screens.Peek().ScreenID then
+        if screen.NumBreadcrumbs = 0 then
+            ' This is awkward, but if we launch a new screen from a dialog we
+            ' end up trying to pop the dialog after the new screen has been
+            ' put on the stack. Try to handle that.
+            for i = m.screens.Count() - 1 to 0 step -1
+                if screen.ScreenID = m.screens[i].ScreenID then
+                    Debug("Removing screen " + screenID + " from middle of stack!")
+                    m.screens.Delete(i)
+                    exit for
+                end if
+            next
+            callActivate = false
+        else
+            Debug("Trying to pop screen that doesn't match the top of our stack!")
+            Return
+        end if
+    else
+        Debug("Popping screen " + screenID + " and cleaning up " + tostr(screen.NumBreadcrumbs) + " breadcrumbs")
+        m.screens.Pop()
+        for i = 0 to screen.NumBreadcrumbs - 1
+            m.breadcrumbs.Pop()
+        next
+    end if
 
     ' Clean up any requests initiated by this screen
     m.CancelRequests(screen.ScreenID)
@@ -352,7 +379,7 @@ Sub vcPopScreen(screen)
     end if
 
     ' Let the new top of the stack know that it's visible again.
-    m.screens.Peek().Activate(screen)
+    if callActivate then m.screens.Peek().Activate(screen)
 
     if m.screens.Count() = 0 then
         m.Home.CreateAllPlaylistRequests(true)
@@ -407,6 +434,8 @@ Sub vcShow()
                 if msgInfo.LogType = "bandwidth.minute" then
                     GetGlobalAA().AddReplace("bandwidth", msgInfo.Bandwidth)
                 end if
+            else if msg.isRemoteKeyPressed() and msg.GetIndex() = 10 then
+                m.CreateContextMenu()
             end if
         end if
 

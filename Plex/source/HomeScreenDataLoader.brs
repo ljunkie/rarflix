@@ -767,7 +767,7 @@ Sub homeRefreshData()
         m.nowPlayingItem.CurIndex = miscContent.Count()
         miscContent.Push(m.nowPlayingItem)
     else if m.nowPlayingItem.CurIndex <> invalid AND audioPlayer.Context = invalid then
-        miscContent.RemoveIndex(m.nowPlayingItem.CurIndex)
+        miscContent.Delete(m.nowPlayingItem.CurIndex)
         m.nowPlayingItem.CurIndex = invalid
     end if
 

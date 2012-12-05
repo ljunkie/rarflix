@@ -33,6 +33,8 @@ Function createAudioPlayer(viewController)
     obj.SetContext = audioPlayerSetContext
     obj.ClearContext = audioPlayerClearContext
 
+    obj.ShowContextMenu = audioPlayerShowContextMenu
+
     obj.IsPlaying = false
     obj.IsPaused = false
 
@@ -183,3 +185,60 @@ Sub audioPlayerClearContext()
     m.IsPaused = false
 End Sub
 
+Sub audioPlayerShowContextMenu()
+    dialog = createBaseDialog()
+    dialog.Title = "Now Playing"
+    dialog.Text = firstOf(m.Context[m.CurIndex].Title, "")
+
+    if m.IsPlaying then
+        dialog.SetButton("pause", "Pause")
+    else if m.IsPaused then
+        dialog.SetButton("resume", "Play")
+    else
+        dialog.SetButton("play", "Play")
+    end if
+    dialog.SetButton("stop", "Stop")
+
+    if m.Context.Count() > 1 then
+        dialog.SetButton("next_track", "Next Track")
+        dialog.SetButton("prev_track", "Previous Track")
+    end if
+
+    dialog.SetButton("show", "Go to Now Playing")
+    dialog.SetButton("close", "Close")
+
+    dialog.HandleButton = audioPlayerMenuHandleButton
+    dialog.ParentScreen = m
+    dialog.Show()
+End Sub
+
+Function audioPlayerMenuHandleButton(command, data) As Boolean
+    ' We're evaluated in the context of the dialog, but we want to be in the
+    ' context of the audio player.
+    obj = m.ParentScreen
+
+    if command = "play" then
+        obj.Play()
+    else if command = "pause" then
+        obj.Pause()
+    else if command = "resume" then
+        obj.Resume()
+    else if command = "stop" then
+        obj.Stop()
+    else if command = "next_track" then
+        obj.Next()
+    else if command = "prev_track" then
+        obj.Prev()
+    else if command = "show" then
+        dummyItem = CreateObject("roAssociativeArray")
+        dummyItem.ContentType = "audio"
+        dummyItem.Key = "nowplaying"
+        obj.ViewController.CreateScreenForItem(dummyItem, invalid, ["Now Playing"])
+    else if command = "close" then
+        return true
+    end if
+
+    ' For now, close the dialog after any button press instead of trying to
+    ' refresh the buttons based on the new state.
+    return true
+End Function

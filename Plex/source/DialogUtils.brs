@@ -111,7 +111,7 @@ Sub dialogShow(blocking=false)
 End Sub
 
 Function dialogHandleMessage(msg) As Boolean
-    handled = true
+    handled = false
 
     if type(msg) = "roMessageDialogEvent" then
         handled = true
