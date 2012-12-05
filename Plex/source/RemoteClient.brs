@@ -48,7 +48,7 @@ Function ProcessPlayMediaRequest() As Boolean
             seek = 0
         end if
 
-        GetViewController.CreatePlayerForItem(children, matchIndex, seek)
+        GetViewController().CreatePlayerForItem(children, matchIndex, seek)
 
         m.http_code = 200
     else
