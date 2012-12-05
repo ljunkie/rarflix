@@ -262,6 +262,9 @@ Function vcCreatePhotoPlayer(context, contextIndex=invalid, show=true)
 End Function
 
 Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=true)
+    ' Stop any background audio first
+    m.AudioPlayer.Stop()
+
     screen = createVideoPlayerScreen(metadata, seekValue, directPlayOptions, m)
 
     m.AddBreadcrumbs(screen, invalid)
