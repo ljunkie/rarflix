@@ -27,6 +27,26 @@ Sub Main(args)
         RegDelete("directplay_restore", "preferences")
     end if
 
+    ' Our old system of reordering keys used a reverse order. If the old pref
+    ' is still around, read it, reverse it, and delete it.
+    oldPriorityKeys = RegRead("priority_keys", "preferences", "")
+    if oldPriorityKeys <> "" then
+        asArray = oldPriorityKeys.Tokenize(",")
+        newOrder = ""
+        first = true
+        for each key in oldPriorityKeys
+            if first then
+                newOrder = key
+                first = false
+            else
+                newOrder = key + "," + newOrder
+            end if
+        next
+
+        RegWrite("section_row_order", "preferences", newOrder)
+        RegDelete("priority_keys", "preferences")
+    end if
+
     'initialize theme attributes like titles, logos and overhang color
     initTheme()
 

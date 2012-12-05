@@ -256,6 +256,7 @@ Sub showPreferencesScreen()
     m.AddItem({title: "Direct Play"}, "directplay", m.GetEnumValue("directplay"))
     m.AddItem({title: "Home Screen"}, "homescreen")
     m.AddItem({title: "Remote Control"}, "remotecontrol")
+    m.AddItem({title: "Section Display"}, "sections")
     m.AddItem({title: "Subtitles"}, "subtitles")
     m.AddItem({title: "Slideshow"}, "slideshow")
     m.AddItem({title: "Screensaver"}, "screensaver", m.GetEnumValue("screensaver"))
@@ -339,6 +340,10 @@ Function prefsMainHandleMessage(msg) As Boolean
             else if command = "subtitles" then
                 screen = createSubtitlePrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["Subtitle Preferences"])
+                screen.Show()
+            else if command = "sections" then
+                screen = createSectionDisplayPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["Section Display Preferences"])
                 screen.Show()
             else if command = "remotecontrol" then
                 screen = createRemoteControlPrefsScreen(m.ViewController)
@@ -1142,6 +1147,84 @@ Function prefsHomeHandleMessage(msg) As Boolean
             if command = "playlist_view_queue" OR command = "playlist_view_recommendations" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "home_row_order" then
+                m.HandleReorderPreference(command, msg.GetIndex())
+            else if command = "close" then
+                m.Screen.Close()
+            end if
+        end if
+    end if
+
+    return handled
+End Function
+
+'*** Section Display Preferences ***
+
+Function createSectionDisplayPrefsScreen(viewController) As Object
+    obj = createBasePrefsScreen(viewController)
+
+    obj.HandleMessage = prefsSectionDisplayHandleMessage
+
+    ' Grids or posters for TV series?
+    values = [
+        { title: "Grid", EnumValue: "1" },
+        { title: "Poster", EnumValue: "" }
+    ]
+    obj.Prefs["use_grid_for_series"] = {
+        values: values,
+        heading: "Which screen type should be used for TV series?",
+        default: ""
+    }
+
+    ' Grid rows that can be reordered
+    values = [
+        { title: "All Items", key: "all" },
+        { title: "On Deck", key: "onDeck" },
+        { title: "Recently Viewed Shows", key: "recentlyViewedShows" },
+        { title: "Recently Added", key: "recentlyAdded" },
+        { title: "Recently Released/Aired", key: "newest" },
+        { title: "Unwatched", key: "unwatched" },
+        { title: "Recently Viewed", key: "recentlyViewed" },
+        { title: "By Album", key: "albums" },
+        { title: "By Collection", key: "collection" },
+        { title: "By Genre", key: "genre" },
+        { title: "By Year", key: "year" },
+        { title: "By Decade", key: "decade" },
+        { title: "By Director", key: "director" },
+        { title: "By Actor", key: "actor" },
+        { title: "By Country", key: "country" },
+        { title: "By Content Rating", key: "contentRating" },
+        { title: "By Rating", key: "rating" },
+        { title: "By Resolution", key: "resolution" },
+        { title: "By First Letter", key: "firstCharacter" },
+        { title: "By Folder", key: "folder" }
+    ]
+    obj.Prefs["section_row_order"] = {
+        values: values,
+        default: ""
+    }
+
+    obj.Screen.SetHeader("Change the appearance of your sections")
+
+    obj.AddItem({title: "TV Series"}, "use_grid_for_series", obj.GetEnumValue("use_grid_for_series"))
+    obj.AddItem({title: "Reorder Rows"}, "section_row_order")
+    obj.AddItem({title: "Close"}, "close")
+
+    return obj
+End Function
+
+Function prefsSectionDisplayHandleMessage(msg) As Boolean
+    handled = false
+
+    if type(msg) = "roListScreenEvent" then
+        handled = true
+
+        if msg.isScreenClosed() then
+            m.ViewController.PopScreen(m)
+        else if msg.isListItemSelected() then
+            command = m.GetSelectedCommand(msg.GetIndex())
+            if command = "use_grid_for_series" then
+                m.HandleEnumPreference(command, msg.GetIndex())
+            else if command = "section_row_order" then
                 m.HandleReorderPreference(command, msg.GetIndex())
             else if command = "close" then
                 m.Screen.Close()
