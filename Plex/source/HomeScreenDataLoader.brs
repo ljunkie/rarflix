@@ -602,7 +602,7 @@ Sub homeOnUrlEvent(msg, requestContext)
         if server.machineID <> invalid AND server.machineID <> xml@machineIdentifier then
             Debug("Ignoring server response from unexpected machine ID")
         else if existing <> invalid AND existing.online then
-            Debug("Ignoring server response from already configured address (" + request.server.serverUrl + " / " + existing.serverUrl + ")")
+            Debug("Ignoring server response from already configured address (" + requestContext.server.serverUrl + " / " + existing.serverUrl + ")")
         else
             server.name = xml@friendlyName
             server.machineID = xml@machineIdentifier
