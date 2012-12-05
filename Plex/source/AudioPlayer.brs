@@ -33,6 +33,9 @@ Function createAudioPlayer(viewController)
     obj.SetContext = audioPlayerSetContext
     obj.ClearContext = audioPlayerClearContext
 
+    obj.IsPlaying = false
+    obj.IsPaused = false
+
     return obj
 End Function
 
@@ -50,10 +53,21 @@ Function audioPlayerHandleMessage(msg) As Boolean
                 Debug("Scrobbling audio track -> " + tostr(item.ratingKey))
                 item.Server.Scrobble(item.ratingKey, item.mediaContainerIdentifier)
             end if
+
+            maxIndex = m.Context.Count() - 1
+            newIndex = m.CurIndex + 1
+            if newIndex > maxIndex then newIndex = 0
+            m.CurIndex = newIndex
         else if msg.isRequestFailed() then
             Debug("Audio playback failed")
+            maxIndex = m.Context.Count() - 1
+            newIndex = m.CurIndex + 1
+            if newIndex > maxIndex then newIndex = 0
+            m.CurIndex = newIndex
         else if msg.isListItemSelected() then
             Debug("Starting to play track: " + tostr(item.Url))
+            m.IsPlaying = true
+            m.IsPaused = false
         else if msg.isStatusMessage() then
             'Debug("Audio player status: " + tostr(msg.getMessage()))
         else if msg.isFullResult() then
@@ -72,8 +86,12 @@ Function audioPlayerHandleMessage(msg) As Boolean
             Debug("isPartialResult")
         else if msg.isPaused() then
             Debug("Stream paused by user")
+            m.IsPlaying = false
+            m.IsPaused = true
         else if msg.isResumed() then
             Debug("Stream resumed by user")
+            m.IsPlaying = true
+            m.IsPaused = false
         end if
     end if
 
@@ -102,6 +120,8 @@ Sub audioPlayerStop()
     if m.Context <> invalid then
         m.audioPlayer.Stop()
         m.audioPlayer.SetNext(m.CurIndex)
+        m.IsPlaying = false
+        m.IsPaused = false
     end if
 End Sub
 
@@ -149,6 +169,9 @@ Sub audioPlayerSetContext(context, contextIndex, screen)
 
     m.audioPlayer.SetContentList(context)
     m.audioPlayer.SetNext(contextIndex)
+
+    m.IsPlaying = false
+    m.IsPaused = false
 End Sub
 
 Sub audioPlayerClearContext()
@@ -156,5 +179,7 @@ Sub audioPlayerClearContext()
     m.Context = invalid
     m.CurIndex = invalid
     m.ContextScreenID = invalid
+    m.IsPlaying = false
+    m.IsPaused = false
 End Sub
 

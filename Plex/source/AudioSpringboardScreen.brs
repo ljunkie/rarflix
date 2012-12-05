@@ -47,11 +47,15 @@ Function createAudioSpringboardScreen(context, index, viewController) As Dynamic
     obj.callbackTimer.SetDuration(1000, true)
     viewController.AddTimer(obj.callbackTimer, obj)
     obj.progressOffset = 0
-    obj.Playstate = 2
 
-    viewController.AudioPlayer.SetContext(obj.Context, obj.CurIndex, obj)
-    ' Start playback when screen is opened
-    viewController.AudioPlayer.Play()
+    ' Start playback when screen is opened if there's nothing playing
+    if NOT viewController.AudioPlayer.IsPlaying then
+        obj.Playstate = 2
+        viewController.AudioPlayer.SetContext(obj.Context, obj.CurIndex, obj)
+        viewController.AudioPlayer.Play()
+    else
+        obj.Playstate = 0
+    end if
 
     return obj
 End Function
@@ -103,6 +107,7 @@ Function audioHandleMessage(msg) As Boolean
             buttonCommand = m.buttonCommands[str(msg.getIndex())]
             Debug("Button command: " + tostr(buttonCommand))
             if buttonCommand = "play" then
+                audioPlayer.SetContext(m.Context, m.CurIndex, m)
                 audioPlayer.Play()
             else if buttonCommand = "resume" then
                 audioPlayer.Resume()
@@ -162,7 +167,7 @@ Function audioHandleMessage(msg) As Boolean
             end if
             m.SetupButtons()
         end if
-    else if type(msg) = "roAudioPlayerEvent" then
+    else if type(msg) = "roAudioPlayerEvent" AND m.ViewController.AudioPlayer.ContextScreenID = m.ScreenID then
         if msg.isRequestSucceeded() then
             m.GotoNextItem()
         else if msg.isRequestFailed() then

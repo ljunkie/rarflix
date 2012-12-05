@@ -84,6 +84,19 @@ Function createHomeScreenDataLoader(listener)
     prefs.HDPosterURL = "file://pkg:/images/gear.png"
     loader.contentArray[loader.RowIndexes["misc"]].content.Push(prefs)
 
+    ' Create an item for Now Playing in the Misc row that will be shown while
+    ' the audio player is active.
+    nowPlaying = CreateObject("roAssociativeArray")
+    nowPlaying.sourceUrl = ""
+    nowPlaying.ContentType = "audio"
+    nowPlaying.Key = "nowplaying"
+    nowPlaying.Title = "Now Playing"
+    nowPlaying.ShortDescriptionLine1 = "Now Playing"
+    nowPlaying.SDPosterURL = "file://pkg:/images/section-music.png"
+    nowPlaying.HDPosterURL = "file://pkg:/images/section-music.png"
+    nowPlaying.CurIndex = invalid
+    loader.nowPlayingItem = nowPlaying
+
     loader.lastMachineID = RegRead("lastMachineID")
     loader.lastSectionKey = RegRead("lastSectionKey")
 
@@ -747,6 +760,17 @@ Function homeGetLoadStatus(row)
 End Function
 
 Sub homeRefreshData()
+    ' Update the Now Playing item according to whether or not something is playing
+    audioPlayer = GetViewController().AudioPlayer
+    miscContent = m.contentArray[m.RowIndexes["misc"]].content
+    if m.nowPlayingItem.CurIndex = invalid AND audioPlayer.Context <> invalid then
+        m.nowPlayingItem.CurIndex = miscContent.Count()
+        miscContent.Push(m.nowPlayingItem)
+    else if m.nowPlayingItem.CurIndex <> invalid AND audioPlayer.Context = invalid then
+        miscContent.RemoveIndex(m.nowPlayingItem.CurIndex)
+        m.nowPlayingItem.CurIndex = invalid
+    end if
+
     ' Refresh the queue
     m.CreateAllPlaylistRequests(true)
 
