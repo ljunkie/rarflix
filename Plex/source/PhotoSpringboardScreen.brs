@@ -1,5 +1,5 @@
 Function itemIsPhoto(item) As Boolean
-    return item.NodeName = "Photo"
+    return item <> invalid AND item.NodeName = "Photo"
 End Function
 
 Function createPhotoSpringboardScreen(context, index, viewController) As Object
