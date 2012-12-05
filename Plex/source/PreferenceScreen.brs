@@ -105,6 +105,7 @@ Function createBasePrefsScreen(viewController) As Object
 
     obj.HandleEnumPreference = prefsHandleEnumPreference
     obj.HandleTextPreference = prefsHandleTextPreference
+    obj.HandleReorderPreference = prefsHandleReorderPreference
     obj.OnUserInput = prefsOnUserInput
     obj.GetEnumValue = prefsGetEnumValue
     obj.GetPrefValue = prefsGetPrefValue
@@ -134,11 +135,26 @@ Sub prefsHandleTextPreference(regKey, index)
     screen.Show()
 End Sub
 
+Sub prefsHandleReorderPreference(regKey, index)
+    m.currentIndex = index
+    m.currentRegKey = regKey
+    label = m.contentArray[index].OrigTitle
+    pref = m.Prefs[regKey]
+
+    screen = m.ViewController.CreateReorderScreen(pref.values, [label], false)
+    screen.InitializeOrder(RegRead(regKey, "preferences", pref.default))
+    screen.Listener = m
+    screen.Show()
+End Sub
+
 Sub prefsOnUserInput(value, screen)
     if type(screen.Screen) = "roKeyboardScreen" then
         RegWrite(m.currentRegKey, value, "preferences")
         m.Changes.AddReplace(m.currentRegKey, value)
         m.AppendValue(m.currentIndex, value)
+    else if type(screen.Screen) = "roListScreen" AND screen.ListScreenType = "reorder" then
+        RegWrite(m.currentRegKey, value, "preferences")
+        m.Changes.AddReplace(m.currentRegKey, value)
     else
         label = m.contentArray[m.currentIndex].OrigTitle
         if screen.SelectedIndex <> invalid then
@@ -252,6 +268,7 @@ Sub showPreferencesScreen()
     m.AddItem({title: "Subtitles"}, "softsubtitles", m.GetEnumValue("softsubtitles"))
     m.AddItem({title: "Slideshow"}, "slideshow")
     m.AddItem({title: "Remote Control"}, "remotecontrol")
+    m.AddItem({title: "Home Screen"}, "homescreen")
     m.AddItem({title: "Screensaver"}, "screensaver", m.GetEnumValue("screensaver"))
     m.AddItem({title: "Logging"}, "debug")
     m.AddItem({title: "Advanced Preferences"}, "advanced")
@@ -333,6 +350,10 @@ Function prefsMainHandleMessage(msg) As Boolean
             else if command = "remotecontrol" then
                 screen = createRemoteControlPrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["Remote Control Preferences"])
+                screen.Show()
+            else if command = "homescreen" then
+                screen = createHomeScreenPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["Home Screen"])
                 screen.Show()
             else if command = "advanced" then
                 screen = createAdvancedPrefsScreen(m.ViewController)
@@ -496,24 +517,6 @@ Function createAdvancedPrefsScreen(viewController) As Object
         default: "100"
     }
 
-    ' Default view for queue and recommendations
-    values = [
-        { title: "All", EnumValue: "all" },
-        { title: "Unwatched", EnumValue: "unwatched" },
-        { title: "Watched", EnumValue: "watched" },
-        { title: "Hidden", EnumValue: "hidden" }
-    ]
-    obj.Prefs["playlist_view_queue"] = {
-        values: values,
-        heading: "Default view for Queue on the home screen",
-        default: "unwatched"
-    }
-    obj.Prefs["playlist_view_recommendations"] = {
-        values: values,
-        heading: "Default view for Recommendations on the home screen",
-        default: "unwatched"
-    }
-
     device = CreateObject("roDeviceInfo")
     versionArr = GetGlobalAA().Lookup("rokuVersionArr")
     major = versionArr[0]
@@ -533,8 +536,6 @@ Function createAdvancedPrefsScreen(viewController) As Object
     obj.AddItem({title: "HLS Segment Length"}, "segment_length", obj.GetEnumValue("segment_length"))
     obj.AddItem({title: "Subtitle Size"}, "subtitle_size", obj.GetEnumValue("subtitle_size"))
     obj.AddItem({title: "Audio Boost"}, "audio_boost", obj.GetEnumValue("audio_boost"))
-    obj.AddItem({title: "Queue"}, "playlist_view_queue", obj.GetEnumValue("playlist_view_queue"))
-    obj.AddItem({title: "Recommendations"}, "playlist_view_recommendations", obj.GetEnumValue("playlist_view_recommendations"))
     obj.AddItem({title: "Close"}, "close")
 
     return obj
@@ -550,7 +551,7 @@ Function prefsAdvancedHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "level" OR command = "fivepointone" OR command = "segment_length" OR command = "subtitle_size" OR command = "audio_boost" OR command = "playlist_view_queue" OR command = "playlist_view_recommendations" then
+            if command = "level" OR command = "fivepointone" OR command = "segment_length" OR command = "subtitle_size" OR command = "audio_boost" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "1080p" then
                 screen = create1080PreferencesScreen(m.ViewController)
@@ -1010,6 +1011,80 @@ Function prefsRemoteControlHandleMessage(msg) As Boolean
                 m.HandleTextPreference(command, msg.GetIndex())
             else if command = "remotecontrol" then
                 m.HandleEnumPreference(command, msg.GetIndex())
+            else if command = "close" then
+                m.Screen.Close()
+            end if
+        end if
+    end if
+
+    return handled
+End Function
+
+'*** Home Screen Preferences ***
+
+Function createHomeScreenPrefsScreen(viewController) As Object
+    obj = createBasePrefsScreen(viewController)
+
+    obj.HandleMessage = prefsHomeHandleMessage
+
+    ' Default view for queue and recommendations
+    values = [
+        { title: "All", EnumValue: "all" },
+        { title: "Unwatched", EnumValue: "unwatched" },
+        { title: "Watched", EnumValue: "watched" },
+        { title: "Hidden", EnumValue: "hidden" }
+    ]
+    obj.Prefs["playlist_view_queue"] = {
+        values: values,
+        heading: "Default view for Queue on the home screen",
+        default: "unwatched"
+    }
+    obj.Prefs["playlist_view_recommendations"] = {
+        values: values,
+        heading: "Default view for Recommendations on the home screen",
+        default: "unwatched"
+    }
+
+    ' Home screen rows that can be reordered
+    values = [
+        { title: "Channels", key: "channels" },
+        { title: "Library Sections", key: "sections" },
+        { title: "On Deck", key: "on_deck" },
+        { title: "Recently Added", key: "recently_added" },
+        { title: "Queue", key: "queue" },
+        { title: "Recommendations", key: "recommendations" },
+        { title: "Shared Library Sections", key: "shared_sections" },
+        { title: "Miscellaneous", key: "misc" }
+    ]
+    obj.Prefs["home_row_order"] = {
+        values: values,
+        default: ""
+    }
+
+    obj.Screen.SetHeader("Change the appearance of the home screen")
+
+    obj.AddItem({title: "Queue"}, "playlist_view_queue", obj.GetEnumValue("playlist_view_queue"))
+    obj.AddItem({title: "Recommendations"}, "playlist_view_recommendations", obj.GetEnumValue("playlist_view_recommendations"))
+    obj.AddItem({title: "Reorder Rows"}, "home_row_order")
+    obj.AddItem({title: "Close"}, "close")
+
+    return obj
+End Function
+
+Function prefsHomeHandleMessage(msg) As Boolean
+    handled = false
+
+    if type(msg) = "roListScreenEvent" then
+        handled = true
+
+        if msg.isScreenClosed() then
+            m.ViewController.PopScreen(m)
+        else if msg.isListItemSelected() then
+            command = m.GetSelectedCommand(msg.GetIndex())
+            if command = "playlist_view_queue" OR command = "playlist_view_recommendations" then
+                m.HandleEnumPreference(command, msg.GetIndex())
+            else if command = "home_row_order" then
+                m.HandleReorderPreference(command, msg.GetIndex())
             else if command = "close" then
                 m.Screen.Close()
             end if
