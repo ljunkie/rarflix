@@ -1203,10 +1203,22 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
         default: ""
     }
 
+    ' TV theme music
+    values = [
+        { title: "Enabled", EnumValue: "1" },
+        { title: "Disabled", EnumValue: "0" }
+    ]
+    obj.Prefs["play_theme_music"] = {
+        values: values,
+        heading: "Play theme music in the background while browsing",
+        default: "1"
+    }
+
     obj.Screen.SetHeader("Change the appearance of your sections")
 
     obj.AddItem({title: "TV Series"}, "use_grid_for_series", obj.GetEnumValue("use_grid_for_series"))
     obj.AddItem({title: "Reorder Rows"}, "section_row_order")
+    obj.AddItem({title: "Theme Music"}, "play_theme_music", obj.GetEnumValue("play_theme_music"))
     obj.AddItem({title: "Close"}, "close")
 
     return obj
@@ -1222,7 +1234,7 @@ Function prefsSectionDisplayHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "use_grid_for_series" then
+            if command = "use_grid_for_series" OR command = "play_theme_music" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "section_row_order" then
                 m.HandleReorderPreference(command, msg.GetIndex())

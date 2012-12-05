@@ -57,7 +57,7 @@ Function createGridScreenForItem(item, viewController, style) As Object
     obj.Loader = createPaginatedLoader(container, 8, 75)
     obj.Loader.Listener = obj
 
-    if item.theme <> invalid AND NOT obj.ViewController.AudioPlayer.IsPlaying then
+    if item.theme <> invalid AND NOT obj.ViewController.AudioPlayer.IsPlaying AND RegRead("play_theme_music", "preferences", "1") = "1" then
         obj.ViewController.AudioPlayer.PlayThemeMusic(item)
         obj.Cleanup = baseStopAudioPlayer
     end if
