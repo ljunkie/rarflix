@@ -39,6 +39,7 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
 
     ' Set to false if a version check fails
     pms.SupportsAudioTranscoding = true
+    pms.AllowsMediaDeletion = false
     pms.IsConfigured = false
     pms.IsAvailable = false
 
@@ -82,8 +83,12 @@ Function unscrobble(key, identifier)
     m.ExecuteCommand(commandUrl)
 End Function
 
-Sub pmsDelete(id)
-    Debug("Delete not implemented for non-queue items")
+Sub pmsDelete(key)
+    if key <> invalid then
+        Debug("Deleting media at " + key)
+        request = m.CreateRequest("", key + "?_method=DELETE")
+        request.PostFromString("")
+    end if
 End Sub
 
 Function rate(key, identifier, rating)

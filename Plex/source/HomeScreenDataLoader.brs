@@ -609,12 +609,14 @@ Sub homeOnUrlEvent(msg, requestContext)
             server.owned = true
             server.online = true
             server.SupportsAudioTranscoding = (xml@transcoderAudio = "1")
+            server.AllowsMediaDeletion = (xml@allowMediaDeletion = "1")
             server.IsAvailable = true
             PutPlexMediaServer(server)
 
             Debug("Fetched additional server information (" + tostr(server.name) + ", " + tostr(server.machineID) + ")")
             Debug("URL: " + tostr(server.serverUrl))
             Debug("Server supports audio transcoding: " + tostr(server.SupportsAudioTranscoding))
+            Debug("Server allows media deletion: " + tostr(server.AllowsMediaDeletion))
 
             status = m.contentArray[m.RowIndexes["misc"]]
 

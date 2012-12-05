@@ -14,6 +14,7 @@ Function createVideoSpringboardScreen(context, index, viewController) As Object
 
     obj.checkChangesOnActivate = false
     obj.refreshOnActivate = false
+    obj.closeOnActivate = false
     obj.Activate = videoActivate
 
     obj.PlayButtonStates = [
@@ -64,7 +65,14 @@ Sub videoSetupButtons()
         if m.metadata.StarRating = invalid then
             m.metadata.StarRating = 0
         endif
-        m.AddRatingButton(m.metadata.UserRating, m.metadata.StarRating, "rateVideo")
+
+        ' When delete is present we don't have enough room so we stuff delete
+        ' and rate in a separate dialog.
+        if m.metadata.server.AllowsMediaDeletion then
+            m.AddButton("More...", "more")
+        else
+            m.AddRatingButton(m.metadata.UserRating, m.metadata.StarRating, "rateVideo")
+        end if
     end if
 End Sub
 
@@ -126,6 +134,19 @@ Function videoHandleMessage(msg) As Boolean
                 m.ViewController.InitializeOtherScreen(screen, ["Video Playback Options"])
                 screen.Show()
                 m.checkChangesOnActivate = true
+            else if buttonCommand = "more" then
+                dialog = createBaseDialog()
+                dialog.Title = ""
+                dialog.Text = ""
+                dialog.Item = m.metadata
+                dialog.SetButton("rate", "_rate_")
+                if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
+                    dialog.SetButton("delete", "Delete permanently")
+                end if
+                dialog.SetButton("close", "Back")
+                dialog.HandleButton = videoDialogHandleButton
+                dialog.ParentScreen = m
+                dialog.Show()
             else if buttonCommand = "rateVideo" then
                 rateValue% = msg.getData() /10
                 m.metadata.UserRating = msg.getdata()
@@ -139,7 +160,34 @@ Function videoHandleMessage(msg) As Boolean
     return handled OR m.superHandleMessage(msg)
 End Function
 
+Function videoDialogHandleButton(command, data) As Boolean
+    ' We're evaluated in the context of the dialog, but we want to be in
+    ' the context of the original screen.
+    obj = m.ParentScreen
+
+    if command = "delete" then
+        obj.metadata.server.delete(obj.metadata.key)
+        obj.closeOnActivate = true
+        return true
+    else if command = "rate" then
+        Debug("videoHandleMessage:: Rate audio for key " + tostr(obj.metadata.ratingKey))
+        rateValue% = (data /10)
+        obj.metadata.UserRating = data
+        if obj.metadata.ratingKey <> invalid then
+            obj.Item.server.Rate(obj.metadata.ratingKey, obj.metadata.mediaContainerIdentifier, rateValue%.ToStr())
+        end if
+    else if command = "close" then
+        return true
+    end if
+    return false
+End Function
+
 Sub videoActivate(priorScreen)
+    if m.closeOnActivate then
+        m.Screen.Close()
+        return
+    end if
+
     if m.checkChangesOnActivate then
         m.checkChangesOnActivate = false
         if priorScreen.Changes.DoesExist("playback") then

@@ -28,7 +28,13 @@ Sub photoSetupButtons()
     if m.metadata.StarRating = invalid then
         m.metadata.StarRating = 0
     endif
-    m.AddRatingButton(m.metadata.UserRating, m.metadata.StarRating, "ratePhoto")
+
+    ' When delete is present, put delete and rate in a separate dialog.
+    if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
+        m.AddButton("More...", "more")
+    else
+        m.AddRatingButton(m.metadata.UserRating, m.metadata.StarRating, "ratePhoto")
+    end if
 End Sub
 
 Sub photoGetMediaDetails(content)
@@ -64,6 +70,19 @@ Function photoHandleMessage(msg) As Boolean
                     m.metadata.ratingKey = 0
                 end if
                 m.Item.server.Rate(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier,rateValue%.ToStr())
+            else if buttonCommand = "more" then
+                dialog = createBaseDialog()
+                dialog.Title = ""
+                dialog.Text = ""
+                dialog.Item = m.metadata
+                dialog.SetButton("rate", "_rate_")
+                if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
+                    dialog.SetButton("delete", "Delete permanently")
+                end if
+                dialog.SetButton("close", "Back")
+                dialog.HandleButton = photoDialogHandleButton
+                dialog.ParentScreen = m
+                dialog.Show()
             else
                 handled = false
             end if
@@ -71,4 +90,26 @@ Function photoHandleMessage(msg) As Boolean
     end if
 
     return handled OR m.superHandleMessage(msg)
+End Function
+
+Function photoDialogHandleButton(command, data) As Boolean
+    ' We're evaluated in the context of the dialog, but we want to be in
+    ' the context of the original screen.
+    obj = m.ParentScreen
+
+    if command = "delete" then
+        obj.metadata.server.delete(obj.metadata.key)
+        obj.closeOnActivate = true
+        return true
+    else if command = "rate" then
+        Debug("photoHandleMessage:: Rate audio for key " + tostr(obj.metadata.ratingKey))
+        rateValue% = (data /10)
+        obj.metadata.UserRating = data
+        if obj.metadata.ratingKey <> invalid then
+            obj.Item.server.Rate(obj.metadata.ratingKey, obj.metadata.mediaContainerIdentifier, rateValue%.ToStr())
+        end if
+    else if command = "close" then
+        return true
+    end if
+    return false
 End Function

@@ -135,6 +135,9 @@ Function audioHandleMessage(msg) As Boolean
                     dialog.SetButton("shuffle", "Shuffle: Off")
                 end if
                 dialog.SetButton("rate", "_rate_")
+                if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
+                    dialog.SetButton("delete", "Delete permanently")
+                end if
                 dialog.SetButton("close", "Back")
                 dialog.HandleButton = audioDialogHandleButton
                 dialog.ParentScreen = m
@@ -224,6 +227,10 @@ Function audioDialogHandleButton(command, data) As Boolean
             m.SetButton(command, "Shuffle: On")
         end if
         m.Refresh()
+    else if command = "delete" then
+        obj.metadata.server.delete(obj.metadata.key)
+        obj.closeOnActivate = true
+        return true
     else if command = "rate" then
         Debug("audioHandleMessage:: Rate audio for key " + tostr(obj.metadata.ratingKey))
         rateValue% = (data /10)

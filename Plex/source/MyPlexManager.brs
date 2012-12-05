@@ -37,6 +37,7 @@ Function createMyPlexManager(viewController) As Object
     obj.AddDirectPlayInfo = pmsAddDirectPlayInfo
     obj.IsRequestToServer = pmsIsRequestToServer
     obj.Log = mpLog
+    obj.AllowsMediaDeletion = false
 
     ' Commands, mostly use the PMS functions
     obj.SetProgress = progress
