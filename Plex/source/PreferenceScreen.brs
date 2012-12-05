@@ -912,8 +912,12 @@ Function createVideoOptionsScreen(item, viewController) As Object
                 if stream.Channels <> invalid then
                     if stream.Channels = "2" then
                         format = format + " Stereo"
+                    else if stream.Channels = "1" then
+                        format = format + " Mono"
                     else if stream.Channels = "6" then
                         format = format + " 5.1"
+                    else if stream.Channels = "7" then
+                        format = format + " 6.1"
                     else if stream.Channels = "8" then
                         format = format + " 7.1"
                     end if

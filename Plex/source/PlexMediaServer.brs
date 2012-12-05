@@ -628,12 +628,14 @@ Function Capabilities(recompute=false) As String
     versionArr = GetGlobal("rokuVersionArr", [0])
     major = versionArr[0]
 
+    ' It's referred to as 5.1 by the feature, but the Roku is just passing the
+    ' signal through and theoretically doesn't care if it's 7.1.
     if device.HasFeature("5.1_surround_sound") and major >= 4 then
         fiveone = RegRead("fivepointone", "preferences", "1")
         Debug("5.1 support set to: " + fiveone)
 
         if fiveone <> "2" then
-            audio = audio + ",ac3{channels:6}"
+            audio = audio + ",ac3{channels:8}"
         else
             Debug("5.1 support disabled via Tweaks")
         end if

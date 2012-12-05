@@ -322,13 +322,17 @@ Function videoCanDirectPlay(mediaItem) As Boolean
         for each stream in mediaItem.preferredPart.streams
             if stream.streamType = "2" then
                 numAudioStreams = numAudioStreams + 1
-                if stream.channels = "2" OR stream.channels = "1" then
+                numChannels = firstOf(stream.channels, "0").toint()
+                if numChannels <= 2 then
                     if stereoCodec = invalid then
                         stereoCodec = stream.codec
                     else if stream.selected <> invalid then
                         secondaryStreamSelected = true
                     end if
-                else if stream.channels = "6" then
+                else if numChannels >= 6 then
+                    ' The Roku is just passing through the surround sound, so
+                    ' it theoretically doesn't care whether there were 6 channels
+                    ' or 60.
                     if surroundCodec = invalid then
                         surroundCodec = stream.codec
                     else if stream.selected <> invalid then
@@ -349,7 +353,7 @@ Function videoCanDirectPlay(mediaItem) As Boolean
     Debug("Media item audio codec: " + tostr(mediaItem.audioCodec))
     Debug("Media item subtitles: " + tostr(subtitleFormat))
     Debug("Media item stereo codec: " + tostr(stereoCodec))
-    Debug("Media item 5.1 codec: " + tostr(surroundCodec))
+    Debug("Media item surround codec: " + tostr(surroundCodec))
     Debug("Secondary audio stream selected: " + tostr(secondaryStreamSelected))
     Debug("Media item aspect ratio: " + tostr(mediaItem.aspectRatio))
 
