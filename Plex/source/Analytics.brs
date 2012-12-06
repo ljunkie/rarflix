@@ -39,9 +39,12 @@ Function createAnalyticsTracker()
 
     obj.Account = "UA-6111912-16"
     obj.NumEvents = 0
+    obj.NumPlaybackEvents = 0
 
     obj.TrackEvent = analyticsTrackEvent
     obj.OnUrlEvent = analyticsOnUrlEvent
+    obj.OnStartup = analyticsOnStartup
+    obj.Cleanup = analyticsCleanup
 
     obj.CustomSessionVars = CreateObject("roArray", 5, false)
     obj.SetCustomSessionVar = analyticsSetCustomSessionVar
@@ -71,12 +74,20 @@ Function createAnalyticsTracker()
     obj.BaseUrl = obj.BaseUrl + "&utmr=-"
     obj.BaseUrl = obj.BaseUrl + "&utmvid=" + encoder.Escape(GetGlobal("rokuUniqueID"))
 
+    obj.SessionTimer = createTimer()
+
     return obj
 End Function
 
 Sub analyticsTrackEvent(category, action, label, value, customVars)
     ' Only if we're enabled
     if RegRead("analytics", "preferences", "1") <> "1" then return
+
+    ' Now's a good time to update our session variables, in case we don't shut
+    ' down cleanly.
+    if category = "Playback" then m.NumPlaybackEvents = m.NumPlaybackEvents + 1
+    RegWrite("session_duration", tostr(m.SessionTimer.GetElapsedSeconds()), "analytics")
+    RegWrite("session_playback_events", tostr(m.NumPlaybackEvents), "analytics")
 
     m.NumEvents = m.NumEvents + 1
 
@@ -116,6 +127,23 @@ End Sub
 
 Sub analyticsOnUrlEvent(msg, requestContext)
     ' Don't care about the response at all.
+End Sub
+
+Sub analyticsOnStartup(signedIn)
+    lastSessionDuration = RegRead("session_duration", "analytics", "0").toint()
+    if lastSessionDuration > 0 then
+        lastSessionPlaybackEvents = RegRead("session_playback_events", "analytics", "0")
+        m.TrackEvent("App", "Shutdown", "", lastSessionDuration, [invalid, invalid, {name: "NumEvents", value: lastSessionPlaybackEvents}])
+    end if
+    m.TrackEvent("App", "Start", "", 1, [invalid, invalid, {name: "Model", value: GetGlobal("rokuModel")}, {name: "myPlex", value: tostr(signedIn)}])
+End Sub
+
+Sub analyticsCleanup()
+    ' Just note the session duration. We wrote the number of playback events the
+    ' last time we got one, and we won't send the actual event until the next
+    ' startup.
+    RegWrite("session_duration", tostr(m.SessionTimer.GetElapsedSeconds()), "analytics")
+    m.SessionTimer = invalid
 End Sub
 
 Sub analyticsSetCustomSessionVar(index, name, value)

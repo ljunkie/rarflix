@@ -483,6 +483,7 @@ Sub vcShow()
     m.myplex = invalid
     m.GdmAdvertiser = invalid
     m.WebServer = invalid
+    m.Analytics.Cleanup()
     m.Analytics = invalid
     m.AudioPlayer = invalid
     m.Timers.Clear()
