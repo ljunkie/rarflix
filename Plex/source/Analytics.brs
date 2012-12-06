@@ -89,7 +89,7 @@ Sub analyticsTrackEvent(category, action, label, value, customVars)
     url = url + "&utmt=event"
     url = url + "&utme=" + m.FormatEvent(category, action, label, value) + m.FormatCustomVars(customVars)
 
-    Debug("Finaly analytics URL: " + url)
+    Debug("Final analytics URL: " + url)
     request.SetUrl(url)
 
     m.NumEvents = m.NumEvents + 1
