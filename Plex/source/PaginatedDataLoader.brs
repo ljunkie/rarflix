@@ -4,14 +4,6 @@
 '*
 
 Function createPaginatedLoader(container, initialLoadSize, pageSize)
-
-    ' Reorder container sections so that frequently accessed sections
-    ' are displayed first.
-    priorityKeys = RegRead("section_row_order", "preferences", "").Tokenize(",")
-    for i = priorityKeys.Count() - 1 to 0 step -1
-        container.MoveKeyToHead(priorityKeys[i])
-    next
-
     loader = CreateObject("roAssociativeArray")
     initDataLoader(loader)
 
@@ -29,6 +21,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize)
         status.content = []
         status.loadStatus = 0 ' 0:Not loaded, 1:Partially loaded, 2:Fully loaded
         status.key = keys[index]
+        status.name = loader.names[index]
         status.pendingRequests = 0
         status.countLoaded = 0
 
@@ -38,17 +31,28 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize)
     ' Set up search nodes as the last row if we have any
     searchItems = container.GetSearch()
     if searchItems.Count() > 0 then
-        loader.names.Push("Search")
-
         status = CreateObject("roAssociativeArray")
         status.content = searchItems
         status.loadStatus = 0
-        status.key = invalid
+        status.key = "_search_"
+        status.name = "Search"
         status.pendingRequests = 0
         status.countLoaded = 0
 
         loader.contentArray.Push(status)
     end if
+
+    ' Reorder container sections so that frequently accessed sections
+    ' are displayed first. Make sure to revert the search row's dummy key
+    ' to invalid so we don't try to load it.
+    ReorderItemsByKeyPriority(loader.contentArray, RegRead("section_row_order", "preferences", ""))
+    for index = 0 to loader.contentArray.Count() - 1
+        status = loader.contentArray[index]
+        loader.names[index] = status.name
+        if status.key = "_search_" then
+            status.key = invalid
+        end if
+    next
 
     loader.LoadMoreContent = loaderLoadMoreContent
     loader.GetLoadStatus = loaderGetLoadStatus

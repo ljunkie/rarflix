@@ -1212,7 +1212,8 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
         { title: "By Rating", key: "rating" },
         { title: "By Resolution", key: "resolution" },
         { title: "By First Letter", key: "firstCharacter" },
-        { title: "By Folder", key: "folder" }
+        { title: "By Folder", key: "folder" },
+        { title: "Search", key: "_search_" }
     ]
     obj.Prefs["section_row_order"] = {
         values: values,
