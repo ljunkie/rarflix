@@ -37,7 +37,7 @@ Function createAnalyticsTracker()
     ' We need a ScreenID property in order to use the view controller for requests.
     obj.ScreenID = -2
 
-    obj.Account = "UA-6111912-15"
+    obj.Account = "UA-6111912-16"
     obj.NumEvents = 0
 
     obj.TrackEvent = analyticsTrackEvent
@@ -75,6 +75,11 @@ Function createAnalyticsTracker()
 End Function
 
 Sub analyticsTrackEvent(category, action, label, value, customVars)
+    ' Only if we're enabled
+    if RegRead("analytics", "preferences", "1") <> "1" then return
+
+    m.NumEvents = m.NumEvents + 1
+
     request = CreateObject("roUrlTransfer")
     request.EnableEncodings(true)
     context = CreateObject("roAssociativeArray")
@@ -91,8 +96,6 @@ Sub analyticsTrackEvent(category, action, label, value, customVars)
 
     Debug("Final analytics URL: " + url)
     request.SetUrl(url)
-
-    m.NumEvents = m.NumEvents + 1
 
     GetViewController().StartRequest(request, m, context)
 End Sub

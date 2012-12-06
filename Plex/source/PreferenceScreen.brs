@@ -581,6 +581,17 @@ Function createAdvancedPrefsScreen(viewController) As Object
         default: "100"
     }
 
+    ' Analytics (opt-out)
+    values = [
+        { title: "Enabled", EnumValue: "1" },
+        { title: "Disabled", EnumValue: "0" }
+    ]
+    obj.Prefs["analytics"] = {
+        values: values,
+        heading: "Send anonymous usage data to help improve Plex",
+        default: "1"
+    }
+
     device = CreateObject("roDeviceInfo")
     versionArr = GetGlobalAA().Lookup("rokuVersionArr")
     major = versionArr[0]
@@ -599,6 +610,7 @@ Function createAdvancedPrefsScreen(viewController) As Object
 
     obj.AddItem({title: "HLS Segment Length"}, "segment_length", obj.GetEnumValue("segment_length"))
     obj.AddItem({title: "Audio Boost"}, "audio_boost", obj.GetEnumValue("audio_boost"))
+    obj.AddItem({title: "Analytics"}, "analytics", obj.GetEnumValue("analytics"))
     obj.AddItem({title: "Close"}, "close")
 
     return obj
@@ -614,7 +626,7 @@ Function prefsAdvancedHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "level" OR command = "fivepointone" OR command = "segment_length" OR command = "audio_boost" then
+            if command = "level" OR command = "fivepointone" OR command = "segment_length" OR command = "audio_boost" OR command = "analytics" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "1080p" then
                 screen = create1080PreferencesScreen(m.ViewController)
