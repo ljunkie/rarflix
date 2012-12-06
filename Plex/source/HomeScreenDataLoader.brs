@@ -362,16 +362,18 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
         ' this is probably a first run scenario, try to be helpful.
         if loadingRow = m.RowIndexes["misc"] AND RegRead("serverList", "servers") = invalid AND NOT myPlex.IsSignedIn then
             if RegRead("autodiscover", "preferences", "1") = "1" then
-                ' Give GDM discovery a chance...
-                m.LoadingFacade = CreateObject("roOneLineDialog")
-                m.LoadingFacade.SetTitle("Looking for Plex Media Servers...")
-                m.LoadingFacade.ShowBusyAnimation()
-                m.LoadingFacade.Show()
+                if m.GdmTimer = invalid then
+                    ' Give GDM discovery a chance...
+                    m.LoadingFacade = CreateObject("roOneLineDialog")
+                    m.LoadingFacade.SetTitle("Looking for Plex Media Servers...")
+                    m.LoadingFacade.ShowBusyAnimation()
+                    m.LoadingFacade.Show()
 
-                m.GdmTimer = createTimer()
-                m.GdmTimer.Name = "GDM"
-                m.GdmTimer.SetDuration(5000)
-                GetViewController().AddTimer(m.GdmTimer, m)
+                    m.GdmTimer = createTimer()
+                    m.GdmTimer.Name = "GDM"
+                    m.GdmTimer.SetDuration(5000)
+                    GetViewController().AddTimer(m.GdmTimer, m)
+                end if
             else
                 ' Slightly strange, GDM disabled but no servers configured
                 Debug("No servers, no GDM, and no myPlex...")
