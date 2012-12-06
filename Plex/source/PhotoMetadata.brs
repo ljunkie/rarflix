@@ -40,7 +40,7 @@ Function newPhotoMetadata(container, item, detailed=true) As Object
 
     ' Transcode if necessary
     if photo.media.Count() > 0 then
-        format = firstOf(photo.media[0].container, "JPEG")
+        format = UCase(firstOf(photo.media[0].container, "JPEG"))
         ' JPEG and PNG are documented, GIF appears to work fine
         if format <> "JPEG" AND format <> "PNG" AND format <> "GIF" then
             Debug("Transcoding photo to JPEG from " + format)
@@ -57,7 +57,7 @@ Function ParsePhotoMedia(photoItem) As Object
     mediaArray = CreateObject("roArray", 5, true)
     for each MediaItem in photoItem.Media
         media = CreateObject("roAssociativeArray")
-    
+
         media.identifier = MediaItem@id
         media.container = MediaItem@container
         media.width = MediaItem@width

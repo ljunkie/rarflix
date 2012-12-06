@@ -35,6 +35,8 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
 
     obj.HandleMessage = photoPlayerHandleMessage
 
+    obj.playbackTimer = createTimer()
+
     return obj
 End Function
 
@@ -48,6 +50,11 @@ Function photoPlayerHandleMessage(msg) As Boolean
         handled = true
 
         if msg.isScreenClosed() then
+            ' Send an analytics event
+            amountPlayed = m.playbackTimer.GetElapsedSeconds()
+            Debug("Sending analytics event, appear to have watched slideshow for " + tostr(amountPlayed) + " seconds")
+            m.ViewController.Analytics.TrackEvent("Playback", firstOf(m.Item.ContentType, "photo"), m.Item.mediaContainerIdentifier, amountPlayed, [])
+
             m.ViewController.PopScreen(m)
         else if msg.isPlaybackPosition() then
             'm.CurIndex = msg.GetIndex()

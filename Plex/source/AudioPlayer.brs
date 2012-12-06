@@ -40,6 +40,9 @@ Function createAudioPlayer(viewController)
     obj.IsPlaying = false
     obj.IsPaused = false
 
+    obj.playbackTimer = createTimer()
+    obj.playbackOffset = 0
+
     return obj
 End Function
 
@@ -58,6 +61,13 @@ Function audioPlayerHandleMessage(msg) As Boolean
                 item.Server.Scrobble(item.ratingKey, item.mediaContainerIdentifier)
             end if
 
+            ' Send an analytics event, but not for theme music
+            if m.ContextScreenID <> invalid then
+                amountPlayed = m.playbackOffset + m.playbackTimer.GetElapsedSeconds()
+                Debug("Sending analytics event, appear to have listened to audio for " + tostr(amountPlayed) + " seconds")
+                m.ViewController.Analytics.TrackEvent("Playback", firstOf(item.ContentType, "track"), item.mediaContainerIdentifier, amountPlayed, [])
+            end if
+
             maxIndex = m.Context.Count() - 1
             newIndex = m.CurIndex + 1
             if newIndex > maxIndex then newIndex = 0
@@ -72,6 +82,8 @@ Function audioPlayerHandleMessage(msg) As Boolean
             Debug("Starting to play track: " + tostr(item.Url))
             m.IsPlaying = true
             m.IsPaused = false
+            m.playbackOffset = 0
+            m.playbackTimer.Mark()
         else if msg.isStatusMessage() then
             'Debug("Audio player status: " + tostr(msg.getMessage()))
         else if msg.isFullResult() then
@@ -92,10 +104,13 @@ Function audioPlayerHandleMessage(msg) As Boolean
             Debug("Stream paused by user")
             m.IsPlaying = false
             m.IsPaused = true
+            m.playbackOffset = m.playbackOffset + m.playbackTimer.GetElapsedSeconds()
+            m.playbackTimer.Mark()
         else if msg.isResumed() then
             Debug("Stream resumed by user")
             m.IsPlaying = true
             m.IsPaused = false
+            m.playbackTimer.Mark()
         end if
     end if
 

@@ -22,6 +22,7 @@ Function createVideoPlayerScreen(metadata, seekValue, directPlayOptions, viewCon
     obj.isPlayed = false
     obj.playbackError = false
     obj.underrunCount = 0
+    obj.playbackTimer = createTimer()
 
     obj.ShowPlaybackError = videoPlayerShowPlaybackError
 
@@ -58,6 +59,7 @@ Sub videoPlayerShow()
             Debug("Starting to direct play video", m.Item.server)
         end if
 
+        m.playbackTimer.Mark()
         m.Screen.Show()
     else
         m.ViewController.PopScreen(m)
@@ -192,6 +194,13 @@ Function videoPlayerHandleMessage(msg) As Boolean
                 end if
             end if
             if m.IsTranscoded then server.StopVideo()
+
+            ' Send an analytics event.
+            startOffset = int(m.SeekValue/1000)
+            amountPlayed = m.lastPosition - startOffset
+            if amountPlayed > m.playbackTimer.GetElapsedSeconds() then amountPlayed = m.playbackTimer.GetElapsedSeconds()
+            Debug("Sending analytics event, appear to have watched video for " + tostr(amountPlayed) + " seconds")
+            m.ViewController.Analytics.TrackEvent("Playback", firstOf(m.Item.ContentType, "clip"), m.Item.mediaContainerIdentifier, amountPlayed, [])
 
             if m.playbackError then
                 m.Show()
