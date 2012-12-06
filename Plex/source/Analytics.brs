@@ -108,11 +108,11 @@ End Sub
 Function analyticsFormatEvent(category, action, label, value) As String
     encoder = CreateObject("roUrlTransfer")
     event = "5(" + encoder.Escape(category) + "*" + encoder.Escape(action)
-    if label <> invalid OR value <> invalid then
+    if label <> invalid then
         event = event + "*" + encoder.Escape(firstOf(label, ""))
-        if value <> invalid then
-            event = event + "*" + tostr(value)
-        end if
+    end if
+    if value <> invalid then
+        event = event + ")(" + tostr(value)
     end if
     event = event + ")"
     return event
