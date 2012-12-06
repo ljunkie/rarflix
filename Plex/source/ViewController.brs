@@ -168,12 +168,10 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen.Loader = createPaginatedLoader(fakeContainer, 8, 25)
         screen.Loader.Listener = screen
         screen.Loader.Port = screen.Port
-        screen.MessageHandler = screen.Loader
     else if item.searchTerm <> invalid AND item.server = invalid then
         screen = createGridScreen(m, "flat-square")
         screen.Loader = createSearchLoader(item.searchTerm)
         screen.Loader.Listener = screen
-        screen.MessageHandler = screen.Loader
     else if item.settings = "1"
         screen = createSettingsScreen(item, m)
     else
@@ -329,6 +327,8 @@ Sub vcPopScreen(screen)
         end while
         m.screens.Pop()
 
+        screen.Loader.Listener = invalid
+        screen.Loader = invalid
         m.Home = invalid
         return
     end if
@@ -336,7 +336,6 @@ Sub vcPopScreen(screen)
     if screen.Cleanup <> invalid then screen.Cleanup()
 
     ' Try to clean up some potential circular references
-    screen.MessageHandler = invalid
     screen.Listener = invalid
     if screen.Loader <> invalid then
         screen.Loader.Listener = invalid
@@ -441,11 +440,13 @@ Sub vcShow()
                 if requestContext <> invalid then
                     m.PendingRequests.Delete(id)
                     requestContext.Listener.OnUrlEvent(msg, requestContext)
+                    requestContext = invalid
                 end if
             else if type(msg) = "roSocketEvent" then
                 listener = m.SocketListeners[msg.getSocketID().tostr()]
                 if listener <> invalid then
                     listener.OnSocketEvent(msg)
+                    listener = invalid
                 else
                     ' Assume it was for the web server (it won't hurt if it wasn't)
                     m.WebServer.postwait()
@@ -477,6 +478,16 @@ Sub vcShow()
             end if
         next
     end while
+
+    ' Clean up some references on the way out
+    m.myplex = invalid
+    m.GdmAdvertiser = invalid
+    m.WebServer = invalid
+    m.Analytics = invalid
+    m.AudioPlayer = invalid
+    m.Timers.Clear()
+    m.PendingRequests.Clear()
+    m.SocketListeners.Clear()
 
     Debug("Finished global message loop")
 End Sub
