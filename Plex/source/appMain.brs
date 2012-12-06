@@ -81,6 +81,7 @@ Sub initGlobals()
 
     appVersion = firstOf(aa["version"], "Unknown")
     GetGlobalAA().AddReplace("appVersionStr", appVersion)
+    GetGlobalAA().AddReplace("appName", firstOf(aa["title"], "Unknown"))
 
     Debug("App version: " + appVersion)
 

@@ -102,6 +102,10 @@ Function createHomeScreenDataLoader(listener)
 
     loader.OnTimerExpired = homeOnTimerExpired
 
+    ' As good a place as any, note that we've started
+    analytics = GetViewController().Analytics
+    analytics.TrackEvent("App", "Start", "", 1, [invalid, invalid, {name: "Model", value: GetGlobal("rokuModel")}, {name: "myPlex", value: tostr(myPlex.IsSignedIn)}])
+
     return loader
 End Function
 
