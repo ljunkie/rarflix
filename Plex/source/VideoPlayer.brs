@@ -202,7 +202,19 @@ Function videoPlayerHandleMessage(msg) As Boolean
             Debug("Sending analytics event, appear to have watched video for " + tostr(amountPlayed) + " seconds")
             m.ViewController.Analytics.TrackEvent("Playback", firstOf(m.Item.ContentType, "clip"), m.Item.mediaContainerIdentifier, amountPlayed, [])
 
+            mediaItem = m.Item.preferredMediaItem
+
+            ' If there was an error, try again on the current part. If there's
+            ' a potential fallback, it'll be tried, otherwise an error will be
+            ' shown. If we played the current part and there are more parts,
+            ' increment the part index and show another video player. Otherwise,
+            ' we're done.
+
             if m.playbackError then
+                m.Show()
+            else if m.isPlayed AND mediaItem <> invalid AND (mediaItem.parts.Count() - 1) > mediaItem.curPartIndex then
+                mediaItem.curPartIndex = mediaItem.curPartIndex + 1
+                m.isPlayed = false
                 m.Show()
             else
                 m.ViewController.PopScreen(m)

@@ -232,10 +232,11 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
     key = ""
     ratingKey = ""
     mediaItem = item.preferredMediaItem
+    part = mediaItem.parts[mediaItem.curPartIndex]
 
     if identifier = "com.plexapp.plugins.library" then
         ' Regular library video
-        mediaKey = mediaItem.preferredPart.key
+        mediaKey = part.key
         key = item.key
         ratingKey = item.ratingKey
         videoRes = mediaItem.videoresolution
@@ -245,8 +246,8 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
         videoRes = item.videoresolution
     else
         ' Plugin video, possibly indirect
-        mediaKey = mediaItem.preferredPart.key
-        postURL = mediaItem.preferredPart.postURL
+        mediaKey = part.key
+        postURL = part.postURL
         videoRes = mediaItem.videoresolution
         if mediaItem.indirect then
             mediaKeyXml = IndirectMediaXml(m, mediaKey, postURL)
@@ -369,7 +370,6 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
     ' usually be more readable, and it might let us direct stream.
 
     if mediaItem <> invalid then
-        part = mediaItem.preferredPart
         if part <> invalid AND part.subtitles <> invalid AND shouldUseSoftSubs(part.subtitles) then
             Debug("Disabling subtitle selection temporarily")
             video.SubtitleUrl = FullUrl(m.serverUrl, "", part.subtitles.key) + "?encoding=utf-8"
@@ -717,7 +717,7 @@ Sub pmsAddDirectPlayInfo(video, item, mediaKey)
     video.IsTranscoded = false
     video.StreamFormat = firstOf(item.preferredMediaItem.container, "mp4")
 
-    part = item.preferredMediaItem.preferredPart
+    part = item.preferredMediaItem.parts[item.preferredMediaItem.curPartIndex]
     if part <> invalid AND part.subtitles <> invalid AND part.subtitles.Codec = "srt" then
         video.SubtitleUrl = FullUrl(m.serverUrl, "", part.subtitles.key) + "?encoding=utf-8"
     end if

@@ -13,7 +13,7 @@ Function newVideoMetadata(container, item, detailed=false) As Object
     video.ContentType = item@type
     if video.ContentType = invalid then
         '* treat video items with no content type as clips
-        video.ContentType = "clip" 
+        video.ContentType = "clip"
     endif
 
     video.ReleaseDate = item@originallyAvailableAt
@@ -34,7 +34,7 @@ Function newVideoMetadata(container, item, detailed=false) As Object
     end if
 
     setVideoBasics(video, container, item)
-	
+
     if detailed AND NOT item.Media.IsEmpty() then
         ' Also sets media and preferredMediaItem
         video.ParseDetails()
@@ -128,7 +128,7 @@ Sub setVideoBasics(video, container, item)
 
     if container.xml@mixedParents = "1" then
         if video.server <> invalid AND item@grandparentThumb <> invalid then
-            sizes = ImageSizes(container.ViewGroup, item@type)                                                                                    
+            sizes = ImageSizes(container.ViewGroup, item@type)
             video.SDPosterURL = video.server.TranscodedImage(container.sourceUrl, item@grandparentThumb, sizes.sdWidth, sizes.sdHeight)
             video.HDPosterURL = video.server.TranscodedImage(container.sourceUrl, item@grandparentThumb, sizes.hdWidth, sizes.hdHeight)
         end if
@@ -143,7 +143,7 @@ Sub setVideoBasics(video, container, item)
     userRating = item@userRating
     if userRating <> invalid then
 	video.UserRating =  int(val(userRating)*10)
-    else 
+    else
 	video.UserRating =  0
     endif
 End Sub
@@ -292,6 +292,7 @@ Function ParseVideoMedia(videoItem) As Object
 		'* TODO: deal with multiple parts correctly. Not sure how audio etc selection works
 		'* TODO: with multi-part
 		media.preferredPart = media.parts[0]
+        media.curPartIndex = 0
 		mediaArray.Push(media)
 	next
 	return mediaArray
