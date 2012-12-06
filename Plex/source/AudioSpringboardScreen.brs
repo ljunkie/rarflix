@@ -41,18 +41,20 @@ Function createAudioSpringboardScreen(context, index, viewController) As Dynamic
         return invalid
     end if
 
-    obj.progressTimer = createTimer()
     obj.callbackTimer = createTimer()
     obj.callbackTimer.Active = false
     obj.callbackTimer.SetDuration(1000, true)
     viewController.AddTimer(obj.callbackTimer, obj)
-    obj.progressOffset = 0
 
     ' Start playback when screen is opened if there's nothing playing
     if NOT viewController.AudioPlayer.IsPlaying then
         obj.Playstate = 2
         viewController.AudioPlayer.SetContext(obj.Context, obj.CurIndex, obj)
         viewController.AudioPlayer.Play()
+    else if viewController.AudioPlayer.ContextScreenID = obj.ScreenID AND viewController.AudioPlayer.IsPlaying then
+        obj.Playstate = 2
+        obj.callbackTimer.Active = true
+        obj.Screen.SetProgressIndicatorEnabled(true)
     else
         obj.Playstate = 0
     end if
@@ -174,9 +176,7 @@ Function audioHandleMessage(msg) As Boolean
             m.GotoNextItem()
         else if msg.isListItemSelected() then
             m.Refresh(true)
-            m.progressOffset = 0
             m.callbackTimer.Active = true
-            m.progressTimer.Mark()
             m.Playstate = 2
 
             m.SetupButtons()
@@ -197,12 +197,10 @@ Function audioHandleMessage(msg) As Boolean
         else if msg.isPaused() then
             m.Playstate = 1
             m.callbackTimer.Active = false
-            m.progressOffset = m.progressOffset + m.progressTimer.GetElapsedSeconds()
             m.SetupButtons()
         else if msg.isResumed() then
             m.Playstate = 2
             m.callbackTimer.Active = true
-            m.progressTimer.Mark()
             m.SetupButtons()
         end if
     end if
@@ -212,7 +210,7 @@ End Function
 
 Sub audioOnTimerExpired(timer)
     if m.Playstate = 2 AND m.metadata.Duration <> invalid then
-        m.Screen.SetProgressIndicator(m.progressOffset + m.progressTimer.GetElapsedSeconds(), m.metadata.Duration)
+        m.Screen.SetProgressIndicator(m.ViewController.AudioPlayer.GetPlaybackProgress(), m.metadata.Duration)
     end if
 End Sub
 

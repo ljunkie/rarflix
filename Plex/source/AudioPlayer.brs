@@ -42,6 +42,7 @@ Function createAudioPlayer(viewController)
 
     obj.playbackTimer = createTimer()
     obj.playbackOffset = 0
+    obj.GetPlaybackProgress = audioPlayerGetPlaybackProgress
 
     return obj
 End Function
@@ -63,7 +64,7 @@ Function audioPlayerHandleMessage(msg) As Boolean
 
             ' Send an analytics event, but not for theme music
             if m.ContextScreenID <> invalid then
-                amountPlayed = m.playbackOffset + m.playbackTimer.GetElapsedSeconds()
+                amountPlayed = m.GetPlaybackProgress()
                 Debug("Sending analytics event, appear to have listened to audio for " + tostr(amountPlayed) + " seconds")
                 m.ViewController.Analytics.TrackEvent("Playback", firstOf(item.ContentType, "track"), item.mediaContainerIdentifier, amountPlayed, [])
             end if
@@ -278,3 +279,7 @@ Sub audioPlayerPlayThemeMusic(item)
     m.SetContext([themeItem], 0, invalid)
     m.Play()
 End Sub
+
+Function audioPlayerGetPlaybackProgress() As Integer
+    return m.playbackOffset + m.playbackTimer.GetElapsedSeconds()
+End Function

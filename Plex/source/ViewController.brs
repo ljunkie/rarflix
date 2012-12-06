@@ -129,9 +129,9 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         ' TODO: What style looks best here, episodic?
         screen.SetListStyle("flat-episodic", "zoom-to-fill")
     else if item.key = "nowplaying" then
+        m.AudioPlayer.ContextScreenID = m.nextScreenId
         screen = createAudioSpringboardScreen(m.AudioPlayer.Context, m.AudioPlayer.CurIndex, m)
         if screen = invalid then return invalid
-        m.AudioPlayer.ContextScreenID = screen.ScreenID
     else if contentType = "audio" then
         screen = createAudioSpringboardScreen(context, contextIndex, m)
         if screen = invalid then return invalid
