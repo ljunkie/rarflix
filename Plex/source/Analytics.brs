@@ -87,12 +87,26 @@ Sub analyticsTrackEvent(category, action, label, value, customVars)
 
     var_utmn    = GARandNumber(1000000000,9999999999).ToStr()   'Random Request Number
 
+    timestamp = CreateObject("roDateTime")
+    var_cookie  = GARandNumber(1000000000,9999999999).ToStr()   'Random Cookie Number
+    var_random  = GARandNumber(1000000000,2147483647).ToStr()   'Random Number Under 2147483647
+    var_today   = timestamp.asSeconds().ToStr()                 'Unix Timestamp For Current Date
+
     url = m.BaseUrl
     url = url + "&utms=" + m.NumEvents.tostr()
     url = url + "&utmn=" + var_utmn
     url = url + "&utmac=" + m.Account
     url = url + "&utmt=event"
     url = url + "&utme=" + m.FormatEvent(category, action, label, value) + m.FormatCustomVars(customVars)
+
+    url = url + "&utmcc=__utma%3D" + var_cookie
+    url = url + "." + var_random + "." + var_today + "." + var_today + "." + var_today
+    url = url + ".2%3B%2B__utmb%3D" + var_cookie
+    url = url + "%3B%2B__utmc%3D" + var_cookie
+    url = url + "%3B%2B__utmz%3D" + var_cookie
+    url = url + "." + var_today
+    url = url + ".2.2.utmccn%3D(direct)%7Cutmcsr%3D(direct)%7Cutmcmd%3D(none)%3B%2B__utmv%3D" + var_cookie
+    url = url + "." + request.Escape(GetGlobal("rokuUniqueID")) + "%3B"
 
     Debug("Final analytics URL: " + url)
     request.SetUrl(url)
