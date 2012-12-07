@@ -500,7 +500,7 @@ End Function
 
 Function shouldUseSoftSubs(stream) As Boolean
     if RegRead("softsubtitles", "preferences", "1") = "0" then return false
-    if stream.codec <> "srt" then return false
+    if stream.codec <> "srt" or stream.key = invalid then return false
 
     ' TODO(schuyler) If Roku adds support for non-Latin characters, remove
     ' this hackery. To the extent that we continue using this hackery, it
