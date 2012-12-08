@@ -62,3 +62,18 @@ standard notes on how best to contribute:
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create new Pull Request
+
+## Important Notes
+
+### Limit on number of function names
+
+The Roku BrightScript compiler enforces a limit on the number of functions that
+can be defined by an app. This is particularly evil because the limit is
+different for the 3.x and 4.x firmware--512 and 768 respectively--which makes
+it very easy to develop against a Roku 2 and not notice. We've already
+exceeded the first gen Roku limit once before, and it's a very ugly crash.
+
+So, any time you add a function, you need to make sure we're not over the limit
+and potentially delete another function (or subroutine) to free up a slot.
+While we're currently very close to the limit, there are plenty of areas that
+could be cleaned up to free some slots.
