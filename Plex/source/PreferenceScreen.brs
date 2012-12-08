@@ -1124,6 +1124,22 @@ Function createHomeScreenPrefsScreen(viewController) As Object
         default: "unwatched"
     }
 
+    ' Visibility for on deck and recently added
+    values = [
+        { title: "Enabled", EnumValue: "" },
+        { title: "Hidden", EnumValue: "hidden" }
+    ]
+    obj.Prefs["row_visibility_ondeck"] = {
+        values: values,
+        heading: "Show On Deck items on the home screen",
+        default: ""
+    }
+    obj.Prefs["row_visibility_recentlyadded"] = {
+        values: values,
+        heading: "Show recently added items on the home screen",
+        default: ""
+    }
+
     ' Home screen rows that can be reordered
     values = [
         { title: "Channels", key: "channels" },
@@ -1144,6 +1160,8 @@ Function createHomeScreenPrefsScreen(viewController) As Object
 
     obj.AddItem({title: "Queue"}, "playlist_view_queue", obj.GetEnumValue("playlist_view_queue"))
     obj.AddItem({title: "Recommendations"}, "playlist_view_recommendations", obj.GetEnumValue("playlist_view_recommendations"))
+    obj.AddItem({title: "On Deck"}, "row_visibility_ondeck", obj.GetEnumValue("row_visibility_ondeck"))
+    obj.AddItem({title: "Recently Added"}, "row_visibility_recentlyadded", obj.GetEnumValue("row_visibility_recentlyadded"))
     obj.AddItem({title: "Reorder Rows"}, "home_row_order")
     obj.AddItem({title: "Close"}, "close")
 
@@ -1160,7 +1178,7 @@ Function prefsHomeHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "playlist_view_queue" OR command = "playlist_view_recommendations" then
+            if command = "playlist_view_queue" OR command = "playlist_view_recommendations" OR command = "row_visibility_ondeck" OR command = "row_visibility_recentlyadded" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "home_row_order" then
                 m.HandleReorderPreference(command, msg.GetIndex())

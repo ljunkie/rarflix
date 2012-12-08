@@ -167,18 +167,28 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
     m.AddOrStartRequest(channels, m.RowIndexes["channels"], startRequests)
 
     ' Request global on deck
-    onDeck = CreateObject("roAssociativeArray")
-    onDeck.server = server
-    onDeck.key = "/library/onDeck"
-    onDeck.requestType = "media"
-    m.AddOrStartRequest(onDeck, m.RowIndexes["on_deck"], startRequests)
+    view = RegRead("row_visibility_ondeck", "preferences", "")
+    if view <> "hidden" then
+        onDeck = CreateObject("roAssociativeArray")
+        onDeck.server = server
+        onDeck.key = "/library/onDeck"
+        onDeck.requestType = "media"
+        m.AddOrStartRequest(onDeck, m.RowIndexes["on_deck"], startRequests)
+    else
+        m.Listener.OnDataLoaded(m.RowIndexes["on_deck"], [], 0, 0, true)
+    end if
 
     ' Request recently added
-    recents = CreateObject("roAssociativeArray")
-    recents.server = server
-    recents.key = "/library/recentlyAdded"
-    recents.requestType = "media"
-    m.AddOrStartRequest(recents, m.RowIndexes["recently_added"], startRequests)
+    view = RegRead("row_visibility_recentlyadded", "preferences", "")
+    if view <> "hidden" then
+        recents = CreateObject("roAssociativeArray")
+        recents.server = server
+        recents.key = "/library/recentlyAdded"
+        recents.requestType = "media"
+        m.AddOrStartRequest(recents, m.RowIndexes["recently_added"], startRequests)
+    else
+        m.Listener.OnDataLoaded(m.RowIndexes["recently_added"], [], 0, 0, true)
+    end if
 End Sub
 
 Sub homeCreateMyPlexRequests(startRequests As Boolean)
