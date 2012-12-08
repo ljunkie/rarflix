@@ -31,7 +31,6 @@ Function createAudioPlayer(viewController)
     obj.CurIndex = invalid
     obj.ContextScreenID = invalid
     obj.SetContext = audioPlayerSetContext
-    obj.ClearContext = audioPlayerClearContext
 
     obj.ShowContextMenu = audioPlayerShowContextMenu
 
@@ -195,15 +194,6 @@ Sub audioPlayerSetContext(context, contextIndex, screen)
     m.audioPlayer.SetContentList(context)
     m.audioPlayer.SetNext(contextIndex)
 
-    m.IsPlaying = false
-    m.IsPaused = false
-End Sub
-
-Sub audioPlayerClearContext()
-    m.Stop()
-    m.Context = invalid
-    m.CurIndex = invalid
-    m.ContextScreenID = invalid
     m.IsPlaying = false
     m.IsPaused = false
 End Sub

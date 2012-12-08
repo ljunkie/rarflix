@@ -36,43 +36,6 @@ End Function
 
 
 '******************************************************
-'Insertion Sort
-'Will sort an array directly, or use a key function
-'******************************************************
-'Sub Sort(A as Object, key=invalid as dynamic)
-'
-'    if type(A)<>"roArray" then return
-'
-'    if (key=invalid) then
-'        for i = 1 to A.Count()-1
-'            value = A[i]
-'            j = i-1
-'            while j>= 0 and A[j] > value
-'                A[j + 1] = A[j]
-'                j = j-1
-'            end while
-'            A[j+1] = value
-'        next
-'
-'    else
-'        if type(key)<>"Function" then return
-'        for i = 1 to A.Count()-1
-'            valuekey = key(A[i])
-'            value = A[i]
-'            j = i-1
-'            while j>= 0 and key(A[j]) > valuekey
-'                A[j + 1] = A[j]
-'                j = j-1
-'            end while
-'            A[j+1] = value
-'        next
-'
-'    end if
-'
-'End Sub
-
-
-'******************************************************
 'Convert anything to a string
 '
 'Always returns a string
@@ -88,22 +51,10 @@ End Function
 '******************************************************
 'Get a " char as a string
 '******************************************************
-'Function Quote()
-'    q$ = Chr(34)
-'    return q$
-'End Function
-
-
-'******************************************************
-'isxmlelement
-'
-'Determine if the given object supports the ifXMLElement interface
-'******************************************************
-'Function isxmlelement(obj as dynamic) As Boolean
-'    if obj = invalid return false
-'    if GetInterface(obj, "ifXMLElement") = invalid return false
-'    return true
-'End Function
+Function Quote()
+    q$ = Chr(34)
+    return q$
+End Function
 
 
 '******************************************************
@@ -212,25 +163,6 @@ End Function
 
 
 '******************************************************
-'strtobool
-'
-'Convert string to boolean safely. Don't crash
-'Looks for certain string values
-'******************************************************
-'Function strtobool(obj As dynamic) As Boolean
-'    if obj = invalid return false
-'    if type(obj) <> "roString" return false
-'    o = strTrim(obj)
-'    o = Lcase(o)
-'    if o = "true" return true
-'    if o = "t" return true
-'    if o = "y" return true
-'    if o = "1" return true
-'    return false
-'End Function
-
-
-'******************************************************
 'itostr
 '
 'Convert int to string. This is necessary because
@@ -240,36 +172,6 @@ Function itostr(i As Integer) As String
     str = Stri(i)
     return strTrim(str)
 End Function
-
-
-'******************************************************
-'Get remaining hours from a total seconds
-'******************************************************
-'Function hoursLeft(seconds As Integer) As Integer
-'    hours% = seconds / 3600
-'    return hours%
-'End Function
-
-
-'******************************************************
-'Get remaining minutes from a total seconds
-'******************************************************
-'Function minutesLeft(seconds As Integer) As Integer
-'    hours% = seconds / 3600
-'    mins% = seconds - (hours% * 3600)
-'    mins% = mins% / 60
-'    return mins%
-'End Function
-
-
-'******************************************************
-'Pluralize simple strings like "1 minute" or "2 minutes"
-'******************************************************
-'Function Pluralize(val As Integer, str As String) As String
-'    ret = itostr(val) + " " + str
-'    if val <> 1 ret = ret + "s"
-'    return ret
-'End Function
 
 
 '******************************************************
@@ -320,85 +222,6 @@ End Function
 
 
 '******************************************************
-'Get all XML subelements by name
-'
-'return list of 0 or more elements
-'******************************************************
-'Function GetXMLElementsByName(xml As Object, name As String) As Object
-'    list = CreateObject("roArray", 100, true)
-'    if islist(xml.GetBody()) = false return list
-'
-'    for each e in xml.GetBody()
-'        if e.GetName() = name then
-'            list.Push(e)
-'        endif
-'    next
-'
-'    return list
-'End Function
-
-
-'******************************************************
-'Get all XML subelement's string bodies by name
-'
-'return list of 0 or more strings
-'******************************************************
-'Function GetXMLElementBodiesByName(xml As Object, name As String) As Object
-'    list = CreateObject("roArray", 100, true)
-'    if islist(xml.GetBody()) = false return list'
-'
-'    for each e in xml.GetBody()
-'        if e.GetName() = name then
-'            b = e.GetBody()
-'            if type(b) = "roString" list.Push(b)
-'        endif
-'    next
-'
-'    return list
-'End Function
-
-
-'******************************************************
-'Get first XML subelement by name
-'
-'return invalid if not found, else the element
-'******************************************************
-'Function GetFirstXMLElementByName(xml As Object, name As String) As dynamic
-'    if islist(xml.GetBody()) = false return invalid'
-
-'    for each e in xml.GetBody()
-'        if e.GetName() = name return e
-'    next
-'
-'    return invalid
-'End Function
-
-
-'******************************************************
-'Get first XML subelement's string body by name
-'
-'return invalid if not found, else the subelement's body string
-'******************************************************
-'Function GetFirstXMLElementBodyStringByName(xml As Object, name As String) As dynamic
-'    e = GetFirstXMLElementByName(xml, name)
-'    if e = invalid return invalid
-'    if type(e.GetBody()) <> "roString" return invalid
-'    return e.GetBody()
-'End Function
-
-
-'******************************************************
-'Get the xml element as an integer
-'
-'return invalid if body not a string, else the integer as converted by strtoi
-'******************************************************
-'Function GetXMLBodyAsInteger(xml As Object) As dynamic
-'    if type(xml.GetBody()) <> "roString" return invalid
-'    return strtoi(xml.GetBody())
-'End Function
-
-
-'******************************************************
 'Parse a string into a roXMLElement
 '
 'return invalid on error, else the xml object
@@ -409,44 +232,6 @@ Function ParseXML(str As String) As dynamic
     if not xml.Parse(str) return invalid
     return xml
 End Function
-
-
-'******************************************************
-'Get XML sub elements whose bodies are strings into an associative array.
-'subelements that are themselves parents are skipped
-'namespace :'s are replaced with _'s
-'
-'So an XML element like...
-'
-'<blah>
-'    <This>abcdefg</This>
-'    <Sucks>xyz</Sucks>
-'    <sub>
-'        <sub2>
-'        ....
-'        </sub2>
-'    </sub>
-'    <ns:doh>homer</ns:doh>
-'</blah>
-'
-'returns an AA with:
-'
-'aa.This = "abcdefg"
-'aa.Sucks = "xyz"
-'aa.ns_doh = "homer"
-'
-'return an empty AA if nothing found
-'******************************************************
-'Sub GetXMLintoAA(xml As Object, aa As Object)
-'    for each e in xml.GetBody()
-'        body = e.GetBody()
-'        if type(body) = "roString" then
-'            name = e.GetName()
-'            name = strReplace(name, ":", "_")
-'            aa.AddReplace(name, body)
-'        endif
-'    next
-'End Sub
 
 
 '******************************************************
@@ -470,16 +255,6 @@ Sub PrintAA(aa as Object)
     endif
     Debug("------------")
 End Sub
-
-
-'******************************************************
-'Walk a list and print it
-'******************************************************
-'Sub PrintList(list as Object)
-'    Debug("---- list ----")
-'    PrintAnyList(0, list)
-'    Debug("--------------")
-'End Sub
 
 
 '******************************************************
@@ -536,23 +311,6 @@ End Sub
 
 
 '******************************************************
-'Print an object as a string for debugging. If it is
-'very long print the first 500 chars.
-'******************************************************
-Sub Dbg(pre As Dynamic, o=invalid As Dynamic)
-    p = AnyToString(pre)
-    if p = invalid p = ""
-    if o = invalid o = ""
-    s = AnyToString(o)
-    if s = invalid s = "???: " + type(o)
-    if Len(s) > 4000
-        s = Left(s, 4000)
-    endif
-    Debug(p + s)
-End Sub
-
-
-'******************************************************
 'Try to convert anything to a string. Only works on simple items.
 '
 'Test with this script...
@@ -603,71 +361,6 @@ Function AnyToString(any As Dynamic) As dynamic
     if isfloat(any) return Str(any)
     if type(any) = "roTimespan" return itostr(any.TotalMilliseconds()) + "ms"
     return invalid
-End Function
-
-
-'******************************************************
-'Walk an XML tree and print it
-'******************************************************
-Sub PrintXML(element As Object, depth As Integer)
-    Debug(String(depth*3, " ") + "Name: [" + element.GetName() + "]")
-    if invalid <> element.GetAttributes() then
-        attrStr = String(depth*3, " ") + "Attributes: "
-        for each a in element.GetAttributes()
-            attrStr = attrStr + a + "=" + left(element.GetAttributes()[a], 4000)
-            if element.GetAttributes().IsNext() then attrStr = attrStr + ", "
-        next
-        Debug(attrStr)
-    endif
-
-    if element.GetBody()=invalid then
-    else if type(element.GetBody())="roString" then
-        Debug(String(depth*3, " ") + "Contains string: [" + left(element.GetBody(), 4000) + "]")
-    else
-        Debug(String(depth*3, " ") + "Contains list:")
-        for each e in element.GetBody()
-            PrintXML(e, depth+1)
-        next
-    endif
-    Debug("")
-end sub
-
-
-'******************************************************
-'Dump the bytes of a string
-'******************************************************
-'Sub DumpString(str As String)
-'    Debug("DUMP STRING")
-'    Debug("---------------------------")
-'    Debug(str)
-'    Debug("---------------------------")
-'    l = Len(str)-1
-'    i = 0
-'    for i = 0 to l
-'        c = Mid(str, i)
-'        val = Asc(c)
-'        Debug(itostr(val))
-'    next
-'    Debug("---------------------------")
-'End Sub
-
-
-'******************************************************
-'Validate parameter is the correct type
-'******************************************************
-Function validateParam(param As Object, paramType As String,functionName As String, allowInvalid = false) As Boolean
-    if type(param) = paramType then
-        return true
-    endif
-
-    if allowInvalid = true then
-        if type(param) = invalid then
-            return true
-        endif
-    endif
-
-    Debug("invalid parameter of type " + type(param) + " for " + paramType + " in function " + functionName)
-    return false
 End Function
 
 

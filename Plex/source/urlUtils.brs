@@ -48,41 +48,6 @@ End Sub
 
 
 REM ******************************************************
-REM Constucts a URL Transfer object 2
-REM ******************************************************
-
-Function CreateURLTransferObject2(url As String, contentHeader As String) as Object
-    obj = CreateObject("roUrlTransfer")
-    obj.SetPort(CreateObject("roMessagePort"))
-    obj.SetUrl(url)
-	obj.AddHeader("Content-Type", contentHeader)
-    obj.EnableEncodings(true)
-    return obj
-End Function
-
-REM ******************************************************
-REM Url Query builder 2
-REM so this is a quick and dirty name/value encoder/accumulator
-REM ******************************************************
-
-Function NewHttp2(url As String, contentHeader As String) as Object
-    obj = CreateObject("roAssociativeArray")
-    obj.Http                        = CreateURLTransferObject2(url, contentHeader)
-    obj.FirstParam                  = true
-    obj.AddParam                    = http_add_param
-    obj.AddRawQuery                 = http_add_raw_query
-    obj.GetToStringWithRetry        = http_get_to_string_with_retry
-    obj.PrepareUrlForQuery          = http_prepare_url_for_query
-    obj.GetToStringWithTimeout      = http_get_to_string_with_timeout
-    obj.PostFromStringWithTimeout   = http_post_from_string_with_timeout
-
-    if Instr(1, url, "?") > 0 then obj.FirstParam = false
-
-    return obj
-End Function
-
-
-REM ******************************************************
 REM HttpEncode - just encode a string
 REM ******************************************************
 
@@ -185,10 +150,10 @@ Function http_get_to_string_with_timeout(seconds as Integer) as String
             m.FailureReason = event.GetFailureReason()
             str = event.GetString()
         elseif event = invalid
-            Dbg("AsyncGetToString timeout")
+            Debug("AsyncGetToString timeout")
             m.Http.AsyncCancel()
         else
-            Dbg("AsyncGetToString unknown event", event)
+            Debug("AsyncGetToString unknown event: " + type(event))
         endif
     endif
 
@@ -212,11 +177,11 @@ Function http_post_from_string_with_timeout(val As String, seconds as Integer) a
 			str = event.GetString()
         elseif event = invalid
 			Debug("2")
-            Dbg("AsyncPostFromString timeout")
+            Debug("AsyncPostFromString timeout")
             m.Http.AsyncCancel()
         else
 			Debug("3")
-            Dbg("AsyncPostFromString unknown event", event)
+            Debug("AsyncPostFromString unknown event: " + type(event))
         endif
     endif
 
@@ -236,10 +201,10 @@ Function GetToStringWithTimeout(request As Object, seconds as Integer) as String
                 Debug("GET returned: " + tostr(event.GetResponseCode()) + " - " + event.GetFailureReason())
             end if
         elseif event = invalid
-            Dbg("AsyncGetToString timeout")
+            Debug("AsyncGetToString timeout")
             request.AsyncCancel()
         else
-            Dbg("AsyncGetToString unknown event", event)
+            Debug("AsyncGetToString unknown event: " + type(event))
         endif
     endif
 
