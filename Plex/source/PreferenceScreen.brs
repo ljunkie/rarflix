@@ -1139,6 +1139,11 @@ Function createHomeScreenPrefsScreen(viewController) As Object
         heading: "Show recently added items on the home screen",
         default: ""
     }
+    obj.Prefs["row_visibility_channels"] = {
+        values: values,
+        heading: "Show channels on the home screen",
+        default: ""
+    }
 
     ' Home screen rows that can be reordered
     values = [
@@ -1162,6 +1167,7 @@ Function createHomeScreenPrefsScreen(viewController) As Object
     obj.AddItem({title: "Recommendations"}, "playlist_view_recommendations", obj.GetEnumValue("playlist_view_recommendations"))
     obj.AddItem({title: "On Deck"}, "row_visibility_ondeck", obj.GetEnumValue("row_visibility_ondeck"))
     obj.AddItem({title: "Recently Added"}, "row_visibility_recentlyadded", obj.GetEnumValue("row_visibility_recentlyadded"))
+    obj.AddItem({title: "Channels"}, "row_visibility_channels", obj.GetEnumValue("row_visibility_channels"))
     obj.AddItem({title: "Reorder Rows"}, "home_row_order")
     obj.AddItem({title: "Close"}, "close")
 
@@ -1178,7 +1184,7 @@ Function prefsHomeHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "playlist_view_queue" OR command = "playlist_view_recommendations" OR command = "row_visibility_ondeck" OR command = "row_visibility_recentlyadded" then
+            if command = "playlist_view_queue" OR command = "playlist_view_recommendations" OR command = "row_visibility_ondeck" OR command = "row_visibility_recentlyadded" OR command = "row_visibility_channels" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "home_row_order" then
                 m.HandleReorderPreference(command, msg.GetIndex())
