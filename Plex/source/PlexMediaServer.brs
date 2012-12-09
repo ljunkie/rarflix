@@ -232,7 +232,11 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
     key = ""
     ratingKey = ""
     mediaItem = item.preferredMediaItem
-    part = mediaItem.parts[mediaItem.curPartIndex]
+    if mediaItem <> invalid then
+        part = mediaItem.parts[mediaItem.curPartIndex]
+    else
+        part = invalid
+    end if
 
     if identifier = "com.plexapp.plugins.library" then
         ' Regular library video
@@ -240,7 +244,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
         key = item.key
         ratingKey = item.ratingKey
         videoRes = mediaItem.videoresolution
-    else if mediaItem = invalid then
+    else if mediaItem = invalid  OR part = invalid then
         ' Plugin video
         mediaKey = item.key
         videoRes = item.videoresolution
