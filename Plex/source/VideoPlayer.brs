@@ -221,7 +221,6 @@ Function videoPlayerHandleMessage(msg) As Boolean
             end if
         else if msg.isPlaybackPosition() then
             m.lastPosition = msg.GetIndex()
-            if m.pingTimer <> invalid then m.pingTimer.Mark()
             if m.Item.ratingKey <> invalid then
                 if m.Item.Length <> invalid AND m.Item.Length > 0 then
                     playedFraction = m.lastPosition/m.Item.Length
