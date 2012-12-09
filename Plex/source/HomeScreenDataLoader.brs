@@ -146,25 +146,30 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
     m.AddOrStartRequest(sections, m.RowIndexes["sections"], startRequests)
 
     ' Request recently used channels
-    channels = CreateObject("roAssociativeArray")
-    channels.server = server
-    channels.key = "/channels/recentlyViewed"
+    view = RegRead("row_visibility_channels", "preferences", "")
+    if view <> "hidden" then
+        channels = CreateObject("roAssociativeArray")
+        channels.server = server
+        channels.key = "/channels/recentlyViewed"
 
-    allChannels = CreateObject("roAssociativeArray")
-    allChannels.Title = "More Channels"
-    if AreMultipleValidatedServers() then
-        allChannels.ShortDescriptionLine2 = "All channels on " + server.name
+        allChannels = CreateObject("roAssociativeArray")
+        allChannels.Title = "More Channels"
+        if AreMultipleValidatedServers() then
+            allChannels.ShortDescriptionLine2 = "All channels on " + server.name
+        else
+            allChannels.ShortDescriptionLine2 = "All channels"
+        end if
+        allChannels.Description = allChannels.ShortDescriptionLine2
+        allChannels.server = server
+        allChannels.sourceUrl = ""
+        allChannels.Key = "/channels/all"
+        allChannels.SDPosterURL = "file://pkg:/images/more.png"
+        allChannels.HDPosterURL = "file://pkg:/images/more.png"
+        channels.item = allChannels
+        m.AddOrStartRequest(channels, m.RowIndexes["channels"], startRequests)
     else
-        allChannels.ShortDescriptionLine2 = "All channels"
+        m.Listener.OnDataLoaded(m.RowIndexes["channels"], [], 0, 0, true)
     end if
-    allChannels.Description = allChannels.ShortDescriptionLine2
-    allChannels.server = server
-    allChannels.sourceUrl = ""
-    allChannels.Key = "/channels/all"
-    allChannels.SDPosterURL = "file://pkg:/images/more.png"
-    allChannels.HDPosterURL = "file://pkg:/images/more.png"
-    channels.item = allChannels
-    m.AddOrStartRequest(channels, m.RowIndexes["channels"], startRequests)
 
     ' Request global on deck
     view = RegRead("row_visibility_ondeck", "preferences", "")
