@@ -16,13 +16,15 @@
 #    Set in your this variable in your shell startup (e.g. .bashrc)
 ##########################################################################  
 APPNAME = Plex
-APPDEPS = manifest
+APPDEPS = manifest count_functions
 ZIP_EXCLUDE = -x .git\* -x manifest.template -x \*.swp -x \*.DS_Store -x \*.py
 include ../app.mk
 
 APPTITLE = PlexDev
 
-.PHONY: manifest beta dev rel test
+num_functions := $(shell grep -ri --include=*.brs '^\(function\|sub\)' . | wc -l | tr -d ' ')
+
+.PHONY: manifest count_functions beta dev rel test
 
 beta: APPTITLE = PlexBeta
 beta: $(APPNAME)
@@ -39,6 +41,10 @@ rel: $(APPNAME)
 manifest:
 	echo "Creating manifest for $(APPTITLE)"
 	sed s/APPTITLE/$(APPTITLE)/ < manifest.template > manifest
+
+count_functions:
+	echo "Counting functions for $(APPTITLE), Roku v3.x limit is 512"
+	test $(num_functions) -le 512
 
 screenshot:
 	curl -s -F passwd= -F mysubmit=Screenshot -F "archive=;filename=" -H "Expect:" "http://$(ROKU_DEV_TARGET)/plugin_inspect" > /dev/null
