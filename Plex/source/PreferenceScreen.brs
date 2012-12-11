@@ -48,18 +48,18 @@ Function settingsHandleMessage(msg) As Boolean
                 m.currentIndex = msg.GetIndex()
                 setting = m.contentArray[msg.GetIndex()]
 
-                if m.setting.type = "text" then
-                    screen = m.ViewController.CreateTextInputScreen("Enter " + m.setting.label, [], false)
-                    screen.Screen.SetText(m.setting.value)
-                    screen.Screen.SetSecureText(m.setting.hidden OR m.setting.secure)
+                if setting.type = "text" then
+                    screen = m.ViewController.CreateTextInputScreen("Enter " + setting.label, [], false)
+                    screen.Screen.SetText(setting.value)
+                    screen.Screen.SetSecureText(setting.hidden OR setting.secure)
                     screen.Listener = m
                     screen.Show()
-                else if m.setting.type = "bool" then
-                    screen = m.ViewController.CreateEnumInputScreen(["true", "false"], m.setting.value, m.setting.label, [], false)
+                else if setting.type = "bool" then
+                    screen = m.ViewController.CreateEnumInputScreen(["true", "false"], setting.value, setting.label, [], false)
                     screen.Listener = m
                     screen.Show()
-                else if m.setting.type = "enum" then
-                    screen = m.ViewController.CreateEnumInputScreen(m.setting.values, m.setting.value.toint(), m.setting.label, [], false)
+                else if setting.type = "enum" then
+                    screen = m.ViewController.CreateEnumInputScreen(setting.values, setting.value.toint(), setting.label, [], false)
                     screen.Listener = m
                     screen.Show()
                 end if
@@ -80,7 +80,7 @@ Sub settingsOnUserInput(value, screen)
         setting.value = value
     end if
 
-    server.SetPref(m.Item.key, setting.id, setting.value)
+    m.Item.server.SetPref(m.Item.key, setting.id, setting.value)
     m.AppendValue(m.currentIndex, setting.GetValueString())
 End Sub
 
