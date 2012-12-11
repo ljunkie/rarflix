@@ -14,6 +14,7 @@ Function createViewController() As Object
 
     controller.GlobalMessagePort = CreateObject("roMessagePort")
 
+    controller.CreateHomeScreen = vcCreateHomeScreen
     controller.CreateScreenForItem = vcCreateScreenForItem
     controller.CreateTextInputScreen = vcCreateTextInputScreen
     controller.CreateEnumInputScreen = vcCreateEnumInputScreen
@@ -26,6 +27,8 @@ Function createViewController() As Object
     controller.CreatePlayerForItem = vcCreatePlayerForItem
     controller.IsVideoPlaying = vcIsVideoPlaying
 
+    controller.ShowReleaseNotes = vcShowReleaseNotes
+
     controller.InitializeOtherScreen = vcInitializeOtherScreen
     controller.AssignScreenID = vcAssignScreenID
     controller.PushScreen = vcPushScreen
@@ -35,7 +38,6 @@ Function createViewController() As Object
     controller.CloseScreenWithCallback = vcCloseScreenWithCallback
 
     controller.Show = vcShow
-    controller.RefreshHomeScreen = vcRefreshHomeScreen
     controller.UpdateScreenProperties = vcUpdateScreenProperties
     controller.AddBreadcrumbs = vcAddBreadcrumbs
 
@@ -90,6 +92,15 @@ End Function
 
 Function GetMyPlexManager()
     return GetViewController().myplex
+End Function
+
+Function vcCreateHomeScreen()
+    screen = createHomeScreen(m)
+    screen.ScreenID = -1
+    m.InitializeOtherScreen(screen, invalid)
+    screen.Show()
+
+    return screen
 End Function
 
 Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As Dynamic
@@ -299,6 +310,19 @@ Function vcIsVideoPlaying() As Boolean
     return type(m.screens.Peek().Screen) = "roVideoScreen"
 End Function
 
+Sub vcShowReleaseNotes()
+    header = GetGlobal("appName") + " has been updated to " + GetGlobal("appVersionStr")
+    paragraphs = []
+    paragraphs.Push("Changes in this version include:")
+    paragraphs.Push(" - TODO: First item")
+    paragraphs.Push(" - TODO: Second item")
+
+    screen = createParagraphScreen(header, paragraphs, m)
+    m.InitializeOtherScreen(screen, invalid)
+
+    screen.Show()
+End Sub
+
 Sub vcInitializeOtherScreen(screen, breadcrumbs)
     m.AddBreadcrumbs(screen, breadcrumbs)
     m.UpdateScreenProperties(screen)
@@ -329,7 +353,6 @@ Sub vcPopScreen(screen)
 
         screen.Loader.Listener = invalid
         screen.Loader = invalid
-        m.Home = invalid
         return
     end if
 
@@ -389,11 +412,13 @@ Sub vcPopScreen(screen)
         m.TimersByScreen.Delete(screenID)
     end if
 
-    ' Let the new top of the stack know that it's visible again.
-    if callActivate then m.screens.Peek().Activate(screen)
-
+    ' Let the new top of the stack know that it's visible again. If we have
+    ' no screens on the stack, but we didn't just close the home screen, then
+    ' we haven't shown the home screen yet. Show it now.
     if m.screens.Count() = 0 then
-        m.Home.CreateAllPlaylistRequests(true)
+        m.CreateHomeScreen()
+    else if callActivate then
+        m.screens.Peek().Activate(screen)
     end if
 
     ' If some other screen requested this close, let it know.
@@ -409,10 +434,12 @@ Sub vcCloseScreenWithCallback(callback)
 End Sub
 
 Sub vcShow()
-    m.Home = createHomeScreen(m)
-    m.Home.ScreenID = -1
-    m.InitializeOtherScreen(m.Home, invalid)
-    m.Home.Show()
+    if RegRead("last_run_version", "misc", "") <> GetGlobal("appVersionStr") then
+        m.ShowReleaseNotes()
+        RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")
+    else
+        m.CreateHomeScreen()
+    end if
 
     Debug("Starting global message loop")
 
@@ -491,14 +518,6 @@ Sub vcShow()
     m.SocketListeners.Clear()
 
     Debug("Finished global message loop")
-End Sub
-
-Sub vcRefreshHomeScreen()
-    while m.screens.Count() > 1
-        m.PopScreen(m.screens.Peek())
-    end while
-
-    m.Home.Refresh()
 End Sub
 
 Sub vcAddBreadcrumbs(screen, breadcrumbs)
