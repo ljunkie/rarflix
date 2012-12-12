@@ -416,7 +416,7 @@ Sub vcPopScreen(screen)
     ' no screens on the stack, but we didn't just close the home screen, then
     ' we haven't shown the home screen yet. Show it now.
     if m.screens.Count() = 0 then
-        m.CreateHomeScreen()
+        m.Home = m.CreateHomeScreen()
     else if callActivate then
         m.screens.Peek().Activate(screen)
     end if
@@ -438,7 +438,7 @@ Sub vcShow()
         m.ShowReleaseNotes()
         RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")
     else
-        m.CreateHomeScreen()
+        m.Home = m.CreateHomeScreen()
     end if
 
     Debug("Starting global message loop")
