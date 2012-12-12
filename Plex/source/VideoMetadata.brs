@@ -1,6 +1,8 @@
 
 Function newVideoMetadata(container, item, detailed=false) As Object
-    video = createBaseMetadata(container, item)
+    ' Videos only have a grandparent thumb in situations where we prefer it,
+    ' so pass that to the base constructor.
+    video = createBaseMetadata(container, item, item@grandparentThumb)
 
     video.Refresh = videoRefresh
     video.ParseDetails = videoParseDetails
@@ -125,14 +127,6 @@ Sub setVideoBasics(video, container, item)
     end if
 
     video.Title = video.ShortDescriptionLine1
-
-    if container.xml@mixedParents = "1" then
-        if video.server <> invalid AND item@grandparentThumb <> invalid then
-            sizes = ImageSizes(container.ViewGroup, item@type)
-            video.SDPosterURL = video.server.TranscodedImage(container.sourceUrl, item@grandparentThumb, sizes.sdWidth, sizes.sdHeight)
-            video.HDPosterURL = video.server.TranscodedImage(container.sourceUrl, item@grandparentThumb, sizes.hdWidth, sizes.hdHeight)
-        end if
-    end if
 
     video.Rating = firstOf(item@contentRating, container.xml@grandparentContentRating)
     rating = item@rating
@@ -385,3 +379,18 @@ Sub videoRefresh(detailed=false)
     end if
 End Sub
 
+Function newSeasonMetadata(container, item) As Object
+    ' Seasons often have their own posters, but in many circumstances we prefer
+    ' show's poster.
+    if container.xml@mixedParents = "1" then
+        thumb = firstOf(item@parentThumb, item@thumb, container.xml@thumb)
+    else
+        thumb = invalid
+    end if
+
+    season = createBaseMetadata(container, item, thumb)
+
+    season.HasDetails = true
+
+    return season
+End Function

@@ -2,7 +2,7 @@
 '* This logic reflects that in the PosterScreen.SetListStyle
 '* Not using the standard sizes appears to slow navigation down
 Function ImageSizes(viewGroup, contentType) As Object
-	'* arced-square size	
+	'* arced-square size
 	sdWidth = "223"
 	sdHeight = "200"
 	hdWidth = "300"
@@ -25,7 +25,7 @@ Function ImageSizes(viewGroup, contentType) As Object
 		sdHeight = "200"
 		hdWidth = "300"
 		hdHeight = "300"
-	
+
 	endif
 	sizes = CreateObject("roAssociativeArray")
 	sizes.sdWidth = sdWidth
@@ -35,7 +35,7 @@ Function ImageSizes(viewGroup, contentType) As Object
 	return sizes
 End Function
 
-Function createBaseMetadata(container, item) As Object
+Function createBaseMetadata(container, item, thumb=invalid) As Object
     metadata = CreateObject("roAssociativeArray")
 
     server = container.server
@@ -59,11 +59,21 @@ Function createBaseMetadata(container, item) As Object
 
     metadata.sourceTitle = item@sourceTitle
 
-    sizes = ImageSizes(container.ViewGroup, item@type)                                                                                    
-    art = firstOf(item@thumb, item@parentThumb, item@art, container.xml@thumb)
-    if art <> invalid AND server <> invalid then
-        metadata.SDPosterURL = server.TranscodedImage(container.sourceUrl, art, sizes.sdWidth, sizes.sdHeight)
-        metadata.HDPosterURL = server.TranscodedImage(container.sourceUrl, art, sizes.hdWidth, sizes.hdHeight)
+    if container.xml@mixedParents = "1" then
+        parentTitle = firstOf(item@parentTitle, container.xml@parentTitle, "")
+        if parentTitle <> "" then
+            metadata.Title = parentTitle + ": " + metadata.Title
+        end if
+    end if
+
+    sizes = ImageSizes(container.ViewGroup, item@type)
+    if thumb = invalid then
+        thumb = firstOf(item@thumb, item@parentThumb, item@grandparentThumb, container.xml@thumb)
+    end if
+
+    if thumb <> invalid AND server <> invalid then
+        metadata.SDPosterURL = server.TranscodedImage(container.sourceUrl, thumb, sizes.sdWidth, sizes.sdHeight)
+        metadata.HDPosterURL = server.TranscodedImage(container.sourceUrl, thumb, sizes.hdWidth, sizes.hdHeight)
     else
         metadata.SDPosterURL = "file://pkg:/images/BlankPoster.png"
         metadata.HDPosterURL = "file://pkg:/images/BlankPoster.png"
