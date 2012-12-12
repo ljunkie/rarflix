@@ -130,18 +130,20 @@ Function gridHandleMessage(msg) As Boolean
             ' Viewed Shows - Show Name"?
 
             item = context[index]
-            if item.ContentType = "series" then
-                breadcrumbs = [item.Title]
-            else if item.ContentType = "section" then
-                breadcrumbs = [item.server.name, item.Title]
-            else
-                breadcrumbs = [m.Loader.GetNames()[msg.GetIndex()], item.Title]
+            if item <> invalid then
+                if item.ContentType = "series" then
+                    breadcrumbs = [item.Title]
+                else if item.ContentType = "section" then
+                    breadcrumbs = [item.server.name, item.Title]
+                else
+                    breadcrumbs = [m.Loader.GetNames()[msg.GetIndex()], item.Title]
+                end if
+
+                m.Facade = CreateObject("roGridScreen")
+                m.Facade.Show()
+
+                m.ViewController.CreateScreenForItem(context, index, breadcrumbs)
             end if
-
-            m.Facade = CreateObject("roGridScreen")
-            m.Facade.Show()
-
-            m.ViewController.CreateScreenForItem(context, index, breadcrumbs)
         else if msg.isListItemFocused() then
             ' If the user is getting close to the limit of what we've
             ' preloaded, make sure we kick off another update.
