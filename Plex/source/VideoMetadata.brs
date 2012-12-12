@@ -193,16 +193,11 @@ Sub setVideoDetails(video, container, videoItemXml)
     end if
 
     ' TODO: review the logic here. Last media item wins. Is this what we want?
-    ' TODO: comment out HD for now - does it fix the SD playing regression?
     for each MediaItem in videoItemXml.Media
         videoResolution = MediaItem@videoResolution
         if videoResolution = "1080" OR videoResolution = "720" then
-            '	video.IsHD = true
             video.HDBranded = true
         endif
-        'if videoResolution = "1080" then
-        '	video.FullHD = true
-        'endif
         frameRate = MediaItem@videoFrameRate
         if frameRate <> invalid then
             if frameRate = "24p" then

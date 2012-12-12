@@ -698,7 +698,7 @@ Function prefs1080HandleMessage(msg) As Boolean
         end if
     end if
 
-    return false
+    return handled
 End Function
 
 '*** Debug Logging Preferences ***

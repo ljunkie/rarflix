@@ -305,10 +305,10 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
 			if RegRead("legacy1080p","preferences") = "enabled" then
 				video.fullHD = true
 				video.framerate = 30
-				frSetting = RegRead("legacy1080pframerate","preferences")
+				frSetting = RegRead("legacy1080pframerate","preferences","auto")
 				if frSetting = "24" then
 					video.framerate = 24
-				else if frSetting = "auto" and item.framerate = "24"
+				else if frSetting = "auto" and item.framerate = 24 then
 					video.framerate = 24
 				end if
 			end if
