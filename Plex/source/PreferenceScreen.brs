@@ -777,6 +777,7 @@ Function createManageServersScreen(viewController) As Object
     obj.superOnUserInput = obj.OnUserInput
     obj.HandleMessage = prefsServersHandleMessage
     obj.OnUserInput = prefsServersOnUserInput
+    obj.Activate = prefsServersActivate
     obj.RefreshServerList = manageRefreshServerList
 
     ' Automatic discovery
@@ -800,6 +801,8 @@ Function createManageServersScreen(viewController) As Object
     obj.removeOffset = obj.contentArray.Count()
     obj.RefreshServerList(obj.removeOffset)
 
+    obj.RefreshOnActivate = false
+
     return obj
 End Function
 
@@ -819,6 +822,7 @@ Function prefsServersHandleMessage(msg) As Boolean
                 screen.Screen.SetMaxLength(80)
                 screen.ValidateText = AddUnnamedServer
                 screen.Show()
+                m.RefreshOnActivate = true
             else if command = "discover" then
                 DiscoverPlexMediaServers()
                 m.RefreshServerList(m.removeOffset)
@@ -846,6 +850,13 @@ Sub prefsServersOnUserInput(value, screen)
         m.RefreshServerList(m.removeOffset)
     else
         m.superOnUserInput(value, screen)
+    end if
+End Sub
+
+Sub prefsServersActivate(priorScreen)
+    if m.RefreshOnActivate then
+        m.RefreshOnActivate = false
+        m.RefreshServerList(m.removeOffset)
     end if
 End Sub
 
