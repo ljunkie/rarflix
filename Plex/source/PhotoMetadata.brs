@@ -41,11 +41,20 @@ Function newPhotoMetadata(container, item, detailed=true) As Object
     ' Transcode if necessary
     if photo.media.Count() > 0 then
         format = UCase(firstOf(photo.media[0].container, "JPEG"))
+        transcode = false
+        device = CreateObject("roDeviceInfo")
+        size = device.GetDisplaySize()
+
         ' JPEG and PNG are documented, GIF appears to work fine
         if format <> "JPEG" AND format <> "PNG" AND format <> "GIF" then
             Debug("Transcoding photo to JPEG from " + format)
-            device = CreateObject("roDeviceInfo")
-            size = device.GetDisplaySize()
+            transcode = true
+        else if photo.media[0].width > size.w OR photo.media[0].height > size.h then
+            Debug("Transcoding photo because it's unnecessarily large: " + tostr(photo.media[0].width) + "x" + tostr(photo.media[0].height))
+            transcode = true
+        end if
+
+        if transcode then
             photo.Url = photo.server.TranscodedImage("", photo.Url, size.w.toStr(), size.h.toStr())
         end if
     end if
@@ -60,8 +69,8 @@ Function ParsePhotoMedia(photoItem) As Object
 
         media.identifier = MediaItem@id
         media.container = MediaItem@container
-        media.width = MediaItem@width
-        media.height = MediaItem@height
+        media.width = firstOf(MediaItem@width, "0").toint()
+        media.height = firstOf(MediaItem@height, "0").toint()
         media.aspectratio = MediaItem@aspectRatio
 
         media.parts = CreateObject("roArray", 2, true)
