@@ -792,6 +792,9 @@ Sub homeRefreshData()
         m.nowPlayingItem.CurIndex = invalid
     end if
 
+    ' The home screen is never empty, make sure we don't close ourself.
+    m.Listener.hasData = true
+
     ' Refresh the queue
     m.CreateAllPlaylistRequests(true)
 

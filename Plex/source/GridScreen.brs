@@ -88,6 +88,17 @@ Function showGridScreen() As Integer
     m.Screen.SetupLists(names.Count())
     m.Screen.SetListNames(names)
 
+    ' If we already "loaded" an empty row, we need to set the list visibility now
+    ' that we've setup the lists.
+    for row = 0 to names.Count() - 1
+        if m.contentArray[row] = invalid then m.contentArray[row] = []
+        m.lastUpdatedSize[row] = m.contentArray[row].Count()
+        m.Screen.SetContentList(row, m.contentArray[row])
+        if m.lastUpdatedSize[row] = 0 AND m.Loader.GetLoadStatus(row) = 2 then
+            m.Screen.SetListVisible(row, false)
+        end if
+    end for
+
     m.Screen.Show()
     facade.Close()
 
@@ -98,11 +109,6 @@ Function showGridScreen() As Integer
 
     maxRow = names.Count() - 1
     if maxRow > 1 then maxRow = 1
-
-    for row = 0 to names.Count() - 1
-        m.contentArray[row] = []
-        m.lastUpdatedSize[row] = 0
-    end for
 
     for row = 0 to maxRow
         Debug("Loading beginning of row " + tostr(row) + ", " + tostr(names[row]))
