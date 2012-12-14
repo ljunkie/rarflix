@@ -194,7 +194,7 @@ Function popupHandleButton(key, data) As Boolean
         dialog.Facade = facade
         dialog.Title = response.xml@header
         dialog.Text = response.xml@message
-        dialog.Show()
+        dialog.Show(true)
     else
         facade.Close()
     end if
