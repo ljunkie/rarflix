@@ -362,7 +362,6 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
         video.fullHD = False
 	endif
 
-	printAA(video)
     video.StreamBitrates = [0]
     video.StreamFormat = "hls"
     video.SwitchingStrategy = "no-adaptation"
@@ -383,6 +382,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
         end if
     end if
 
+    printAA(video)
     return video
 End Function
 
