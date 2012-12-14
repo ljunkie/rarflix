@@ -509,6 +509,7 @@ Sub vcShow()
     end while
 
     ' Clean up some references on the way out
+    m.Home = invalid
     m.myplex = invalid
     m.GdmAdvertiser = invalid
     m.WebServer = invalid
