@@ -515,7 +515,9 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As 
     path = "/video/:/transcode/segmented/start.m3u8?"
 
     query = "offset=0"
-    query = query + "&identifier=" + identifier
+    if identifier <> invalid then
+        query = query + "&identifier=" + identifier
+    end if
     query = query + "&ratingKey=" + ratingKey
     if len(fullKey) > 0 then
         query = query + "&key=" + HttpEncode(fullKey)

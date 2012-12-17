@@ -188,7 +188,7 @@ Sub videoActivate(priorScreen)
         return
     end if
 
-    if m.checkChangesOnActivate then
+    if m.checkChangesOnActivate AND priorScreen.Changes <> invalid then
         m.checkChangesOnActivate = false
         if priorScreen.Changes.DoesExist("playback") then
             m.PlayButtonState = priorScreen.Changes["playback"].toint()

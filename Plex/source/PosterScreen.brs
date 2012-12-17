@@ -139,17 +139,20 @@ Function posterHandleMessage(msg) As Boolean
             index = msg.GetIndex()
             content = m.contentArray[m.focusedList].content
             selected = content[index]
-            contentType = selected.ContentType
 
-            Debug("Content type in poster screen: " + tostr(contentType))
+            if selected <> invalid then
+                contentType = selected.ContentType
 
-            if contentType = "series" OR NOT m.FilterMode then
-                breadcrumbs = [selected.Title]
-            else
-                breadcrumbs = [m.names[m.focusedList], selected.Title]
+                Debug("Content type in poster screen: " + tostr(contentType))
+
+                if contentType = "series" OR NOT m.FilterMode then
+                    breadcrumbs = [selected.Title]
+                else
+                    breadcrumbs = [m.names[m.focusedList], selected.Title]
+                end if
+
+                m.ViewController.CreateScreenForItem(content, index, breadcrumbs)
             end if
-
-            m.ViewController.CreateScreenForItem(content, index, breadcrumbs)
         else if msg.isScreenClosed() then
             m.ViewController.PopScreen(m)
         else if msg.isListItemFocused() then

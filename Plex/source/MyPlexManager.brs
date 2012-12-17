@@ -27,6 +27,8 @@ Function createMyPlexManager(viewController) As Object
     ' Masquerade as a basic Plex Media Server
     obj.serverUrl = "https://my.plexapp.com"
     obj.name = "myPlex"
+    obj.owned = false
+    obj.online = true
     obj.StopVideo = mpStopVideo
     obj.StartTranscode = mpStartTranscode
     obj.PingTranscode = mpPingTranscode

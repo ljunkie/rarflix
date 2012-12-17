@@ -377,22 +377,23 @@ Sub vcPopScreen(screen)
     callActivate = true
     screenID = screen.ScreenID.tostr()
     if screen.ScreenID <> m.screens.Peek().ScreenID then
-        if screen.NumBreadcrumbs = 0 then
-            ' This is awkward, but if we launch a new screen from a dialog we
-            ' end up trying to pop the dialog after the new screen has been
-            ' put on the stack. Try to handle that.
-            for i = m.screens.Count() - 1 to 0 step -1
-                if screen.ScreenID = m.screens[i].ScreenID then
-                    Debug("Removing screen " + screenID + " from middle of stack!")
-                    m.screens.Delete(i)
-                    exit for
-                end if
-            next
-            callActivate = false
-        else
-            Debug("Trying to pop screen that doesn't match the top of our stack!")
-            Return
-        end if
+        Debug("Trying to pop screen that doesn't match the top of our stack!")
+
+        ' This is potentially indicative of something very wrong, which we may
+        ' not be able to recover from. But it also happens when we launch a new
+        ' screen from a dialog and try to pop the dialog after the new screen
+        ' has been put on the stack. If we don't remove the screen from the
+        ' stack, things will almost certainly go wrong (seen one crash report
+        ' likely caused by this). So we might as well give it a shot.
+
+        for i = m.screens.Count() - 1 to 0 step -1
+            if screen.ScreenID = m.screens[i].ScreenID then
+                Debug("Removing screen " + screenID + " from middle of stack!")
+                m.screens.Delete(i)
+                exit for
+            end if
+        next
+        callActivate = false
     else
         Debug("Popping screen " + screenID + " and cleaning up " + tostr(screen.NumBreadcrumbs) + " breadcrumbs")
         m.screens.Pop()
