@@ -26,6 +26,8 @@ Function createVideoPlayerScreen(metadata, seekValue, directPlayOptions, viewCon
 
     obj.ShowPlaybackError = videoPlayerShowPlaybackError
 
+    obj.curPart = metadata.SelectPartForOffset(seekValue)
+
     return obj
 End Function
 
@@ -69,10 +71,19 @@ End Sub
 
 Function videoPlayerCreateVideoPlayer()
     Debug("MediaPlayer::playVideo: Displaying video: " + tostr(m.Item.title))
-    seconds = int(m.SeekValue/1000)
     server = m.Item.server
+    mediaItem = m.Item.preferredMediaItem
 
-    if (m.Item.preferredMediaItem <> invalid AND m.Item.preferredMediaItem.forceTranscode <> invalid) AND (m.DirectPlayOptions <> 1 AND m.DirectPlayOptions <> 2) then
+    if mediaItem <> invalid AND mediaItem.parts.Count() > mediaItem.curPartIndex then
+        m.curPartOffset = int(mediaItem.parts[mediaItem.curPartIndex].startOffset / 1000)
+        seconds = int(m.SeekValue/1000) - m.curPartOffset
+        if seconds < 0 then seconds = 0
+    else
+        m.curPartOffset = 0
+        seconds = int(m.SeekValue/1000)
+    end if
+
+    if (mediaItem <> invalid AND mediaItem.forceTranscode <> invalid) AND (m.DirectPlayOptions <> 1 AND m.DirectPlayOptions <> 2) then
         m.DirectPlayOptions = 4
     end if
 
@@ -221,10 +232,11 @@ Function videoPlayerHandleMessage(msg) As Boolean
                 m.ViewController.PopScreen(m)
             end if
         else if msg.isPlaybackPosition() then
-            m.lastPosition = msg.GetIndex()
+            mediaItem = m.Item.preferredMediaItem
+            m.lastPosition = m.curPartOffset + msg.GetIndex()
             if m.Item.ratingKey <> invalid then
-                if m.Item.Length <> invalid AND m.Item.Length > 0 then
-                    playedFraction = m.lastPosition/m.Item.Length
+                if mediaItem <> invalid AND validint(mediaItem.duration) > 0 then
+                    playedFraction = m.lastPosition/mediaItem.duration
                     Debug("MediaPlayer::playVideo::VideoScreenEvent::isPlaybackPosition: position -> " + tostr(m.lastPosition) + " playedFraction -> " + tostr(playedFraction))
                     if playedFraction > 0.90 then
                         m.isPlayed = true
@@ -241,8 +253,9 @@ Function videoPlayerHandleMessage(msg) As Boolean
         else if msg.isPaused() then
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isPaused: position -> " + tostr(m.lastPosition))
         else if msg.isPartialResult() then
-            if m.Item.Length <> invalid AND m.Item.Length > 0 then
-                playedFraction = m.lastPosition/m.Item.Length
+            mediaItem = m.Item.preferredMediaItem
+            if mediaItem <> invalid AND validint(mediaItem.duration) > 0 then
+                playedFraction = m.lastPosition/mediaItem.duration
                 Debug("MediaPlayer::playVideo::VideoScreenEvent::isPartialResult: position -> " + tostr(m.lastPosition) + " playedFraction -> " + tostr(playedFraction))
                 if playedFraction > 0.90 then
                     m.isPlayed = true

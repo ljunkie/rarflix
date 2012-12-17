@@ -6,6 +6,7 @@ Function newVideoMetadata(container, item, detailed=false) As Object
 
     video.Refresh = videoRefresh
     video.ParseDetails = videoParseDetails
+    video.SelectPartForOffset = videoSelectPartForOffset
 
     if item = invalid then return video
 
@@ -230,6 +231,7 @@ End Function
 
 Function ParseVideoMedia(videoItem) As Object
     mediaArray = CreateObject("roArray", 5, true)
+
 	for each MediaItem in videoItem.Media
 		media = CreateObject("roAssociativeArray")
 		media.indirect = false
@@ -243,6 +245,9 @@ Function ParseVideoMedia(videoItem) As Object
         media.container = parseMediaContainer(MediaItem)
         media.aspectRatio = val(firstOf(MediaItem@aspectRatio, "0.0"))
         media.optimized = MediaItem@optimizedForStreaming
+        media.duration = validint(strtoi(firstOf(MediaItem@duration, "0")))
+
+        startOffset = 0
 		media.parts = CreateObject("roArray", 3, true)
 		for each MediaPart in MediaItem.Part
 			part = CreateObject("roAssociativeArray")
@@ -251,6 +256,10 @@ Function ParseVideoMedia(videoItem) As Object
             part.postURL = MediaPart@postURL
 			part.streams = CreateObject("roArray", 5, true)
             part.subtitles = invalid
+            part.duration = validint(strtoi(firstOf(MediaPart@duration, "0")))
+            part.startOffset = startOffset
+            startOffset = startOffset + part.duration
+
 			for each StreamItem in MediaPart.Stream
 				stream = CreateObject("roAssociativeArray")
 				stream.id = StreamItem@id
@@ -353,6 +362,23 @@ Function PickMediaItem(mediaItems, hasDetails) As Object
     end if
 
     return firstOf(best, mediaItems[0])
+End Function
+
+Function videoSelectPartForOffset(offset)
+    mediaItem = m.preferredMediaItem
+    if mediaItem = invalid then return invalid
+    if mediaItem.parts.Count() = 0 then return invalid
+
+    for i = 0 to mediaItem.parts.Count() - 1
+        part = mediaItem.parts[i]
+        if part.startOffset + part.duration > offset then
+            mediaItem.curPartIndex = i
+            return part
+        end if
+    end for
+
+    mediaItem.curPartIndex = 0
+    return mediaItem.parts[0]
 End Function
 
 Sub videoRefresh(detailed=false)
