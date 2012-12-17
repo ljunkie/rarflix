@@ -481,14 +481,17 @@ Function videoCanDirectPlay(mediaItem) As Boolean
     end if
 
     if mediaItem.container = "hls" then
-        if mediaItem.videoCodec <> "h264" then
+        ' HLS is a bit of a special case. We can only direct play certain codecs,
+        ' but PMS won't always successfully transcode the HLS.
+
+        if isnonemptystr(mediaItem.videoCodec) AND mediaItem.videoCodec <> "h264" then
             Debug("videoCanDirectPlay: vc not h264")
-            return false
+            'return false
         end if
 
-        if (mediaItem.audioCodec <> "aac" AND mediaItem.audioCodec <> "ac3" AND mediaItem.audioCodec <> "mp3") then
+        if isnonemptystr(mediaItem.audioCodec) AND (mediaItem.audioCodec <> "aac" AND mediaItem.audioCodec <> "ac3" AND mediaItem.audioCodec <> "mp3") then
             Debug("videoCanDirectPlay: ac not aac/ac3/mp3")
-            return false
+            'return false
         end if
 
         mediaItem.canDirectPlay = true
