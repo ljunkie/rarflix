@@ -33,6 +33,7 @@ Sub videoPlayerShow()
     if NOT m.playbackError then
         m.Screen = m.CreateVideoPlayer()
     else if m.DirectPlayOptions = 0 OR m.DirectPlayOptions = 2 then
+        m.playbackError = false
         m.DirectPlayOptions = 3
         m.Screen = m.CreateVideoPlayer()
     else
