@@ -22,7 +22,7 @@ include ../app.mk
 
 APPTITLE = PlexDev
 
-num_functions := $(shell grep -ri --include=*.brs '^\(function\|sub\)' . | wc -l | tr -d ' ')
+num_functions := $(shell grep -ri --include=*.brs 'end \(function\|sub\)' . | wc -l | tr -d ' ')
 
 .PHONY: manifest count_functions beta dev rel test
 
