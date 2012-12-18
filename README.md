@@ -54,7 +54,7 @@ messages to a console that you can tail using telnet. It's as simple as
 ## Contributing
 
 Did I already mention we love contributors? Please fork and hack away. Let us
-know in the forums what you're working on. And of course ther's GitHub's
+know in the forums what you're working on. And of course there's GitHub's
 standard notes on how best to contribute:
 
 1. Fork it
