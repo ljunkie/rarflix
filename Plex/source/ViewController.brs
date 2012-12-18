@@ -315,12 +315,12 @@ Sub vcShowReleaseNotes()
     header = GetGlobal("appName") + " has been updated to " + GetGlobal("appVersionStr")
     paragraphs = []
     paragraphs.Push("Changes in this version include:")
-    paragraphs.Push(" - The ability to show release notes like these!")
     paragraphs.Push(" - Fix a crash when editing preferences inside a channel.")
     paragraphs.Push(" - Use TV show posters in the On Deck and Recently Added rows. (Thanks, shooks!)")
     paragraphs.Push(" - Fix 1080p issues on first gen Rokus (firmware 3.x). (Thanks, destructo!)")
     paragraphs.Push(" - Fix some quirks around hiding home screen rows. (Thanks, arijaycomet!)")
     paragraphs.Push(" - Fix channel directory dialogs.")
+    paragraphs.Push(" - Fix a couple more crashes.")
 
     screen = createParagraphScreen(header, paragraphs, m)
     m.InitializeOtherScreen(screen, invalid)
