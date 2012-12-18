@@ -84,6 +84,7 @@ Function audioPlayerHandleMessage(msg) As Boolean
             m.IsPaused = false
             m.playbackOffset = 0
             m.playbackTimer.Mark()
+            m.ViewController.DestroyGlitchyScreens()
         else if msg.isStatusMessage() then
             'Debug("Audio player status: " + tostr(msg.getMessage()))
         else if msg.isFullResult() then

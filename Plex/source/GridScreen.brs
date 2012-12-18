@@ -27,6 +27,7 @@ Function createGridScreen(viewController, style="flat-movie") As Object
     screen.Show = showGridScreen
     screen.HandleMessage = gridHandleMessage
     screen.Activate = gridActivate
+    screen.OnTimerExpired = gridOnTimerExpired
 
     screen.SetUpBehaviorAtTopRow = setUpBehavior
 
@@ -40,6 +41,7 @@ Function createGridScreen(viewController, style="flat-movie") As Object
     screen.hasData = false
     screen.hasBeenFocused = false
     screen.ignoreNextFocus = false
+    screen.recreating = false
 
     screen.OnDataLoaded = gridOnDataLoaded
 
@@ -182,7 +184,12 @@ Function gridHandleMessage(msg) As Boolean
                 m.ViewController.CreatePlayerForItem(context, m.focusedIndex)
             end if
         else if msg.isScreenClosed() then
-            m.ViewController.PopScreen(m)
+            if m.recreating then
+                Debug("Ignoring grid screen close, we should be recreating")
+                m.recreating = false
+            else
+                m.ViewController.PopScreen(m)
+            end if
         end if
     end if
 
@@ -305,6 +312,20 @@ Sub gridDestroyAndRecreate()
         Debug("Destroying grid...")
         m.Screen.Close()
         m.Screen = invalid
+
+        if m.ViewController.IsActiveScreen(m) then
+            m.recreating = true
+
+            timer = createTimer()
+            timer.Name = "Reactivate"
+
+            ' Pretty arbitrary, but too close to 0 won't work. This is obviously
+            ' a hack, but we're working around an acknowledged bug that will
+            ' never be fixed, so what can you do.
+            timer.SetDuration(1500)
+
+            m.ViewController.AddTimer(timer, m)
+        end if
     end if
 End Sub
 
@@ -358,4 +379,10 @@ Sub gridActivate(priorScreen)
     m.Loader.RefreshData()
 
     if m.Facade <> invalid then m.Facade.Close()
+End Sub
+
+Sub gridOnTimerExpired(timer)
+    if timer.Name = "Reactivate" AND m.ViewController.IsActiveScreen(m) then
+        m.Activate(invalid)
+    end if
 End Sub

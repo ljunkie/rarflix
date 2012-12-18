@@ -33,6 +33,7 @@ Function createViewController() As Object
     controller.AssignScreenID = vcAssignScreenID
     controller.PushScreen = vcPushScreen
     controller.PopScreen = vcPopScreen
+    controller.IsActiveScreen = vcIsActiveScreen
 
     controller.afterCloseCallback = invalid
     controller.CloseScreenWithCallback = vcCloseScreenWithCallback
@@ -433,6 +434,10 @@ Sub vcPopScreen(screen)
     end if
 End Sub
 
+Function vcIsActiveScreen(screen) As Boolean
+    return m.screens.Peek().ScreenID = screen.ScreenID
+End Function
+
 Sub vcCloseScreenWithCallback(callback)
     m.afterCloseCallback = callback
     m.screens.Peek().Screen.Close()
@@ -643,6 +648,10 @@ Sub vcApplyThemeAttrs(attrs)
 End Sub
 
 Sub vcDestroyGlitchyScreens()
+    ' The audio player / grid screen glitch only affects older firmware versions.
+    versionArr = GetGlobal("rokuVersionArr", [0])
+    if versionArr[0] >= 4 then return
+
     for each screen in m.screens
         if screen.DestroyAndRecreate <> invalid then
             Debug("Destroying screen " + tostr(screen.ScreenID) + " to work around glitch")
