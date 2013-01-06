@@ -643,6 +643,8 @@ Sub homeOnUrlEvent(msg, requestContext)
             server.owned = true
             server.online = true
             server.SupportsAudioTranscoding = (xml@transcoderAudio = "1")
+            server.SupportsVideoTranscoding = (xml@transcoderVideoQualities <> invalid)
+            server.SupportsPhotoTranscoding = server.machineID <> "myPlex"
             server.AllowsMediaDeletion = (xml@allowMediaDeletion = "1")
             server.IsAvailable = true
             PutPlexMediaServer(server)

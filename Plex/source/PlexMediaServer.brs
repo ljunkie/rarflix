@@ -39,6 +39,8 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
 
     ' Set to false if a version check fails
     pms.SupportsAudioTranscoding = true
+    pms.SupportsVideoTranscoding = true
+    pms.SupportsPhotoTranscoding = true
     pms.AllowsMediaDeletion = false
     pms.IsConfigured = false
     pms.IsAvailable = false
@@ -468,6 +470,7 @@ End Function
 '* Constructs an image based on a PMS url with the specific width and height.
 Function TranscodedImage(queryUrl, imagePath, width, height) As String
     imageUrl = FullUrl(m.serverUrl, queryUrl, imagePath)
+    if NOT m.SupportsPhotoTranscoding then return imageUrl
     imageUrl = m.ConvertURLToLoopback(imageUrl)
     encodedUrl = HttpEncode(imageUrl)
     image = m.serverUrl + "/photo/:/transcode?url="+encodedUrl+"&width="+width+"&height="+height
@@ -489,6 +492,8 @@ End Function
 '* Construct the Plex transcoding URL.
 '*
 Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As Object)
+    if NOT m.SupportsVideoTranscoding then return invalid
+
     Debug("Constructing transcoding video URL for " + videoUrl)
 
     key = ""
@@ -617,7 +622,16 @@ Function ConvertURLToLoopback(url) As String
 End Function
 
 Function pmsIsRequestToServer(url) As Boolean
-    return (Left(url, len(m.serverUrl)) = m.serverUrl)
+    ' Ignore the port. If it's 80 or 443, it's possible that it'll be missing
+    ' in one of the URLs.
+    portIndex = instr(8, m.serverUrl, ":")
+    if portIndex > 0 then
+        schemeAndHost = Left(m.serverUrl, portIndex - 1)
+    else
+        schemeAndHost = m.serverUrl
+    end if
+
+    return (Left(url, len(schemeAndHost)) = schemeAndHost)
 End Function
 
 Function Capabilities(recompute=false) As String
