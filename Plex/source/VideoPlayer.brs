@@ -113,13 +113,16 @@ Function videoPlayerCreateVideoPlayer()
 
     videoPlayer = CreateObject("roVideoScreen")
     videoPlayer.SetMessagePort(m.Port)
-    videoPlayer.SetContent(videoItem)
 
     ' If we're playing the video from the server, add appropriate X-Plex
     ' headers.
     if server.IsRequestToServer(videoItem.StreamUrls[0]) then
         AddPlexHeaders(videoPlayer, server.AccessToken)
     end if
+
+    videoPlayer.SetCertificatesFile("common:/certs/ca-bundle.crt")
+    videoPlayer.SetCertificatesDepth(5)
+    videoPlayer.SetContent(videoItem)
 
     if videoItem.IsTranscoded then
         cookie = server.StartTranscode(videoItem.StreamUrls[0])

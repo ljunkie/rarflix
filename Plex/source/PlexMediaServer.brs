@@ -117,6 +117,8 @@ Function pmsCreateRequest(sourceUrl, key) As Object
         req.AddHeader("X-Plex-Token", m.AccessToken)
     end if
     req.AddHeader("X-Plex-Client-Capabilities", Capabilities())
+    req.AddHeader("Accept", "application/xml")
+    req.SetCertificatesFile("common:/certs/ca-bundle.crt")
     return req
 End Function
 
