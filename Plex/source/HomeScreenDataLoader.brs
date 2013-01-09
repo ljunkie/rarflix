@@ -705,7 +705,11 @@ Sub homeOnUrlEvent(msg, requestContext)
         for each serverElem in xml.Server
             ' If we already have a server for this machine ID then disregard
             existing = GetPlexMediaServer(serverElem@machineIdentifier)
-            addr = "http://" + serverElem@host + ":" + serverElem@port
+            if serverElem@port = "443" then
+                addr = "https://" + serverElem@host
+            else
+                addr = "http://" + serverElem@host + ":" + serverElem@port
+            end if
             if existing <> invalid AND (existing.IsAvailable OR existing.ServerUrl = addr) then
                 Debug("Ignoring duplicate shared server: " + tostr(serverElem@machineIdentifier))
             else

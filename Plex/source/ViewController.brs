@@ -569,6 +569,8 @@ End Sub
 Sub vcUpdateScreenProperties(screen)
     ' Make sure that metadata requests from the screen carry an auth token.
     if GetInterface(screen.Screen, "ifHttpAgent") <> invalid AND screen.Item <> invalid AND screen.Item.server <> invalid AND screen.Item.server.AccessToken <> invalid then
+        screen.Screen.SetCertificatesDepth(5)
+        screen.Screen.SetCertificatesFile("common:/certs/ca-bundle.crt")
         screen.Screen.AddHeader("X-Plex-Token", screen.Item.server.AccessToken)
     end if
 
