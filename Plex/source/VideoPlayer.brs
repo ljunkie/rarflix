@@ -239,7 +239,7 @@ Function videoPlayerHandleMessage(msg) As Boolean
             m.lastPosition = m.curPartOffset + msg.GetIndex()
             if m.Item.ratingKey <> invalid then
                 if mediaItem <> invalid AND validint(mediaItem.duration) > 0 then
-                    playedFraction = m.lastPosition/mediaItem.duration
+                    playedFraction = (m.lastPosition * 1000)/mediaItem.duration
                     Debug("MediaPlayer::playVideo::VideoScreenEvent::isPlaybackPosition: position -> " + tostr(m.lastPosition) + " playedFraction -> " + tostr(playedFraction))
                     if playedFraction > 0.90 then
                         m.isPlayed = true
@@ -258,7 +258,7 @@ Function videoPlayerHandleMessage(msg) As Boolean
         else if msg.isPartialResult() then
             mediaItem = m.Item.preferredMediaItem
             if mediaItem <> invalid AND validint(mediaItem.duration) > 0 then
-                playedFraction = m.lastPosition/mediaItem.duration
+                playedFraction = (m.lastPosition * 1000)/mediaItem.duration
                 Debug("MediaPlayer::playVideo::VideoScreenEvent::isPartialResult: position -> " + tostr(m.lastPosition) + " playedFraction -> " + tostr(playedFraction))
                 if playedFraction > 0.90 then
                     m.isPlayed = true
