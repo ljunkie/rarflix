@@ -32,9 +32,16 @@ Function createVideoPlayerScreen(metadata, seekValue, directPlayOptions, viewCon
 End Function
 
 Sub videoPlayerShow()
+    ' We only fall back automatically if we originally tried to Direct Play
+    ' and the preference allows fallback. One potential quirk is that we do
+    ' fall back if there was progress on the Direct Play attempt. This should
+    ' be quite uncommon, but if something happens part way through the file
+    ' that the device can't handle, we at least give transcoding (from there)
+    ' a shot.
+
     if NOT m.playbackError then
         m.Screen = m.CreateVideoPlayer()
-    else if m.DirectPlayOptions = 0 OR m.DirectPlayOptions = 2 then
+    else if (m.DirectPlayOptions = 0 OR m.DirectPlayOptions = 2) AND NOT m.IsTranscoded then
         m.playbackError = false
         m.DirectPlayOptions = 3
         m.Screen = m.CreateVideoPlayer()
@@ -74,13 +81,21 @@ Function videoPlayerCreateVideoPlayer()
     server = m.Item.server
     mediaItem = m.Item.preferredMediaItem
 
+    ' This is unusual, but if we're in a fallback scenario where Direct Play
+    ' faild part way through, use the last reported position as the offset
+    ' for the transcoder.
+    if m.lastPosition > 0 then
+        startOffset = m.lastPosition
+    else
+        startOffset = int(m.SeekValue/1000)
+    end if
+
     if mediaItem <> invalid AND mediaItem.parts.Count() > mediaItem.curPartIndex then
         m.curPartOffset = int(mediaItem.parts[mediaItem.curPartIndex].startOffset / 1000)
-        seconds = int(m.SeekValue/1000) - m.curPartOffset
-        if seconds < 0 then seconds = 0
+        startOffset = startOffset - m.curPartOffset
+        if startOffset < 0 then startOffset = 0
     else
         m.curPartOffset = 0
-        seconds = int(m.SeekValue/1000)
     end if
 
     if (mediaItem <> invalid AND mediaItem.forceTranscode <> invalid) AND (m.DirectPlayOptions <> 1 AND m.DirectPlayOptions <> 2) then
@@ -97,7 +112,7 @@ Function videoPlayerCreateVideoPlayer()
         origDirectPlayOptions = invalid
     end if
 
-    videoItem = server.ConstructVideoItem(m.Item, seconds, m.DirectPlayOptions < 3, m.DirectPlayOptions = 1 OR m.DirectPlayOptions = 2)
+    videoItem = server.ConstructVideoItem(m.Item, startOffset, m.DirectPlayOptions < 3, m.DirectPlayOptions = 1 OR m.DirectPlayOptions = 2)
 
     if videoItem = invalid then
         Debug("Can't play video, server was unable to construct video item", server)
