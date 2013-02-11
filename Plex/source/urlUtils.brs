@@ -1,5 +1,5 @@
 '**********************************************************
-'**  Video Player Example Application - URL Utilities 
+'**  Video Player Example Application - URL Utilities
 '**  November 2009
 '**  Copyright (c) 2009 Roku Inc. All Rights Reserved.
 '**********************************************************
@@ -38,7 +38,7 @@ Function CreateURLTransferObject(url As String) as Object
 End Function
 
 Sub AddPlexHeaders(transferObj, token=invalid)
-    transferObj.AddHeader("X-Plex-Client-Platform", "Roku")
+    transferObj.AddHeader("X-Plex-Platform", "Roku")
     transferObj.AddHeader("X-Plex-Version", GetGlobal("appVersionStr"))
 
     if token <> invalid then
@@ -116,7 +116,7 @@ Function http_get_to_string_with_retry() as String
             event = wait(timeout%, m.Http.GetPort())
             if type(event) = "roUrlEvent"
                 str = event.GetString()
-                exit while        
+                exit while
             elseif event = invalid
                 m.Http.AsyncCancel()
                 REM reset the connection on timeouts
@@ -129,7 +129,7 @@ Function http_get_to_string_with_retry() as String
 
         num_retries% = num_retries% - 1
     end while
-    
+
     return str
 End Function
 
