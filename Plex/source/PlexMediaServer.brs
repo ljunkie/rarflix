@@ -71,18 +71,24 @@ Function issuePostCommand(commandPath)
 End Function
 
 Function progress(key, identifier, time)
-    commandUrl = "/:/progress?key="+HttpEncode(key)+"&identifier="+identifier+"&time="+time.tostr()
-    m.ExecuteCommand(commandUrl)
+    if identifier <> invalid then
+        commandUrl = "/:/progress?key="+HttpEncode(key)+"&identifier="+identifier+"&time="+time.tostr()
+        m.ExecuteCommand(commandUrl)
+    end if
 End Function
 
 Function scrobble(key, identifier)
-    commandUrl = "/:/scrobble?key="+HttpEncode(key)+"&identifier="+identifier
-    m.ExecuteCommand(commandUrl)
+    if identifier <> invalid then
+        commandUrl = "/:/scrobble?key="+HttpEncode(key)+"&identifier="+identifier
+        m.ExecuteCommand(commandUrl)
+    end if
 End Function
 
 Function unscrobble(key, identifier)
-    commandUrl = "/:/unscrobble?key="+HttpEncode(key)+"&identifier="+identifier
-    m.ExecuteCommand(commandUrl)
+    if identifier <> invalid then
+        commandUrl = "/:/unscrobble?key="+HttpEncode(key)+"&identifier="+identifier
+        m.ExecuteCommand(commandUrl)
+    end if
 End Function
 
 Sub pmsDelete(key)

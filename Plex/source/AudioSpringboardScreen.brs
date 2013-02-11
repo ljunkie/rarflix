@@ -14,12 +14,6 @@ Function createAudioSpringboardScreen(context, index, viewController) As Dynamic
     obj.Screen.AllowNavRewind(true)
     obj.Screen.AllowNavFastForward(true)
 
-    ' Grid screens get corrupted when audio players are created, so we
-    ' (used to) tell the view controller to destroy and recreate them.
-    ' This doesn't appear to be an issue if we create a single audio player
-    ' at startup and always use that.
-    ' viewController.DestroyGlitchyScreens()
-
     ' If there isn't a single playable item in the list then the Roku has
     ' been observed to die a horrible death.
     obj.IsPlayable = false
