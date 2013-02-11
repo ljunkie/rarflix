@@ -280,6 +280,28 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
     ' Stop any background audio first
     m.AudioPlayer.Stop()
 
+    ' Prompt about resuming if there's an offset and the caller didn't specify a seek value.
+    if seekValue = invalid then
+        if metadata.viewOffset <> invalid then
+            offsetSeconds = fix(val(metadata.viewOffset)/1000)
+
+            dlg = createBaseDialog()
+            dlg.Title = "Play Video"
+            dlg.SetButton("resume", "Resume from " + TimeDisplay(offsetSeconds))
+            dlg.SetButton("play", "Play from beginning")
+            dlg.Show(true)
+
+            if dlg.Result = invalid then return invalid
+            if dlg.Result = "resume" then
+                seekValue = int(val(metadata.viewOffset))
+            else
+                seekValue = 0
+            end if
+        else
+            seekValue = 0
+        end if
+    end if
+
     screen = createVideoPlayerScreen(metadata, seekValue, directPlayOptions, m)
 
     m.AddBreadcrumbs(screen, invalid)
@@ -291,7 +313,7 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
     return screen
 End Function
 
-Function vcCreatePlayerForItem(context, contextIndex, seekValue=0)
+Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
     item = context[contextIndex]
 
     if item.ContentType = "photo" then
