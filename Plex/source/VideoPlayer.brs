@@ -190,18 +190,24 @@ Sub videoPlayerCleanup()
 End Sub
 
 Sub videoPlayerShowPlaybackError()
-    if m.DirectPlayOptions >= 3 then
+    dialog = createBaseDialog()
+
+    if NOT m.curPart.exists then
+        dialog.Title = "Video Unavailable"
+        dialog.Text = "Please check that this file exists and the necessary drive is mounted."
+    else if NOT m.curPart.exists then
+        dialog.Title = "Video Unavailable"
+        dialog.Text = "Please check that this file exists and has appropriate permissions."
+    else if m.DirectPlayOptions >= 3 then
         ' Nothing left to fall back to, tell the user
-        dialog = createBaseDialog()
         dialog.Title = "Video Unavailable"
         dialog.Text = "We're unable to play this video, make sure the server is running and has access to this video."
-        dialog.Show()
     else if m.DirectPlayOptions = 1 then
-        dialog = createBaseDialog()
         dialog.Title = "Direct Play Unavailable"
         dialog.Text = "This video isn't supported for Direct Play."
-        dialog.Show()
     end if
+
+    dialog.Show()
 End Sub
 
 Function videoPlayerHandleMessage(msg) As Boolean

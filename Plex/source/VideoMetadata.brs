@@ -151,7 +151,12 @@ Function videoParseDetails()
     if m.DetailUrl <> invalid then
         container = createPlexContainerForUrl(m.server, m.sourceUrl, m.DetailUrl)
     else if left(m.Key, 5) <> "plex:" then
-        container = createPlexContainerForUrl(m.server, m.sourceUrl, m.Key)
+        if Instr(1, m.Key, "?") > 0 then
+            detailKey = m.Key + "&checkFiles=1"
+        else
+            detailKey = m.Key + "?checkFiles=1"
+        end if
+        container = createPlexContainerForUrl(m.server, m.sourceUrl, detailKey)
     end if
 
     if container <> invalid then
@@ -256,6 +261,8 @@ Function ParseVideoMedia(videoItem) As Object
             part.postURL = MediaPart@postURL
 			part.streams = CreateObject("roArray", 5, true)
             part.subtitles = invalid
+            part.exists = MediaPart@exists <> "0"
+            part.accessible = MediaPart@accessible <> "0"
             part.duration = validint(strtoi(firstOf(MediaPart@duration, "0")))
             part.startOffset = startOffset
             startOffset = startOffset + part.duration
@@ -314,7 +321,7 @@ Function PickMediaItem(mediaItems, hasDetails) As Object
     supportsSurround = major >= 4 AND device.hasFeature("5.1_surround_sound") AND RegRead("fivepointone", "preferences", "1") <> "2"
 
     best = invalid
-    bestScore = 0
+    bestScore = -10000
 
     for each mediaItem in mediaItems
         score = 0
@@ -335,6 +342,9 @@ Function PickMediaItem(mediaItems, hasDetails) As Object
         end if
 
         if mediaItem.preferredPart <> invalid then
+            if NOT (mediaItem.preferredPart.exists AND mediaItem.preferredPart.accessible) then
+                score = score - 1000
+            end if
             for each stream in mediaItem.preferredPart.streams
                 if stream.streamType = "1" then
                     ' Video can be copied if it's H.264 and an ok resolution
