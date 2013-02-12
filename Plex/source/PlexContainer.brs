@@ -63,6 +63,16 @@ End Function
 Sub containerParseXml()
     if m.Parsed then return
 
+    ' If this container has an error message, show it now
+    if m.xml@header <> invalid AND m.xml@message <> invalid then
+        dlg = createBaseDialog()
+        dlg.Title = m.xml@header
+        dlg.Text = m.xml@message
+        dlg.Show(true)
+        dlg = invalid
+        m.DialogShown = true
+    end if
+
     nodes = m.xml.GetChildElements()
     for each n in nodes
         nodeType = firstOf(n@type, m.ViewGroup)
