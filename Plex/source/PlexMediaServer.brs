@@ -476,12 +476,15 @@ End Function
 
 
 '* Constructs an image based on a PMS url with the specific width and height.
-Function TranscodedImage(queryUrl, imagePath, width, height) As String
+Function TranscodedImage(queryUrl, imagePath, width, height, forceBackgroundColor="363636") As String
     imageUrl = FullUrl(m.serverUrl, queryUrl, imagePath)
     if NOT m.SupportsPhotoTranscoding then return imageUrl
     imageUrl = m.ConvertURLToLoopback(imageUrl)
     encodedUrl = HttpEncode(imageUrl)
     image = m.serverUrl + "/photo/:/transcode?url="+encodedUrl+"&width="+width+"&height="+height
+    if forceBackgroundColor <> invalid then
+        image = image + "&format=jpeg&background=" + forceBackgroundColor
+    end if
     return image
 End Function
 

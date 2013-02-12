@@ -70,10 +70,7 @@ Sub containerParseXml()
         if n@scanner <> invalid then
             metadata = newDirectoryMetadata(m, n)
             metadata.contentType = "section"
-            ' PMS used to only return thumbs if they were custom. Now it always
-            ' returns thumbs and the standard ones have transparency that doesn't
-            ' work on the Roku. If it's a standard thumb, ignore it.
-            if n@thumb = invalid OR Left(n@thumb, 3) = "/:/" then
+            if n@thumb = invalid then
                 if metadata.Type = "movie" then
                     thumb = "file://pkg:/images/section-movie.png"
                 else if metadata.Type = "show" then
