@@ -743,7 +743,7 @@ Sub pmsAddDirectPlayInfo(video, item, mediaKey)
     mediaFullUrl = FullUrl(m.serverUrl, "", mediaKey)
     Debug("Will try to direct play " + tostr(mediaFullUrl))
     video.StreamUrls = [mediaFullUrl]
-    video.StreamBitrates = [0]
+    video.StreamBitrates = [item.preferredMediaItem.bitrate]
     video.FrameRate = item.FrameRate
     video.IsTranscoded = false
     video.StreamFormat = firstOf(item.preferredMediaItem.container, "mp4")

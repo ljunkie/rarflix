@@ -251,6 +251,7 @@ Function ParseVideoMedia(videoItem) As Object
         media.aspectRatio = val(firstOf(MediaItem@aspectRatio, "0.0"))
         media.optimized = MediaItem@optimizedForStreaming
         media.duration = validint(strtoi(firstOf(MediaItem@duration, "0")))
+        media.bitrate = validint(strtoi(firstOf(MediaItem@bitrate, "0")))
 
         startOffset = 0
 		media.parts = CreateObject("roArray", 3, true)
