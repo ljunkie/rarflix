@@ -259,7 +259,7 @@ End Function
 
 Function vcCreateContextMenu()
     ' Our context menu is only relevant if the audio player has content.
-    if m.AudioPlayer.Context = invalid then return invalid
+    if m.AudioPlayer.ContextScreenID = invalid then return invalid
 
     return m.AudioPlayer.ShowContextMenu()
 End Function
