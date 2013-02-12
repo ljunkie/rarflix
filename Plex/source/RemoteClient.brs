@@ -30,7 +30,12 @@ Function ProcessPlayMediaRequest() As Boolean
         server = GetPrimaryServer()
     end if
 
-    container = createPlexContainerForUrl(server, url, "")
+    if server = invalid then
+        m.default(404, "No server available for specified URL")
+        return true
+    end if
+
+    container = createPlexContainerForUrl(server, "", url)
     children = container.GetMetadata()
     matchIndex = invalid
     for i = 0 to children.Count() - 1
@@ -40,6 +45,14 @@ Function ProcessPlayMediaRequest() As Boolean
             exit for
         end if
     end for
+
+    ' Sadly, this doesn't work when playing something from the queue on iOS. So
+    ' if we didn't find a match, just request the key directly.
+    if matchIndex = invalid then
+        container = createPlexContainerForUrl(server, url, key)
+        children = container.GetMetadata()
+        if children.Count() > 0 then matchIndex = 0
+    end if
 
     if matchIndex <> invalid then
         if m.request.fields.DoesExist("X-Plex-Arg-ViewOffset") then

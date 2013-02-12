@@ -417,6 +417,7 @@ Sub SetServerForHost(hostname, server)
         GetGlobalAA().AddReplace("servers_by_host", servers)
         servers["https://my.plexapp.com/"] = GetMyPlexManager()
         servers["https://my.plexapp.com:443/"] = GetMyPlexManager()
+        servers["http://node.plexapp.com:32400/"] = invalid
     end if
 
     servers[hostname] = server
@@ -429,6 +430,7 @@ Function GetServerForUrl(url)
         GetGlobalAA().AddReplace("servers_by_host", servers)
         servers["https://my.plexapp.com/"] = GetMyPlexManager()
         servers["https://my.plexapp.com:443/"] = GetMyPlexManager()
+        servers["http://node.plexapp.com:32400/"] = invalid
     end if
 
     index = instr(10, url, "/")
