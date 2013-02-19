@@ -13,7 +13,7 @@
  ' purpose with or without fee is hereby granted, provided that the
  ' above copyright notice and this permission notice appear in all
  ' copies.
- ' 
+ '
  ' THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
  ' WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
  ' WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
@@ -22,7 +22,7 @@
  ' PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
  ' TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  ' PERFORMANCE OF THIS SOFTWARE.
- ' 
+ '
 
  ' Adapted from C to Brightscript with mods by Roku, Inc.
 
@@ -159,7 +159,7 @@ end function
 
 function reply_redirect(where as String)
     m.location = where
-    message = "Moved to: <a href="+ Quote() + where + Quote() + ">" + where + "</a>"
+    message = "Moved to: <a href="+ Chr(34) + where + Chr(34) + ">" + where + "</a>"
     m.default(301,message)
 end function
 
@@ -230,7 +230,7 @@ function reply_generate_directory_listing() as Boolean
             if indicator<>invalid
                 uri = uriDir + item
                 safe_url = uri ' UrlEncode(uri) ' too much encoding
-                listing = listing + "<a href=" + Quote() + safe_url + Quote() + ">" + item
+                listing = listing + "<a href=" + Chr(34) + safe_url + Chr(34) + ">" + item
                 listing = listing + indicator
                 listing = listing + "</a>" + UnixNL()
             else
@@ -297,7 +297,7 @@ function reply_process_get() as Boolean
 
     m.source = m.FROMFILE
     m.lastmod = Now() ' stat.mtime (mod date not yet available)
-    fileFinish = m.fileLength - 1 
+    fileFinish = m.fileLength - 1
 
     ' check for If-Modified-Since, may not have to send */
     if_mod_since = req.fields["If-Modified-Since"]

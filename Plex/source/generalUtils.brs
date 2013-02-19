@@ -49,27 +49,6 @@ End Function
 
 
 '******************************************************
-'Get a " char as a string
-'******************************************************
-Function Quote()
-    q$ = Chr(34)
-    return q$
-End Function
-
-
-'******************************************************
-'islist
-'
-'Determine if the given object supports the ifList interface
-'******************************************************
-Function islist(obj as dynamic) As Boolean
-    if obj = invalid return false
-    if GetInterface(obj, "ifArray") = invalid return false
-    return true
-End Function
-
-
-'******************************************************
 'isint
 '
 'Determine if the given object supports the ifInt interface
@@ -119,45 +98,9 @@ End Function
 'and returns a string of non zero length
 '******************************************************
 Function isnonemptystr(obj)
-    if isnullorempty(obj) return false
-    return true
-End Function
-
-
-'******************************************************
-'isnullorempty
-'
-'Determine if the given object is invalid or supports
-'the ifString interface and returns a string of non zero length
-'******************************************************
-Function isnullorempty(obj)
-    if obj = invalid return true
-    if not isstr(obj) return true
-    if Len(obj) = 0 return true
-    return false
-End Function
-
-
-'******************************************************
-'isbool
-'
-'Determine if the given object supports the ifBoolean interface
-'******************************************************
-Function isbool(obj as dynamic) As Boolean
     if obj = invalid return false
-    if GetInterface(obj, "ifBoolean") = invalid return false
-    return true
-End Function
-
-
-'******************************************************
-'isfloat
-'
-'Determine if the given object supports the ifFloat interface
-'******************************************************
-Function isfloat(obj as dynamic) As Boolean
-    if obj = invalid return false
-    if GetInterface(obj, "ifFloat") = invalid return false
+    if not isstr(obj) return false
+    if Len(obj) = 0 return false
     return true
 End Function
 
@@ -169,17 +112,8 @@ End Function
 'the builtin Stri(x) prepends whitespace
 '******************************************************
 Function itostr(i As Integer) As String
-    str = Stri(i)
-    return strTrim(str)
-End Function
-
-
-'******************************************************
-'Trim a string
-'******************************************************
-Function strTrim(str As String) As String
     st=CreateObject("roString")
-    st.SetString(str)
+    st.SetString(Stri(i))
     return st.Trim()
 End Function
 
@@ -218,19 +152,6 @@ Function strReplace(basestr As String, oldsub As String, newsub As String) As St
     end while
 
     return newstr
-End Function
-
-
-'******************************************************
-'Parse a string into a roXMLElement
-'
-'return invalid on error, else the xml object
-'******************************************************
-Function ParseXML(str As String) As dynamic
-    if str = invalid return invalid
-    xml=CreateObject("roXMLElement")
-    if not xml.Parse(str) return invalid
-    return xml
 End Function
 
 
@@ -300,7 +221,7 @@ Sub PrintAny(depth As Integer, prefix As String, any As Dynamic)
         PrintAnyAA(depth, any)
         return
     endif
-    if islist(any) = true
+    if GetInterface(any, "ifArray") <> invalid
         Debug(prefix + "(list of " + itostr(any.Count()) + ")...")
         PrintAnyList(depth, any)
         return
@@ -354,11 +275,11 @@ Function AnyToString(any As Dynamic) As dynamic
     if any = invalid return "invalid"
     if isstr(any) return any
     if isint(any) return itostr(any)
-    if isbool(any)
+    if GetInterface(obj, "ifBoolean") <> invalid
         if any = true return "true"
         return "false"
     endif
-    if isfloat(any) return Str(any)
+    if GetInterface(obj, "ifFloat") <> invalid then return Str(any)
     if type(any) = "roTimespan" return itostr(any.TotalMilliseconds()) + "ms"
     return invalid
 End Function
