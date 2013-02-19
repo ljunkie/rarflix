@@ -185,12 +185,12 @@ Sub videoActivate(priorScreen)
 
         if priorScreen.Changes.DoesExist("audio") then
             m.media.canDirectPlay = invalid
-            m.Item.server.UpdateAudioStreamSelection(m.media.preferredPart.id, priorScreen.Changes["audio"])
+            m.Item.server.UpdateStreamSelection("audio", m.media.preferredPart.id, priorScreen.Changes["audio"])
         end if
 
         if priorScreen.Changes.DoesExist("subtitles") then
             m.media.canDirectPlay = invalid
-            m.Item.server.UpdateSubtitleStreamSelection(m.media.preferredPart.id, priorScreen.Changes["subtitles"])
+            m.Item.server.UpdateStreamSelection("subtitle", m.media.preferredPart.id, priorScreen.Changes["subtitles"])
         end if
 
         if NOT priorScreen.Changes.IsEmpty() then

@@ -10,7 +10,7 @@ Sub RunScreenSaver()
 End Sub
 
 Sub DisplayScreenSaver(mode)
-    if IsHD() then
+    if GetGlobal("IsHD") then
         m.default_screensaver = {url:"pkg:/images/screensaver-hd.png", SourceRect:{w:336,h:210}, TargetRect:{x:0,y:0}}
     else
         m.default_screensaver = {url:"pkg:/images/screensaver-sd.png", SourceRect:{w:248,h:140}, TargetRect:{x:0,y:0}}
@@ -86,10 +86,10 @@ Sub SaveImagesForScreenSaver(item, sizes)
     else
         token = ""
     end if
-    
+
     if item = invalid then
         WriteFileHelper("tmp:/plex_screensaver", invalid, invalid, invalid)
-    else if IsHD() then
+    else if GetGlobal("IsHD") then
         WriteFileHelper("tmp:/plex_screensaver", item.HDPosterURL + token, sizes.hdWidth, sizes.hdHeight)
     else
         WriteFileHelper("tmp:/plex_screensaver", item.SDPosterURL + token, sizes.sdWidth, sizes.sdHeight)
@@ -106,9 +106,3 @@ Sub WriteFileHelper(fname, url, width, height)
         DeleteFile(fname)
     end if
 End Sub
-
-Function IsHD()
-    di = CreateObject("roDeviceInfo")
-    return di.GetDisplayType() = "HDTV"
-End Function
-

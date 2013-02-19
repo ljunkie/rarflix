@@ -2,7 +2,7 @@
 '* A grid screen backed by XML from a PMS.
 '*
 
-Function createGridScreen(viewController, style="flat-movie") As Object
+Function createGridScreen(viewController, style="flat-movie", upBehavior="exit") As Object
     Debug("######## Creating Grid Screen ########")
 
     setGridTheme(style)
@@ -19,7 +19,7 @@ Function createGridScreen(viewController, style="flat-movie") As Object
     ' some combination of posters and video frames.
     grid.SetDisplayMode("scale-to-fit")
     grid.SetGridStyle(style)
-    grid.SetUpBehaviorAtTopRow("exit")
+    grid.SetUpBehaviorAtTopRow(upBehavior)
 
     ' Standard properties for all our Screen types
     screen.Screen = grid
@@ -29,15 +29,13 @@ Function createGridScreen(viewController, style="flat-movie") As Object
     screen.Activate = gridActivate
     screen.OnTimerExpired = gridOnTimerExpired
 
-    screen.SetUpBehaviorAtTopRow = setUpBehavior
-
     screen.timer = createTimer()
     screen.selectedRow = 0
     screen.focusedIndex = 0
     screen.contentArray = []
     screen.lastUpdatedSize = []
     screen.gridStyle = style
-    screen.upBehavior = "exit"
+    screen.upBehavior = upBehavior
     screen.hasData = false
     screen.hasBeenFocused = false
     screen.ignoreNextFocus = false
@@ -299,11 +297,6 @@ Sub setGridTheme(style as String)
         app.SetThemeAttribute("GridScreenFocusBorderHD", "pkg:/images/border-movie-hd.png")
         app.SetThemeAttribute("GridScreenFocusBorderSD", "pkg:/images/border-movie-sd.png")
     end if
-End Sub
-
-Sub setUpBehavior(behavior as String)
-    m.upBehavior = behavior
-    m.Screen.SetUpBehaviorAtTopRow(behavior)
 End Sub
 
 Sub gridDestroyAndRecreate()

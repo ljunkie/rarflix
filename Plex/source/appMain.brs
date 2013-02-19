@@ -132,6 +132,8 @@ Sub initGlobals()
     else
         GetGlobalAA().AddReplace("maxRefFrames", 5)
     end if
+
+    GetGlobalAA().AddReplace("IsHD", device.GetDisplayType() = "HDTV")
 End Sub
 
 Function GetGlobal(var, default=invalid)

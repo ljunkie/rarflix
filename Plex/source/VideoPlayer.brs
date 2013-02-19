@@ -185,7 +185,7 @@ Sub videoPlayerCleanup()
 
     if m.Item.RestoreSubtitleID <> invalid then
         Debug("Restoring subtitle selection")
-        m.Item.server.UpdateSubtitleStreamSelection(m.Item.RestoreSubtitlePartID, m.Item.RestoreSubtitleID)
+        m.Item.server.UpdateStreamSelection("subtitle", m.Item.RestoreSubtitlePartID, m.Item.RestoreSubtitleID)
     end if
 End Sub
 

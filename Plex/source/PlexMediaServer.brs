@@ -26,8 +26,7 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.setPref = setpref
     pms.ExecuteCommand = issueCommand
     pms.ExecutePostCommand = issuePostCommand
-    pms.UpdateAudioStreamSelection = updateAudioStreamSelection
-    pms.UpdateSubtitleStreamSelection = updateSubtitleStreamSelection
+    pms.UpdateStreamSelection = pmsUpdateStreamSelection
     pms.TranscodedImage = TranscodedImage
     pms.ConstructVideoItem = pmsConstructVideoItem
     pms.TranscodingVideoUrl = TranscodingVideoUrl
@@ -49,17 +48,8 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
 End Function
 
 '* This needs a HTTP PUT command that does not exist in the Roku API but it's faked with a POST
-Function updateAudioStreamSelection(partId As String, audioStreamId As String)
-    commandUrl = "/library/parts/"+partId+"?audioStreamID="+audioStreamId
-    m.ExecutePostCommand(commandUrl)
-End Function
-
-Function updateSubtitleStreamSelection(partId As String, subtitleStreamId As String)
-    subtitle = invalid
-    if subtitleStreamId <> invalid then
-        subtitle = subtitleStreamId
-    endif
-    commandUrl = "/library/parts/"+partId+"?subtitleStreamID="+subtitle
+Function pmsUpdateStreamSelection(streamType As String, partId As String, streamId As String)
+    commandUrl = "/library/parts/"+partId+"?" + streamType + "StreamID="+streamId
     m.ExecutePostCommand(commandUrl)
 End Function
 
@@ -386,7 +376,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
         if part <> invalid AND part.subtitles <> invalid AND shouldUseSoftSubs(part.subtitles) then
             Debug("Disabling subtitle selection temporarily")
             video.SubtitleUrl = FullUrl(m.serverUrl, "", part.subtitles.key) + "?encoding=utf-8"
-            m.UpdateSubtitleStreamSelection(part.id, "")
+            m.UpdateStreamSelection("subtitle", part.id, "")
             item.RestoreSubtitleID = part.subtitles.id
             item.RestoreSubtitlePartID = part.id
         end if
@@ -581,7 +571,7 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As 
     end if
 
     publicKey = "KQMIY6GATPC63AIMC4R2"
-    time = LinuxTime().tostr()
+    time = CreateObject("roDateTime").asSeconds().tostr()
     msg = path + query + "@" + time
     finalMsg = HMACHash(msg)
 
@@ -710,14 +700,6 @@ Function HMACHash(msg As String) As String
         result = hmac.process(message)
         return result.toBase64String()
     end if
-End Function
-
-'*
-'* Time since the start (of UNIX time)
-'*
-Function LinuxTime() As Integer
-    time = CreateObject("roDateTime")
-    return time.asSeconds()
 End Function
 
 Sub pmsLog(msg as String, level=3 As Integer, timeout=0 As Integer)

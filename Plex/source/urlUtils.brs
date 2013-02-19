@@ -16,10 +16,8 @@ Function NewHttp(url As String) as Object
     obj.FirstParam                  = true
     obj.AddParam                    = http_add_param
     obj.AddRawQuery                 = http_add_raw_query
-    obj.GetToStringWithRetry        = http_get_to_string_with_retry
     obj.PrepareUrlForQuery          = http_prepare_url_for_query
     obj.GetToStringWithTimeout      = http_get_to_string_with_timeout
-    obj.PostFromStringWithTimeout   = http_post_from_string_with_timeout
 
     if Instr(1, url, "?") > 0 then obj.FirstParam = false
 
@@ -101,39 +99,6 @@ Function http_add_raw_query(query As String) as Void
 End Function
 
 REM ******************************************************
-REM Performs Http.AsyncGetToString() in a retry loop
-REM with exponential backoff. To the outside
-REM world this appears as a synchronous API.
-REM ******************************************************
-
-Function http_get_to_string_with_retry() as String
-    timeout%         = 1500
-    num_retries%     = 5
-
-    str = ""
-    while num_retries% > 0
-        if (m.Http.AsyncGetToString())
-            event = wait(timeout%, m.Http.GetPort())
-            if type(event) = "roUrlEvent"
-                str = event.GetString()
-                exit while
-            elseif event = invalid
-                m.Http.AsyncCancel()
-                REM reset the connection on timeouts
-                m.Http = CreateURLTransferObject(m.Http.GetUrl())
-                timeout% = 2 * timeout%
-            else
-                Debug("roUrlTransfer::AsyncGetToString(): unknown event")
-            endif
-        endif
-
-        num_retries% = num_retries% - 1
-    end while
-
-    return str
-End Function
-
-REM ******************************************************
 REM Performs Http.AsyncGetToString() with a single timeout in seconds
 REM To the outside world this appears as a synchronous API.
 REM ******************************************************
@@ -154,34 +119,6 @@ Function http_get_to_string_with_timeout(seconds as Integer) as String
             m.Http.AsyncCancel()
         else
             Debug("AsyncGetToString unknown event: " + type(event))
-        endif
-    endif
-
-    return str
-End Function
-
-REM ******************************************************
-REM Performs Http.AsyncPostFromString() with a single timeout in seconds
-REM To the outside world this appears as a synchronous API.
-REM ******************************************************
-
-Function http_post_from_string_with_timeout(val As String, seconds as Integer) as String
-    timeout% = 1000 * seconds
-
-    str = ""
-'    m.Http.EnableFreshConnection(true) 'Don't reuse existing connections
-    if (m.Http.AsyncPostFromString(val))
-        event = wait(timeout%, m.Http.GetPort())
-        if type(event) = "roUrlEvent"
-			Debug("1")
-			str = event.GetString()
-        elseif event = invalid
-			Debug("2")
-            Debug("AsyncPostFromString timeout")
-            m.Http.AsyncCancel()
-        else
-			Debug("3")
-            Debug("AsyncPostFromString unknown event: " + type(event))
         endif
     endif
 
