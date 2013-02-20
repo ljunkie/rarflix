@@ -178,7 +178,6 @@ Sub videoPlayerCleanup()
         dialog.SetButton("ok", "Ok")
         dialog.SetButton("quality", "Lower the quality setting now")
         dialog.HandleButton = qualityHandleButton
-        dialog.Quality = m.OrigQuality
         dialog.Item = m.Item
         dialog.Show()
     end if
@@ -318,11 +317,13 @@ End Sub
 
 Function qualityHandleButton(key, data) As Boolean
     if key = "quality" then
-        Debug("Lowering quality from original value: " + tostr(m.Quality))
-        quality = m.Quality.toint()
+        quality = RegRead("quality", "preferences", "7").toint()
+        Debug("Lowering quality from original value: " + tostr(quality))
         newQuality = invalid
 
-        if quality >= 9 then
+        if quality >= 10 then
+            newQuality = 9
+        else if quality >= 9 then
             newQuality = 7
         else if quality >= 6 then
             newQuality = 5
@@ -333,7 +334,7 @@ Function qualityHandleButton(key, data) As Boolean
         if newQuality <> invalid then
             Debug("New quality: " + tostr(newQuality))
             RegWrite("quality", newQuality.tostr(), "preferences")
-            m.Quality = newQuality.tostr()
+            RegWrite("quality_restore", newQuality.tostr(), "preferences")
             m.Item.preferredMediaItem = PickMediaItem(m.Item.media, m.Item.HasDetails)
         end if
     end if
