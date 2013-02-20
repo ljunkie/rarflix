@@ -27,6 +27,13 @@ Sub Main(args)
         RegDelete("directplay_restore", "preferences")
     end if
 
+    quality = RegRead("quality_restore", "preferences")
+    if quality <> invalid then
+        Debug("Restoring quality to: " + tostr(quality))
+        RegWrite("quality", quality, "preferences")
+        RegDelete("quality_restore", "preferences")
+    end if
+
     ' Our old system of reordering keys used a reverse order. If the old pref
     ' is still around, read it, reverse it, and delete it.
     oldPriorityKeys = RegRead("priority_keys", "preferences", "")
