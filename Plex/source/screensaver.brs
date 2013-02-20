@@ -3,6 +3,7 @@ Sub RunScreenSaver()
     mode = RegRead("screensaver", "preferences", "random")
 
     if mode <> "disabled" then
+        initGlobals()
         DisplayScreenSaver(mode)
     else
         Debug("Deferring to system screensaver")
