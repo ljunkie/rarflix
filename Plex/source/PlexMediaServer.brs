@@ -146,6 +146,7 @@ Function xmlContent(sourceUrl, key) As Object
 End Function
 
 Function IndirectMediaXml(server, originalKey, postURL)
+    response = invalid
     if postURL <> invalid then
         crlf = Chr(13) + Chr(10)
 
@@ -202,6 +203,11 @@ Function IndirectMediaXml(server, originalKey, postURL)
         httpRequest = server.CreateRequest("", originalKey)
         Debug("Fetching content from server at query URL: " + tostr(httpRequest.GetUrl()))
         response = GetToStringWithTimeout(httpRequest, 60)
+    end if
+
+    if response = invalid then
+        Debug("Failed to resolve indirect with postURL")
+        return invalid
     end if
 
     xml=CreateObject("roXMLElement")
