@@ -209,6 +209,7 @@ End Sub
 
 Sub posterShowContentList(index)
     status = m.contentArray[index]
+    if status = invalid then return
     m.Screen.SetContentList(status.content)
 
     if status.listStyle <> invalid then
