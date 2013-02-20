@@ -939,7 +939,7 @@ Function createVideoOptionsScreen(item, viewController) As Object
 
     subtitleStreams.Push({ title: "No Subtitles", EnumValue: "" })
 
-    if item.server.owned AND item.preferredMediaItem <> invalid AND item.preferredMediaItem.preferredPart <> invalid then
+    if item.server.owned AND item.preferredMediaItem <> invalid AND item.preferredMediaItem.preferredPart <> invalid AND item.preferredMediaItem.preferredPart.Id <> invalid then
         for each stream in item.preferredMediaItem.preferredPart.streams
             if stream.streamType = "2" then
                 language = firstOf(stream.Language, "Unknown")
