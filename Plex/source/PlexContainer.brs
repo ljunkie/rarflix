@@ -64,7 +64,7 @@ Sub containerParseXml()
     if m.Parsed then return
 
     ' If this container has an error message, show it now
-    if m.xml@header <> invalid AND m.xml@message <> invalid then
+    if isnonemptystr(m.xml@header) AND isnonemptystr(m.xml@message) then
         dlg = createBaseDialog()
         dlg.Title = m.xml@header
         dlg.Text = m.xml@message
