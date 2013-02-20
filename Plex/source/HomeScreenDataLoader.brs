@@ -317,9 +317,6 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
             m.Listener.OnDataLoaded(m.RowIndexes["queue"], [], 0, 0, true)
             m.Listener.OnDataLoaded(m.RowIndexes["recommendations"], [], 0, 0, true)
             m.Listener.OnDataLoaded(m.RowIndexes["shared_sections"], [], 0, 0, true)
-        else
-            ' It'll be made visible if we get any data.
-            m.Listener.Screen.SetListVisible(m.RowIndexes["shared_sections"], false)
         end if
 
         m.Listener.hasBeenFocused = false
