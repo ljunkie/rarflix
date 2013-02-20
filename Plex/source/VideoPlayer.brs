@@ -214,8 +214,6 @@ Function videoPlayerHandleMessage(msg) As Boolean
     handled = false
     server = m.Item.server
 
-    Debug("MediaPlayer::playVideo: Reacting to video screen event message -> " + tostr(msg))
-
     if type(msg) = "roVideoScreenEvent" then
         handled = true
 
