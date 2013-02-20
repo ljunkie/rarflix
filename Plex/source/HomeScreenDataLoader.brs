@@ -645,6 +645,7 @@ Sub homeOnUrlEvent(msg, requestContext)
             server.SupportsAudioTranscoding = (xml@transcoderAudio = "1")
             server.SupportsVideoTranscoding = (xml@transcoderVideoQualities <> invalid)
             server.SupportsPhotoTranscoding = server.machineID <> "myPlex"
+            server.SupportsUniversalTranscoding = ServerVersionCompare(xml@version, [0, 9, 7, 13])
             server.AllowsMediaDeletion = (xml@allowMediaDeletion = "1")
             server.IsAvailable = true
             PutPlexMediaServer(server)
@@ -653,6 +654,7 @@ Sub homeOnUrlEvent(msg, requestContext)
             Debug("URL: " + tostr(server.serverUrl))
             Debug("Server supports audio transcoding: " + tostr(server.SupportsAudioTranscoding))
             Debug("Server allows media deletion: " + tostr(server.AllowsMediaDeletion))
+            Debug("Server supports universal transcoding: " + tostr(server.SupportsUniversalTranscoding))
 
             status = m.contentArray[m.RowIndexes["misc"]]
 

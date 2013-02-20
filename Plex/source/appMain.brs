@@ -134,6 +134,11 @@ Sub initGlobals()
     end if
 
     GetGlobalAA().AddReplace("IsHD", device.GetDisplayType() = "HDTV")
+
+    ' Set up mappings from old-style quality to the new transcoder params.
+    GetGlobalAA().AddReplace("TranscodeVideoQualities",   ["10",      "20",     "30",     "30",     "40",     "60",     "60",      "75",      "100",     "60",       "75",       "90",        "100"])
+    GetGlobalAA().AddReplace("TranscodeVideoResolutions", ["220x180", "220x128","284x160","420x240","576x320","720x480","1024x768","1280x720","1280x720","1920x1080","1920x1080","1920x1080", "1920x1080"])
+    GetGlobalAA().AddReplace("TranscodeVideoBitrates",    ["64",      "96",     "208",    "320",    "720",    "1500",   "2000",    "3000",    "4000",    "8000",     "10000",    "12000",     "20000"])
 End Sub
 
 Function GetGlobal(var, default=invalid)

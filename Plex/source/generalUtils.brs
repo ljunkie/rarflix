@@ -275,11 +275,11 @@ Function AnyToString(any As Dynamic) As dynamic
     if any = invalid return "invalid"
     if isstr(any) return any
     if isint(any) return itostr(any)
-    if GetInterface(obj, "ifBoolean") <> invalid
+    if GetInterface(any, "ifBoolean") <> invalid
         if any = true return "true"
         return "false"
     endif
-    if GetInterface(obj, "ifFloat") <> invalid then return Str(any)
+    if GetInterface(any, "ifFloat") <> invalid then return Str(any)
     if type(any) = "roTimespan" return itostr(any.TotalMilliseconds()) + "ms"
     return invalid
 End Function

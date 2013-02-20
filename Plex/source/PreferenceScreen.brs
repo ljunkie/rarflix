@@ -529,6 +529,18 @@ Function createAdvancedPrefsScreen(viewController) As Object
 
     obj.HandleMessage = prefsAdvancedHandleMessage
 
+    ' Transcoder version. We'll default to the "experimental" transcoder, but
+    ' there's also a server version check.
+    transcoder_version = [
+        { title: "Stable", EnumValue: "classic", ShortDescriptionLine2: "Use the older but more stable transcoder." },
+        { title: "Experimental", EnumValue: "universal" }
+    ]
+    obj.Prefs["transcoder_version"] = {
+        values: transcoder_version,
+        heading: "Transcoder version",
+        default: "universal"
+    }
+
     ' H.264 Level
     levels = [
         { title: "Level 4.0 (Supported)", EnumValue: "40" },
@@ -598,6 +610,7 @@ Function createAdvancedPrefsScreen(viewController) As Object
 
     obj.Screen.SetHeader("Advanced preferences don't usually need to be changed")
 
+    obj.AddItem({title: "Transcoder"}, "transcoder_version", obj.GetEnumValue("transcoder_version"))
     obj.AddItem({title: "H.264"}, "level", obj.GetEnumValue("level"))
 
     if major >= 4 AND device.hasFeature("5.1_surround_sound") then
@@ -626,14 +639,14 @@ Function prefsAdvancedHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "level" OR command = "fivepointone" OR command = "segment_length" OR command = "audio_boost" OR command = "analytics" then
-                m.HandleEnumPreference(command, msg.GetIndex())
-            else if command = "1080p" then
+            if command = "1080p" then
                 screen = create1080PreferencesScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["1080p Settings"])
                 screen.Show()
             else if command = "close" then
                 m.Screen.Close()
+            else
+                m.HandleEnumPreference(command, msg.GetIndex())
             end if
         end if
     end if

@@ -29,6 +29,8 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.UpdateStreamSelection = pmsUpdateStreamSelection
     pms.TranscodedImage = TranscodedImage
     pms.ConstructVideoItem = pmsConstructVideoItem
+    pms.ClassicTranscodingVideoUrl = classicTranscodingVideoUrl
+    pms.UniversalTranscodingVideoUrl = universalTranscodingVideoUrl
     pms.TranscodingVideoUrl = TranscodingVideoUrl
     pms.TranscodingAudioUrl = TranscodingAudioUrl
     pms.ConvertURLToLoopback = ConvertURLToLoopback
@@ -40,6 +42,7 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.SupportsAudioTranscoding = true
     pms.SupportsVideoTranscoding = true
     pms.SupportsPhotoTranscoding = true
+    pms.SupportsUniversalTranscoding = true
     pms.AllowsMediaDeletion = false
     pms.IsConfigured = false
     pms.IsAvailable = false
@@ -493,6 +496,83 @@ End Function
 '* Construct the Plex transcoding URL.
 '*
 Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As Object)
+    ' TODO(schuyler): Once we're comfortable with the percentage of users using
+    ' an adequate version, we can probably remove the classic transcoder. Doing
+    ' so will actually lead to a variety of changes, since we can let PMS worry
+    ' about stuff like indirect resolution and there's no need to have httpHeaders
+    ' here.
+
+    if m.SupportsUniversalTranscoding AND RegRead("transcoder_version", "preferences", "universal") = "universal" then
+        return m.UniversalTranscodingVideoUrl(videoUrl, item)
+    else
+        return m.ClassicTranscodingVideoUrl(videoUrl, item, httpHeaders)
+    end if
+End Function
+
+Function universalTranscodingVideoUrl(videoUrl As String, item As Object)
+    if NOT m.SupportsVideoTranscoding then return invalid
+
+    Debug("Constructing transcoding video URL for " + videoUrl)
+
+    fullKey = m.ConvertURLToLoopback(FullUrl(m.serverUrl, item.sourceUrl, item.key))
+    extras = ""
+
+    builder = NewHttp(m.serverUrl + "/video/:/transcode/universal/start.m3u8")
+
+    builder.AddParam("protocol", "hls")
+    builder.AddParam("path", fullKey)
+    builder.AddParam("session", GetGlobal("rokuUniqueId"))
+    builder.AddParam("directPlay", "0")
+
+    versionArr = GetGlobal("rokuVersionArr", [0, 0])
+    directPlayOptions = RegRead("directplay", "preferences", "0")
+    if (versionArr[0] >= 4 AND directPlayOptions <> "4") OR directPlayOptions = "3" then
+        builder.AddParam("directStream", "1")
+    else
+        builder.AddParam("directStream", "0")
+    end if
+
+    quality = RegRead("quality", "preferences", "7").toInt()
+    builder.AddParam("videoQuality", GetGlobal("TranscodeVideoQualities")[quality])
+    builder.AddParam("videoResolution", GetGlobal("TranscodeVideoResolutions")[quality])
+    builder.AddParam("maxVideoBitrate", GetGlobal("TranscodeVideoBitrates")[quality])
+
+    builder.AddParam("subtitleSize", RegRead("subtitle_size", "preferences", "125"))
+    builder.AddParam("audioBoost", RegRead("audio_boost", "preferences", "100"))
+
+    if item.preferredMediaItem <> invalid then
+        builder.AddParam("partIndex", tostr(item.preferredMediaItem.curPartIndex))
+    end if
+
+    ' Augement the server's profile for things that depend on the Roku's configuration.
+    device = CreateObject("roDeviceInfo")
+
+    builder.AddParam("X-Plex-Platform", "Roku")
+
+    if device.HasFeature("5.1_surround_sound") and versionArr[0] >= 4 then
+        if RegRead("fivepointone", "preferences", "1") = "1" then
+            extras = extras + "add-transcode-target-audio-codec(type=videoProfile&context=streaming&protocol=hls&audioCodec=ac3)"
+        end if
+    end if
+
+    ' Theoretically we can handle H.264 level like this...
+    'extras = extras + "+add-limitation(scope=videoCodec&scopeName=h264&type=upperBound&name=video.level&value=" + RegRead("level", "preference", "40") + "&isRequired=true)+"
+
+    if Len(extras) > 0 then
+        builder.AddParam("X-Plex-Client-Profile-Extra", extras)
+    end if
+
+    ' We're cheating, but unlike everywhere else, don't include the Roku build. This
+    ' makes it easier for us to match against a firmware specific firmware.
+    builder.AddParam("X-Plex-Platform-Version", tostr(versionArr[0]) + "." + tostr(versionArr[1]))
+    builder.AddParam("X-Plex-Version", GetGlobal("appVersionStr"))
+    builder.AddParam("X-Plex-Product", "Plex for Roku")
+    builder.AddParam("X-Plex-Device", GetGlobal("rokuModel"))
+
+    return builder.Http.GetUrl()
+End Function
+
+Function classicTranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As Object)
     if NOT m.SupportsVideoTranscoding then return invalid
 
     Debug("Constructing transcoding video URL for " + videoUrl)
