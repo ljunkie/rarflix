@@ -203,8 +203,10 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
 
     ' Don't bother showing empty rows
     if data.Count() = 0 then
-        m.Screen.SetListVisible(row, false)
-        m.Screen.SetContentList(row, data)
+        if m.Screen <> invalid then
+            m.Screen.SetListVisible(row, false)
+            m.Screen.SetContentList(row, data)
+        end if
 
         if NOT m.hasData then
             pendingRows = (m.Loader.GetPendingRequestCount() > 0)
@@ -251,7 +253,7 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
         end if
 
         return
-    else if count > 0
+    else if count > 0 AND m.Screen <> invalid then
         m.Screen.SetListVisible(row, true)
     end if
 
@@ -265,13 +267,13 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
     lastUpdatedSize = m.lastUpdatedSize[row]
 
     if finished then
-        m.Screen.SetContentList(row, data)
+        if m.Screen <> invalid then m.Screen.SetContentList(row, data)
         m.lastUpdatedSize[row] = data.Count()
     else if startItem < lastUpdatedSize then
-        m.Screen.SetContentListSubset(row, data, startItem, count)
+        if m.Screen <> invalid then m.Screen.SetContentListSubset(row, data, startItem, count)
         m.lastUpdatedSize[row] = data.Count()
     else if startItem = 0 OR (m.selectedRow = row AND m.focusedIndex + 10 > lastUpdatedSize) then
-        m.Screen.SetContentListSubset(row, data, lastUpdatedSize, data.Count() - lastUpdatedSize)
+        if m.Screen <> invalid then m.Screen.SetContentListSubset(row, data, lastUpdatedSize, data.Count() - lastUpdatedSize)
         m.lastUpdatedSize[row] = data.Count()
     end if
 
