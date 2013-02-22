@@ -18,6 +18,7 @@ Function newVideoMetadata(container, item, detailed=false) As Object
         '* treat video items with no content type as clips
         video.ContentType = "clip"
     endif
+    video.isLibraryContent = (video.mediaContainerIdentifier = "com.plexapp.plugins.library")
 
     video.ReleaseDate = item@originallyAvailableAt
 
@@ -151,10 +152,16 @@ Function videoParseDetails()
     if m.DetailUrl <> invalid then
         container = createPlexContainerForUrl(m.server, m.sourceUrl, m.DetailUrl)
     else if left(m.Key, 5) <> "plex:" then
-        if Instr(1, m.Key, "?") > 0 then
-            detailKey = m.Key + "&checkFiles=1"
+        ' Channels don't understand checkFiles, and the framework gets angry
+        ' about things it doesn't understand.
+        if m.isLibraryContent then
+            if Instr(1, m.Key, "?") > 0 then
+                detailKey = m.Key + "&checkFiles=1"
+            else
+                detailKey = m.Key + "?checkFiles=1"
+            end if
         else
-            detailKey = m.Key + "?checkFiles=1"
+            detailKey = m.Key
         end if
         container = createPlexContainerForUrl(m.server, m.sourceUrl, detailKey)
     end if
