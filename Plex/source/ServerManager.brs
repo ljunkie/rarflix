@@ -314,6 +314,7 @@ Function ServerVersionCompare(versionStr, minVersion) As Boolean
     tokens = strTokenize(versionStr, ".")
     count = 0
     for each token in tokens
+        if count >= minVersion.count() then exit for
         value = val(token)
         minValue = minVersion[count]
         count = count + 1
