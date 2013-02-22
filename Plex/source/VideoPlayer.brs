@@ -197,13 +197,13 @@ Sub videoPlayerShowPlaybackError()
     else if NOT m.curPart.exists then
         dialog.Title = "Video Unavailable"
         dialog.Text = "Please check that this file exists and has appropriate permissions."
-    else if m.DirectPlayOptions >= 3 then
-        ' Nothing left to fall back to, tell the user
-        dialog.Title = "Video Unavailable"
-        dialog.Text = "We're unable to play this video, make sure the server is running and has access to this video."
     else if m.DirectPlayOptions = 1 then
         dialog.Title = "Direct Play Unavailable"
         dialog.Text = "This video isn't supported for Direct Play."
+    else ' This should imply m.IsTranscoding, but make sure we always show something
+        ' Nothing left to fall back to, tell the user
+        dialog.Title = "Video Unavailable"
+        dialog.Text = "We're unable to play this video, make sure the server is running and has access to this video."
     end if
 
     dialog.Show()
