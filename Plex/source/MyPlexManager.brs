@@ -137,10 +137,10 @@ Function mpCheckTranscodeServer(showError=false As Boolean) As Boolean
     return true
 End Function
 
-Function mpTranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As Object)
+Function mpTranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As Object, seekValue=0)
     if NOT m.CheckTranscodeServer(true) then return invalid
 
-    return m.TranscodeServer.TranscodingVideoUrl(videoUrl, item, httpHeaders)
+    return m.TranscodeServer.TranscodingVideoUrl(videoUrl, item, httpHeaders, seekValue)
 End Function
 
 Function mpStartTranscode(videoUrl)

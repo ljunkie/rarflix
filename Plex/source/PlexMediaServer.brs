@@ -374,7 +374,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
     video.StreamBitrates = [0]
     video.StreamFormat = "hls"
     video.SwitchingStrategy = "no-adaptation"
-    url = m.TranscodingVideoUrl(mediaKey, item, headers)
+    url = m.TranscodingVideoUrl(mediaKey, item, headers, seekValue)
     if url = invalid then return invalid
     video.StreamUrls = [url]
 
@@ -501,7 +501,7 @@ End Function
 '*
 '* Construct the Plex transcoding URL.
 '*
-Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As Object)
+Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As Object, seekValue=0)
     ' TODO(schuyler): Once we're comfortable with the percentage of users using
     ' an adequate version, we can probably remove the classic transcoder. Doing
     ' so will actually lead to a variety of changes, since we can let PMS worry
@@ -509,13 +509,13 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As 
     ' here.
 
     if m.SupportsUniversalTranscoding AND RegRead("transcoder_version", "preferences", "universal") = "universal" then
-        return m.UniversalTranscodingVideoUrl(videoUrl, item)
+        return m.UniversalTranscodingVideoUrl(videoUrl, item, seekValue)
     else
         return m.ClassicTranscodingVideoUrl(videoUrl, item, httpHeaders)
     end if
 End Function
 
-Function universalTranscodingVideoUrl(videoUrl As String, item As Object)
+Function universalTranscodingVideoUrl(videoUrl As String, item As Object, seekValue As Integer)
     if NOT m.SupportsVideoTranscoding then return invalid
 
     Debug("Constructing transcoding video URL for " + videoUrl)
@@ -529,6 +529,7 @@ Function universalTranscodingVideoUrl(videoUrl As String, item As Object)
     builder.AddParam("path", fullKey)
     builder.AddParam("session", GetGlobal("rokuUniqueId"))
     builder.AddParam("waitForSegments", "1")
+    builder.AddParam("offset", tostr(seekValue))
     builder.AddParam("directPlay", "0")
 
     versionArr = GetGlobal("rokuVersionArr", [0, 0])
