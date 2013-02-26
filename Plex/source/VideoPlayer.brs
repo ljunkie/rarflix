@@ -191,10 +191,10 @@ End Sub
 Sub videoPlayerShowPlaybackError()
     dialog = createBaseDialog()
 
-    if NOT m.curPart.exists then
+    if m.curPart <> invalid AND NOT m.curPart.exists then
         dialog.Title = "Video Unavailable"
         dialog.Text = "Please check that this file exists and the necessary drive is mounted."
-    else if NOT m.curPart.exists then
+    else if m.curPart <> invalid AND NOT m.curPart.accessible then
         dialog.Title = "Video Unavailable"
         dialog.Text = "Please check that this file exists and has appropriate permissions."
     else if m.DirectPlayOptions = 1 then
