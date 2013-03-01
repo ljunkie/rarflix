@@ -633,7 +633,12 @@ Sub homeOnUrlEvent(msg, requestContext)
         if server.machineID <> invalid AND server.machineID <> xml@machineIdentifier then
             Debug("Ignoring server response from unexpected machine ID")
         else if existing <> invalid AND existing.online then
-            Debug("Ignoring server response from already configured address (" + requestContext.server.serverUrl + " / " + existing.serverUrl + ")")
+            if server.local = true then
+                Debug("Updating " + tostr(existing.name) + " to use local address: " + server.serverUrl)
+                existing.serverUrl = server.serverUrl
+            else
+                Debug("Ignoring server response from already configured address (" + requestContext.server.serverUrl + " / " + existing.serverUrl + ")")
+            end if
         else
             server.name = firstOf(xml@friendlyName, server.name)
             server.machineID = xml@machineIdentifier
@@ -729,12 +734,14 @@ Sub homeOnUrlEvent(msg, requestContext)
                     for each localAddress in localAddresses
                         localServer = newPlexMediaServer("http://" + localAddress + ":32400", serverElem@name, serverElem@machineIdentifier)
                         localServer.owned = true
+                        localServer.local = true
                         localServer.AccessToken = firstOf(serverElem@accessToken, GetMyPlexManager().AuthToken)
                         m.CreateServerRequests(localServer, true, false)
                     next
 
                     newServer.name = firstOf(serverElem@name, newServer.name)
                     newServer.owned = true
+                    newServer.local = false
 
                     ' An owned server that we didn't have configured, request
                     ' its sections and channels now.
