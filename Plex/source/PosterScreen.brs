@@ -198,7 +198,7 @@ Sub posterOnDataLoaded(row As Integer, data As Object, startItem as Integer, cou
         end if
     end if
 
-    if finished OR startItem = 0 OR status.focusedIndex + 10 > status.lastUpdatedSize then
+    if row = m.focusedList AND (finished OR startItem = 0 OR status.focusedIndex + 10 > status.lastUpdatedSize) then
         m.ShowList(row)
         status.lastUpdatedSize = status.content.Count()
     end if
