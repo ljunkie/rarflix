@@ -209,6 +209,11 @@ Function createPreferencesScreen(viewController) As Object
         heading: "Higher settings produce better video quality but require more" + Chr(10) + "network bandwidth. (Current reported bandwidth is " + tostr(GetGlobalAA().Lookup("bandwidth")) + "kbps)",
         default: "7"
     }
+    obj.Prefs["quality_remote"] = {
+        values: qualities,
+        heading: "Higher settings produce better video quality but require more" + Chr(10) + "network bandwidth. (Current reported bandwidth is " + tostr(GetGlobalAA().Lookup("bandwidth")) + "kbps)",
+        default: RegRead("quality", "preferences", "7")
+    }
 
     ' Direct play options
     directplay = [
@@ -253,6 +258,7 @@ Sub showPreferencesScreen()
     m.AddItem({title: "Plex Media Servers"}, "servers")
     m.AddItem({title: getCurrentMyPlexLabel()}, "myplex")
     m.AddItem({title: "Quality"}, "quality", m.GetEnumValue("quality"))
+    m.AddItem({title: "Remote Quality"}, "quality_remote", m.GetEnumValue("quality_remote"))
     m.AddItem({title: "Direct Play"}, "directplay", m.GetEnumValue("directplay"))
     m.AddItem({title: "Home Screen"}, "homescreen")
     m.AddItem({title: "Remote Control"}, "remotecontrol")
@@ -331,7 +337,7 @@ Function prefsMainHandleMessage(msg) As Boolean
                     m.myPlexIndex = msg.GetIndex()
                     m.ViewController.CreateMyPlexPinScreen()
                 end if
-            else if command = "quality" OR command = "level" OR command = "fivepointone" OR command = "directplay" OR command = "screensaver" then
+            else if command = "quality" OR command = "quality_remote" OR command = "level" OR command = "fivepointone" OR command = "directplay" OR command = "screensaver" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "slideshow" then
                 screen = createSlideshowPrefsScreen(m.ViewController)
@@ -929,7 +935,7 @@ Function createVideoOptionsScreen(item, viewController) As Object
         values: qualities,
         label: "Quality",
         heading: "Higher settings require more bandwidth and may buffer",
-        default: RegRead("quality", "preferences", "7")
+        default: tostr(GetQualityForItem(item))
     }
 
     audioStreams = []
@@ -1320,5 +1326,16 @@ Function getCurrentMyPlexLabel() As String
         return "Disconnect myPlex account (" + myplex.EmailAddress + ")"
     else
         return "Connect myPlex account"
+    end if
+End Function
+
+Function GetQualityForItem(item) As Integer
+    override = RegRead("quality_override", "preferences")
+    if override <> invalid then return override.toint()
+
+    if item <> invalid AND item.server <> invalid AND item.server.local = true AND item.isLibraryContent = true then
+        return RegRead("quality", "preferences", "7").toint()
+    else
+        return RegRead("quality_remote", "preferences", RegRead("quality", "preferences", "7")).toint()
     end if
 End Function

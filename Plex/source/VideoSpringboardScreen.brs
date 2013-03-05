@@ -26,8 +26,6 @@ Function createVideoSpringboardScreen(context, index, viewController) As Object
     ]
     obj.PlayButtonState = RegRead("directplay", "preferences", "0").toint()
 
-    RegWrite("quality_restore", RegRead("quality", "preferences", "7"), "preferences")
-
     return obj
 End Function
 
@@ -87,10 +85,7 @@ Function videoHandleMessage(msg) As Boolean
 
     if type(msg) = "roSpringboardScreenEvent" then
         if msg.isScreenClosed() then
-            if RegExists("quality_restore", "preferences") then
-                RegWrite("quality", RegRead("quality_restore", "preferences"), "preferences")
-                RegDelete("quality_restore", "preferences")
-            end if
+            RegDelete("quality_override", "preferences")
             ' Don't treat the message as handled though, the super class handles
             ' closing.
         else if msg.isButtonPressed() then
@@ -182,8 +177,8 @@ Sub videoActivate(priorScreen)
         end if
 
         if priorScreen.Changes.DoesExist("quality") then
-            RegWrite("quality", priorScreen.Changes["quality"], "preferences")
-            m.metadata.preferredMediaItem = PickMediaItem(m.metadata.media, m.metadata.HasDetails)
+            RegWrite("quality_override", priorScreen.Changes["quality"], "preferences")
+            m.metadata.preferredMediaItem = m.metadata.PickMediaItem(m.metadata.HasDetails)
         end if
 
         if priorScreen.Changes.DoesExist("audio") then

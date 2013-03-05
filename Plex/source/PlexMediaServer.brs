@@ -13,6 +13,7 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.machineID = machineID
     pms.owned = true
     pms.online = false
+    pms.local = false
     pms.StopVideo = stopTranscode
     pms.StartTranscode = StartTranscodingSession
     pms.PingTranscode = pingTranscode
@@ -326,6 +327,8 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
 		endif
 	endif
 
+    qualityPref = GetQualityForItem(item)
+
     if forceDirectPlay then
         if mediaItem = invalid then
             Debug("Can't direct play, plugin video has no media item!")
@@ -340,7 +343,6 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
         end if
     else if allowDirectPlay AND mediaItem <> invalid then
         Debug("Checking to see if direct play of video is possible")
-        qualityPref = RegRead("quality", "preferences", "7").toInt()
         if qualityPref >= 9 then
             maxResolution = 1080
         else if qualityPref >= 6 then
@@ -367,7 +369,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
     video.HDBranded = item.HDBranded
 
 	'We are transcoding, don't set fullHD if quality isn't 1080p
-    if RegRead("quality", "preferences") <> "9" then
+    if qualityPref < 9 then
         video.fullHD = False
 	endif
 
@@ -540,7 +542,7 @@ Function universalTranscodingVideoUrl(videoUrl As String, item As Object, seekVa
         builder.AddParam("directStream", "0")
     end if
 
-    quality = RegRead("quality", "preferences", "7").toInt()
+    quality = GetQualityForItem(item)
     builder.AddParam("videoQuality", GetGlobal("TranscodeVideoQualities")[quality])
     builder.AddParam("videoResolution", GetGlobal("TranscodeVideoResolutions")[quality])
     builder.AddParam("maxVideoBitrate", GetGlobal("TranscodeVideoBitrates")[quality])
@@ -620,11 +622,11 @@ Function classicTranscodingVideoUrl(videoUrl As String, item As Object, httpHead
         query = query + "&webkit=1"
     end if
 
-    currentQuality = RegRead("quality", "preferences", "7")
-    if currentQuality = "Auto" then
+    currentQuality = GetQualityForItem(item)
+    if currentQuality = 0 then
         query = query + "&minQuality=4&maxQuality=8"
     else
-        query = query + "&quality=" + currentQuality
+        query = query + "&quality=" + tostr(currentQuality)
     end if
 
     ' Forcing longer segment sizes usually mitigates some Roku 2 weirdness

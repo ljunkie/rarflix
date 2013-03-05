@@ -59,6 +59,7 @@ Function PlexMediaServers() As Object
         ' should be able to handle servers that don't respond.
         server = newPlexMediaServer(serverInfo.Url, serverInfo.Name, serverInfo.MachineID)
         server.IsConfigured = true
+        server.local = true
         list.AddTail(server)
     next
 
@@ -204,6 +205,7 @@ Function AddUnnamedServer(address) As Boolean
             server.ServerUrl = address
             server.Name = firstOf(xml@friendlyName, "Unknown")
             server.owned = true
+            server.local = true
             server.IsConfigured = true
             server.IsAvailable = true
             server.IsUpdated = true
@@ -282,6 +284,7 @@ Function DiscoverPlexMediaServers()
                     existing.ServerUrl = server.Url
                     existing.Name = server.Name
                     existing.owned = true
+                    existing.local = true
                     existing.IsConfigured = true
                     existing.IsAvailable = true
                     existing.IsUpdated = true
@@ -293,6 +296,7 @@ Function DiscoverPlexMediaServers()
                     AddServer(server.Name, server.Url, server.MachineID)
                     pms = newPlexMediaServer(server.Url, server.Name, server.MachineID)
                     pms.owned = true
+                    pms.local = true
                     pms.IsConfigured = true
                     PutPlexMediaServer(pms)
                     found = found + 1

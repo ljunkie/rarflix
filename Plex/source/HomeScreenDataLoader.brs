@@ -771,6 +771,7 @@ Sub homeOnServerDiscovered(serverInfo)
             existing.ServerUrl = serverInfo.Url
             existing.owned = true
             existing.IsConfigured = true
+            existing.local = true
             m.CreateServerRequests(existing, true, false)
             UpdateServerAddress(existing)
         end if
@@ -779,6 +780,7 @@ Sub homeOnServerDiscovered(serverInfo)
         server = newPlexMediaServer(serverInfo.Url, serverInfo.Name, serverInfo.MachineID)
         server.owned = true
         server.IsConfigured = true
+        server.local = true
         PutPlexMediaServer(server)
         m.CreateServerRequests(server, true, false)
     end if

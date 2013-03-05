@@ -7,6 +7,7 @@ Function newVideoMetadata(container, item, detailed=false) As Object
     video.Refresh = videoRefresh
     video.ParseDetails = videoParseDetails
     video.SelectPartForOffset = videoSelectPartForOffset
+    video.PickMediaItem = PickMediaItem
 
     if item = invalid then return video
 
@@ -44,7 +45,7 @@ Function newVideoMetadata(container, item, detailed=false) As Object
         video.ParseDetails()
     else
         video.media = ParseVideoMedia(item)
-        video.preferredMediaItem = PickMediaItem(video.media, false)
+        video.preferredMediaItem = video.PickMediaItem(false)
 
         if video.preferredMediaItem = invalid then
             video.HasDetails = true
@@ -223,7 +224,7 @@ Sub setVideoDetails(video, container, videoItemXml)
     next
 
     video.media = ParseVideoMedia(videoItemXml)
-    video.preferredMediaItem = PickMediaItem(video.media, true)
+    video.preferredMediaItem = video.PickMediaItem(true)
 End Sub
 
 Function parseMediaContainer(MediaItem)
@@ -312,8 +313,9 @@ Function ParseVideoMedia(videoItem) As Object
 End Function
 
 '* Logic for choosing which Media item to use from the collection of possibles.
-Function PickMediaItem(mediaItems, hasDetails) As Object
-    quality = RegRead("quality", "preferences", "7").toInt()
+Function PickMediaItem(hasDetails) As Object
+    mediaItems = m.media
+    quality = GetQualityForItem(m)
     if quality >= 9 then
         maxResolution = 1080
     else if quality >= 6 then

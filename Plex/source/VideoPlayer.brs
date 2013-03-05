@@ -317,7 +317,7 @@ End Sub
 
 Function qualityHandleButton(key, data) As Boolean
     if key = "quality" then
-        quality = RegRead("quality", "preferences", "7").toint()
+        quality = GetQualityForItem(m.Item)
         Debug("Lowering quality from original value: " + tostr(quality))
         newQuality = invalid
 
@@ -333,9 +333,13 @@ Function qualityHandleButton(key, data) As Boolean
 
         if newQuality <> invalid then
             Debug("New quality: " + tostr(newQuality))
-            RegWrite("quality", newQuality.tostr(), "preferences")
-            RegWrite("quality_restore", newQuality.tostr(), "preferences")
-            m.Item.preferredMediaItem = PickMediaItem(m.Item.media, m.Item.HasDetails)
+            if m.Item.server <> invalid AND m.Item.server.local = true AND m.Item.isLibraryContent = true then
+                RegWrite("quality", newQuality.tostr(), "preferences")
+            else
+                RegWrite("quality_remote", newQuality.tostr(), "preferences")
+            end if
+            RegDelete("quality_override", "preferences")
+            m.Item.preferredMediaItem = m.Item.PickMediaItem(m.Item.HasDetails)
         end if
     end if
     return true
