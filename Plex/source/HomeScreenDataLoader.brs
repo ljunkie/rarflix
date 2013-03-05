@@ -647,7 +647,7 @@ Sub homeOnUrlEvent(msg, requestContext)
             server.SupportsAudioTranscoding = (xml@transcoderAudio = "1")
             server.SupportsVideoTranscoding = (xml@transcoderVideoQualities <> invalid)
             server.SupportsPhotoTranscoding = server.machineID <> "myPlex"
-            server.SupportsUniversalTranscoding = ServerVersionCompare(xml@version, [0, 9, 7, 13])
+            server.SupportsUniversalTranscoding = ServerVersionCompare(xml@version, [0, 9, 7, 15])
             server.AllowsMediaDeletion = (xml@allowMediaDeletion = "1")
             server.IsAvailable = true
             PutPlexMediaServer(server)
