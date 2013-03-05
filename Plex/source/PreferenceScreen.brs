@@ -547,6 +547,17 @@ Function createAdvancedPrefsScreen(viewController) As Object
         default: "universal"
     }
 
+    ' Continuous play
+    continuous_play = [
+        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Experimental" },
+        { title: "Disabled", EnumValue: "0" }
+    ]
+    obj.Prefs["continuous_play"] = {
+        values: continuous_play,
+        heading: "Automatically start playing the next video",
+        default: "0"
+    }
+
     ' H.264 Level
     levels = [
         { title: "Level 4.0 (Supported)", EnumValue: "40" },
@@ -617,6 +628,7 @@ Function createAdvancedPrefsScreen(viewController) As Object
     obj.Screen.SetHeader("Advanced preferences don't usually need to be changed")
 
     obj.AddItem({title: "Transcoder"}, "transcoder_version", obj.GetEnumValue("transcoder_version"))
+    obj.AddItem({title: "Continuous Play"}, "continuous_play", obj.GetEnumValue("continuous_play"))
     obj.AddItem({title: "H.264"}, "level", obj.GetEnumValue("level"))
 
     if major >= 4 AND device.hasFeature("5.1_surround_sound") then
@@ -895,7 +907,7 @@ End Sub
 
 '*** Video Playback Options ***
 
-Function createVideoOptionsScreen(item, viewController) As Object
+Function createVideoOptionsScreen(item, viewController, continuousPlay) As Object
     obj = createBasePrefsScreen(viewController)
 
     obj.Item = item
@@ -1010,9 +1022,26 @@ Function createVideoOptionsScreen(item, viewController) As Object
         }
     end if
 
+    ' Continuous play
+    if continuousPlay = true then
+        defaultContinuous = "1"
+    else
+        defaultContinuous = "0"
+    end if
+    continuous_play = [
+        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Experimental" },
+        { title: "Disabled", EnumValue: "0" }
+    ]
+    obj.Prefs["continuous_play"] = {
+        values: continuous_play,
+        label: "Continuous Play"
+        heading: "Automatically start playing the next video",
+        default: defaultContinuous
+    }
+
     obj.Screen.SetHeader("Video playback options")
 
-    possiblePrefs = ["playback", "quality", "audio", "subtitles"]
+    possiblePrefs = ["playback", "quality", "audio", "subtitles", "continuous_play"]
     for each key in possiblePrefs
         pref = obj.Prefs[key]
         if pref <> invalid then
@@ -1037,15 +1066,15 @@ Function videoOptionsHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "playback" OR command = "audio" OR command = "subtitles" OR command = "quality" then
+            if command = "close" then
+                m.Screen.Close()
+            else
                 pref = m.Prefs[command]
                 m.currentIndex = msg.GetIndex()
                 m.currentEnumKey = command
                 screen = m.ViewController.CreateEnumInputScreen(pref.values, pref.default, pref.heading, [pref.label], false)
                 screen.Listener = m
                 screen.Show()
-            else if command = "close" then
-                m.Screen.Close()
             end if
         end if
     end if

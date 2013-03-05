@@ -26,6 +26,8 @@ Function createVideoSpringboardScreen(context, index, viewController) As Object
     ]
     obj.PlayButtonState = RegRead("directplay", "preferences", "0").toint()
 
+    obj.ContinuousPlay = (RegRead("continuous_play", "preferences") = "1")
+
     return obj
 End Function
 
@@ -112,7 +114,7 @@ Function videoHandleMessage(msg) As Boolean
                 m.Item.server.Delete(m.metadata.id)
                 m.Screen.Close()
             else if buttonCommand = "options" then
-                screen = createVideoOptionsScreen(m.metadata, m.ViewController)
+                screen = createVideoOptionsScreen(m.metadata, m.ViewController, m.ContinuousPlay)
                 m.ViewController.InitializeOtherScreen(screen, ["Video Playback Options"])
                 screen.Show()
                 m.checkChangesOnActivate = true
@@ -191,12 +193,24 @@ Sub videoActivate(priorScreen)
             m.Item.server.UpdateStreamSelection("subtitle", m.media.preferredPart.id, priorScreen.Changes["subtitles"])
         end if
 
+        if priorScreen.Changes.DoesExist("continuous_play") then
+            m.ContinuousPlay = (priorScreen.Changes["continuous_play"] = "1")
+            priorScreen.Changes.Delete("continuous_play")
+        end if
+
         if NOT priorScreen.Changes.IsEmpty() then
             m.Refresh(true)
         end if
     end if
 
     if m.refreshOnActivate then
-        m.Refresh(true)
+        if m.ContinuousPlay AND (priorScreen.isPlayed = true OR priorScreen.playbackError = true) then
+            m.GotoNextItem()
+            directPlayOptions = m.PlayButtonStates[m.PlayButtonState]
+            Debug("Playing video with Direct Play options set to: " + directPlayOptions.label)
+            m.ViewController.CreateVideoPlayer(m.metadata, 0, directPlayOptions.value)
+        else
+            m.Refresh(true)
+        end if
     end if
 End Sub
