@@ -171,8 +171,8 @@ Sub audioPlayerPrev()
     m.Play()
 End Sub
 
-Sub audioPlayerSetContext(context, contextIndex, screen)
-    m.Stop()
+Sub audioPlayerSetContext(context, contextIndex, screen, startPlayer)
+    if startPlayer then m.Stop()
 
     item = context[contextIndex]
 
@@ -193,10 +193,17 @@ Sub audioPlayerSetContext(context, contextIndex, screen)
     m.audioPlayer.SetLoop(context.Count() > 1 OR screen = invalid)
 
     m.audioPlayer.SetContentList(context)
-    m.audioPlayer.SetNext(contextIndex)
 
-    m.IsPlaying = false
-    m.IsPaused = false
+    if startPlayer then
+        m.audioPlayer.SetNext(contextIndex)
+        m.IsPlaying = false
+        m.IsPaused = false
+    else
+        maxIndex = context.Count() - 1
+        newIndex = contextIndex + 1
+        if newIndex > maxIndex then newIndex = 0
+        m.audioPlayer.SetNext(newIndex)
+    end if
 End Sub
 
 Sub audioPlayerShowContextMenu()

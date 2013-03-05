@@ -43,7 +43,7 @@ Function createAudioSpringboardScreen(context, index, viewController) As Dynamic
     ' Start playback when screen is opened if there's nothing playing
     if NOT viewController.AudioPlayer.IsPlaying then
         obj.Playstate = 2
-        viewController.AudioPlayer.SetContext(obj.Context, obj.CurIndex, obj)
+        viewController.AudioPlayer.SetContext(obj.Context, obj.CurIndex, obj, true)
         viewController.AudioPlayer.Play()
     else if viewController.AudioPlayer.ContextScreenID = obj.ScreenID AND viewController.AudioPlayer.IsPlaying then
         obj.Playstate = 2
@@ -103,7 +103,7 @@ Function audioHandleMessage(msg) As Boolean
             buttonCommand = m.buttonCommands[str(msg.getIndex())]
             Debug("Button command: " + tostr(buttonCommand))
             if buttonCommand = "play" then
-                audioPlayer.SetContext(m.Context, m.CurIndex, m)
+                audioPlayer.SetContext(m.Context, m.CurIndex, m, true)
                 audioPlayer.Play()
             else if buttonCommand = "resume" then
                 audioPlayer.Resume()
@@ -224,6 +224,11 @@ Function audioDialogHandleButton(command, data) As Boolean
             m.SetButton(command, "Shuffle: On")
         end if
         m.Refresh()
+
+        audioPlayer = GetViewController().AudioPlayer
+        if audioPlayer.ContextScreenID = obj.ScreenID
+            audioPlayer.SetContext(obj.Context, obj.CurIndex, obj, false)
+        end if
     else if command = "delete" then
         obj.metadata.server.delete(obj.metadata.key)
         obj.closeOnActivate = true
