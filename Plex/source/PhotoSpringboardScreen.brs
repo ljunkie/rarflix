@@ -75,6 +75,11 @@ Function photoHandleMessage(msg) As Boolean
                 dialog.Title = ""
                 dialog.Text = ""
                 dialog.Item = m.metadata
+                if m.IsShuffled then
+                    dialog.SetButton("shuffle", "Shuffle: On")
+                else
+                    dialog.SetButton("shuffle", "Shuffle: Off")
+                end if
                 dialog.SetButton("rate", "_rate_")
                 if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
                     dialog.SetButton("delete", "Delete permanently")
@@ -101,6 +106,17 @@ Function photoDialogHandleButton(command, data) As Boolean
         obj.metadata.server.delete(obj.metadata.key)
         obj.closeOnActivate = true
         return true
+    else if command = "shuffle" then
+        if obj.IsShuffled then
+            obj.Unshuffle(obj.Context)
+            obj.IsShuffled = false
+            m.SetButton(command, "Shuffle: Off")
+        else
+            obj.Shuffle(obj.Context)
+            obj.IsShuffled = true
+            m.SetButton(command, "Shuffle: On")
+        end if
+        m.Refresh()
     else if command = "rate" then
         Debug("photoHandleMessage:: Rate audio for key " + tostr(obj.metadata.ratingKey))
         rateValue% = (data /10)
