@@ -89,10 +89,6 @@ Sub sbShuffle(arr)
         ' the item we put at 0 will be left untouched.
         SwapArray(m.Context, i, Rnd(i))
     next
-
-    ' TODO: Make this audio player agnostic
-    'm.audioPlayer.SetContentList(m.Context)
-    'm.audioPlayer.SetNext(m.CurIndex + 1)
 End Sub
 
 Sub sbUnshuffle(arr)
@@ -100,10 +96,6 @@ Sub sbUnshuffle(arr)
         SwapArray(m.Context, i, m.Context[i].OrigIndex)
     next
     m.CurIndex = m.Item.OrigIndex
-
-    ' TODO: Make this audio player agnostic
-    'm.audioPlayer.SetContentList(m.Context)
-    'm.audioPlayer.SetNext(m.CurIndex + 1)
 End Sub
 
 Sub sbShow()
