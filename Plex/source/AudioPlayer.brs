@@ -274,7 +274,7 @@ Sub audioPlayerPlayThemeMusic(item)
     themeItem.StreamFormat = "mp3"
     themeItem.server = item.server
 
-    m.SetContext([themeItem], 0, invalid)
+    m.SetContext([themeItem], 0, invalid, true)
     m.Play()
 End Sub
 
