@@ -28,7 +28,8 @@ Function createTimer() As Object
 End Function
 
 Sub timerPrintElapsedTime(msg As String, mark=True As Boolean)
-    Debug(msg + " took: " + itostr(m.timer.TotalMilliseconds()) + "ms")
+    elapsed = m.timer.TotalMilliseconds()
+    Debug(msg + " took: " + itostr(elapsed) + "ms")
     if mark then m.timer.Mark()
 End Sub
 

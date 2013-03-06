@@ -50,8 +50,13 @@ REM HttpEncode - just encode a string
 REM ******************************************************
 
 Function HttpEncode(str As String) As String
-    o = CreateObject("roUrlTransfer")
-    return o.Escape(str)
+    ' Creating and destroying a roUrlTransfer is slightly expensive, and it can
+    ' add up if we're encoding a bunch of stuff (like, say, creating a bunch of
+    ' image transcoder URLs when turning XML into metadata objects).
+    if m.HttpEncoder = invalid then
+        m.HttpEncoder = CreateObject("roUrlTransfer")
+    end if
+    return m.HttpEncoder.Escape(str)
 End Function
 
 REM ******************************************************

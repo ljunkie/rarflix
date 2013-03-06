@@ -58,12 +58,11 @@ Function createAnalyticsTracker()
     ' The URL is huge and terrible, but most of it is static. Build what we can
     ' now and just append the rest at the time of the event.
 
-    device = CreateObject("roDeviceInfo")
     encoder = CreateObject("roUrlTransfer")
 
     obj.BaseUrl = "http://www.google-analytics.com/__utm.gif"
     obj.BaseUrl = obj.BaseUrl + "?utmwv=1"
-    obj.BaseUrl = obj.BaseUrl + "&utmsr=" + encoder.Escape(device.GetDisplayMode() + " " + device.GetDisplayType())
+    obj.BaseUrl = obj.BaseUrl + "&utmsr=" + encoder.Escape(GetGlobal("DisplayMode") + " " + GetGlobal("DisplayType"))
     obj.BaseUrl = obj.BaseUrl + "&utmsc=24-bit"
     obj.BaseUrl = obj.BaseUrl + "&utmul=en-us"
     obj.BaseUrl = obj.BaseUrl + "&utmje=0"

@@ -4,6 +4,8 @@
 ' ********************************************************************
 
 Sub Main(args)
+    m.RegistryCache = CreateObject("roAssociativeArray")
+
     ' Process any launch args (set registry values)
     for each arg in args
         if Left(arg, 5) = "pref!" then
@@ -142,6 +144,17 @@ Sub initGlobals()
     GetGlobalAA().AddReplace("TranscodeVideoQualities",   ["10",      "20",     "30",     "30",     "40",     "60",     "60",      "75",      "100",     "60",       "75",       "90",        "100"])
     GetGlobalAA().AddReplace("TranscodeVideoResolutions", ["220x180", "220x128","284x160","420x240","576x320","720x480","1024x768","1280x720","1280x720","1920x1080","1920x1080","1920x1080", "1920x1080"])
     GetGlobalAA().AddReplace("TranscodeVideoBitrates",    ["64",      "96",     "208",    "320",    "720",    "1500",   "2000",    "3000",    "4000",    "8000",     "10000",    "12000",     "20000"])
+
+    ' Stash some more info from roDeviceInfo into globals. Fetching the device
+    ' info can be slow, especially for anything related to metadata creation
+    ' that may happen inside a loop.
+
+    GetGlobalAA().AddReplace("DisplaySize", device.GetDisplaySize())
+    GetGlobalAA().AddReplace("DisplayMode", device.GetDisplayMode())
+    GetGlobalAA().AddReplace("DisplayType", device.GetDisplayType())
+
+    GetGlobalAA().AddReplace("surroundSound", (device.HasFeature("5.1_surround_sound") AND major >= 4))
+    GetGlobalAA().AddReplace("legacy1080p", (device.HasFeature("1080p_hardware") AND major < 4))
 End Sub
 
 Function GetGlobal(var, default=invalid)

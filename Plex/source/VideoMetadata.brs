@@ -327,8 +327,7 @@ Function PickMediaItem(hasDetails) As Object
     end if
 
     major = GetGlobal("rokuVersionArr", [0])[0]
-    device = CreateObject("roDeviceInfo")
-    supportsSurround = major >= 4 AND device.hasFeature("5.1_surround_sound") AND RegRead("fivepointone", "preferences", "1") <> "2"
+    supportsSurround = GetGlobal("surroundSound") AND RegRead("fivepointone", "preferences", "1") <> "2"
 
     best = invalid
     bestScore = -10000

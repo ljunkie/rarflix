@@ -301,9 +301,8 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
         end if
     end if
 
-    deviceInfo = CreateObject("roDeviceInfo")
     quality = "SD"
-    if deviceInfo.GetDisplayType() = "HDTV" then quality = "HD"
+    if GetGlobal("DisplayType") = "HDTV" then quality = "HD"
     Debug("Setting stream quality: " + quality)
     video.StreamQualities = [quality]
 
@@ -555,11 +554,10 @@ Function universalTranscodingVideoUrl(videoUrl As String, item As Object, seekVa
     end if
 
     ' Augement the server's profile for things that depend on the Roku's configuration.
-    device = CreateObject("roDeviceInfo")
 
     builder.AddParam("X-Plex-Platform", "Roku")
 
-    if device.HasFeature("5.1_surround_sound") and versionArr[0] >= 4 then
+    if GetGlobal("surroundSound") then
         if RegRead("fivepointone", "preferences", "1") = "1" then
             extras = extras + "add-transcode-target-audio-codec(type=videoProfile&context=streaming&protocol=hls&audioCodec=ac3)"
         end if
@@ -605,8 +603,6 @@ Function classicTranscodingVideoUrl(videoUrl As String, item As Object, httpHead
     end if
     Debug("Original key: " + tostr(key))
     Debug("Full key: " + tostr(fullKey))
-
-    if not(RegExists("level", "preferences")) then RegWrite("level", "40", "preferences")
 
     path = "/video/:/transcode/segmented/start.m3u8?"
 
@@ -734,14 +730,13 @@ Function Capabilities(recompute=false) As String
     protocols = "protocols=http-live-streaming,http-mp4-streaming,http-mp4-video,http-mp4-video-720p,http-streaming-video,http-streaming-video-720p"
     level = RegRead("level", "preferences", "40")
     'do checks to see if 5.1 is supported, else use stereo
-    device = CreateObject("roDeviceInfo")
     audio = "aac"
     versionArr = GetGlobal("rokuVersionArr", [0])
     major = versionArr[0]
 
     ' It's referred to as 5.1 by the feature, but the Roku is just passing the
     ' signal through and theoretically doesn't care if it's 7.1.
-    if device.HasFeature("5.1_surround_sound") and major >= 4 then
+    if GetGlobal("surroundSound") then
         fiveone = RegRead("fivepointone", "preferences", "1")
         Debug("5.1 support set to: " + fiveone)
 

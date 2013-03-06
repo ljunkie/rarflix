@@ -441,8 +441,6 @@ Function videoCanDirectPlay(mediaItem) As Boolean
         return false
     end if
 
-    device = CreateObject("roDeviceInfo")
-
     if mediaItem.container = "mp4" OR mediaItem.container = "mov" OR mediaItem.container = "m4v" then
         if (mediaItem.videoCodec <> "h264" AND mediaItem.videoCodec <> "mpeg4") then
             Debug("videoCanDirectPlay: vc not h264/mpeg4")
@@ -457,7 +455,7 @@ Function videoCanDirectPlay(mediaItem) As Boolean
             return false
         end if
 
-        if device.hasFeature("5.1_surround_sound") AND surroundCodec <> invalid AND surroundCodec = "ac3" then
+        if GetGlobal("surroundSound") AND surroundCodec <> invalid AND surroundCodec = "ac3" then
             mediaItem.canDirectPlay = true
             return true
         end if
@@ -506,7 +504,7 @@ Function videoCanDirectPlay(mediaItem) As Boolean
             return false
         end if
 
-        if device.hasFeature("5.1_surround_sound") AND surroundCodec <> invalid AND surroundCodec = "ac3" then
+        if GetGlobal("surroundSound") AND surroundCodec <> invalid AND surroundCodec = "ac3" then
             mediaItem.canDirectPlay = true
             return true
         end if

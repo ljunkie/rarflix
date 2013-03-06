@@ -248,7 +248,6 @@ Function createPreferencesScreen(viewController) As Object
 End Function
 
 Sub showPreferencesScreen()
-    device = CreateObject("roDeviceInfo")
     versionArr = GetGlobalAA().Lookup("rokuVersionArr")
     major = versionArr[0]
 
@@ -621,7 +620,6 @@ Function createAdvancedPrefsScreen(viewController) As Object
         default: "1"
     }
 
-    device = CreateObject("roDeviceInfo")
     versionArr = GetGlobalAA().Lookup("rokuVersionArr")
     major = versionArr[0]
 
@@ -631,11 +629,11 @@ Function createAdvancedPrefsScreen(viewController) As Object
     obj.AddItem({title: "Continuous Play"}, "continuous_play", obj.GetEnumValue("continuous_play"))
     obj.AddItem({title: "H.264"}, "level", obj.GetEnumValue("level"))
 
-    if major >= 4 AND device.hasFeature("5.1_surround_sound") then
+    if GetGlobal("surroundSound") then
         obj.AddItem({title: "5.1 Support"}, "fivepointone", obj.GetEnumValue("fivepointone"))
     end if
 
-    if major < 4  and device.hasFeature("1080p_hardware") then
+    if GetGlobal("legacy1080p") then
         obj.AddItem({title: "1080p Settings"}, "1080p")
     end if
 

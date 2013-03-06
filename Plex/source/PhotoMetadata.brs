@@ -42,8 +42,7 @@ Function newPhotoMetadata(container, item, detailed=true) As Object
     if photo.media.Count() > 0 then
         format = UCase(firstOf(photo.media[0].container, "JPEG"))
         transcode = false
-        device = CreateObject("roDeviceInfo")
-        size = device.GetDisplaySize()
+        size = GetGlobal("DisplaySize")
 
         ' JPEG and PNG are documented, GIF appears to work fine
         if format <> "JPEG" AND format <> "PNG" AND format <> "GIF" then
