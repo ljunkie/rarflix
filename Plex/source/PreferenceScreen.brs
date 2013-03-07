@@ -1037,9 +1037,45 @@ Function createVideoOptionsScreen(item, viewController, continuousPlay) As Objec
         default: defaultContinuous
     }
 
+    ' Media selection
+    mediaOptions = []
+    defaultMedia = ""
+
+    if item.media <> invalid then
+        mediaIndex = 0
+        for each media in item.media
+            if media.AsString <> invalid then
+                mediaName = media.AsString
+            else
+                mediaName = UCase(firstOf(media.container, "?"))
+                mediaName = mediaName + "/" + UCase(firstOf(media.videoCodec, "?"))
+                mediaName = mediaName + "/" + UCase(firstOf(media.audioCodec, "?"))
+                mediaName = mediaName + "/" + firstOf(media.videoResolution, "?")
+                mediaName = mediaName + "/" + tostr(media.bitrate) + "kbps"
+                media.AsString = mediaName
+            end if
+
+            mediaOptions.Push({ title: mediaName, EnumValue: tostr(mediaIndex) })
+            mediaIndex = mediaIndex + 1
+
+            'if media = item.preferredMediaItem then
+                'defaultMedia = mediaName
+            'end if
+        next
+    end if
+
+    if mediaOptions.Count() > 1 then
+        obj.Prefs["media"] = {
+            values: mediaOptions,
+            label: "Media",
+            heading: "Select a source",
+            default: defaultMedia
+        }
+    end if
+
     obj.Screen.SetHeader("Video playback options")
 
-    possiblePrefs = ["playback", "quality", "audio", "subtitles", "continuous_play"]
+    possiblePrefs = ["playback", "quality", "audio", "subtitles", "media", "continuous_play"]
     for each key in possiblePrefs
         pref = obj.Prefs[key]
         if pref <> invalid then

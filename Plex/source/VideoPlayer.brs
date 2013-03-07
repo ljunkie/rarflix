@@ -339,7 +339,7 @@ Function qualityHandleButton(key, data) As Boolean
                 RegWrite("quality_remote", newQuality.tostr(), "preferences")
             end if
             RegDelete("quality_override", "preferences")
-            m.Item.preferredMediaItem = m.Item.PickMediaItem(m.Item.HasDetails)
+            m.Item.PickMediaItem(m.Item.HasDetails)
         end if
     end if
     return true

@@ -231,7 +231,6 @@ Function DirectMediaXml(server, queryUrl) As Object
     return xml
 End Function
 
-'* TODO: this assumes one part media. Implement multi-part at some point.
 Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay)
     video = CreateObject("roAssociativeArray")
     video.PlayStart = seekValue
@@ -550,6 +549,9 @@ Function universalTranscodingVideoUrl(videoUrl As String, item As Object, seekVa
     builder.AddParam("audioBoost", RegRead("audio_boost", "preferences", "100"))
 
     if item.preferredMediaItem <> invalid then
+        if item.isManuallySelectedMediaItem = true then
+            builder.AddParam("mediaIndex", tostr(item.preferredMediaIndex))
+        end if
         builder.AddParam("partIndex", tostr(item.preferredMediaItem.curPartIndex))
     end if
 

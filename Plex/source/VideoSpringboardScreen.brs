@@ -180,7 +180,7 @@ Sub videoActivate(priorScreen)
 
         if priorScreen.Changes.DoesExist("quality") then
             RegWrite("quality_override", priorScreen.Changes["quality"], "preferences")
-            m.metadata.preferredMediaItem = m.metadata.PickMediaItem(m.metadata.HasDetails)
+            m.metadata.PickMediaItem(m.metadata.HasDetails)
         end if
 
         if priorScreen.Changes.DoesExist("audio") then
@@ -196,6 +196,17 @@ Sub videoActivate(priorScreen)
         if priorScreen.Changes.DoesExist("continuous_play") then
             m.ContinuousPlay = (priorScreen.Changes["continuous_play"] = "1")
             priorScreen.Changes.Delete("continuous_play")
+        end if
+
+        if priorScreen.Changes.DoesExist("media") then
+            index = strtoi(priorScreen.Changes["media"])
+            media = m.metadata.media[index]
+            if media <> invalid then
+                m.media = media
+                m.metadata.preferredMediaItem = media
+                m.metadata.preferredMediaIndex = index
+                m.metadata.isManuallySelectedMediaItem = true
+            end if
         end if
 
         if NOT priorScreen.Changes.IsEmpty() then

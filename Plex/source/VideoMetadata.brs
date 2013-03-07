@@ -45,7 +45,7 @@ Function newVideoMetadata(container, item, detailed=false) As Object
         video.ParseDetails()
     else
         video.media = ParseVideoMedia(item)
-        video.preferredMediaItem = video.PickMediaItem(false)
+        video.PickMediaItem(false)
 
         if video.preferredMediaItem = invalid then
             video.HasDetails = true
@@ -224,7 +224,7 @@ Sub setVideoDetails(video, container, videoItemXml)
     next
 
     video.media = ParseVideoMedia(videoItemXml)
-    video.preferredMediaItem = video.PickMediaItem(true)
+    video.PickMediaItem(true)
 End Sub
 
 Function parseMediaContainer(MediaItem)
@@ -313,7 +313,8 @@ Function ParseVideoMedia(videoItem) As Object
 End Function
 
 '* Logic for choosing which Media item to use from the collection of possibles.
-Function PickMediaItem(hasDetails) As Object
+Sub PickMediaItem(hasDetails)
+    if m.isManuallySelectedMediaItem = true then return
     mediaItems = m.media
     quality = GetQualityForItem(m)
     if quality >= 9 then
@@ -329,7 +330,8 @@ Function PickMediaItem(hasDetails) As Object
     major = GetGlobal("rokuVersionArr", [0])[0]
     supportsSurround = GetGlobal("surroundSound") AND RegRead("fivepointone", "preferences", "1") <> "2"
 
-    best = invalid
+    index = 0
+    bestIndex = 0
     bestScore = -10000
 
     for each mediaItem in mediaItems
@@ -338,8 +340,8 @@ Function PickMediaItem(hasDetails) As Object
 
         ' If we'll be able to direct play, exit immediately
         if resolution <= maxResolution AND hasDetails = true AND videoCanDirectPlay(mediaItem) then
-            best = mediaItem
             bestScore = 100
+            bestIndex = index
             exit for
         end if
 
@@ -372,16 +374,19 @@ Function PickMediaItem(hasDetails) As Object
 
         if score > bestScore then
             bestScore = score
-            best = mediaItem
+            bestIndex = index
         end if
+
+        index = index + 1
     next
 
     if hasDetails = true then
         Debug("Picking best media item with score " + tostr(bestScore))
     end if
 
-    return firstOf(best, mediaItems[0])
-End Function
+    m.preferredMediaItem = mediaItems[bestIndex]
+    m.preferredMediaIndex = bestIndex
+End Sub
 
 Function videoSelectPartForOffset(offset)
     mediaItem = m.preferredMediaItem
