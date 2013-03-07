@@ -1,5 +1,6 @@
 
 Sub RunScreenSaver()
+    m.RegistryCache = CreateObject("roAssociativeArray")
     mode = RegRead("screensaver", "preferences", "random")
 
     if mode <> "disabled" then
