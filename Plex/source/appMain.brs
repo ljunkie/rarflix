@@ -104,6 +104,7 @@ Sub initGlobals()
     knownModels["3050X"] = "Roku 2 XD"
     knownModels["3100X"] = "Roku 2 XS"
     knownModels["3400X"] = "Roku Streaming Stick"
+    knownModels["4200R"] = "Roku 3"
 
     model = firstOf(knownModels[device.GetModel()], "Roku " + device.GetModel())
     GetGlobalAA().AddReplace("rokuModel", model)
