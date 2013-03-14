@@ -9,4 +9,6 @@ mm_icon_focus_hd=pkg:/images/plex-logo-hd.jpg
 mm_icon_side_hd=pkg:/images/plex-logo-sd.jpg
 mm_icon_focus_sd=pkg:/images/plex-logo-hd.jpg
 mm_icon_side_sd=pkg:/images/plex-logo-sd.jpg
+splash_screen_hd=pkg:/images/Splash_HD.jpg
+splash_screen_sd=pkg:/images/Splash_SD43.jpg
 

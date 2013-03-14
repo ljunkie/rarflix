@@ -44,6 +44,8 @@ Function createViewController() As Object
 
     controller.DestroyGlitchyScreens = vcDestroyGlitchyScreens
 
+    ' Even with the splash screen, we still need a facade for memory purposes
+    ' and a clean exit.
     controller.facade = CreateObject("roGridScreen")
     controller.facade.Show()
 
