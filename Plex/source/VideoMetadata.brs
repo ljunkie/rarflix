@@ -254,7 +254,6 @@ Sub ParseVideoMedia(videoItem, sourceUrl) As Object
             baseUrl = Left(sourceUrl, slashIndex - 1)
         end if
     end if
-    Debug("Parsing video media with base URL set to: " + tostr(baseUrl))
 
 	for each MediaItem in videoItem.Media
 		media = CreateObject("roAssociativeArray")
