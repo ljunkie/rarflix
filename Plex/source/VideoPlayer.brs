@@ -465,6 +465,13 @@ Function videoCanDirectPlay(mediaItem) As Boolean
             return true
         end if
 
+        if stereoCodec = invalid AND numAudioStreams = 0 AND major >= 4 then
+            ' If everything else looks ok and there are no audio streams, that's
+            ' fine on Roku 2+.
+            mediaItem.canDirectPlay = true
+            return true
+        end if
+
         Debug("videoCanDirectPlay: ac not aac/ac3")
         return false
     end if
