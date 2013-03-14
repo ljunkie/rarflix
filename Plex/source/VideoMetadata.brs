@@ -8,6 +8,7 @@ Function newVideoMetadata(container, item, detailed=false) As Object
     video.ParseDetails = videoParseDetails
     video.SelectPartForOffset = videoSelectPartForOffset
     video.PickMediaItem = PickMediaItem
+    video.ParseVideoMedia = ParseVideoMedia
 
     if item = invalid then return video
 
@@ -44,7 +45,7 @@ Function newVideoMetadata(container, item, detailed=false) As Object
         ' Also sets media and preferredMediaItem
         video.ParseDetails()
     else
-        video.media = ParseVideoMedia(item)
+        video.ParseVideoMedia(item, container.sourceUrl)
         video.PickMediaItem(false)
 
         if video.preferredMediaItem = invalid then
@@ -150,9 +151,7 @@ Function videoParseDetails()
 
     ' Don't bother trying to request bogus (webkit) keys
     container = invalid
-    if m.DetailUrl <> invalid then
-        container = createPlexContainerForUrl(m.server, m.sourceUrl, m.DetailUrl)
-    else if left(m.Key, 5) <> "plex:" then
+    if left(m.Key, 5) <> "plex:" then
         ' Channels don't understand checkFiles, and the framework gets angry
         ' about things it doesn't understand.
         if m.isLibraryContent then
@@ -223,7 +222,7 @@ Sub setVideoDetails(video, container, videoItemXml)
         video.OptimizedForStreaming = MediaItem@optimizedForStreaming
     next
 
-    video.media = ParseVideoMedia(videoItemXml)
+    video.ParseVideoMedia(videoItemXml, container.sourceUrl)
     video.PickMediaItem(true)
 End Sub
 
@@ -242,8 +241,20 @@ Function parseMediaContainer(MediaItem)
     return container
 End Function
 
-Function ParseVideoMedia(videoItem) As Object
+Sub ParseVideoMedia(videoItem, sourceUrl) As Object
     mediaArray = CreateObject("roArray", 5, true)
+
+    ' myPlex content may have had details requested from the node, which may
+    ' respond with relative URLs. Resolve URLs now so that when we go to play
+    ' the video we don't think we have a relative URL relative to the server.
+    baseUrl = m.server.serverUrl
+    if Left(sourceUrl, 4) = "http" then
+        slashIndex = instr(10, sourceUrl, "/")
+        if slashIndex > 0 then
+            baseUrl = Left(sourceUrl, slashIndex - 1)
+        end if
+    end if
+    Debug("Parsing video media with base URL set to: " + tostr(baseUrl))
 
 	for each MediaItem in videoItem.Media
 		media = CreateObject("roAssociativeArray")
@@ -266,7 +277,7 @@ Function ParseVideoMedia(videoItem) As Object
 		for each MediaPart in MediaItem.Part
 			part = CreateObject("roAssociativeArray")
 			part.id = MediaPart@id
-			part.key = MediaPart@key
+			part.key = FullUrl(baseUrl, "", MediaPart@key)
             part.postURL = MediaPart@postURL
 			part.streams = CreateObject("roArray", 5, true)
             part.subtitles = invalid
@@ -309,8 +320,9 @@ Function ParseVideoMedia(videoItem) As Object
         media.curPartIndex = 0
 		mediaArray.Push(media)
 	next
-	return mediaArray
-End Function
+
+    m.media = mediaArray
+End Sub
 
 '* Logic for choosing which Media item to use from the collection of possibles.
 Sub PickMediaItem(hasDetails)
@@ -418,7 +430,7 @@ Sub videoRefresh(detailed=false)
     if videoItemXml <> invalid then
         setVideoBasics(m, container, videoItemXml)
 
-        if detailed then
+        if detailed AND m.DetailUrl = invalid then
             setVideoDetails(m, container, videoItemXml)
         end if
     end if
