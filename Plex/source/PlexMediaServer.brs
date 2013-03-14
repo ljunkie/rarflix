@@ -816,6 +816,7 @@ Sub pmsAddDirectPlayInfo(video, item, mediaKey)
     video.FrameRate = item.FrameRate
     video.IsTranscoded = false
     video.StreamFormat = firstOf(item.preferredMediaItem.container, "mp4")
+    if video.StreamFormat = "hls" then video.SwitchingStrategy = "full-adaptation"
 
     part = item.preferredMediaItem.parts[item.preferredMediaItem.curPartIndex]
     if part <> invalid AND part.subtitles <> invalid AND part.subtitles.Codec = "srt" then
