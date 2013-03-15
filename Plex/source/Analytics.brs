@@ -73,6 +73,33 @@ Function createAnalyticsTracker()
     obj.BaseUrl = obj.BaseUrl + "&utmr=-"
     obj.BaseUrl = obj.BaseUrl + "&utmvid=" + encoder.Escape(GetGlobal("rokuUniqueID"))
 
+    ' Initialize our "cookies"
+    domainHash = "1095529729" ' should be set by Google, but hardcode to something
+    visitorID = RegRead("AnalyticsID", "analytics", invalid)
+    if visitorID = invalid then
+        visitorID = GARandNumber(1000000000,9999999999).ToStr()
+        RegWrite("AnalyticsID", visitorID, "analytics")
+    end if
+
+    timestamp = CreateObject("roDateTime")
+    firstTimestamp = RegRead("FirstTimestamp", "analytics", invalid)
+    prevTimestamp = RegRead("PrevTimestamp", "analytics", invalid)
+    curTimestamp = timestamp.asSeconds().ToStr()
+
+    RegWrite("PrevTimestamp", curTimestamp, "analytics")
+    if prevTimestamp = invalid then prevTimestamp = curTimestamp
+    if firstTimestamp = invalid then
+        RegWrite("FirstTimestamp", curTimestamp, "analytics")
+        firstTimestamp = curTimestamp
+    end if
+
+    numSessions = RegRead("NumSessions", "analytics", "0").toint() + 1
+    RegWrite("NumSessions", numSessions.ToStr(), "analytics")
+
+    obj.BaseUrl = obj.BaseUrl + "&utmcc=__utma%3D" + domainHash + "." + visitorID + "." + firstTimestamp + "." + prevTimestamp + "." + curTimestamp + "." + numSessions.tostr()
+    obj.BaseUrl = obj.BaseUrl + "%3B%2B__utmb%3D" + domainHash + ".0.10." + curTimestamp + "000"
+    obj.BaseUrl = obj.BaseUrl + "%3B%2B__utmc%3D" + domainHash + ".0.10." + curTimestamp + "000"
+
     obj.SessionTimer = createTimer()
 
     return obj
@@ -95,28 +122,12 @@ Sub analyticsTrackEvent(category, action, label, value, customVars)
     context = CreateObject("roAssociativeArray")
     context.requestType = "analytics"
 
-    var_utmn    = GARandNumber(1000000000,9999999999).ToStr()   'Random Request Number
-
-    timestamp = CreateObject("roDateTime")
-    var_cookie  = GARandNumber(1000000000,9999999999).ToStr()   'Random Cookie Number
-    var_random  = GARandNumber(1000000000,2147483647).ToStr()   'Random Number Under 2147483647
-    var_today   = timestamp.asSeconds().ToStr()                 'Unix Timestamp For Current Date
-
     url = m.BaseUrl
     url = url + "&utms=" + m.NumEvents.tostr()
-    url = url + "&utmn=" + var_utmn
+    url = url + "&utmn=" + GARandNumber(1000000000,9999999999).ToStr()   'Random Request Number
     url = url + "&utmac=" + m.Account
     url = url + "&utmt=event"
     url = url + "&utme=" + m.FormatEvent(category, action, label, value) + m.FormatCustomVars(customVars)
-
-    url = url + "&utmcc=__utma%3D" + var_cookie
-    url = url + "." + var_random + "." + var_today + "." + var_today + "." + var_today
-    url = url + ".2%3B%2B__utmb%3D" + var_cookie
-    url = url + "%3B%2B__utmc%3D" + var_cookie
-    url = url + "%3B%2B__utmz%3D" + var_cookie
-    url = url + "." + var_today
-    url = url + ".2.2.utmccn%3D(direct)%7Cutmcsr%3D(direct)%7Cutmcmd%3D(none)%3B%2B__utmv%3D" + var_cookie
-    url = url + "." + request.Escape(GetGlobal("rokuUniqueID")) + "%3B"
 
     Debug("Final analytics URL: " + url)
     request.SetUrl(url)
