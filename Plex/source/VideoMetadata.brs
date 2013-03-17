@@ -236,6 +236,8 @@ Function parseMediaContainer(MediaItem)
         container = "hls"
     elseif MediaItem@protocol = "rtmp" then
         container = "rtmp"
+    else if MediaItem@protocol = "webkit" then
+        container = "webkit"
     end if
 
     return container

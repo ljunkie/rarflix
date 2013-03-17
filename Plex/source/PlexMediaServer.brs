@@ -331,7 +331,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
         if mediaItem = invalid then
             Debug("Can't direct play, plugin video has no media item!")
             return invalid
-        else if left(mediaKey, 5) = "plex:" then
+        else if left(mediaKey, 5) = "plex:" OR mediaItem.container = "webkit" then
             Debug("Can't direct play plex: URLs: " + tostr(mediaKey))
             return invalid
         else
@@ -616,7 +616,7 @@ Function classicTranscodingVideoUrl(videoUrl As String, item As Object, httpHead
     if len(fullKey) > 0 then
         query = query + "&key=" + HttpEncode(fullKey)
     end if
-    if left(videoUrl, 4) = "plex" then
+    if left(videoUrl, 4) = "plex" OR (item.preferredMediaItem <> invalid AND item.preferredMediaItem.container = "webkit") then
         query = query + "&webkit=1"
     end if
 
