@@ -247,6 +247,7 @@ Function videoPlayerHandleMessage(msg) As Boolean
                 m.Show()
             else if m.isPlayed AND mediaItem <> invalid AND (mediaItem.parts.Count() - 1) > mediaItem.curPartIndex then
                 mediaItem.curPartIndex = mediaItem.curPartIndex + 1
+                mediaItem.parts[mediaItem.curPartIndex].startOffset = m.lastPosition * 1000
                 m.isPlayed = false
                 m.Show()
             else
