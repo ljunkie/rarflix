@@ -329,8 +329,17 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
 
     if forceDirectPlay then
         if mediaItem = invalid then
-            Debug("Can't direct play, plugin video has no media item!")
-            return invalid
+            ' If it looks like it might be an MP4, let the user force a Direct
+            ' Play. This is mostly a concession for iTunes content (including
+            ' podcasts).
+            extension = Right(mediaKey, 4)
+            if extension = ".mp4" OR extension = ".m4v" OR extension = ".mov" then
+                m.AddDirectPlayInfo(video, item, mediaKey)
+                return video
+            else
+                Debug("Can't direct play, plugin video has no media item!")
+                return invalid
+            end if
         else if left(mediaKey, 5) = "plex:" OR mediaItem.container = "webkit" then
             Debug("Can't direct play plex: URLs: " + tostr(mediaKey))
             return invalid
@@ -809,16 +818,28 @@ Sub pmsLog(msg as String, level=3 As Integer, timeout=0 As Integer)
 End Sub
 
 Sub pmsAddDirectPlayInfo(video, item, mediaKey)
-    mediaFullUrl = FullUrl(m.serverUrl, "", mediaKey)
+    if item.preferredMediaItem <> invalid then
+        mediaItem = item.preferredMediaItem
+    else
+        ' Allow users to try forcing Direct Play on old school content by
+        ' assuming it's an MP4.
+        mediaItem = CreateObject("roAssociativeArray")
+        mediaItem.bitrate = 0
+        mediaItem.container = "mp4"
+        mediaItem.parts = []
+        mediaItem.curPartIndex = 0
+    end if
+
+    mediaFullUrl = FullUrl(m.serverUrl, item.sourceUrl, mediaKey)
     Debug("Will try to direct play " + tostr(mediaFullUrl))
     video.StreamUrls = [mediaFullUrl]
-    video.StreamBitrates = [item.preferredMediaItem.bitrate]
+    video.StreamBitrates = [mediaItem.bitrate]
     video.FrameRate = item.FrameRate
     video.IsTranscoded = false
-    video.StreamFormat = firstOf(item.preferredMediaItem.container, "mp4")
+    video.StreamFormat = firstOf(mediaItem.container, "mp4")
     if video.StreamFormat = "hls" then video.SwitchingStrategy = "full-adaptation"
 
-    part = item.preferredMediaItem.parts[item.preferredMediaItem.curPartIndex]
+    part = mediaItem.parts[mediaItem.curPartIndex]
     if part <> invalid AND part.subtitles <> invalid AND part.subtitles.Codec = "srt" then
         video.SubtitleUrl = FullUrl(m.serverUrl, "", part.subtitles.key) + "?encoding=utf-8"
     end if
