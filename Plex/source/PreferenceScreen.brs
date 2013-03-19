@@ -755,7 +755,17 @@ Sub debugRefreshItems()
 
         myPlex = GetGlobalAA().Lookup("myplex")
         if myPlex <> invalid AND myPlex.IsSignedIn then
-            m.AddItem({title: "Enable Remote Logging"}, "remote")
+            if m.Logger.RemoteLoggingTimer <> invalid then
+                remainingMinutes = int(0.5 + (m.Logger.RemoteLoggingSeconds - m.Logger.RemoteLoggingTimer.TotalSeconds()) / 60)
+                if remainingMinutes > 1 then
+                    extraLabel = " (" + tostr(remainingMinutes) + " minutes)"
+                else
+                    extraLabel = ""
+                end if
+                m.AddItem({title: "Remote Logging Enabled" + extraLabel}, "null")
+            else
+                m.AddItem({title: "Enable Remote Logging"}, "remote")
+            end if
         end if
 
         m.AddItem({title: "Download Logs"}, "download")
@@ -789,6 +799,7 @@ Function prefsDebugHandleMessage(msg) As Boolean
                 ' TODO(schuyler) What if we want to debug something related
                 ' to a non-primary server?
                 m.Logger.EnablePapertrail(20, GetPrimaryServer())
+                m.RefreshItems()
             else if command = "close" then
                 m.Screen.Close()
             end if
