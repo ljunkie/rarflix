@@ -517,7 +517,10 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As 
     ' about stuff like indirect resolution and there's no need to have httpHeaders
     ' here.
 
-    if m.SupportsUniversalTranscoding AND RegRead("transcoder_version", "preferences", "universal") = "universal" then
+    ' The universal transcoder doesn't support old school XML with no Media
+    ' elements, so check for that and use the old transcoder.
+
+    if item.preferredMediaItem <> invalid AND m.SupportsUniversalTranscoding AND RegRead("transcoder_version", "preferences", "universal") = "universal" then
         return m.UniversalTranscodingVideoUrl(videoUrl, item, seekValue)
     else
         return m.ClassicTranscodingVideoUrl(videoUrl, item, httpHeaders)
