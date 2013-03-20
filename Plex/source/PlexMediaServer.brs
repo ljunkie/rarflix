@@ -325,6 +325,12 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
 		endif
 	endif
 
+    ' Indexes
+    if part <> invalid then
+        if part.indexes["sd"] <> invalid then video.SDBifUrl = part.indexes["sd"]
+        if part.indexes["hd"] <> invalid then video.HDBifUrl = part.indexes["hd"]
+    end if
+
     qualityPref = GetQualityForItem(item)
 
     if forceDirectPlay then

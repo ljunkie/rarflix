@@ -288,6 +288,14 @@ Sub ParseVideoMedia(videoItem, sourceUrl) As Object
             part.startOffset = startOffset
             startOffset = startOffset + part.duration
 
+            part.indexes = CreateObject("roAssociativeArray")
+            if MediaPart@indexes <> invalid then
+                indexKeys = strTokenize(MediaPart@indexes, ",")
+                for each indexKey in indexKeys
+                    part.indexes[indexKey] = m.server.serverUrl + "/library/parts/" + tostr(part.id) + "/indexes/" + indexKey
+                next
+            end if
+
 			for each StreamItem in MediaPart.Stream
 				stream = CreateObject("roAssociativeArray")
 				stream.id = StreamItem@id
