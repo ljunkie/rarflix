@@ -100,11 +100,15 @@ Sub initGlobals()
     knownModels["2100X"] = "Roku XD|S"
     knownModels["2400X"] = "Roku LT"
     knownModels["2450X"] = "Roku LT"
+    ' 2500X is also Roku HD, but the newer meaning of it... not sure how best to distinguish
+    knownModels["2500X"] = "Roku HD (New)"
     knownModels["3000X"] = "Roku 2 HD"
     knownModels["3050X"] = "Roku 2 XD"
     knownModels["3100X"] = "Roku 2 XS"
     knownModels["3400X"] = "Roku Streaming Stick"
+    knownModels["3420X"] = "Roku Streaming Stick"
     knownModels["4200R"] = "Roku 3"
+    knownModels["4200X"] = "Roku 3"
 
     model = firstOf(knownModels[device.GetModel()], "Roku " + device.GetModel())
     GetGlobalAA().AddReplace("rokuModel", model)
