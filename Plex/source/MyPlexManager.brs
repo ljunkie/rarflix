@@ -10,7 +10,6 @@ Function createMyPlexManager(viewController) As Object
     obj.Disconnect = mpDisconnect
 
     obj.ExtraHeaders = {}
-    obj.ExtraHeaders["X-Plex-Platform"] = "Roku"
     obj.ExtraHeaders["X-Plex-Platform-Version"] = GetGlobal("rokuVersionStr", "unknown")
     obj.ExtraHeaders["X-Plex-Provides"] = "player"
     obj.ExtraHeaders["X-Plex-Product"] = "Plex for Roku"
