@@ -45,8 +45,7 @@ Function newVideoMetadata(container, item, detailed=false) As Object
         ' Also sets media and preferredMediaItem
         video.ParseDetails()
     else
-        video.ParseVideoMedia(item, container.sourceUrl)
-        video.PickMediaItem(false)
+        setVideoDetails(video, container, item, false)
 
         if video.preferredMediaItem = invalid then
             video.HasDetails = true
@@ -176,7 +175,7 @@ Function videoParseDetails()
     return m
 End Function
 
-Sub setVideoDetails(video, container, videoItemXml)
+Sub setVideoDetails(video, container, videoItemXml, hasDetails=true)
     ' Fix some items that might have been modified for the grid view.
     if video.OrigReleaseDate <> invalid then
         video.ReleaseDate = video.OrigReleaseDate
@@ -223,7 +222,7 @@ Sub setVideoDetails(video, container, videoItemXml)
     next
 
     video.ParseVideoMedia(videoItemXml, container.sourceUrl)
-    video.PickMediaItem(true)
+    video.PickMediaItem(hasDetails)
 End Sub
 
 Function parseMediaContainer(MediaItem)
