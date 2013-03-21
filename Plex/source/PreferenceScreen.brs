@@ -996,15 +996,16 @@ Function createVideoOptionsScreen(item, viewController, continuousPlay) As Objec
 
                 audioStreams.Push({ title: title, EnumValue: stream.Id })
             else if stream.streamType = "3" then
-                language = firstOf(stream.Language, "Unknown")
-                if stream.Codec = "srt" then
-                    language = language + " (*)"
+                label = firstOf(stream.Language, "Unknown")
+                label = label + " (" + UCase(firstOf(stream.Codec, "")) + ")"
+                if shouldUseSoftSubs(stream) then
+                    label = label + "*"
                 end if
                 if stream.selected <> invalid then
                     defaultSubtitle = stream.Id
                 end if
 
-                subtitleStreams.Push({ title: language, EnumValue: stream.Id })
+                subtitleStreams.Push({ title: label, EnumValue: stream.Id })
             end if
         next
     end if
