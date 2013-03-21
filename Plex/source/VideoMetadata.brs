@@ -273,6 +273,8 @@ Sub ParseVideoMedia(videoItem, sourceUrl) As Object
         media.duration = validint(strtoi(firstOf(MediaItem@duration, "0")))
         media.bitrate = validint(strtoi(firstOf(MediaItem@bitrate, "0")))
 
+        bitrateSum = 0
+
         startOffset = 0
 		media.parts = CreateObject("roArray", 3, true)
 		for each MediaPart in MediaItem.Part
@@ -319,10 +321,16 @@ Sub ParseVideoMedia(videoItem, sourceUrl) As Object
                     stream.refFrames = StreamItem@refFrames
                 end if
 
+                bitrateSum = bitrateSum + validint(strtoi(firstOf(StreamItem@bitrate, "0")))
+
 				part.streams.Push(stream)
 			next
 			media.parts.Push(part)
 		next
+
+        ' The overall bitrate had better be at least the sum of its parts
+        if bitrateSum > media.bitrate then media.bitrate = bitrateSum
+
 		'* TODO: deal with multiple parts correctly. Not sure how audio etc selection works
 		'* TODO: with multi-part
 		media.preferredPart = media.parts[0]
