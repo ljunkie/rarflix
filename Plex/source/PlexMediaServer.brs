@@ -304,6 +304,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
     if GetGlobal("DisplayType") = "HDTV" then quality = "HD"
     Debug("Setting stream quality: " + quality)
     video.StreamQualities = [quality]
+    video.HDBranded = item.HDBranded
 
 	'Setup 1080p metadata
     if videoRes = "1080" then
@@ -379,7 +380,6 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
     end if
 
     video.IsTranscoded = true
-    video.HDBranded = item.HDBranded
 
 	'We are transcoding, don't set fullHD if quality isn't 1080p
     if qualityPref < 9 then
