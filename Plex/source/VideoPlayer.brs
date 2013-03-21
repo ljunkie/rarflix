@@ -379,8 +379,10 @@ Function videoCanDirectPlay(mediaItem) As Boolean
     surroundCodec = invalid
     secondaryStreamSelected = false
     numAudioStreams = 0
+    numVideoStreams = 0
     videoStream = invalid
     if mediaItem.preferredPart <> invalid then
+        if mediaItem.preferredPart.hasChapterVideoStream then numVideoStreams = 1
         for each stream in mediaItem.preferredPart.streams
             if stream.streamType = "2" then
                 numAudioStreams = numAudioStreams + 1
@@ -403,8 +405,11 @@ Function videoCanDirectPlay(mediaItem) As Boolean
                 else
                     Debug("Unexpected channels on audio stream: " + tostr(stream.channels))
                 end if
-            elseif stream.streamType = "1" AND videoStream = invalid then
-                videoStream = stream
+            else if stream.streamType = "1" then
+                numVideoStreams = numVideoStreams + 1
+                if videoStream = invalid OR stream.selected <> invalid then
+                    videoStream = stream
+                end if
             end if
         next
     end if
@@ -422,6 +427,12 @@ Function videoCanDirectPlay(mediaItem) As Boolean
     ' If no streams are provided, treat the Media audio codec as stereo.
     if numAudioStreams = 0 then
         stereoCodec = mediaItem.audioCodec
+    end if
+
+    ' Multiple video streams aren't supported, regardless of type.
+    if numVideoStreams > 1 then
+        Debug("videoCanDirectPlay: multiple video streams")
+        return false
     end if
 
     versionArr = GetGlobal("rokuVersionArr", [0])

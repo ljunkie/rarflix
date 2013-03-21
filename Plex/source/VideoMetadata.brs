@@ -286,6 +286,7 @@ Sub ParseVideoMedia(videoItem, sourceUrl) As Object
             part.exists = MediaPart@exists <> "0"
             part.accessible = MediaPart@accessible <> "0"
             part.duration = validint(strtoi(firstOf(MediaPart@duration, "0")))
+            part.hasChapterVideoStream = (MediaPart@hasChapterVideoStream = "1")
             part.startOffset = startOffset
             startOffset = startOffset + part.duration
 
