@@ -397,10 +397,13 @@ Function videoCanDirectPlay(mediaItem) As Boolean
     ' channels, it might be chosen by the Roku when Direct Playing. We don't
     ' just check the selected stream though, because if the 5.1 AC3 stream is
     ' selected and there's also a stereo AAC stream, we can direct play.
+    ' But if there's a surround AAC stream before a stereo AAC stream, that
+    ' doesn't work.
 
     stereoCodec = invalid
     surroundCodec = invalid
     secondaryStreamSelected = false
+    surroundStreamFirst = false
     numAudioStreams = 0
     numVideoStreams = 0
     videoStream = invalid
@@ -413,6 +416,7 @@ Function videoCanDirectPlay(mediaItem) As Boolean
                 if numChannels <= 2 then
                     if stereoCodec = invalid then
                         stereoCodec = stream.codec
+                        surroundStreamFirst = (surroundCodec <> invalid)
                     else if stream.selected <> invalid then
                         secondaryStreamSelected = true
                     end if
@@ -487,6 +491,11 @@ Function videoCanDirectPlay(mediaItem) As Boolean
             ' don't try to Direct Stream.
             mediaItem.forceTranscode = true
             Debug("videoCanDirectPlay: too many ReFrames: " + tostr(videoStream.refFrames))
+            return false
+        end if
+
+        if surroundStreamFirst AND surroundCodec = "aac" then
+            Debug("videoCanDirectPlay: first audio stream is 5.1 AAC")
             return false
         end if
 
