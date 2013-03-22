@@ -14,7 +14,6 @@ Function createMyPlexManager(viewController) As Object
     obj.ExtraHeaders["X-Plex-Provides"] = "player"
     obj.ExtraHeaders["X-Plex-Product"] = "Plex for Roku"
     obj.ExtraHeaders["X-Plex-Device"] = GetGlobal("rokuModel")
-    obj.ExtraHeaders["X-Plex-Client-Identifier"] = GetGlobal("rokuUniqueID")
 
     Debug("myPlex headers")
     for each name in obj.ExtraHeaders
@@ -41,6 +40,7 @@ Function createMyPlexManager(viewController) As Object
     obj.AllowsMediaDeletion = false
 
     ' Commands, mostly use the PMS functions
+    obj.Timeline = mpTimeline
     obj.SetProgress = progress
     obj.Scrobble = scrobble
     obj.Unscrobble = unscrobble
@@ -226,5 +226,16 @@ End Function
 
 Sub mpLog(msg="", level=3, timeout=0)
     ' Noop, only defined to implement PlexMediaServer "interface"
+End Sub
+
+Sub mpTimeline(item, state, time, isPlayed)
+    ' No timeline support at myPlex yet, so translate to progress and scrobble
+    if state = "playing" then
+        ' Send a progress event
+        m.SetProgress(item.ratingKey, item.mediaContainerIdentifier, time)
+    else if state = "stopped" AND isPlayed then
+        ' Send a scrobble
+        m.Scrobble(item.ratingKey, item.mediaContainerIdentifier)
+    end if
 End Sub
 

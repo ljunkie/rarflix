@@ -115,14 +115,18 @@ End Function
 
 
 '******************************************************
-'itostr
+'numtostr
 '
-'Convert int to string. This is necessary because
-'the builtin Stri(x) prepends whitespace
+'Convert an int or float to string. This is necessary because
+'the builtin Str[i](x) prepends whitespace
 '******************************************************
-Function itostr(i As Integer) As String
+Function numtostr(num) As String
     st=CreateObject("roString")
-    st.SetString(Stri(i))
+    if GetInterface(num, "ifInt") <> invalid then
+        st.SetString(Stri(num))
+    else if GetInterface(num, "ifFloat") <> invalid then
+        st.SetString(Str(num))
+    end if
     return st.Trim()
 End Function
 
@@ -204,7 +208,7 @@ End Sub
 Sub PrintAnyList(depth As Integer, list as Object)
     i = 0
     for each e in list
-        PrintAny(depth, "List(" + itostr(i) + ")= ", e)
+        PrintAny(depth, "List(" + tostr(i) + ")= ", e)
         i = i + 1
     next
 End Sub
@@ -215,7 +219,7 @@ End Sub
 '******************************************************
 Sub PrintAny(depth As Integer, prefix As String, any As Dynamic)
     if depth >= 10
-        Debug("**** TOO DEEP " + itostr(5))
+        Debug("**** TOO DEEP " + tostr(5))
         return
     endif
     prefix = string(depth*2," ") + prefix
@@ -231,7 +235,7 @@ Sub PrintAny(depth As Integer, prefix As String, any As Dynamic)
         return
     endif
     if GetInterface(any, "ifArray") <> invalid
-        Debug(prefix + "(list of " + itostr(any.Count()) + ")...")
+        Debug(prefix + "(list of " + tostr(any.Count()) + ")...")
         PrintAnyList(depth, any)
         return
     endif
@@ -283,13 +287,13 @@ End Sub
 Function AnyToString(any As Dynamic) As dynamic
     if any = invalid return "invalid"
     if isstr(any) return any
-    if isint(any) return itostr(any)
+    if isint(any) return numtostr(any)
     if GetInterface(any, "ifBoolean") <> invalid
         if any = true return "true"
         return "false"
     endif
-    if GetInterface(any, "ifFloat") <> invalid then return Str(any)
-    if type(any) = "roTimespan" return itostr(any.TotalMilliseconds()) + "ms"
+    if GetInterface(any, "ifFloat") <> invalid then return numtostr(any)
+    if type(any) = "roTimespan" return numtostr(any.TotalMilliseconds()) + "ms"
     return invalid
 End Function
 

@@ -23,8 +23,11 @@ Function createVideoPlayerScreen(metadata, seekValue, directPlayOptions, viewCon
     obj.playbackError = false
     obj.underrunCount = 0
     obj.playbackTimer = createTimer()
+    obj.timelineTimer = invalid
+    obj.playState = "buffering"
 
     obj.ShowPlaybackError = videoPlayerShowPlaybackError
+    obj.SendTimeline = videoPlayerSendTimeline
 
     obj.curPart = metadata.SelectPartForOffset(seekValue)
 
@@ -68,6 +71,11 @@ Sub videoPlayerShow()
         else
             Debug("Starting to direct play video", m.Item.server)
         end if
+
+        m.timelineTimer = createTimer()
+        m.timelineTimer.Name = "timeline"
+        m.timelineTimer.SetDuration(15000, true)
+        m.ViewController.AddTimer(m.timelineTimer, m)
 
         m.playbackTimer.Mark()
         m.Screen.Show()
@@ -217,15 +225,10 @@ Function videoPlayerHandleMessage(msg) As Boolean
         handled = true
 
         if msg.isScreenClosed() then
+            m.timelineTimer.Active = false
+            m.playState = "stopped"
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isScreenClosed: position -> " + tostr(m.lastPosition))
-            if m.Item.ratingKey <> invalid then
-                if m.isPlayed then
-                    Debug("MediaPlayer::playVideo::VideoScreenEvent::isScreenClosed: scrobbling media -> " + tostr(m.Item.ratingKey))
-                    server.Scrobble(m.Item.ratingKey, m.Item.mediaContainerIdentifier)
-                else
-                    server.SetProgress(m.Item.ratingKey, m.Item.mediaContainerIdentifier, 1000 * m.lastPosition)
-                end if
-            end if
+            m.SendTimeline()
             if m.IsTranscoded then server.StopVideo()
 
             ' Send an analytics event.
@@ -256,17 +259,15 @@ Function videoPlayerHandleMessage(msg) As Boolean
         else if msg.isPlaybackPosition() then
             mediaItem = m.Item.preferredMediaItem
             m.lastPosition = m.curPartOffset + msg.GetIndex()
-            if m.Item.ratingKey <> invalid then
-                if mediaItem <> invalid AND validint(mediaItem.duration) > 0 then
-                    playedFraction = (m.lastPosition * 1000)/mediaItem.duration
-                    Debug("MediaPlayer::playVideo::VideoScreenEvent::isPlaybackPosition: position -> " + tostr(m.lastPosition) + " playedFraction -> " + tostr(playedFraction))
-                    if playedFraction > 0.90 then
-                        m.isPlayed = true
-                    end if
+            Debug("MediaPlayer::playVideo::VideoScreenEvent::isPlaybackPosition: set progress -> " + tostr(1000*m.lastPosition))
+
+            if mediaItem <> invalid AND validint(mediaItem.duration) > 0 then
+                playedFraction = (m.lastPosition * 1000)/mediaItem.duration
+                if playedFraction > 0.90 then
+                    m.isPlayed = true
                 end if
-                Debug("MediaPlayer::playVideo::VideoScreenEvent::isPlaybackPosition: set progress -> " + tostr(1000*m.lastPosition))
-                server.SetProgress(m.Item.ratingKey, m.Item.mediaContainerIdentifier, 1000*m.lastPosition)
             end if
+            m.SendTimeline(true)
         else if msg.isRequestFailed() then
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed - message = " + tostr(msg.GetMessage()))
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed - data = " + tostr(msg.GetData()))
@@ -274,23 +275,28 @@ Function videoPlayerHandleMessage(msg) As Boolean
             m.playbackError = true
         else if msg.isPaused() then
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isPaused: position -> " + tostr(m.lastPosition))
+            m.playState = "paused"
+            m.SendTimeline()
+        else if msg.isResumed() then
+            Debug("MediaPlayer::playVideo::VideoScreenEvent::isResumed")
+            m.playState = "playing"
+            m.SendTimeline()
         else if msg.isPartialResult() then
-            mediaItem = m.Item.preferredMediaItem
-            if mediaItem <> invalid AND validint(mediaItem.duration) > 0 then
-                playedFraction = (m.lastPosition * 1000)/mediaItem.duration
-                Debug("MediaPlayer::playVideo::VideoScreenEvent::isPartialResult: position -> " + tostr(m.lastPosition) + " playedFraction -> " + tostr(playedFraction))
-                if playedFraction > 0.90 then
-                    m.isPlayed = true
-                end if
-            end if
+            Debug("MediaPlayer::playVideo::VideoScreenEvent::isPartialResult: position -> " + tostr(m.lastPosition))
+            m.playState = "stopped"
+            m.SendTimeline()
             if m.IsTranscoded then server.StopVideo()
         else if msg.isFullResult() then
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isFullResult: position -> " + tostr(m.lastPosition))
             m.isPlayed = true
+            m.playState = "stopped"
+            m.SendTimeline()
             if m.IsTranscoded then server.StopVideo()
         else if msg.isStreamStarted() then
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isStreamStarted: position -> " + tostr(m.lastPosition))
             Debug("Message data -> " + tostr(msg.GetInfo()))
+            m.playState = "playing"
+            m.SendTimeline()
 
             if msg.GetInfo().IsUnderrun = true then
                 m.underrunCount = m.underrunCount + 1
@@ -311,9 +317,26 @@ Function videoPlayerHandleMessage(msg) As Boolean
 End Function
 
 Sub videoPlayerOnTimerExpired(timer)
-    if m.IsTranscoded then
+    if timer.Name = "ping" then
         m.Item.server.PingTranscode()
+    else if timer.Name = "timeline"
+        m.SendTimeline(true)
     end if
+End Sub
+
+Sub videoPlayerSendTimeline(force=false)
+    ' We can only send the event if we have some basic info about the item
+    if m.Item.ratingKey = invalid OR m.Item.RawLength = invalid OR m.Item.server = invalid then
+        m.timelineTimer.Active = false
+        return
+    end if
+
+    ' Avoid duplicates
+    if m.playState = m.lastTimelineState AND NOT force then return
+
+    m.lastTimelineState = m.playState
+    m.Item.server.Timeline(m.Item, m.playState, 1000 * m.lastPosition, m.isPlayed)
+    m.timelineTimer.Mark()
 End Sub
 
 Function qualityHandleButton(key, data) As Boolean
@@ -607,4 +630,3 @@ Function shouldUseSoftSubs(stream) As Boolean
 
     return false
 End Function
-

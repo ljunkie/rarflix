@@ -97,7 +97,7 @@ function reply_send(sock as Object, bufsize as Integer) as Integer
         if m.start+m.sent>=m.buf_start+m.buf.count()
             m.buf_start = m.start+m.sent
             m.buf.ReadFile(m.path,m.buf_start,bufsize)
-            info(m,"Read" + Stri(m.buf.count()) + " bytes from source file @" + itostr(m.buf_start))
+            info(m,"Read" + Stri(m.buf.count()) + " bytes from source file @" + tostr(m.buf_start))
         end if
     else if m.source=m.CONCATFILES
         if m.start + m.sent >= m.buf_offset + m.buf_start + m.buf.count()
@@ -112,7 +112,7 @@ function reply_send(sock as Object, bufsize as Integer) as Integer
             end if
 
             m.buf.ReadFile(file.path, m.buf_start, bufsize)
-            info(m,"Read" + Stri(m.buf.count()) + " bytes from source file @" + itostr(m.buf_start))
+            info(m,"Read" + Stri(m.buf.count()) + " bytes from source file @" + tostr(m.buf_start))
         end if
     end if
     buf_pos = m.start + m.sent - m.buf_start - m.buf_offset
@@ -387,7 +387,7 @@ function reply_done_header() as Boolean
 end function
 
 function makeRange(start as Integer, length as Integer, total as Integer)
-    return itostr(start) + "-" + itostr(start+length-1) + "/" + itostr(total)
+    return tostr(start) + "-" + tostr(start+length-1) + "/" + tostr(total)
 end function
 
 function reply_log(recent as Integer,from as Integer, total as Integer)

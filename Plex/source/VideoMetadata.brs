@@ -143,6 +143,9 @@ Sub setVideoBasics(video, container, item)
     else
 	video.UserRating =  0
     endif
+
+    video.guid = item@guid
+    video.url = item@url
 End Sub
 
 Function videoParseDetails()

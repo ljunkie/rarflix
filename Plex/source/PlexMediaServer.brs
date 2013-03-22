@@ -20,6 +20,7 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.CreateRequest = pmsCreateRequest
     pms.GetQueryResponse = xmlContent
     pms.SetProgress = progress
+    pms.Timeline = pmsTimeline
     pms.Scrobble = scrobble
     pms.Unscrobble = unscrobble
     pms.Delete = pmsDelete
@@ -48,6 +49,10 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.IsConfigured = false
     pms.IsAvailable = false
 
+    ' For using the view controller for HTTP requests
+    pms.ScreenID = -3
+    pms.OnUrlEvent = pmsOnUrlEvent
+
     return pms
 End Function
 
@@ -70,6 +75,25 @@ Function progress(key, identifier, time)
         m.ExecuteCommand(commandUrl)
     end if
 End Function
+
+Sub pmsTimeline(item, state, time, isPlayed)
+    encoder = CreateObject("roUrlTransfer")
+
+    query = "time=" + tostr(time)
+    query = query + "&duration=" + tostr(item.RawLength)
+    query = query + "&state=" + state
+    if item.guid <> invalid then query = query + "&guid=" + encoder.Escape(item.guid)
+    if item.ratingKey <> invalid then query = query + "&ratingKey=" + tostr(item.ratingKey)
+    if item.url <> invalid then query = query + "&url=" + encoder.Escape(item.url)
+    if item.key <> invalid then query = query + "&key=" + encoder.Escape(item.key)
+    if item.sourceUrl <> invalid then query = query + "&containerKey=" + encoder.Escape(item.sourceUrl)
+
+    request = m.CreateRequest("", "/:/timeline?" + query)
+    context = CreateObject("roAssociativeArray")
+    context.requestType = "timeline"
+
+    GetViewController().StartRequest(request, m, context)
+End Sub
 
 Function scrobble(key, identifier)
     if identifier <> invalid then
@@ -810,7 +834,6 @@ End Function
 Sub pmsLog(msg as String, level=3 As Integer, timeout=0 As Integer)
     query = "source=roku&level=" + level.tostr() + "&message=" + HttpEncode(msg)
     httpRequest = m.CreateRequest("", "/log?" + query)
-    httpRequest.AsyncGetToString()
 
     ' If we let the log request go out of scope it will get canceled, but we
     ' definitely don't want to block waiting for the response. So, we'll hang
@@ -822,7 +845,9 @@ Sub pmsLog(msg as String, level=3 As Integer, timeout=0 As Integer)
     if timeout > 0 then
         GetToStringWithTimeout(httpRequest, timeout)
     else
-        GetGlobalAA().AddReplace("log_request", httpRequest)
+        context = CreateObject("roAssociativeArray")
+        context.requestType = "log"
+        GetViewController().StartRequest(httpRequest, m, context)
     end if
 End Sub
 
@@ -856,3 +881,6 @@ Sub pmsAddDirectPlayInfo(video, item, mediaKey)
     PrintAA(video)
 End Sub
 
+Sub pmsOnUrlEvent(msg, requestContext)
+    ' Don't care about the response for any of our requests.
+End Sub

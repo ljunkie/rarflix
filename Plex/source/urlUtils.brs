@@ -38,6 +38,7 @@ End Function
 Sub AddPlexHeaders(transferObj, token=invalid)
     transferObj.AddHeader("X-Plex-Platform", "Roku")
     transferObj.AddHeader("X-Plex-Version", GetGlobal("appVersionStr"))
+    transferObj.AddHeader("X-Plex-Client-Identifier", GetGlobal("rokuUniqueID"))
 
     if token <> invalid then
         transferObj.AddHeader("X-Plex-Token", token)

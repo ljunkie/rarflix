@@ -13,7 +13,7 @@
  ' purpose with or without fee is hereby granted, provided that the
  ' above copyright notice and this permission notice appear in all
  ' copies.
- ' 
+ '
  ' THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
  ' WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
  ' WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
@@ -22,7 +22,7 @@
  ' PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
  ' TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  ' PERFORMANCE OF THIS SOFTWARE.
- ' 
+ '
 
  ' Adapted from C to Brightscript with mods by Roku, Inc.
 
@@ -58,15 +58,11 @@ function dbglog(obj as Object, level as String, message as String, code=0 as Int
     tag = ""
     if isstr(obj)
         tag = obj
-    else    
+    else
         class = obj.class
         id    = obj.id
         if class<>invalid then tag = tag + class
-        if isint(id)
-            tag = tag +"[" + itostr(id) + "]"
-        else if isstr(id)
-            tag = tag +"[" + id + "]"
-        end if
+        tag = tag +"[" + tostr(id) + "]"
     end if
     print tag; ".";  level; ": ";
     if code<>0 then print "*"; Stri(code).trim(); "* ";
@@ -232,7 +228,7 @@ function GetExtension(fn as String) as String
     if l.count()>0 then return l.GetTail() else return ""
 end function
 
-function deduceType(val as String, force=invalid as Dynamic) as Dynamic 
+function deduceType(val as String, force=invalid as Dynamic) as Dynamic
     if isstr(force)
         tforce = lcase(force)
         if tforce.right(6)="string" then return val
