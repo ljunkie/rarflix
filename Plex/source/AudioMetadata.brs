@@ -106,6 +106,10 @@ Function newTrackMetadata(container, item, detailed=true) As Object
     if (codec = invalid OR codec = "") AND key <> invalid then
         ' It's probably the extension on the key, try to be lenient.
         codec = key.Tokenize(".").Peek()
+        queryStart = instr(1, codec, "?")
+        if queryStart > 0 then
+            codec = left(codec, queryStart - 1)
+        end if
         Debug("Audio codec wasn't set, inferred " + tostr(codec))
     end if
 
