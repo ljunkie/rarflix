@@ -208,6 +208,9 @@ Sub videoPlayerShowPlaybackError()
     else if m.DirectPlayOptions = 1 then
         dialog.Title = "Direct Play Unavailable"
         dialog.Text = "This video isn't supported for Direct Play."
+    else if m.Item.server <> invalid AND m.Item.server.SupportsVideoTranscoding = false then
+        dialog.Title = "Transcoding Unavailable"
+        dialog.Text = "Your Plex Media Server doesn't support video transcoding."
     else ' This should imply m.IsTranscoding, but make sure we always show something
         ' Nothing left to fall back to, tell the user
         dialog.Title = "Video Unavailable"
