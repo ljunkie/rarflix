@@ -221,6 +221,10 @@ Function AddUnnamedServer(address) As Boolean
         else if ServerVersionCompare(xml@version, [0, 9, 2, 7]) then
             AddServer(xml@friendlyName, address, xml@machineIdentifier)
             return true
+        else if xml@serverClass = "secondary" then
+            ' There's not a lot to go on here, but assume it's ok.
+            AddServer(xml@friendlyName, address, xml@machineIdentifier)
+            return true
         else
             Debug("Server version is insufficient")
             dialog = createBaseDialog()
@@ -310,6 +314,7 @@ Function DiscoverPlexMediaServers()
 End Function
 
 Function ServerVersionCompare(versionStr, minVersion) As Boolean
+    if versionStr = invalid then return false
     versionStr = strReplace(versionStr,"v","")
     index = instr(1, versionStr, "-")
     if index > 0 then
@@ -406,7 +411,7 @@ End Function
 Function GetPrimaryServer()
     ' TODO(schuyler): Actually define a primary server instead of using an arbitrary one
     for each server in GetOwnedPlexMediaServers()
-        if server.owned AND server.online then
+        if server.owned AND server.online AND NOT server.IsSecondary then
             Debug("Setting primary server to " + server.name)
             return server
         end if

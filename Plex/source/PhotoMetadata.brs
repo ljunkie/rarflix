@@ -45,11 +45,14 @@ Function newPhotoMetadata(container, item, detailed=true) As Object
         size = GetGlobal("DisplaySize")
 
         ' JPEG and PNG are documented, GIF appears to work fine
-        if format <> "JPEG" AND format <> "PNG" AND format <> "GIF" then
+        if format <> "JPEG" AND format <> "JPG" AND format <> "PNG" AND format <> "GIF" then
             Debug("Transcoding photo to JPEG from " + format)
             transcode = true
         else if photo.media[0].width > size.w OR photo.media[0].height > size.h then
             Debug("Transcoding photo because it's unnecessarily large: " + tostr(photo.media[0].width) + "x" + tostr(photo.media[0].height))
+            transcode = true
+        else if photo.media[0].width <= 0 OR photo.media[0].width > photo.media[0].height then
+            Debug("Transcoding photo for fear that it requires EXIF rotation")
             transcode = true
         end if
 

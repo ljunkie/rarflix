@@ -650,6 +650,7 @@ Sub homeOnUrlEvent(msg, requestContext)
             server.SupportsUniversalTranscoding = ServerVersionCompare(xml@version, [0, 9, 7, 15])
             server.AllowsMediaDeletion = (xml@allowMediaDeletion = "1")
             server.IsAvailable = true
+            server.IsSecondary = (xml@serverClass = "secondary")
             PutPlexMediaServer(server)
 
             Debug("Fetched additional server information (" + tostr(server.name) + ", " + tostr(server.machineID) + ")")
@@ -661,7 +662,7 @@ Sub homeOnUrlEvent(msg, requestContext)
             status = m.contentArray[m.RowIndexes["misc"]]
 
             machineId = tostr(server.machineID)
-            if NOT status.loadedServers.DoesExist(machineID) then
+            if NOT server.IsSecondary AND NOT status.loadedServers.DoesExist(machineID) then
                 status.loadedServers[machineID] = "1"
                 channelDir = CreateObject("roAssociativeArray")
                 channelDir.server = server

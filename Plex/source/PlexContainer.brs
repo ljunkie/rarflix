@@ -77,7 +77,7 @@ Sub containerParseXml()
     for each n in nodes
         nodeType = firstOf(n@type, m.ViewGroup)
 
-        if n@scanner <> invalid then
+        if n@scanner <> invalid OR n@agent <> invalid then
             metadata = newDirectoryMetadata(m, n)
             metadata.contentType = "section"
             if n@thumb = invalid then
