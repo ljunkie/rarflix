@@ -441,10 +441,17 @@ Sub videoRefresh(detailed=false)
     if m.preferredMediaItem = invalid then return
 
     if m.DetailUrl <> invalid then
-        container = createPlexContainerForUrl(m.server, m.sourceUrl, m.DetailUrl)
+        detailKey = m.DetailUrl
+    else if m.isLibraryContent then
+        if Instr(1, m.Key, "?") > 0 then
+            detailKey = m.Key + "&checkFiles=1"
+        else
+            detailKey = m.Key + "?checkFiles=1"
+        end if
     else
-        container = createPlexContainerForUrl(m.server, m.sourceUrl, m.Key)
+        detailKey = m.Key
     end if
+    container = createPlexContainerForUrl(m.server, m.sourceUrl, detailKey)
     videoItemXml = container.xml.Video[0]
 
     if videoItemXml <> invalid then
