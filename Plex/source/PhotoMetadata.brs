@@ -51,7 +51,7 @@ Function newPhotoMetadata(container, item, detailed=true) As Object
         else if photo.media[0].width > size.w OR photo.media[0].height > size.h then
             Debug("Transcoding photo because it's unnecessarily large: " + tostr(photo.media[0].width) + "x" + tostr(photo.media[0].height))
             transcode = true
-        else if photo.media[0].width <= 0 OR photo.media[0].width > photo.media[0].height then
+        else if photo.media[0].width <= 0 then
             Debug("Transcoding photo for fear that it requires EXIF rotation")
             transcode = true
         end if
