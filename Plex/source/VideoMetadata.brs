@@ -37,6 +37,12 @@ Function newVideoMetadata(container, item, detailed=false) As Object
     ' TODO(schuyler): Is there a less hacky way to decide this?
     if video.mediaContainerIdentifier = "com.plexapp.plugins.myplex" AND video.id <> invalid then
         video.DetailUrl = "/pms/playlists/items/" + video.id
+        nodePrefix = "http://node.plexapp.com:32400"
+        primaryServer = GetPrimaryServer()
+        if Left(video.Key, Len(nodePrefix)) = nodePrefix AND primaryServer <> invalid then
+            video.Key = primaryServer.serverUrl + Mid(video.Key, Len(nodePrefix) + 1)
+            Debug("Rewrote node key to: " + video.Key)
+        end if
     end if
 
     setVideoBasics(video, container, item)

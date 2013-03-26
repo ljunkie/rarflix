@@ -409,15 +409,21 @@ Function GetOwnedPlexMediaServers()
 End Function
 
 Function GetPrimaryServer()
+    if m.PrimaryServer <> invalid then return m.PrimaryServer
+
+    m.PrimaryServer = invalid
+
     ' TODO(schuyler): Actually define a primary server instead of using an arbitrary one
     for each server in GetOwnedPlexMediaServers()
         if server.owned AND server.online AND NOT server.IsSecondary then
-            Debug("Setting primary server to " + server.name)
-            return server
+            if m.PrimaryServer = invalid OR server.machineID = RegRead("primaryServerID", "preferences", "") then
+                Debug("Setting primary server to " + server.name)
+                m.PrimaryServer = server
+            end if
         end if
     next
 
-    return invalid
+    return m.PrimaryServer
 End Function
 
 Sub SetServerForHost(hostname, server)
