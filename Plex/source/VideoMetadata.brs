@@ -206,13 +206,6 @@ Sub setVideoDetails(video, container, videoItemXml, hasDetails=true)
         video.Categories.Push(Category@tag)
     next
 
-    art = videoItemXml@thumb
-    if video.server <> invalid AND art <> invalid then
-        sizes = ImageSizes(container.ViewGroup, video.type)
-        video.SDPosterURL = video.server.TranscodedImage(container.sourceUrl, art, sizes.sdWidth, sizes.sdHeight)
-        video.HDPosterURL = video.server.TranscodedImage(container.sourceUrl, art, sizes.hdWidth, sizes.hdHeight)
-    end if
-
     ' TODO: review the logic here. Last media item wins. Is this what we want?
     for each MediaItem in videoItemXml.Media
         videoResolution = MediaItem@videoResolution
