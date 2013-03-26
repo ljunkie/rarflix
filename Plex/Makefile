@@ -17,7 +17,7 @@
 ##########################################################################  
 APPNAME = Plex
 APPDEPS = manifest count_functions
-ZIP_EXCLUDE = -x .git\* -x manifest.template -x \*.swp -x \*.DS_Store -x \*.py
+ZIP_EXCLUDE = -x .git\* -x manifest.template -x \*.swp -x \*.DS_Store -x \*.py -x roku_screenshot.jpg
 include ../app.mk
 
 APPTITLE = PlexDev
