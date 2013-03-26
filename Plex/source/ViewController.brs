@@ -339,6 +339,7 @@ Sub vcShowReleaseNotes()
     header = GetGlobal("appName") + " has been updated to " + GetGlobal("appVersionStr")
     paragraphs = []
     paragraphs.Push("Changes in this version include:")
+    paragraphs.Push(" - Fix crash caused by iOS update.")
     paragraphs.Push(" - Fix multipart playback, including several channels.")
     paragraphs.Push(" - Fix iTunes video playback.")
     paragraphs.Push(" - Show HD branding more consistently.")

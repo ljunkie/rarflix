@@ -1,0 +1,12 @@
+NEW:
+  - Add more detail to subtitle selection UI.
+  - Support for browsing "mini" servers, such as the latest Plex/iOS.
+  - Show a more helpful error when video transcoding isn't supported.
+
+FIXES:
+  - Fix crash caused by iOS update.
+  - Fix multipart playback (including several channels).
+  - Fix iTunes video playback.
+  - Fix WebKit channel playback.
+  - Show HD branding more consistently.
+  - Detect surround support changes caused by (un)plugging Roku 3 headphones.
