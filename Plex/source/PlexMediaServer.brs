@@ -393,6 +393,8 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
         end if
         Debug("Max resolution: " + tostr(maxResolution))
 
+        ' Make sure we have a current value for the surround sound support
+        SupportsSurroundSound(false, true)
         if (videoCanDirectPlay(mediaItem))
             resolution = firstOf(mediaItem.videoResolution, "0").toInt()
             Debug("Media item resolution: " + tostr(resolution) + ", max is " + tostr(maxResolution))
@@ -602,7 +604,7 @@ Function universalTranscodingVideoUrl(videoUrl As String, item As Object, seekVa
 
     builder.AddParam("X-Plex-Platform", "Roku")
 
-    if GetGlobal("surroundSound") then
+    if SupportsSurroundSound(true, true) then
         if RegRead("fivepointone", "preferences", "1") = "1" then
             extras = extras + "add-transcode-target-audio-codec(type=videoProfile&context=streaming&protocol=hls&audioCodec=ac3)"
         end if
@@ -781,7 +783,7 @@ Function Capabilities(recompute=false) As String
 
     ' It's referred to as 5.1 by the feature, but the Roku is just passing the
     ' signal through and theoretically doesn't care if it's 7.1.
-    if GetGlobal("surroundSound") then
+    if SupportsSurroundSound(true, true) then
         fiveone = RegRead("fivepointone", "preferences", "1")
         Debug("5.1 support set to: " + fiveone)
 

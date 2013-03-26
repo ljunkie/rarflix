@@ -629,7 +629,7 @@ Function createAdvancedPrefsScreen(viewController) As Object
     obj.AddItem({title: "Continuous Play"}, "continuous_play", obj.GetEnumValue("continuous_play"))
     obj.AddItem({title: "H.264"}, "level", obj.GetEnumValue("level"))
 
-    if GetGlobal("surroundSound") then
+    if SupportsSurroundSound(true) then
         obj.AddItem({title: "5.1 Support"}, "fivepointone", obj.GetEnumValue("fivepointone"))
     end if
 

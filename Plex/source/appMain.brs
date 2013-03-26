@@ -158,8 +158,8 @@ Sub initGlobals()
     GetGlobalAA().AddReplace("DisplayMode", device.GetDisplayMode())
     GetGlobalAA().AddReplace("DisplayType", device.GetDisplayType())
 
-    GetGlobalAA().AddReplace("surroundSound", (device.HasFeature("5.1_surround_sound") AND major >= 4))
     GetGlobalAA().AddReplace("legacy1080p", (device.HasFeature("1080p_hardware") AND major < 4))
+    SupportsSurroundSound()
 End Sub
 
 Function GetGlobal(var, default=invalid)
@@ -271,3 +271,31 @@ Sub initTheme()
 
 End Sub
 
+Function SupportsSurroundSound(transcoding=false, refresh=false) As Boolean
+    ' Before the Roku 3, there's no need to ever refresh.
+    major = GetGlobal("rokuVersionArr", [0])[0]
+
+    if m.SurroundSoundTimer = invalid then
+        refresh = true
+        m.SurroundSoundTimer = CreateTimer()
+    else if major <= 4 then
+        refresh = false
+    else if m.SurroundSoundTimer.GetElapsedSeconds() > 10 then
+        refresh = true
+    end if
+
+    if refresh then
+        device = CreateObject("roDeviceInfo")
+        result = device.HasFeature("5.1_surround_sound")
+        GetGlobalAA().AddReplace("surroundSound", result)
+        m.SurroundSoundTimer.Mark()
+    else
+        result = GetGlobal("surroundSound")
+    end if
+
+    if transcoding then
+        return (result AND major >= 4)
+    else
+        return result
+    end if
+End Function

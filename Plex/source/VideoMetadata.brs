@@ -359,8 +359,7 @@ Sub PickMediaItem(hasDetails)
         maxResolution = 0
     end if
 
-    major = GetGlobal("rokuVersionArr", [0])[0]
-    supportsSurround = GetGlobal("surroundSound") AND RegRead("fivepointone", "preferences", "1") <> "2"
+    supportsSurround = SupportsSurroundSound(true) AND RegRead("fivepointone", "preferences", "1") <> "2"
 
     index = 0
     bestIndex = 0

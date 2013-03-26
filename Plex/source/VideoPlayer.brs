@@ -378,10 +378,16 @@ Function videoCanDirectPlay(mediaItem) As Boolean
         return false
     end if
 
-    if mediaItem.canDirectPlay <> invalid then
+    ' With the Roku 3, the surround sound support may have changed because of
+    ' the headphones in the remote. If we have a cached direct play decision,
+    ' we need to make sure the surround sound support hasn't changed and
+    ' possibly reevaluate.
+    surroundSound = SupportsSurroundSound(false, false)
+    if mediaItem.canDirectPlay <> invalid AND surroundSound = mediaItem.cachedSurroundSound then
         return mediaItem.canDirectPlay
     end if
     mediaItem.canDirectPlay = false
+    mediaItem.cachedSurroundSound = surroundSound
 
     if mediaItem.preferredPart <> invalid AND mediaItem.preferredPart.subtitles <> invalid then
         subtitleStream = mediaItem.preferredPart.subtitles
@@ -502,7 +508,7 @@ Function videoCanDirectPlay(mediaItem) As Boolean
             return false
         end if
 
-        if GetGlobal("surroundSound") AND surroundCodec <> invalid AND surroundCodec = "ac3" then
+        if surroundSound AND surroundCodec <> invalid AND surroundCodec = "ac3" then
             mediaItem.canDirectPlay = true
             return true
         end if
@@ -558,7 +564,7 @@ Function videoCanDirectPlay(mediaItem) As Boolean
             return false
         end if
 
-        if GetGlobal("surroundSound") AND surroundCodec <> invalid AND surroundCodec = "ac3" then
+        if surroundSound AND surroundCodec <> invalid AND surroundCodec = "ac3" then
             mediaItem.canDirectPlay = true
             return true
         end if
