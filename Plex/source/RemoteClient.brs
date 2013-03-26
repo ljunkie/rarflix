@@ -21,8 +21,8 @@ Function ProcessPlayMediaRequest() As Boolean
     ' allows us to set the context correctly so we can do things like play an
     ' entire album or slideshow.
 
-    url = UrlUnescape(m.request.fields["X-Plex-Arg-Path"])
-    key = UrlUnescape(m.request.fields["X-Plex-Arg-Key"])
+    url = RewriteNodeKey(UrlUnescape(firstOf(m.request.fields["X-Plex-Arg-Path"], "")))
+    key = RewriteNodeKey(UrlUnescape(firstOf(m.request.fields["X-Plex-Arg-Key"], "")))
 
     server = GetServerForUrl(url)
     if server = invalid then
