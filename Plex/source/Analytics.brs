@@ -6,30 +6,9 @@
 '* media of each type is being consumed (movie, music, photo), to allow us
 '* to direct future focus most effectively. And you can always opt out.
 '*
-'* This class is written largely anew, but while reading Trevor Anderson's
-'* GATracker.brs, which deserves a hat tip. That library came with a license
-'* disclaimer that is duplicated below.
+'* This class has been updated to use the new Universal Analytics, which has
+'* an actual documented API.
 '*
-
-REM *****************************************************
-REM   Google Analytics Tracking Library for Roku
-REM   GATracker.brs - Version 2.0
-REM   (C) 2012, Trevor Anderson, BloggingWordPress.com
-REM   Permission is hereby granted, free of charge, to any person obtaining a copy of this software
-REM   and associated documentation files (the "Software"), to deal in the Software without restriction,
-REM   including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-REM   and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
-REM   subject to the following conditions:
-REM
-REM   The above copyright notice and this permission notice shall be included in all copies or substantial
-REM   portions of the Software.
-REM
-REM   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
-REM   LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-REM   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-REM   WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-REM   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-REM *****************************************************
 
 Function createAnalyticsTracker()
     obj = CreateObject("roAssociativeArray")
@@ -37,102 +16,104 @@ Function createAnalyticsTracker()
     ' We need a ScreenID property in order to use the view controller for requests.
     obj.ScreenID = -2
 
-    obj.Account = "UA-6111912-16"
-    obj.NumEvents = 0
     obj.NumPlaybackEvents = 0
 
     obj.TrackEvent = analyticsTrackEvent
+    obj.TrackScreen = analyticsTrackScreen
+    obj.TrackTiming = analyticsTrackTiming
+    obj.SendTrackingRequest = analyticsSendTrackingRequest
     obj.OnUrlEvent = analyticsOnUrlEvent
     obj.OnStartup = analyticsOnStartup
     obj.Cleanup = analyticsCleanup
 
-    obj.CustomSessionVars = CreateObject("roArray", 5, false)
-    obj.SetCustomSessionVar = analyticsSetCustomSessionVar
-
-    obj.SetCustomSessionVar(1, "X-Plex-Product", "Plex for Roku")
-    obj.SetCustomSessionVar(2, "X-Plex-Client-Identifier", GetGlobal("rokuUniqueID"))
-
-    obj.FormatEvent = analyticsFormatEvent
-    obj.FormatCustomVars = analyticsFormatCustomVars
-
-    ' The URL is huge and terrible, but most of it is static. Build what we can
-    ' now and just append the rest at the time of the event.
+    ' Much of the data that we need to submit is session based and can be built
+    ' now. When we're tracking an indvidual hit we'll append the hit-specific
+    ' variables.
 
     encoder = CreateObject("roUrlTransfer")
 
-    obj.BaseUrl = "http://www.google-analytics.com/__utm.gif"
-    obj.BaseUrl = obj.BaseUrl + "?utmwv=1"
-    obj.BaseUrl = obj.BaseUrl + "&utmsr=" + encoder.Escape(GetGlobal("DisplayMode") + " " + GetGlobal("DisplayType"))
-    obj.BaseUrl = obj.BaseUrl + "&utmsc=24-bit"
-    obj.BaseUrl = obj.BaseUrl + "&utmul=en-us"
-    obj.BaseUrl = obj.BaseUrl + "&utmje=0"
-    obj.BaseUrl = obj.BaseUrl + "&utmfl=-"
-    obj.BaseUrl = obj.BaseUrl + "&utmdt=" + encoder.Escape(GetGlobal("appName"))
-    obj.BaseUrl = obj.BaseUrl + "&utmp=" + encoder.Escape(GetGlobal("appName"))
-    obj.BaseUrl = obj.BaseUrl + "&utmhn=clients.plexapp.com"
-    obj.BaseUrl = obj.BaseUrl + "&utmr=-"
-    obj.BaseUrl = obj.BaseUrl + "&utmvid=" + encoder.Escape(GetGlobal("rokuUniqueID"))
-
-    ' Initialize our "cookies"
-    domainHash = "1095529729" ' should be set by Google, but hardcode to something
-    visitorID = RegRead("AnalyticsID", "analytics", invalid)
-    if visitorID = invalid then
-        visitorID = GARandNumber(1000000000,9999999999).ToStr()
-        RegWrite("AnalyticsID", visitorID, "analytics")
+    uuid = RegRead("UUID", "analytics")
+    if uuid = invalid then
+        uuid = CreateUUID()
+        RegWrite("UUID", uuid, "analytics")
     end if
 
-    timestamp = CreateObject("roDateTime")
-    firstTimestamp = RegRead("FirstTimestamp", "analytics", invalid)
-    prevTimestamp = RegRead("PrevTimestamp", "analytics", invalid)
-    curTimestamp = timestamp.asSeconds().ToStr()
+    dimensionsObj = GetGlobal("DisplaySize")
+    dimensions = tostr(dimensionsObj.w) + "x" + tostr(dimensionsObj.h)
 
-    RegWrite("PrevTimestamp", curTimestamp, "analytics")
-    if prevTimestamp = invalid then prevTimestamp = curTimestamp
-    if firstTimestamp = invalid then
-        RegWrite("FirstTimestamp", curTimestamp, "analytics")
-        firstTimestamp = curTimestamp
-    end if
+    obj.BaseData = "v=1"
+    obj.BaseData = obj.BaseData + "&tid=UA-6111912-18"
+    obj.BaseData = obj.BaseData + "&cid=" + uuid
+    obj.BaseData = obj.BaseData + "&sr=" + dimensions
+    obj.BaseData = obj.BaseData + "&ul=en-us"
+    obj.BaseData = obj.BaseData + "&cd1=" + encoder.Escape(GetGlobal("appName") + " for Roku")
+    obj.BaseData = obj.BaseData + "&cd2=" + encoder.Escape(GetGlobal("rokuUniqueID"))
+    obj.BaseData = obj.BaseData + "&cd3=Roku"
+    obj.BaseData = obj.BaseData + "&cd4=" + encoder.Escape(GetGlobal("rokuVersionStr", "unknown"))
+    obj.BaseData = obj.BaseData + "&cd5=" + encoder.Escape(GetGlobal("rokuModel"))
+    obj.BaseData = obj.BaseData + "&cd6=" + encoder.Escape(GetGlobal("appVersionStr"))
+    obj.BaseData = obj.BaseData + "&an=" + encoder.Escape(GetGlobal("appName") + " for Roku")
+    obj.BaseData = obj.BaseData + "&av=" + encoder.Escape(GetGlobal("appVersionStr"))
 
     numSessions = RegRead("NumSessions", "analytics", "0").toint() + 1
     RegWrite("NumSessions", numSessions.ToStr(), "analytics")
-
-    obj.BaseUrl = obj.BaseUrl + "&utmcc=__utma%3D" + domainHash + "." + visitorID + "." + firstTimestamp + "." + prevTimestamp + "." + curTimestamp + "." + numSessions.tostr()
-    obj.BaseUrl = obj.BaseUrl + "%3B%2B__utmb%3D" + domainHash + ".0.10." + curTimestamp + "000"
-    obj.BaseUrl = obj.BaseUrl + "%3B%2B__utmc%3D" + domainHash + ".0.10." + curTimestamp + "000"
 
     obj.SessionTimer = createTimer()
 
     return obj
 End Function
 
-Sub analyticsTrackEvent(category, action, label, value, customVars)
-    ' Only if we're enabled
-    if RegRead("analytics", "preferences", "1") <> "1" then return
-
+Sub analyticsTrackEvent(category, action, label, value, customVars={})
     ' Now's a good time to update our session variables, in case we don't shut
     ' down cleanly.
     if category = "Playback" then m.NumPlaybackEvents = m.NumPlaybackEvents + 1
     RegWrite("session_duration", tostr(m.SessionTimer.GetElapsedSeconds()), "analytics")
     RegWrite("session_playback_events", tostr(m.NumPlaybackEvents), "analytics")
 
-    m.NumEvents = m.NumEvents + 1
+    customVars["t"] = "event"
+    customVars["ec"] = category
+    customVars["ea"] = action
+    customVars["el"] = label
+    customVars["ev"] = tostr(value)
+
+    m.SendTrackingRequest(customVars)
+End Sub
+
+Sub analyticsTrackScreen(screenName, customVars={})
+    customVars["t"] = "appview"
+    customVars["cd"] = screenName
+
+    m.SendTrackingRequest(customVars)
+End Sub
+
+Sub analyticsTrackTiming(time, category, variable, label, customVars={})
+    customVars["t"] = "timing"
+    customVars["utc"] = category
+    customVars["utv"] = variable
+    customVars["utl"] = label
+    customVars["utt"] = tostr(time)
+
+    m.SendTrackingRequest(customVars)
+End Sub
+
+Sub analyticsSendTrackingRequest(vars)
+    ' Only if we're enabled
+    if RegRead("analytics", "preferences", "1") <> "1" then return
 
     request = CreateObject("roUrlTransfer")
     request.EnableEncodings(true)
+    request.SetUrl("http://www.google-analytics.com/collect")
     context = CreateObject("roAssociativeArray")
     context.requestType = "analytics"
 
-    url = m.BaseUrl
-    url = url + "&utms=" + m.NumEvents.tostr()
-    url = url + "&utmn=" + GARandNumber(1000000000,9999999999).ToStr()   'Random Request Number
-    url = url + "&utmac=" + m.Account
-    url = url + "&utmt=event"
-    url = url + "&utme=" + m.FormatEvent(category, action, label, value) + m.FormatCustomVars(customVars)
+    data = m.BaseData
+    for each name in vars
+        data = data + "&" + name + "=" + request.Escape(vars[name])
+    next
 
-    Debug("Final analytics URL: " + url)
-    request.SetUrl(url)
+    Debug("Final analytics data: " + data)
 
-    GetViewController().StartRequest(request, m, context)
+    GetViewController().StartRequest(request, m, context, data)
 End Sub
 
 Sub analyticsOnUrlEvent(msg, requestContext)
@@ -143,9 +124,9 @@ Sub analyticsOnStartup(signedIn)
     lastSessionDuration = RegRead("session_duration", "analytics", "0").toint()
     if lastSessionDuration > 0 then
         lastSessionPlaybackEvents = RegRead("session_playback_events", "analytics", "0")
-        m.TrackEvent("App", "Shutdown", "", lastSessionDuration, [invalid, invalid, {name: "NumEvents", value: lastSessionPlaybackEvents}])
+        m.TrackEvent("App", "Shutdown", "", lastSessionDuration, {cm1: lastSessionPlaybackEvents})
     end if
-    m.TrackEvent("App", "Start", "", 1, [invalid, invalid, {name: "Model", value: GetGlobal("rokuModel")}, {name: "myPlex", value: tostr(signedIn)}])
+    m.TrackEvent("App", "Start", "", 1, {sc: "start"})
 End Sub
 
 Sub analyticsCleanup()
@@ -156,71 +137,20 @@ Sub analyticsCleanup()
     m.SessionTimer = invalid
 End Sub
 
-Sub analyticsSetCustomSessionVar(index, name, value)
-    m.CustomSessionVars[index - 1] = {name: name, value: value}
-End Sub
-
-Function analyticsFormatEvent(category, action, label, value) As String
-    encoder = CreateObject("roUrlTransfer")
-    event = "5(" + encoder.Escape(category) + "*" + encoder.Escape(action)
-    if label <> invalid then
-        event = event + "*" + encoder.Escape(firstOf(label, ""))
-    end if
-    if value <> invalid then
-        event = event + ")(" + tostr(value)
-    end if
-    event = event + ")"
-    return event
-End Function
-
-Function analyticsFormatCustomVars(pageVars) As String
-    encoder = CreateObject("roUrlTransfer")
-    vars = CreateObject("roArray", 5, false)
-    hasVar = false
-    for i = 0 to 4
-        vars[i] = firstOf(pageVars[i], m.CustomSessionVars[i])
-        if vars[i] <> invalid then hasVar = true
-    end for
-
-    if NOT hasVar then return ""
-
-    names = "8"
-    values = "9"
-    scopes = "11"
-    skipped = false
-
-    for i = 0 to vars.Count() - 1
-        if vars[i] <> invalid then
-            if i = 0 then
-                prefix = "("
-            else if skipped then
-                prefix = i.tostr() + "!"
+' This isn't a "real" UUID, but it should at least be random and look like one.
+Function CreateUUID()
+    uuid = ""
+    for each numChars in [8, 4, 4, 4, 12]
+        if Len(uuid) > 0 then uuid = uuid + "-"
+        for i=1 to numChars
+            o = Rnd(16)
+            if o <= 10
+                o = o + 47
             else
-                prefix = "*"
+                o = o + 96 - 10
             end if
-
-            names = names + prefix + encoder.Escape(firstOf(vars[i].name, ""))
-            values = values + prefix + encoder.Escape(firstOf(vars[i].value, ""))
-
-            if pageVars[i] <> invalid then
-                scope = "3"
-            else
-                scope = "2"
-            end if
-
-            scopes = scopes + prefix + scope
-        else
-            skipped = true
-        end if
-    end for
-
-    names = names + ")"
-    values = values + ")"
-    scopes = scopes + ")"
-
-    return names + values + scopes
-End Function
-
-Function GARandNumber(num_min As Integer, num_max As Integer) As Integer
-    Return (RND(0) * (num_max - num_min)) + num_min
+            uuid = uuid + Chr(o)
+        end for
+    next
+    return uuid
 End Function

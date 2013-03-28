@@ -87,6 +87,7 @@ Sub dialogShow(blocking=false)
         m.ScreensToClose.Unshift(m.Facade)
     end if
 
+    m.ScreenName = "Dialog: " + tostr(m.Title)
     m.ViewController.AddBreadcrumbs(m, invalid)
     m.ViewController.UpdateScreenProperties(m)
     m.ViewController.PushScreen(m)

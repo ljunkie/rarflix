@@ -100,6 +100,7 @@ End Function
 Function vcCreateHomeScreen()
     screen = createHomeScreen(m)
     screen.ScreenID = -1
+    screen.ScreenName = "Home"
     m.InitializeOtherScreen(screen, invalid)
     screen.Show()
 
@@ -125,46 +126,59 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     ' include the filter bar that makes it more grid like, but it can
     ' be forced by setting screen.FilterMode = true.
 
-    if contentType = "movie" OR contentType = "episode" then
+    screenName = invalid
+
+    if contentType = "movie" OR contentType = "episode" OR contentType = "clip" then
         screen = createVideoSpringboardScreen(context, contextIndex, m)
-    else if contentType = "clip" then
-        screen = createVideoSpringboardScreen(context, contextIndex, m)
+        screenName = "Preplay " + contentType
     else if contentType = "series" then
         if RegRead("use_grid_for_series", "preferences", "") <> "" then
             screen = createGridScreenForItem(item, m, "flat-16X9")
+            screenName = "Series Grid"
         else
             screen = createPosterScreen(item, m)
+            screenName = "Series Poster"
         end if
     else if contentType = "artist" then
         ' TODO: Poster, poster with filters, or grid?
         screen = createPosterScreen(item, m)
+        screenName = "Artist Poster"
     else if contentType = "album" then
         screen = createPosterScreen(item, m)
         ' TODO: What style looks best here, episodic?
         screen.SetListStyle("flat-episodic", "zoom-to-fill")
+        screenName = "Album Poster"
     else if item.key = "nowplaying" then
         m.AudioPlayer.ContextScreenID = m.nextScreenId
         screen = createAudioSpringboardScreen(m.AudioPlayer.Context, m.AudioPlayer.CurIndex, m)
+        screenName = "Now Playing"
         if screen = invalid then return invalid
     else if contentType = "audio" then
         screen = createAudioSpringboardScreen(context, contextIndex, m)
         if screen = invalid then return invalid
+        screenName = "Audio Springboard"
     else if contentType = "section" then
         RegWrite("lastMachineID", item.server.machineID)
         RegWrite("lastSectionKey", item.key)
         screen = createGridScreenForItem(item, m, "flat-movie")
+        screenName = "Section: " + tostr(item.type)
     else if contentType = "playlists" then
         screen = createGridScreenForItem(item, m, "flat-16X9")
+        screenName = "Playlist Grid"
     else if contentType = "photo" then
         if right(item.key, 8) = "children" then
             screen = createPosterScreen(item, m)
+            screenName = "Photo Poster"
         else
             screen = createPhotoSpringboardScreen(context, contextIndex, m)
+            screenName = "Photo Springboard"
         end if
     else if contentType = "search" then
         screen = createSearchScreen(item, m)
+        screenName = "Search"
     else if item.key = "/system/appstore" then
         screen = createGridScreenForItem(item, m, "flat-square")
+        screenName = "Channel Directory"
     else if viewGroup = "Store:Info" then
         dialog = createPopupMenu(item)
         dialog.Show()
@@ -173,6 +187,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen = createPosterScreen(item, m)
     else if item.key = "globalprefs" then
         screen = createPreferencesScreen(m)
+        screenName = "Preferences Main"
     else if item.key = "/channels/all" then
         ' Special case for all channels to force it into a special grid view
         screen = createGridScreen(m, "flat-square")
@@ -182,17 +197,26 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen.Loader = createPaginatedLoader(fakeContainer, 8, 25)
         screen.Loader.Listener = screen
         screen.Loader.Port = screen.Port
+        screenName = "All Channels"
     else if item.searchTerm <> invalid AND item.server = invalid then
         screen = createGridScreen(m, "flat-square")
         screen.Loader = createSearchLoader(item.searchTerm)
         screen.Loader.Listener = screen
+        screenName = "Search Results"
     else if item.settings = "1"
         screen = createSettingsScreen(item, m)
+        screenName = "Settings"
     else
         ' Where do we capture channel directory?
         Debug("Creating a default view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
         screen = createPosterScreen(item, m)
     end if
+
+    if screenName = invalid then
+        screenName = type(screen.Screen) + " " + firstOf(contentType, "unknown")
+    end if
+
+    screen.ScreenName = screenName
 
     m.AddBreadcrumbs(screen, breadcrumbs)
     m.UpdateScreenProperties(screen)
@@ -205,6 +229,7 @@ End Function
 
 Function vcCreateTextInputScreen(heading, breadcrumbs, show=true) As Dynamic
     screen = createKeyboardScreen(m)
+    screen.ScreenName = "Keyboard: " + tostr(heading)
 
     if heading <> invalid then
         screen.Screen.SetDisplayText(heading)
@@ -221,6 +246,7 @@ End Function
 
 Function vcCreateEnumInputScreen(options, selected, heading, breadcrumbs, show=true) As Dynamic
     screen = createEnumScreen(options, selected, m)
+    screen.ScreenName = "Enum: " + tostr(heading)
 
     if heading <> invalid then
         screen.Screen.SetHeader(heading)
@@ -237,6 +263,7 @@ End Function
 
 Function vcCreateReorderScreen(items, breadcrumbs, show=true) As Dynamic
     screen = createReorderScreen(items, m)
+    screen.ScreenName = "Reorder"
 
     m.AddBreadcrumbs(screen, breadcrumbs)
     m.UpdateScreenProperties(screen)
@@ -249,6 +276,7 @@ End Function
 
 Function vcCreateMyPlexPinScreen(show=true)
     screen = createMyPlexPinScreen(m)
+    screen.ScreenName = "myPlex PIN"
 
     m.AddBreadcrumbs(screen, invalid)
     m.UpdateScreenProperties(screen)
@@ -268,6 +296,7 @@ End Function
 
 Function vcCreatePhotoPlayer(context, contextIndex=invalid, show=true)
     screen = createPhotoPlayerScreen(context, contextIndex, m)
+    screen.ScreenName = "Photo Player"
 
     m.AddBreadcrumbs(screen, invalid)
     m.UpdateScreenProperties(screen)
@@ -305,6 +334,7 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
     end if
 
     screen = createVideoPlayerScreen(metadata, seekValue, directPlayOptions, m)
+    screen.ScreenName = "Video Player"
 
     m.AddBreadcrumbs(screen, invalid)
     m.UpdateScreenProperties(screen)
@@ -347,6 +377,7 @@ Sub vcShowReleaseNotes()
     paragraphs.Push(" - Fix WebKit channel playback.")
 
     screen = createParagraphScreen(header, paragraphs, m)
+    screen.ScreenName = "Release Notes"
     m.InitializeOtherScreen(screen, invalid)
 
     screen.Show()
@@ -367,7 +398,9 @@ End Sub
 
 Sub vcPushScreen(screen)
     m.AssignScreenID(screen)
-    Debug("Pushing screen " + tostr(screen.ScreenID) + " onto view controller stack - " + type(screen.Screen))
+    screenName = firstOf(screen.ScreenName, type(screen.Screen))
+    m.Analytics.TrackScreen(screenName)
+    Debug("Pushing screen " + tostr(screen.ScreenID) + " onto view controller stack - " + screenName)
     m.screens.Push(screen)
 End Sub
 
@@ -448,7 +481,11 @@ Sub vcPopScreen(screen)
     if m.screens.Count() = 0 then
         m.Home = m.CreateHomeScreen()
     else if callActivate then
-        m.screens.Peek().Activate(screen)
+        newScreen = m.screens.Peek()
+        screenName = firstOf(newScreen.ScreenName, type(newScreen.Screen))
+        Debug("Top of stack is once again: " + screenName)
+        m.Analytics.TrackScreen(screenName)
+        newScreen.Activate(screen)
     end if
 
     ' If some other screen requested this close, let it know.
