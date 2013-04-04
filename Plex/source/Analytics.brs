@@ -55,9 +55,6 @@ Function createAnalyticsTracker()
     obj.BaseData = obj.BaseData + "&an=" + encoder.Escape(GetGlobal("appName") + " for Roku")
     obj.BaseData = obj.BaseData + "&av=" + encoder.Escape(GetGlobal("appVersionStr"))
 
-    numSessions = RegRead("NumSessions", "analytics", "0").toint() + 1
-    RegWrite("NumSessions", numSessions.ToStr(), "analytics")
-
     obj.SessionTimer = createTimer()
 
     return obj
