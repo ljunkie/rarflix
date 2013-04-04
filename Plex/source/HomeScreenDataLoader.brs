@@ -632,23 +632,25 @@ Sub homeOnUrlEvent(msg, requestContext)
         existing = GetPlexMediaServer(xml@machineIdentifier)
         if server.machineID <> invalid AND server.machineID <> xml@machineIdentifier then
             Debug("Ignoring server response from unexpected machine ID")
-        else if existing <> invalid AND existing.online then
-            if server.local = true then
-                Debug("Updating " + tostr(existing.name) + " to use local address: " + server.serverUrl)
-                existing.serverUrl = server.serverUrl
-            else
-                Debug("Ignoring server response from already configured address (" + requestContext.server.serverUrl + " / " + existing.serverUrl + ")")
-            end if
         else
+            if existing <> invalid AND existing.online then
+                if server.local = true then
+                    Debug("Updating " + tostr(existing.name) + " to use local address: " + server.serverUrl)
+                    existing.serverUrl = server.serverUrl
+                end if
+                duplicate = true
+            else
+                duplicate = false
+            end if
+
             server.name = firstOf(xml@friendlyName, server.name)
             server.machineID = xml@machineIdentifier
-            server.owned = true
             server.online = true
             server.SupportsAudioTranscoding = (xml@transcoderAudio = "1")
             server.SupportsVideoTranscoding = (xml@transcoderVideoQualities <> invalid)
             server.SupportsPhotoTranscoding = server.machineID <> "myPlex"
             server.SupportsUniversalTranscoding = ServerVersionCompare(xml@version, [0, 9, 7, 15])
-            server.AllowsMediaDeletion = (xml@allowMediaDeletion = "1")
+            server.AllowsMediaDeletion = server.owned AND (xml@allowMediaDeletion = "1")
             server.IsAvailable = true
             server.IsSecondary = (xml@serverClass = "secondary")
             if server.AccessToken = invalid AND ServerVersionCompare(xml@version, [0, 9, 7, 15]) then
@@ -663,51 +665,52 @@ Sub homeOnUrlEvent(msg, requestContext)
             Debug("Server allows media deletion: " + tostr(server.AllowsMediaDeletion))
             Debug("Server supports universal transcoding: " + tostr(server.SupportsUniversalTranscoding))
 
-            status = m.contentArray[m.RowIndexes["misc"]]
+            if server.owned AND NOT duplicate then
+                status = m.contentArray[m.RowIndexes["misc"]]
+                machineId = tostr(server.machineID)
+                if NOT server.IsSecondary AND NOT status.loadedServers.DoesExist(machineID) then
+                    status.loadedServers[machineID] = "1"
+                    channelDir = CreateObject("roAssociativeArray")
+                    channelDir.server = server
+                    channelDir.sourceUrl = ""
+                    channelDir.key = "/system/appstore"
+                    channelDir.Title = "Channel Directory"
+                    if AreMultipleValidatedServers() then
+                        channelDir.ShortDescriptionLine2 = "Browse channels to install on " + server.name
+                    else
+                        channelDir.ShortDescriptionLine2 = "Browse channels to install"
+                    end if
+                    channelDir.Description = channelDir.ShortDescriptionLine2
+                    channelDir.SDPosterURL = "file://pkg:/images/more.png"
+                    channelDir.HDPosterURL = "file://pkg:/images/more.png"
+                    status.content.Push(channelDir)
+                end if
 
-            machineId = tostr(server.machineID)
-            if NOT server.IsSecondary AND NOT status.loadedServers.DoesExist(machineID) then
-                status.loadedServers[machineID] = "1"
-                channelDir = CreateObject("roAssociativeArray")
-                channelDir.server = server
-                channelDir.sourceUrl = ""
-                channelDir.key = "/system/appstore"
-                channelDir.Title = "Channel Directory"
-                if AreMultipleValidatedServers() then
-                    channelDir.ShortDescriptionLine2 = "Browse channels to install on " + server.name
+                if m.FirstServer then
+                    m.FirstServer = false
+
+                    if m.LoadingFacade <> invalid then
+                        m.LoadingFacade.Close()
+                        m.LoadingFacade = invalid
+                        m.GdmTimer.Active = false
+                        m.GdmTimer = invalid
+                    end if
+
+                    ' Add universal search now that we have a server
+                    univSearch = CreateObject("roAssociativeArray")
+                    univSearch.sourceUrl = ""
+                    univSearch.ContentType = "search"
+                    univSearch.Key = "globalsearch"
+                    univSearch.Title = "Search"
+                    univSearch.Description = "Search for items across all your sections and channels"
+                    univSearch.ShortDescriptionLine2 = univSearch.Description
+                    univSearch.SDPosterURL = "file://pkg:/images/search.png"
+                    univSearch.HDPosterURL = "file://pkg:/images/search.png"
+                    status.content.Unshift(univSearch)
+                    m.Listener.OnDataLoaded(m.RowIndexes["misc"], status.content, 0, status.content.Count(), true)
                 else
-                    channelDir.ShortDescriptionLine2 = "Browse channels to install"
+                    m.Listener.OnDataLoaded(m.RowIndexes["misc"], status.content, status.content.Count() - 1, 1, true)
                 end if
-                channelDir.Description = channelDir.ShortDescriptionLine2
-                channelDir.SDPosterURL = "file://pkg:/images/more.png"
-                channelDir.HDPosterURL = "file://pkg:/images/more.png"
-                status.content.Push(channelDir)
-            end if
-
-            if m.FirstServer then
-                m.FirstServer = false
-
-                if m.LoadingFacade <> invalid then
-                    m.LoadingFacade.Close()
-                    m.LoadingFacade = invalid
-                    m.GdmTimer.Active = false
-                    m.GdmTimer = invalid
-                end if
-
-                ' Add universal search now that we have a server
-                univSearch = CreateObject("roAssociativeArray")
-                univSearch.sourceUrl = ""
-                univSearch.ContentType = "search"
-                univSearch.Key = "globalsearch"
-                univSearch.Title = "Search"
-                univSearch.Description = "Search for items across all your sections and channels"
-                univSearch.ShortDescriptionLine2 = univSearch.Description
-                univSearch.SDPosterURL = "file://pkg:/images/search.png"
-                univSearch.HDPosterURL = "file://pkg:/images/search.png"
-                status.content.Unshift(univSearch)
-                m.Listener.OnDataLoaded(m.RowIndexes["misc"], status.content, 0, status.content.Count(), true)
-            else
-                m.Listener.OnDataLoaded(m.RowIndexes["misc"], status.content, status.content.Count() - 1, 1, true)
             end if
         end if
     else if requestContext.requestType = "servers" then
@@ -754,10 +757,18 @@ Sub homeOnUrlEvent(msg, requestContext)
                 else
                     newServer.name = firstOf(serverElem@name, newServer.name) + " (shared by " + serverElem@sourceTitle + ")"
                     newServer.owned = false
+
+                    ' Request server details (ensure we have a machine ID, check
+                    ' transcoding support, etc.)
+                    newRequest = newServer.CreateRequest("", "/")
+                    newContext = CreateObject("roAssociativeArray")
+                    newContext.requestType = "server"
+                    newContext.server = newServer
+                    GetViewController().StartRequest(newRequest, m, newContext)
                 end if
                 PutPlexMediaServer(newServer)
 
-                Debug("Added shared server: " + tostr(newServer.name))
+                Debug("Added myPlex server: " + tostr(newServer.name))
             end if
         next
     end if
