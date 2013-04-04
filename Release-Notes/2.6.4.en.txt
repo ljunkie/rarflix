@@ -1,0 +1,6 @@
+NEW:
+  - Upgraded analytics.
+  - Add X-Plex- headers more often, increases support for certain PMS features.
+
+FIXES:
+  - Detect transcoding support for shared servers.

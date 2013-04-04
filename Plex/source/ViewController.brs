@@ -375,6 +375,7 @@ Sub vcShowReleaseNotes()
     paragraphs.Push(" - Show HD branding more consistently.")
     paragraphs.Push(" - Add more detail to subtitle selection UI.")
     paragraphs.Push(" - Fix WebKit channel playback.")
+    paragraphs.Push(" - Detect transcoder support of shared servers.")
 
     screen = createParagraphScreen(header, paragraphs, m)
     screen.ScreenName = "Release Notes"
