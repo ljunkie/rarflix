@@ -651,6 +651,10 @@ Sub homeOnUrlEvent(msg, requestContext)
             server.AllowsMediaDeletion = (xml@allowMediaDeletion = "1")
             server.IsAvailable = true
             server.IsSecondary = (xml@serverClass = "secondary")
+            if server.AccessToken = invalid AND ServerVersionCompare(xml@version, [0, 9, 7, 15]) then
+                server.AccessToken = GetMyPlexManager().AuthToken
+            end if
+
             PutPlexMediaServer(server)
 
             Debug("Fetched additional server information (" + tostr(server.name) + ", " + tostr(server.machineID) + ")")
