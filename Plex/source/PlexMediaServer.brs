@@ -49,6 +49,7 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.IsConfigured = false
     pms.IsAvailable = false
     pms.IsSecondary = false
+    pms.SupportsMultiuser = false
 
     ' For using the view controller for HTTP requests
     pms.ScreenID = -3

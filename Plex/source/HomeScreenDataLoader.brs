@@ -653,6 +653,7 @@ Sub homeOnUrlEvent(msg, requestContext)
             server.AllowsMediaDeletion = server.owned AND (xml@allowMediaDeletion = "1")
             server.IsAvailable = true
             server.IsSecondary = (xml@serverClass = "secondary")
+            server.SupportsMultiuser = (xml@multiuser = "1")
             if server.AccessToken = invalid AND ServerVersionCompare(xml@version, [0, 9, 7, 15]) then
                 server.AccessToken = GetMyPlexManager().AuthToken
             end if
