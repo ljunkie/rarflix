@@ -633,7 +633,7 @@ Sub vcUpdateScreenProperties(screen)
     if GetInterface(screen.Screen, "ifHttpAgent") <> invalid AND screen.Item <> invalid AND screen.Item.server <> invalid AND screen.Item.server.AccessToken <> invalid then
         screen.Screen.SetCertificatesDepth(5)
         screen.Screen.SetCertificatesFile("common:/certs/ca-bundle.crt")
-        screen.Screen.AddHeader("X-Plex-Token", screen.Item.server.AccessToken)
+        AddAccountHeaders(screen.Screen, screen.Item.server.AccessToken)
     end if
 
     if screen.NumBreadcrumbs <> 0 then

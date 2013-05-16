@@ -185,8 +185,8 @@ Sub audioPlayerSetContext(context, contextIndex, screen, startPlayer)
         m.ContextScreenID = invalid
     end if
 
-    if item.server <> invalid AND item.server.AccessToken <> invalid then
-        m.audioPlayer.AddHeader("X-Plex-Token", item.server.AccessToken)
+    if item.server <> invalid then
+        AddAccountHeaders(m.audioPlayer, item.server.AccessToken)
     end if
 
     ' TODO: Do we want to loop? Always/Sometimes/Never/Preference?

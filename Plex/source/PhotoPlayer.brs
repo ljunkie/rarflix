@@ -19,16 +19,12 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
     obj.Screen = screen
     if type(context) = "roArray" then
         obj.Item = context[contextIndex]
-        if obj.Item.server.AccessToken <> invalid then
-            screen.AddHeader("X-Plex-Token", obj.Item.server.AccessToken)
-        end if
+        AddAccountHeaders(screen, obj.Item.server.AccessToken)
         screen.SetContentList(context)
         screen.SetNext(contextIndex, true)
     else
         obj.Item = context
-        if obj.Item.server.AccessToken <> invalid then
-            screen.AddHeader("X-Plex-Token", obj.Item.server.AccessToken)
-        end if
+        AddAccountHeaders(screen, obj.Item.server.AccessToken)
         screen.AddContent(context)
         screen.SetNext(0, true)
     end if

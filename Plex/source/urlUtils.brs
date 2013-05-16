@@ -43,8 +43,21 @@ Sub AddPlexHeaders(transferObj, token=invalid)
     transferObj.AddHeader("X-Plex-Product", "Plex for Roku")
     transferObj.AddHeader("X-Plex-Device", GetGlobal("rokuModel"))
 
+    AddAccountHeaders(transferObj, token)
+End Sub
+
+Sub AddAccountHeaders(transferObj, token=invalid)
     if token <> invalid then
         transferObj.AddHeader("X-Plex-Token", token)
+    end if
+
+    myplex = GetMyPlexManager()
+    if myplex.Username <> invalid then
+        transferObj.AddHeader("X-Plex-Username", myplex.Username)
+    end if
+
+    if myplex.AccountID <> invalid then
+        transferObj.AddHeader("X-Plex-AccountID", myplex.AccountID)
     end if
 End Sub
 

@@ -42,6 +42,9 @@ Function createMyPlexManager(viewController) As Object
     obj.ExecutePostCommand = mpExecutePostCommand
 
     obj.IsSignedIn = false
+    obj.Username = invalid
+    obj.EmailAddress = invalid
+    obj.AccountID = invalid
     obj.CheckAuthentication = mpCheckAuthentication
 
     obj.TranscodeServer = invalid
@@ -71,8 +74,9 @@ Function mpValidateToken(token) As Boolean
     if type(event) = "roUrlEvent" AND event.GetInt() = 1 AND event.GetResponseCode() = 201 then
         xml = CreateObject("roXMLElement")
         xml.Parse(event.GetString())
-        m.Username = xml.username.GetText()
-        m.EmailAddress = xml.email.GetText()
+        m.Username = xml@username
+        m.EmailAddress = xml@email
+        m.AccountID = xml@id
         m.IsSignedIn = true
         m.AuthToken = token
 

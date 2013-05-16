@@ -139,9 +139,7 @@ End Function
 Function pmsCreateRequest(sourceUrl, key) As Object
     url = FullUrl(m.serverUrl, sourceUrl, key)
     req = CreateURLTransferObject(url)
-    if m.AccessToken <> invalid then
-        req.AddHeader("X-Plex-Token", m.AccessToken)
-    end if
+    AddAccountHeaders(req, m.AccessToken)
     req.AddHeader("X-Plex-Client-Capabilities", Capabilities())
     req.AddHeader("Accept", "application/xml")
     req.SetCertificatesFile("common:/certs/ca-bundle.crt")
