@@ -139,6 +139,8 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
         GetViewController().StartRequest(httpRequest, m, context)
     end if
 
+    if NOT server.owned then return
+
     ' Request sections
     sections = CreateObject("roAssociativeArray")
     sections.server = server
@@ -731,39 +733,27 @@ Sub homeOnUrlEvent(msg, requestContext)
 
                 newServer.AccessToken = firstOf(serverElem@accessToken, GetMyPlexManager().AuthToken)
 
-                if serverElem@owned = "1" then
-                    ' If we got local addresses, kick off simultaneous requests for all
-                    ' of them. The first one back will win, so we should always use the
-                    ' most efficient connection.
-                    localAddresses = strTokenize(serverElem@localAddresses, ",")
-                    for each localAddress in localAddresses
-                        localServer = newPlexMediaServer("http://" + localAddress + ":32400", serverElem@name, serverElem@machineIdentifier)
-                        localServer.owned = true
-                        localServer.local = true
-                        localServer.AccessToken = firstOf(serverElem@accessToken, GetMyPlexManager().AuthToken)
-                        m.CreateServerRequests(localServer, true, false)
-                    next
+                ' If we got local addresses, kick off simultaneous requests for all
+                ' of them. The first one back will win, so we should always use the
+                ' most efficient connection.
+                localAddresses = strTokenize(serverElem@localAddresses, ",")
+                for each localAddress in localAddresses
+                    localServer = newPlexMediaServer("http://" + localAddress + ":32400", serverElem@name, serverElem@machineIdentifier)
+                    localServer.owned = (serverElem@owned = "1")
+                    localServer.local = true
+                    localServer.AccessToken = firstOf(serverElem@accessToken, GetMyPlexManager().AuthToken)
+                    m.CreateServerRequests(localServer, true, false)
+                next
 
+                if serverElem@owned = "1" then
                     newServer.name = firstOf(serverElem@name, newServer.name)
                     newServer.owned = true
                     newServer.local = false
-
-                    ' An owned server that we didn't have configured, request
-                    ' its sections and channels now.
-                    m.CreateServerRequests(newServer, true, false)
                 else
                     newServer.name = firstOf(serverElem@name, newServer.name) + " (shared by " + serverElem@sourceTitle + ")"
                     newServer.owned = false
-
-                    ' Request server details (ensure we have a machine ID, check
-                    ' transcoding support, etc.)
-                    newRequest = newServer.CreateRequest("", "/")
-                    newContext = CreateObject("roAssociativeArray")
-                    newContext.requestType = "server"
-                    newContext.server = newServer
-                    GetViewController().StartRequest(newRequest, m, newContext)
                 end if
-                PutPlexMediaServer(newServer)
+                m.CreateServerRequests(newServer, true, false)
 
                 Debug("Added myPlex server: " + tostr(newServer.name))
             end if
