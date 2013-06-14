@@ -341,3 +341,20 @@ Sub ReorderItemsByKeyPriority(items, keys)
         end for
     next
 End Sub
+
+'******************************************************
+'Check for minimum version support
+'******************************************************
+Function CheckMinimumVersion(versionArr, requiredVersion) As Boolean
+    index = 0
+    for each num in versionArr
+        if index >= requiredVersion.count() then exit for
+        if num < requiredVersion[index] then
+            return false
+        else if num > requiredVersion[index] then
+            return true
+        end if
+        index = index + 1
+    next
+    return true
+End Function

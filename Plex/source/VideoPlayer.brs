@@ -544,6 +544,10 @@ Function videoCanDirectPlay(mediaItem) As Boolean
 
     if mediaItem.container = "wmv" then
         ' TODO: What exactly should we check here?
+        if major > 3 then
+            Debug("videoCanDirectPlay: wmv not supported by version " + tostr(major))
+            return false
+        end if
 
         ' Based on docs, only WMA9.2 is supported for audio
         if stereoCodec = invalid OR Left(stereoCodec, 3) <> "wma" then
@@ -562,22 +566,17 @@ Function videoCanDirectPlay(mediaItem) As Boolean
     end if
 
     if mediaItem.container = "mkv" then
-        if major < 4 then
+        if NOT CheckMinimumVersion(versionArr, [5, 1]) then
             Debug("videoCanDirectPlay: mkv not supported by version " + tostr(major))
             return false
-        else
-            ' TODO(schuyler): Reenable for 4+ only if/when we can figure out
-            ' why so many MKVs fail.
-            Debug("videoCanDirectPlay: mkv (temporarily?) disallowed for version " + tostr(major))
+        end if
+
+        if (mediaItem.videoCodec <> "h264" AND mediaItem.videoCodec <> "mpeg4") then
+            Debug("videoCanDirectPlay: vc not h264/mpeg4")
             return false
         end if
 
-        if mediaItem.videoCodec <> "h264" then
-            Debug("videoCanDirectPlay: vc not h264")
-            return false
-        end if
-
-        if surroundSound AND (surroundCodec = "ac3" OR stereoCodec = "ac3") then
+        if surroundSound AND (surroundCodec = "ac3" OR stereoCodec = "ac3" OR surroundCodec = "dca") then
             mediaItem.canDirectPlay = true
             return true
         end if
