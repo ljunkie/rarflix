@@ -513,12 +513,12 @@ Function videoCanDirectPlay(mediaItem) As Boolean
             return false
         end if
 
-        if surroundSound AND surroundCodec <> invalid AND surroundCodec = "ac3" then
+        if surroundSound AND (surroundCodec = "ac3" OR stereoCodec = "ac3") then
             mediaItem.canDirectPlay = true
             return true
         end if
 
-        if stereoCodec <> invalid AND (stereoCodec = "aac" OR stereoCodec = "ac3") then
+        if stereoCodec = "aac" then
             mediaItem.canDirectPlay = true
             return true
         end if
@@ -569,12 +569,12 @@ Function videoCanDirectPlay(mediaItem) As Boolean
             return false
         end if
 
-        if surroundSound AND surroundCodec <> invalid AND surroundCodec = "ac3" then
+        if surroundSound AND (surroundCodec = "ac3" OR stereoCodec = "ac3") then
             mediaItem.canDirectPlay = true
             return true
         end if
 
-        if stereoCodec <> invalid AND (stereoCodec = "aac" OR stereoCodec = "ac3" OR stereoCodec = "mp3") then
+        if stereoCodec <> invalid AND (stereoCodec = "aac" OR stereoCodec = "mp3") then
             mediaItem.canDirectPlay = true
             return true
         end if
