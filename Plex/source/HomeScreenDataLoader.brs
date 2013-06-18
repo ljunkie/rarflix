@@ -139,13 +139,17 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
         GetViewController().StartRequest(httpRequest, m, context)
     end if
 
-    if NOT server.owned then return
-
     ' Request sections
     sections = CreateObject("roAssociativeArray")
     sections.server = server
     sections.key = "/library/sections"
-    m.AddOrStartRequest(sections, m.RowIndexes["sections"], startRequests)
+
+    if server.owned then
+        m.AddOrStartRequest(sections, m.RowIndexes["sections"], startRequests)
+    else
+        m.AddOrStartRequest(sections, m.RowIndexes["shared_sections"], startRequests)
+        return
+    end if
 
     ' Request recently used channels
     view = RegRead("row_visibility_channels", "preferences", "")
@@ -212,11 +216,8 @@ Sub homeCreateMyPlexRequests(startRequests As Boolean)
     ' Queue and recommendations requests
     m.CreateAllPlaylistRequests(startRequests)
 
-    ' Shared sections request
-    shared = CreateObject("roAssociativeArray")
-    shared.server = myPlex
-    shared.key = "/pms/system/library/sections"
-    m.AddOrStartRequest(shared, m.RowIndexes["shared_sections"], startRequests)
+    ' Instead of requesting /pms/system/library/sections we'll just request sections
+    ' from any online shared servers directly.
 End Sub
 
 Sub homeCreateAllPlaylistRequests(startRequests As Boolean)
