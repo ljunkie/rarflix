@@ -313,7 +313,13 @@ Function videoPlayerHandleMessage(msg) As Boolean
                     GetGlobalAA().AddReplace("show_underrun_warning", "1")
                 end if
             end if
-        else if msg.GetType() = 27 OR msg.GetType() = 31 then
+        else if msg.GetType() = 31 then
+            ' TODO(schuyler): DownloadDuration is completely incomprehensible to me.
+            ' It doesn't seem like it could be seconds or milliseconds, and I couldn't
+            ' seem to do anything to artificially affect it by tweaking PMS.
+            segInfo = msg.GetInfo()
+            Debug("Downloaded segment " + tostr(segInfo.Sequence) + " in " + tostr(segInfo.DownloadDuration) + "?s (" + tostr(segInfo.SegSize) + " bytes, buffer is now " + tostr(segInfo.BufferLevel) + "/" + tostr(segInfo.BufferSize))
+        else if msg.GetType() = 27 then
             ' This is an HLS Segment Info event. We don't really need to do
             ' anything with it. It includes info like the stream bandwidth,
             ' sequence, URL, and start time.
