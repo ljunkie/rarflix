@@ -636,6 +636,7 @@ Sub homeOnUrlEvent(msg, requestContext)
         if server.machineID <> invalid AND server.machineID <> xml@machineIdentifier then
             Debug("Ignoring server response from unexpected machine ID")
         else
+            duplicate = false
             if existing <> invalid then
                 if server.local = true then
                     Debug("Updating " + tostr(existing.name) + " to use local address: " + server.serverUrl)
@@ -643,8 +644,6 @@ Sub homeOnUrlEvent(msg, requestContext)
                 end if
                 if existing.online then duplicate = true
                 server = existing
-            else
-                duplicate = false
             end if
 
             server.name = firstOf(xml@friendlyName, server.name)
