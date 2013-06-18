@@ -137,6 +137,7 @@ Function videoPlayerCreateVideoPlayer()
 
     videoPlayer = CreateObject("roVideoScreen")
     videoPlayer.SetMessagePort(m.Port)
+    videoPlayer.EnableCookies()
 
     ' If we're playing the video from the server, add appropriate X-Plex
     ' headers.
