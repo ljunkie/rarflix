@@ -14,6 +14,10 @@ Function newDirectoryMetadata(container, item) As Object
     directory.MachineID = item@machineIdentifier
     directory.Owned = item@owned
 
+    if item@machineIdentifier <> invalid AND item@path <> invalid
+        directory.key = item@path
+    end if
+
     return directory
 End Function
 
