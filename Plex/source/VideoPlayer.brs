@@ -276,6 +276,7 @@ Function videoPlayerHandleMessage(msg) As Boolean
                     m.isPlayed = true
                 end if
             end if
+            m.playState = "playing"
             m.SendTimeline(true)
         else if msg.isRequestFailed() then
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed - message = " + tostr(msg.GetMessage()))
@@ -304,8 +305,6 @@ Function videoPlayerHandleMessage(msg) As Boolean
         else if msg.isStreamStarted() then
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isStreamStarted: position -> " + tostr(m.lastPosition))
             Debug("Message data -> " + tostr(msg.GetInfo()))
-            m.playState = "playing"
-            m.SendTimeline()
 
             if msg.GetInfo().IsUnderrun = true then
                 m.underrunCount = m.underrunCount + 1
