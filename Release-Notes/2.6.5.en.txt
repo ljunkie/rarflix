@@ -1,0 +1,12 @@
+NEW:
+  - Support for multiuser PMS.
+  - Ask myPlex for local IPs of shared servers.
+  - Add preferences for looping audio playback.
+  - Try to support channels that require non-search text input.
+
+FIXES:
+  - Correctly use local IPs when public IP is inaccessible.
+  - Only direct play stereo AC3 when connected to a receiver.
+  - Request sections directly from shared servers.
+  - Fix certain HLS channels.
+  - Use episode thumbnail on detail screen when launched from On Deck.

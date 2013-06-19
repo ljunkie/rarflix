@@ -372,13 +372,10 @@ Sub vcShowReleaseNotes()
     header = GetGlobal("appName") + " has been updated to " + GetGlobal("appVersionStr")
     paragraphs = []
     paragraphs.Push("Changes in this version include:")
-    paragraphs.Push(" - Fix crash caused by iOS update.")
-    paragraphs.Push(" - Fix multipart playback, including several channels.")
-    paragraphs.Push(" - Fix iTunes video playback.")
-    paragraphs.Push(" - Show HD branding more consistently.")
-    paragraphs.Push(" - Add more detail to subtitle selection UI.")
-    paragraphs.Push(" - Fix WebKit channel playback.")
-    paragraphs.Push(" - Detect transcoder support of shared servers.")
+    paragraphs.Push(" - Support for latest Plex Media Server features, such as multiuser.")
+    paragraphs.Push(" - Use local IP addresses more often.")
+    paragraphs.Push(" - Add preferences for looping audio playback.")
+    paragraphs.Push(" - Improved channel support.")
 
     screen = createParagraphScreen(header, paragraphs, m)
     screen.ScreenName = "Release Notes"
