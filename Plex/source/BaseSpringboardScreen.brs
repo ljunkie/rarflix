@@ -61,6 +61,8 @@ Function createBaseSpringboardScreen(context, index, viewController, includePred
     obj.SetupButtons = invalid
     obj.GetMediaDetails = invalid
 
+    obj.thumbnailsToReset = []
+
     ' Stretched and cropped posters both look kind of terrible, so zoom.
     screen.SetDisplayMode("zoom-to-fill")
 
@@ -110,6 +112,12 @@ Function sbHandleMessage(msg) As Boolean
         handled = true
 
         if msg.isScreenClosed() then
+            for each item in m.thumbnailsToReset
+                item.SDPosterUrl = item.SDGridThumb
+                item.HDPosterUrl = item.HDGridThumb
+            next
+            m.thumbnailsToReset.Clear()
+
             m.ViewController.PopScreen(m)
         else if msg.isButtonPressed() then
             buttonCommand = m.buttonCommands[str(msg.getIndex())]
@@ -147,6 +155,13 @@ Function sbRefresh(force=false)
         end if
     end if
 
+    ' See if we should switch the poster
+    if m.metadata.SDDetailThumb <> invalid then
+        m.metadata.SDPosterUrl = m.metadata.SDDetailThumb
+        m.metadata.HDPosterUrl = m.metadata.HDDetailThumb
+        m.thumbnailsToReset.Push(m.metadata)
+    end if
+
     m.Screen.setContent(m.metadata)
     m.Screen.AllowUpdates(false)
     m.SetupButtons()
@@ -155,6 +170,7 @@ Function sbRefresh(force=false)
         m.Screen.PrefetchPoster(m.metadata.SDPosterURL, m.metadata.HDPosterURL)
         SaveImagesForScreenSaver(m.metadata, ImageSizes(m.metadata.ViewGroup, m.metadata.Type))
     endif
+
     m.Screen.Show()
 End Function
 

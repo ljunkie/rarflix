@@ -4,6 +4,15 @@ Function newVideoMetadata(container, item, detailed=false) As Object
     ' so pass that to the base constructor.
     video = createBaseMetadata(container, item, item@grandparentThumb)
 
+    if item@grandparentThumb <> invalid AND item@thumb <> invalid AND video.server <> invalid then
+        sizes = ImageSizes(container.ViewGroup, item@type)
+
+        video.SDGridThumb = video.server.TranscodedImage(container.sourceUrl, item@grandparentThumb, sizes.sdWidth, sizes.sdHeight)
+        video.HDGridThumb = video.server.TranscodedImage(container.sourceUrl, item@grandparentThumb, sizes.hdWidth, sizes.hdHeight)
+        video.SDDetailThumb = video.server.TranscodedImage(container.sourceUrl, item@thumb, sizes.sdWidth, sizes.sdHeight)
+        video.HDDetailThumb = video.server.TranscodedImage(container.sourceUrl, item@thumb, sizes.hdWidth, sizes.hdHeight)
+    end if
+
     video.Refresh = videoRefresh
     video.ParseDetails = videoParseDetails
     video.SelectPartForOffset = videoSelectPartForOffset
