@@ -264,6 +264,7 @@ Sub showPreferencesScreen()
     m.AddItem({title: "Section Display"}, "sections")
     m.AddItem({title: "Subtitles"}, "subtitles")
     m.AddItem({title: "Slideshow"}, "slideshow")
+    m.AddItem({title: "Audio Preferences"}, "audio_prefs")
     m.AddItem({title: "Screensaver"}, "screensaver", m.GetEnumValue("screensaver"))
     m.AddItem({title: "Logging"}, "debug")
     m.AddItem({title: "Advanced Preferences"}, "advanced")
@@ -365,6 +366,10 @@ Function prefsMainHandleMessage(msg) As Boolean
             else if command = "debug" then
                 screen = createDebugLoggingScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["Logging"])
+                screen.Show()
+            else if command = "audio_prefs" then
+                screen = createAudioPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["Audio Preferences"])
                 screen.Show()
             else if command = "close" then
                 m.Screen.Close()
@@ -720,6 +725,67 @@ Function prefs1080HandleMessage(msg) As Boolean
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
             if command = "legacy1080p" OR command = "legacy1080pframerate" then
+                m.HandleEnumPreference(command, msg.GetIndex())
+            else if command = "close" then
+                m.Screen.Close()
+            end if
+        end if
+    end if
+
+    return handled
+End Function
+
+'*** Audio Preferences ***
+
+Function createAudioPrefsScreen(viewController) As Object
+    obj = createBasePrefsScreen(viewController)
+
+    obj.HandleMessage = prefsAudioHandleMessage
+
+    ' Loop album playback
+    loopalbums = [
+        { title: "Always", EnumValue: "always" },
+        { title: "Never", EnumValue: "never" },
+        { title: "Sometimes", EnumValue: "sometimes", ShortDescriptionLine2: "Loop playback when there are multiple songs." }
+    ]
+    obj.Prefs["loopalbums"] = {
+        values: loopalbums,
+        heading: "Loop when playing music",
+        default: "sometimes"
+    }
+
+    ' Theme music
+    theme_music = [
+        { title: "Loop", EnumValue: "loop" },
+        { title: "Play Once", EnumValue: "once" },
+        { title: "Disabled", EnumValue: "disabled" }
+    ]
+    obj.Prefs["theme_music"] = {
+        values: theme_music,
+        heading: "Play theme music in the background while browsing",
+        default: "loop"
+    }
+
+    obj.Screen.SetHeader("Audio Preferences")
+
+    obj.AddItem({title: "Loop Playback"}, "loopalbums", obj.GetEnumValue("loopalbums"))
+    obj.AddItem({title: "Theme Music"}, "theme_music", obj.GetEnumValue("theme_music"))
+    obj.AddItem({title: "Close"}, "close")
+
+    return obj
+End Function
+
+Function prefsAudioHandleMessage(msg) As Boolean
+    handled = false
+
+    if type(msg) = "roListScreenEvent" then
+        handled = true
+
+        if msg.isScreenClosed() then
+            m.ViewController.PopScreen(m)
+        else if msg.isListItemSelected() then
+            command = m.GetSelectedCommand(msg.GetIndex())
+            if command = "loopalbums" OR command = "theme_music" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "close" then
                 m.Screen.Close()
@@ -1349,22 +1415,10 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
         default: ""
     }
 
-    ' TV theme music
-    values = [
-        { title: "Enabled", EnumValue: "1" },
-        { title: "Disabled", EnumValue: "0" }
-    ]
-    obj.Prefs["play_theme_music"] = {
-        values: values,
-        heading: "Play theme music in the background while browsing",
-        default: "1"
-    }
-
     obj.Screen.SetHeader("Change the appearance of your sections")
 
     obj.AddItem({title: "TV Series"}, "use_grid_for_series", obj.GetEnumValue("use_grid_for_series"))
     obj.AddItem({title: "Reorder Rows"}, "section_row_order")
-    obj.AddItem({title: "Theme Music"}, "play_theme_music", obj.GetEnumValue("play_theme_music"))
     obj.AddItem({title: "Close"}, "close")
 
     return obj
@@ -1380,7 +1434,7 @@ Function prefsSectionDisplayHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "use_grid_for_series" OR command = "play_theme_music" then
+            if command = "use_grid_for_series" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "section_row_order" then
                 m.HandleReorderPreference(command, msg.GetIndex())

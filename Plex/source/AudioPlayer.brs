@@ -189,9 +189,18 @@ Sub audioPlayerSetContext(context, contextIndex, screen, startPlayer)
         AddAccountHeaders(m.audioPlayer, item.server.AccessToken)
     end if
 
-    ' TODO: Do we want to loop? Always/Sometimes/Never/Preference?
-    m.audioPlayer.SetLoop(context.Count() > 1 OR screen = invalid)
+    if screen = invalid then
+        loop = (RegRead("theme_music", "preferences", "loop") = "loop")
+    else
+        pref = RegRead("loopalbums", "preferences", "sometimes")
+        if pref = "sometimes" then
+            loop = (context.Count() > 1)
+        else
+            loop = (pref = "always")
+        end if
+    end if
 
+    m.audioPlayer.SetLoop(loop)
     m.audioPlayer.SetContentList(context)
 
     if startPlayer then
