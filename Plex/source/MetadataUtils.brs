@@ -110,6 +110,17 @@ Function newSearchMetadata(container, item) As Object
         metadata.HDPosterURL = "file://pkg:/images/search.png"
     end if
 
+    ' Special handling for search items inside channels, which may actually be
+    ' text input objects. There's no good way to tell. :[
+    if metadata.key.Left(1) = "/" then
+        ' If the item isn't for a search service and doesn't start with "Search",
+        ' we'll try using a keyboard screen. Anything else sounds like an honest
+        ' to goodness search and will get a search screen.
+        if instr(1, metadata.key, "/serviceSearch") <= 0 AND metadata.prompt.Left(6) <> "Search" then
+            metadata.ContentType = "keyboard"
+        end if
+    end if
+
     return metadata
 End Function
 

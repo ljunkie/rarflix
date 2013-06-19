@@ -2,7 +2,7 @@
 '* A simple wrapper around a keyboard screen.
 '*
 
-Function createKeyboardScreen(viewController As Object) As Object
+Function createKeyboardScreen(viewController As Object, item=invalid) As Object
     obj = CreateObject("roAssociativeArray")
     initBaseScreen(obj, viewController)
 
@@ -14,6 +14,7 @@ Function createKeyboardScreen(viewController As Object) As Object
 
     ' Standard properties for all our screen types
     obj.Screen = screen
+    obj.Item = item
 
     obj.Show = showKeyboardScreen
     obj.HandleMessage = kbHandleMessage
@@ -49,6 +50,23 @@ Function kbHandleMessage(msg) As Boolean
                     m.Text = m.Screen.GetText()
                     if m.Listener <> invalid then
                         m.Listener.OnUserInput(m.Text, m)
+                    else
+                        callback = CreateObject("roAssociativeArray")
+                        callback.Heading = m.Text
+                        callback.Item = CreateObject("roAssociativeArray")
+                        callback.Item.server = m.Item.server
+                        callback.Item.Title = m.Text
+                        callback.Item.sourceUrl = m.Item.sourceUrl
+                        callback.Item.viewGroup = m.Item.viewGroup
+
+                        if instr(1, m.Item.Key, "?") > 0 then
+                            callback.Item.Key = m.Item.Key + "&query=" + HttpEncode(m.Text)
+                        else
+                            callback.Item.Key = m.Item.Key + "?query=" + HttpEncode(m.Text)
+                        end if
+
+                        callback.OnAfterClose = createScreenForItemCallback
+                        m.ViewController.afterCloseCallback = callback
                     end if
                     m.Screen.Close()
                 end if

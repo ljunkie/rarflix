@@ -117,6 +117,8 @@ Function showPosterScreen() As Integer
         m.contentArray[0] = status
     end if
 
+    m.DialogShown = (container.DialogShown = true)
+
     m.focusedList = 0
     m.ShowList(0)
     if m.Facade <> invalid then m.Facade.Close()
@@ -223,13 +225,20 @@ Sub posterShowContentList(index)
     Debug("List style is " + tostr(status.listStyle) + ", " + tostr(status.listDisplayMode))
 
     if status.content.Count() = 0 AND NOT m.FilterMode then
-        dialog = createBaseDialog()
-        dialog.Facade = m.Facade
-        dialog.Title = "No items to display"
-        dialog.Text = "This directory appears to be empty."
-        dialog.Show()
-        m.Facade = invalid
-        m.closeOnActivate = true
+        if m.DialogShown then
+            m.Screen.Show()
+            m.Facade.Close()
+            m.Facade = invalid
+            m.Screen.Close()
+        else
+            dialog = createBaseDialog()
+            dialog.Facade = m.Facade
+            dialog.Title = "No items to display"
+            dialog.Text = "This directory appears to be empty."
+            dialog.Show()
+            m.Facade = invalid
+            m.closeOnActivate = true
+        end if
     else
         m.Screen.Show()
         m.Screen.SetFocusedListItem(status.focusedIndex)

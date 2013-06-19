@@ -173,6 +173,9 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             screen = createPhotoSpringboardScreen(context, contextIndex, m)
             screenName = "Photo Springboard"
         end if
+    else if contentType = "keyboard" then
+        screen = createKeyboardScreen(m, item)
+        screenName = "Keyboard"
     else if contentType = "search" then
         screen = createSearchScreen(item, m)
         screenName = "Search"
@@ -491,8 +494,9 @@ Sub vcPopScreen(screen)
 
     ' If some other screen requested this close, let it know.
     if m.afterCloseCallback <> invalid then
-        m.afterCloseCallback.OnAfterClose()
+        callback = m.afterCloseCallback
         m.afterCloseCallback = invalid
+        callback.OnAfterClose()
     end if
 End Sub
 
@@ -798,4 +802,8 @@ Sub InitWebServer(vc)
     ClassReply().AddHandler("/application/Stop", ProcessStopMediaRequest)
 
     vc.WebServer = InitServer({msgPort: vc.GlobalMessagePort, port: 8324})
+End Sub
+
+Sub createScreenForItemCallback()
+    GetViewController().CreateScreenForItem(m.Item, invalid, [firstOf(m.Heading, "")])
 End Sub
