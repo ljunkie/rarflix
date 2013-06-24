@@ -354,6 +354,7 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
     if item.ContentType = "photo" then
         return m.CreatePhotoPlayer(context, contextIndex)
     else if item.ContentType = "audio" then
+        m.AudioPlayer.Stop()
         return m.CreateScreenForItem(context, contextIndex, invalid)
     else if item.ContentType = "movie" OR item.ContentType = "episode" OR item.ContentType = "clip" then
         directplay = RegRead("directplay", "preferences", "0").toint()
