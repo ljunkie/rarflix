@@ -603,14 +603,13 @@ Function universalTranscodingVideoUrl(videoUrl As String, item As Object, seekVa
 
     builder.AddParam("X-Plex-Platform", "Roku")
 
+    extras = "add-limitation(scope=videoCodec&scopeName=h264&type=upperBound&name=video.level&value=" + RegRead("level", "preference", "40") + "&isRequired=true)"
+
     if SupportsSurroundSound(true, true) then
         if RegRead("fivepointone", "preferences", "1") = "1" then
-            extras = extras + "add-transcode-target-audio-codec(type=videoProfile&context=streaming&protocol=hls&audioCodec=ac3)"
+            extras = extras + "+add-transcode-target-audio-codec(type=videoProfile&context=streaming&protocol=hls&audioCodec=ac3)"
         end if
     end if
-
-    ' Theoretically we can handle H.264 level like this...
-    'extras = extras + "+add-limitation(scope=videoCodec&scopeName=h264&type=upperBound&name=video.level&value=" + RegRead("level", "preference", "40") + "&isRequired=true)+"
 
     if Len(extras) > 0 then
         builder.AddParam("X-Plex-Client-Profile-Extra", extras)
