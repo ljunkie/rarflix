@@ -11,6 +11,7 @@ Function createMyPlexManager(viewController) As Object
 
     obj.ExtraHeaders = {}
     obj.ExtraHeaders["X-Plex-Provides"] = "player"
+    obj.ExtraHeaders["X-Plex-Device-Name"] = RegRead("player_name", "preferences", GetGlobalAA().Lookup("rokuModel"))
 
     obj.ViewController = viewController
 
