@@ -300,7 +300,7 @@ Sub ParseVideoMedia(videoItem, sourceUrl) As Object
             if MediaPart@indexes <> invalid then
                 indexKeys = strTokenize(MediaPart@indexes, ",")
                 for each indexKey in indexKeys
-                    part.indexes[indexKey] = m.server.serverUrl + "/library/parts/" + tostr(part.id) + "/indexes/" + indexKey
+                    part.indexes[indexKey] = m.server.serverUrl + "/library/parts/" + tostr(part.id) + "/indexes/" + indexKey + "?interval=" + RegRead("bif_interval", "preferences", "10000")
                 next
             end if
 
