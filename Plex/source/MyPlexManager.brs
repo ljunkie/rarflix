@@ -90,7 +90,7 @@ Function mpValidateToken(token) As Boolean
     return m.IsSignedIn
 End Function
 
-Function mpCreateRequest(sourceUrl As String, path As String, appendToken=true As Boolean) As Object
+Function mpCreateRequest(sourceUrl As String, path As String, appendToken=true As Boolean, connectionUrl=invalid) As Object
     url = FullUrl(m.serverUrl, sourceUrl, path)
     req = CreateURLTransferObject(url)
     if appendToken AND m.AuthToken <> invalid then

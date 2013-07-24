@@ -12,6 +12,7 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.name = firstOf(pmsName, "Unknown")
     pms.machineID = machineID
     pms.owned = true
+    pms.synced = false
     pms.online = false
     pms.local = false
     pms.StopVideo = stopTranscode
@@ -136,8 +137,8 @@ Function issueCommand(commandPath)
     request.GetToString()
 End Function
 
-Function pmsCreateRequest(sourceUrl, key) As Object
-    url = FullUrl(m.serverUrl, sourceUrl, key)
+Function pmsCreateRequest(sourceUrl, key, appendToken=true, connectionUrl=invalid) As Object
+    url = FullUrl(firstOf(connectionUrl, m.serverUrl), sourceUrl, key)
     req = CreateURLTransferObject(url)
     AddAccountHeaders(req, m.AccessToken)
     req.AddHeader("X-Plex-Client-Capabilities", Capabilities())

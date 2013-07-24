@@ -126,16 +126,17 @@ Function homeCreateRow(name) As Integer
     return index
 End Function
 
-Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refreshRequest As Boolean)
+Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refreshRequest As Boolean, connectionUrl=invalid)
     if not refreshRequest then
         PutPlexMediaServer(server)
 
         ' Request server details (ensure we have a machine ID, check transcoding
         ' support, etc.)
-        httpRequest = server.CreateRequest("", "/")
+        httpRequest = server.CreateRequest("", "/", true, connectionUrl)
         context = CreateObject("roAssociativeArray")
         context.requestType = "server"
         context.server = server
+        context.connectionUrl = connectionUrl
         GetViewController().StartRequest(httpRequest, m, context)
     end if
 
@@ -143,6 +144,7 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
     sections = CreateObject("roAssociativeArray")
     sections.server = server
     sections.key = "/library/sections"
+    sections.connectionUrl = connectionUrl
 
     if server.owned then
         m.AddOrStartRequest(sections, m.RowIndexes["sections"], startRequests)
@@ -157,6 +159,7 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
         channels = CreateObject("roAssociativeArray")
         channels.server = server
         channels.key = "/channels/recentlyViewed"
+        channels.connectionUrl = connectionUrl
 
         allChannels = CreateObject("roAssociativeArray")
         allChannels.Title = "More Channels"
@@ -169,6 +172,7 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
         allChannels.server = server
         allChannels.sourceUrl = ""
         allChannels.Key = "/channels/all"
+        allChannels.connectionUrl = connectionUrl
         allChannels.SDPosterURL = "file://pkg:/images/more.png"
         allChannels.HDPosterURL = "file://pkg:/images/more.png"
         channels.item = allChannels
@@ -183,6 +187,7 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
         onDeck = CreateObject("roAssociativeArray")
         onDeck.server = server
         onDeck.key = "/library/onDeck"
+        onDeck.connectionUrl = connectionUrl
         onDeck.requestType = "media"
         m.AddOrStartRequest(onDeck, m.RowIndexes["on_deck"], startRequests)
     else
@@ -195,6 +200,7 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
         recents = CreateObject("roAssociativeArray")
         recents.server = server
         recents.key = "/library/recentlyAdded"
+        recents.connectionUrl = connectionUrl
         recents.requestType = "media"
         m.AddOrStartRequest(recents, m.RowIndexes["recently_added"], startRequests)
     else
@@ -261,7 +267,7 @@ Sub homeAddOrStartRequest(request As Object, row As Integer, startRequests As Bo
     status = m.contentArray[row]
 
     if startRequests then
-        httpRequest = request.server.CreateRequest("", request.Key)
+        httpRequest = request.server.CreateRequest("", request.Key, true, request.connectionUrl)
         request.row = row
         request.requestType = firstOf(request.requestType, "row")
 
@@ -638,9 +644,10 @@ Sub homeOnUrlEvent(msg, requestContext)
         else
             duplicate = false
             if existing <> invalid then
-                if server.local = true then
-                    Debug("Updating " + tostr(existing.name) + " to use local address: " + server.serverUrl)
-                    existing.serverUrl = server.serverUrl
+                if requestContext.connectionUrl <> invalid then
+                    existing.local = true
+                    Debug("Updating " + tostr(existing.name) + " to use local address: " + requestContext.connectionUrl)
+                    existing.serverUrl = requestContext.connectionUrl
                 end if
                 if existing.online then duplicate = true
                 server = existing
@@ -651,7 +658,7 @@ Sub homeOnUrlEvent(msg, requestContext)
             server.online = true
             server.SupportsAudioTranscoding = (xml@transcoderAudio = "1")
             server.SupportsVideoTranscoding = (xml@transcoderVideoQualities <> invalid)
-            server.SupportsPhotoTranscoding = server.machineID <> "myPlex"
+            server.SupportsPhotoTranscoding = NOT server.synced
             server.SupportsUniversalTranscoding = ServerVersionCompare(xml@version, [0, 9, 7, 15])
             server.AllowsMediaDeletion = server.owned AND (xml@allowMediaDeletion = "1")
             server.IsAvailable = true
@@ -733,17 +740,14 @@ Sub homeOnUrlEvent(msg, requestContext)
                 end if
 
                 newServer.AccessToken = firstOf(serverElem@accessToken, GetMyPlexManager().AuthToken)
+                newServer.synced = (serverElem@synced = "1")
 
                 ' If we got local addresses, kick off simultaneous requests for all
                 ' of them. The first one back will win, so we should always use the
                 ' most efficient connection.
                 localAddresses = strTokenize(serverElem@localAddresses, ",")
                 for each localAddress in localAddresses
-                    localServer = newPlexMediaServer("http://" + localAddress + ":32400", serverElem@name, serverElem@machineIdentifier)
-                    localServer.owned = (serverElem@owned = "1")
-                    localServer.local = true
-                    localServer.AccessToken = firstOf(serverElem@accessToken, GetMyPlexManager().AuthToken)
-                    m.CreateServerRequests(localServer, true, false)
+                    m.CreateServerRequests(newServer, true, false, "http://" + localAddress + ":32400")
                 next
 
                 if serverElem@owned = "1" then
