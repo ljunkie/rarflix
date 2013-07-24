@@ -137,7 +137,9 @@ Function videoPlayerCreateVideoPlayer()
 
     videoPlayer = CreateObject("roVideoScreen")
     videoPlayer.SetMessagePort(m.Port)
-    videoPlayer.EnableCookies()
+    if GetGlobal("rokuVersionArr", [0])[0] >= 4 then
+        videoPlayer.EnableCookies()
+    end if
 
     ' If we're playing the video from the server, add appropriate X-Plex
     ' headers.
