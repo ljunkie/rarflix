@@ -72,14 +72,6 @@ Sub setVideoBasics(video, container, item)
 
     video.ShortDescriptionLine1 = firstOf(item@title, item@name)
 
-    ' if a video has ever been watch mark as such, else mark partially if there's a recorded
-    ' offset
-    if video.Watched then
-        video.ShortDescriptionLine1 = video.ShortDescriptionLine1 + " (Watched)"
-    else if video.viewOffset <> invalid AND val(video.viewOffset) > 0 then
-        video.ShortDescriptionLine1 = video.ShortDescriptionLine1 + " (Partially Watched)"
-    end if
-
     ' Bookmark position represents the last watched so a video could be marked watched but
     ' have a bookmark not at the end if it was a subsequent viewing
     video.BookmarkPosition = 0
@@ -137,6 +129,16 @@ Sub setVideoBasics(video, container, item)
         end if
     else if video.ContentType = "clip" then
         video.ReleaseDate = firstOf(video.ReleaseDate, item@subtitle)
+    end if
+
+    video.CleanTitle = video.ShortDescriptionLine1
+
+    ' if a video has ever been watch mark as such, else mark partially if there's a recorded
+    ' offset
+    if video.Watched then
+        video.ShortDescriptionLine1 = video.ShortDescriptionLine1 + " (Watched)"
+    else if video.viewOffset <> invalid AND val(video.viewOffset) > 0 then
+        video.ShortDescriptionLine1 = video.ShortDescriptionLine1 + " (Partially Watched)"
     end if
 
     video.Title = video.ShortDescriptionLine1

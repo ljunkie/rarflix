@@ -259,7 +259,7 @@ End Function
 Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay)
     video = CreateObject("roAssociativeArray")
     video.PlayStart = seekValue
-    video.Title = item.Title
+    video.Title = firstOf(item.CleanTitle, item.Title)
 
     identifier = item.mediaContainerIdentifier
     headers = []
