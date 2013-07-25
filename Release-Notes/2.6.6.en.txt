@@ -1,0 +1,9 @@
+NEW:
+  - Send device name to myPlex.
+  - Allow audio player looping to be set from the now playing screen.
+
+FIXES:
+  - Fix crash on playback on firmware 3.x.
+  - Allow remote clients to start new audio playback.
+  - Respect H.264 level preference when using new transcoder.
+  - Fix for delete only working intermittently.

@@ -377,6 +377,7 @@ Sub vcShowReleaseNotes()
     paragraphs.Push(" - Use local IP addresses more often.")
     paragraphs.Push(" - Add preferences for looping audio playback.")
     paragraphs.Push(" - Improved channel support.")
+    paragraphs.Push(" - Fix for delete only working intermittently.")
 
     screen = createParagraphScreen(header, paragraphs, m)
     screen.ScreenName = "Release Notes"
