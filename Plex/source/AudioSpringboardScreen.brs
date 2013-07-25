@@ -135,6 +135,15 @@ Function audioHandleMessage(msg) As Boolean
                 else
                     dialog.SetButton("shuffle", "Shuffle: Off")
                 end if
+
+                if audioPlayer.ContextScreenID = m.ScreenID then
+                    if audioPlayer.Loop then
+                        dialog.SetButton("loop", "Loop: On")
+                    else
+                        dialog.SetButton("loop", "Loop: Off")
+                    end if
+                end if
+
                 dialog.SetButton("rate", "_rate_")
                 if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
                     dialog.SetButton("delete", "Delete permanently")
@@ -229,6 +238,16 @@ Function audioDialogHandleButton(command, data) As Boolean
         if audioPlayer.ContextScreenID = obj.ScreenID
             audioPlayer.SetContext(obj.Context, obj.CurIndex, obj, false)
         end if
+    else if command = "loop" then
+        audioPlayer = GetViewController().AudioPlayer
+        if audioPlayer.Loop then
+            m.SetButton(command, "Loop: Off")
+        else
+            m.SetButton(command, "Loop: On")
+        end if
+        audioPlayer.Loop = Not audioPlayer.Loop
+        audioPlayer.audioPlayer.SetLoop(audioPlayer.Loop)
+        m.Refresh()
     else if command = "delete" then
         obj.metadata.server.delete(obj.metadata.key)
         obj.closeOnActivate = true
