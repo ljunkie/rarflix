@@ -539,11 +539,11 @@ Function createAdvancedPrefsScreen(viewController) As Object
 
     obj.HandleMessage = prefsAdvancedHandleMessage
 
-    ' Transcoder version. We'll default to the "experimental" transcoder, but
+    ' Transcoder version. We'll default to the "universal" transcoder, but
     ' there's also a server version check.
     transcoder_version = [
-        { title: "Stable", EnumValue: "classic", ShortDescriptionLine2: "Use the older but more stable transcoder." },
-        { title: "Experimental", EnumValue: "universal" }
+        { title: "Legacy", EnumValue: "classic", ShortDescriptionLine2: "Use the older, legacy transcoder." },
+        { title: "Universal", EnumValue: "universal" }
     ]
     obj.Prefs["transcoder_version"] = {
         values: transcoder_version,
