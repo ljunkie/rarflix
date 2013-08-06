@@ -44,12 +44,6 @@ There are some additional targets in the Makefile, like `make rel install` to
 build a release, but you don't generally need them. One other nicety is the
 ability to take a screenshot using `make screenshot`.
 
-**Note:** Some Roku versions are beginning to require HTTP authentication for
-the installer. This is somewhat handled, but not necessarily robustly, so
-you may need to make some tweaks. You can set environment variables for
-`ROKU_DEV_USERNAME` and `ROKU_DEV_PASSWORD`, which default to `rokudev` and
-`plex` respectively.
-
 ### Debugging
 
 The Roku doesn't have logging per se, but dev channels are able to write
