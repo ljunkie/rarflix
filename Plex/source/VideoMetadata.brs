@@ -336,6 +336,7 @@ Sub ParseVideoMedia(videoItem, sourceUrl) As Object
                     stream.level = StreamItem@level
                     stream.profile = StreamItem@profile
                     stream.refFrames = StreamItem@refFrames
+                    stream.bitDepth = StreamItem@bitDepth
                 end if
 
                 bitrateSum = bitrateSum + validint(strtoi(firstOf(StreamItem@bitrate, "0")))

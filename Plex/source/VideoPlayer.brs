@@ -576,12 +576,20 @@ Function videoCanDirectPlay(mediaItem) As Boolean
             return false
         end if
 
-        if videoStream <> invalid AND firstOf(videoStream.refFrames, "0").toInt() > GetGlobal("maxRefFrames", 0) then
-            ' Not only can we not Direct Play, but we want to make sure we
-            ' don't try to Direct Stream.
-            mediaItem.forceTranscode = true
-            Debug("videoCanDirectPlay: too many ReFrames: " + tostr(videoStream.refFrames))
-            return false
+        if videoStream <> invalid then
+            if firstOf(videoStream.refFrames, "0").toInt() > GetGlobal("maxRefFrames", 0) then
+                ' Not only can we not Direct Play, but we want to make sure we
+                ' don't try to Direct Stream.
+                mediaItem.forceTranscode = true
+                Debug("videoCanDirectPlay: too many ReFrames: " + tostr(videoStream.refFrames))
+                return false
+            end if
+
+            if firstOf(videoStream.bitDepth, "0").toInt() > 8 then
+                mediaItem.forceTranscode = true
+                Debug("videoCanDirectPlay: bitDepth too high: " + tostr(videoStream.bitDepth))
+                return false
+            end if
         end if
 
         if surroundSound AND (surroundCodec = "ac3" OR stereoCodec = "ac3" OR surroundCodec = "dca") then
