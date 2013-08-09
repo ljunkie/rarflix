@@ -112,7 +112,7 @@ Sub setVideoBasics(video, container, item)
         parentIndex = firstOf(item@parentIndex, container.xml@parentIndex)
         if parentIndex <> invalid then
             video.ShortDescriptionLine2 = "Season " + parentIndex + " - " + episode
-	    video.parentIndex = parentIndex
+            video.parentIndex = parentIndex
 
             if val(parentIndex) >= 10 then
                 seasonStr = "S" + parentIndex
