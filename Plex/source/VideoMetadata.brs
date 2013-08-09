@@ -33,14 +33,6 @@ Function newVideoMetadata(container, item, detailed=false) As Object
 
     video.ReleaseDate = item@originallyAvailableAt
 
-    'grandparentKey -- for episode - RR
-    if item@grandparentKey <> invalid then
-       video.grandparentKey = item@grandparentKey
-    end if
-    if item@parentKey <> invalid then
-       video.parentKey = item@parentKey
-    end if
-
     length = item@duration
     if length <> invalid then
         video.Length = int(val(length)/1000)
