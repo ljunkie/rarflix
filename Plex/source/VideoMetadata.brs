@@ -72,6 +72,14 @@ Sub setVideoBasics(video, container, item)
 
     video.ShortDescriptionLine1 = firstOf(item@title, item@name)
 
+    'grandparentKey -- for episode - RR
+    if item@grandparentKey <> invalid then
+       video.grandparentKey = item@grandparentKey
+    end if
+    if item@parentKey <> invalid then
+       video.parentKey = item@parentKey
+    end if
+
     ' Bookmark position represents the last watched so a video could be marked watched but
     ' have a bookmark not at the end if it was a subsequent viewing
     video.BookmarkPosition = 0
@@ -104,6 +112,7 @@ Sub setVideoBasics(video, container, item)
         parentIndex = firstOf(item@parentIndex, container.xml@parentIndex)
         if parentIndex <> invalid then
             video.ShortDescriptionLine2 = "Season " + parentIndex + " - " + episode
+	    video.parentIndex = parentIndex
 
             if val(parentIndex) >= 10 then
                 seasonStr = "S" + parentIndex

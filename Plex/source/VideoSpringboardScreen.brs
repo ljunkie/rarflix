@@ -66,7 +66,10 @@ Sub videoSetupButtons()
 
         ' When delete is present we don't have enough room so we stuff delete
         ' and rate in a separate dialog.
+	' RR - when grandparentKey is present - we don't have enough room either. We present 'Show All Seasons' and 'Show Season #'
         if m.metadata.server.AllowsMediaDeletion then
+            m.AddButton("More...", "more")
+        else if m.metadata.grandparentKey <> invalid then
             m.AddButton("More...", "more")
         else
             m.AddRatingButton(m.metadata.UserRating, m.metadata.StarRating, "rateVideo")
@@ -124,6 +127,14 @@ Function videoHandleMessage(msg) As Boolean
                 dialog.Text = ""
                 dialog.Item = m.metadata
                 dialog.SetButton("rate", "_rate_")
+		' display View All Seasons if we have grandparentKey -- entered from a episode
+		if m.metadata.grandparentKey <> invalid then
+	           dialog.SetButton("showFromEpisode", "View All Seasons")
+		end if
+		' display View speicific season if we have parentKey/parentIndex -- entered from a episode
+		if m.metadata.parentKey <> invalid AND m.metadata.parentIndex <> invalid then
+	           dialog.SetButton("seasonFromEpisode", "View Season " + m.metadata.parentIndex)
+		end if
                 if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
                     dialog.SetButton("delete", "Delete permanently")
                 end if
@@ -153,6 +164,20 @@ Function videoDialogHandleButton(command, data) As Boolean
         obj.metadata.server.delete(obj.metadata.key)
         obj.closeOnActivate = true
         return true
+    else if command = "showFromEpisode" then
+        dummyItem = CreateObject("roAssociativeArray")
+        dummyItem.ContentType = "series"
+        dummyItem.key = obj.metadata.grandparentKey + "/children"
+        dummyItem.server = obj.metadata.server
+        obj.ViewController.CreateScreenForItem(dummyItem, invalid, ["Series"])
+	return true
+    else if command = "seasonFromEpisode" then
+        dummyItem = CreateObject("roAssociativeArray")
+        dummyItem.ContentType = "series"
+        dummyItem.key = obj.metadata.parentKey + "/children"
+        dummyItem.server = obj.metadata.server
+        obj.ViewController.CreateScreenForItem(dummyItem, invalid, ["Series"])
+	return true
     else if command = "rate" then
         Debug("videoHandleMessage:: Rate audio for key " + tostr(obj.metadata.ratingKey))
         rateValue% = (data /10)
