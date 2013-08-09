@@ -24,7 +24,7 @@ APPTITLE = PlexDev
 
 num_functions := $(shell grep -ri --include=*.brs 'end \(function\|sub\)' . | wc -l | tr -d ' ')
 
-.PHONY: manifest count_functions beta dev rel test
+.PHONY: manifest count_functions beta dev rel test rarflix
 
 beta: APPTITLE = PlexBeta
 beta: $(APPNAME)
@@ -38,9 +38,13 @@ dev: $(APPNAME)
 rel: APPTITLE = Plex
 rel: $(APPNAME)
 
+rarflix: APPTITLE = RARflix
+rarflix: $(APPNAME)
+
 manifest:
 	echo "Creating manifest for $(APPTITLE)"
 	sed s/APPTITLE/$(APPTITLE)/ < manifest.template > manifest
+#	sed s/APPTITLE/$(APPTITLE)/ < manifest.rarflix.template > manifest
 
 count_functions:
 	echo "Counting functions for $(APPTITLE), Roku v3.x limit is 512"
