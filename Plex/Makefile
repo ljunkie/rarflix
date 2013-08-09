@@ -43,8 +43,8 @@ rarflix: $(APPNAME)
 
 manifest:
 	echo "Creating manifest for $(APPTITLE)"
-	sed s/APPTITLE/$(APPTITLE)/ < manifest.template > manifest
-#	sed s/APPTITLE/$(APPTITLE)/ < manifest.rarflix.template > manifest
+#	sed s/APPTITLE/$(APPTITLE)/ < manifest.template > manifest
+	sed s/APPTITLE/$(APPTITLE)/ < manifest.rarflix.template > manifest
 
 count_functions:
 	echo "Counting functions for $(APPTITLE), Roku v3.x limit is 512"
