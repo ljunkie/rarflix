@@ -47,8 +47,8 @@ manifest:
 	sed s/APPTITLE/$(APPTITLE)/ < manifest.rarflix.template > manifest
 
 count_functions:
-	echo "Counting functions for $(APPTITLE), Roku v3.x limit is 512"
-	test $(num_functions) -le 512
+	echo "Counting functions for $(APPTITLE), Roku v5.x limit is 65536"
+	test $(num_functions) -le 65536
 
 screenshot:
 	curl -s -F passwd= -F mysubmit=Screenshot -F "archive=;filename=" -H "Expect:" "http://$(ROKU_DEV_TARGET)/plugin_inspect" > /dev/null
