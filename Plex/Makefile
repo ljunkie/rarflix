@@ -51,7 +51,11 @@ count_functions:
 	test $(num_functions) -le 512
 
 screenshot:
-	$(CURL) -s -F passwd= -F mysubmit=Screenshot -F "archive=;filename=" -H "Expect:" "http://$(ROKU_DEV_TARGET)/plugin_inspect" > /dev/null
-	$(CURL) -s "http://$(ROKU_DEV_TARGET)/pkgs/dev.jpg" > roku_screenshot.jpg
+	curl -s -F passwd= -F mysubmit=Screenshot -F "archive=;filename=" -H "Expect:" "http://$(ROKU_DEV_TARGET)/plugin_inspect" > /dev/null
+	curl -s "http://$(ROKU_DEV_TARGET)/pkgs/dev.jpg" > roku_screenshot.jpg
+
+download: $(APPNAME)
+	echo "Uploading latest package to GitHub"
+	./create_github_download.py $(ZIPREL)/$(APPNAME).zip
 
 all: $(APPNAME)

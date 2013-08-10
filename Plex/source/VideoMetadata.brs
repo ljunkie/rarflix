@@ -112,7 +112,7 @@ Sub setVideoBasics(video, container, item)
         parentIndex = firstOf(item@parentIndex, container.xml@parentIndex)
         if parentIndex <> invalid then
             video.ShortDescriptionLine2 = "Season " + parentIndex + " - " + episode
-	    video.parentIndex = parentIndex
+            video.parentIndex = parentIndex
 
             if val(parentIndex) >= 10 then
                 seasonStr = "S" + parentIndex
@@ -336,6 +336,7 @@ Sub ParseVideoMedia(videoItem, sourceUrl) As Object
                     stream.level = StreamItem@level
                     stream.profile = StreamItem@profile
                     stream.refFrames = StreamItem@refFrames
+                    stream.bitDepth = StreamItem@bitDepth
                 end if
 
                 bitrateSum = bitrateSum + validint(strtoi(firstOf(StreamItem@bitrate, "0")))

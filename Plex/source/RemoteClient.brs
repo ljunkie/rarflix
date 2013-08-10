@@ -77,6 +77,15 @@ Function ProcessPlayMediaRequest() As Boolean
             GetViewController().CloseScreenWithCallback(callback)
         else
             GetViewController().CreatePlayerForItem(children, matchIndex, seek)
+
+            ' If the screensaver is on, which we can't reliably know, then the
+            ' video won't start until the user wakes the Roku up. We can do that
+            ' for them by sending a harmless keystroke. Down is harmless, as long
+            ' as they started a video or slideshow.
+            if GetViewController().IsVideoPlaying() OR children[matchIndex].ContentType = "photo" then
+                req = CreateURLTransferObject("http://127.0.0.1:8060/keypress/Down")
+                req.AsyncPostFromString("")
+            end if
         end if
 
         m.http_code = 200
