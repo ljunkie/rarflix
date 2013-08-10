@@ -165,6 +165,21 @@ Function videoHandleMessage(msg) As Boolean
                 rateValue% = msg.getData() /10
                 m.metadata.UserRating = msg.getdata()
                 m.Item.server.Rate(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier,rateValue%.ToStr())
+            else if buttonCommand = "tomatoes" then
+                dialog = createBaseDialog()
+                dialog.Title = "Rotten Tomatoes Review"
+'                review_text = "Critic's score: " + tostr(m.metadata.tomatoData.ratings.critics_score) + "%" + chr(10)
+'                review_text = review_text + "Audience's score: " + tostr(m.metadata.tomatoData.ratings.audience_score) + "%" + chr(10)
+                review_text = tostr(m.metadata.tomatoData.ratings.critics_score) + "%  Critic's score" + chr(10)
+                review_text = review_text + tostr(m.metadata.tomatoData.ratings.audience_score) + "% Audience's score" + chr(10)
+               if m.metadata.tomatoData.critics_consensus <> invalid then
+                  review_text = review_text + tostr(m.metadata.tomatoData.critics_consensus)
+               end if
+               dialog.Text = review_text
+                dialog.SetButton("close", "Back")
+                dialog.HandleButton = videoDialogHandleButton
+                dialog.ParentScreen = m
+                dialog.Show()
             else
                 handled = false
             end if
