@@ -96,6 +96,9 @@ Sub videoGetMediaDetails(content)
     Debug("About to fetch meta-data for Content Type: " + tostr(content.contentType))
 
     m.metadata = content.ParseDetails()
+    if m.metadata.ContentType = "movie" AND RegRead("rottentomatoes", "preferences", "disabled") = "enabled" then
+        m.metadata.tomatoData = getRottenTomatoesData(m.metadata.CleanTitle)
+    endif
     m.media = m.metadata.preferredMediaItem
 End Sub
 
