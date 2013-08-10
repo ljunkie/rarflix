@@ -43,8 +43,10 @@ Sub videoSetupButtons()
         if m.metadata.viewCount <> invalid AND val(m.metadata.viewCount) > 0 then
             m.AddButton("Mark as unwatched", "unscrobble")
         else
-            if m.metadata.viewOffset <> invalid AND val(m.metadata.viewOffset) > 0 then
-                m.AddButton("Mark as unwatched", "unscrobble")
+            if RegRead("rottentomatoes", "preferences", "disabled") = "disabled" then
+                if m.metadata.viewOffset <> invalid AND val(m.metadata.viewOffset) > 0 then
+                    m.AddButton("Mark as unwatched", "unscrobble")
+                end if
             end if
             m.AddButton("Mark as watched", "scrobble")
         end if
@@ -62,6 +64,19 @@ Sub videoSetupButtons()
         endif
         if m.metadata.StarRating = invalid then
             m.metadata.StarRating = 0
+        endif
+
+        ' Rotten Tomatoes ratings, if enabled
+        if m.metadata.ContentType = "movie" AND RegRead("rottentomatoes", "preferences", "disabled") = "enabled" then
+            tomatoData = m.metadata.tomatoData
+            if tomatoData <> invalid AND tomatoData.ratings <> invalid AND tomatoData.ratings.critics_score <> invalid then
+                if tomatoData.ratings.critics_score = -1 then
+                    rating_string = "Not rated"
+                else
+                    rating_string = tostr(tomatoData.ratings.critics_score) + "%"
+                endif
+                m.AddButton(rating_string + " on Rotten Tomatoes", "tomatoes")
+            endif
         endif
 
         ' When delete is present we don't have enough room so we stuff delete
