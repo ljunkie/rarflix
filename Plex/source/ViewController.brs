@@ -500,8 +500,7 @@ Sub vcShow()
         m.ShowReleaseNotes()
         RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")
     else
-        'm.Home = m.CreateHomeScreen()
-        m.ShowReleaseNotes()
+        m.Home = m.CreateHomeScreen()
     end if
 
     Debug("Starting global message loop")
