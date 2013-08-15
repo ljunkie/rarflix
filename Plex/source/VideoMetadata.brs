@@ -288,6 +288,8 @@ Sub ParseVideoMedia(videoItem, sourceUrl) As Object
         media.optimized = MediaItem@optimizedForStreaming
         media.duration = validint(strtoi(firstOf(MediaItem@duration, "0")))
         media.bitrate = validint(strtoi(firstOf(MediaItem@bitrate, "0")))
+        media.width = validint(strtoi(firstOf(MediaItem@width, "0")))
+        media.height = validint(strtoi(firstOf(MediaItem@height, "0")))
 
         bitrateSum = 0
 
@@ -337,6 +339,7 @@ Sub ParseVideoMedia(videoItem, sourceUrl) As Object
                     stream.profile = StreamItem@profile
                     stream.refFrames = StreamItem@refFrames
                     stream.bitDepth = StreamItem@bitDepth
+                    stream.anamorphic = (StreamItem@anamorphic = "1")
                 end if
 
                 bitrateSum = bitrateSum + validint(strtoi(firstOf(StreamItem@bitrate, "0")))

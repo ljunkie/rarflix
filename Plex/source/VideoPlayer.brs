@@ -497,10 +497,16 @@ Function videoCanDirectPlay(mediaItem) As Boolean
         return false
     end if
 
-    if mediaItem.aspectRatio > 2.2 AND NOT GetGlobal("playsAnamorphic", false) then
+    if (videoStream <> invalid AND videoStream.anamorphic) AND NOT GetGlobal("playsAnamorphic", false) then
         Debug("videoCanDirectPlay: anamorphic videos not supported")
         return false
     end if
+
+    if mediaItem.height > 1080 then
+        Debug("videoCanDirectPlay: height is greater than 1080: " + tostr(mediaItem.height))
+        return false
+    end if
+
 
     if mediaItem.container = "mp4" OR mediaItem.container = "mov" OR mediaItem.container = "m4v" then
         if (mediaItem.videoCodec <> "h264" AND mediaItem.videoCodec <> "mpeg4") then
