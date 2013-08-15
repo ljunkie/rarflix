@@ -1,0 +1,9 @@
+NEW:
+  - Add "View All Seasons" and "View Season #" options.
+  - Support for Direct Play of MKV and FLAC.
+
+FIXES:
+  - Wake the Roku from its screensaver when playing from a remote.
+  - Don't try to Direct Play videos with overly large dimensions.
+  - Fix timeline reporting for long videos.
+  - Use English names for unsupported languages.

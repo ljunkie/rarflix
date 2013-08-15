@@ -362,8 +362,9 @@ Sub vcShowReleaseNotes()
     paragraphs.Push(" - Support for latest Plex Media Server features, such as multiuser.")
     paragraphs.Push(" - Use local IP addresses more often.")
     paragraphs.Push(" - Add preferences for looping audio playback.")
-    paragraphs.Push(" - Improved channel support.")
     paragraphs.Push(" - Fix for delete only working intermittently.")
+    paragraphs.Push(" - Support for MKV and FLAC on latest firmware.")
+    paragraphs.Push(" - Fix timeline reporting for long videos.")
 
     screen = createParagraphScreen(header, paragraphs, m)
     screen.ScreenName = "Release Notes"
