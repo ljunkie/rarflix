@@ -43,8 +43,10 @@ Sub videoSetupButtons()
         if m.metadata.viewCount <> invalid AND val(m.metadata.viewCount) > 0 then
             m.AddButton("Mark as unwatched", "unscrobble")
         else
-            if m.metadata.viewOffset <> invalid AND val(m.metadata.viewOffset) > 0 then
-                m.AddButton("Mark as unwatched", "unscrobble")
+            if RegRead("rottentomatoes", "preferences", "disabled") = "disabled" then
+                if m.metadata.viewOffset <> invalid AND val(m.metadata.viewOffset) > 0 then
+                    m.AddButton("Mark as unwatched", "unscrobble")
+                end if
             end if
             m.AddButton("Mark as watched", "scrobble")
         end if
@@ -64,6 +66,19 @@ Sub videoSetupButtons()
             m.metadata.StarRating = 0
         endif
 
+        ' Rotten Tomatoes ratings, if enabled
+        if m.metadata.ContentType = "movie" AND RegRead("rottentomatoes", "preferences", "disabled") = "enabled" then
+            tomatoData = m.metadata.tomatoData
+            if tomatoData <> invalid AND tomatoData.ratings <> invalid AND tomatoData.ratings.critics_score <> invalid then
+                if tomatoData.ratings.critics_score = -1 then
+                    rating_string = "Not rated"
+                else
+                    rating_string = tostr(tomatoData.ratings.critics_score) + "%"
+                endif
+                m.AddButton(rating_string + " on Rotten Tomatoes", "tomatoes")
+            endif
+        endif
+
         ' When delete is present we don't have enough room so we stuff delete
         ' and rate in a separate dialog.
         ' RR - when grandparentKey is present - we don't have enough room
@@ -81,6 +96,9 @@ Sub videoGetMediaDetails(content)
     Debug("About to fetch meta-data for Content Type: " + tostr(content.contentType))
 
     m.metadata = content.ParseDetails()
+    if m.metadata.ContentType = "movie" AND RegRead("rottentomatoes", "preferences", "disabled") = "enabled" then
+        m.metadata.tomatoData = getRottenTomatoesData(m.metadata.CleanTitle)
+    endif
     m.media = m.metadata.preferredMediaItem
 End Sub
 
@@ -147,6 +165,21 @@ Function videoHandleMessage(msg) As Boolean
                 rateValue% = msg.getData() /10
                 m.metadata.UserRating = msg.getdata()
                 m.Item.server.Rate(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier,rateValue%.ToStr())
+            else if buttonCommand = "tomatoes" then
+                dialog = createBaseDialog()
+                dialog.Title = "Rotten Tomatoes Review"
+'                review_text = "Critic's score: " + tostr(m.metadata.tomatoData.ratings.critics_score) + "%" + chr(10)
+'                review_text = review_text + "Audience's score: " + tostr(m.metadata.tomatoData.ratings.audience_score) + "%" + chr(10)
+                review_text = tostr(m.metadata.tomatoData.ratings.critics_score) + "%  Critic's score" + chr(10)
+                review_text = review_text + tostr(m.metadata.tomatoData.ratings.audience_score) + "% Audience's score" + chr(10)
+               if m.metadata.tomatoData.critics_consensus <> invalid then
+                  review_text = review_text + tostr(m.metadata.tomatoData.critics_consensus)
+               end if
+               dialog.Text = review_text
+                dialog.SetButton("close", "Back")
+                dialog.HandleButton = videoDialogHandleButton
+                dialog.ParentScreen = m
+                dialog.Show()
             else
                 handled = false
             end if

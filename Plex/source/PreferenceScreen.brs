@@ -241,6 +241,17 @@ Function createPreferencesScreen(viewController) As Object
         default: "random"
     }
 
+    ' Rotten Tomatoes
+    rottentomatoes = [
+        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Get ratings from RottenTomatoes" },
+        { title: "Enabled", EnumValue: "enabled" }
+    ]
+    obj.Prefs["rottentomatoes"] = {
+        values: rottentomatoes,
+        heading: "Rotten Tomatoes",
+        default: "disabled"
+    }
+
     obj.myplex = GetGlobalAA().Lookup("myplex")
     obj.checkMyPlexOnActivate = false
 
@@ -266,6 +277,7 @@ Sub showPreferencesScreen()
     m.AddItem({title: "Slideshow"}, "slideshow")
     m.AddItem({title: "Audio Preferences"}, "audio_prefs")
     m.AddItem({title: "Screensaver"}, "screensaver", m.GetEnumValue("screensaver"))
+    m.AddItem({title: "Rotten Tomatoes"}, "rottentomatoes", m.GetEnumValue("rottentomatoes"))
     m.AddItem({title: "Logging"}, "debug")
     m.AddItem({title: "Advanced Preferences"}, "advanced")
 
@@ -339,7 +351,7 @@ Function prefsMainHandleMessage(msg) As Boolean
                     m.ViewController.InitializeOtherScreen(screen, invalid)
                     screen.Show()
                 end if
-            else if command = "quality" OR command = "quality_remote" OR command = "level" OR command = "fivepointone" OR command = "directplay" OR command = "screensaver" then
+            else if command = "quality" OR command = "quality_remote" OR command = "level" OR command = "fivepointone" OR command = "directplay" OR command = "screensaver" OR command = "rottentomatoes" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "slideshow" then
                 screen = createSlideshowPrefsScreen(m.ViewController)
