@@ -1037,7 +1037,7 @@ Function createVideoOptionsScreen(item, viewController, continuousPlay) As Objec
     if (item.server.owned OR item.server.SupportsMultiuser) AND item.preferredMediaItem <> invalid AND item.preferredMediaItem.preferredPart <> invalid AND item.preferredMediaItem.preferredPart.Id <> invalid then
         for each stream in item.preferredMediaItem.preferredPart.streams
             if stream.streamType = "2" then
-                language = firstOf(stream.Language, "Unknown")
+                language = GetSafeLanguageName(stream)
                 format = ucase(firstOf(stream.Codec, ""))
                 if format = "DCA" then format = "DTS"
                 if stream.Channels <> invalid then
@@ -1064,7 +1064,7 @@ Function createVideoOptionsScreen(item, viewController, continuousPlay) As Objec
 
                 audioStreams.Push({ title: title, EnumValue: stream.Id })
             else if stream.streamType = "3" then
-                label = firstOf(stream.Language, "Unknown")
+                label = GetSafeLanguageName(stream)
                 label = label + " (" + UCase(firstOf(stream.Codec, "")) + ")"
                 if shouldUseSoftSubs(stream) then
                     label = label + "*"

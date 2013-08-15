@@ -676,3 +676,33 @@ Function shouldUseSoftSubs(stream) As Boolean
 
     return false
 End Function
+
+Function GetSafeLanguageName(stream) As String
+    if stream = invalid OR stream.languageCode = invalid then return "Unknown"
+
+    ' We're not trying very hard, but try to use English names for common languages
+    ' that can't be rendered by the Roku.
+    if m.SafeLanguageNames = invalid then
+        m.SafeLanguageNames = {
+            ara: "Arabic",
+            arm: "Armenian",
+            bel: "Belarusian",
+            ben: "Bengali",
+            bul: "Bulgarian",
+            chi: "Chinese",
+            cze: "Czech",
+            gre: "Greek",
+            heb: "Hebrew",
+            hin: "Hindi",
+            jpn: "Japanese",
+            kor: "Korean",
+            rus: "Russian",
+            srp: "Serbian",
+            tha: "Thai",
+            ukr: "Ukrainian",
+            yid: "Yiddish"
+        }
+    end if
+
+    return firstOf(m.SafeLanguageNames[stream.languageCode], stream.Language, "Unknown")
+End Function
