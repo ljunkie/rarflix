@@ -19,7 +19,6 @@ Function createViewController() As Object
     controller.CreateTextInputScreen = vcCreateTextInputScreen
     controller.CreateEnumInputScreen = vcCreateEnumInputScreen
     controller.CreateReorderScreen = vcCreateReorderScreen
-    controller.CreateMyPlexPinScreen = vcCreateMyPlexPinScreen
     controller.CreateContextMenu = vcCreateContextMenu
 
     controller.CreatePhotoPlayer = vcCreatePhotoPlayer
@@ -269,19 +268,6 @@ Function vcCreateReorderScreen(items, breadcrumbs, show=true) As Dynamic
     screen.ScreenName = "Reorder"
 
     m.AddBreadcrumbs(screen, breadcrumbs)
-    m.UpdateScreenProperties(screen)
-    m.PushScreen(screen)
-
-    if show then screen.Show()
-
-    return screen
-End Function
-
-Function vcCreateMyPlexPinScreen(show=true)
-    screen = createMyPlexPinScreen(m)
-    screen.ScreenName = "myPlex PIN"
-
-    m.AddBreadcrumbs(screen, invalid)
     m.UpdateScreenProperties(screen)
     m.PushScreen(screen)
 

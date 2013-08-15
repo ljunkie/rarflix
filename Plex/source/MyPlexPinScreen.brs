@@ -28,6 +28,7 @@ Function createMyPlexPinScreen(viewController As Object) As Object
     obj.HandleMessage = pinHandleMessage
     obj.OnUrlEvent = pinOnUrlEvent
     obj.OnTimerExpired = pinOnTimerExpired
+    obj.ScreenName = "myPlex PIN"
 
     obj.myPlex = GetMyPlexManager()
     obj.pollUrl = invalid

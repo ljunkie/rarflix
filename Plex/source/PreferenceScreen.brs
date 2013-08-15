@@ -335,7 +335,9 @@ Function prefsMainHandleMessage(msg) As Boolean
                 else
                     m.checkMyPlexOnActivate = true
                     m.myPlexIndex = msg.GetIndex()
-                    m.ViewController.CreateMyPlexPinScreen()
+                    screen = createMyPlexPinScreen(m.ViewController)
+                    m.ViewController.InitializeOtherScreen(screen, invalid)
+                    screen.Show()
                 end if
             else if command = "quality" OR command = "quality_remote" OR command = "level" OR command = "fivepointone" OR command = "directplay" OR command = "screensaver" then
                 m.HandleEnumPreference(command, msg.GetIndex())
