@@ -44,7 +44,6 @@ Function createMyPlexManager(viewController) As Object
     obj.IsSignedIn = false
     obj.Username = invalid
     obj.EmailAddress = invalid
-    obj.AccountID = invalid
     obj.CheckAuthentication = mpCheckAuthentication
 
     obj.TranscodeServer = invalid
@@ -76,7 +75,6 @@ Function mpValidateToken(token) As Boolean
         xml.Parse(event.GetString())
         m.Username = xml@username
         m.EmailAddress = xml@email
-        m.AccountID = xml@id
         m.IsSignedIn = true
         m.AuthToken = token
 

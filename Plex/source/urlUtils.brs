@@ -56,10 +56,6 @@ Sub AddAccountHeaders(transferObj, token=invalid)
     if myplex.Username <> invalid then
         transferObj.AddHeader("X-Plex-Username", myplex.Username)
     end if
-
-    if myplex.AccountID <> invalid then
-        transferObj.AddHeader("X-Plex-Account", myplex.AccountID)
-    end if
 End Sub
 
 
