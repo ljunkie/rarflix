@@ -614,7 +614,7 @@ Function universalTranscodingVideoUrl(videoUrl As String, item As Object, seekVa
 
     builder.AddParam("X-Plex-Platform", "Roku")
 
-    extras = "add-limitation(scope=videoCodec&scopeName=h264&type=upperBound&name=video.level&value=" + RegRead("level", "preference", "40") + "&isRequired=true)"
+    extras = "add-limitation(scope=videoCodec&scopeName=h264&type=upperBound&name=video.level&value=" + RegRead("level", "preferences", "40") + "&isRequired=true)"
 
     if SupportsSurroundSound(true, true) then
         if RegRead("fivepointone", "preferences", "1") = "1" then
