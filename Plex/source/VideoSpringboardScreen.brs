@@ -69,14 +69,17 @@ Sub videoSetupButtons()
         ' Rotten Tomatoes ratings, if enabled
         if m.metadata.ContentType = "movie" AND RegRead("rottentomatoes", "preferences", "disabled") = "enabled" then
             tomatoData = m.metadata.tomatoData
+            rating_string = "Not Found"
             if tomatoData <> invalid AND tomatoData.ratings <> invalid AND tomatoData.ratings.critics_score <> invalid then
-                if tomatoData.ratings.critics_score = -1 then
+                if tomatoData.ratings.critics_score = -1 AND tomatoData.ratings.audience_score > 0
+                    rating_string = tostr(tomatoData.ratings.audience_score) + "%"
+                else if tomatoData.ratings.critics_score = -1 then
                     rating_string = "Not rated"
                 else
                     rating_string = tostr(tomatoData.ratings.critics_score) + "%"
                 endif
-                m.AddButton(rating_string + " on Rotten Tomatoes", "tomatoes")
             endif
+            m.AddButton(rating_string + " on Rotten Tomatoes", "tomatoes")
         endif
 
         ' When delete is present we don't have enough room so we stuff delete
@@ -168,14 +171,16 @@ Function videoHandleMessage(msg) As Boolean
             else if buttonCommand = "tomatoes" then
                 dialog = createBaseDialog()
                 dialog.Title = "Rotten Tomatoes Review"
-'                review_text = "Critic's score: " + tostr(m.metadata.tomatoData.ratings.critics_score) + "%" + chr(10)
-'                review_text = review_text + "Audience's score: " + tostr(m.metadata.tomatoData.ratings.audience_score) + "%" + chr(10)
-                review_text = tostr(m.metadata.tomatoData.ratings.critics_score) + "%  Critic's score" + chr(10)
-                review_text = review_text + tostr(m.metadata.tomatoData.ratings.audience_score) + "% Audience's score" + chr(10)
-               if m.metadata.tomatoData.critics_consensus <> invalid then
-                  review_text = review_text + tostr(m.metadata.tomatoData.critics_consensus)
-               end if
-               dialog.Text = review_text
+                review_text = "Movie was not found... sorry"
+		if m.metadata.tomatoData <> invalid  then 
+		     review_text = tostr(m.metadata.tomatoData.ratings.critics_score) + "%  Critic's score" + chr(10)
+		     review_text = review_text + tostr(m.metadata.tomatoData.ratings.audience_score) + "% Audience's score" + chr(10)
+		     if m.metadata.tomatoData.critics_consensus <> invalid then
+                        review_text = review_text + tostr(m.metadata.tomatoData.critics_consensus)
+                     end if
+		end if
+
+		dialog.Text = review_text		
                 dialog.SetButton("close", "Back")
                 dialog.HandleButton = videoDialogHandleButton
                 dialog.ParentScreen = m
