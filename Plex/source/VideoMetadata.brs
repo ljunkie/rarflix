@@ -36,7 +36,7 @@ Function newVideoMetadata(container, item, detailed=false) As Object
     length = item@duration
     if length <> invalid then
         video.Length = int(val(length)/1000)
-        video.RawLength = val(length)
+        video.RawLength = int(val(length))
     endif
 
     if container.ViewGroup = "Details" OR container.ViewGroup = "InfoList" then
