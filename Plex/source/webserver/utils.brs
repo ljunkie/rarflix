@@ -50,10 +50,6 @@ function AddGlobals(aa as Object)
     m.globals.append(aa)
 end function
 
-function min(a as Integer, b as Integer) as Integer
-    if a<b then return a else return b
-end function
-
 function dbglog(obj as Object, level as String, message as String, code=0 as Integer)
     tag = ""
     if isstr(obj)
@@ -156,24 +152,6 @@ function Now() as Object
     return this
 end function
 
-function UrlEncode(url as String) as String
-    ue = m.UrlEncoder
-    if ue = invalid
-        ue = CreateObject("roUrlTransfer")
-        m.UrlEncoder = ue
-    end if
-    return ue.UrlEncode(url)
-end function
-
-function UrlEscape(url as String) as String
-    ue = m.UrlEncoder
-    if ue = invalid
-        ue = CreateObject("roUrlTransfer")
-        m.UrlEncoder = ue
-    end if
-    return ue.escape(url)
-end function
-
 function UrlUnescape(url as String) as String
     ue = m.UrlEncoder
     if ue = invalid
@@ -226,21 +204,5 @@ end function
 function GetExtension(fn as String) as String
     l = fn.tokenize(".")
     if l.count()>0 then return l.GetTail() else return ""
-end function
-
-function deduceType(val as String, force=invalid as Dynamic) as Dynamic
-    if isstr(force)
-        tforce = lcase(force)
-        if tforce.right(6)="string" then return val
-        if tforce.left(3)="int" then return strtoi(val)
-        if tforce.left(4)="bool" then return (lcase(val)="true" or strtoi(val)=1)
-    end if
-    tval = lcase(val)
-    if tval="false" then return false
-    if tval="true" then return true
-    if tval="0" then return 0
-    tval = strtoi(val)
-    if tval<>0 then return tval
-    return val
 end function
 

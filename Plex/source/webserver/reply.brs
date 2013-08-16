@@ -229,7 +229,7 @@ function reply_generate_directory_listing() as Boolean
             end if
             if indicator<>invalid
                 uri = uriDir + item
-                safe_url = uri ' UrlEncode(uri) ' too much encoding
+                safe_url = uri
                 listing = listing + "<a href=" + Chr(34) + safe_url + Chr(34) + ">" + item
                 listing = listing + indicator
                 listing = listing + "</a>" + UnixNL()
