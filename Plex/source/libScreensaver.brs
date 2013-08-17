@@ -169,34 +169,6 @@ Function screensaverLib_RandomLocation(scr, image_width, image_height, loc)
     return loc
 End Function
 
-' Similar to screensaverLib_RandomLocations except that it repeatedly
-' generates locations in the four corners of the screen.
-'
-' Uses loc to store the last corner generated.
-Function screensaverLib_CornerLocations(scr, image_width, image_height, loc)
-    ' TOP LEFT is the default
-    if (loc = invalid) then loc = {x:scr.x,y:scr.y,corner:0}
-    if (loc.corner = 3) then
-        loc.corner = 0
-    else
-        loc.corner = loc.corner + 1
-    end if
-    if (loc.corner = 1) then
-        'TOP RIGHT
-        loc.x = scr.width + scr.x - image_width
-        loc.y = scr.y
-    else if (loc.corner = 2) then
-        'BOTTOM RIGHT
-        loc.x = scr.width  + scr.x - image_width
-        loc.y = scr.height + scr.y - image_height
-    else if (loc = 3) then
-        'BOTTOM LEFT
-        loc.x = scr.x
-        loc.y = scr.height + scr.y - image_height
-    end if
-    return loc
-End Function
-
 ' Similar to screensaverLib_RandomLocation except that it attempts
 ' to generate locations that would create smooth animation where the
 ' image travels across the screen. When it hits the perimeter it starts
@@ -224,9 +196,4 @@ Function screensaverLib_SmoothAnimation(scr, image_width, image_height, loc)
     loc.x = loc.x + loc.velocity_x
     loc.y = loc.y + loc.velocity_y
     return loc
-End Function
-
-' For testing. Always returns the top left. 
-Function screensaverLib_UpperLeft(scr, image_width, image_height, loc)
-    return {x:scr.x, y:scr.y}
 End Function

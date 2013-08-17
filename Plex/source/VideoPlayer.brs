@@ -11,11 +11,13 @@ Function createVideoPlayerScreen(metadata, seekValue, directPlayOptions, viewCon
     obj.Show = videoPlayerShow
     obj.HandleMessage = videoPlayerHandleMessage
     obj.OnTimerExpired = videoPlayerOnTimerExpired
+    obj.OnUrlEvent = videoPlayerOnUrlEvent
     obj.Cleanup = videoPlayerCleanup
 
     obj.SeekValue = seekValue
     obj.DirectPlayOptions = directPlayOptions
     obj.CreateVideoPlayer = videoPlayerCreateVideoPlayer
+    obj.StartTranscodeSessionRequest = videoPlayerStartTranscodeSessionRequest
 
     obj.pingTimer = invalid
     obj.lastPosition = 0
@@ -135,6 +137,13 @@ Function videoPlayerCreateVideoPlayer()
         end if
     end if
 
+    videoItem.OrigReleaseDate = videoItem.ReleaseDate
+    if videoItem.IsTranscoded then
+        videoItem.ReleaseDate = videoItem.ReleaseDate + "   Transcoded"
+    else
+        videoItem.ReleaseDate = videoItem.ReleaseDate + "   Direct Play"
+    end if
+
     videoPlayer = CreateObject("roVideoScreen")
     videoPlayer.SetMessagePort(m.Port)
     if GetGlobal("rokuVersionArr", [0])[0] >= 4 then
@@ -167,6 +176,8 @@ Function videoPlayerCreateVideoPlayer()
     videoPlayer.SetPositionNotificationPeriod(5)
 
     m.IsTranscoded = videoItem.IsTranscoded
+    m.videoItem = videoItem
+    m.videoPlayer = videoPlayer
 
     return videoPlayer
 End Function
@@ -308,6 +319,8 @@ Function videoPlayerHandleMessage(msg) As Boolean
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isStreamStarted: position -> " + tostr(m.lastPosition))
             Debug("Message data -> " + tostr(msg.GetInfo()))
 
+            m.StartTranscodeSessionRequest()
+
             if msg.GetInfo().IsUnderrun = true then
                 m.underrunCount = m.underrunCount + 1
                 if m.underrunCount = 4 and not GetGlobalAA().DoesExist("underrun_warning_shown") then
@@ -332,11 +345,62 @@ Function videoPlayerHandleMessage(msg) As Boolean
     return handled
 End Function
 
+Sub videoPlayerStartTranscodeSessionRequest()
+    if m.IsTranscoded then
+        httpRequest = m.Item.server.CreateRequest("", "/transcode/sessions/" + GetGlobal("rokuUniqueId"))
+        context = CreateObject("roAssociativeArray")
+        context.requestType = "transcode"
+        m.ViewController.StartRequest(httpRequest, m, context)
+    end if
+End Sub
+
 Sub videoPlayerOnTimerExpired(timer)
     if timer.Name = "ping" then
+        m.StartTranscodeSessionRequest()
         m.Item.server.PingTranscode()
     else if timer.Name = "timeline"
         m.SendTimeline(true)
+    end if
+End Sub
+
+Sub videoPlayerOnUrlEvent(msg, requestContext)
+    if requestContext.requestType = "transcode" then
+        if msg.GetResponseCode() = 200 then
+            xml = CreateObject("roXMLElement")
+            xml.Parse(msg.GetString())
+
+            if xml.TranscodeSession <> invalid then
+                Debug("--- Transcode Session Info ---")
+                Debug("Throttled: " + tostr(xml.TranscodeSession@throttled))
+                Debug("Progress: " + tostr(xml.TranscodeSession@progress))
+                Debug("Speed: " + tostr(xml.TranscodeSession@speed))
+                Debug("Video Decision: " + tostr(xml.TranscodeSession@videoDecision))
+                Debug("Audio Decision: " + tostr(xml.TranscodeSession@audioDecision))
+
+                if val(firstOf(xml.TranscodeSession@progress, "0")) >= 100 then
+                    curState = " (done)"
+                else if xml.TranscodeSession@throttled = "1" then
+                    curState = " (> 1x)"
+                else
+                    curState = " (" + tostr(xml.TranscodeSession@speed) + "x)"
+                end if
+
+                if xml.TranscodeSession@videoDecision = "transcode" then
+                    video = "convert"
+                else
+                    video = "copy"
+                end if
+
+                if xml.TranscodeSession@audioDecision = "transcode" then
+                    audio = "convert"
+                else
+                    audio = "copy"
+                end if
+
+                m.VideoItem.ReleaseDate = m.VideoItem.OrigReleaseDate + "   video: " + video + " audio: " + audio + curState
+                m.VideoPlayer.SetContent(m.VideoItem)
+            end if
+        end if
     end if
 End Sub
 

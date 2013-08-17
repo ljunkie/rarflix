@@ -273,7 +273,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
     end if
 
     ' add Video Relase date to support releaseDate option in Roku HUD - RR
-    video.releaseDate = item.ReleaseDate
+    video.ReleaseDate = tostr(item.ReleaseDate)
 
     ' set title to title + episode if episode - RR
     if item.EpisodeStr <> invalid then
@@ -416,7 +416,6 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
     end if
 
     video.IsTranscoded = true
-    video.releaseDate = video.releaseDate + "     Transcoded"
 
 	'We are transcoding, don't set fullHD if quality isn't 1080p
     if qualityPref < 9 then
@@ -883,7 +882,6 @@ Sub pmsAddDirectPlayInfo(video, item, mediaKey)
     video.FrameRate = item.FrameRate
     video.IsTranscoded = false
     video.StreamFormat = firstOf(mediaItem.container, "mp4")
-    video.releaseDate = video.releaseDate + "     Direct Play"
     if video.StreamFormat = "hls" then video.SwitchingStrategy = "full-adaptation"
 
     part = mediaItem.parts[mediaItem.curPartIndex]

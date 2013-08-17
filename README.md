@@ -77,3 +77,7 @@ So, any time you add a function, you need to make sure we're not over the limit
 and potentially delete another function (or subroutine) to free up a slot.
 While we're currently very close to the limit, there are plenty of areas that
 could be cleaned up to free some slots.
+
+In particular, the things we've borrowed from SDK examples (screensaver and
+web server) could easily be trimmed. UnixNL and WinNL could easily be inlined,
+and the various logging functions could be combined.
