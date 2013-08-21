@@ -139,6 +139,7 @@ Function videoPlayerCreateVideoPlayer()
 
     videoItem.OrigReleaseDate = videoItem.ReleaseDate
     if videoItem.IsTranscoded then
+        server = videoItem.TranscodeServer
         videoItem.ReleaseDate = videoItem.ReleaseDate + "   Transcoded"
     else
         videoItem.ReleaseDate = videoItem.ReleaseDate + "   Direct Play"
@@ -347,7 +348,7 @@ End Function
 
 Sub videoPlayerStartTranscodeSessionRequest()
     if m.IsTranscoded then
-        httpRequest = m.Item.server.CreateRequest("", "/transcode/sessions/" + GetGlobal("rokuUniqueId"))
+        httpRequest = m.videoItem.TranscodeServer.CreateRequest("", "/transcode/sessions/" + GetGlobal("rokuUniqueId"))
         context = CreateObject("roAssociativeArray")
         context.requestType = "transcode"
         m.ViewController.StartRequest(httpRequest, m, context)

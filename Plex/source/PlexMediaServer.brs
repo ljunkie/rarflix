@@ -429,6 +429,12 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
     if url = invalid then return invalid
     video.StreamUrls = [url]
 
+    if m.TranscodeServer <> invalid then
+        video.TranscodeServer = m.TranscodeServer
+    else
+        video.TranscodeServer = m
+    end if
+
     ' If we have SRT subtitles, let the Roku display them itself. They'll
     ' usually be more readable, and it might let us direct stream.
 
