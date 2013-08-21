@@ -142,7 +142,7 @@ Function videoPlayerCreateVideoPlayer()
         server = videoItem.TranscodeServer
         videoItem.ReleaseDate = videoItem.ReleaseDate + "   Transcoded"
     else
-        videoItem.ReleaseDate = videoItem.ReleaseDate + "   Direct Play"
+        videoItem.ReleaseDate = videoItem.ReleaseDate + "   Direct Play (" + tostr(videoItem.StreamFormat) + ")"
     end if
 
     videoPlayer = CreateObject("roVideoScreen")
