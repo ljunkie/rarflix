@@ -30,6 +30,8 @@ Function createMyPlexManager(viewController) As Object
     obj.IsRequestToServer = pmsIsRequestToServer
     obj.Log = mpLog
     obj.AllowsMediaDeletion = false
+    obj.SupportsMultiuser = false
+    obj.SupportsVideoTranscoding = true
 
     ' Commands, mostly use the PMS functions
     obj.Timeline = mpTimeline
@@ -126,6 +128,8 @@ Function mpCheckTranscodeServer(showError=false As Boolean) As Boolean
         end if
         Debug("myPlex operation failed due to lack of primary server")
         return false
+    else
+        m.SupportsVideoTranscoding = m.TranscodeServer.SupportsVideoTranscoding
     end if
 
     return true
