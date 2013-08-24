@@ -281,6 +281,7 @@ Sub ParseVideoMedia(videoItem, sourceUrl) As Object
 		end if
 		media.identifier = MediaItem@id
 		media.audioCodec = MediaItem@audioCodec
+		media.audioChannels = MediaItem@audioChannels
 		media.videoCodec = MediaItem@videoCodec
 		media.videoResolution = MediaItem@videoResolution
         media.container = parseMediaContainer(MediaItem)

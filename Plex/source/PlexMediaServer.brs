@@ -287,15 +287,21 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
         key = item.key
         ratingKey = item.ratingKey
         videoRes = mediaItem.videoresolution
+        audioCh = mediaitem.audioChannels
+        audioCodec = mediaItem.audioCodec
     else if mediaItem = invalid  OR part = invalid then
         ' Plugin video
         mediaKey = item.key
         videoRes = item.videoresolution
+        audioCh = item.audioChannels
+        audioCodec = item.audioCodec
     else
         ' Plugin video, possibly indirect
         mediaKey = part.key
         postURL = part.postURL
         videoRes = mediaItem.videoresolution
+        audioCh = mediaItem.audioChannels
+        audioCodec = mediaItem.audioCodec
         if mediaItem.indirect then
             mediaKeyXml = IndirectMediaXml(m, mediaKey, postURL)
             if mediaKeyXml = invalid then
@@ -333,6 +339,10 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
             end if
         end if
     end if
+    ' ADD videoRes for HUD - RR
+    video.videoRes = videoRes
+    video.audioCh = audioCh
+    video.audioCodec = audioCodec
 
     quality = "SD"
     if GetGlobal("DisplayType") = "HDTV" then quality = "HD"

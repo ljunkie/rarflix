@@ -142,7 +142,21 @@ Function videoPlayerCreateVideoPlayer()
         server = videoItem.TranscodeServer
         videoItem.ReleaseDate = videoItem.ReleaseDate + "   Transcoded"
     else
-        videoItem.ReleaseDate = videoItem.ReleaseDate + "   Direct Play (" + tostr(videoItem.StreamFormat) + ")"
+
+       if (videoItem.audioCh.toint() = 6) then
+       	    audioCh = "5.1"
+       else
+       	    audioCh = tostr(videoItem.audioCh) + "ch"
+       end if
+
+       if (tostr(videoItem.audioCodec) = "dca") then
+       	    audioCodec = "DTS"
+       else
+       	    audioCodec = tostr(videoItem.audioCodec)
+       end if
+
+        videoItem.ReleaseDate = videoItem.ReleaseDate + "   Direct Play (" + tostr(videoItem.videoRes) + "p " + audioCh + " " + audioCodec + " " + tostr(videoItem.StreamFormat) + ")"
+
     end if
 
     videoPlayer = CreateObject("roVideoScreen")
@@ -377,6 +391,12 @@ Sub videoPlayerOnUrlEvent(msg, requestContext)
                 Debug("Speed: " + tostr(xml.TranscodeSession@speed))
                 Debug("Video Decision: " + tostr(xml.TranscodeSession@videoDecision))
                 Debug("Audio Decision: " + tostr(xml.TranscodeSession@audioDecision))
+		Debug("Width: " + tostr(xml.TranscodeSession@width))
+		Debug("Height: " + tostr(xml.TranscodeSession@height))
+		Debug("Audio Channels: " + tostr(xml.TranscodeSession@audioChannels))
+
+		audioChannel = tostr(xml.TranscodeSession@audioChannels) + "ch"
+		videoRes = tostr(xml.TranscodeSession@width) + "x" + tostr(xml.TranscodeSession@height)
 
                 if val(firstOf(xml.TranscodeSession@progress, "0")) >= 100 then
                     curState = " (done)"
@@ -398,10 +418,11 @@ Sub videoPlayerOnUrlEvent(msg, requestContext)
                     audio = "copy"
                 end if
 
-                m.VideoItem.ReleaseDate = m.VideoItem.OrigReleaseDate + "   video: " + video + " audio: " + audio + curState
+                m.VideoItem.ReleaseDate = m.VideoItem.OrigReleaseDate + chr(10) + "video: " + video  + chr(10) + " audio: " + audio + chr(10) + videoRes + " " + audioChannel
+                ' + curState -- doesn't seem useful
                 m.VideoPlayer.SetContent(m.VideoItem)
             end if
-        end if
+	end if
     end if
 End Sub
 
