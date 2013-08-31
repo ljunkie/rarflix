@@ -549,6 +549,12 @@ Function videoCanDirectPlay(mediaItem) As Boolean
         next
     end if
 
+    ' RR - for some reason fling video from iPhone to Roku skips code above let's set the surroundCodec to mediaItem.audioCodec if it's still invalid 
+    ' TODO @ http://forums.plexapp.com/index.php/topic/79460-fling-direct-play-broken-from-iphone-dca-codec/
+    if surroundCodec = invalid then
+           surroundCodec = mediaItem.audioCodec
+    end if
+
     Debug("Media item optimized for streaming: " + tostr(mediaItem.optimized))
     Debug("Media item container: " + tostr(mediaItem.container))
     Debug("Media item video codec: " + tostr(mediaItem.videoCodec))
@@ -684,6 +690,7 @@ Function videoCanDirectPlay(mediaItem) As Boolean
             end if
         end if
 
+	' ROBROBROB is this line right -- ac3 twice? should taht be aac?
         if surroundSound AND (surroundCodec = "ac3" OR stereoCodec = "ac3" OR surroundCodec = "dca") then
             mediaItem.canDirectPlay = true
             return true
@@ -694,7 +701,7 @@ Function videoCanDirectPlay(mediaItem) As Boolean
             return true
         end if
 
-        Debug("videoCanDirectPlay: ac not aac/ac3/mp3")
+        Debug("videoCanDirectPlay: mkv ac not aac/ac3/mp3")
         return false
     end if
 
@@ -708,7 +715,7 @@ Function videoCanDirectPlay(mediaItem) As Boolean
         end if
 
         if isnonemptystr(mediaItem.audioCodec) AND (mediaItem.audioCodec <> "aac" AND mediaItem.audioCodec <> "ac3" AND mediaItem.audioCodec <> "mp3") then
-            Debug("videoCanDirectPlay: ac not aac/ac3/mp3")
+            Debug("videoCanDirectPlay: hls ac not aac/ac3/mp3")
             'return false
         end if
 
