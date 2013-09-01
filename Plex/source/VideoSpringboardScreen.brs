@@ -76,7 +76,9 @@ Sub videoSetupButtons()
                 else if tomatoData.ratings.critics_score = -1 then
                     rating_string = "Not rated"
                 else
-                    rating_string = tostr(tomatoData.ratings.critics_score) + "%"
+		    ' I prefer the audience score vs the critics - RR - maybe we can make this a setting if needed
+		    'rating_string = tostr(tomatoData.ratings.critics_score) + "%"
+                    rating_string = tostr(tomatoData.ratings.audience_score) + "%"
                 endif
             endif
             m.AddButton(rating_string + " on Rotten Tomatoes", "tomatoes")
