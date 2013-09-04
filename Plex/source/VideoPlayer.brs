@@ -692,15 +692,14 @@ Function videoCanDirectPlay(mediaItem) As Boolean
             end if
         end if
 
-	' ROBROBROB is this line right -- ac3 twice? should taht be aac?
         if surroundSound then
             if (surroundCodec = "ac3" OR stereoCodec = "ac3") then
                 mediaItem.canDirectPlay = true
-                return true     
+                return true
             end if
             if (fiveoneDCA <> "2" AND surroundCodec = "dca") then
                 mediaItem.canDirectPlay = true
-                return true     
+                return true
             end if
         end if
 
