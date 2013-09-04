@@ -554,6 +554,8 @@ Function videoCanDirectPlay(mediaItem) As Boolean
     if surroundCodec = invalid then
            surroundCodec = mediaItem.audioCodec
     end if
+    fiveoneDCA = RegRead("fivepointoneDCA", "preferences", "1")
+    Debug("DTS support set to  " + fiveoneDCA)
 
     Debug("Media item optimized for streaming: " + tostr(mediaItem.optimized))
     Debug("Media item container: " + tostr(mediaItem.container))
@@ -691,9 +693,15 @@ Function videoCanDirectPlay(mediaItem) As Boolean
         end if
 
 	' ROBROBROB is this line right -- ac3 twice? should taht be aac?
-        if surroundSound AND (surroundCodec = "ac3" OR stereoCodec = "ac3" OR surroundCodec = "dca") then
-            mediaItem.canDirectPlay = true
-            return true
+        if surroundSound then
+            if (surroundCodec = "ac3" OR stereoCodec = "ac3") then
+                mediaItem.canDirectPlay = true
+                return true     
+            end if
+            if (fiveoneDCA <> "2" AND surroundCodec = "dca") then
+                mediaItem.canDirectPlay = true
+                return true     
+            end if
         end if
 
         if stereoCodec <> invalid AND (stereoCodec = "aac" OR stereoCodec = "mp3") then

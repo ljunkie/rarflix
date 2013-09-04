@@ -601,6 +601,17 @@ Function createAdvancedPrefsScreen(viewController) As Object
         default: "1"
     }
 
+    ' DTS support
+    fiveoneDCA = [
+        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Try to copy DTS audio streams when transcoding." },
+        { title: "Disabled", EnumValue: "2", ShortDescriptionLine2: "Always use 2-channel audio when transcoding." }
+    ]
+    obj.Prefs["fivepointoneDCA"] = {
+        values: fiveoneDCA,
+        heading: "DTS audio support for transcoded content",
+        default: "1"
+    }
+
     ' HLS seconds per segment
     lengths = [
         { title: "Automatic", EnumValue: "auto", ShortDescriptionLine2: "Chooses based on quality." },
@@ -650,6 +661,7 @@ Function createAdvancedPrefsScreen(viewController) As Object
 
     if SupportsSurroundSound(true) then
         obj.AddItem({title: "5.1 Support"}, "fivepointone", obj.GetEnumValue("fivepointone"))
+        obj.AddItem({title: "5.1 DTS Support"}, "fivepointoneDCA", obj.GetEnumValue("fivepointoneDCA"))
     end if
 
     if GetGlobal("legacy1080p") then

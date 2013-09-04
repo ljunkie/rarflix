@@ -809,7 +809,9 @@ Function Capabilities(recompute=false) As String
     ' signal through and theoretically doesn't care if it's 7.1.
     if SupportsSurroundSound(true, true) then
         fiveone = RegRead("fivepointone", "preferences", "1")
+        fiveoneDCA = RegRead("fivepointoneDCA", "preferences", "1")
         Debug("5.1 support set to: " + fiveone)
+        Debug("5.1 DTS support set to: " + fiveoneDCA)
 
         if fiveone <> "2" then
             audio = audio + ",ac3{channels:8}"
