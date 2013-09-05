@@ -578,17 +578,6 @@ Function createAdvancedPrefsScreen(viewController) As Object
         default: "40"
     }
 
-    ' 5.1 Support
-    fiveone = [
-        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Try to copy 5.1 audio streams when transcoding." },
-        { title: "Disabled", EnumValue: "2", ShortDescriptionLine2: "Always use 2-channel audio when transcoding." }
-    ]
-    obj.Prefs["fivepointone"] = {
-        values: fiveone,
-        heading: "5.1 audio support for transcoded content",
-        default: "1"
-    }
-
     ' HLS seconds per segment
     lengths = [
         { title: "Automatic", EnumValue: "auto", ShortDescriptionLine2: "Chooses based on quality." },
@@ -599,21 +588,6 @@ Function createAdvancedPrefsScreen(viewController) As Object
         values: lengths,
         heading: "Seconds per HLS segment. Longer segments may load faster.",
         default: "10"
-    }
-
-    ' Audio boost for transcoded content. Transcoded content is quiet by
-    ' default, but if we set a default boost then audio will never be remuxed.
-    ' These values are based on iOS.
-    values = [
-        { title: "None", EnumValue: "100" },
-        { title: "Small", EnumValue: "175" },
-        { title: "Large", EnumValue: "225" },
-        { title: "Huge", EnumValue: "300" }
-    ]
-    obj.Prefs["audio_boost"] = {
-        values: values,
-        heading: "Audio boost for transcoded video",
-        default: "100"
     }
 
     ' Analytics (opt-out)
@@ -636,16 +610,11 @@ Function createAdvancedPrefsScreen(viewController) As Object
     obj.AddItem({title: "Continuous Play"}, "continuous_play", obj.GetEnumValue("continuous_play"))
     obj.AddItem({title: "H.264"}, "level", obj.GetEnumValue("level"))
 
-    if SupportsSurroundSound(true) then
-        obj.AddItem({title: "5.1 Support"}, "fivepointone", obj.GetEnumValue("fivepointone"))
-    end if
-
     if GetGlobal("legacy1080p") then
         obj.AddItem({title: "1080p Settings"}, "1080p")
     end if
 
     obj.AddItem({title: "HLS Segment Length"}, "segment_length", obj.GetEnumValue("segment_length"))
-    obj.AddItem({title: "Audio Boost"}, "audio_boost", obj.GetEnumValue("audio_boost"))
     obj.AddItem({title: "Analytics"}, "analytics", obj.GetEnumValue("analytics"))
     obj.AddItem({title: "Close"}, "close")
 
@@ -768,10 +737,43 @@ Function createAudioPrefsScreen(viewController) As Object
         default: "loop"
     }
 
+    ' 5.1 Support
+    fiveone = [
+        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Try to copy 5.1 audio streams when transcoding." },
+        { title: "Disabled", EnumValue: "2", ShortDescriptionLine2: "Always use 2-channel audio when transcoding." }
+    ]
+    obj.Prefs["fivepointone"] = {
+        values: fiveone,
+        heading: "5.1 audio support for transcoded content",
+        default: "1"
+    }
+
+    ' Audio boost for transcoded content. Transcoded content is quiet by
+    ' default, but if we set a default boost then audio will never be remuxed.
+    ' These values are based on iOS.
+    values = [
+        { title: "None", EnumValue: "100" },
+        { title: "Small", EnumValue: "175" },
+        { title: "Large", EnumValue: "225" },
+        { title: "Huge", EnumValue: "300" }
+    ]
+    obj.Prefs["audio_boost"] = {
+        values: values,
+        heading: "Audio boost for transcoded video",
+        default: "100"
+    }
+
     obj.Screen.SetHeader("Audio Preferences")
 
     obj.AddItem({title: "Loop Playback"}, "loopalbums", obj.GetEnumValue("loopalbums"))
     obj.AddItem({title: "Theme Music"}, "theme_music", obj.GetEnumValue("theme_music"))
+
+    if SupportsSurroundSound(true) then
+        obj.AddItem({title: "5.1 Support"}, "fivepointone", obj.GetEnumValue("fivepointone"))
+    end if
+
+    obj.AddItem({title: "Audio Boost"}, "audio_boost", obj.GetEnumValue("audio_boost"))
+
     obj.AddItem({title: "Close"}, "close")
 
     return obj
@@ -787,10 +789,10 @@ Function prefsAudioHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "loopalbums" OR command = "theme_music" then
-                m.HandleEnumPreference(command, msg.GetIndex())
-            else if command = "close" then
+            if command = "close" then
                 m.Screen.Close()
+            else
+                m.HandleEnumPreference(command, msg.GetIndex())
             end if
         end if
     end if
