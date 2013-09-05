@@ -182,7 +182,7 @@ Function videoHandleMessage(msg) As Boolean
                      end if
 		end if
 
-		dialog.Text = review_text		
+		dialog.Text = review_text
                 dialog.SetButton("getTrailers", "Trailers")
                 dialog.SetButton("close", "Back")
                 dialog.HandleButton = videoDialogHandleButton
@@ -298,5 +298,3 @@ Sub videoActivate(priorScreen)
         end if
     end if
 End Sub
-
-
