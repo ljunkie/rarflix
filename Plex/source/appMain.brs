@@ -45,6 +45,9 @@ Sub Main(args)
 
     initGlobals()
 
+    m.youtube = InitYouTube()
+    youtube = LoadYouTube()
+
     'prepare the screen for display and get ready to begin
     controller = createViewController()
     controller.Show()
