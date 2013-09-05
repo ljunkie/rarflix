@@ -265,22 +265,22 @@ Sub showPreferencesScreen()
     m.Screen.SetTitle("Preferences v" + GetGlobalAA().Lookup("appVersionStr"))
     m.Screen.SetHeader("Set Plex Channel Preferences")
 
+    ' re-orderd - RR
     m.AddItem({title: "Plex Media Servers"}, "servers")
     m.AddItem({title: getCurrentMyPlexLabel()}, "myplex")
     m.AddItem({title: "Quality"}, "quality", m.GetEnumValue("quality"))
     m.AddItem({title: "Remote Quality"}, "quality_remote", m.GetEnumValue("quality_remote"))
+    m.AddItem({title: "Rotten Tomatoes"}, "rottentomatoes", m.GetEnumValue("rottentomatoes"))
     m.AddItem({title: "Direct Play"}, "directplay", m.GetEnumValue("directplay"))
+    m.AddItem({title: "Audio Preferences"}, "audio_prefs")
     m.AddItem({title: "Home Screen"}, "homescreen")
-    m.AddItem({title: "Remote Control"}, "remotecontrol")
     m.AddItem({title: "Section Display"}, "sections")
+    m.AddItem({title: "Remote Control/Name"}, "remotecontrol")
     m.AddItem({title: "Subtitles"}, "subtitles")
     m.AddItem({title: "Slideshow"}, "slideshow")
-    m.AddItem({title: "Audio Preferences"}, "audio_prefs")
     m.AddItem({title: "Screensaver"}, "screensaver", m.GetEnumValue("screensaver"))
-    m.AddItem({title: "Rotten Tomatoes"}, "rottentomatoes", m.GetEnumValue("rottentomatoes"))
     m.AddItem({title: "Logging"}, "debug")
     m.AddItem({title: "Advanced Preferences"}, "advanced")
-
     m.AddItem({title: "Close Preferences"}, "close")
 
     m.serversBefore = {}
@@ -351,7 +351,8 @@ Function prefsMainHandleMessage(msg) As Boolean
                     m.ViewController.InitializeOtherScreen(screen, invalid)
                     screen.Show()
                 end if
-            else if command = "quality" OR command = "quality_remote" OR command = "level" OR command = "fivepointone" OR command = "directplay" OR command = "screensaver" OR command = "rottentomatoes" then
+            ' removed 5.1 (finepointone) -- moved to audio prefs RR
+            else if command = "quality" OR command = "quality_remote" OR command = "level" OR command = "directplay" OR command = "screensaver" OR command = "rottentomatoes" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "slideshow" then
                 screen = createSlideshowPrefsScreen(m.ViewController)
@@ -590,27 +591,6 @@ Function createAdvancedPrefsScreen(viewController) As Object
         default: "40"
     }
 
-    ' 5.1 Support
-    fiveone = [
-        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Try to copy 5.1 audio streams when transcoding." },
-        { title: "Disabled", EnumValue: "2", ShortDescriptionLine2: "Always use 2-channel audio when transcoding." }
-    ]
-    obj.Prefs["fivepointone"] = {
-        values: fiveone,
-        heading: "5.1 audio support for transcoded content",
-        default: "1"
-    }
-
-    ' DTS support
-    fiveoneDCA = [
-        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Try to copy DTS audio streams when transcoding." },
-        { title: "Disabled", EnumValue: "2", ShortDescriptionLine2: "Always use 2-channel audio when transcoding." }
-    ]
-    obj.Prefs["fivepointoneDCA"] = {
-        values: fiveoneDCA,
-        heading: "DTS audio support for transcoded content",
-        default: "1"
-    }
 
     ' HLS seconds per segment
     lengths = [
@@ -624,20 +604,6 @@ Function createAdvancedPrefsScreen(viewController) As Object
         default: "10"
     }
 
-    ' Audio boost for transcoded content. Transcoded content is quiet by
-    ' default, but if we set a default boost then audio will never be remuxed.
-    ' These values are based on iOS.
-    values = [
-        { title: "None", EnumValue: "100" },
-        { title: "Small", EnumValue: "175" },
-        { title: "Large", EnumValue: "225" },
-        { title: "Huge", EnumValue: "300" }
-    ]
-    obj.Prefs["audio_boost"] = {
-        values: values,
-        heading: "Audio boost for transcoded video",
-        default: "100"
-    }
 
     ' Analytics (opt-out)
     values = [
@@ -659,17 +625,12 @@ Function createAdvancedPrefsScreen(viewController) As Object
     obj.AddItem({title: "Continuous Play"}, "continuous_play", obj.GetEnumValue("continuous_play"))
     obj.AddItem({title: "H.264"}, "level", obj.GetEnumValue("level"))
 
-    if SupportsSurroundSound(true) then
-        obj.AddItem({title: "5.1 Support"}, "fivepointone", obj.GetEnumValue("fivepointone"))
-        obj.AddItem({title: "5.1 DTS Support"}, "fivepointoneDCA", obj.GetEnumValue("fivepointoneDCA"))
-    end if
 
     if GetGlobal("legacy1080p") then
         obj.AddItem({title: "1080p Settings"}, "1080p")
     end if
 
     obj.AddItem({title: "HLS Segment Length"}, "segment_length", obj.GetEnumValue("segment_length"))
-    obj.AddItem({title: "Audio Boost"}, "audio_boost", obj.GetEnumValue("audio_boost"))
     obj.AddItem({title: "Analytics"}, "analytics", obj.GetEnumValue("analytics"))
     obj.AddItem({title: "Close"}, "close")
 
@@ -792,10 +753,59 @@ Function createAudioPrefsScreen(viewController) As Object
         default: "loop"
     }
 
+    ' Audio boost for transcoded content. Transcoded content is quiet by
+    ' default, but if we set a default boost then audio will never be remuxed.
+    ' These values are based on iOS.
+    ' moved into Audio Preferences - RR
+    values = [
+        { title: "None", EnumValue: "100" },
+        { title: "Small", EnumValue: "175" },
+        { title: "Large", EnumValue: "225" },
+        { title: "Huge", EnumValue: "300" }
+    ]
+    obj.Prefs["audio_boost"] = {
+        values: values,
+        heading: "Audio boost for transcoded video",
+        default: "100"
+    }
+
+
+    ' 5.1 Support
+    ' moved into Audio Preferences - RR
+    fiveone = [
+        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Try to copy 5.1 audio streams when transcoding." },
+        { title: "Disabled", EnumValue: "2", ShortDescriptionLine2: "Always use 2-channel audio when transcoding." }
+    ]
+    obj.Prefs["fivepointone"] = {
+        values: fiveone,
+        heading: "5.1 audio support for transcoded content",
+        default: "1"
+    }
+
+
+    ' DTS support - Added by RR
+    ' moved into Audio Preferences - RR
+    fiveoneDCA = [
+        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Try to copy DTS audio streams when transcoding." },
+        { title: "Disabled", EnumValue: "2", ShortDescriptionLine2: "Always use 2-channel audio when transcoding." }
+    ]
+    obj.Prefs["fivepointoneDCA"] = {
+        values: fiveoneDCA,
+        heading: "DTS audio support for transcoded content",
+        default: "1"
+    }
+
+
     obj.Screen.SetHeader("Audio Preferences")
 
     obj.AddItem({title: "Loop Playback"}, "loopalbums", obj.GetEnumValue("loopalbums"))
     obj.AddItem({title: "Theme Music"}, "theme_music", obj.GetEnumValue("theme_music"))
+    obj.AddItem({title: "Audio Boost"}, "audio_boost", obj.GetEnumValue("audio_boost"))
+    if SupportsSurroundSound(true) then
+        obj.AddItem({title: "5.1 Support"}, "fivepointone", obj.GetEnumValue("fivepointone"))
+        obj.AddItem({title: "5.1 DTS Support"}, "fivepointoneDCA", obj.GetEnumValue("fivepointoneDCA"))
+    end if
+
     obj.AddItem({title: "Close"}, "close")
 
     return obj
@@ -811,7 +821,9 @@ Function prefsAudioHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "loopalbums" OR command = "theme_music" then
+            ' Moved DTS, 5.1 and Audio Boost into audio Prefs RR
+            ' OLD: if command = "loopalbums" OR command = "theme_music" then
+            if command = "loopalbums" OR command = "theme_music" OR command = "fivepointone" OR command = "fivepointoneDCA" OR command = "audio_boost" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "close" then
                 m.Screen.Close()
