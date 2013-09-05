@@ -45,6 +45,7 @@ Sub Main(args)
 
     initGlobals()
 
+    ' Youtube Trailers - RR
     m.youtube = InitYouTube()
     youtube = LoadYouTube()
 
