@@ -1,5 +1,4 @@
 Function LoadYouTube() As Object
-    ' global singleton
     return m.youtube
 End Function
 
@@ -27,19 +26,12 @@ Function InitYouTube() As Object
     this.newVideoListFromXML = youtube_new_video_list
     this.newVideoFromXML = youtube_new_video
 
-    this.UpdateButtons = update_buttons
 
     print "YouTube: init complete"
     return this
 End Function
 
-
-Function youtube_exec_api(request As Dynamic, username="default" As Dynamic) As Object
-    if username=invalid then
-        username=""
-    else
-        username="users/"+username+"/"
-    end if
+Function youtube_exec_api(request As Dynamic) As Object
 
     method = "GET"
     url_stub = request
@@ -56,10 +48,10 @@ Function youtube_exec_api(request As Dynamic, username="default" As Dynamic) As 
     if Instr(0, url_stub, "http://") OR Instr(0, url_stub, "https://") then
         http = NewHttp(url_stub)
     else
-        http = NewHttp(m.prefix + "/" + username + url_stub)
+        http = NewHttp(m.prefix + "/" + url_stub)
     end if
 '    http = NewHttp("http://www.rarforge.com")
-    Debug("url: " + tostr(m.prefix + "/" + username + url_stub))
+    Debug("url: " + tostr(m.prefix + "/" + url_stub))
     if not headers.DoesExist("GData-Version") then headers.AddReplace("GData-Version", "2") 
 
     http.method = method
@@ -82,30 +74,20 @@ End Function
 
 Function handleYoutubeError(rsp) As Dynamic
     ' Is there a status code? If not, return a connection error.
-    Debug("10")
     if rsp.status=invalid then return ShowConnectionFailed()
-    Debug("11")
     ' Don't check for errors if the response code was a 2xx or 3xx number
     if int(rsp.status/100)=2 or int(rsp.status/100)=3 return ""
-    Debug("12")
     if not isxmlelement(rsp.xml) return ShowErrorDialog("API return invalid. Try again later", "Bad response")
-    Debug("13")
     error=rsp.xml.GetNamedElements("error")[0]
-    Debug("14")
     if error=invalid then
-    Debug("15")
         ' we got an unformatted HTML response with the error in the title
         error=rsp.xml.GetChildElements()[0].GetChildElements()[0].GetText()
     else
-    Debug("16")
         error=error.GetNamedElements("internalReason")[0].GetText()
     end if
-    Debug("17")
     ShowDialog1Button("Error", error, "OK", true)
-    Debug("18")
     return error
 End Function
-
 
 Sub youtube_search(keyword as string )
     dialog = createBaseDialog()
@@ -113,7 +95,7 @@ Sub youtube_search(keyword as string )
     dialog.Text = ""
     dialog=ShowPleaseWait("Please wait","Searching YouTube for "+Quote()+keyword+Quote())
     searchString = URLEncode(keyword)
-    xml=m.youtube.ExecServerAPI("videos?q="+searchString,invalid)["xml"]
+    xml=m.youtube.ExecServerAPI("videos?q="+searchString)["xml"]
     if not isxmlelement(xml) then dialog.Close():ShowConnectionFailed():return
     videos=m.youtube.newVideoListFromXML(xml.entry)
     if videos.Count() > 0 then
@@ -124,9 +106,8 @@ Sub youtube_search(keyword as string )
     end if
 End Sub
 
-
 Sub DisplayVideo(content As Object)
-    print "Displaying video: "
+    'print "Displaying video: "
     p = CreateObject("roMessagePort")
     video = CreateObject("roVideoScreen")
     video.setMessagePort(p)
@@ -138,7 +119,7 @@ Sub DisplayVideo(content As Object)
         msg = wait(0, video.GetMessagePort())
         if type(msg) = "roVideoScreenEvent"
             if msg.isScreenClosed() then 'ScreenClosed event
-                print "Closing video screen"
+                'print "Closing video screen"
                 video.Close()
                 exit while
             else if msg.isRequestFailed()
@@ -150,11 +131,8 @@ Sub DisplayVideo(content As Object)
     end while
 End Sub
 
-
-
-
 Function parseVideoFormatsMap(videoInfo As String) As Object
-    
+
     ' print "-----------------------------------------------"
     ' print videoInfo
     ' print "-----------------------------------------------"
@@ -223,7 +201,6 @@ Function parseVideoFormatsMap(videoInfo As String) As Object
 
 End Function
 
-
 Sub youtube_display_video_list(videos As Object, title As String, links=invalid, screen=invalid)
     if screen=invalid then
         screen=uitkPreShowPosterMenu("flat-episodic-16x9", title)
@@ -245,7 +222,7 @@ Sub youtube_display_video_list(videos As Object, title As String, links=invalid,
         onselect = [1, metadata, m,
             function(video, youtube, set_idx)
                 if video[set_idx]["action"]<>invalid then
-                    youtube.FetchVideoList(video[set_idx]["pageURL"], youtube.CurrentPageTitle, invalid)
+                    youtube.FetchVideoList(video[set_idx]["pageURL"], youtube.CurrentPageTitle)
                 else
                     youtube.VideoDetails(video[set_idx], youtube.CurrentPageTitle)
                 end if
@@ -313,14 +290,6 @@ Sub youtube_display_video_springboard(video As Object, breadcrumb As String)
     end while
 End Sub
 
-
-Sub update_buttons(buttons)
-    m.screen.ClearButtons()
-    print buttons
-    if buttons["play"]<>invalid then m.screen.AddButton(0, "Play")
-    if buttons["more"]<>invalid then m.screen.AddButton(1, "More Videos By "+m.video.Author)
-End Sub
-
 Function video_get_qualities(videoID as String) As Object
     http = NewHttp("http://www.youtube.com/get_video_info?video_id="+videoID)
     Debug("SteamQualities: http://www.youtube.com/get_video_info?video_id="+videoID)
@@ -359,96 +328,13 @@ Function video_get_qualities(videoID as String) As Object
     return invalid
 End Function
 
-Function displayVideo2(args As Dynamic)
-    print "Displaying video: "
-    p = CreateObject("roMessagePort")
-    video = CreateObject("roVideoScreen")
-    video.setMessagePort(p)
-
-    'bitrates  = [0]          ' 0 = no dots, adaptive bitrate                                                                                                                                                      
-    'bitrates  = [348]    ' <500 Kbps = 1 dot                                                                                                                                                                      
-    'bitrates  = [664]    ' <800 Kbps = 2 dots                                                                                                                                                                     
-    'bitrates  = [996]    ' <1.1Mbps  = 3 dots                                                                                                                                                                     
-    'bitrates  = [2048]    ' >=1.1Mbps = 4 dots                                                                                                                                                                    
-    bitrates  = [0]
-
-    'Swap the commented values below to play different video clips...                                                                                                                                              
-    urls = ["http://video.ted.com/talks/podcast/CraigVenter_2008_480.mp4"]
-
-'    urls = ["http://www.youtube.com/embed/9l3DDSXkEQ0"]
-    qualities = ["HD"]
-    StreamFormat = "mp4"
-    title = "Craig Venter Synthetic Life"
-    srt = "file://pkg:/source/craigventer.srt"
-
-
-   if type(args) = "roAssociativeArray"
-        if type(args.url) = "roString" and args.url <> "" then
-            urls[0] = args.url
-        end if
-        if type(args.StreamFormat) = "roString" and args.StreamFormat <> "" then
-            StreamFormat = args.StreamFormat
-        end if
-        if type(args.title) = "roString" and args.title <> "" then
-            title = args.title
-        else
-            title = ""
-        end if
-        if type(args.srt) = "roString" and args.srt <> "" then
-            srt = args.StreamFormat
-        else
-            srt = ""
-        end if
-    end if
-   videoclip = CreateObject("roAssociativeArray")
-    videoclip.StreamBitrates = bitrates
-    videoclip.StreamUrls = urls
-    videoclip.StreamQualities = qualities
-    videoclip.StreamFormat = StreamFormat
-    videoclip.Title = title
-    print "srt = ";srt
-    if srt <> invalid and srt <> "" then
-        videoclip.SubtitleUrl = srt
-    end if
-
-    video.SetContent(videoclip)
-    video.show()
-
-    lastSavedPos   = 0
-    statusInterval = 10 'position must change by more than this number of seconds before saving                                                                                                                    
-
-    while true
-        msg = wait(0, video.GetMessagePort())
-        if type(msg) = "roVideoScreenEvent"
-            if msg.isScreenClosed() then 'ScreenClosed event                                                                                                                                                       
-                print "Closing video screen"
-                exit while
-            else if msg.isPlaybackPosition() then
-                nowpos = msg.GetIndex()
-                if nowpos > 10000
-               end if
-                if nowpos > 0
-                    if abs(nowpos - lastSavedPos) > statusInterval
-                        lastSavedPos = nowpos
-                    end if
-                end if
-            else if msg.isRequestFailed()
-                print "play failed: "; msg.GetMessage()
-            else
-                print "Unknown event: "; msg.GetType(); " msg: "; msg.GetMessage()
-            endif
-        end if
-    end while
-End Function
-
-
 Function URLEncode(str As String) As String
     if not m.DoesExist("encodeProxyUrl") then m.encodeProxyUrl = CreateObject("roUrlTransfer")
     return m.encodeProxyUrl.urlEncode(str)
 End Function
 
 Function URLDecode(str As String) As String
-    strReplace(str,"+"," ") ' backward compatibility                                                                                                                                                               
+    strReplace(str,"+"," ") ' backward compatibility
     if not m.DoesExist("encodeProxyUrl") then m.encodeProxyUrl = CreateObject("roUrlTransfer")
     return m.encodeProxyUrl.Unescape(str)
 End Function
@@ -465,8 +351,9 @@ Function ShowPleaseWait(title As dynamic, text As dynamic) As Object
     port = CreateObject("roMessagePort")
     dialog = invalid
 
-    'the OneLineDialog renders a single line of text better                                                                                                                                                        
-    'than the MessageDialog.                                                                                                                                                                                       
+    'the OneLineDialog renders a single line of text better
+    'than the MessageDialog.
+
     if text = ""
         dialog = CreateObject("roOneLineDialog")
     else
@@ -482,7 +369,7 @@ Function ShowPleaseWait(title As dynamic, text As dynamic) As Object
     return dialog
 End Function
 
-Sub youtube_fetch_video_list(APIRequest As Dynamic, title As String, username As Dynamic)
+Sub youtube_fetch_video_list(APIRequest As Dynamic, title As String)
     
     ' fields = m.FieldsToInclude
     ' if Instr(0, APIRequest, "?") = 0 then
@@ -492,7 +379,7 @@ Sub youtube_fetch_video_list(APIRequest As Dynamic, title As String, username As
     screen=uitkPreShowPosterMenu("flat-episodic-16x9", title)
     screen.showMessage("Loading...")
 
-    xml=m.youtube.ExecServerAPI(APIRequest, username)["xml"]
+    xml=m.youtube.ExecServerAPI(APIRequest)["xml"]
     if not isxmlelement(xml) then ShowConnectionFailed():return
     
     videos=m.newVideoListFromXML(xml.entry)
@@ -626,11 +513,9 @@ Sub Dbg(pre As Dynamic, o=invalid As Dynamic)
     print p + s
 End Sub
 
-
 Function GetConnectionFailedText() as String
     return "We were unable to connect to the service.  Please try again in a few minutes."
 End Function
-
 
 Function ShowConnectionFailedRetry() as dynamic
     Dbg("Connection Failed Retry")
@@ -644,7 +529,6 @@ Sub ShowErrorDialog(text As dynamic, title=invalid as dynamic)
     if not isstr(title) title = "Error"
     ShowDialog1Button(title, text, "Done")
 End Sub
-
 
 Sub ShowDialog1Button(title As dynamic, text As dynamic, but1 As String, quickReturn=false As Boolean)
     if not isstr(title) title = ""
@@ -718,7 +602,7 @@ Function isxmlelement(obj as dynamic) As Boolean
     return true
 End Function
 
-
+' uitk Poster/Grids -- remove these and use Plex functions (TODO)
 Function uitkPreShowPosterMenu(ListStyle="flat-category" as String, breadA=invalid, breadB=invalid) As Object
 	port=CreateObject("roMessagePort")
 	screen = CreateObject("roPosterScreen")
@@ -726,7 +610,7 @@ Function uitkPreShowPosterMenu(ListStyle="flat-category" as String, breadA=inval
 
 	if breadA<>invalid and breadB<>invalid then
 		screen.SetBreadcrumbText(breadA, breadB)
-    elseif breadA<>invalid and breadB = invalid then
+        else if breadA<>invalid and breadB = invalid then
         screen.SetTitle(breadA)
 	end if
 
@@ -736,12 +620,11 @@ Function uitkPreShowPosterMenu(ListStyle="flat-category" as String, breadA=inval
 
 	screen.SetListStyle(ListStyle)
 	screen.SetListDisplayMode("scale-to-fit")
-	REM screen.SetListDisplayMode("zoom-to-fill")
+	 screen.SetListDisplayMode("zoom-to-fill")
 	screen.Show()
 
 	return screen
 end function
-
 
 Function uitkDoPosterMenu(posterdata, screen, onselect_callback=invalid) As Integer
 
@@ -803,7 +686,6 @@ Function uitkDoPosterMenu(posterdata, screen, onselect_callback=invalid) As Inte
 	end while
 End Function
 
-
 Function uitkPreShowListMenu(breadA=invalid, breadB=invalid) As Object
     port=CreateObject("roMessagePort")
     screen = CreateObject("roListScreen")
@@ -818,7 +700,6 @@ Function uitkPreShowListMenu(breadA=invalid, breadB=invalid) As Object
 
     return screen
 end function
-
 
 Function uitkDoListMenu(posterdata, screen, onselect_callback=invalid) As Integer
 
@@ -880,7 +761,6 @@ Function uitkDoListMenu(posterdata, screen, onselect_callback=invalid) As Intege
     end while
 End Function
 
-
 Function uitkDoCategoryMenu(categoryList, screen, content_callback, onclick_callback) As Integer  
     'Set current category to first in list
     category_idx=0
@@ -940,3 +820,4 @@ Sub uitkDoMessage(message, screen)
         end if
     end while
 End Sub
+' end uitk
