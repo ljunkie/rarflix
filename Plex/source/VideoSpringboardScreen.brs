@@ -183,7 +183,7 @@ Function videoHandleMessage(msg) As Boolean
 		end if
 
 		dialog.Text = review_text		
-                dialog.SetButton("trailerFromMovie", "Trailers")
+                dialog.SetButton("getTrailers", "Trailers")
                 dialog.SetButton("close", "Back")
                 dialog.HandleButton = videoDialogHandleButton
                 dialog.ParentScreen = m
@@ -215,8 +215,7 @@ Function videoDialogHandleButton(command, data) As Boolean
         dummyItem.server = obj.metadata.server
         obj.ViewController.CreateScreenForItem(dummyItem, invalid, ["Series"])
         closeDialog = true
-    else if command = "trailerFromMovie" then
-'        youtube_search(URLEncode(tostr(obj.metadata.CleanTitle) + " trailer"))
+    else if command = "getTrailers" then
         youtube_search(tostr(obj.metadata.CleanTitle + " trailer"))
         closeDialog = true
     else if command = "seasonFromEpisode" then
