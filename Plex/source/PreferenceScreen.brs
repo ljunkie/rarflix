@@ -737,14 +737,25 @@ Function createAudioPrefsScreen(viewController) As Object
         default: "loop"
     }
 
-    ' 5.1 Support
+    ' 5.1 Support - AC-3
     fiveone = [
         { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Try to copy 5.1 audio streams when transcoding." },
         { title: "Disabled", EnumValue: "2", ShortDescriptionLine2: "Always use 2-channel audio when transcoding." }
     ]
     obj.Prefs["fivepointone"] = {
         values: fiveone,
-        heading: "5.1 audio support for transcoded content",
+        heading: "5.1 AC-3 support",
+        default: "1"
+    }
+
+    ' 5.1 Support - DTS
+    fiveoneDCA = [
+        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Try to Direct Play DTS in MKVs." },
+        { title: "Disabled", EnumValue: "2", ShortDescriptionLine2: "Never Direct Play DTS." }
+    ]
+    obj.Prefs["fivepointoneDCA"] = {
+        values: fiveoneDCA,
+        heading: "5.1 DTS support",
         default: "1"
     }
 
@@ -769,7 +780,8 @@ Function createAudioPrefsScreen(viewController) As Object
     obj.AddItem({title: "Theme Music"}, "theme_music", obj.GetEnumValue("theme_music"))
 
     if SupportsSurroundSound(true) then
-        obj.AddItem({title: "5.1 Support"}, "fivepointone", obj.GetEnumValue("fivepointone"))
+        obj.AddItem({title: "5.1 AC-3 Support"}, "fivepointone", obj.GetEnumValue("fivepointone"))
+        obj.AddItem({title: "5.1 DTS Support"}, "fivepointoneDCA", obj.GetEnumValue("fivepointoneDCA"))
     end if
 
     obj.AddItem({title: "Audio Boost"}, "audio_boost", obj.GetEnumValue("audio_boost"))

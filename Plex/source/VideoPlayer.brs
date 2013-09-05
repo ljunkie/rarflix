@@ -466,6 +466,8 @@ Function videoCanDirectPlay(mediaItem) As Boolean
     end if
     mediaItem.canDirectPlay = false
     mediaItem.cachedSurroundSound = surroundSound
+    surroundSoundDCA = surroundSound AND (RegRead("fivepointoneDCA", "preferences", "1") = "1")
+    surroundSound = surroundSound AND (RegRead("fivepointone", "preferences", "1") = "1")
 
     if mediaItem.preferredPart <> invalid AND mediaItem.preferredPart.subtitles <> invalid then
         subtitleStream = mediaItem.preferredPart.subtitles
@@ -663,7 +665,12 @@ Function videoCanDirectPlay(mediaItem) As Boolean
             end if
         end if
 
-        if surroundSound AND (surroundCodec = "ac3" OR stereoCodec = "ac3" OR surroundCodec = "dca") then
+        if surroundSound AND (surroundCodec = "ac3" OR stereoCodec = "ac3") then
+            mediaItem.canDirectPlay = true
+            return true
+        end if
+
+        if surroundSoundDCA AND (surroundCodec = "dca" OR stereoCodec = "dca") then
             mediaItem.canDirectPlay = true
             return true
         end if
