@@ -128,7 +128,8 @@ Sub initGlobals()
     ' on at least one test video there were noticeable artifacts as the
     ' number increased, starting with 8.
     if major >= 4 then
-        GetGlobalAA().AddReplace("maxRefFrames", 8)
+        ' upping this to 9 for now -- RR look into this later and set as a preference 
+        GetGlobalAA().AddReplace("maxRefFrames", 9)
     else
         GetGlobalAA().AddReplace("maxRefFrames", 5)
     end if
