@@ -300,6 +300,9 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
     ' Stop any background audio first
     m.AudioPlayer.Stop()
 
+    ' Make sure we have full details before trying to play.
+    metadata.ParseDetails()
+
     ' Prompt about resuming if there's an offset and the caller didn't specify a seek value.
     if seekValue = invalid then
         if metadata.viewOffset <> invalid then
