@@ -312,7 +312,7 @@ Function videoPlayerHandleMessage(msg) As Boolean
 
             ' START: EndTime and Time Left to HUD - ljunkie
 	    if msg.GetIndex() > 0 AND m.VideoItem.Duration > 0 then
-	        printAA(m.VideoItem)
+	        'printAA(m.VideoItem)
                 duration = int(m.VideoItem.Duration/1000)
                 nowpos = msg.GetIndex()
                 date = CreateObject("roDateTime")
@@ -364,7 +364,7 @@ Function videoPlayerHandleMessage(msg) As Boolean
         else if msg.isStreamStarted() then
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isStreamStarted: position -> " + tostr(m.lastPosition))
             Debug("Message data -> " + tostr(msg.GetInfo()))
-	    printAA(msg.GetInfo())
+	    'printAA(msg.GetInfo())
 	    m.VideoItem.rokuStreamBitrate = msg.GetInfo().StreamBitrate
             m.StartTranscodeSessionRequest()
 
