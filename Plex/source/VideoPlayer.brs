@@ -589,14 +589,14 @@ Function videoCanDirectPlay(mediaItem) As Boolean
             return false
         end if
 
-        if surroundStreamFirst AND surroundCodec = "aac" then
-            Debug("videoCanDirectPlay: first audio stream is 5.1 AAC")
-            return false
-        end if
-
         if surroundSound AND (surroundCodec = "ac3" OR stereoCodec = "ac3") then
             mediaItem.canDirectPlay = true
             return true
+        end if
+
+        if surroundStreamFirst then
+            Debug("videoCanDirectPlay: first audio stream is unsupported 5.1")
+            return false
         end if
 
         if stereoCodec = "aac" then
@@ -673,6 +673,11 @@ Function videoCanDirectPlay(mediaItem) As Boolean
         if surroundSoundDCA AND (surroundCodec = "dca" OR stereoCodec = "dca") then
             mediaItem.canDirectPlay = true
             return true
+        end if
+
+        if surroundStreamFirst then
+            Debug("videoCanDirectPlay: first audio stream is unsupported 5.1")
+            return false
         end if
 
         if stereoCodec <> invalid AND (stereoCodec = "aac" OR stereoCodec = "mp3") then
