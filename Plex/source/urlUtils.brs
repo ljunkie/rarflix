@@ -19,8 +19,6 @@ Function NewHttp(url As String) as Object
     obj.PrepareUrlForQuery          = http_prepare_url_for_query
     obj.GetToStringWithTimeout      = http_get_to_string_with_timeout
 
-
-
     if Instr(1, url, "?") > 0 then obj.FirstParam = false
 
     return obj

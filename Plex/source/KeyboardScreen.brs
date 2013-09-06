@@ -50,7 +50,7 @@ Function kbHandleMessage(msg) As Boolean
                     m.Text = m.Screen.GetText()
                     if m.Listener <> invalid then
                         m.Listener.OnUserInput(m.Text, m)
-                    else
+                    else if m.Item <> invalid then
                         callback = CreateObject("roAssociativeArray")
                         callback.Heading = m.Text
                         callback.Item = CreateObject("roAssociativeArray")

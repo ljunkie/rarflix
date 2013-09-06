@@ -193,8 +193,6 @@ Function videoPlayerCreateVideoPlayer()
 
     videoPlayer.SetPositionNotificationPeriod(5)
 
-
-
     m.IsTranscoded = videoItem.IsTranscoded
     m.videoItem = videoItem
     m.videoPlayer = videoPlayer
@@ -522,6 +520,8 @@ Function videoCanDirectPlay(mediaItem) As Boolean
     end if
     mediaItem.canDirectPlay = false
     mediaItem.cachedSurroundSound = surroundSound
+    surroundSoundDCA = surroundSound AND (RegRead("fivepointoneDCA", "preferences", "1") = "1")
+    surroundSound = surroundSound AND (RegRead("fivepointone", "preferences", "1") = "1")
 
     if mediaItem.preferredPart <> invalid AND mediaItem.preferredPart.subtitles <> invalid then
         subtitleStream = mediaItem.preferredPart.subtitles
@@ -584,15 +584,6 @@ Function videoCanDirectPlay(mediaItem) As Boolean
         next
     end if
 
-    ' ljunkie - for some reason fling video from iPhone to Roku skips code above let's set the surroundCodec to mediaItem.audioCodec if it's still invalid 
-    ' TODO @ http://forums.plexapp.com/index.php/topic/79460-fling-direct-play-broken-from-iphone-dca-codec/
-    ' This has been fixed in 2.6.8 a different way -- back out changes when I implement the 'correct' fix
-    if surroundCodec = invalid then
-           surroundCodec = mediaItem.audioCodec
-    end if
-    fiveoneDCA = RegRead("fivepointoneDCA", "preferences", "1")
-    Debug("DTS support set to  " + fiveoneDCA)
-
     Debug("Media item optimized for streaming: " + tostr(mediaItem.optimized))
     Debug("Media item container: " + tostr(mediaItem.container))
     Debug("Media item video codec: " + tostr(mediaItem.videoCodec))
@@ -652,14 +643,14 @@ Function videoCanDirectPlay(mediaItem) As Boolean
             return false
         end if
 
-        if surroundStreamFirst AND surroundCodec = "aac" then
-            Debug("videoCanDirectPlay: first audio stream is 5.1 AAC")
-            return false
-        end if
-
         if surroundSound AND (surroundCodec = "ac3" OR stereoCodec = "ac3") then
             mediaItem.canDirectPlay = true
             return true
+        end if
+
+        if surroundStreamFirst then
+            Debug("videoCanDirectPlay: first audio stream is unsupported 5.1")
+            return false
         end if
 
         if stereoCodec = "aac" then
@@ -728,15 +719,19 @@ Function videoCanDirectPlay(mediaItem) As Boolean
             end if
         end if
 
-        if surroundSound then
-            if (surroundCodec = "ac3" OR stereoCodec = "ac3") then
-                mediaItem.canDirectPlay = true
-                return true
-            end if
-            if (fiveoneDCA <> "2" AND surroundCodec = "dca") then
-                mediaItem.canDirectPlay = true
-                return true
-            end if
+        if surroundSound AND (surroundCodec = "ac3" OR stereoCodec = "ac3") then
+            mediaItem.canDirectPlay = true
+            return true
+        end if
+
+        if surroundSoundDCA AND (surroundCodec = "dca" OR stereoCodec = "dca") then
+            mediaItem.canDirectPlay = true
+            return true
+        end if
+
+        if surroundStreamFirst then
+            Debug("videoCanDirectPlay: first audio stream is unsupported 5.1")
+            return false
         end if
 
         if stereoCodec <> invalid AND (stereoCodec = "aac" OR stereoCodec = "mp3") then

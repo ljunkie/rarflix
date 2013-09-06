@@ -576,9 +576,19 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As 
     ' here.
 
     ' The universal transcoder doesn't support old school XML with no Media
-    ' elements, so check for that and use the old transcoder.
+    ' elements, so check for that and use the old transcoder. It also won't
+    ' work when analysis fails and there are no streams. The old transcoder
+    ' may not work with those files anyway, but the universal transcoder will
+    ' definitely fail.
 
-    if item.preferredMediaItem <> invalid AND m.SupportsUniversalTranscoding AND RegRead("transcoder_version", "preferences", "universal") = "universal" then
+    hasStreams = false
+    if item.preferredMediaItem <> invalid then
+        if item.preferredMediaItem.preferredPart <> invalid then
+            hasStreams = (item.preferredMediaItem.preferredPart.streams.Count() > 0)
+        end if
+    end if
+
+    if hasStreams AND m.SupportsUniversalTranscoding AND RegRead("transcoder_version", "preferences", "universal") = "universal" then
         return m.UniversalTranscodingVideoUrl(videoUrl, item, seekValue)
     else
         return m.ClassicTranscodingVideoUrl(videoUrl, item, httpHeaders)
@@ -809,9 +819,7 @@ Function Capabilities(recompute=false) As String
     ' signal through and theoretically doesn't care if it's 7.1.
     if SupportsSurroundSound(true, true) then
         fiveone = RegRead("fivepointone", "preferences", "1")
-        fiveoneDCA = RegRead("fivepointoneDCA", "preferences", "1")
         Debug("5.1 support set to: " + fiveone)
-        Debug("5.1 DTS support set to: " + fiveoneDCA)
 
         if fiveone <> "2" then
             audio = audio + ",ac3{channels:8}"
