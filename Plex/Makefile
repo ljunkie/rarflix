@@ -29,17 +29,18 @@ num_functions := $(shell grep -ri --include=*.brs 'end \(function\|sub\)' . | wc
 beta: APPTITLE = PlexBeta
 beta: $(APPNAME)
 
-test: APPTITLE = PlexTest
+test: APPTITLE = RARflixTest
 test: $(APPNAME)
 
 dev: APPTITLE = PlexDev
 dev: $(APPNAME)
 
-rel: APPTITLE = Plex
+rel: APPTITLE = RARflix
 rel: $(APPNAME)
 
 rarflix: APPTITLE = RARflix
 rarflix: $(APPNAME)
+
 
 manifest:
 	echo "Creating manifest for $(APPTITLE)"
