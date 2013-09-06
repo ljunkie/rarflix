@@ -379,7 +379,7 @@ Sub youtube_fetch_video_list(APIRequest As Dynamic, title As String)
     screen=uitkPreShowPosterMenu("flat-episodic-16x9", title)
     screen.showMessage("Loading...")
 
-    xml=m.youtube.ExecServerAPI(APIRequest)["xml"]
+    xml=m.ExecServerAPI(APIRequest)["xml"]
     if not isxmlelement(xml) then ShowConnectionFailed():return
     
     videos=m.newVideoListFromXML(xml.entry)
