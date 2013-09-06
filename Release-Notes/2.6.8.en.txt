@@ -1,0 +1,8 @@
+NEW:
+  - Add transcode session info to the HUD.
+  - Add a toggle for DTS support.
+
+FIXES:
+  - Fix a crash in Playback Options for non-library content.
+  - Fix for Direct Playable content flung from iOS.
+  - Fix H.264 level preference.
