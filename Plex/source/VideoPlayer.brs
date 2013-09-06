@@ -82,54 +82,6 @@ Sub videoPlayerShow()
 
         m.playbackTimer.Mark()
         m.Screen.Show()
-
-       PrintAA(m.VideoItem)
-
-	' RR testing 
-    while true
-        msg = wait(0, m.Screen.GetMessagePort())
-        if type(msg) = "roVideoScreenEvent"
-            if msg.isScreenClosed() then 'ScreenClosed event
-                'print "Closing video screen"
-                m.Screen.Close()
-                exit while
-            else if msg.isStreamStarted() then
-		print "Video status: "; msg.GetIndex(); " " msg.GetInfo() 
-            else if msg.isPlaybackPosition() then
-		nowpos = msg.GetIndex()
-		duration = int(m.VideoItem.Duration/1000)
-		if nowpos > 0 then
-		date = CreateObject("roDateTime")
-		    Debug(tostr(nowpos))
-		    Debug(tostr(Duration))
-		    timeLeft = int(Duration - nowpos)
-		    timeLeftMin = int(timeLeft/60)
-		    timeLeftHum = GetDurationString(timeLeft)
-
-endString= GetTime12Hour(date.AsSeconds()+timeLeft)
-endString = endString + " (" + timeLeftHum + " )"
-
-		    content = CreateObject("roAssociativeArray")
-		    content.length = m.VideoItem.duration
-		    content.releasedate = m.VideoItem.releasedate  + chr(10) + "End Time: " + endString
-		    content.title = m.VideoItem.title
-		    Debug("Setting HUD Content: " + tostr(content.releasedate))
-                    m.Screen.SetContent(content)
-		else
-		    'content.releaseDate = "poop"
-                    'm.Screen.SetContent(content)
-		end if
-	    else if msg.isStatusMessage()
-                print "Video status: "; msg.GetIndex(); " " msg.GetData() 
-            else if msg.isRequestFailed()
-                print "play failed: "; msg.GetMessage()
-            else
-                print "Unknown event: "; msg.GetType(); " msg: "; msg.GetMessage()
-            end if
-        end if
-    end while
-	' end testing
-
     else
         m.ViewController.PopScreen(m)
     end if
@@ -186,8 +138,9 @@ Function videoPlayerCreateVideoPlayer()
     end if
 
     videoItem.OrigReleaseDate = videoItem.ReleaseDate
-    ' add duration for HUD fun - RR
-    videoItem.Duration = mediaItem.duration
+
+    videoItem.Duration = mediaItem.duration ' set duration - used for EndTime/TimeLeft on HUD  - ljunkie
+
     if videoItem.IsTranscoded then
         server = videoItem.TranscodeServer
         videoItem.ReleaseDate = videoItem.ReleaseDate + "   Transcoded"
@@ -358,6 +311,34 @@ Function videoPlayerHandleMessage(msg) As Boolean
             end if
             m.playState = "playing"
             m.SendTimeline(true)
+
+            ' START: EndTime and Time Left to HUD - ljunkie
+	    if msg.GetIndex() > 0 AND m.VideoItem.Duration > 0 then
+	        printAA(m.VideoItem)
+                duration = int(m.VideoItem.Duration/1000)
+                nowpos = msg.GetIndex()
+                date = CreateObject("roDateTime")
+                timeLeft = int(Duration - nowpos)
+                endString = RRmktime(date.AsSeconds()+timeLeft)
+                endString = endString + " (" + GetDurationString(timeLeft,0,1,1) + ")" 'always show min/secs
+		' set the HUD
+                content = CreateObject("roAssociativeArray")
+                content.length = m.VideoItem.duration
+                content.title = m.VideoItem.title
+
+		if tostr(m.VideoItem.rokustreambitrate) <> "invalid" then
+	  	    bitrate = RRbitrate(m.VideoItem.rokustreambitrate)
+		    'if tostr(m.videoItem.IsTranscoded) = "false" then
+                        'bitrate = chr(10) + bitrate ' put bitrate on a new line -- string might be too long
+		    'end if
+                    content.releasedate = m.VideoItem.releasedate + " " + bitrate
+                end if
+                content.releasedate = content.releasedate + chr(10) + chr(10) + "End Time: " + endString 'two line breaks - easier to read ( yea it makes the hug larger...)                     
+
+		'Debug("Setting HUD Content: " + tostr(content.releasedate))
+                m.Screen.SetContent(content)
+            end if
+            ' END: EndTime/TimeLeft HUD - ljunkie
         else if msg.isRequestFailed() then
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed - message = " + tostr(msg.GetMessage()))
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed - data = " + tostr(msg.GetData()))
@@ -385,7 +366,8 @@ Function videoPlayerHandleMessage(msg) As Boolean
         else if msg.isStreamStarted() then
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isStreamStarted: position -> " + tostr(m.lastPosition))
             Debug("Message data -> " + tostr(msg.GetInfo()))
-
+	    printAA(msg.GetInfo())
+	    m.VideoItem.rokuStreamBitrate = msg.GetInfo().StreamBitrate
             m.StartTranscodeSessionRequest()
 
             if msg.GetInfo().IsUnderrun = true then
@@ -470,8 +452,9 @@ Sub videoPlayerOnUrlEvent(msg, requestContext)
                     audio = "copy"
                 end if
 
-                m.VideoItem.ReleaseDate = m.VideoItem.OrigReleaseDate + chr(10) + "video: " + video  + chr(10) + " audio: " + audio + chr(10) + videoRes + " " + audioChannel
-                ' + curState -- doesn't seem useful
+                m.VideoItem.ReleaseDate = m.VideoItem.OrigReleaseDate + "   Transcoded " + " (" + videoRes + " " + audioChannel + ")" +chr(10)  + "video: " + video  + " audio: " + audio 
+                ' + curState -- doesn't seem useful - this doesn't get updated on the fly, useful if moved to: videoPlayerHandleMessage -> msg.isPlaybackPosition
+
                 m.VideoPlayer.SetContent(m.VideoItem)
             end if
 	end if
@@ -601,8 +584,9 @@ Function videoCanDirectPlay(mediaItem) As Boolean
         next
     end if
 
-    ' RR - for some reason fling video from iPhone to Roku skips code above let's set the surroundCodec to mediaItem.audioCodec if it's still invalid 
+    ' ljunkie - for some reason fling video from iPhone to Roku skips code above let's set the surroundCodec to mediaItem.audioCodec if it's still invalid 
     ' TODO @ http://forums.plexapp.com/index.php/topic/79460-fling-direct-play-broken-from-iphone-dca-codec/
+    ' This has been fixed in 2.6.8 a different way -- back out changes when I implement the 'correct' fix
     if surroundCodec = invalid then
            surroundCodec = mediaItem.audioCodec
     end if

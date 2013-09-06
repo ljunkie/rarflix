@@ -107,30 +107,29 @@ Sub youtube_search(keyword as string )
 End Sub
 
 Sub DisplayVideo(content As Object)
-    'print "Displaying video: "
     p = CreateObject("roMessagePort")
     video = CreateObject("roVideoScreen")
     video.setMessagePort(p)
-    video.SetPositionNotificationPeriod(10)
-    content.releaseDate = "testiing"
-    PrintAA(content)
+    video.SetPositionNotificationPeriod(5)
+    content.releaseDate = "Played: " + GetDurationString(0,0,1,1) ' just to keep the format the same on initial start
+    'PrintAA(content)
     video.SetContent(content)
     video.show()
     
     while true
         msg = wait(0, video.GetMessagePort())
         if type(msg) = "roVideoScreenEvent"
-            if msg.isScreenClosed() then 'ScreenClosed event
-                'print "Closing video screen"
+            if msg.isScreenClosed() then 
                 video.Close()
                 exit while
             else if msg.isStreamStarted() then
 		print "Video status: "; msg.GetIndex(); " " msg.GetInfo() 
             else if msg.isPlaybackPosition() then
-		nowpos = msg.GetIndex()
-                print "Video GetIndex: "; msg.GetIndex()
-		content.releaseDate = tostr(nowpos)
-                video.SetContent(content)
+                'print "Video GetIndex: "; msg.GetIndex()
+                if msg.GetIndex() > 0
+		    content.releaseDate = "Played: " + GetDurationString(msg.GetIndex(),0,1,1)
+                    video.SetContent(content)
+                end if
 	    else if msg.isStatusMessage()
                 print "Video status: "; msg.GetIndex(); " " msg.GetData() 
             else if msg.isRequestFailed()
