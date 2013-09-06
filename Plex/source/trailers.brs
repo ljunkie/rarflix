@@ -315,7 +315,7 @@ Function video_get_qualities(videoID as String) As Object
                     end if
                 else
                     dialog.Close()
-                    ShowErrorDialog("Having trouble finding video formats to play...")
+                    ShowErrorDialog("Could not find any playable formats. Please try another video...")
                 end if
             end if
             dialog.Close()
