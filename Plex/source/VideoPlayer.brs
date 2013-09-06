@@ -82,6 +82,54 @@ Sub videoPlayerShow()
 
         m.playbackTimer.Mark()
         m.Screen.Show()
+
+       PrintAA(m.VideoItem)
+
+	' RR testing 
+    while true
+        msg = wait(0, m.Screen.GetMessagePort())
+        if type(msg) = "roVideoScreenEvent"
+            if msg.isScreenClosed() then 'ScreenClosed event
+                'print "Closing video screen"
+                m.Screen.Close()
+                exit while
+            else if msg.isStreamStarted() then
+		print "Video status: "; msg.GetIndex(); " " msg.GetInfo() 
+            else if msg.isPlaybackPosition() then
+		nowpos = msg.GetIndex()
+		duration = int(m.VideoItem.Duration/1000)
+		if nowpos > 0 then
+		date = CreateObject("roDateTime")
+		    Debug(tostr(nowpos))
+		    Debug(tostr(Duration))
+		    timeLeft = int(Duration - nowpos)
+		    timeLeftMin = int(timeLeft/60)
+		    timeLeftHum = GetDurationString(timeLeft)
+
+endString= GetTime12Hour(date.AsSeconds()+timeLeft)
+endString = endString + " (" + timeLeftHum + " )"
+
+		    content = CreateObject("roAssociativeArray")
+		    content.length = m.VideoItem.duration
+		    content.releasedate = m.VideoItem.releasedate  + chr(10) + "End Time: " + endString
+		    content.title = m.VideoItem.title
+		    Debug("Setting HUD Content: " + tostr(content.releasedate))
+                    m.Screen.SetContent(content)
+		else
+		    'content.releaseDate = "poop"
+                    'm.Screen.SetContent(content)
+		end if
+	    else if msg.isStatusMessage()
+                print "Video status: "; msg.GetIndex(); " " msg.GetData() 
+            else if msg.isRequestFailed()
+                print "play failed: "; msg.GetMessage()
+            else
+                print "Unknown event: "; msg.GetType(); " msg: "; msg.GetMessage()
+            end if
+        end if
+    end while
+	' end testing
+
     else
         m.ViewController.PopScreen(m)
     end if
@@ -138,6 +186,8 @@ Function videoPlayerCreateVideoPlayer()
     end if
 
     videoItem.OrigReleaseDate = videoItem.ReleaseDate
+    ' add duration for HUD fun - RR
+    videoItem.Duration = mediaItem.duration
     if videoItem.IsTranscoded then
         server = videoItem.TranscodeServer
         videoItem.ReleaseDate = videoItem.ReleaseDate + "   Transcoded"
@@ -189,6 +239,8 @@ Function videoPlayerCreateVideoPlayer()
     end if
 
     videoPlayer.SetPositionNotificationPeriod(5)
+
+
 
     m.IsTranscoded = videoItem.IsTranscoded
     m.videoItem = videoItem

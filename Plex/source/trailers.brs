@@ -111,7 +111,9 @@ Sub DisplayVideo(content As Object)
     p = CreateObject("roMessagePort")
     video = CreateObject("roVideoScreen")
     video.setMessagePort(p)
-    
+    video.SetPositionNotificationPeriod(10)
+    content.releaseDate = "testiing"
+    PrintAA(content)
     video.SetContent(content)
     video.show()
     
@@ -122,6 +124,15 @@ Sub DisplayVideo(content As Object)
                 'print "Closing video screen"
                 video.Close()
                 exit while
+            else if msg.isStreamStarted() then
+		print "Video status: "; msg.GetIndex(); " " msg.GetInfo() 
+            else if msg.isPlaybackPosition() then
+		nowpos = msg.GetIndex()
+                print "Video GetIndex: "; msg.GetIndex()
+		content.releaseDate = tostr(nowpos)
+                video.SetContent(content)
+	    else if msg.isStatusMessage()
+                print "Video status: "; msg.GetIndex(); " " msg.GetData() 
             else if msg.isRequestFailed()
                 print "play failed: "; msg.GetMessage()
             else
@@ -821,3 +832,63 @@ Sub uitkDoMessage(message, screen)
     end while
 End Sub
 ' end uitk
+
+
+    Function GetDurationString( TotalSeconds = 0 As Integer ) As String
+       datetime = CreateObject( "roDateTime" )
+       datetime.FromSeconds( TotalSeconds )
+          
+       hours = datetime.GetHours().ToStr()
+       minutes = datetime.GetMinutes().ToStr()
+       seconds = datetime.GetSeconds().ToStr()
+       
+       duration = ""
+       If hours <> "0" Then
+          duration = duration + hours + "h "
+       End If
+       If minutes <> "0" Then
+          duration = duration + minutes + "m "
+       End If
+       If seconds <> "0" Then
+          duration = duration + seconds + "s"
+       End If
+       
+       Return duration
+    End Function
+
+
+    Function GetTime12Hour( epoch As Integer ) As String
+
+
+    datetime = CreateObject("roDateTime")
+    datetime.FromSeconds(epoch)
+    datetime.ToLocalTime()
+    hours = datetime.GetHours()
+    minutes = datetime.GetMinutes()
+    seconds = datetime.GetSeconds()
+       
+       duration = ""
+       hour = hours
+       If hours = 0 Then
+           hour = 12
+       End If
+
+       If hours > 12 Then
+           hour = hours-12
+       End If
+
+       If hours >= 0 and hours < 12 Then
+          AMPM = "AM"
+       else
+	  AMPM = "PM"
+       End if
+       
+       minute = minutes.ToStr()
+       If minutes < 10 Then
+         minute = "0" + minutes.ToStr()
+       end if
+
+       result = hour.ToStr() + ":" + minute + AMPM
+
+       Return result
+    End Function
