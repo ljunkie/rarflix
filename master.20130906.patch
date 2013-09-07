@@ -1,0 +1,374 @@
+diff --git Plex/source/KeyboardScreen.brs Plex/source/KeyboardScreen.brs
+index 787dce2..86c0177 100644
+--- Plex/source/KeyboardScreen.brs
++++ Plex/source/KeyboardScreen.brs
+@@ -50,7 +50,7 @@ Function kbHandleMessage(msg) As Boolean
+                     m.Text = m.Screen.GetText()
+                     if m.Listener <> invalid then
+                         m.Listener.OnUserInput(m.Text, m)
+-                    else
++                    else if m.Item <> invalid then
+                         callback = CreateObject("roAssociativeArray")
+                         callback.Heading = m.Text
+                         callback.Item = CreateObject("roAssociativeArray")
+diff --git Plex/source/PlexMediaServer.brs Plex/source/PlexMediaServer.brs
+index 7209f7a..35c25c4 100644
+--- Plex/source/PlexMediaServer.brs
++++ Plex/source/PlexMediaServer.brs
+@@ -576,9 +566,19 @@ Function TranscodingVideoUrl(videoUrl As String, item As Object, httpHeaders As
+     ' here.
+ 
+     ' The universal transcoder doesn't support old school XML with no Media
+-    ' elements, so check for that and use the old transcoder.
++    ' elements, so check for that and use the old transcoder. It also won't
++    ' work when analysis fails and there are no streams. The old transcoder
++    ' may not work with those files anyway, but the universal transcoder will
++    ' definitely fail.
+ 
+-    if item.preferredMediaItem <> invalid AND m.SupportsUniversalTranscoding AND RegRead("transcoder_version", "preferences", "universal") = "universal" then
++    hasStreams = false
++    if item.preferredMediaItem <> invalid then
++        if item.preferredMediaItem.preferredPart <> invalid then
++            hasStreams = (item.preferredMediaItem.preferredPart.streams.Count() > 0)
++        end if
++    end if
++
++    if hasStreams AND m.SupportsUniversalTranscoding AND RegRead("transcoder_version", "preferences", "universal") = "universal" then
+         return m.UniversalTranscodingVideoUrl(videoUrl, item, seekValue)
+     else
+         return m.ClassicTranscodingVideoUrl(videoUrl, item, httpHeaders)
+@@ -809,9 +809,7 @@ Function Capabilities(recompute=false) As String
+     ' signal through and theoretically doesn't care if it's 7.1.
+     if SupportsSurroundSound(true, true) then
+         fiveone = RegRead("fivepointone", "preferences", "1")
+-        fiveoneDCA = RegRead("fivepointoneDCA", "preferences", "1")
+         Debug("5.1 support set to: " + fiveone)
+-        Debug("5.1 DTS support set to: " + fiveoneDCA)
+ 
+         if fiveone <> "2" then
+             audio = audio + ",ac3{channels:8}"
+diff --git Plex/source/PreferenceScreen.brs Plex/source/PreferenceScreen.brs
+index 8535cc0..408bf73 100644
+--- Plex/source/PreferenceScreen.brs
++++ Plex/source/PreferenceScreen.brs
+@@ -591,7 +578,6 @@ Function createAdvancedPrefsScreen(viewController) As Object
+         default: "40"
+     }
+ 
+-
+     ' HLS seconds per segment
+     lengths = [
+         { title: "Automatic", EnumValue: "auto", ShortDescriptionLine2: "Chooses based on quality." },
+@@ -604,7 +590,6 @@ Function createAdvancedPrefsScreen(viewController) As Object
+         default: "10"
+     }
+ 
+-
+     ' Analytics (opt-out)
+     values = [
+         { title: "Enabled", EnumValue: "1" },
+@@ -625,7 +610,6 @@ Function createAdvancedPrefsScreen(viewController) As Object
+     obj.AddItem({title: "Continuous Play"}, "continuous_play", obj.GetEnumValue("continuous_play"))
+     obj.AddItem({title: "H.264"}, "level", obj.GetEnumValue("level"))
+ 
+-
+     if GetGlobal("legacy1080p") then
+         obj.AddItem({title: "1080p Settings"}, "1080p")
+     end if
+@@ -753,59 +737,55 @@ Function createAudioPrefsScreen(viewController) As Object
+         default: "loop"
+     }
+ 
+-    ' Audio boost for transcoded content. Transcoded content is quiet by
+-    ' default, but if we set a default boost then audio will never be remuxed.
+-    ' These values are based on iOS.
+-    ' moved into Audio Preferences - RR
+-    values = [
+-        { title: "None", EnumValue: "100" },
+-        { title: "Small", EnumValue: "175" },
+-        { title: "Large", EnumValue: "225" },
+-        { title: "Huge", EnumValue: "300" }
+-    ]
+-    obj.Prefs["audio_boost"] = {
+-        values: values,
+-        heading: "Audio boost for transcoded video",
+-        default: "100"
+-    }
+-
+-
+-    ' 5.1 Support
+-    ' moved into Audio Preferences - RR
++    ' 5.1 Support - AC-3
+     fiveone = [
+         { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Try to copy 5.1 audio streams when transcoding." },
+         { title: "Disabled", EnumValue: "2", ShortDescriptionLine2: "Always use 2-channel audio when transcoding." }
+     ]
+     obj.Prefs["fivepointone"] = {
+         values: fiveone,
+-        heading: "5.1 audio support for transcoded content",
++        heading: "5.1 AC-3 support",
+         default: "1"
+     }
+ 
+-
+-    ' DTS support - Added by RR
+-    ' moved into Audio Preferences - RR
++    ' 5.1 Support - DTS
+     fiveoneDCA = [
+-        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Try to copy DTS audio streams when transcoding." },
+-        { title: "Disabled", EnumValue: "2", ShortDescriptionLine2: "Always use 2-channel audio when transcoding." }
++        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Try to Direct Play DTS in MKVs." },
++        { title: "Disabled", EnumValue: "2", ShortDescriptionLine2: "Never Direct Play DTS." }
+     ]
+     obj.Prefs["fivepointoneDCA"] = {
+         values: fiveoneDCA,
+-        heading: "DTS audio support for transcoded content",
++        heading: "5.1 DTS support",
+         default: "1"
+     }
+ 
++    ' Audio boost for transcoded content. Transcoded content is quiet by
++    ' default, but if we set a default boost then audio will never be remuxed.
++    ' These values are based on iOS.
++    values = [
++        { title: "None", EnumValue: "100" },
++        { title: "Small", EnumValue: "175" },
++        { title: "Large", EnumValue: "225" },
++        { title: "Huge", EnumValue: "300" }
++    ]
++    obj.Prefs["audio_boost"] = {
++        values: values,
++        heading: "Audio boost for transcoded video",
++        default: "100"
++    }
+ 
+     obj.Screen.SetHeader("Audio Preferences")
+ 
+     obj.AddItem({title: "Loop Playback"}, "loopalbums", obj.GetEnumValue("loopalbums"))
+     obj.AddItem({title: "Theme Music"}, "theme_music", obj.GetEnumValue("theme_music"))
+-    obj.AddItem({title: "Audio Boost"}, "audio_boost", obj.GetEnumValue("audio_boost"))
++
+     if SupportsSurroundSound(true) then
+-        obj.AddItem({title: "5.1 Support"}, "fivepointone", obj.GetEnumValue("fivepointone"))
++        obj.AddItem({title: "5.1 AC-3 Support"}, "fivepointone", obj.GetEnumValue("fivepointone"))
+         obj.AddItem({title: "5.1 DTS Support"}, "fivepointoneDCA", obj.GetEnumValue("fivepointoneDCA"))
+     end if
+ 
++    obj.AddItem({title: "Audio Boost"}, "audio_boost", obj.GetEnumValue("audio_boost"))
++
+     obj.AddItem({title: "Close"}, "close")
+ 
+     return obj
+@@ -821,12 +801,10 @@ Function prefsAudioHandleMessage(msg) As Boolean
+             m.ViewController.PopScreen(m)
+         else if msg.isListItemSelected() then
+             command = m.GetSelectedCommand(msg.GetIndex())
+-            ' Moved DTS, 5.1 and Audio Boost into audio Prefs RR
+-            ' OLD: if command = "loopalbums" OR command = "theme_music" then
+-            if command = "loopalbums" OR command = "theme_music" OR command = "fivepointone" OR command = "fivepointoneDCA" OR command = "audio_boost" then
+-                m.HandleEnumPreference(command, msg.GetIndex())
+-            else if command = "close" then
++            if command = "close" then
+                 m.Screen.Close()
++            else
++                m.HandleEnumPreference(command, msg.GetIndex())
+             end if
+         end if
+     end if
+--- Plex/source/VideoPlayer.brs
++++ Plex/source/VideoPlayer.brs
+@@ -193,8 +176,6 @@ Function videoPlayerCreateVideoPlayer()
+ 
+     videoPlayer.SetPositionNotificationPeriod(5)
+ 
+-
+-
+     m.IsTranscoded = videoItem.IsTranscoded
+     m.videoItem = videoItem
+     m.videoPlayer = videoPlayer
+@@ -522,6 +466,8 @@ Function videoCanDirectPlay(mediaItem) As Boolean
+     end if
+     mediaItem.canDirectPlay = false
+     mediaItem.cachedSurroundSound = surroundSound
++    surroundSoundDCA = surroundSound AND (RegRead("fivepointoneDCA", "preferences", "1") = "1")
++    surroundSound = surroundSound AND (RegRead("fivepointone", "preferences", "1") = "1")
+ 
+     if mediaItem.preferredPart <> invalid AND mediaItem.preferredPart.subtitles <> invalid then
+         subtitleStream = mediaItem.preferredPart.subtitles
+@@ -584,15 +530,6 @@ Function videoCanDirectPlay(mediaItem) As Boolean
+         next
+     end if
+ 
+-    ' ljunkie - for some reason fling video from iPhone to Roku skips code above let's set the surroundCodec to mediaItem.audioCodec if it's still invalid 
+-    ' TODO @ http://forums.plexapp.com/index.php/topic/79460-fling-direct-play-broken-from-iphone-dca-codec/
+-    ' This has been fixed in 2.6.8 a different way -- back out changes when I implement the 'correct' fix
+-    if surroundCodec = invalid then
+-           surroundCodec = mediaItem.audioCodec
+-    end if
+-    fiveoneDCA = RegRead("fivepointoneDCA", "preferences", "1")
+-    Debug("DTS support set to  " + fiveoneDCA)
+-
+     Debug("Media item optimized for streaming: " + tostr(mediaItem.optimized))
+     Debug("Media item container: " + tostr(mediaItem.container))
+     Debug("Media item video codec: " + tostr(mediaItem.videoCodec))
+@@ -652,16 +589,16 @@ Function videoCanDirectPlay(mediaItem) As Boolean
+             return false
+         end if
+ 
+-        if surroundStreamFirst AND surroundCodec = "aac" then
+-            Debug("videoCanDirectPlay: first audio stream is 5.1 AAC")
+-            return false
+-        end if
+-
+         if surroundSound AND (surroundCodec = "ac3" OR stereoCodec = "ac3") then
+             mediaItem.canDirectPlay = true
+             return true
+         end if
+ 
++        if surroundStreamFirst then
++            Debug("videoCanDirectPlay: first audio stream is unsupported 5.1")
++            return false
++        end if
++
+         if stereoCodec = "aac" then
+             mediaItem.canDirectPlay = true
+             return true
+@@ -728,15 +665,19 @@ Function videoCanDirectPlay(mediaItem) As Boolean
+             end if
+         end if
+ 
+-        if surroundSound then
+-            if (surroundCodec = "ac3" OR stereoCodec = "ac3") then
+-                mediaItem.canDirectPlay = true
+-                return true
+-            end if
+-            if (fiveoneDCA <> "2" AND surroundCodec = "dca") then
+-                mediaItem.canDirectPlay = true
+-                return true
+-            end if
++        if surroundSound AND (surroundCodec = "ac3" OR stereoCodec = "ac3") then
++            mediaItem.canDirectPlay = true
++            return true
++        end if
++
++        if surroundSoundDCA AND (surroundCodec = "dca" OR stereoCodec = "dca") then
++            mediaItem.canDirectPlay = true
++            return true
++        end if
++
++        if surroundStreamFirst then
++            Debug("videoCanDirectPlay: first audio stream is unsupported 5.1")
++            return false
+         end if
+ 
+         if stereoCodec <> invalid AND (stereoCodec = "aac" OR stereoCodec = "mp3") then
+@@ -744,7 +685,7 @@ Function videoCanDirectPlay(mediaItem) As Boolean
+             return true
+         end if
+ 
+-        Debug("videoCanDirectPlay: mkv ac not aac/ac3/mp3")
++        Debug("videoCanDirectPlay: mkv ac not aac/ac3/mp3")
+         return false
+     end if
+ 
+@@ -758,7 +699,7 @@ Function videoCanDirectPlay(mediaItem) As Boolean
+         end if
+ 
+         if isnonemptystr(mediaItem.audioCodec) AND (mediaItem.audioCodec <> "aac" AND mediaItem.audioCodec <> "ac3" AND mediaItem.audioCodec <> "mp3") then
+-            Debug("videoCanDirectPlay: hls ac not aac/ac3/mp3")
++            Debug("videoCanDirectPlay: hls ac not aac/ac3/mp3")
+             'return false
+         end if
+ 
+diff --git Plex/source/ViewController.brs Plex/source/ViewController.brs
+index 51a86b6..a1b48cb 100644
+--- Plex/source/ViewController.brs
++++ Plex/source/ViewController.brs
+@@ -300,6 +300,9 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
+     ' Stop any background audio first
+     m.AudioPlayer.Stop()
+ 
++    ' Make sure we have full details before trying to play.
++    metadata.ParseDetails()
++
+     ' Prompt about resuming if there's an offset and the caller didn't specify a seek value.
+     if seekValue = invalid then
+         if metadata.viewOffset <> invalid then
+diff --git Plex/source/urlUtils.brs Plex/source/urlUtils.brs
+index 4481c7b..617dc6e 100644
+--- Plex/source/urlUtils.brs
++++ Plex/source/urlUtils.brs
+@@ -19,8 +19,6 @@ Function NewHttp(url As String) as Object
+     obj.PrepareUrlForQuery          = http_prepare_url_for_query
+     obj.GetToStringWithTimeout      = http_get_to_string_with_timeout
+ 
+-
+-
+     if Instr(1, url, "?") > 0 then obj.FirstParam = false
+ 
+     return obj
+--- README.md
++++ README.md
+@@ -44,6 +44,12 @@ There are some additional targets in the Makefile, like `make rel install` to
+ build a release, but you don't generally need them. One other nicety is the
+ ability to take a screenshot using `make screenshot`.
+ 
++**Note:** Some Roku versions are beginning to require HTTP authentication for
++the installer. This is somewhat handled, but not necessarily robustly, so
++you may need to make some tweaks. You can set environment variables for
++`ROKU_DEV_USERNAME` and `ROKU_DEV_PASSWORD`, which default to `rokudev` and
++`plex` respectively.
++
+ ### Debugging
+ 
+ The Roku doesn't have logging per se, but dev channels are able to write
+diff --git Release-Notes/2.6.8.en.txt Release-Notes/2.6.8.en.txt
+new file mode 100644
+index 0000000..0dd8fc1
+--- /dev/null
++++ Release-Notes/2.6.8.en.txt
+@@ -0,0 +1,8 @@
++NEW:
++  - Add transcode session info to the HUD.
++  - Add a toggle for DTS support.
++
++FIXES:
++  - Fix a crash in Playback Options for non-library content.
++  - Fix for Direct Playable content flung from iOS.
++  - Fix H.264 level preference.
+diff --git app.mk app.mk
+index cbab269..6af4c8e 100644
+--- app.mk
++++ app.mk
+@@ -25,6 +25,10 @@ PKGREL = ../packages
+ ZIPREL = ../zips
+ SOURCEREL = ..
+ 
++ROKU_DEV_USERNAME ?= rokudev
++ROKU_DEV_PASSWORD ?= plex
++CURL = curl --digest -u $(ROKU_DEV_USERNAME):$(ROKU_DEV_PASSWORD)
++
+ 
+ .PHONY: all $(APPNAME)
+ 
+@@ -64,7 +68,7 @@ $(APPNAME): $(APPDEPS)
+ 
+ install: $(APPNAME)
+ 	@echo "Installing $(APPNAME) to host $(ROKU_DEV_TARGET)"
+-	@curl -s -S -F "mysubmit=Install" -F "archive=@$(ZIPREL)/$(APPNAME).zip" -F "passwd=" http://$(ROKU_DEV_TARGET)/plugin_install | grep "<font color" | sed "s/<font color=\"red\">//"
++	@$(CURL) -s -S -F "mysubmit=Install" -F "archive=@$(ZIPREL)/$(APPNAME).zip" -F "passwd=" http://$(ROKU_DEV_TARGET)/plugin_install | grep "<font color" | sed "s/<font color=\"red\">//"
+ 
+ pkg: install
+ 	@echo "*** Creating Package ***"
+@@ -82,9 +86,9 @@ pkg: install
+ 	fi
+ 
+ 	@echo "Packaging  $(APPNAME) on host $(ROKU_DEV_TARGET)"
+-	@read -p "Password: " REPLY ; echo $$REPLY | xargs -i curl -s -S -Fmysubmit=Package -Fapp_name=$(APPNAME)/$(VERSION) -Fpasswd={} -Fpkg_time=`expr \`date +%s\` \* 1000` "http://$(ROKU_DEV_TARGET)/plugin_package" | grep '^<font face=' | sed 's/.*href=\"\([^\"]*\)\".*/\1/' | sed 's#pkgs/##' | xargs -i curl -s -S -o $(PKGREL)/$(APPNAME)_{} http://$(ROKU_DEV_TARGET)/pkgs/{}
++	@read -p "Password: " REPLY ; echo $$REPLY | xargs -i $(CURL) -s -S -Fmysubmit=Package -Fapp_name=$(APPNAME)/$(VERSION) -Fpasswd={} -Fpkg_time=`expr \`date +%s\` \* 1000` "http://$(ROKU_DEV_TARGET)/plugin_package" | grep '^<font face=' | sed 's/.*href=\"\([^\"]*\)\".*/\1/' | sed 's#pkgs/##' | xargs -i $(CURL) -s -S -o $(PKGREL)/$(APPNAME)_{} http://$(ROKU_DEV_TARGET)/pkgs/{}
+ 
+ 	@echo "*** Package  $(APPNAME) complete ***" 
+ remove:
+ 	@echo "Removing $(APPNAME) from host $(ROKU_DEV_TARGET)"
+-	@curl -s -S -F "mysubmit=Delete" -F "archive=" -F "passwd=" http://$(ROKU_DEV_TARGET)/plugin_install | grep "<font color" | sed "s/<font color=\"red\">//"
++	@$(CURL) -s -S -F "mysubmit=Delete" -F "archive=" -F "passwd=" http://$(ROKU_DEV_TARGET)/plugin_install | grep "<font color" | sed "s/<font color=\"red\">//"
