@@ -143,10 +143,13 @@ Function videoPlayerCreateVideoPlayer()
         videoItem.ReleaseDate = videoItem.ReleaseDate + "   Transcoded"
     else
 
-       if (videoItem.audioCh.toint() = 6) then
-       	    audioCh = "5.1"
-       else
-       	    audioCh = tostr(videoItem.audioCh) + "ch"
+       audioCh = ""
+       if videoItem.audioCh <> invalid then
+           if (videoItem.audioCh.toint() = 6) then
+               audioCh = "5.1"
+           else
+               audioCh = tostr(videoItem.audioCh) + "ch"
+           end if
        end if
 
        if (tostr(videoItem.audioCodec) = "dca") then
