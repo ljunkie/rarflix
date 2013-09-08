@@ -98,10 +98,18 @@ Sub videoSetupButtons()
             m.AddButton(rating_string + " on Rotten Tomatoes", "tomatoes")
         endif
 
+
+          if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
+             if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
+               m.AddButton("Delete permanently","delete")
+           end if
+           end if
+
 	' more buttong if TV SHOW ( only if grandparent key is available,stops loops) OR if this is Movie
-	   if m.metadata.grandparentKey <> invalid or m.metadata.ContentType = "movie" then
-          m.AddButton("More...", "more")
+	  if m.metadata.grandparentKey <> invalid or m.metadata.ContentType = "movie" then
+              m.AddButton("More...", "more")
 	  end if
+
         ' Show rating bar if the content is a show or an episode - we might want this to be the delete button. We will see
           if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
                m.AddRatingButton(m.metadata.UserRating, m.metadata.StarRating, "rateVideo")
@@ -203,6 +211,10 @@ Function videoHandleMessage(msg) As Boolean
                     dialog.SetButton("delete", "Delete permanently")
                 end if
 
+                if m.metadata.ContentType = "episode" or m.metadata.ContentType = "show"  then
+                   ' dialog.SetButton("options", "Playback options")
+                    dialog.SetButton("rate", "_rate_")
+                end if
 
                 dialog.SetButton("close", "Back")
                 dialog.HandleButton = videoDialogHandleButton
