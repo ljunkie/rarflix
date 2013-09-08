@@ -59,6 +59,30 @@ Function createBaseMetadata(container, item, thumb=invalid) As Object
 
     metadata.sourceTitle = item@sourceTitle
 
+    ' START: ljunkie - leafCount viewedLeafCount ( how many items, how many items watched)
+    if item@leafCount <> invalid  then
+       metadata.leafCount = item@leafCount
+    end if
+
+    if item@viewedLeafCount <> invalid  then
+       metadata.viewedLeafCount = item@viewedLeafCount
+    end if
+
+    ' set content watched if all leafs are viewed
+    if item@viewedLeafCount <> invalid and item@leafCount <> invalid 
+       extra = invalid
+       if val(item@viewedLeafCount) = val(item@leafCount) then
+            extra = " (watched)" ' all items watched
+       else if val(item@viewedLeafCount) > 0 then
+            extra = " (" + tostr(item@viewedLeafCount) + " of " + tostr(item@leafCount) + " watched)" ' partially watched - show count
+       end if
+       if extra <> invalid then
+           metadata.Title = metadata.Title + extra
+           metadata.ShortDescriptionLine1 = metadata.ShortDescriptionLine1 + extra
+       end if
+    end if
+    ' END: ljunkie - leafCount viewedLeafCount ( how many items, how many items watched)
+
     if container.xml@mixedParents = "1" then
         parentTitle = firstOf(item@parentTitle, container.xml@parentTitle, "")
         if parentTitle <> "" then
