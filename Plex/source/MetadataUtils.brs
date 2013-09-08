@@ -68,13 +68,16 @@ Function createBaseMetadata(container, item, thumb=invalid) As Object
        metadata.viewedLeafCount = item@viewedLeafCount
     end if
 
-    ' set content watched if all leafs are viewed
+    ' appent title differently based on leaf/viewed
+    ' I might what to check the type here - not sure how this looks for types other than shows (TODO)
     if item@viewedLeafCount <> invalid and item@leafCount <> invalid 
        extra = invalid
        if val(item@viewedLeafCount) = val(item@leafCount) then
             extra = " (watched)" ' all items watched
        else if val(item@viewedLeafCount) > 0 then
             extra = " (" + tostr(item@viewedLeafCount) + " of " + tostr(item@leafCount) + " watched)" ' partially watched - show count
+       else if val(item@leafCount) > 0 then
+            extra = " (" + tostr(item@leafCount) + ")"
        end if
        if extra <> invalid then
            metadata.Title = metadata.Title + extra
