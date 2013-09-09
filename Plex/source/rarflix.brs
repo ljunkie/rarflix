@@ -73,9 +73,17 @@ Function RRbitrate( bitrate As Float) As String
 End Function
 
 Function RRbreadcrumbDate(myscreen) As Object
+        'newScreen = m.screens.Peek()
+    screenName = firstOf(myScreen.ScreenName, type(myScreen.Screen))
+    if screenName <> invalid and screenName = "Home" then 
+    Debug("update " + screenName + " screen time")
     date = CreateObject("roDateTime")
     timeString = RRmktime(date.AsSeconds())
     dateString = date.AsDateString("short-month-short-weekday")
     myscreen.Screen.SetBreadcrumbEnabled(true)
     myscreen.Screen.SetBreadcrumbText(dateString, timeString)
+    else 
+     Debug("will NOT update " + screenName + " screen time. " + screenName +"=Home")
+    end if
+
 End function

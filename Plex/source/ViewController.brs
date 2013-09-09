@@ -481,7 +481,7 @@ Sub vcPopScreen(screen)
         Debug("Top of stack is once again: " + screenName)
         m.Analytics.TrackScreen(screenName)
         newScreen.Activate(screen)
-        ' RRbreadcrumbDate(newScreen) - maybe if we check to make sure this screenName is the homescreen.. but not needed
+        RRbreadcrumbDate(newScreen)
     end if
 
     ' If some other screen requested this close, let it know.
