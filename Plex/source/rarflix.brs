@@ -42,9 +42,9 @@ Function RRmktime( epoch As Integer) As String
        End If
 
        If hours >= 0 and hours < 12 Then
-          AMPM = "AM"
+          AMPM = "am"
        else
-	  AMPM = "PM"
+	  AMPM = "pm"
        End if
        
        minute = minutes.ToStr()

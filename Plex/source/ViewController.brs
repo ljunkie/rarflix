@@ -102,6 +102,12 @@ Function vcCreateHomeScreen()
     screen.ScreenName = "Home"
     m.InitializeOtherScreen(screen, invalid)
     screen.Show()
+    ' show dataTime on homescreen
+    date = CreateObject("roDateTime")
+    timeString = RRmktime(date.AsSeconds())
+    dateString = date.AsDateString("short-month-short-weekday")
+    screen.Screen.SetBreadcrumbEnabled(true)
+    screen.Screen.SetBreadcrumbText(dateString, timeString)
 
     return screen
 End Function
@@ -481,6 +487,13 @@ Sub vcPopScreen(screen)
         Debug("Top of stack is once again: " + screenName)
         m.Analytics.TrackScreen(screenName)
         newScreen.Activate(screen)
+	' refresh DateTime - ljunkie
+        ' ljunkie - current time 
+        date = CreateObject("roDateTime")
+        timeString = RRmktime(date.AsSeconds())
+        dateString = date.AsDateString("short-month-short-weekday")
+        newScreen.Screen.SetBreadcrumbEnabled(true)
+        newScreen.Screen.SetBreadcrumbText(dateString, timeString)
     end if
 
     ' If some other screen requested this close, let it know.
@@ -631,6 +644,8 @@ Sub vcUpdateScreenProperties(screen)
         AddAccountHeaders(screen.Screen, screen.Item.server.AccessToken)
     end if
 
+    ' ljunkie - current time -- removed from this - ONLY on home screen for now.
+
     if screen.NumBreadcrumbs <> 0 then
         count = m.breadcrumbs.Count()
         if count >= 2 then
@@ -650,6 +665,7 @@ Sub vcUpdateScreenProperties(screen)
 
     screenType = type(screen.Screen)
     ' Sigh, different screen types don't support breadcrumbs with the same functions
+
     if screenType = "roGridScreen" OR screenType = "roPosterScreen" OR screenType = "roSpringboardScreen" then
         if enableBreadcrumbs then
             screen.Screen.SetBreadcrumbEnabled(true)
