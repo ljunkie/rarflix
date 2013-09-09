@@ -59,7 +59,7 @@ End Function
 
 Sub mpCheckAuthentication()
     if m.IsSignedIn then return
-    token = RegRead("AuthToken", "myplex")
+    token = RegRead("AuthToken1", "myplex")
     if token <> invalid then
         m.ValidateToken(token)
     end if
