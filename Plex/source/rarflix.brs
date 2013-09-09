@@ -31,30 +31,30 @@ Function RRmktime( epoch As Integer) As String
     minutes = datetime.GetMinutes()
     seconds = datetime.GetSeconds()
        
-       duration = ""
-       hour = hours
-       If hours = 0 Then
-           hour = 12
-       End If
+    duration = ""
+    hour = hours
+    If hours = 0 Then
+       hour = 12
+    End If
 
-       If hours > 12 Then
-           hour = hours-12
-       End If
+    If hours > 12 Then
+        hour = hours-12
+    End If
 
-       If hours >= 0 and hours < 12 Then
-          AMPM = "am"
-       else
-	  AMPM = "pm"
-       End if
+    If hours >= 0 and hours < 12 Then
+        AMPM = "am"
+    else
+        AMPM = "pm"
+    End if
        
-       minute = minutes.ToStr()
-       If minutes < 10 Then
-         minute = "0" + minutes.ToStr()
-       end if
+    minute = minutes.ToStr()
+    If minutes < 10 Then
+      minute = "0" + minutes.ToStr()
+    end if
 
-       result = hour.ToStr() + ":" + minute + AMPM
+    result = hour.ToStr() + ":" + minute + AMPM
 
-       Return result
+    Return result
 End Function
 
 Function RRbitrate( bitrate As Float) As String
@@ -73,17 +73,16 @@ Function RRbitrate( bitrate As Float) As String
 End Function
 
 Function RRbreadcrumbDate(myscreen) As Object
-        'newScreen = m.screens.Peek()
     screenName = firstOf(myScreen.ScreenName, type(myScreen.Screen))
     if screenName <> invalid and screenName = "Home" then 
-    Debug("update " + screenName + " screen time")
-    date = CreateObject("roDateTime")
-    timeString = RRmktime(date.AsSeconds())
-    dateString = date.AsDateString("short-month-short-weekday")
-    myscreen.Screen.SetBreadcrumbEnabled(true)
-    myscreen.Screen.SetBreadcrumbText(dateString, timeString)
+        Debug("update " + screenName + " screen time")
+        date = CreateObject("roDateTime")
+        timeString = RRmktime(date.AsSeconds())
+        dateString = date.AsDateString("short-month-short-weekday")
+        myscreen.Screen.SetBreadcrumbEnabled(true)
+        myscreen.Screen.SetBreadcrumbText(dateString, timeString)
     else 
-     Debug("will NOT update " + screenName + " screen time. " + screenName +"=Home")
+        Debug("will NOT update " + screenName + " screen time. " + screenName +"=Home")
     end if
 
 End function
