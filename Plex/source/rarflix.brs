@@ -77,5 +77,5 @@ Function RRbreadcrumbDate(myscreen) As Object
     timeString = RRmktime(date.AsSeconds())
     dateString = date.AsDateString("short-month-short-weekday")
     myscreen.Screen.SetBreadcrumbEnabled(true)
-    myscreen.Screen.SetBreadcrumbText(dateString, timeString+"shit")
+    myscreen.Screen.SetBreadcrumbText(dateString, timeString)
 End function
