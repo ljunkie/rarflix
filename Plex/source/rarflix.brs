@@ -71,3 +71,11 @@ Function RRbitrate( bitrate As Float) As String
     end if
     return tostr(speed) + format
 End Function
+
+Function RRbreadcrumbDate(myscreen) As Object
+    date = CreateObject("roDateTime")
+    timeString = RRmktime(date.AsSeconds())
+    dateString = date.AsDateString("short-month-short-weekday")
+    myscreen.Screen.SetBreadcrumbEnabled(true)
+    myscreen.Screen.SetBreadcrumbText(dateString, timeString+"shit")
+End function

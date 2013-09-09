@@ -102,13 +102,7 @@ Function vcCreateHomeScreen()
     screen.ScreenName = "Home"
     m.InitializeOtherScreen(screen, invalid)
     screen.Show()
-    ' show dataTime on homescreen
-    date = CreateObject("roDateTime")
-    timeString = RRmktime(date.AsSeconds())
-    dateString = date.AsDateString("short-month-short-weekday")
-    screen.Screen.SetBreadcrumbEnabled(true)
-    screen.Screen.SetBreadcrumbText(dateString, timeString)
-
+    RRbreadcrumbDate(screen) 'ljunkie - homescreen data/time
     return screen
 End Function
 
@@ -487,13 +481,7 @@ Sub vcPopScreen(screen)
         Debug("Top of stack is once again: " + screenName)
         m.Analytics.TrackScreen(screenName)
         newScreen.Activate(screen)
-	' refresh DateTime - ljunkie
-        ' ljunkie - current time 
-        date = CreateObject("roDateTime")
-        timeString = RRmktime(date.AsSeconds())
-        dateString = date.AsDateString("short-month-short-weekday")
-        newScreen.Screen.SetBreadcrumbEnabled(true)
-        newScreen.Screen.SetBreadcrumbText(dateString, timeString)
+        RRbreadcrumbDate(newScreen) 'ljunkie - homescreen data/time
     end if
 
     ' If some other screen requested this close, let it know.
@@ -524,9 +512,31 @@ Sub vcShow()
     Debug("Starting global message loop")
 
     timeout = 0
+    lastmin = -1 'container to update every minute
     while m.screens.Count() > 0
         m.WebServer.prewait()
         msg = wait(timeout, m.GlobalMessagePort)
+
+        'ljunkie - minute refresh check - if minuteRefresh <> invalid, then it a brand spanking new minute
+        minuteRefresh = invalid
+        if lastmin <> invalid then 
+            date = CreateObject("roDateTime")
+            newmin = date.GetMinutes()
+            if newmin <> lastmin then 
+    	        'Debug(tostr(newmin) + " >  " + tostr(lastmin) + " minuteRefresh set")
+	        minuteRefresh = 1
+                lastmin = date.GetMinutes()
+            end if
+        end if
+        ' end minute check
+
+        ' ljunkie - update clock on home screen (every minute) - only on roSocketEvent
+	if m.screens.Count() = 1 and type(msg) = "roSocketEvent" then 
+            if minuteRefresh <> invalid then
+		    RRbreadcrumbDate(m.screens[0])
+            end if
+	end if
+
         if msg <> invalid then
             ' Printing debug information about every message may be overkill
             ' regardless, but note that URL events don't play by the same rules,
