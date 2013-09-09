@@ -317,14 +317,17 @@ Function videoPlayerHandleMessage(msg) As Boolean
 	    if msg.GetIndex() > 0 AND m.VideoItem.Duration > 0 then
 	        'printAA(m.VideoItem)
                 duration = int(m.VideoItem.Duration/1000)
-                nowpos = msg.GetIndex()
                 date = CreateObject("roDateTime")
-                timeLeft = int(Duration - nowpos)
+                timeLeft = int(Duration - msg.GetIndex())
                 endString = RRmktime(date.AsSeconds()+timeLeft)
                 endString = endString + " (" + GetDurationString(timeLeft,0,1,1) + ")" 'always show min/secs
+
 		' set the HUD
                 content = CreateObject("roAssociativeArray")
                 content = m.VideoItem ' assign Video item and reset other keys
+		if m.VideoItem.OrigHUDreleaseDate = invalid then
+                   m.VideoItem.OrigHUDreleaseDate = m.VideoItem.releasedate
+                end if
                 content.length = m.VideoItem.duration
                 content.title = m.VideoItem.title
 
@@ -333,7 +336,7 @@ Function videoPlayerHandleMessage(msg) As Boolean
 		    'if tostr(m.videoItem.IsTranscoded) = "false" then
                         'bitrate = chr(10) + bitrate ' put bitrate on a new line -- string might be too long
 		    'end if
-                    content.releasedate = m.VideoItem.releasedate + " " + bitrate
+                    content.releasedate = m.VideoItem.OrigHUDreleasedate + " " + bitrate
                 end if
                 content.releasedate = content.releasedate + chr(10) + chr(10) + "End Time: " + endString 'two line breaks - easier to read ( yea it makes the hug larger...)                     
 		' update HUD
