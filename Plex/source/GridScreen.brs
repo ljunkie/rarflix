@@ -54,6 +54,7 @@ Function createGridScreenForItem(item, viewController, style) As Object
 
     container = createPlexContainerForUrl(item.server, item.sourceUrl, item.key)
     container.SeparateSearchItems = true
+    ' ljunkie -- testing lazy load (TODO)
     obj.Loader = createPaginatedLoader(container, 8, 75)
     obj.Loader.Listener = obj
 

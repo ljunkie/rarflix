@@ -247,7 +247,12 @@ Function videoHandleMessage(msg) As Boolean
                 m.metadata.UserRating = msg.getdata()
                 m.Item.server.Rate(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier,rateValue%.ToStr())
             else if buttonCommand = "getTrailers" then
-                youtube_search(tostr(m.metadata.CleanTitle + " trailer"))
+                if m.metaData.OrigReleaseDate <> invalid then
+                     year = m.metaData.OrigReleaseDate
+                else 
+                     year = m.metaData.ReleaseDate
+                end if
+                youtube_search(tostr(m.metadata.CleanTitle),tostr(year))
                 'closeDialog = true
             else if buttonCommand = "tomatoes" then
                 dialog = createBaseDialog()
@@ -296,7 +301,7 @@ Function videoDialogHandleButton(command, data) As Boolean
         obj.ViewController.CreateScreenForItem(dummyItem, invalid, ["Series"])
         closeDialog = true
     else if command = "getTrailers" then
-        youtube_search(tostr(obj.metadata.CleanTitle + " trailer"))
+        youtube_search(tostr(obj.metadata.CleanTitle + " trailer",obj.metadata.Year))
         closeDialog = true
     else if command = "scrobble" then
         obj.metadata.server.Scrobble(obj.metadata.ratingKey, obj.metadata.mediaContainerIdentifier)

@@ -7,6 +7,11 @@ Function InitYouTube() As Object
     this.protocol = "http"
     this.scope = this.protocol + "://gdata.youtube.com"
     this.prefix = this.scope + "/feeds/api"
+
+    this.tmdb_scope = this.protocol + "://api.themoviedb.org"
+    this.tmdb_prefix = this.tmdb_scope + "/3"
+    this.tmdb_apikey = "cc34d5f77b86f8c21377b86d4420439a"
+
     ' this.FieldsToInclude = "&fields=entry(title,author,link,gd:rating,media:group(media:category,media:description,media:thumbnail,yt:videoid))"
     
     this.CurrentPageTitle = ""
@@ -15,6 +20,7 @@ Function InitYouTube() As Object
 
     'API Calls
     this.ExecServerAPI = youtube_exec_api
+    this.ExecTmdbAPI = tmdb_exec_api
     
     'Search
     this.SearchYouTube = youtube_search ' changed to a forced search
@@ -55,10 +61,10 @@ Function youtube_exec_api(request As Dynamic) As Object
     if not headers.DoesExist("GData-Version") then headers.AddReplace("GData-Version", "2") 
 
     http.method = method
-    print "----------------------------------"
+    'print "----------------------------------"
     if postdata<>invalid then
         rsp=http.PostFromStringWithTimeout(postdata, 10, headers)
-        print "postdata:",postdata
+        'print "postdata:",postdata
     else
         rsp=http.getToStringWithTimeout(10, headers)
     end if
@@ -89,15 +95,72 @@ Function handleYoutubeError(rsp) As Dynamic
     return error
 End Function
 
-Sub youtube_search(keyword as string )
+Sub youtube_search(keyword as string, year = "invalid" as string )
     dialog = createBaseDialog()
     dialog.Title = ""
     dialog.Text = ""
-    dialog=ShowPleaseWait("Please wait","Searching YouTube for "+Quote()+keyword+Quote())
+    dialog=ShowPleaseWait("Please wait","Searching TMDB & YouTube for " + Quote()+keyword+Quote())
+    origSearch_trailer = keyword + " trailer"
+    searchString_trailer = URLEncode(origSearch_trailer)
     searchString = URLEncode(keyword)
-    xml=m.youtube.ExecServerAPI("videos?q="+searchString)["xml"]
-    if not isxmlelement(xml) then dialog.Close():ShowConnectionFailed():return
-    videos=m.youtube.newVideoListFromXML(xml.entry)
+    ' xml=m.youtube.ExecServerAPI("videos?q=HJEsNjH3JT8")["xml"]
+    ' try the TMDB first.. then try youtube
+    ' we could speed this up if we know the TMDB ( does PMS know this? )
+
+    Videos=CreateObject("roList")
+
+    if year <> "invalid" then
+       re = CreateObject("roRegex", "-", "") ' only grab the year
+       year = re.split(year)[0]
+       s_tmdb = m.youtube.ExecTmdbAPI("search/movie?query="+searchString+"&page=1&include_adult=false&year=" + tostr(year))["json"]
+       if s_tmdb.results.count() = 0 then
+         Debug("---------------- no match found with year.. try again")
+         year = "invalid" ' invalidate year to try again without it
+       end if
+    end if
+    
+    ' try TMDB lookup without year
+    if year = "invalid" then
+       s_tmdb = m.youtube.ExecTmdbAPI("search/movie?query="+searchString+"&page=1&include_adult=false")["json"]
+    end if
+
+    ' locate trailers for video
+    if s_tmdb.results.count() > 0 and tostr(s_tmdb.results[0].id) <> "invalid"  then
+       s_tmdb = m.youtube.ExecTmdbAPI("movie/"+tostr(s_tmdb.results[0].id)+"/trailers?page=1")["json"]
+    end if
+
+
+    if type(s_tmdb.youtube) = "roArray"  then 
+       for each trailer in s_tmdb.youtube
+            Debug("Found YouTube Trailer from TMDB")
+            PrintAA(trailer)
+            re = CreateObject("roRegex", "&", "") ' seems some urls have &hd=1 .. maybe more to come
+	    source = re.split(trailer.Source)[0]
+
+            ' verify it's playable first
+            if video_check_embed(source) <> "invalid" then
+              xml=m.youtube.ExecServerAPI("videos/" + source)["xml"]
+              if isxmlelement(xml) then 
+                  ' single video will be retured.. call newVideoFromXML
+                  video=m.youtube.newVideoFromXML(xml, searchString, "TMDb", "themoviedb.org")
+                  Videos.Push(video)      
+               else 
+                   Debug("---------------------- Failed to get TMDB YouTube Trailer ")
+              end if
+             end if
+        end for
+    end if
+
+
+    ' join raw youtube videos - maybe make this a toggle? some may ONLY want TMDB
+    ' or include them if nothing is found from TMDB? to many options... I am sure someone will complain - never enough.. too much
+    xml=m.youtube.ExecServerAPI("videos?q="+searchString_trailer+"&prettyprint=true&max-results=6&alt=atom&paid-content=false&v=2")["xml"]
+    if isxmlelement(xml) then
+        Videos =m.youtube.newVideoListFromXML(xml.entry,Videos,origSearch_trailer)
+    else 
+        xml = CreateObject("roXMLElement") ' just backwards compatibility
+    end if
+
     if videos.Count() > 0 then
         dialog.Close()
         m.youtube.DisplayVideoList(videos, "Search Results for "+Chr(39)+keyword+Chr(39), xml.link, invalid)
@@ -123,7 +186,7 @@ Sub DisplayVideo(content As Object)
                 video.Close()
                 exit while
             else if msg.isStreamStarted() then
-		print "Video status: "; msg.GetIndex(); " " msg.GetInfo() 
+		'print "Video status: "; msg.GetIndex(); " " msg.GetInfo() 
             else if msg.isPlaybackPosition() then
                 'print "Video GetIndex: "; msg.GetIndex()
                 if msg.GetIndex() > 0
@@ -131,7 +194,7 @@ Sub DisplayVideo(content As Object)
                     video.SetContent(content)
                 end if
 	    else if msg.isStatusMessage()
-                print "Video status: "; msg.GetIndex(); " " msg.GetData() 
+                'print "Video status: "; msg.GetIndex(); " " msg.GetData() 
             else if msg.isRequestFailed()
                 print "play failed: "; msg.GetMessage()
             else
@@ -286,7 +349,7 @@ Sub youtube_display_video_springboard(video As Object, breadcrumb As String)
         msg = wait(0, screen.GetMessagePort())
         if type(msg) = "roSpringboardScreenEvent" then
             if msg.isScreenClosed()
-                print "Closing springboard screen"
+                'print "Closing springboard screen"
                 exit while
             else if msg.isButtonPressed()
                 print "Button pressed: "; msg.GetIndex(); " " msg.GetData()
@@ -336,6 +399,32 @@ Function video_get_qualities(videoID as String) As Object
     end if
     
     return invalid
+End Function
+
+
+Function video_check_embed(videoID as String) As string
+    http = NewHttp("http://www.youtube.com/get_video_info?video_id="+videoID)
+    Debug("Checking Embed options: http://www.youtube.com/get_video_info?video_id="+videoID)
+    rsp = http.getToStringWithTimeout(10)
+    r = CreateObject("roRegex", "status=fail", "i")
+    if r.IsMatch(rsp) then
+          r = CreateObject("roRegex", "reason=([^(&|\$)]+)", "i")
+          if r.IsMatch(rsp) then
+            reason = r.Match(rsp)
+            Debug("-------" + videoID +"------------- this YouTube Video is not playable:" + URLDecode(tostr(reason[0])))
+          else 
+             r = CreateObject("roRegex", "Embedding\+disabled", "i")
+             if r.IsMatch(rsp) then
+               Debug("-------" + videoID +"------------- this YouTube Video is not playable -- embedding disabled")
+             end if
+           end if
+    else 
+        ' no failure - we can embed this
+        return "playable"
+    end if
+    
+    ' invalid for any result of status=fail
+    return "invalid"
 End Function
 
 Function URLEncode(str As String) As String
@@ -397,18 +486,29 @@ Sub youtube_fetch_video_list(APIRequest As Dynamic, title As String)
 
 End Sub
 
-Function youtube_new_video_list(xmllist As Object) As Object
+Function youtube_new_video_list(xmllist As Object, videolist = invalid as Object, searchString = "invalid" as String) As Object
     print "youtube_new_video_list init"
-    videolist=CreateObject("roList")
+
+    if videolist = invalid then
+        videolist=CreateObject("roList")
+    end if
+
     for each record in xmllist
-        video=m.newVideoFromXML(record)
-        videolist.Push(video)
+           'ljunkie - might be slower -- but at least all the videos will play instead of having random videos that fail
+            source = record.GetNamedElements("media:group")[0].GetNamedElements("yt:videoid")[0].GetText()
+            if video_check_embed(source) <> "invalid" then
+             video=m.newVideoFromXML(record, SearchString)
+             videolist.Push(video)
+            end if
     next
     return videolist
 End Function
 
-Function youtube_new_video(xml As Object) As Object
+Function youtube_new_video(xml As Object, searchString = "invalid" as String, provider = "YouTube" as String, providerLong = "YouTube" as String) As Object
     video = CreateObject("roAssociativeArray")
+
+
+
     video.youtube=m
     video.xml=xml
     video.GetID=function():return m.xml.GetNamedElements("media:group")[0].GetNamedElements("yt:videoid")[0].GetText():end function
@@ -420,8 +520,12 @@ Function youtube_new_video(xml As Object) As Object
     video.GetRating=get_xml_rating
     video.GetThumb=get_xml_thumb
     video.GetEditLink=get_xml_edit_link
+    video.GetEditLink=get_xml_edit_link
     'video.GetLinks=function():return m.xml.GetNamedElements("link"):end function
     'video.GetURL=video_get_url
+    video.Provider=provider
+    video.ProviderLong=providerLong
+    video.SearchString=searchString
     return video
 End Function
 
@@ -433,6 +537,8 @@ Function GetVideoMetaData(videos As Object)
         meta.ContentType="movie"
         
         meta.ID=video.GetID()
+        meta.provider=video.Provider
+        meta.providerLong=video.ProviderLong
         meta.Author=video.GetAuthor()
         meta.Title=video.GetTitle()
         meta.Actors=meta.Author
@@ -442,6 +548,18 @@ Function GetVideoMetaData(videos As Object)
         meta.ShortDescriptionLine1=meta.Title
         meta.SDPosterUrl=video.GetThumb()
         meta.HDPosterUrl=video.GetThumb()
+
+
+        ' cleanup Description
+        output = meta.Description
+        re = CreateObject("roRegex", "\s+", "i")
+        output = re.ReplaceAll(output, ". ")
+	if tostr(meta.provider) <> "YouTube" then
+           meta.Description = "Provided by: " + meta.providerLong + chr(10) + output
+	else 
+           meta.Description = "Provided by: YouTube search for '" + tostr(video.SearchString) +"'" + chr(10) + output
+        end if
+        meta.ShortDescriptionLine1 = meta.ShortDescriptionLine1 + " [" + meta.provider + "]"
 
         meta.xml=video.xml
         meta.UserID=video.GetUserID()
@@ -562,7 +680,7 @@ Sub ShowDialog1Button(title As dynamic, text As dynamic, but1 As String, quickRe
 
         if type(dlgMsg) = "roMessageDialogEvent"
             if dlgMsg.isScreenClosed()
-                print "Screen closed"
+                'print "Screen closed"
                 return
             else if dlgMsg.isButtonPressed()
                 print "Button pressed: "; dlgMsg.GetIndex(); " " dlgMsg.GetData()
@@ -594,7 +712,7 @@ Function ShowDialog2Buttons(title As dynamic, text As dynamic, but1 As String, b
 
         if type(dlgMsg) = "roMessageDialogEvent"
             if dlgMsg.isScreenClosed()
-                print "Screen closed"
+                'print "Screen closed"
                 dialog = invalid
                 return 0
             else if dlgMsg.isButtonPressed()
@@ -648,7 +766,7 @@ Function uitkDoPosterMenu(posterdata, screen, onselect_callback=invalid) As Inte
     while true
         msg = wait(0, screen.GetMessagePort())
 		
-		print "uitkDoPosterMenu | msg type = ";type(msg)
+		'print "uitkDoPosterMenu | msg type = ";type(msg)
 		
 		if type(msg) = "roPosterScreenEvent" then
 			print "event.GetType()=";msg.GetType(); " event.GetMessage()= "; msg.GetMessage()
@@ -723,7 +841,7 @@ Function uitkDoListMenu(posterdata, screen, onselect_callback=invalid) As Intege
     while true
         msg = wait(0, screen.GetMessagePort())
         
-        print "uitkDoPosterMenu | msg type = ";type(msg)
+        'print "uitkDoPosterMenu | msg type = ";type(msg)
         
         if type(msg) = "roListScreenEvent" then
             print "event.GetType()=";msg.GetType(); " Event.GetMessage()= "; msg.GetMessage()
@@ -831,4 +949,53 @@ Sub uitkDoMessage(message, screen)
     end while
 End Sub
 ' end uitk
+
+
+
+
+
+Function tmdb_exec_api(request As Dynamic) As Object
+
+    method = "GET"
+    url_stub = request
+    postdata = invalid
+    headers = { }
+
+    if type(request) = "roAssociativeArray" then
+        if request.url_stub<>invalid then url_stub = request.url_stub
+        if request.postdata<>invalid then : postdata = request.postdata : method="POST" : end if
+        if request.headers<>invalid then headers = request.headers
+        if request.method<>invalid then method = request.method
+    end if
+        
+    url_stub = url_stub + "&api_key=" + m.tmdb_apikey
+    if Instr(0, url_stub, "http://") OR Instr(0, url_stub, "https://") then
+        Debug("url: " + url_stub)
+        http = NewHttp(url_stub)
+    else
+        Debug("url: " + tostr(m.tmdb_prefix + "/" + url_stub))
+        http = NewHttp(m.tmdb_prefix + "/" + url_stub)
+
+    end if
+
+
+    if not headers.DoesExist("Accept") then headers.AddReplace("Accept", "application/json") 
+    'xhr.setRequestHeader("Accept", "application/json");
+    http.method = method
+    'print "----------------------------------"
+    if postdata<>invalid then
+        rsp=http.PostFromStringWithTimeout(postdata, 10, headers)
+        'print "postdata:",postdata
+    else
+        rsp=http.getToStringWithTimeout(10, headers)
+    end if
+
+    json=ParseJSON(rsp)
+    returnObj = CreateObject("roAssociativeArray")
+    returnObj.json = json
+    returnObj.status = 200
+    'returnObj.status = http.status -- plex http functions only return data/string - we will just set this to 200 for now
+    'returnObj.error = handleYoutubeError(returnObj) ' kind of redundant, but maybe useful later
+    return returnObj
+End Function
 
