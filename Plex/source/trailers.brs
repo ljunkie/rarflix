@@ -129,8 +129,8 @@ Sub youtube_search(keyword as string, year = "invalid" as string )
        s_tmdb = m.youtube.ExecTmdbAPI("movie/"+tostr(s_tmdb.results[0].id)+"/trailers?page=1")["json"]
     end if
 
-
-    if type(s_tmdb.youtube) = "roArray"  then 
+'    printAA(s_tmdb)
+    if type (s_tmdb) = "roAssociativeArray" and type(s_tmdb.youtube) = "roArray"  then 
        for each trailer in s_tmdb.youtube
             Debug("Found YouTube Trailer from TMDB")
             PrintAA(trailer)
