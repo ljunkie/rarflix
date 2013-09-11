@@ -40,7 +40,8 @@ Sub videoSetupButtons()
 
     ' Trailers! (TODO) enable this for TV shows ( youtube is still useful )
     ' if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
-    if m.metadata.ContentType = "movie"  then
+    isTrailers = RegRead("trailers", "preferences")
+    if m.metadata.ContentType = "movie" AND  RegRead("trailers", "preferences", "disabled") <> "disabled" then 
          m.AddButton("Trailer", "getTrailers")
     end if
 
@@ -191,7 +192,7 @@ Function videoHandleMessage(msg) As Boolean
 
                 ' Trailers link - RR (last now that we include it on the main screen .. well before delete - people my be used to delete being second to last)
                 'if m.metadata.grandparentKey = invalid then
-                if m.metadata.ContentType = "movie"  then
+                if m.metadata.ContentType = "movie" AND  RegRead("trailers", "preferences", "disabled") <> "disabled" then 
                     dialog.SetButton("getTrailers", "Trailer")
                 end if
 

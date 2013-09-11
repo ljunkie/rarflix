@@ -252,6 +252,19 @@ Function createPreferencesScreen(viewController) As Object
         default: "disabled"
     }
 
+    ' Trailers
+    trailers = [
+        { title: "Enabled TMDB & Youtube", EnumValue: "enabled", ShortDescriptionLine2: "Get Movies Trailers" },
+        { title: "Enabled TMDB w/ Youtube Fallback", EnumValue: "enabled_tmbd_ytfb" }
+        { title: "Disabled", EnumValue: "disabled"}
+
+    ]
+    obj.Prefs["trailers"] = {
+        values: trailers,
+        heading: "Movie Trailers",
+        default: "enabled_tmdb_yt"
+    }
+
     obj.myplex = GetGlobalAA().Lookup("myplex")
     obj.checkMyPlexOnActivate = false
 
@@ -271,6 +284,7 @@ Sub showPreferencesScreen()
     m.AddItem({title: "Quality"}, "quality", m.GetEnumValue("quality"))
     m.AddItem({title: "Remote Quality"}, "quality_remote", m.GetEnumValue("quality_remote"))
     m.AddItem({title: "Rotten Tomatoes"}, "rottentomatoes", m.GetEnumValue("rottentomatoes"))
+    m.AddItem({title: "Movie Trailers"}, "trailers", m.GetEnumValue("trailers"))
     m.AddItem({title: "Direct Play"}, "directplay", m.GetEnumValue("directplay"))
     m.AddItem({title: "Audio Preferences"}, "audio_prefs")
     m.AddItem({title: "Home Screen"}, "homescreen")
@@ -352,7 +366,7 @@ Function prefsMainHandleMessage(msg) As Boolean
                     screen.Show()
                 end if
             ' removed 5.1 (finepointone) -- moved to audio prefs RR
-            else if command = "quality" OR command = "quality_remote" OR command = "level" OR command = "directplay" OR command = "screensaver" OR command = "rottentomatoes" then
+            else if command = "quality" OR command = "quality_remote" OR command = "level" OR command = "directplay" OR command = "screensaver" OR command = "rottentomatoes" OR command = "trailers" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "slideshow" then
                 screen = createSlideshowPrefsScreen(m.ViewController)

@@ -3,6 +3,13 @@ Function LoadYouTube() As Object
 End Function
 
 Function InitYouTube() As Object
+    ' enabled trailers by default 
+    trailersEnabled = RegRead("trailers", "preferences")
+    if trailersEnabled = invalid then
+        RegWrite("trailers", "enabled", "preferences")
+    end if
+
+
     this = CreateObject("roAssociativeArray")
     this.protocol = "http"
     this.scope = this.protocol + "://gdata.youtube.com"
@@ -151,16 +158,27 @@ Sub youtube_search(keyword as string, year = "invalid" as string )
         end for
     end if
 
-
     ' join raw youtube videos - maybe make this a toggle? some may ONLY want TMDB
-    ' or include them if nothing is found from TMDB? to many options... I am sure someone will complain - never enough.. too much
-    xml=m.youtube.ExecServerAPI("videos?q="+searchString_trailer+"&prettyprint=true&max-results=6&alt=atom&paid-content=false&v=2")["xml"]
-    if isxmlelement(xml) then
-        Videos =m.youtube.newVideoListFromXML(xml.entry,Videos,origSearch_trailer)
+    trailerTypes = RegRead("trailers", "preferences")
+    includeYouTubeRaw = 0
+    if videos.Count() > 0 and trailerTypes = "enabled"  then 
+         includeYouTubeRaw = 1 ' include youtube trailers when 'enabled' is set -- grab everything
+    else if videos.Count() = 0 and trailerTypes = "enabled_tmbd_ytfb"  then 
+         includeYouTubeRaw = 1 ' include youtube trailers when youtube fallback is enabled and we didn't find any trailers on tmdb
     else 
-        xml = CreateObject("roXMLElement") ' just backwards compatibility
+         print "------------ skipping raw youtube trailer search (found trailers on TMDB) ------------------"
     end if
 
+    ' so - should we include the raw yourube search?
+    if includeYouTubeRaw = 1 then
+        xml=m.youtube.ExecServerAPI("videos?q="+searchString_trailer+"&prettyprint=true&max-results=6&alt=atom&paid-content=false&v=2")["xml"]
+        if isxmlelement(xml) then
+            Videos =m.youtube.newVideoListFromXML(xml.entry,Videos,origSearch_trailer)
+        else 
+            xml = CreateObject("roXMLElement") ' just backwards compatibility
+        end if
+    end if
+    
     if videos.Count() > 0 then
         dialog.Close()
         m.youtube.DisplayVideoList(videos, "Search Results for "+Chr(39)+keyword+Chr(39), xml.link, invalid)
