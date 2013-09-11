@@ -66,6 +66,7 @@ Function newVideoMetadata(container, item, detailed=false) As Object
 End Function
 
 Sub setVideoBasics(video, container, item)
+
     video.viewOffset = item@viewOffset
     video.viewCount = item@viewCount
     video.Watched = video.viewCount <> invalid AND val(video.viewCount) > 0

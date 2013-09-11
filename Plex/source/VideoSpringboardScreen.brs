@@ -61,17 +61,10 @@ Sub videoSetupButtons()
 
     end if
 
-    'Delete button moved to more... only
-    'if m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex" AND m.metadata.id <> invalid then
-    ' delete only in more option -- more clicks the better imho
-    'm.AddButton("Delete from queue", "delete")
-    'end if
-
     ' Playback options only if a tvshow or episode -- movies use a line for trailers (moved this to more...)
     if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
       m.AddButton("Playback options", "options")
     end if
-
 
     if supportedIdentifier then
         if m.metadata.UserRating = invalid then
@@ -101,10 +94,10 @@ Sub videoSetupButtons()
 
 
           if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
-             if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
-               m.AddButton("Delete permanently","delete")
-           end if
-           end if
+              if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
+                  m.AddButton("Delete permanently","delete")
+              end if
+          end if
 
 	' more buttong if TV SHOW ( only if grandparent key is available,stops loops) OR if this is Movie
 	  if m.metadata.grandparentKey <> invalid or m.metadata.ContentType = "movie" then
@@ -159,7 +152,11 @@ Function videoHandleMessage(msg) As Boolean
                 ' Refresh play data after unscrobbling
                 m.Refresh(true)
             else if buttonCommand = "delete" then
-                m.Item.server.Delete(m.metadata.id)
+	        key = m.metadata.id
+		if tostr(key) = "invalid"
+                  key = m.metadata.key
+                end if
+                m.Item.server.Delete(key)
                 m.Screen.Close()
             else if buttonCommand = "options" then
                 screen = createVideoOptionsScreen(m.metadata, m.ViewController, m.ContinuousPlay)
