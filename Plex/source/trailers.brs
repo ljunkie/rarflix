@@ -163,13 +163,13 @@ Sub youtube_search(keyword as string, year = "invalid" as string )
     includeYouTubeRaw = 0
     
     if trailerTypes = "enabled"  then 
-         print "------------ Included raw youtube trailer search (enabled) ------------------"
+         print "------------ Included raw youtube trailer search (trailers: enabled) ------------------ trailer:" + trailerTypes
          includeYouTubeRaw = 1 ' include youtube trailers when 'enabled' is set -- grab everything
     else if videos.Count() = 0 and trailerTypes = "enabled_tmdb_ytfb"  then 
-         print "------------ Included raw youtube trailer search (enabled_tmdb_ytfb) ------------------"
+         print "------------ Included raw youtube trailer search (trailers: enabled_tmdb_ytfb and 0 TMDB found) ------------------ trailer:" + trailerTypes
          includeYouTubeRaw = 1 ' include youtube trailers when youtube fallback is enabled and we didn't find any trailers on tmdb
     else 
-         print "------------ skipping raw youtube trailer search (found trailers on TMDB) ------------------"
+         print "------------ skipping raw youtube trailer search (found trailers on TMDB) ------------------ trailer:" + trailerTypes
     end if
 
     ' so - should we include the raw yourube search?
