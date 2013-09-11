@@ -161,9 +161,12 @@ Sub youtube_search(keyword as string, year = "invalid" as string )
     ' join raw youtube videos - maybe make this a toggle? some may ONLY want TMDB
     trailerTypes = RegRead("trailers", "preferences")
     includeYouTubeRaw = 0
-    if videos.Count() > 0 and trailerTypes = "enabled"  then 
+    
+    if trailerTypes = "enabled"  then 
+         print "------------ Included raw youtube trailer search (enabled) ------------------"
          includeYouTubeRaw = 1 ' include youtube trailers when 'enabled' is set -- grab everything
-    else if videos.Count() = 0 and trailerTypes = "enabled_tmbd_ytfb"  then 
+    else if videos.Count() = 0 and trailerTypes = "enabled_tmdb_ytfb"  then 
+         print "------------ Included raw youtube trailer search (enabled_tmdb_ytfb) ------------------"
          includeYouTubeRaw = 1 ' include youtube trailers when youtube fallback is enabled and we didn't find any trailers on tmdb
     else 
          print "------------ skipping raw youtube trailer search (found trailers on TMDB) ------------------"

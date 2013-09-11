@@ -255,7 +255,7 @@ Function createPreferencesScreen(viewController) As Object
     ' Trailers
     trailers = [
         { title: "Enabled TMDB & Youtube", EnumValue: "enabled", ShortDescriptionLine2: "Get Movies Trailers" },
-        { title: "Enabled TMDB w/ Youtube Fallback", EnumValue: "enabled_tmbd_ytfb" }
+        { title: "Enabled TMDB w/ Youtube Fallback", EnumValue: "enabled_tmdb_ytfb" }
         { title: "Disabled", EnumValue: "disabled"}
 
     ]
