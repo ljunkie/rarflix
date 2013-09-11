@@ -77,6 +77,7 @@ Function RRbreadcrumbDate(myscreen) As Object
     if screenName <> invalid and screenName = "Home" then 
         Debug("update " + screenName + " screen time")
         date = CreateObject("roDateTime")
+        date.ToLocalTime() ' localizetime
         timeString = RRmktime(date.AsSeconds())
         dateString = date.AsDateString("short-month-short-weekday")
         myscreen.Screen.SetBreadcrumbEnabled(true)
