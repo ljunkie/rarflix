@@ -135,7 +135,7 @@ Sub setVideoBasics(video, container, item)
             end if
             video.OrigReleaseDate = video.ReleaseDate
             video.ReleaseDate = video.EpisodeStr
-            video.TitleSeason = video.Title + " - " + video.EpisodeStr
+            video.TitleSeason = firstOf(item@title, item@name) + " - " + video.EpisodeStr
         end if
     else if video.ContentType = "clip" then
         video.ReleaseDate = firstOf(video.ReleaseDate, item@subtitle)
@@ -145,15 +145,22 @@ Sub setVideoBasics(video, container, item)
 
     ' if a video has ever been watch mark as such, else mark partially if there's a recorded
     ' offset
-    if video.Watched AND video.viewOffset <> invalid AND val(video.viewOffset) > 0 then
-        video.ShortDescriptionLine1 = video.ShortDescriptionLine1 + " (Watched + Partially Watched)"
-    else if video.Watched then
-        video.ShortDescriptionLine1 = video.ShortDescriptionLine1 + " (Watched)"
+    watched_status = "invalid"
+    if video.Watched then
+       watched_status = " (Watched)"
     else if video.viewOffset <> invalid AND val(video.viewOffset) > 0 then
-        video.ShortDescriptionLine1 = video.ShortDescriptionLine1 + " (Partially Watched)"
+       watched_status = " (Partially Watched)"
     end if
 
+    if watched_status <> "invalid" then 
+        video.ShortDescriptionLine1 = video.ShortDescriptionLine1 + watched_status
+        if video.TitleSeason <> invalid then 
+            video.TitleSeason = video.TitleSeason + watched_status
+        end if
+    end if 
+
     video.Title = video.ShortDescriptionLine1
+
 
     video.Rating = firstOf(item@contentRating, container.xml@grandparentContentRating)
     rating = item@rating
