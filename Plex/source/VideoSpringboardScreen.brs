@@ -299,7 +299,12 @@ Function videoDialogHandleButton(command, data) As Boolean
         obj.ViewController.CreateScreenForItem(dummyItem, invalid, ["Series"])
         closeDialog = true
     else if command = "getTrailers" then
-        youtube_search(tostr(obj.metadata.CleanTitle + " trailer",obj.metadata.Year))
+        if obj.metaData.OrigReleaseDate <> invalid then
+            year = obj.metaData.OrigReleaseDate
+        else 
+            year = obj.metaData.ReleaseDate
+        end if
+        youtube_search(tostr(obj.metadata.CleanTitle),tostr(year))
         closeDialog = true
     else if command = "scrobble" then
         obj.metadata.server.Scrobble(obj.metadata.ratingKey, obj.metadata.mediaContainerIdentifier)
