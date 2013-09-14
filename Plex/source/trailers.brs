@@ -5,7 +5,8 @@ End Function
 Function InitYouTube() As Object
     ' enabled trailers by default 
     trailersEnabled = RegRead("trailers", "preferences")
-    if trailersEnabled = invalid then
+    ' set if invalid or if the typo happened - we can take this out after a while
+    if trailersEnabled = invalid or trailersEnabled = "enabled_tmbd_ytfb" then
         RegWrite("trailers", "enabled", "preferences")
     end if
 

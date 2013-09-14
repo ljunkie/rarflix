@@ -23,10 +23,12 @@ Function GetDurationString( TotalSeconds = 0 As Integer, emptyHr = 0 As Integer,
 End Function
 
 
-Function RRmktime( epoch As Integer) As String
+Function RRmktime( epoch As Integer, localize = 1 as Integer) As String
     datetime = CreateObject("roDateTime")
     datetime.FromSeconds(epoch)
-    datetime.ToLocalTime()
+    if localize = 1 then 
+        datetime.ToLocalTime()
+    end if
     hours = datetime.GetHours()
     minutes = datetime.GetMinutes()
     seconds = datetime.GetSeconds()
@@ -78,7 +80,7 @@ Function RRbreadcrumbDate(myscreen) As Object
         Debug("update " + screenName + " screen time")
         date = CreateObject("roDateTime")
         date.ToLocalTime() ' localizetime
-        timeString = RRmktime(date.AsSeconds())
+        timeString = RRmktime(date.AsSeconds(),0)
         dateString = date.AsDateString("short-month-short-weekday")
         myscreen.Screen.SetBreadcrumbEnabled(true)
         myscreen.Screen.SetBreadcrumbText(dateString, timeString)
