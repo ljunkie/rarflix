@@ -102,7 +102,7 @@ Function vcCreateHomeScreen()
     screen.ScreenName = "Home"
     m.InitializeOtherScreen(screen, invalid)
     screen.Show()
-
+    RRbreadcrumbDate(screen) 'ljunkie - homescreen data/time
     return screen
 End Function
 
@@ -300,6 +300,9 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
     ' Stop any background audio first
     m.AudioPlayer.Stop()
 
+    ' Make sure we have full details before trying to play.
+    metadata.ParseDetails()
+
     ' Prompt about resuming if there's an offset and the caller didn't specify a seek value.
     if seekValue = invalid then
         if metadata.viewOffset <> invalid then
@@ -359,13 +362,13 @@ Sub vcShowReleaseNotes()
     header = GetGlobal("appName") + " has been updated to " + GetGlobal("appVersionStr")
     paragraphs = []
     paragraphs.Push("Changes in this version include:")
-    paragraphs.Push(" - Audio Preference updates: 5.1 and DTS settings")
-    paragraphs.Push(" - Rotten Tomatoes defaults to User Ratings + more HUD Updates")
+    paragraphs.Push(" - Trailer Support for Movies: Initial release")
     paragraphs.Push(" -- Custom changes made --")
+    paragraphs.Push(" - Audio Preference updates: 5.1 and DTS settings")
     paragraphs.Push(" - Rotten Tomatoes Critic/User Ratings (Enable in Preferences).")
     paragraphs.Push(" - Enter Season or Specific Season from Episode (More... button)")
-    paragraphs.Push(" - Release Date added to HUD (down button during video play)")
-    paragraphs.Push(" - Direct/Transcoded added to HUD (down button during video play)")
+    paragraphs.Push(" - Release Date info on HUD (down button during video play)")
+    paragraphs.Push(" - Direct/Transcoded info on HUD (down button during video play)")
     paragraphs.Push(" Enjoy. -Rob")
 
     screen = createParagraphScreen(header, paragraphs, m)
@@ -478,6 +481,7 @@ Sub vcPopScreen(screen)
         Debug("Top of stack is once again: " + screenName)
         m.Analytics.TrackScreen(screenName)
         newScreen.Activate(screen)
+        RRbreadcrumbDate(newScreen)
     end if
 
     ' If some other screen requested this close, let it know.
@@ -508,9 +512,31 @@ Sub vcShow()
     Debug("Starting global message loop")
 
     timeout = 0
+    lastmin = -1 'container to update every minute
     while m.screens.Count() > 0
         m.WebServer.prewait()
         msg = wait(timeout, m.GlobalMessagePort)
+
+        'ljunkie - minute refresh check - if minuteRefresh <> invalid, then it a brand spanking new minute
+        minuteRefresh = invalid
+        if lastmin <> invalid then 
+            date = CreateObject("roDateTime")
+            newmin = date.GetMinutes()
+            if newmin <> lastmin then 
+                'Debug(tostr(newmin) + " >  " + tostr(lastmin) + " minuteRefresh set")
+                minuteRefresh = 1
+                lastmin = date.GetMinutes()
+            end if
+        end if
+        ' end minute check
+
+        ' ljunkie - update clock on home screen (every minute) - only on roSocketEvent
+        if m.screens.Count() = 1 and type(msg) = "roSocketEvent" then 
+            if minuteRefresh <> invalid then
+                RRbreadcrumbDate(m.screens[0])
+            end if
+        end if
+
         if msg <> invalid then
             ' Printing debug information about every message may be overkill
             ' regardless, but note that URL events don't play by the same rules,
@@ -628,6 +654,8 @@ Sub vcUpdateScreenProperties(screen)
         AddAccountHeaders(screen.Screen, screen.Item.server.AccessToken)
     end if
 
+    ' ljunkie - current time -- removed from this - ONLY on home screen for now.
+
     if screen.NumBreadcrumbs <> 0 then
         count = m.breadcrumbs.Count()
         if count >= 2 then
@@ -647,6 +675,7 @@ Sub vcUpdateScreenProperties(screen)
 
     screenType = type(screen.Screen)
     ' Sigh, different screen types don't support breadcrumbs with the same functions
+
     if screenType = "roGridScreen" OR screenType = "roPosterScreen" OR screenType = "roSpringboardScreen" then
         if enableBreadcrumbs then
             screen.Screen.SetBreadcrumbEnabled(true)

@@ -66,6 +66,7 @@ Function newVideoMetadata(container, item, detailed=false) As Object
 End Function
 
 Sub setVideoBasics(video, container, item)
+
     video.viewOffset = item@viewOffset
     video.viewCount = item@viewCount
     video.Watched = video.viewCount <> invalid AND val(video.viewCount) > 0
@@ -144,7 +145,9 @@ Sub setVideoBasics(video, container, item)
 
     ' if a video has ever been watch mark as such, else mark partially if there's a recorded
     ' offset
-    if video.Watched then
+    if video.Watched AND video.viewOffset <> invalid AND val(video.viewOffset) > 0 then
+        video.ShortDescriptionLine1 = video.ShortDescriptionLine1 + " (Watched + Partially Watched)"
+    else if video.Watched then
         video.ShortDescriptionLine1 = video.ShortDescriptionLine1 + " (Watched)"
     else if video.viewOffset <> invalid AND val(video.viewOffset) > 0 then
         video.ShortDescriptionLine1 = video.ShortDescriptionLine1 + " (Partially Watched)"

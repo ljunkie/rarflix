@@ -184,7 +184,7 @@ Sub mpDelete(id)
         Debug("Executing delete command: " + commandUrl)
         request = m.CreateRequest("", commandUrl)
         request.PostFromString("_method=DELETE")
-    end if
+     end if
 End Sub
 
 Function mpExecuteCommand(commandPath)

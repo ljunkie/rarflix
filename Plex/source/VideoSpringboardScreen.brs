@@ -38,25 +38,33 @@ Sub videoSetupButtons()
     Debug("Media = " + tostr(m.media))
     Debug("Can direct play = " + tostr(videoCanDirectPlay(m.media)))
 
+    ' Trailers! (TODO) enable this for TV shows ( youtube is still useful )
+    ' if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
+    isTrailers = RegRead("trailers", "preferences")
+    if m.metadata.ContentType = "movie" AND  RegRead("trailers", "preferences", "disabled") <> "disabled" then 
+         m.AddButton("Trailer", "getTrailers")
+    end if
+
     supportedIdentifier = (m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
     if supportedIdentifier then
-        if m.metadata.viewCount <> invalid AND val(m.metadata.viewCount) > 0 then
+
+        ' Partial Watch ( can be watched/unwatched - but in progess) allow scrobbleMore dialog - to show both options mark as watched or unwatched
+        if m.metadata.viewOffset <> invalid AND val(m.metadata.viewOffset) > 0 then
+            m.AddButton("Mark as watched/unwatched", "scrobbleMore")
+        ' content is watched - show unscrobble button
+        else if m.metadata.viewCount <> invalid AND val(m.metadata.viewCount) > 0 then
             m.AddButton("Mark as unwatched", "unscrobble")
+        ' content is NOT watched - show unscrobble button
         else
-            if RegRead("rottentomatoes", "preferences", "disabled") = "disabled" then
-                if m.metadata.viewOffset <> invalid AND val(m.metadata.viewOffset) > 0 then
-                    m.AddButton("Mark as unwatched", "unscrobble")
-                end if
-            end if
             m.AddButton("Mark as watched", "scrobble")
         end if
+
     end if
 
-    if m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex" AND m.metadata.id <> invalid then
-        m.AddButton("Delete from queue", "delete")
+    ' Playback options only if a tvshow or episode -- movies use a line for trailers (moved this to more...)
+    if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
+      m.AddButton("Playback options", "options")
     end if
-
-    m.AddButton("Playback options", "options")
 
     if supportedIdentifier then
         if m.metadata.UserRating = invalid then
@@ -84,15 +92,23 @@ Sub videoSetupButtons()
             m.AddButton(rating_string + " on Rotten Tomatoes", "tomatoes")
         endif
 
-        ' When delete is present we don't have enough room so we stuff delete
-        ' and rate in a separate dialog.
-        ' RR - when grandparentKey is present - we don't have enough room
-        ' either. We present 'Show All Seasons' and 'Show Season #'
-        if m.metadata.server.AllowsMediaDeletion OR m.metadata.grandparentKey <> invalid then
-            m.AddButton("More...", "more")
-        else
-            m.AddRatingButton(m.metadata.UserRating, m.metadata.StarRating, "rateVideo")
-        end if
+
+          if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
+              if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
+                  m.AddButton("Delete permanently","delete")
+              end if
+          end if
+
+	' more buttong if TV SHOW ( only if grandparent key is available,stops loops) OR if this is Movie
+	  if m.metadata.grandparentKey <> invalid or m.metadata.ContentType = "movie" then
+              m.AddButton("More...", "more")
+	  end if
+
+        ' Show rating bar if the content is a show or an episode - we might want this to be the delete button. We will see
+          if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
+               m.AddRatingButton(m.metadata.UserRating, m.metadata.StarRating, "rateVideo")
+	  end if
+
     end if
 End Sub
 
@@ -136,7 +152,11 @@ Function videoHandleMessage(msg) As Boolean
                 ' Refresh play data after unscrobbling
                 m.Refresh(true)
             else if buttonCommand = "delete" then
-                m.Item.server.Delete(m.metadata.id)
+	        key = m.metadata.id
+		if tostr(key) = "invalid"
+                  key = m.metadata.key
+                end if
+                m.Item.server.Delete(key)
                 m.Screen.Close()
             else if buttonCommand = "options" then
                 screen = createVideoOptionsScreen(m.metadata, m.ViewController, m.ContinuousPlay)
@@ -148,20 +168,74 @@ Function videoHandleMessage(msg) As Boolean
                 dialog.Title = ""
                 dialog.Text = ""
                 dialog.Item = m.metadata
-                dialog.SetButton("rate", "_rate_")
+
+                'if m.metadata.grandparentKey = invalid then
+                if m.metadata.ContentType = "movie"  then
+                    dialog.SetButton("options", "Playback options")
+                    dialog.SetButton("rate", "_rate_")
+                end if
 
                 ' display View All Seasons if we have grandparentKey -- entered from a episode
-                if m.metadata.grandparentKey <> invalid then
-                   dialog.SetButton("showFromEpisode", "View All Seasons")
+                if m.metadata.grandparentKey <> invalid then ' global on deck does not work with this
+                'if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
+                    dialog.SetButton("showFromEpisode", "View All Seasons")
                 end if
                 ' display View specific season if we have parentKey/parentIndex -- entered from a episode
-                if m.metadata.parentKey <> invalid AND m.metadata.parentIndex <> invalid then
+                if m.metadata.parentKey <> invalid AND m.metadata.parentIndex <> invalid then  ' global on deck does not work with this
+                'if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
                    dialog.SetButton("seasonFromEpisode", "View Season " + m.metadata.parentIndex)
+                end if
+
+
+                ' Trailers link - RR (last now that we include it on the main screen .. well before delete - people my be used to delete being second to last)
+                'if m.metadata.grandparentKey = invalid then
+                if m.metadata.ContentType = "movie" AND  RegRead("trailers", "preferences", "disabled") <> "disabled" then 
+                    dialog.SetButton("getTrailers", "Trailer")
+                end if
+
+                supportedIdentifier = (m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
+                if supportedIdentifier then
+                    if m.metadata.viewCount <> invalid AND val(m.metadata.viewCount) > 0 then
+                        dialog.SetButton("unscrobble", "Mark as unwatched")
+                    else
+                        if m.metadata.viewOffset <> invalid AND val(m.metadata.viewOffset) > 0 then
+                            dialog.SetButton("unscrobble", "Mark as unwatched")
+                        end if
+                    end if
+                    dialog.SetButton("scrobble", "Mark as watched")
                 end if
 
                 if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
                     dialog.SetButton("delete", "Delete permanently")
                 end if
+
+                if m.metadata.ContentType = "episode" or m.metadata.ContentType = "show"  then
+                   ' dialog.SetButton("options", "Playback options")
+                    dialog.SetButton("rate", "_rate_")
+                end if
+
+                dialog.SetButton("close", "Back")
+                dialog.HandleButton = videoDialogHandleButton
+                dialog.ParentScreen = m
+                dialog.Show()
+            else if buttonCommand = "scrobbleMore" then
+                dialog = createBaseDialog()
+                dialog.Title = ""
+                dialog.Text = ""
+                dialog.Item = m.metadata
+
+                supportedIdentifier = (m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
+                if supportedIdentifier then
+                    if m.metadata.viewCount <> invalid AND val(m.metadata.viewCount) > 0 then
+                        dialog.SetButton("unscrobble", "Mark as unwatched")
+                    else
+                        if m.metadata.viewOffset <> invalid AND val(m.metadata.viewOffset) > 0 then
+                            dialog.SetButton("unscrobble", "Mark as unwatched")
+                        end if
+                    end if
+                    dialog.SetButton("scrobble", "Mark as watched")
+                end if
+
                 dialog.SetButton("close", "Back")
                 dialog.HandleButton = videoDialogHandleButton
                 dialog.ParentScreen = m
@@ -170,6 +244,14 @@ Function videoHandleMessage(msg) As Boolean
                 rateValue% = msg.getData() /10
                 m.metadata.UserRating = msg.getdata()
                 m.Item.server.Rate(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier,rateValue%.ToStr())
+            else if buttonCommand = "getTrailers" then
+                if m.metaData.OrigReleaseDate <> invalid then
+                     year = m.metaData.OrigReleaseDate
+                else 
+                     year = m.metaData.ReleaseDate
+                end if
+                youtube_search(tostr(m.metadata.CleanTitle),tostr(year))
+                'closeDialog = true
             else if buttonCommand = "tomatoes" then
                 dialog = createBaseDialog()
                 dialog.Title = "Rotten Tomatoes Review"
@@ -182,7 +264,8 @@ Function videoHandleMessage(msg) As Boolean
                      end if
 		end if
 
-		dialog.Text = review_text		
+		dialog.Text = review_text
+                dialog.SetButton("getTrailers", "Trailer")
                 dialog.SetButton("close", "Back")
                 dialog.HandleButton = videoDialogHandleButton
                 dialog.ParentScreen = m
@@ -199,6 +282,7 @@ End Function
 Function videoDialogHandleButton(command, data) As Boolean
     ' We're evaluated in the context of the dialog, but we want to be in
     ' the context of the original screen.
+    ' These are button presses from a Dialog - ljunkie
     obj = m.ParentScreen
 
     closeDialog = false
@@ -213,6 +297,23 @@ Function videoDialogHandleButton(command, data) As Boolean
         dummyItem.key = obj.metadata.grandparentKey + "/children"
         dummyItem.server = obj.metadata.server
         obj.ViewController.CreateScreenForItem(dummyItem, invalid, ["Series"])
+        closeDialog = true
+    else if command = "getTrailers" then
+        youtube_search(tostr(obj.metadata.CleanTitle + " trailer",obj.metadata.Year))
+        closeDialog = true
+    else if command = "scrobble" then
+        obj.metadata.server.Scrobble(obj.metadata.ratingKey, obj.metadata.mediaContainerIdentifier)
+        obj.Refresh(true)
+        closeDialog = true
+    else if command = "unscrobble" then
+        obj.metadata.server.Unscrobble(obj.metadata.ratingKey, obj.metadata.mediaContainerIdentifier)
+        obj.Refresh(true)
+        closeDialog = true
+    else if Command = "options" then
+        screen = createVideoOptionsScreen(obj.metadata, obj.ViewController, obj.ContinuousPlay)
+        obj.ViewController.InitializeOtherScreen(screen, ["Video Playback Options"])
+        screen.Show()
+        obj.checkChangesOnActivate = true
         closeDialog = true
     else if command = "seasonFromEpisode" then
         dummyItem = CreateObject("roAssociativeArray")

@@ -122,8 +122,17 @@ REM Performs Http.AsyncGetToString() with a single timeout in seconds
 REM To the outside world this appears as a synchronous API.
 REM ******************************************************
 
-Function http_get_to_string_with_timeout(seconds as Integer) as String
+Function http_get_to_string_with_timeout(seconds as Integer, headers=invalid As Object) as String
+'Function http_get_to_string_with_timeout(seconds as Integer) as String
     timeout% = 1000 * seconds
+
+    ' added for trailer/youtube support - RR
+    if headers<>invalid then
+        for each key in headers
+            print key,headers[key]
+            m.Http.AddHeader(key, headers[key])
+        end for
+    end if
 
     str = ""
     m.Http.EnableFreshConnection(true) 'Don't reuse existing connections

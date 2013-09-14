@@ -45,6 +45,10 @@ Sub Main(args)
 
     initGlobals()
 
+    ' Youtube Trailers - RR
+    m.youtube = InitYouTube()
+    youtube = LoadYouTube()
+
     'prepare the screen for display and get ready to begin
     controller = createViewController()
     controller.Show()

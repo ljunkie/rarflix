@@ -138,6 +138,9 @@ Function videoPlayerCreateVideoPlayer()
     end if
 
     videoItem.OrigReleaseDate = videoItem.ReleaseDate
+
+    videoItem.Duration = mediaItem.duration ' set duration - used for EndTime/TimeLeft on HUD  - ljunkie
+
     if videoItem.IsTranscoded then
         server = videoItem.TranscodeServer
         videoItem.ReleaseDate = videoItem.ReleaseDate + "   Transcoded"
@@ -148,7 +151,7 @@ Function videoPlayerCreateVideoPlayer()
            if (videoItem.audioCh.toint() = 6) then
                audioCh = "5.1"
            else
-               audioCh = tostr(videoItem.audioCh) + "ch"
+              audioCh = tostr(videoItem.audioCh) + "ch"
            end if
        end if
 
@@ -309,6 +312,37 @@ Function videoPlayerHandleMessage(msg) As Boolean
             end if
             m.playState = "playing"
             m.SendTimeline(true)
+
+            ' START: EndTime and Time Left to HUD - ljunkie
+	    if msg.GetIndex() > 0 AND m.VideoItem.Duration > 0 then
+	        'printAA(m.VideoItem)
+                duration = int(m.VideoItem.Duration/1000)
+                date = CreateObject("roDateTime")
+                timeLeft = int(Duration - msg.GetIndex())
+                endString = RRmktime(date.AsSeconds()+timeLeft)
+                endString = endString + " (" + GetDurationString(timeLeft,0,1,1) + ")" 'always show min/secs
+
+		' set the HUD
+                content = CreateObject("roAssociativeArray")
+                content = m.VideoItem ' assign Video item and reset other keys
+		if m.VideoItem.OrigHUDreleaseDate = invalid then
+                   m.VideoItem.OrigHUDreleaseDate = m.VideoItem.releasedate
+                end if
+                content.length = m.VideoItem.duration
+                content.title = m.VideoItem.title
+
+		if tostr(m.VideoItem.rokustreambitrate) <> "invalid" then
+	  	    bitrate = RRbitrate(m.VideoItem.rokustreambitrate)
+		    'if tostr(m.videoItem.IsTranscoded) = "false" then
+                        'bitrate = chr(10) + bitrate ' put bitrate on a new line -- string might be too long
+		    'end if
+                    content.releasedate = m.VideoItem.OrigHUDreleasedate + " " + bitrate
+                end if
+                content.releasedate = content.releasedate + chr(10) + chr(10) + "End Time: " + endString 'two line breaks - easier to read ( yea it makes the hug larger...)                     
+		' update HUD
+                m.Screen.SetContent(content)
+            end if
+            ' END: EndTime/TimeLeft HUD - ljunkie
         else if msg.isRequestFailed() then
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed - message = " + tostr(msg.GetMessage()))
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed - data = " + tostr(msg.GetData()))
@@ -336,7 +370,8 @@ Function videoPlayerHandleMessage(msg) As Boolean
         else if msg.isStreamStarted() then
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isStreamStarted: position -> " + tostr(m.lastPosition))
             Debug("Message data -> " + tostr(msg.GetInfo()))
-
+	    'printAA(msg.GetInfo())
+	    m.VideoItem.rokuStreamBitrate = msg.GetInfo().StreamBitrate
             m.StartTranscodeSessionRequest()
 
             if msg.GetInfo().IsUnderrun = true then
@@ -421,8 +456,9 @@ Sub videoPlayerOnUrlEvent(msg, requestContext)
                     audio = "copy"
                 end if
 
-                m.VideoItem.ReleaseDate = m.VideoItem.OrigReleaseDate + chr(10) + "video: " + video  + chr(10) + " audio: " + audio + chr(10) + videoRes + " " + audioChannel
-                ' + curState -- doesn't seem useful
+                m.VideoItem.ReleaseDate = m.VideoItem.OrigReleaseDate + "   Transcoded " + " (" + videoRes + " " + audioChannel + ")" +chr(10)  + "video: " + video  + " audio: " + audio 
+                ' + curState -- doesn't seem useful - this doesn't get updated on the fly, useful if moved to: videoPlayerHandleMessage -> msg.isPlaybackPosition
+
                 m.VideoPlayer.SetContent(m.VideoItem)
             end if
 	end if
@@ -490,6 +526,8 @@ Function videoCanDirectPlay(mediaItem) As Boolean
     end if
     mediaItem.canDirectPlay = false
     mediaItem.cachedSurroundSound = surroundSound
+    surroundSoundDCA = surroundSound AND (RegRead("fivepointoneDCA", "preferences", "1") = "1")
+    surroundSound = surroundSound AND (RegRead("fivepointone", "preferences", "1") = "1")
 
     if mediaItem.preferredPart <> invalid AND mediaItem.preferredPart.subtitles <> invalid then
         subtitleStream = mediaItem.preferredPart.subtitles
@@ -552,14 +590,6 @@ Function videoCanDirectPlay(mediaItem) As Boolean
         next
     end if
 
-    ' RR - for some reason fling video from iPhone to Roku skips code above let's set the surroundCodec to mediaItem.audioCodec if it's still invalid 
-    ' TODO @ http://forums.plexapp.com/index.php/topic/79460-fling-direct-play-broken-from-iphone-dca-codec/
-    if surroundCodec = invalid then
-           surroundCodec = mediaItem.audioCodec
-    end if
-    fiveoneDCA = RegRead("fivepointoneDCA", "preferences", "1")
-    Debug("DTS support set to  " + fiveoneDCA)
-
     Debug("Media item optimized for streaming: " + tostr(mediaItem.optimized))
     Debug("Media item container: " + tostr(mediaItem.container))
     Debug("Media item video codec: " + tostr(mediaItem.videoCodec))
@@ -619,14 +649,14 @@ Function videoCanDirectPlay(mediaItem) As Boolean
             return false
         end if
 
-        if surroundStreamFirst AND surroundCodec = "aac" then
-            Debug("videoCanDirectPlay: first audio stream is 5.1 AAC")
-            return false
-        end if
-
         if surroundSound AND (surroundCodec = "ac3" OR stereoCodec = "ac3") then
             mediaItem.canDirectPlay = true
             return true
+        end if
+
+        if surroundStreamFirst then
+            Debug("videoCanDirectPlay: first audio stream is unsupported 5.1")
+            return false
         end if
 
         if stereoCodec = "aac" then
@@ -695,15 +725,19 @@ Function videoCanDirectPlay(mediaItem) As Boolean
             end if
         end if
 
-        if surroundSound then
-            if (surroundCodec = "ac3" OR stereoCodec = "ac3") then
-                mediaItem.canDirectPlay = true
-                return true
-            end if
-            if (fiveoneDCA <> "2" AND surroundCodec = "dca") then
-                mediaItem.canDirectPlay = true
-                return true
-            end if
+        if surroundSound AND (surroundCodec = "ac3" OR stereoCodec = "ac3") then
+            mediaItem.canDirectPlay = true
+            return true
+        end if
+
+        if surroundSoundDCA AND (surroundCodec = "dca" OR stereoCodec = "dca") then
+            mediaItem.canDirectPlay = true
+            return true
+        end if
+
+        if surroundStreamFirst then
+            Debug("videoCanDirectPlay: first audio stream is unsupported 5.1")
+            return false
         end if
 
         if stereoCodec <> invalid AND (stereoCodec = "aac" OR stereoCodec = "mp3") then
