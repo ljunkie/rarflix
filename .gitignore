@@ -1,5 +1,6 @@
 .DS_Store
 zips
 packages
+patches/*
 Plex/roku_screenshot.jpg
 screenshots
