@@ -4,7 +4,8 @@
 
 Function getRottenTomatoesData(movieTitle)
     movieTitle = HttpEncode(movieTitle)
-    url = "http://api.rottentomatoes.com/api/public/v1.0/movies.json?apikey=tk9u9ybr6mnjx9jfvxbumqjy&page_limit=1&q=" + movieTitle
+    apikey = "whvxdmyudad56xpnzp7ftrk5"
+    url = "http://api.rottentomatoes.com/api/public/v1.0/movies.json?apikey=whvxdmyudad56xpnzp7ftrk5&page_limit=1&q=" + movieTitle
     Debug("Calling Rotten Tomatoes API for " + movieTitle)
 
     httpRequest = NewHttp(url)
