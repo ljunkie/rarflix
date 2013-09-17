@@ -132,6 +132,16 @@ End Sub
 Sub loaderStartRequest(row, startItem, count)
     status = m.contentArray[row]
     request = CreateObject("roAssociativeArray")
+    ' REM ljunkie - need to add more rows? wrong section - but this section could override a row (might be useful if we can get toggles working)
+    ' if status.key = "recentlyAdded" then
+    '     status.key = "all?type=1&unwatched=1&sort=addedAt:desc"
+    ' end if
+    '
+    ' if status.key = "newest" then
+    '     status.key = "all?type=1&unwatched=1&sort=originallyAvailableAt:desc"
+    ' end if
+    ' print "start request ---------------------- " + status.key
+
     httpRequest = m.server.CreateRequest(m.sourceUrl, status.key)
     httpRequest.AddHeader("X-Plex-Container-Start", startItem.tostr())
     httpRequest.AddHeader("X-Plex-Container-Size", count.tostr())

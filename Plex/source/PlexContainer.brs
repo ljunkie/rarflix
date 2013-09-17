@@ -110,6 +110,34 @@ Sub containerParseXml()
         else if n@search = "1" then
             metadata = newSearchMetadata(m, n)
         else if n.GetName() = "Directory" then
+            ' ljunkie add here? for custom rows
+            ' original line:  metadata = newDirectoryMetadata(m, n)
+
+            ' may need some more checks here than just n@key = "all"
+            ' TODO: add regkey to enable/disable this mod/rows
+            if n@key = "all" then 
+                ' unwatched recently released
+                topass = m
+                metadata = newDirectoryMetadata(topass, n)
+                metadata.title = "Unwatched Recently Released"
+                metadata.key = "all?type=1&unwatched=1&sort=originallyAvailableAt:desc"
+                m.metadata.Push(metadata)
+                m.names.Push(metadata.title)
+                m.keys.Push(metadata.key)
+   
+                ' unwatched recently added
+                topass = m
+                metadata = newDirectoryMetadata(topass, n)
+                metadata.title = "Unwatched Recently Added"
+                metadata.key = "all?type=1&unwatched=1&sort=addedAt:desc"
+                m.metadata.Push(metadata)
+                m.names.Push(metadata.title)
+                m.keys.Push(metadata.key)
+   
+                ' add the normal row
+            end if
+            
+            ' orignally load what was called 
             metadata = newDirectoryMetadata(m, n)
         else if nodeType = "movie" OR nodeType = "episode" then
             metadata = newVideoMetadata(m, n, m.ParseDetails)
