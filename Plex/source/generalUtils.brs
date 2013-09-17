@@ -359,9 +359,12 @@ Function CheckMinimumVersion(versionArr, requiredVersion) As Boolean
     return true
 End Function
 
-Function CurrentTimeAsString() As String
+Function CurrentTimeAsString(localized=true As Boolean) As String
     time = CreateObject("roDateTime")
-    time.ToLocalTime()
+
+    if localized then
+        time.ToLocalTime()
+    end if
 
     hours = time.GetHours()
     if hours >= 12 then
