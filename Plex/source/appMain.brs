@@ -66,6 +66,7 @@ Sub initGlobals()
     GetGlobalAA().AddReplace("rokuVersionStr", versionStr)
     GetGlobalAA().AddReplace("rokuVersionArr", [major, minor, build])
 
+    Debug("UTC time: " + CurrentTimeAsString(false))
     Debug("Roku version: " + versionStr + " (" + version + ")")
 
     manifest = ReadAsciiFile("pkg:/manifest")
