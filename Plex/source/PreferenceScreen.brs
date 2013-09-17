@@ -1432,14 +1432,14 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
     ' Grid rows that can be reordered
     values = [
         { title: "All Items", key: "all" },
-        { title: "RAunwatched", key: "all?type=1&unwatched=1&sort=addedAt:desc" },
-        { title: "RRunwatched", key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc" },
         { title: "On Deck", key: "onDeck" },
-        { title: "Recently Viewed Shows", key: "recentlyViewedShows" },
+        { title: "Recently Added (unwatched)", key: "all?type=1&unwatched=1&sort=addedAt:desc" },
+        { title: "Recently Released (unwatched)", key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc" },
         { title: "Recently Added", key: "recentlyAdded" },
         { title: "Recently Released/Aired", key: "newest" },
         { title: "Unwatched", key: "unwatched" },
         { title: "Recently Viewed", key: "recentlyViewed" },
+        { title: "Recently Viewed Shows", key: "recentlyViewedShows" },
         { title: "By Album", key: "albums" },
         { title: "By Collection", key: "collection" },
         { title: "By Genre", key: "genre" },
