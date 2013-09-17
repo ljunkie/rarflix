@@ -372,6 +372,12 @@ Sub vcShowReleaseNotes()
     screen.ScreenName = "Release Notes"
     m.InitializeOtherScreen(screen, invalid)
 
+    ' As a one time fix, if the user is just updating and previously specifically
+    ' set the H.264 level preference to 4.0, update it to 4.1.
+    if RegRead("level", "preferences", "41") = "40" then
+        RegWrite("level", "41", "preferences")
+    end if
+
     screen.Show()
 End Sub
 
