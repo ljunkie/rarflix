@@ -60,6 +60,12 @@ Sub videoSetupButtons()
         end if
 
     end if
+    
+    ' Delete button for myplex vidoes (queue/recommended)
+    if m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex" AND m.metadata.id <> invalid then
+        m.AddButton("Delete from queue", "delete")
+    end if
+
 
     ' Playback options only if a tvshow or episode -- movies use a line for trailers (moved this to more...)
     if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
