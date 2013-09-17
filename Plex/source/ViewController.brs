@@ -101,6 +101,8 @@ Function vcCreateHomeScreen()
     screen.ScreenID = -1
     screen.ScreenName = "Home"
     m.InitializeOtherScreen(screen, invalid)
+    screen.Screen.SetBreadcrumbEnabled(true)
+    screen.Screen.SetBreadcrumbText("", CurrentTimeAsString())
     screen.Show()
 
     return screen
