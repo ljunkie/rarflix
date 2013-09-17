@@ -364,11 +364,10 @@ Sub vcShowReleaseNotes()
     header = GetGlobal("appName") + " has been updated to " + GetGlobal("appVersionStr")
     paragraphs = []
     paragraphs.Push("Changes in this version include:")
-    paragraphs.Push(" - Add transcode session info to the HUD.")
-    paragraphs.Push(" - Add a toggle for DTS support.")
-    paragraphs.Push(" - Fix a crash in Playback Options for non-library content.")
-    paragraphs.Push(" - Fix for Direct Playable content flung from iOS.")
-    paragraphs.Push(" - Fix H.264 level preference.")
+    paragraphs.Push(" - Fix a crash when adding servers manually.")
+    paragraphs.Push(" - Fix episode title when watched status changes.")
+    paragraphs.Push(" - Update supported H.264 level to 4.1.")
+    paragraphs.Push(" - Add clock to home screen.")
 
     screen = createParagraphScreen(header, paragraphs, m)
     screen.ScreenName = "Release Notes"
