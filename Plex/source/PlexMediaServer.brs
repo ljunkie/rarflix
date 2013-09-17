@@ -639,7 +639,7 @@ Function universalTranscodingVideoUrl(videoUrl As String, item As Object, seekVa
 
     builder.AddParam("X-Plex-Platform", "Roku")
 
-    extras = "add-limitation(scope=videoCodec&scopeName=h264&type=upperBound&name=video.level&value=" + RegRead("level", "preferences", "40") + "&isRequired=true)"
+    extras = "add-limitation(scope=videoCodec&scopeName=h264&type=upperBound&name=video.level&value=" + RegRead("level", "preferences", "41") + "&isRequired=true)"
 
     if SupportsSurroundSound(true, true) then
         if RegRead("fivepointone", "preferences", "1") = "1" then
@@ -809,7 +809,7 @@ Function Capabilities(recompute=false) As String
     end if
 
     protocols = "protocols=http-live-streaming,http-mp4-streaming,http-mp4-video,http-mp4-video-720p,http-streaming-video,http-streaming-video-720p"
-    level = RegRead("level", "preferences", "40")
+    level = RegRead("level", "preferences", "41")
     'do checks to see if 5.1 is supported, else use stereo
     audio = "aac"
     versionArr = GetGlobal("rokuVersionArr", [0])

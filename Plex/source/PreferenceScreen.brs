@@ -594,15 +594,15 @@ Function createAdvancedPrefsScreen(viewController) As Object
     ' H.264 Level
     levels = [
         { title: "Level 4.0 (Supported)", EnumValue: "40" },
-        { title: "Level 4.1", EnumValue: "41", ShortDescriptionLine2: "This level may not be supported well." },
+        { title: "Level 4.1 (Supported)", EnumValue: "41" },
         { title: "Level 4.2", EnumValue: "42", ShortDescriptionLine2: "This level may not be supported well." },
         { title: "Level 5.0", EnumValue: "50", ShortDescriptionLine2: "This level may not be supported well." },
         { title: "Level 5.1", EnumValue: "51", ShortDescriptionLine2: "This level may not be supported well." }
     ]
     obj.Prefs["level"] = {
         values: levels,
-        heading: "Use specific H264 level. Only 4.0 is officially supported.",
-        default: "40"
+        heading: "Use specific H264 level. Up to 4.1 is officially supported.",
+        default: "41"
     }
 
     ' HLS seconds per segment
