@@ -1,0 +1,25 @@
+######################################################################
+#### search for actor (not possible?)
+#
+# Idea - make actors/productions/etc clickable (probably not possible)
+#  ->  have a dialog showing details below, each on a button to click and enter a list of movie
+-- in a movie, actors will show up as 
+api: /library/metadata/13945
+
+<Writer id="2289" tag="Will Ferrell"/>
+<Writer id="2288" tag="Adam McKay"/>
+<Director id="2287" tag="Adam McKay"/>
+<Producer id="1463" tag="Judd Apatow"/>
+<Country id="31" tag="USA"/>
+<Role id="2296" tag="Will Ferrell" role="Ron Burgundy"/>
+<Role id="2297" tag="Christina Applegate" role="Veronica Corningstone"/>
+<Role id="615" tag="Paul Rudd" role="Brian Fantana"/>
+<Role id="482" tag="Steve Carell" role="Brick Tamland"/>
+<Role id="418" tag="David Koechner" role="Champ Kind" thumb="http://d3gtl9l2a4fn1j.cloudfront.net/t/p/original/w9qPq1xvvt0lvHP6xxJR7jwiEQf.jpg"/>
+</Video>
+
+
+/sections/6/filter?type=1&key=writer&value=2289&title=Will%20Ferrell
+/sections/6/filter?type=1&key=director&value=2287&title=Adam%20McKay
+/sections/6/filter?type=1&key=actor&value=2296&title=Will%20Ferrell
+/sections/6/filter?type=1&key=producer&value=1463&title=Judd%20Apatow

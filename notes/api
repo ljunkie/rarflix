@@ -1,0 +1,39 @@
+##################################################################
+## Unwatched ONLY
+
+## Limit Results: &X-Plex-Container-Start=0&X-Plex-Container-Size=99
+
+## FILTER options
+# unwatched=1
+# actor={actorid} <-- need to research this
+
+## SORT options
+# &sort=
+#   addedAt
+#   originallyAvailableAt
+#   rating
+#   titleSort
+#   mediaHeight
+#   duration
+
+## Examples
+
+## date added
+/library/sections/6/all?type=1&unwatched=1&sort=addedAt:desc&X-Plex-Container-Start=0&X-Plex-Container-Size=99
+
+## date released
+/library/sections/6/all?type=1&unwatched=1&sort=originallyAvailableAt:desc&X-Plex-Container-Start=0&X-Plex-Container-Size=99
+
+## by rating
+/library/sections/6/all?type=1&unwatched=1&sort=rating:desc&X-Plex-Container-Start=0&X-Plex-Container-Size=99
+
+## by title name
+/library/sections/6/all?type=1&unwatched=1&sort=titleSort:desc&X-Plex-Container-Start=0&X-Plex-Container-Size=99
+
+## by resolution
+/library/sections/6/all?type=1&unwatched=1&sort=mediaHeight:desc&X-Plex-Container-Start=0&X-Plex-Container-Size=99
+
+## by duration
+/library/sections/6/all?type=1&unwatched=1&sort=duration:desc&X-Plex-Container-Start=0&X-Plex-Container-Size=99
+
+
