@@ -143,6 +143,10 @@ Sub setVideoBasics(video, container, item)
 
     video.CleanTitle = video.ShortDescriptionLine1
 
+    if tostr(video.EpisodeStr) <> "invalid" then
+        video.ShortDescriptionLine1 = video.CleanTitle + " - " + tostr(video.EpisodeStr)
+    end if
+
     ' if a video has ever been watch mark as such, else mark partially if there's a recorded
     ' offset
     watched_status = "invalid"
