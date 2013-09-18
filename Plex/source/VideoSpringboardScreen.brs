@@ -123,6 +123,12 @@ Sub videoGetMediaDetails(content)
     Debug("About to fetch meta-data for Content Type: " + tostr(content.contentType))
 
     m.metadata = content.ParseDetails()
+
+    'ljunkie - prepend ShowTitle if content is an episode and and ShowTitle exists (useful for Ondeck/Recently Added -- when someone enters an episode directly)
+    if m.metadata.ContentType = "episode" and tostr(m.metadata.ShowTitle) <> "invalid" then 
+       m.metadata.description = m.metadata.showtitle + ": " + m.metadata.description
+    end if
+
     if m.metadata.ContentType = "movie" AND RegRead("rottentomatoes", "preferences", "disabled") = "enabled" then
         m.metadata.tomatoData = getRottenTomatoesData(m.metadata.CleanTitle)
     endif
@@ -184,7 +190,7 @@ Function videoHandleMessage(msg) As Boolean
                 ' display View All Seasons if we have grandparentKey -- entered from a episode
                 if m.metadata.grandparentKey <> invalid then ' global on deck does not work with this
                 'if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
-                    dialog.SetButton("showFromEpisode", "View All Seasons")
+                    dialog.SetButton("showFromEpisode", "View All Seasons of " + m.metadata.ShowTitle )
                 end if
                 ' display View specific season if we have parentKey/parentIndex -- entered from a episode
                 if m.metadata.parentKey <> invalid AND m.metadata.parentIndex <> invalid then  ' global on deck does not work with this

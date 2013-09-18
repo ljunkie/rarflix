@@ -97,6 +97,7 @@ Sub setVideoBasics(video, container, item)
         seasonStr = invalid
         if item@grandparentTitle <> invalid then
             video.ShortDescriptionLine1 = item@grandparentTitle + ": " + video.ShortDescriptionLine1
+            video.ShowTitle = item@grandparentTitle
         end if
         if item@index <> invalid then
             video.EpisodeNumber = item@index
