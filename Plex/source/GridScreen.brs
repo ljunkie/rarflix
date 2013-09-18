@@ -140,13 +140,28 @@ Function gridHandleMessage(msg) As Boolean
 
             item = context[index]
             if item <> invalid then
+	        print "----------------------------------------------------------"
+	        print "roGridScreenEvent"
+	        print item.ContentType
+		'printAA(item)
+	        print "----------------------------------------------------------"
+                'roGridScreenEvent
+                'episode
+
                 if item.ContentType = "series" then
                     breadcrumbs = [item.Title]
+'                else if item.ContentType = "episode" then
+'                    breadcrumbs = [item.server.name, item.ShowTitle, "Rob"]
                 else if item.ContentType = "section" then
                     breadcrumbs = [item.server.name, item.Title]
                 else
                     breadcrumbs = [m.Loader.GetNames()[msg.GetIndex()], item.Title]
                 end if
+
+'		print type(breadcrumbs)
+'		if type(breadcrumbs) = "roArray" then
+'                    print breadcrumbs
+'                end if
 
                 m.Facade = CreateObject("roGridScreen")
                 m.Facade.Show()
