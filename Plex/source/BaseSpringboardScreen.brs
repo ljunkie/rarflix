@@ -155,6 +155,17 @@ Function sbRefresh(force=false)
         end if
     end if
 
+    ' disable right/left for now -- until bug is fixed
+    ' probably a better way to match this - but I don't know of it yet
+    ' We should allow this if the left or right is also a movie.. TODO
+    r = CreateObject("roRegex", "library/recentlyAdded", "")
+    ismatch = r.Match(m.metadata.sourceurl)
+    if tostr(m.screenname) = "Preplay movie" and m.metadata.contenttype ="movie"  and ismatch[0] <> invalid
+            Debug("------------ disabled right/left buttons on Recenlty Added - Preplay screen")
+            m.Screen.AllowNavLeft(false)
+            m.Screen.AllowNavRight(false)
+    end if
+
     ' See if we should switch the poster
     if m.metadata.SDDetailThumb <> invalid then
         m.metadata.SDPosterUrl = m.metadata.SDDetailThumb

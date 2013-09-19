@@ -127,11 +127,41 @@ Sub videoGetMediaDetails(content)
     'ljunkie - prepend ShowTitle if content is an episode and and ShowTitle exists 
     ' (useful for Ondeck/Recently Added -- when someone enters an episode directly)
     ' also need to update breadcrumbs..
+    
+    ' ljunkie - should probably be done in -- sbRefresh (well maybe not anymore)
+    ra = CreateObject("roRegex", "/recentlyAdded", "")
+    od = CreateObject("roRegex", "/onDeck", "")
+    ismatch_ra = ra.Match(m.metadata.sourceurl)
+    ismatch_od = od.Match(m.metadata.sourceurl)
+    where = "invalid"
+    if ismatch_ra[0] <> invalid then
+       where = "Recently Added"
+    else if ismatch_od[0] <> invalid then
+       where = "On Deck"
+    end if
+    
     if m.metadata.ContentType = "episode" and tostr(m.metadata.ShowTitle) <> "invalid" then 
-       ' ljunkie - should probably be done in -- sbRefresh
        m.Screen.SetBreadcrumbEnabled(true)
-       m.Screen.SetBreadcrumbText(m.metadata.ShowTitle, m.metadata.episodestr)
-       m.metadata.description = m.metadata.showtitle + ": " + m.metadata.description
+       if where <> "invalid" then
+           ' m.Screen.SetBreadcrumbText(where, m.metadata.ShowTitle + ": " + m.metadata.episodestr)
+           ' we don't need episode string - we have that already displayed - however truncate long text
+           m.Screen.SetBreadcrumbText(where, truncateString(m.metadata.ShowTitle,26))
+       else 
+           m.Screen.SetBreadcrumbText(m.metadata.ShowTitle, m.metadata.episodestr)
+       end if
+       ' removed - it's redundant now that breadcrumbs are updating
+       ' m.metadata.description = m.metadata.showtitle + ": " + m.metadata.description 
+    else if m.metadata.ContentType = "movie" then 
+       if where = "invalid" then where = m.metadata.Title
+       m.Screen.SetBreadcrumbEnabled(true)
+       m.Screen.SetBreadcrumbText(where, "")
+    else if tostr(m.metadata.ContentType) = "invalid" then
+       m.Screen.SetBreadcrumbEnabled(true)
+       ' todo - figure out what screen we are in..
+       'm.Screen.SetBreadcrumbText(m.Loader.GetNames()[msg.GetIndex()], m.metadata.Title)
+       m.Screen.SetBreadcrumbText("invalid", "bug in official channel too")
+    else 
+       'ljunkie BUGFIX TODO ( this is bug existing in official plex ) left/right buttons when viewing global recently added - dies on Seasons
     end if
 
     if m.metadata.ContentType = "movie" AND RegRead("rottentomatoes", "preferences", "disabled") = "enabled" then

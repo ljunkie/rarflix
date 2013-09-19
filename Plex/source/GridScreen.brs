@@ -143,8 +143,7 @@ Function gridHandleMessage(msg) As Boolean
                 if item.ContentType = "series" then
                     breadcrumbs = [item.Title]
                 else if item.ContentType = "episode" then
-                    'ljunkie - update breadcrumbs for directly entered episode
-                    ' we have to update bc in videoGetMediaDetails too now (left/right button)
+		    ' ljunkie - added but now it's not used - override in videoGetMediaDetails()
                     breadcrumbs = [item.ShowTitle, item.episodestr, ""]
                 else if item.ContentType = "section" then
                     breadcrumbs = [item.server.name, item.Title]
