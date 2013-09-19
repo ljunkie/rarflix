@@ -124,8 +124,13 @@ Sub videoGetMediaDetails(content)
 
     m.metadata = content.ParseDetails()
 
-    'ljunkie - prepend ShowTitle if content is an episode and and ShowTitle exists (useful for Ondeck/Recently Added -- when someone enters an episode directly)
+    'ljunkie - prepend ShowTitle if content is an episode and and ShowTitle exists 
+    ' (useful for Ondeck/Recently Added -- when someone enters an episode directly)
+    ' also need to update breadcrumbs..
     if m.metadata.ContentType = "episode" and tostr(m.metadata.ShowTitle) <> "invalid" then 
+       ' ljunkie - should probably be done in -- sbRefresh
+       m.Screen.SetBreadcrumbEnabled(true)
+       m.Screen.SetBreadcrumbText(m.metadata.ShowTitle, m.metadata.episodestr)
        m.metadata.description = m.metadata.showtitle + ": " + m.metadata.description
     end if
 

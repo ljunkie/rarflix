@@ -622,10 +622,6 @@ Sub vcAddBreadcrumbs(screen, breadcrumbs)
     ' If the current screen specified invalid for the breadcrubms then it
     ' doesn't want any breadcrumbs to be shown. If it specified an empty
     ' array, then the current breadcrumbs will be shown again.
-
-    print "-----------------------------------------------------------------"
-    print "Bread crumbs!"
-
     screenType = type(screen.Screen)
     if breadcrumbs = invalid then
         screen.NumBreadcrumbs = 0
@@ -635,12 +631,10 @@ Sub vcAddBreadcrumbs(screen, breadcrumbs)
     ' Special case for springboard screens, don't show the current title
     ' in the breadcrumbs.
     if screenType = "roSpringboardScreen" AND breadcrumbs.Count() > 0 then
-        print "------------ roSpringboardScreen screen -- popping breadcrumb!"
         breadcrumbs.Pop()
     end if
 
     if breadcrumbs.Count() = 0 AND m.breadcrumbs.Count() > 0 then
-        print "--------------EMPTY - reseting to defaults"
         count = m.breadcrumbs.Count()
         if count >= 2 then
             breadcrumbs = [m.breadcrumbs[count-2], m.breadcrumbs[count-1]]
@@ -651,12 +645,9 @@ Sub vcAddBreadcrumbs(screen, breadcrumbs)
         m.breadcrumbs.Append(breadcrumbs)
         screen.NumBreadcrumbs = breadcrumbs.Count()
     else
-        print "---- we have some" + tostr(breadcrumbs.Count())
         for each b in breadcrumbs
             m.breadcrumbs.Push(tostr(b))
-            print tostr(b)
         next
-	
         screen.NumBreadcrumbs = breadcrumbs.Count()
     end if
 End Sub
