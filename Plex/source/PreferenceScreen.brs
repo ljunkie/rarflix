@@ -241,30 +241,6 @@ Function createPreferencesScreen(viewController) As Object
         default: "random"
     }
 
-    ' Rotten Tomatoes
-    rottentomatoes = [
-        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Get ratings from RottenTomatoes" },
-        { title: "Enabled", EnumValue: "enabled" }
-    ]
-    obj.Prefs["rottentomatoes"] = {
-        values: rottentomatoes,
-        heading: "Rotten Tomatoes",
-        default: "disabled"
-    }
-
-    ' Trailers
-    trailers = [
-        { title: "Enabled TMDB & Youtube", EnumValue: "enabled", ShortDescriptionLine2: "Get Movies Trailers" },
-        { title: "Enabled TMDB w/ Youtube Fallback", EnumValue: "enabled_tmdb_ytfb" }
-        { title: "Disabled", EnumValue: "disabled"}
-
-    ]
-    obj.Prefs["trailers"] = {
-        values: trailers,
-        heading: "Movie Trailers",
-        default: "enabled_tmdb_yt"
-    }
-
     obj.myplex = GetGlobalAA().Lookup("myplex")
     obj.checkMyPlexOnActivate = false
 
@@ -278,13 +254,12 @@ Sub showPreferencesScreen()
     m.Screen.SetTitle("Preferences v" + GetGlobalAA().Lookup("appVersionStr"))
     m.Screen.SetHeader("Set Plex Channel Preferences")
 
-    ' re-orderd - RR
+    ' re-ordered - RR
     m.AddItem({title: "Plex Media Servers"}, "servers")
     m.AddItem({title: getCurrentMyPlexLabel()}, "myplex")
+    m.AddItem({title: "RARFlix Preferences"}, "rarflix_prefs")
     m.AddItem({title: "Quality"}, "quality", m.GetEnumValue("quality"))
     m.AddItem({title: "Remote Quality"}, "quality_remote", m.GetEnumValue("quality_remote"))
-    m.AddItem({title: "Rotten Tomatoes"}, "rottentomatoes", m.GetEnumValue("rottentomatoes"))
-    m.AddItem({title: "Movie Trailers"}, "trailers", m.GetEnumValue("trailers"))
     m.AddItem({title: "Direct Play"}, "directplay", m.GetEnumValue("directplay"))
     m.AddItem({title: "Audio Preferences"}, "audio_prefs")
     m.AddItem({title: "Home Screen"}, "homescreen")
@@ -365,8 +340,7 @@ Function prefsMainHandleMessage(msg) As Boolean
                     m.ViewController.InitializeOtherScreen(screen, invalid)
                     screen.Show()
                 end if
-            ' removed 5.1 (finepointone) -- moved to audio prefs RR
-            else if command = "quality" OR command = "quality_remote" OR command = "level" OR command = "directplay" OR command = "screensaver" OR command = "rottentomatoes" OR command = "trailers" then
+            else if command = "quality" OR command = "quality_remote" OR command = "level" OR command = "directplay" OR command = "screensaver" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "slideshow" then
                 screen = createSlideshowPrefsScreen(m.ViewController)
@@ -399,6 +373,10 @@ Function prefsMainHandleMessage(msg) As Boolean
             else if command = "audio_prefs" then
                 screen = createAudioPrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["Audio Preferences"])
+                screen.Show()
+            else if command = "rarflix_prefs" then
+                screen = createRARFlixPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["RARFlix Preferences"])
                 screen.Show()
             else if command = "close" then
                 m.Screen.Close()

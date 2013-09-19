@@ -155,12 +155,11 @@ Function sbRefresh(force=false)
         end if
     end if
 
-    ' disable right/left for now -- until bug is fixed
-    ' probably a better way to match this - but I don't know of it yet
-    ' We should allow this if the left or right is also a movie.. TODO
-    r = CreateObject("roRegex", "library/recentlyAdded", "")
-    ismatch = r.Match(m.metadata.sourceurl)
-    if tostr(m.screenname) = "Preplay movie" and m.metadata.contenttype ="movie"  and ismatch[0] <> invalid
+    ' disable right/left for now -- until bug is fixed. Probably a better way to match this - but I don't know of it yet.
+    ' We should allow this if the NEXT content type left or right is also a movie.. TODO
+    '  ^ but again the user might wonder why it works sometimes and not others.. so maybe better to just keep disabled
+    r = CreateObject("roRegex", "library/recentlyAdded", "") ' note: only affect global recentlyAdded ( allows different content types )
+    if tostr(m.screenname) = "Preplay movie" and m.metadata.contenttype ="movie"  and r.Match(m.metadata.sourceurl)[0] <> invalid
             Debug("------------ disabled right/left buttons on Recenlty Added - Preplay screen")
             m.Screen.AllowNavLeft(false)
             m.Screen.AllowNavRight(false)

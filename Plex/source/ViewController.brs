@@ -113,6 +113,22 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         item = context
     end if
 
+    ' ljunkie - reset breadcrumb for TV show if tv watched status enabled and title <> origtitle (post and grid view supported)
+    if RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" and (item.type = "show" or item.viewgroup = "season" or item.viewgroup = "show" or item.viewgroup = "episode") then
+        if item.origtitle <> invalid and breadcrumbs[0] <> invalid and breadcrumbs[0] = item.title then 
+	    Debug("tv watched status enabled: setting breadcrumb back to original title; change from " + breadcrumbs[0] + " -to- " + item.origtitle)
+            breadcrumbs[0] = item.origtitle
+        else if item.parentindex <> invalid and item.viewgroup = "episode" then 
+	    Debug("tv watched status enabled: setting breadcrumb back to original title (tv gridview?); change from " + breadcrumbs[0] + " -to- " + item.origtitle)
+            breadcrumbs[0] = "Season " + tostr(item.parentindex)
+            breadcrumbs[1] = ""
+	else 
+            Debug("tv watched status enabled: DID not match criteria(1) -- NOT setting breadcrumb back to original title; change from " + breadcrumbs[0] + " -to- " + item.origtitle)
+        end if
+    else if RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" and item.origtitle <> invalid and breadcrumbs[0] <> invalid and breadcrumbs[0] = item.title then 
+	 Debug("tv watched status enabled: DID not match criteria(2) -- NOT setting breadcrumb back to original title; change from " + breadcrumbs[0] + " -to- " + item.origtitle)
+    end if
+
     contentType = item.ContentType
     viewGroup = item.viewGroup
     if viewGroup = invalid then viewGroup = ""

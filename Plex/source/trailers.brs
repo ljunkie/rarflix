@@ -3,14 +3,6 @@ Function LoadYouTube() As Object
 End Function
 
 Function InitYouTube() As Object
-    ' enabled trailers by default 
-    trailersEnabled = RegRead("trailers", "preferences")
-    ' set if invalid or if the typo happened - we can take this out after a while
-    if trailersEnabled = invalid or trailersEnabled = "enabled_tmbd_ytfb" then
-        RegWrite("trailers", "enabled", "preferences")
-    end if
-
-
     this = CreateObject("roAssociativeArray")
     this.protocol = "http"
     this.scope = this.protocol + "://gdata.youtube.com"
@@ -41,7 +33,7 @@ Function InitYouTube() As Object
     this.newVideoFromXML = youtube_new_video
 
 
-    print "YouTube: init complete"
+    Debug("Trailers(YouTube): init complete")
     return this
 End Function
 
@@ -64,15 +56,13 @@ Function youtube_exec_api(request As Dynamic) As Object
     else
         http = NewHttp(m.prefix + "/" + url_stub)
     end if
-'    http = NewHttp("http://www.rarforge.com")
+
     Debug("url: " + tostr(m.prefix + "/" + url_stub))
     if not headers.DoesExist("GData-Version") then headers.AddReplace("GData-Version", "2") 
 
     http.method = method
-    'print "----------------------------------"
     if postdata<>invalid then
         rsp=http.PostFromStringWithTimeout(postdata, 10, headers)
-        'print "postdata:",postdata
     else
         rsp=http.getToStringWithTimeout(10, headers)
     end if
@@ -137,11 +127,10 @@ Sub youtube_search(keyword as string, year = "invalid" as string )
        s_tmdb = m.youtube.ExecTmdbAPI("movie/"+tostr(s_tmdb.results[0].id)+"/trailers?page=1")["json"]
     end if
 
-'    printAA(s_tmdb)
     if type (s_tmdb) = "roAssociativeArray" and type(s_tmdb.youtube) = "roArray"  then 
        for each trailer in s_tmdb.youtube
             Debug("Found YouTube Trailer from TMDB")
-            PrintAA(trailer)
+            'PrintAA(trailer)
             re = CreateObject("roRegex", "&", "") ' seems some urls have &hd=1 .. maybe more to come
 	    source = re.split(trailer.Source)[0]
 
@@ -160,17 +149,17 @@ Sub youtube_search(keyword as string, year = "invalid" as string )
     end if
 
     ' join raw youtube videos - maybe make this a toggle? some may ONLY want TMDB
-    trailerTypes = RegRead("trailers", "preferences")
+    trailerTypes = RegRead("rf_trailers", "preferences")
     includeYouTubeRaw = 0
-    
+ 
     if trailerTypes = "enabled"  then 
-         print "------------ Included raw youtube trailer search (trailers: enabled) ------------------ trailer:" + trailerTypes
+         Debug("------------ Included raw youtube trailer search (trailers: enabled) ------------------ trailer:" + trailerTypes)
          includeYouTubeRaw = 1 ' include youtube trailers when 'enabled' is set -- grab everything
     else if videos.Count() = 0 and trailerTypes = "enabled_tmdb_ytfb"  then 
-         print "------------ Included raw youtube trailer search (trailers: enabled_tmdb_ytfb and 0 TMDB found) ------------------ trailer:" + trailerTypes
+         Debug("------------ Included raw youtube trailer search (trailers: enabled_tmdb_ytfb and 0 TMDB found) ------------------ trailer:" + trailerTypes)
          includeYouTubeRaw = 1 ' include youtube trailers when youtube fallback is enabled and we didn't find any trailers on tmdb
     else 
-         print "------------ skipping raw youtube trailer search (found trailers on TMDB) ------------------ trailer:" + trailerTypes
+         Debug("------------ skipping raw youtube trailer search (found trailers on TMDB) ------------------ trailer:" + trailerTypes)
     end if
 
     ' so - should we include the raw yourube search?
@@ -238,10 +227,10 @@ Function parseVideoFormatsMap(videoInfo As String) As Object
     if videoFormatsMatches[0]<>invalid then
         videoFormats = videoFormatsMatches[1]
     else
-        print "parseVideoFormatsMap: didn't find any video formats"
-        print "---------------------------------------------------"
-        print videoInfo
-        print "---------------------------------------------------"
+        Debug("parseVideoFormatsMap: didn't find any video formats")
+        Debug("---------------------------------------------------")
+        Debug(videoInfo)
+        Debug("---------------------------------------------------")
         return invalid
     end if
 
@@ -509,7 +498,7 @@ Sub youtube_fetch_video_list(APIRequest As Dynamic, title As String)
 End Sub
 
 Function youtube_new_video_list(xmllist As Object, videolist = invalid as Object, searchString = "invalid" as String) As Object
-    print "youtube_new_video_list init"
+    'print "youtube_new_video_list init"
 
     if videolist = invalid then
         videolist=CreateObject("roList")
@@ -1002,12 +991,9 @@ Function tmdb_exec_api(request As Dynamic) As Object
 
 
     if not headers.DoesExist("Accept") then headers.AddReplace("Accept", "application/json") 
-    'xhr.setRequestHeader("Accept", "application/json");
     http.method = method
-    'print "----------------------------------"
     if postdata<>invalid then
         rsp=http.PostFromStringWithTimeout(postdata, 10, headers)
-        'print "postdata:",postdata
     else
         rsp=http.getToStringWithTimeout(10, headers)
     end if

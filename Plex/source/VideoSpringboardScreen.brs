@@ -40,8 +40,7 @@ Sub videoSetupButtons()
 
     ' Trailers! (TODO) enable this for TV shows ( youtube is still useful )
     ' if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
-    isTrailers = RegRead("trailers", "preferences")
-    if m.metadata.ContentType = "movie" AND  RegRead("trailers", "preferences", "disabled") <> "disabled" then 
+    if m.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
          m.AddButton("Trailer", "getTrailers")
     end if
 
@@ -81,7 +80,7 @@ Sub videoSetupButtons()
         endif
 
         ' Rotten Tomatoes ratings, if enabled
-        if m.metadata.ContentType = "movie" AND RegRead("rottentomatoes", "preferences", "disabled") = "enabled" then
+        if m.metadata.ContentType = "movie" AND RegRead("rf_rottentomatoes", "preferences", "enabled") = "enabled" then 
             tomatoData = m.metadata.tomatoData
             rating_string = "Not Found"
             if tomatoData <> invalid AND tomatoData.ratings <> invalid AND tomatoData.ratings.critics_score <> invalid then
@@ -124,47 +123,53 @@ Sub videoGetMediaDetails(content)
 
     m.metadata = content.ParseDetails()
 
-    'ljunkie - prepend ShowTitle if content is an episode and and ShowTitle exists 
-    ' (useful for Ondeck/Recently Added -- when someone enters an episode directly)
-    ' also need to update breadcrumbs..
-    
-    ' ljunkie - should probably be done in -- sbRefresh (well maybe not anymore)
-    ra = CreateObject("roRegex", "/recentlyAdded", "")
-    od = CreateObject("roRegex", "/onDeck", "")
-    ismatch_ra = ra.Match(m.metadata.sourceurl)
-    ismatch_od = od.Match(m.metadata.sourceurl)
-    where = "invalid"
-    if ismatch_ra[0] <> invalid then
-       where = "Recently Added"
-    else if ismatch_od[0] <> invalid then
-       where = "On Deck"
-    end if
-    
-    if m.metadata.ContentType = "episode" and tostr(m.metadata.ShowTitle) <> "invalid" then 
-       m.Screen.SetBreadcrumbEnabled(true)
-       if where <> "invalid" then
-           ' m.Screen.SetBreadcrumbText(where, m.metadata.ShowTitle + ": " + m.metadata.episodestr)
-           ' we don't need episode string - we have that already displayed - however truncate long text
+    'ljunkie - dynamically update breadbcrumbs -- 
+    ' Useful for Ondeck/Recently Added -- when someone enters an episode directly
+    ' .. also useful when someone enters an episode from All Seasons in the gridview for TV shows
+    ' * should probably be done in sbRefresh - (well maybe not anymore)
+
+    if RegRead("rf_bcdynamic", "preferences", "enabled") = "enabled" then 
+        ' todo - figure out what screen we are in.. kinda done the lame way
+        ra = CreateObject("roRegex", "/recentlyAdded", "")
+        od = CreateObject("roRegex", "/onDeck", "")
+        rv = CreateObject("roRegex", "/recentlyViewed", "")
+        rair = CreateObject("roRegex", "/newest", "")
+        rallLeaves = CreateObject("roRegex", "/allLeaves", "")
+	'stop
+
+        where = "invalid"
+        if ra.Match(m.metadata.sourceurl)[0] <> invalid then
+           where = "Recently Added"
+        else if od.Match(m.metadata.sourceurl)[0] <> invalid then
+           where = "On Deck"
+        else if rv.Match(m.metadata.sourceurl)[0] <> invalid then
+           where = "Recently Viewed"
+        else if rair.Match(m.metadata.sourceurl)[0] <> invalid then
+	   where = "Recently Aired"
+        else if rallLeaves.Match(m.metadata.sourceurl)[0] <> invalid then
+	   where = "All Episodes"
+        end if
+        
+        if m.metadata.ContentType = "episode" and tostr(m.metadata.ShowTitle) <> "invalid" and where <> "invalid" then 
+           m.Screen.SetBreadcrumbEnabled(true)
            m.Screen.SetBreadcrumbText(where, truncateString(m.metadata.ShowTitle,26))
-       else 
-           m.Screen.SetBreadcrumbText(m.metadata.ShowTitle, m.metadata.episodestr)
-       end if
-       ' removed - it's redundant now that breadcrumbs are updating
-       ' m.metadata.description = m.metadata.showtitle + ": " + m.metadata.description 
-    else if m.metadata.ContentType = "movie" then 
-       if where = "invalid" then where = m.metadata.Title
-       m.Screen.SetBreadcrumbEnabled(true)
-       m.Screen.SetBreadcrumbText(where, "")
-    else if tostr(m.metadata.ContentType) = "invalid" then
-       m.Screen.SetBreadcrumbEnabled(true)
-       ' todo - figure out what screen we are in..
-       'm.Screen.SetBreadcrumbText(m.Loader.GetNames()[msg.GetIndex()], m.metadata.Title)
-       m.Screen.SetBreadcrumbText("invalid", "bug in official channel too")
-    else 
-       'ljunkie BUGFIX TODO ( this is bug existing in official plex ) left/right buttons when viewing global recently added - dies on Seasons
+           Debug("Dynamically set Episode breadcrumbs; " + where + ": " + truncateString(m.metadata.ShowTitle,26))
+        else if m.metadata.ContentType = "movie" and where <> "invalid" and od.Match(m.metadata.sourceurl)[0] <> invalid then 
+           ' this has been added for the global on deck view. Normally we already have this breadcrumb displayed, 
+           ' but due to global on deck (possibly recently added) , we need to account for switching between differnt contentTypes
+           m.Screen.SetBreadcrumbEnabled(true)
+           m.Screen.SetBreadcrumbText("Movies", where) 
+           Debug("Dynamically set MOVIES breadcrumbs; Movies: " + where)
+        else if tostr(m.metadata.ContentType) = "invalid" then
+           m.Screen.SetBreadcrumbEnabled(true)
+           'ljunkie BUGFIX TODO ( this is bug existing in official plex ) 
+           '  left/right buttons when viewing global recently added dies when switching from movie to other contentType
+	   ' Note: left and right have been denied now in BaseSpringboardScreen.brs - sbRefresh 
+           m.Screen.SetBreadcrumbText("invalid", "bug in official channel too")
+        end if
     end if
 
-    if m.metadata.ContentType = "movie" AND RegRead("rottentomatoes", "preferences", "disabled") = "enabled" then
+    if m.metadata.ContentType = "movie" AND RegRead("rf_rottentomatoes", "preferences", "enabled") = "enabled" then 
         m.metadata.tomatoData = getRottenTomatoesData(m.metadata.CleanTitle)
     endif
     m.media = m.metadata.preferredMediaItem
@@ -236,7 +241,7 @@ Function videoHandleMessage(msg) As Boolean
 
                 ' Trailers link - RR (last now that we include it on the main screen .. well before delete - people my be used to delete being second to last)
                 'if m.metadata.grandparentKey = invalid then
-                if m.metadata.ContentType = "movie" AND  RegRead("trailers", "preferences", "disabled") <> "disabled" then 
+                if m.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
                     dialog.SetButton("getTrailers", "Trailer")
                 end if
 
@@ -329,7 +334,6 @@ End Function
 Function videoDialogHandleButton(command, data) As Boolean
     ' We're evaluated in the context of the dialog, but we want to be in
     ' the context of the original screen.
-    ' These are button presses from a Dialog - ljunkie
     obj = m.ParentScreen
 
     closeDialog = false

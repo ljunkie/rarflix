@@ -1,4 +1,22 @@
 ' other functions required for my mods
+Sub InitRARFlix() 
+    RegRead("rf_bcdynamic", "preferences","enabled")
+    RegRead("rf_rottentomatoes", "preferences","enabled")
+    RegRead("rf_trailers", "preferences","enabled")
+    RegRead("rf_tvwatch", "preferences","enabled")
+
+    ' ljunkie Youtube Trailers (extended to TMDB)
+    m.youtube = InitYouTube()
+
+    Debug("=======================RARFLIX SETTINGS ====================================")
+    Debug("rf_bcdynamic: " + tostr(RegRead("rf_bcdynamic", "preferences")))
+    Debug("rf_rottentomatoes: " + tostr(RegRead("rf_rottentomatoes", "preferences")))
+    Debug("rf_trailers: " + tostr(RegRead("rf_trailers", "preferences")))
+    Debug("rf_tvwatch: " + tostr(RegRead("rf_tvwatch", "preferences")))
+    Debug("============================================================================")
+
+end sub
+
 Function GetDurationString( TotalSeconds = 0 As Integer, emptyHr = 0 As Integer, emptyMin = 0 As Integer, emptySec = 0 As Integer  ) As String
    datetime = CreateObject( "roDateTime" )
    datetime.FromSeconds( TotalSeconds )
@@ -89,3 +107,88 @@ Function RRbreadcrumbDate(myscreen) As Object
     end if
 
 End function
+
+Function createRARFlixPrefsScreen(viewController) As Object
+    obj = createBasePrefsScreen(viewController)
+    obj.HandleMessage = prefsRARFflixHandleMessage
+
+    ' Rotten Tomatoes
+    rt_prefs = [
+        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Display Ratings from RottenTomatoes" },
+        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Display Ratings from RottenTomatoes" },
+    ]
+    obj.Prefs["rf_rottentomatoes"] = {
+        values: rt_prefs,
+        heading: "Movie Ratings from Critics and Users",
+        default: "enabled"
+    }
+
+    ' Trailers
+    trailer_prefs = [
+        { title: "Enabled TMDB & Youtube", EnumValue: "enabled", ShortDescriptionLine2: "Display Movie Trailers" + chr(10) + "themoviedb.org and Youtube" },
+        { title: "Enabled TMDB w/ Youtube Fallback", EnumValue: "enabled_tmdb_ytfb", ShortDescriptionLine2: "Display Movie Trailers" + chr(10) + "themoviedb.org or Fallback to Youtube" },
+        { title: "Disabled", EnumValue: "disabled"}
+
+    ]
+    obj.Prefs["rf_trailers"] = {
+        values: trailer_prefs,
+        heading: "Show Movie Trailer button",
+        default: "enabled_tmdb_yt"
+    }
+
+    ' Breadcrumb fixes
+    bc_prefs = [
+        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Update header when browsing " +chr(10)+ "On Deck, Recently Added, etc.."  },
+        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Update header when browsing " +chr(10)+ "On Deck, Recently Added, etc.."  },
+
+
+    ]
+    obj.Prefs["rf_bcdynamic"] = {
+        values: bc_prefs,
+        heading: "Update Header (top right)",
+        default: "enabled"
+    }
+
+    ' TV Watched status next to ShowTITLE
+    tv_watch_prefs = [
+        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Dexter (watched)" + chr(10) + "Dexter (1 of 12 watched)" },
+        { title: "Disabled", EnumValue: "disabled" },
+
+    ]
+    obj.Prefs["rf_tvwatch"] = {
+        values: tv_watch_prefs,
+        heading: "Append the watched status to TV Show Titles",
+        default: "enabled"
+    }
+
+    obj.Screen.SetHeader("RARFlix Preferences")
+
+    obj.AddItem({title: "Rotten Tomatoes"}, "rf_rottentomatoes", obj.GetEnumValue("rf_rottentomatoes"))
+    obj.AddItem({title: "Movie Trailers"}, "rf_trailers", obj.GetEnumValue("rf_trailers"))
+    obj.AddItem({title: "Dynamic Headers"}, "rf_bcdynamic", obj.GetEnumValue("rf_bcdynamic"))
+    obj.AddItem({title: "TV Titles (Watched Status)"}, "rf_tvwatch", obj.GetEnumValue("rf_tvwatch"))
+
+    obj.AddItem({title: "Close"}, "close")
+    return obj
+End Function
+
+Function prefsRARFflixHandleMessage(msg) As Boolean
+    handled = false
+
+    if type(msg) = "roListScreenEvent" then
+        handled = true
+
+        if msg.isScreenClosed() then
+            m.ViewController.PopScreen(m)
+        else if msg.isListItemSelected() then
+            command = m.GetSelectedCommand(msg.GetIndex())
+            if command = "close" then
+                m.Screen.Close()
+            else
+                m.HandleEnumPreference(command, msg.GetIndex())
+            end if
+        end if
+    end if
+
+    return handled
+End Function
