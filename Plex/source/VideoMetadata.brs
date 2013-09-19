@@ -150,10 +150,12 @@ Sub setVideoBasics(video, container, item)
         video.ShortDescriptionLine1 = video.CleanTitle + " - " + tostr(video.EpisodeStr)
     end if
 
-    ' if a video has ever been watch mark as such, else mark partially if there's a recorded
-    ' offset
+    ' if a video has ever been watch mark as such, else mark partially if there's a recorded offset
+    ' ljunkie - we should mark it as watched & partially watched -- otherwise it's confusing when watched content is ondeck
     watched_status = "invalid"
-    if video.Watched then
+    if video.Watched AND video.viewOffset <> invalid AND val(video.viewOffset) > 0 then
+       watched_status = " (Watched+Restarted)" ' try and keep it show "Watched+Partially Watched" seems to long
+    else if video.Watched then
        watched_status = " (Watched)"
     else if video.viewOffset <> invalid AND val(video.viewOffset) > 0 then
        watched_status = " (Partially Watched)"
