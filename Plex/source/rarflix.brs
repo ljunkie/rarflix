@@ -97,33 +97,47 @@ Function RRbitrate( bitrate As Float) As String
 End Function
 
 Function RRbreadcrumbDate(myscreen) As Object
-    screenName = firstOf(myScreen.ScreenName, type(myScreen.Screen))
-    if screenName <> invalid and screenName = "Home" then 
-        Debug("update " + screenName + " screen time")
-        date = CreateObject("roDateTime")
-        date.ToLocalTime() ' localizetime
-        timeString = RRmktime(date.AsSeconds(),0)
-        dateString = date.AsDateString("short-month-short-weekday")
-        myscreen.Screen.SetBreadcrumbEnabled(true)
-        myscreen.Screen.SetBreadcrumbText(dateString, timeString)
-    else 
-        Debug("will NOT update " + screenName + " screen time. " + screenName +"=Home")
+    if RegRead("rf_hs_clock", "preferences", "enabled") = "enabled" then
+        screenName = firstOf(myScreen.ScreenName, type(myScreen.Screen))
+        if screenName <> invalid and screenName = "Home" then 
+            Debug("update " + screenName + " screen time")
+            date = CreateObject("roDateTime")
+            date.ToLocalTime() ' localizetime
+            timeString = RRmktime(date.AsSeconds(),0)
+            dateString = date.AsDateString("short-month-short-weekday")
+            myscreen.Screen.SetBreadcrumbEnabled(true)
+            myscreen.Screen.SetBreadcrumbText(dateString, timeString)
+        else 
+            Debug("will NOT update " + screenName + " screen time. " + screenName +"=Home")
+        end if
     end if
-
 End function
 
 Function createRARFlixPrefsScreen(viewController) As Object
     obj = createBasePrefsScreen(viewController)
     obj.HandleMessage = prefsRARFflixHandleMessage
 
+    ' Deprecated : part of Hide Rows 
     ' Show 2 new fows for movies (unwatched: recenlty added and recently released )
-    rf_uw_movie_row_prefs = [
-        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Recenlty Added (unwatched)" + chr(10) + "Recenlty Released (unwatched)" },
-        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Recenlty Added (unwatched)" + chr(10) + "Recenlty Released (unwatched)" },
+    '    rf_uw_movie_row_prefs = [
+    '        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Recenlty Added (unwatched)" + chr(10) + "Recenlty Released (unwatched)" },
+    '        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Recenlty Added (unwatched)" + chr(10) + "Recenlty Released (unwatched)" },
+    '    ]
+    '    obj.Prefs["rf_uw_movie_rows"] = {
+    '        values: rf_uw_movie_row_prefs,
+    '        heading: "Add unwatched Movie Rows",
+    '        default: "enabled"
+    '    }
+
+
+    ' Home Screen clock
+    rf_hs_clock_prefs = [
+        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Show clock on Home Screen" },
+        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Show clock on Home Screen" },
     ]
-    obj.Prefs["rf_uw_movie_rows"] = {
-        values: rf_uw_movie_row_prefs,
-        heading: "Add unwatched Movie Rows",
+    obj.Prefs["rf_hs_clock"] = {
+        values: rf_hs_clock_prefs,
+        heading: "Clock (requires a restart of channel)",
         default: "enabled"
     }
 
@@ -182,9 +196,10 @@ Function createRARFlixPrefsScreen(viewController) As Object
     obj.AddItem({title: "Movie Trailers"}, "rf_trailers", obj.GetEnumValue("rf_trailers"))
     obj.AddItem({title: "Dynamic Headers"}, "rf_bcdynamic", obj.GetEnumValue("rf_bcdynamic"))
     obj.AddItem({title: "TV Titles (Watched Status)"}, "rf_tvwatch", obj.GetEnumValue("rf_tvwatch"))
-   ' now part of the Hide Rows
-   ' obj.AddItem({title: "Unwatched Movie Rows"}, "rf_uw_movie_rows", obj.GetEnumValue("rf_uw_movie_rows"))
+    obj.AddItem({title: "Clock on Home Screen"}, "rf_hs_clock", obj.GetEnumValue("rf_hs_clock"))
     obj.AddItem({title: "Hide Rows"}, "hide_rows_prefs")
+    ' now part of the Hide Rows
+    ' obj.AddItem({title: "Unwatched Movie Rows"}, "rf_uw_movie_rows", obj.GetEnumValue("rf_uw_movie_rows"))
 
     obj.AddItem({title: "Close"}, "close")
     return obj
