@@ -1411,8 +1411,6 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
     values = [
         { title: "All Items", key: "all" },
         { title: "On Deck", key: "onDeck" },
-        { title: "Recently Added (unwatched)", key: "all?type=1&unwatched=1&sort=addedAt:desc" },
-        { title: "Recently Released (unwatched)", key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc" },
         { title: "Recently Added", key: "recentlyAdded" },
         { title: "Recently Released/Aired", key: "newest" },
         { title: "Unwatched", key: "unwatched" },
@@ -1433,6 +1431,12 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
         { title: "By Folder", key: "folder" },
         { title: "Search", key: "_search_" }
     ]
+
+    if RegRead("rf_uw_movie_rows", "preferences","enabled") = "enabled" then
+        values.Unshift({ title: "Recently Added (unwatched)", key: "all?type=1&unwatched=1&sort=addedAt:desc" })
+        values.Unshift({ title: "Recently Released (unwatched)", key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc" })
+    end if
+
     obj.Prefs["section_row_order"] = {
         values: values,
         default: ""

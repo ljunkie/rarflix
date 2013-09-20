@@ -111,33 +111,36 @@ Sub containerParseXml()
             metadata = newSearchMetadata(m, n)
         else if n.GetName() = "Directory" then
             ' ljunkie add here? for custom rows
-            ' original line:  metadata = newDirectoryMetadata(m, n)
 
-            ' may need some more checks here than just n@key = "all"
+            ' may need some more checks here than just n@key = "all": DONE - only setup for n@title = "All Movies"
             ' TODO: add regkey to enable/disable this mod/rows
-	    
-            if n@key = "all" and m.xml@identifier = "com.plexapp.plugins.library" and m.xml@content = "secondary" then 
-                ' unwatched recently released
-                topass = m
-                metadata = newDirectoryMetadata(topass, n)
-                metadata.title = "Recently Released (unwatched)"
-                metadata.key = "all?type=1&unwatched=1&sort=originallyAvailableAt:desc"
-                m.metadata.Push(metadata)
-                m.names.Push(metadata.title)
-                m.keys.Push(metadata.key)
-   
-                ' unwatched recently added
-                topass = m
-                metadata = newDirectoryMetadata(topass, n)
-                metadata.title = "Recently Added (unwatched)"
-                metadata.key = "all?type=1&unwatched=1&sort=addedAt:desc"
-                m.metadata.Push(metadata)
-                m.names.Push(metadata.title)
-                m.keys.Push(metadata.key)
-   
-                ' add the normal row
+            if RegRead("rf_uw_movie_rows", "preferences", "enabled") = "enabled" then 	    
+                if n@key = "all" and n@title = "All Movies" and m.xml@identifier = "com.plexapp.plugins.library" and m.xml@content = "secondary" then 
+                    ' unwatched recently released
+                    topass = m
+                    metadata = newDirectoryMetadata(topass, n)
+                    metadata.title = "Recently Released (unwatched)"
+                    metadata.key = "all?type=1&unwatched=1&sort=originallyAvailableAt:desc"
+                    m.metadata.Push(metadata)
+                    m.names.Push(metadata.title)
+                    m.keys.Push(metadata.key)
+       
+                    ' unwatched recently added
+                    topass = m
+                    metadata = newDirectoryMetadata(topass, n)
+                    metadata.title = "Recently Added (unwatched)"
+                    metadata.key = "all?type=1&unwatched=1&sort=addedAt:desc"
+                    m.metadata.Push(metadata)
+                    m.names.Push(metadata.title)
+                    m.keys.Push(metadata.key)
+       
+                ' shows have a different way to filter (&unwatchedLeaves=1) -- but it's too slow to use right now
+                ' else if n@key = "all" and n@title = "All Shows" and m.xml@identifier = "com.plexapp.plugins.library" and m.xml@content = "secondary" then 
+                   ' shows have a different key -- but it's too slow to use right now
+                   ' recently released: metadata.key = "all?type=2&unwatchedLeaves=1&sort=originallyAvailableAt:desc"
+                   ' recently added: metadata.key = "all?type=2&unwatchedLeaves=1&sort=addedAt:desc"
+                end if
             end if
-            
             ' orignally load what was called 
             metadata = newDirectoryMetadata(m, n)
         else if nodeType = "movie" OR nodeType = "episode" then

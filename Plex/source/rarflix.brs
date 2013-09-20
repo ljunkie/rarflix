@@ -4,6 +4,7 @@ Sub InitRARFlix()
     RegRead("rf_rottentomatoes", "preferences","enabled")
     RegRead("rf_trailers", "preferences","enabled")
     RegRead("rf_tvwatch", "preferences","enabled")
+    RegRead("rf_uw_movie_rows", "preferences","enabled")
 
     ' ljunkie Youtube Trailers (extended to TMDB)
     m.youtube = InitYouTube()
@@ -13,9 +14,12 @@ Sub InitRARFlix()
     Debug("rf_rottentomatoes: " + tostr(RegRead("rf_rottentomatoes", "preferences")))
     Debug("rf_trailers: " + tostr(RegRead("rf_trailers", "preferences")))
     Debug("rf_tvwatch: " + tostr(RegRead("rf_tvwatch", "preferences")))
+    Debug("rf_uw_movie_rows: " + tostr(RegRead("rf_uw_movie_rows", "preferences")))
     Debug("============================================================================")
 
 end sub
+
+
 
 Function GetDurationString( TotalSeconds = 0 As Integer, emptyHr = 0 As Integer, emptyMin = 0 As Integer, emptySec = 0 As Integer  ) As String
    datetime = CreateObject( "roDateTime" )
@@ -112,6 +116,17 @@ Function createRARFlixPrefsScreen(viewController) As Object
     obj = createBasePrefsScreen(viewController)
     obj.HandleMessage = prefsRARFflixHandleMessage
 
+    ' Show 2 new fows for movies (unwatched: recenlty added and recently released )
+    rf_uw_movie_row_prefs = [
+        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Recenlty Added (unwatched)" + chr(10) + "Recenlty Released (unwatched)" },
+        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Recenlty Added (unwatched)" + chr(10) + "Recenlty Released (unwatched)" },
+    ]
+    obj.Prefs["rf_uw_movie_rows"] = {
+        values: rf_uw_movie_row_prefs,
+        heading: "Add unwatched Movie Rows",
+        default: "enabled"
+    }
+
     ' Rotten Tomatoes
     rt_prefs = [
         { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Display Ratings from RottenTomatoes" },
@@ -167,6 +182,7 @@ Function createRARFlixPrefsScreen(viewController) As Object
     obj.AddItem({title: "Movie Trailers"}, "rf_trailers", obj.GetEnumValue("rf_trailers"))
     obj.AddItem({title: "Dynamic Headers"}, "rf_bcdynamic", obj.GetEnumValue("rf_bcdynamic"))
     obj.AddItem({title: "TV Titles (Watched Status)"}, "rf_tvwatch", obj.GetEnumValue("rf_tvwatch"))
+    obj.AddItem({title: "Unwatched Movie Rows"}, "rf_uw_movie_rows", obj.GetEnumValue("rf_uw_movie_rows"))
 
     obj.AddItem({title: "Close"}, "close")
     return obj
