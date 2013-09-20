@@ -1436,6 +1436,7 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
 
     ' Used to be a toggle.. but now it's part of Hide Rows ( we can just show this as we normally would - still put on top so people see the change
     'if RegRead("rf_uw_movie_rows", "preferences","enabled") = "enabled" then
+        ' Unshift these in -- easier to remember to merge with PlexTest
         values.Unshift({ title: "Recently Added (unwatched)", key: "all?type=1&unwatched=1&sort=addedAt:desc" })
         values.Unshift({ title: "Recently Released (unwatched)", key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc" })
     'end if

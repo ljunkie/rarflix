@@ -145,7 +145,7 @@ Sub containerParseXml()
             ' Check if we have hidden this row (normal directory listing from XML) 
             if m.xml@content = "secondary" AND RegRead("rf_hide_" + n@key, "preferences", "show") <> "show" then 
                 hide_row = true ' we will not push metadata to screen if this is set
-                Debug("ROW HIDDEN: " + n@key)
+                Debug("-- rarflix prefs - hide row enabled for: " + n@key)
             end if
 
             ' orignally load what was called 

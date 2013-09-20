@@ -234,243 +234,49 @@ Function createHideRowsPrefsScreen(viewController) As Object
     obj = createBasePrefsScreen(viewController)
     obj.HandleMessage = prefsRARFflixHandleMessage
 
-
-
-    ' this is nasty (thanks emacs macros)- we shoudl be pulling from the reorder_prefs -- but for another time
-    all_prefs = [
-        { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: "All Items" },
-        { title: "Show", EnumValue: "show", ShortDescriptionLine2: "All Items" },
+    'a little cleaner: if Plex adds/changes rows it will be in PreferenceScreen.brs:createSectionDisplayPrefsScreen()
+    PlexRows = [
+        { title: "All Items", key: "all" },
+        { title: "On Deck", key: "onDeck" },
+        { title: "Recently Added", key: "recentlyAdded" },
+        { title: "Recently Released/Aired", key: "newest" },
+        { title: "Unwatched", key: "unwatched" },
+        { title: "Recently Added (unwatched)", key: "all?type=1&unwatched=1&sort=addedAt:desc" },
+        { title: "Recently Released (unwatched)", key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc" },
+        { title: "Recently Viewed", key: "recentlyViewed" },
+        { title: "Recently Viewed Shows", key: "recentlyViewedShows" },
+        { title: "By Album", key: "albums" },
+        { title: "By Collection", key: "collection" },
+        { title: "By Genre", key: "genre" },
+        { title: "By Year", key: "year" },
+        { title: "By Decade", key: "decade" },
+        { title: "By Director", key: "director" },
+        { title: "By Actor", key: "actor" },
+        { title: "By Country", key: "country" },
+        { title: "By Content Rating", key: "contentRating" },
+        { title: "By Rating", key: "rating" },
+        { title: "By Resolution", key: "resolution" },
+        { title: "By First Letter", key: "firstCharacter" },
+        { title: "By Folder", key: "folder" },
+        { title: "Search", key: "_search_" }
     ]
-    obj.Prefs["rf_hide_all"] = {
-        values: all_prefs,
-        heading: "Show or Hide Row",
-        default: "show"
-    }
-    onDeck_prefs = [
-        { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: "On Deck" },
-        { title: "Show", EnumValue: "show", ShortDescriptionLine2: "On Deck" },
-    ]
-    obj.Prefs["rf_hide_onDeck"] = {
-        values: onDeck_prefs,
-        heading: "Show or Hide Row",
-        default: "show"
-    }
-    recentlyAdded_prefs = [
-        { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: "Recently Added" },
-        { title: "Show", EnumValue: "show", ShortDescriptionLine2: "Recently Added" },
-    ]
-    obj.Prefs["rf_hide_recentlyAdded"] = {
-        values: recentlyAdded_prefs,
-        heading: "Show or Hide Row",
-        default: "show"
-    }
-    newest_prefs = [
-        { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: "Recently Released/Aired" },
-        { title: "Show", EnumValue: "show", ShortDescriptionLine2: "Recently Released/Aired" },
-    ]
-    obj.Prefs["rf_hide_newest"] = {
-        values: newest_prefs,
-        heading: "Show or Hide Row",
-        default: "show"
-    }
-    recentlyAdded_uw_prefs = [
-        { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: "Recently Added (unwatched)" },
-        { title: "Show", EnumValue: "show", ShortDescriptionLine2: "Recently Added (unwatched)" },
-    ]
-    obj.Prefs["rf_hide_recentlyAdded_uw"] = {
-        values: recentlyAdded_uw_prefs,
-        heading: "Show or Hide Row",
-        default: "show"
-    }
-    newest_uw_prefs = [
-        { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: "Recently Released (unwatched)" },
-        { title: "Show", EnumValue: "show", ShortDescriptionLine2: "Recently Released (unwatched)" },
-    ]
-    obj.Prefs["rf_hide_newest_uw"] = {
-        values: newest_uw_prefs,
-        heading: "Show or Hide Row",
-        default: "show"
-    }
-    unwatched_prefs = [
-        { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: "Unwatched" },
-        { title: "Show", EnumValue: "show", ShortDescriptionLine2: "Unwatched" },
-    ]
-    obj.Prefs["rf_hide_unwatched"] = {
-        values: unwatched_prefs,
-        heading: "Show or Hide Row",
-        default: "show"
-    }
-    recentlyViewed_prefs = [
-        { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: "Recently Viewed" },
-        { title: "Show", EnumValue: "show", ShortDescriptionLine2: "Recently Viewed" },
-    ]
-    obj.Prefs["rf_hide_recentlyViewed"] = {
-        values: recentlyViewed_prefs,
-        heading: "Show or Hide Row",
-        default: "show"
-    }
-    recentlyViewedShows_prefs = [
-        { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: "Recently Viewed Show," }
-        { title: "Show", EnumValue: "show", ShortDescriptionLine2: "Recently Viewed Shows" },
-    ]
-    obj.Prefs["rf_hide_recentlyViewedShows"] = {
-        values: recentlyViewedShows_prefs,
-        heading: "Show or Hide Row",
-        default: "show"
-    }
-    albums_prefs = [
-        { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: "By Album" },
-        { title: "Show", EnumValue: "show", ShortDescriptionLine2: "By Album" },
-    ]
-    obj.Prefs["rf_hide_albums"] = {
-        values: albums_prefs,
-        heading: "Show or Hide Row",
-        default: "show"
-    }
-    collection_prefs = [
-        { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: "By Collection" },
-        { title: "Show", EnumValue: "show", ShortDescriptionLine2: "By Collection" },
-    ]
-    obj.Prefs["rf_hide_collection"] = {
-        values: collection_prefs,
-        heading: "Show or Hide Row",
-        default: "show"
-    }
-    genre_prefs = [
-        { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: "By Genre" },
-        { title: "Show", EnumValue: "show", ShortDescriptionLine2: "By Genre" },
-    ]
-    obj.Prefs["rf_hide_genre"] = {
-        values: genre_prefs,
-        heading: "Show or Hide Row",
-        default: "show"
-    }
-    year_prefs = [
-        { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: "By Year" },
-        { title: "Show", EnumValue: "show", ShortDescriptionLine2: "By Year" },
-    ]
-    obj.Prefs["rf_hide_year"] = {
-        values: year_prefs,
-        heading: "Show or Hide Row",
-        default: "show"
-    }
-    decade_prefs = [
-        { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: "By Decade" },
-        { title: "Show", EnumValue: "show", ShortDescriptionLine2: "By Decade" },
-    ]
-    obj.Prefs["rf_hide_decade"] = {
-        values: decade_prefs,
-        heading: "Show or Hide Row",
-        default: "show"
-    }
-    director_prefs = [
-        { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: "By Director" },
-        { title: "Show", EnumValue: "show", ShortDescriptionLine2: "By Director" },
-    ]
-    obj.Prefs["rf_hide_director"] = {
-        values: director_prefs,
-        heading: "Show or Hide Row",
-        default: "show"
-    }
-    actor_prefs = [
-        { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: "By Actor" },
-        { title: "Show", EnumValue: "show", ShortDescriptionLine2: "By Actor" },
-    ]
-    obj.Prefs["rf_hide_actor"] = {
-        values: actor_prefs,
-        heading: "Show or Hide Row",
-        default: "show"
-    }
-    country_prefs = [
-        { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: "By Country" },
-        { title: "Show", EnumValue: "show", ShortDescriptionLine2: "By Country" },
-    ]
-    obj.Prefs["rf_hide_country"] = {
-        values: country_prefs,
-        heading: "Show or Hide Row",
-        default: "show"
-    }
-    contentRating_prefs = [
-        { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: "By Content Rating" },
-        { title: "Show", EnumValue: "show", ShortDescriptionLine2: "By Content Rating" },
-    ]
-    obj.Prefs["rf_hide_contentRating"] = {
-        values: contentRating_prefs,
-        heading: "Show or Hide Row",
-        default: "show"
-    }
-    rating_prefs = [
-        { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: "By Rating" },
-        { title: "Show", EnumValue: "show", ShortDescriptionLine2: "By Rating" },
-    ]
-    obj.Prefs["rf_hide_rating"] = {
-        values: rating_prefs,
-        heading: "Show or Hide Row",
-        default: "show"
-    }
-    resolution_prefs = [
-        { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: "By Resolution" },
-        { title: "Show", EnumValue: "show", ShortDescriptionLine2: "By Resolution" },
-    ]
-    obj.Prefs["rf_hide_resolution"] = {
-        values: resolution_prefs,
-        heading: "Show or Hide Row",
-        default: "show"
-    }
-    firstCharacter_prefs = [
-        { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: "By First Letter" },
-        { title: "Show", EnumValue: "show", ShortDescriptionLine2: "By First Letter" },
-    ]
-    obj.Prefs["rf_hide_firstCharacter"] = {
-        values: firstCharacter_prefs,
-        heading: "Show or Hide Row",
-        default: "show"
-    }
-    folder_prefs = [
-        { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: "By Folder" },
-        { title: "Show", EnumValue: "show", ShortDescriptionLine2: "By Folder" },
-    ]
-    obj.Prefs["rf_hide_folder"] = {
-        values: folder_prefs,
-        heading: "Show or Hide Row",
-        default: "show"
-    }
-    search_prefs = [
-        { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: "Search" },
-        { title: "Show", EnumValue: "show", ShortDescriptionLine2: "Search" },
-    ]
-    obj.Prefs["rf_hide_search"] = {
-        values: search_prefs,
-        heading: "Show or Hide Row",
-        default: "show"
-    }
-    
     obj.Screen.SetHeader("Hide or Show Rows for Library Sections")
-    
-    obj.AddItem({title: "All Items"}, "rf_hide_all", obj.GetEnumValue("rf_hide_all"))
-    obj.AddItem({title: "On Deck"}, "rf_hide_onDeck", obj.GetEnumValue("rf_hide_onDeck"))
-    obj.AddItem({title: "Recently Added (unwatched)"}, "rf_hide_recentlyAdded_uw", obj.GetEnumValue("rf_hide_recentlyAdded_uw"))
-    obj.AddItem({title: "Recently Released (unwatched)"}, "rf_hide_newest_uw", obj.GetEnumValue("rf_hide_newest_uw"))
-    obj.AddItem({title: "Recently Added"}, "rf_hide_recentlyAdded", obj.GetEnumValue("rf_hide_recentlyAdded"))
-    obj.AddItem({title: "Recently Released/Aired"}, "rf_hide_newest", obj.GetEnumValue("rf_hide_newest"))
-    obj.AddItem({title: "Unwatched"}, "rf_hide_unwatched", obj.GetEnumValue("rf_hide_unwatched"))
-    obj.AddItem({title: "Recently Viewed"}, "rf_hide_recentlyViewed", obj.GetEnumValue("rf_hide_recentlyViewed"))
-    obj.AddItem({title: "Recently Viewed Shows"}, "rf_hide_recentlyViewedShows", obj.GetEnumValue("rf_hide_recentlyViewedShows"))
-    obj.AddItem({title: "By Album"}, "rf_hide_albums", obj.GetEnumValue("rf_hide_albums"))
-    obj.AddItem({title: "By Collection"}, "rf_hide_collection", obj.GetEnumValue("rf_hide_collection"))
-    obj.AddItem({title: "By Genre"}, "rf_hide_genre", obj.GetEnumValue("rf_hide_genre"))
-    obj.AddItem({title: "By Year"}, "rf_hide_year", obj.GetEnumValue("rf_hide_year"))
-    obj.AddItem({title: "By Decade"}, "rf_hide_decade", obj.GetEnumValue("rf_hide_decade"))
-    obj.AddItem({title: "By Director"}, "rf_hide_director", obj.GetEnumValue("rf_hide_director"))
-    obj.AddItem({title: "By Actor"}, "rf_hide_actor", obj.GetEnumValue("rf_hide_actor"))
-    obj.AddItem({title: "By Country"}, "rf_hide_country", obj.GetEnumValue("rf_hide_country"))
-    obj.AddItem({title: "By Content Rating"}, "rf_hide_contentRating", obj.GetEnumValue("rf_hide_contentRating"))
-    obj.AddItem({title: "By Rating"}, "rf_hide_rating", obj.GetEnumValue("rf_hide_rating"))
-    obj.AddItem({title: "By Resolution"}, "rf_hide_resolution", obj.GetEnumValue("rf_hide_resolution"))
-    obj.AddItem({title: "By First Letter"}, "rf_hide_firstCharacter", obj.GetEnumValue("rf_hide_firstCharacter"))
-    obj.AddItem({title: "By Folder"}, "rf_hide_folder", obj.GetEnumValue("rf_hide_folder"))
-    obj.AddItem({title: "Search"}, "rf_hide_search", obj.GetEnumValue("rf_hide_search"))
-    
+
+    for each item in PlexRows
+        rf_hide_key = "rf_hide_"+item.key
+        if item.key = "_search_" then item.key = "search" 'special case
+        values = [
+            { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: item.title },
+            { title: "Show", EnumValue: "show", ShortDescriptionLine2: item.title },
+        ]
+        obj.Prefs[rf_hide_key] = {
+           values: values,
+           heading: "Show or Hide Row",
+           default: "show"
+        }
+        obj.AddItem({title: item.title}, rf_hide_key, obj.GetEnumValue(rf_hide_key))
+    next
+   
     obj.AddItem({title: "Close"}, "close")
     return obj
 End Function
