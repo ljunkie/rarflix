@@ -47,10 +47,16 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize)
     ' to invalid so we don't try to load it.
     ReorderItemsByKeyPriority(loader.contentArray, RegRead("section_row_order", "preferences", ""))
     for index = 0 to loader.contentArray.Count() - 1
-        status = loader.contentArray[index]
-        loader.names[index] = status.name
-        if status.key = "_search_" then
-            status.key = invalid
+        'ljunkie - allow search to be hidden (Hide Rows in RARFlix prefs)
+        if status.key = "_search_" and RegRead("rf_hide_search", "preferences", "show") <> "show" then 
+            Debug("ROW HIDDEN: search")
+        else 
+            status = loader.contentArray[index]
+            loader.names[index] = status.name
+
+            if status.key = "_search_" then
+                status.key = invalid
+            end if
         end if
     next
 

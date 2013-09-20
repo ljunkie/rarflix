@@ -1432,10 +1432,11 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
         { title: "Search", key: "_search_" }
     ]
 
-    if RegRead("rf_uw_movie_rows", "preferences","enabled") = "enabled" then
+    ' Used to be a toggle.. but now it's part of Hide Rows ( we can just show this as we normally would - still put on top so people see the change
+    'if RegRead("rf_uw_movie_rows", "preferences","enabled") = "enabled" then
         values.Unshift({ title: "Recently Added (unwatched)", key: "all?type=1&unwatched=1&sort=addedAt:desc" })
         values.Unshift({ title: "Recently Released (unwatched)", key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc" })
-    end if
+    'end if
 
     obj.Prefs["section_row_order"] = {
         values: values,

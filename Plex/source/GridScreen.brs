@@ -81,7 +81,7 @@ Function showGridScreen() As Integer
         dialog = createBaseDialog()
         dialog.Facade = facade
         dialog.Title = "Content Unavailable"
-        dialog.Text = "An error occurred while trying to load this content, make sure the server is running."
+        dialog.Text = "An error occurred while trying to load this content, make sure the server is running (did you hide all the rows?)."
         dialog.Show()
 
         m.popOnActivate = true

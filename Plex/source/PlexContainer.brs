@@ -77,6 +77,7 @@ Sub containerParseXml()
     for each n in nodes
         nodeType = firstOf(n@type, m.ViewGroup)
 
+        hide_row = false 'ljunkie 
         if n@scanner <> invalid OR n@agent <> invalid then
             metadata = newDirectoryMetadata(m, n)
             metadata.contentType = "section"
@@ -111,12 +112,10 @@ Sub containerParseXml()
             metadata = newSearchMetadata(m, n)
         else if n.GetName() = "Directory" then
             ' ljunkie add here? for custom rows
-
-            ' may need some more checks here than just n@key = "all": DONE - only setup for n@title = "All Movies"
-            ' TODO: add regkey to enable/disable this mod/rows
-            if RegRead("rf_uw_movie_rows", "preferences", "enabled") = "enabled" then 	    
-                if n@key = "all" and n@title = "All Movies" and m.xml@identifier = "com.plexapp.plugins.library" and m.xml@content = "secondary" then 
-                    ' unwatched recently released
+            ' removed TOGGLE for this since we have a toggle to hide or show rows now ' if RegRead("rf_uw_movie_rows", "preferences", "enabled") = "enabled" then 	    
+            if n@key = "all" and n@title = "All Movies" and m.xml@identifier = "com.plexapp.plugins.library" and m.xml@content = "secondary" then 
+                ' unwatched recently released
+                if RegRead("rf_hide_newest_uw", "preferences", "show") = "show" then 
                     topass = m
                     metadata = newDirectoryMetadata(topass, n)
                     metadata.title = "Recently Released (unwatched)"
@@ -124,8 +123,9 @@ Sub containerParseXml()
                     m.metadata.Push(metadata)
                     m.names.Push(metadata.title)
                     m.keys.Push(metadata.key)
-       
-                    ' unwatched recently added
+                end if
+                 ' unwatched recently added
+                if RegRead("rf_hide_recentlyAdded_uw", "preferences", "show") = "show" then 
                     topass = m
                     metadata = newDirectoryMetadata(topass, n)
                     metadata.title = "Recently Added (unwatched)"
@@ -133,16 +133,23 @@ Sub containerParseXml()
                     m.metadata.Push(metadata)
                     m.names.Push(metadata.title)
                     m.keys.Push(metadata.key)
-       
-                ' shows have a different way to filter (&unwatchedLeaves=1) -- but it's too slow to use right now
-                ' else if n@key = "all" and n@title = "All Shows" and m.xml@identifier = "com.plexapp.plugins.library" and m.xml@content = "secondary" then 
-                   ' shows have a different key -- but it's too slow to use right now
-                   ' recently released: metadata.key = "all?type=2&unwatchedLeaves=1&sort=originallyAvailableAt:desc"
-                   ' recently added: metadata.key = "all?type=2&unwatchedLeaves=1&sort=addedAt:desc"
                 end if
+   
+               ' shows have a different way to filter (&unwatchedLeaves=1) -- but it's too slow to use right now
+               ' else if n@key = "all" and n@title = "All Shows" and m.xml@identifier = "com.plexapp.plugins.library" and m.xml@content = "secondary" then 
+               ' shows have a different key -- but it's too slow to use right now
+               ' recently released: metadata.key = "all?type=2&unwatchedLeaves=1&sort=originallyAvailableAt:desc"
+               ' recently added: metadata.key = "all?type=2&unwatchedLeaves=1&sort=addedAt:desc"
             end if
+
+            ' Check if we have hidden this row (normal directory listing from XML) 
+            if m.xml@content = "secondary" AND RegRead("rf_hide_" + n@key, "preferences", "show") <> "show" then 
+                hide_row = true ' we will not push metadata to screen if this is set
+                Debug("ROW HIDDEN: " + n@key)
+            end if
+
             ' orignally load what was called 
-            metadata = newDirectoryMetadata(m, n)
+            metadata = newDirectoryMetadata(m, n)       
         else if nodeType = "movie" OR nodeType = "episode" then
             metadata = newVideoMetadata(m, n, m.ParseDetails)
         else if nodeType = "clip" OR n.GetName() = "Video" then
@@ -158,14 +165,17 @@ Sub containerParseXml()
             metadata = newDirectoryMetadata(m, n)
         end if
 
-        if metadata.search = true AND m.SeparateSearchItems then
-            m.search.Push(metadata)
-        else if metadata.setting = true then
-            m.settings.Push(metadata)
-        else
-            m.metadata.Push(metadata)
-            m.names.Push(metadata.Title)
-            m.keys.Push(metadata.Key)
+        ' ljunkie - Hide Rows
+        if NOT hide_row then 
+            if metadata.search = true AND m.SeparateSearchItems then
+                m.search.Push(metadata)
+            else if metadata.setting = true then
+                m.settings.Push(metadata)
+            else
+                m.metadata.Push(metadata)
+                m.names.Push(metadata.Title)
+                m.keys.Push(metadata.Key)
+            end if
         end if
     next
 
