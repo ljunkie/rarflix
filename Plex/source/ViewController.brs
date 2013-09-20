@@ -375,20 +375,22 @@ Function vcIsVideoPlaying() As Boolean
 End Function
 
 Sub vcShowReleaseNotes()
-    header = GetGlobal("appName") + " has been updated to " + GetGlobal("appVersionStr")
+    header = ""
+    title = GetGlobal("appName") + " updated to " + GetGlobal("appVersionStr")
     paragraphs = []
-    paragraphs.Push(" New: Recently Added/Released unwatched Row. Prefs-> Section Display-> Reorder Rows")
-    paragraphs.Push(" New: Time & Watched Time on HUD (channels/web clips)")
-    paragraphs.Push(" Fix: ability to delete queued items")
-    paragraphs.Push(" - Trailer Support for Movies: TMDB * YouTube")
-    paragraphs.Push(" - HUD: End Time, Time Left, Bitrate, Direct/Transcode & Release Date")
-    paragraphs.Push(" - Audio Preference: 5.1 and DTS toggles")
-    paragraphs.Push(" - Rotten Tomatoes: User/Critic Ratings (Enable in Prefs)")
-    paragraphs.Push(" - Enter Season or Specific Season from Episode ('More' button)")
-    paragraphs.Push(" - other minor changes... Enjoy. -Rob")
-
+    paragraphs.Push("New: Unwatched Rows: Prefs-> Section Display-> Reorder Rows")
+    paragraphs.Push("New: RARFflix preferences - toggles for mods")
+    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+" * Hide Rows")
+    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+" * Home Screen Clock ")
+    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+" * Dynamic Headers ")
+    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+" * TV Show Season (watched status)")
+    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+" * Time & Watched Time on HUD (channels/web clips)")
+    paragraphs.Push(" ")
+    paragraphs.Push("+ Movie Trailers, Rotten Tomatoes Ratings, HUD mods, other misc updates")
+    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+" ** Please let me know of issues - rarflix@rarforge.com **")
     screen = createParagraphScreen(header, paragraphs, m)
     screen.ScreenName = "Release Notes"
+    screen.Screen.SetTitle(title)
     m.InitializeOtherScreen(screen, invalid)
 
     ' As a one time fix, if the user is just updating and previously specifically
