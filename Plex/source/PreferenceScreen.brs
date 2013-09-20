@@ -118,6 +118,7 @@ Sub prefsHandleEnumPreference(regKey, index)
     m.currentRegKey = regKey
     label = m.contentArray[index].OrigTitle
     pref = m.Prefs[regKey]
+    m.Changes.AddReplace("_previous_"+regKey, RegRead(regKey, "preferences", pref.default)) ' ljunkie - set _previous_ value to key off of later
     screen = m.ViewController.CreateEnumInputScreen(pref.values, RegRead(regKey, "preferences", pref.default), pref.heading, [label], false)
     screen.Listener = m
     screen.Show()
@@ -169,6 +170,7 @@ End Sub
 Function prefsGetEnumValue(regKey)
     pref = m.Prefs[regKey]
     value = RegRead(regKey, "preferences", pref.default)
+    m.Changes.AddReplace(regKey, value) ' ljunkie add changes, we can key of changes: 'm.Changes["_prev_{regKey}"] will have the previously selection
     for each item in pref.values
         if value = item.EnumValue then
             return item.title

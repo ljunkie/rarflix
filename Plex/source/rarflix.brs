@@ -44,7 +44,6 @@ Function GetDurationString( TotalSeconds = 0 As Integer, emptyHr = 0 As Integer,
    Return duration
 End Function
 
-
 Function RRmktime( epoch As Integer, localize = 1 as Integer) As String
     datetime = CreateObject("roDateTime")
     datetime.FromSeconds(epoch)
@@ -137,7 +136,7 @@ Function createRARFlixPrefsScreen(viewController) As Object
     ]
     obj.Prefs["rf_hs_clock"] = {
         values: rf_hs_clock_prefs,
-        heading: "Clock (requires a restart of channel)",
+        heading: "Date and Time",
         default: "enabled"
     }
 
@@ -213,6 +212,7 @@ Function prefsRARFflixHandleMessage(msg) As Boolean
 
         if msg.isScreenClosed() then
             m.ViewController.PopScreen(m)
+            m.ViewController.Home.Refresh(m.Changes) ' include the Changes for homescreen refresh ( might be useful to add this to the main ALL *HandleMessages functions )
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
             if command = "hide_rows_prefs" then

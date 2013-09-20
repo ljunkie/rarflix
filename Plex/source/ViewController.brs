@@ -503,7 +503,7 @@ Sub vcPopScreen(screen)
         Debug("Top of stack is once again: " + screenName)
         m.Analytics.TrackScreen(screenName)
         newScreen.Activate(screen)
-        RRbreadcrumbDate(newScreen)
+        RRbreadcrumbDate(newScreen) ' ljunkie - clock
     end if
 
     ' If some other screen requested this close, let it know.
