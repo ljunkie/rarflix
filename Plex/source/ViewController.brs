@@ -125,8 +125,9 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
 	else 
             Debug("tv watched status enabled: DID not match criteria(1) -- NOT setting breadcrumb back to original title; change from " + breadcrumbs[0] + " -to- " + item.origtitle)
         end if
-    else if RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" and item.origtitle <> invalid and breadcrumbs[0] <> invalid and breadcrumbs[0] = item.title then 
-	 Debug("tv watched status enabled: DID not match criteria(2) -- NOT setting breadcrumb back to original title; change from " + breadcrumbs[0] + " -to- " + item.origtitle)
+    ' this causes a crash in playing Photos from Year with the play button -- not need for this anyways..
+    'else if RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" and item.origtitle <> invalid and breadcrumbs[0] <> invalid and breadcrumbs[0] = item.title then 
+    '	 Debug("tv watched status enabled: DID not match criteria(2) -- NOT setting breadcrumb back to original title; change from " + breadcrumbs[0] + " -to- " + item.origtitle)
     end if
 
     contentType = item.ContentType
