@@ -170,8 +170,8 @@ Sub videoGetMediaDetails(content)
     end if
 
     if m.metadata.ContentType = "movie" AND RegRead("rf_rottentomatoes", "preferences", "enabled") = "enabled" then 
-        m.metadata.tomatoData = getRottenTomatoesData(m.metadata.CleanTitle)
-    endif
+        m.metadata.tomatoData = getRottenTomatoesData(m.metadata.RFSearchTitle) 
+    end if
     m.media = m.metadata.preferredMediaItem
 End Sub
 
@@ -302,17 +302,16 @@ Function videoHandleMessage(msg) As Boolean
                 else 
                      year = m.metaData.ReleaseDate
                 end if
-                youtube_search(tostr(m.metadata.CleanTitle),tostr(year))
-                'closeDialog = true
+                youtube_search(tostr(m.metadata.RFSearchTitle),tostr(year))
             else if buttonCommand = "tomatoes" then
                 dialog = createBaseDialog()
                 dialog.Title = "Rotten Tomatoes Review"
-                review_text = "Movie was not found... sorry"
+                review_text = "'" + m.metadata.RFSearchTitle + "' could not be located on Rotten Tomatoes... sorry."
 		if m.metadata.tomatoData <> invalid  then 
 		     review_text = tostr(m.metadata.tomatoData.ratings.critics_score) + "%  Critic's score" + chr(10)
 		     review_text = review_text + tostr(m.metadata.tomatoData.ratings.audience_score) + "% Audience's score" + chr(10)
 		     if m.metadata.tomatoData.critics_consensus <> invalid then
-                        review_text = review_text + tostr(m.metadata.tomatoData.critics_consensus)
+                        review_text = review_text + chr(10) + tostr(m.metadata.tomatoData.critics_consensus) + chr(10)
                      end if
 		end if
 
@@ -355,7 +354,7 @@ Function videoDialogHandleButton(command, data) As Boolean
         else 
             year = obj.metaData.ReleaseDate
         end if
-        youtube_search(tostr(obj.metadata.CleanTitle),tostr(year))
+        youtube_search(tostr(obj.metadata.RFSearchTitle),tostr(year))
         closeDialog = true
     else if command = "scrobble" then
         obj.metadata.server.Scrobble(obj.metadata.ratingKey, obj.metadata.mediaContainerIdentifier)

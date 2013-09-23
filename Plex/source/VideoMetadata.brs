@@ -146,6 +146,14 @@ Sub setVideoBasics(video, container, item)
 
     video.CleanTitle = video.ShortDescriptionLine1
 
+    'ljunkie - search title for RT and Trailers. We will use CleanTitle unless overridden
+    if RegRead("rf_searchtitle", "preferences", "title") = "originalTitle" then    
+        video.RFSearchTitle = firstOf(item@originalTitle, item@title, item@name)
+    else 
+        video.RFSearchTitle = firstOf(item@title, item@name)
+    end if
+    'ljunkie - end search title
+
     if tostr(video.EpisodeStr) <> "invalid" then
         video.ShortDescriptionLine1 = video.CleanTitle + " - " + tostr(video.EpisodeStr)
     end if

@@ -5,6 +5,7 @@ Sub InitRARFlix()
     RegRead("rf_trailers", "preferences","enabled")
     RegRead("rf_tvwatch", "preferences","enabled")
     RegRead("rf_uw_movie_rows", "preferences","enabled")
+    RegRead("rf_searchtitle", "preferences","title")
 
     ' ljunkie Youtube Trailers (extended to TMDB)
     m.youtube = InitYouTube()
@@ -15,6 +16,7 @@ Sub InitRARFlix()
     Debug("rf_trailers: " + tostr(RegRead("rf_trailers", "preferences")))
     Debug("rf_tvwatch: " + tostr(RegRead("rf_tvwatch", "preferences")))
     Debug("rf_uw_movie_rows: " + tostr(RegRead("rf_uw_movie_rows", "preferences")))
+    Debug("rf_searchtitle: " + tostr(RegRead("rf_searchtitle", "preferences")))
     Debug("============================================================================")
 
 end sub
@@ -151,6 +153,17 @@ Function createRARFlixPrefsScreen(viewController) As Object
         default: "enabled"
     }
 
+    ' RT/Trailers - search title
+    rt_prefs = [
+        { title: "Title", EnumValue: "title", ShortDescriptionLine2: "Search by Movie Title" },
+        { title: "Original Title", EnumValue: "originalTitle", ShortDescriptionLine2: "Search by Original Movie Title" },
+    ]
+    obj.Prefs["rf_searchtitle"] = {
+        values: rt_prefs,
+        heading: "Search by Title or 'Original' Title",
+        default: "title"
+    }
+
     ' Trailers
     trailer_prefs = [
         { title: "Enabled TMDB & Youtube", EnumValue: "enabled", ShortDescriptionLine2: "Display Movie Trailers" + chr(10) + "themoviedb.org and Youtube" },
@@ -193,6 +206,7 @@ Function createRARFlixPrefsScreen(viewController) As Object
 
     obj.AddItem({title: "Rotten Tomatoes"}, "rf_rottentomatoes", obj.GetEnumValue("rf_rottentomatoes"))
     obj.AddItem({title: "Movie Trailers"}, "rf_trailers", obj.GetEnumValue("rf_trailers"))
+    obj.AddItem({title: "Trailers/Rotten Tomatoes Search by"}, "rf_searchtitle", obj.GetEnumValue("rf_searchtitle"))
     obj.AddItem({title: "Dynamic Headers"}, "rf_bcdynamic", obj.GetEnumValue("rf_bcdynamic"))
     obj.AddItem({title: "TV Titles (Watched Status)"}, "rf_tvwatch", obj.GetEnumValue("rf_tvwatch"))
     obj.AddItem({title: "Clock on Home Screen"}, "rf_hs_clock", obj.GetEnumValue("rf_hs_clock"))
