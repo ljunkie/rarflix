@@ -317,7 +317,25 @@ Sub youtube_display_video_list(videos As Object, title As String, links=invalid,
                     youtube.VideoDetails(video[set_idx], youtube.CurrentPageTitle)
                 end if
             end function]
-        uitkDoPosterMenu(metadata, screen, onselect)
+         onplay = [1, metadata, m,
+             Function(video, youtube, set_idx)
+                 streamQualities = video_get_qualities(video[set_idx].id)
+                 if streamQualities <> invalid then
+                     video[set_idx].Streams = streamQualities
+                     if streamQualities.Peek()["contentid"].toInt() > 18
+                         Debug("is HD")
+                         video[set_idx].HDBranded = true
+                         video[set_idx].FullHD = false
+                     else if streamQualities.Peek()["contentid"].toInt() = 37
+                         video[set_idx].HDBranded = true
+                         video[set_idx].FullHD = true
+             	         Debug("is FULL HD")
+                     end if
+                     'printany(5,"1",video[set_idx])
+                     DisplayVideo(video[set_idx])
+                 end if
+             end Function]
+        uitkDoPosterMenu(metadata, screen, onselect, onplay) 
     else
         uitkDoMessage("No videos found.", screen)
     end if
@@ -771,7 +789,7 @@ Function uitkPreShowPosterMenu(ListStyle="flat-category" as String, breadA=inval
 	return screen
 end function
 
-Function uitkDoPosterMenu(posterdata, screen, onselect_callback=invalid) As Integer
+Function uitkDoPosterMenu(posterdata, screen, onselect_callback=invalid, onplay_callback=invalid) As Integer
 
 	if type(screen)<>"roPosterScreen" then
 		print "illegal type/value for screen passed to uitkDoPosterMenu()" 
@@ -779,6 +797,7 @@ Function uitkDoPosterMenu(posterdata, screen, onselect_callback=invalid) As Inte
 	end if
 	
 	screen.SetContentList(posterdata)
+        idx% = 0
 
     while true
         msg = wait(0, screen.GetMessagePort())
@@ -826,6 +845,16 @@ Function uitkDoPosterMenu(posterdata, screen, onselect_callback=invalid) As Inte
 				end if
 			else if msg.isScreenClosed() then
 				return -1
+                        else if (msg.isListItemFocused()) then
+			    idx% = msg.GetIndex()
+                        else if (msg.isRemoteKeyPressed()) then
+                            ' If the play button is pressed on the video list, and the onplay_callback is valid, play the video
+                            if (onplay_callback <> invalid AND msg.GetIndex() = 13) then
+                                userdata1 = onplay_callback[1]
+                                userdata2 = onplay_callback[2]
+                                f = onplay_callback[3]
+                                f(userdata1, userdata2, idx%)
+                            end if 
 			end if
         end if
 	end while
