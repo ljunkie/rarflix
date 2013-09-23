@@ -112,24 +112,27 @@ Sub containerParseXml()
             metadata = newSearchMetadata(m, n)
         else if n.GetName() = "Directory" then
             ' ljunkie add here? for custom rows
-            ' removed TOGGLE for this since we have a toggle to hide or show rows now ' if RegRead("rf_uw_movie_rows", "preferences", "enabled") = "enabled" then 	    
+            ' removed TOGGLE for this since we have a toggle to hide or show rows now 'old: if RegRead("rf_uw_movie_rows", "preferences", "enabled") = "enabled" then 	    
             if n@key = "all" and n@title = "All Movies" and m.xml@identifier = "com.plexapp.plugins.library" and m.xml@content = "secondary" then 
+                topass = m ' probably not needed - TODO
+                
                 ' unwatched recently released
-                if RegRead("rf_hide_newest_uw", "preferences", "show") = "show" then 
-                    topass = m
+                new_key = "all?type=1&unwatched=1&sort=originallyAvailableAt:desc"
+                if RegRead("rf_hide_"+new_key, "preferences", "show") = "show" then 
                     metadata = newDirectoryMetadata(topass, n)
+                    metadata.key = new_key
                     metadata.title = "Recently Released (unwatched)"
-                    metadata.key = "all?type=1&unwatched=1&sort=originallyAvailableAt:desc"
                     m.metadata.Push(metadata)
                     m.names.Push(metadata.title)
                     m.keys.Push(metadata.key)
                 end if
-                 ' unwatched recently added
-                if RegRead("rf_hide_recentlyAdded_uw", "preferences", "show") = "show" then 
-                    topass = m
+
+                ' unwatched recently added
+                new_key = "all?type=1&unwatched=1&sort=addedAt:desc"
+                if RegRead("rf_hide_"+new_key, "preferences", "show") = "show" then 
                     metadata = newDirectoryMetadata(topass, n)
+                    metadata.key = new_key
                     metadata.title = "Recently Added (unwatched)"
-                    metadata.key = "all?type=1&unwatched=1&sort=addedAt:desc"
                     m.metadata.Push(metadata)
                     m.names.Push(metadata.title)
                     m.keys.Push(metadata.key)
@@ -142,7 +145,7 @@ Sub containerParseXml()
                ' recently added: metadata.key = "all?type=2&unwatchedLeaves=1&sort=addedAt:desc"
             end if
 
-            ' Check if we have hidden this row (normal directory listing from XML) 
+            ' ljunkie - Check if we have hidden this row (normal directory listing from PMS XML) 
             if m.xml@content = "secondary" AND RegRead("rf_hide_" + n@key, "preferences", "show") <> "show" then 
                 hide_row = true ' we will not push metadata to screen if this is set
                 Debug("-- rarflix prefs - hide row enabled for: " + n@key)
