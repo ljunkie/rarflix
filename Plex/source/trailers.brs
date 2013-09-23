@@ -185,7 +185,11 @@ Sub DisplayVideo(content As Object)
     video = CreateObject("roVideoScreen")
     video.setMessagePort(p)
     video.SetPositionNotificationPeriod(5)
-    content.releaseDate = "Played: " + GetDurationString(0,0,1,1) ' just to keep the format the same on initial start
+
+    date = CreateObject("roDateTime")
+    watchedString = "Time: " + RRmktime(date.AsSeconds()) + "     Watched: " + GetDurationString(0,0,1,1) ' just to keep the format the same on initial start                    
+    if watchedString <> "invalid" then content.releasedate = watchedString
+
     'PrintAA(content)
     video.SetContent(content)
     video.show()
@@ -199,10 +203,12 @@ Sub DisplayVideo(content As Object)
             else if msg.isStreamStarted() then
 		'print "Video status: "; msg.GetIndex(); " " msg.GetInfo() 
             else if msg.isPlaybackPosition() then
-                'print "Video GetIndex: "; msg.GetIndex()
                 if msg.GetIndex() > 0
-		    content.releaseDate = "Played: " + GetDurationString(msg.GetIndex(),0,1,1)
-                    video.SetContent(content)
+                    watchedString = "Time: " + RRmktime(date.AsSeconds()) + "     Watched: " + GetDurationString(int(msg.GetIndex()))                    
+                    if watchedString <> "invalid" then 
+                        content.releasedate = watchedString
+                        video.SetContent(content)
+                    end if
                 end if
 	    else if msg.isStatusMessage()
                 'print "Video status: "; msg.GetIndex(); " " msg.GetData() 
