@@ -187,28 +187,45 @@ Sub DisplayVideo(content As Object)
     video.SetPositionNotificationPeriod(5)
 
     date = CreateObject("roDateTime")
-    watchedString = "Time: " + RRmktime(date.AsSeconds()) + "     Watched: " + GetDurationString(0,0,1,1) ' just to keep the format the same on initial start                    
-    if watchedString <> "invalid" then content.releasedate = watchedString
+    endString = "invalid"
+    if content.Length <> invalid and content.Length.ToInt() > 0 then
+        timeLeft = content.Length.ToInt()
+        endString = "End Time: " + RRmktime(date.AsSeconds()+timeLeft) + "     (" + GetDurationString(timeLeft,0,1,1) + ")" 'always show min/secs
+    else
+        endString = "Time: " + RRmktime(date.AsSeconds()) + "     Watched: " + GetDurationString(int(msg.GetIndex()))
+    end if
+    if endString <> "invalid" then content.releasedate = endString
 
-    'PrintAA(content)
     video.SetContent(content)
     video.show()
-    
+        
     while true
         msg = wait(0, video.GetMessagePort())
         if type(msg) = "roVideoScreenEvent"
             if msg.isScreenClosed() then 
+                content.releasedate = "" 'reset release date -- we don't want dynamic the HUD info displayed in the details
+                video.SetContent(content)
                 video.Close()
                 exit while
             else if msg.isStreamStarted() then
 		'print "Video status: "; msg.GetIndex(); " " msg.GetInfo() 
             else if msg.isPlaybackPosition() then
                 if msg.GetIndex() > 0
-                    watchedString = "Time: " + RRmktime(date.AsSeconds()) + "     Watched: " + GetDurationString(int(msg.GetIndex()))                    
-                    if watchedString <> "invalid" then 
-                        content.releasedate = watchedString
-                        video.SetContent(content)
-                    end if
+                date = CreateObject("roDateTime")
+		endString = "invalid"
+                if content.Length <> invalid and content.Length.ToInt() > 0 then
+		print content.Length.ToInt()
+                print msg.GetIndex()
+                    timeLeft = int(content.Length.ToInt() - msg.GetIndex())
+                print timeLeft
+                    endString = "End Time: " + RRmktime(date.AsSeconds()+timeLeft) + "     (" + GetDurationString(timeLeft,0,1,1) + ")" 'always show min/secs
+                else
+                    endString = "Time: " + RRmktime(date.AsSeconds()) + "     Watched: " + GetDurationString(int(msg.GetIndex()))
+                end if
+                
+                if endString <> "invalid" then content.releasedate = endString
+
+                video.SetContent(content)
                 end if
 	    else if msg.isStatusMessage()
                 'print "Video status: "; msg.GetIndex(); " " msg.GetData() 
@@ -556,6 +573,7 @@ Function youtube_new_video(xml As Object, searchString = "invalid" as String, pr
     video.GetThumb=get_xml_thumb
     video.GetEditLink=get_xml_edit_link
     video.GetEditLink=get_xml_edit_link
+    video.GetLength=get_length 
     'video.GetLinks=function():return m.xml.GetNamedElements("link"):end function
     'video.GetURL=video_get_url
     video.Provider=provider
@@ -581,19 +599,24 @@ Function GetVideoMetaData(videos As Object)
         meta.Categories=video.GetCategory()
         meta.StarRating=video.GetRating()
         meta.ShortDescriptionLine1=meta.Title
+
+	if tostr(meta.provider) <> "YouTube" then
+           meta.ShortDescriptionLine2 = "Provided by: " + meta.providerLong
+	else 
+           meta.ShortDescriptionLine2 = "Provided by: YouTube search for '" + tostr(video.SearchString) +"'"
+        end if
+        meta.ShortDescriptionLine2  = GetDurationString(video.GetLength()) + " - " + meta.ShortDescriptionLine2
+
         meta.SDPosterUrl=video.GetThumb()
         meta.HDPosterUrl=video.GetThumb()
-
+        meta.Length=video.GetLength() 
 
         ' cleanup Description
         output = meta.Description
         re = CreateObject("roRegex", "\s+", "i")
         output = re.ReplaceAll(output, ". ")
-	if tostr(meta.provider) <> "YouTube" then
-           meta.Description = "Provided by: " + meta.providerLong + chr(10) + output
-	else 
-           meta.Description = "Provided by: YouTube search for '" + tostr(video.SearchString) +"'" + chr(10) + output
-        end if
+        meta.Description = output
+
         meta.ShortDescriptionLine1 = meta.ShortDescriptionLine1 + " [" + meta.provider + "]"
 
         meta.xml=video.xml
@@ -1040,5 +1063,13 @@ Function tmdb_exec_api(request As Dynamic) As Object
     'returnObj.status = http.status -- plex http functions only return data/string - we will just set this to 200 for now
     'returnObj.error = handleYoutubeError(returnObj) ' kind of redundant, but maybe useful later
     return returnObj
+End Function
+
+
+Function get_length() As Dynamic
+    durations = m.xml.GetNamedElements("media:group")[0].GetNamedElements("yt:duration")
+    if (durations.Count() > 0) then
+        return durations.GetAttributes()["seconds"]
+    end if
 End Function
 
