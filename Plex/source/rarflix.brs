@@ -26,14 +26,13 @@ end sub
 Function GetDurationString( Seconds As Dynamic, emptyHr = 0 As Integer, emptyMin = 0 As Integer, emptySec = 0 As Integer  ) As String
    datetime = CreateObject( "roDateTime" )
 
-   print type(Seconds)
-    if (type(Seconds) = "roString") then
-        TotalSeconds% = Seconds.toint()
-    else if (type(Seconds) = "roInteger") or (type(Seconds) = "Integer") then
-        TotalSeconds% = Seconds
-    else
-        return "Unknown"
-    end if
+   if (type(Seconds) = "roString") then
+       TotalSeconds% = Seconds.toint()
+   else if (type(Seconds) = "roInteger") or (type(Seconds) = "Integer") then
+       TotalSeconds% = Seconds
+   else
+       return "Unknown"
+   end if
 
    datetime.FromSeconds( TotalSeconds% )
       
