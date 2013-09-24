@@ -266,6 +266,10 @@ Function videoHandleMessage(msg) As Boolean
                     dialog.SetButton("rate", "_rate_")
                 end if
 
+                if m.metadata.ContentType = "movie"  or m.metadata.ContentType = "show"  or m.metadata.ContentType = "episode"  then
+                    dialog.SetButton("RFactorList", "Actors")
+                end if
+
                 dialog.SetButton("close", "Back")
                 dialog.HandleButton = videoDialogHandleButton
                 dialog.ParentScreen = m
@@ -356,6 +360,30 @@ Function videoDialogHandleButton(command, data) As Boolean
         end if
         youtube_search(tostr(obj.metadata.RFSearchTitle),tostr(year))
         closeDialog = true
+
+    else if command = "RFactorList" then
+                dialog = createBaseDialog()
+                dialog.Title = "Actors"
+                dialog.Text = "Actors"
+                dialog.Item = obj
+                dialog.Server = obj.metadata.server
+                ' Should change this into a screen -- or figure out if dialogs can scroll? TODO
+                for each item in obj.metadata.actorsList
+                    dialog.SetButton("showPeople=actor="+tostr(item.id)+"="+item.name, item.name )
+                next
+
+'                for each item in obj.metadata.directorList
+'                    dialog.SetButton("showPeople=director="+tostr(item.id)+"="+item.name, "Director: "+item.name )
+'                next
+
+'                for each item in obj.metadata.writerList
+'                    dialog.SetButton("showPeople=writer="+tostr(item.id)+"="+item.name, "Writer: " + item.name )
+'                next
+
+                dialog.SetButton("close", "Back")
+                dialog.HandleButton = videoDialogHandleButton
+                dialog.ParentScreen = m
+                dialog.Show()
     else if command = "scrobble" then
         obj.metadata.server.Scrobble(obj.metadata.ratingKey, obj.metadata.mediaContainerIdentifier)
         obj.Refresh(true)

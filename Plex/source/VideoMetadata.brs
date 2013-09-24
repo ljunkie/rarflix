@@ -235,14 +235,27 @@ Sub setVideoDetails(video, container, videoItemXml, hasDetails=true)
     ' Everything else requires a Video item, which we might not have for clips.
     if videoItemXml = invalid then return
 
+    video.ActorsList  = [] ' ljunkie - list of actors for links later
+    video.DirectorList  = [] ' ljunkie - list of actors for links later
+    video.WriterList  = [] ' ljunkie - list of actors for links later
+
     video.Actors = CreateObject("roArray", 15, true)
     for each Actor in videoItemXml.Role
-        video.Actors.Push(Actor@tag)
+        video.ActorsList.Push({ name: Actor@tag, id: Actor@id, role: Actor@role })
+        video.Actors.Push(Actor@tag) ' original field
     next
+
     video.Director = CreateObject("roArray", 3, true)
     for each Director in videoItemXml.Director
+        video.ActorsList.Push({ name: Director@tag, id: Director@id })
         video.Director.Push(Director@tag)
     next
+
+    for each Writer in videoItemXml.Writer
+        video.WriterList.Push({ name: Writer@tag, id: Writer@id })
+         '  video.Director.Push(Director@tag)
+    next
+
     video.Categories = CreateObject("roArray", 15, true)
     for each Category in videoItemXml.Genre
         video.Categories.Push(Category@tag)

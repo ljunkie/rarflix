@@ -218,6 +218,8 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen.Loader.Port = screen.Port
         screenName = "All Channels"
     else if item.searchTerm <> invalid AND item.server = invalid then
+       print "woooooooooooooooooooooooooohooooooooooooooooooooooooooooo"
+       print "woooooooooooooooooooooooooohooooooooooooooooooooooooooooo"
         screen = createGridScreen(m, "flat-square")
         screen.Loader = createSearchLoader(item.searchTerm)
         screen.Loader.Listener = screen
