@@ -312,7 +312,7 @@ Sub youtube_display_video_list(videos As Object, title As String, links=invalid,
         screen.showMessage("Loading...")
     end if
     m.CurrentPageTitle = title
-
+    print "-----" + title
     if videos.Count() > 0 then
         metadata=GetVideoMetaData(videos)
 
@@ -841,26 +841,34 @@ End Function
 
 ' uitk Poster/Grids -- remove these and use Plex functions (TODO)
 Function uitkPreShowPosterMenu(ListStyle="flat-category" as String, breadA=invalid, breadB=invalid) As Object
-        port=CreateObject("roMessagePort")
-        screen = CreateObject("roPosterScreen")
-        screen.SetMessagePort(port)
+    port=CreateObject("roMessagePort")
+    screen = CreateObject("roPosterScreen")
+    screen.SetMessagePort(port)
 
+   ' hack to show breadCrumbs for trailer movie - we don't care what was passed in this context since this is only used for trailers...
+    obj = m.viewcontroller.screens.peek()
+    if obj.metadata.title <> invalid or obj.metadata.umtitle <> invalid then
+        screen.SetBreadcrumbText("Movie Trailers", firstof(obj.metadata.umtitle, obj.metadata.title))
+    else
         if breadA<>invalid and breadB<>invalid then
-                screen.SetBreadcrumbText(breadA, breadB)
+            screen.SetBreadcrumbText(breadA, breadB)
         else if breadA<>invalid and breadB = invalid then
-        screen.SetTitle(breadA)
+            screen.SetTitle(breadA)
+            screen.SetBreadcrumbText(breadA, "")
         end if
+    end if
 
     if ListStyle = "" OR ListStyle = invalid then
         ListStyle = "flat-category"
     end if
 
-        screen.SetListStyle(ListStyle)
-        screen.SetListDisplayMode("scale-to-fit")
-        screen.SetListDisplayMode("zoom-to-fill")
-        screen.Show()
+    screen.SetListStyle(ListStyle)
+'    screen.SetListStyle("arced-square")
+    screen.SetListDisplayMode("scale-to-fit")
+    screen.SetListDisplayMode("zoom-to-fill")
+    screen.Show()
+    return screen
 
-        return screen
 end function
 
 Function uitkDoPosterMenu(posterdata, screen, onselect_callback=invalid, onplay_callback=invalid) As Integer
