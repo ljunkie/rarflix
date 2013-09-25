@@ -311,9 +311,8 @@ function RFshowCastAndCrewScreen(item as object) as Dynamic
     obj.HandleMessage = RFCastAndCrewHandleMessage ' override default Handler
 
     server = obj.item.metadata.server
-    serverurl = server.serverurl
-    print "------ requesting metadata to get required librarySection " + serverUrl + obj.item.metadata.key
-    container = createPlexContainerForUrl(server, serverUrl, obj.item.metadata.key)
+    print "------ requesting metadata to get required librarySection " + server.serverUrl + obj.item.metadata.key
+    container = createPlexContainerForUrl(server, server.serverUrl, obj.item.metadata.key)
 
     if container <> invalid then
         obj.librarySection = container.xml@librarySectionID
@@ -403,23 +402,22 @@ End Function
 ' Screen show show Movies with Actor/Director/Writer/etc.. 
 Function displayCastCrewScreen(obj as Object, idx as integer) As Integer
     cast = obj.item.metadata.castcrewlist[idx]
-
     server = obj.item.metadata.server
-    serverurl = server.serverurl
     librarySection = obj.librarySection
+
     if librarySection <> invalid then 
         dummyItem = CreateObject("roAssociativeArray")
         if lcase(cast.itemtype) = "writer" or lcase(cast.itemtype) = "producer" then ' writer and producer are not listed secondaries ( must use filter - hack in PlexMediaServer.brs:FullUrl function )
-            dummyItem.sourceUrl = serverurl + "/library/sections/" + librarySection + "/all"
+            dummyItem.sourceUrl = server.serverurl + "/library/sections/" + librarySection + "/all"
             dummyItem.key = "filter?type=1&" + lcase(cast.itemtype) + "=" + cast.id + "&X-Plex-Container-Start=0" ' prepend "filter" to the key, is the key to the hack
         else
-            dummyItem.sourceUrl = serverurl + "/library/sections/" + librarySection + "/" + lcase(cast.itemtype) + "/" + cast.id
+            dummyItem.sourceUrl = server.serverurl + "/library/sections/" + librarySection + "/" + lcase(cast.itemtype) + "/" + cast.id
             dummyItem.key = ""
         end if
 
 	print "-------------------------- " + dummyItem.sourceUrl + dummyItem.key
-        print "------ requesting metadata to get required librarySection " + serverUrl + "library/sections/" + librarySection
-        container = createPlexContainerForUrl(server, serverUrl, "library/sections/" + librarySection)        
+        print "------ requesting metadata to get required librarySection " + server.serverUrl + "library/sections/" + librarySection
+        container = createPlexContainerForUrl(server, server.serverUrl, "library/sections/" + librarySection)        
         bctype1 = "Content"
         if container.xml@title1 <> invalid then bctype1 = container.xml@title1 
 
@@ -433,7 +431,7 @@ Function displayCastCrewScreen(obj as Object, idx as integer) As Integer
             bctype2 = "with"
         end if
         
-        breadcrumbs = ["",bctype1 + " " + bctype2 + " " + cast.name]
+        breadcrumbs = [server.name,bctype1 + " " + bctype2 + " " + cast.name]
         dummyItem.server = server
         dummyItem.viewGroup = "secondary"
         Debug( "------------ trying to get movies for cast member: " + cast.name + ":" + lcase(cast.itemtype) + " @ " + dummyItem.sourceUrl)
