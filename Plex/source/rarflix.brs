@@ -18,10 +18,7 @@ Sub InitRARFlix()
     Debug("rf_uw_movie_rows: " + tostr(RegRead("rf_uw_movie_rows", "preferences")))
     Debug("rf_searchtitle: " + tostr(RegRead("rf_searchtitle", "preferences")))
     Debug("============================================================================")
-
-
 end sub
-
 
 
 Function GetDurationString( Seconds As Dynamic, emptyHr = 0 As Integer, emptyMin = 0 As Integer, emptySec = 0 As Integer  ) As String
@@ -305,34 +302,41 @@ Function createHideRowsPrefsScreen(viewController) As Object
     return obj
 End Function
 
+
+' Function to create and SHOW the Actors/Writers/Directors/etc for a given Movie Title
 function RFshowCastAndCrewScreen(item as object) as Dynamic
     obj = CreateObject("roAssociativeArray")
     obj = createPosterScreen(item, m.viewcontroller)
     screenName = "Cast & Crew List"
     obj.HandleMessage = RFCastAndCrewHandleMessage ' override default Handler
 
+    server = obj.item.metadata.server
+    serverurl = server.serverurl
+    print "------ requesting metadata to get required librarySection " + serverUrl + obj.item.metadata.key
+    container = createPlexContainerForUrl(server, serverUrl, obj.item.metadata.key)
 
-   if obj=invalid then
-        print "unexpected error in createPosterScreen"
+    if container <> invalid then
+        obj.librarySection = container.xml@librarySectionID
+        obj.screen.SetContentList(getPostersForCastCrew(item,obj.librarySection))
+        obj.ScreenName = screenName
+
+        breadcrumbs = ["The Cast & Crew",item.metadata.title]
+        m.viewcontroller.AddBreadcrumbs(obj, breadcrumbs)
+        m.viewcontroller.UpdateScreenProperties(obj)
+        m.viewcontroller.PushScreen(obj)
+
+        obj.screen.Show()
+    else
+        print "unexpected error in RFshowCastAndCrewScreen"
         return -1
     end if
-
-    obj.screen.SetContentList(getPostersForCastCrew(item))
-    obj.ScreenName = screenName
-
-    breadcrumbs = ["The Cast & Crew",item.metadata.title] ' to be cast and crew?
-    m.viewcontroller.AddBreadcrumbs(obj, breadcrumbs)
-    m.viewcontroller.UpdateScreenProperties(obj)
-    m.viewcontroller.PushScreen(obj)
-
-    obj.screen.Show()
 
     return obj
 end function
 
+
 Function RFCastAndCrewHandleMessage(msg) As Boolean
     obj = m.viewcontroller.screens.peek()
-    screen = obj.screen
     handled = false
 
     if type(msg) = "roPosterScreenEvent" then
@@ -343,111 +347,92 @@ Function RFCastAndCrewHandleMessage(msg) As Boolean
             displayCastCrewScreen(obj,msg.GetIndex())
         else if msg.isScreenClosed() then
             handled = true
-            m.ViewController.PopScreen(m.viewcontroller.screens.Peek())
+            m.ViewController.PopScreen(obj)
         end if
     end If
 
  return handled
 End Function
 
+
+Function getPostersForCastCrew(item As Object, librarySection as string) As Object
+    server = item.metadata.server
+
+    ' we can modify this if PMS ever keeps images for other cast & crew members. Actors only for now: http://10.69.1.12:32400/library/sections/6/actor
+    dialog = createBaseDialog()
+    dialog.Title = ""
+    dialog.Text = ""
+    dialog=ShowPleaseWait("Please wait","Gathering the Cast and Crew")
+
+    print "------ requesting FULL list of actors to supply images " + server.serverurl + "/library/sections/" + librarySection + "/actor"
+    container = createPlexContainerForUrl(server, server.serverurl, "/library/sections/" + librarySection + "/actor")
+
+    'names = container.GetNames()
+    keys = container.GetKeys()
+    list = []
+    sizes = ImageSizes("movie", "movie")
+    for each i in item.metadata.castcrewList
+        for index = 0 to keys.Count() - 1
+            if keys[index] = i.id then 
+
+                default_img = container.xml.Directory[index]@thumb
+                i.imageSD = server.TranscodedImage(server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
+                i.imageHD = server.TranscodedImage(server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
+                if server.AccessToken <> invalid then 
+                    i.imageSD = i.imageSD + "&X-Plex-Token=" + server.AccessToken
+                    i.imageHD = i.imageHD + "&X-Plex-Token=" + server.AccessToken
+                end if
+                exit for
+            end if
+        end for
+
+        values = {
+            ShortDescriptionLine1:i.name,
+            ShortDescriptionLine2: i.itemtype,
+            SDPosterUrl:i.imageSD,
+            HDPosterUrl:i.imageHD,
+            itemtype: i.itemtype,
+            }
+        list.Push(values)        
+
+    next
+    dialog.Close()
+    return list
+End Function
+
+' Screen show show Movies with Actor/Director/Writer/etc.. 
 Function displayCastCrewScreen(obj as Object, idx as integer) As Integer
     cast = obj.item.metadata.castcrewlist[idx]
 
     server = obj.item.metadata.server
     serverurl = server.serverurl
-    ratingKey = obj.item.metadata.ratingkey
-    container = createPlexContainerForUrl(server, serverUrl, obj.item.metadata.key)
-    if container <> invalid then
-        librarySection = container.xml@librarySectionID
-        if librarySection <> invalid then 
-            print "------------------------------ library section:" + librarySection
-            dummyItem = CreateObject("roAssociativeArray")
-
-            if cast.itemtype = "writer" or cast.itemtype = "producer" then ' writer and producer are not listed secondaries ( must use filter - hack in PlexMediaServer.brs:FullUrl function )
-                dummyItem.sourceUrl = serverurl + "/library/sections/" + librarySection + "/all"
-                dummyItem.key = "filter?type=1&" + cast.itemtype + "=" + cast.id + "&X-Plex-Container-Start=0" ' filter? is the key to the hack
-            else
-                dummyItem.sourceUrl = serverurl + "/library/sections/" + librarySection + "/" + cast.itemtype + "/" + cast.id
-                dummyItem.key = ""
-            end if
-
-            if cast.itemtype = "writer" then
-                bctype = "written by"
-            else if cast.itemtype = "producer" then 
-                bctype = "produced by"
-            else if cast.itemtype = "director" then 
-                bctype = "directed by"
-            else
-                bctype = "with"
-            end if
-            breadcrumbs = ["","Movies " + bctype + " " + cast.name]
-
-            dummyItem.server = server
-            dummyItem.viewGroup = "secondary"
-	    Debug( "------------ trying to get movies for cast member: " + cast.name + ":" + cast.itemtype + " @ " + dummyItem.sourceUrl)
-            m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
+    librarySection = obj.librarySection
+    if librarySection <> invalid then 
+        dummyItem = CreateObject("roAssociativeArray")
+        if cast.itemtype = "writer" or cast.itemtype = "producer" then ' writer and producer are not listed secondaries ( must use filter - hack in PlexMediaServer.brs:FullUrl function )
+            dummyItem.sourceUrl = serverurl + "/library/sections/" + librarySection + "/all"
+            dummyItem.key = "filter?type=1&" + cast.itemtype + "=" + cast.id + "&X-Plex-Container-Start=0" ' prepend "filter" to the key, is the key to the hack
+        else
+            dummyItem.sourceUrl = serverurl + "/library/sections/" + librarySection + "/" + cast.itemtype + "/" + cast.id
+            dummyItem.key = ""
         end if
-    end if
+        
+        if cast.itemtype = "writer" then
+            bctype = "written by"
+        else if cast.itemtype = "producer" then 
+            bctype = "produced by"
+        else if cast.itemtype = "director" then 
+            bctype = "directed by"
+        else
+            bctype = "with"
+        end if
+        
+        breadcrumbs = ["","Movies " + bctype + " " + cast.name]
+        dummyItem.server = server
+        dummyItem.viewGroup = "secondary"
+        Debug( "------------ trying to get movies for cast member: " + cast.name + ":" + cast.itemtype + " @ " + dummyItem.sourceUrl)
+        m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
+        end if
     return 1
 End Function
 
-Function getPostersForCastCrew(item As Object) As Object
-     'http://10.69.1.12:32400/library/sections/6/actor
-
-     ' TODO get cast and crew thumbs if exist
-     '   SDPosterUrl:"http://d3gtl9l2a4fn1j.cloudfront.net/t/p/original/igMZZmqf8Dl4gGHQ5cphP9mS3m9.jpg",
-     '   HDPosterUrl:"http://d3gtl9l2a4fn1j.cloudfront.net/t/p/original/igMZZmqf8Dl4gGHQ5cphP9mS3m9.jpg"
-
-
-    server = item.metadata.server
-
-    ' we can modify this if PMS every keeps imaages for other cast & crew members than just actors
-    ' TODO -- need section
-    container = createPlexContainerForUrl(server, server.serverurl, "/library/sections/6/actor")
-
-     'names = container.GetNames()
-     keys = container.GetKeys()
-     list = []
-     sizes = ImageSizes("movie", "movie")
-     for each i in item.metadata.castcrewList
-
-          print i.id
-          for index = 0 to keys.Count() - 1
-              'print index
-              'key = container.xml.Directory[index]@key     
-              
-              if keys[index] = i.id then 
-
-
-
-               default_img = container.xml.Directory[index]@thumb
-               i.imageSD = server.TranscodedImage(server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
-               i.imageHD = server.TranscodedImage(server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
-               i.imageSD = i.imageSD + "&X-Plex-Token=" + server.AccessToken
-               i.imageHD = i.imageHD + "&X-Plex-Token=" + server.AccessToken
-               print i.imageHD
-                 'i.imageHD = container.xml.Directory[index]@thumb
-                 'i.imageSD = container.xml.Directory[index]@thumb
-		 'print "WOOOOOOOOOOOHOOOOOOOOOO - poster" + i.imageHD
-		 'print "WOOOOOOOOOOOHOOOOOOOOOO - poster" + i.imageSD
-                 exit for
-              end if
-              'thumb = container.xml.Directory[0]@thumb
-              'title = container.xml.Directory[0]@title
-              'm.contentArray[index] = status
-          end for
-
- 
-
-            values = {
-                ShortDescriptionLine1:i.name,
-                ShortDescriptionLine2: i.itemtype,
-                SDPosterUrl:i.imageSD,
-                HDPosterUrl:i.imageHD,
-                itemtype: i.itemtype,
-            }
-            list.Push(values)        
-     next
-    return list
-
-End Function

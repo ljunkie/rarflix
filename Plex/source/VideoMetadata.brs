@@ -243,8 +243,10 @@ Sub setVideoDetails(video, container, videoItemXml, hasDetails=true)
 
     SDThumb = video.server.TranscodedImage(video.server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
     HDThumb = video.server.TranscodedImage(video.server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
-    SDThumb = SDThumb + "&X-Plex-Token=" + video.server.AccessToken
-    HDThumb = HDThumb + "&X-Plex-Token=" + video.server.AccessToken
+    if video.server.AccessToken <> invalid then
+        SDThumb = SDThumb + "&X-Plex-Token=" + video.server.AccessToken
+        HDThumb = HDThumb + "&X-Plex-Token=" + video.server.AccessToken
+    end if
     ' end thumbs - ljunkie
  
     video.Actors = CreateObject("roArray", 15, true)
