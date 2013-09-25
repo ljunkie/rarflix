@@ -160,9 +160,10 @@ Function sbRefresh(force=false)
     '  ^ but again the user might wonder why it works sometimes and not others.. so maybe better to just keep disabled
     r = CreateObject("roRegex", "library/recentlyAdded", "") ' note: only affect global recentlyAdded ( allows different content types )
     if tostr(m.screenname) = "Preplay movie" and m.metadata.contenttype ="movie"  and r.Match(m.metadata.sourceurl)[0] <> invalid
-            Debug("------------ disabled right/left buttons on Recenlty Added - Preplay screen")
+            Debug("------------ disabled right/left buttons on Recenlty Added - Preplay screen - and override breadcrumbs")
             m.Screen.AllowNavLeft(false)
             m.Screen.AllowNavRight(false)
+            m.screen.SetBreadcrumbText(m.metadata.server.name,"Recently Added")' override breadcrumb to - global recently added, let's show the server
     end if
 
     ' See if we should switch the poster
