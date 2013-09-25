@@ -213,7 +213,7 @@ Function DisplayVideo(content As Object)
             else if msg.isPlaybackPosition() then
                 if msg.GetIndex() > 0
                 date = CreateObject("roDateTime")
-            endString = "invalid"
+                endString = "invalid"
                 if content.Length <> invalid and content.Length.ToInt() > 0 then
                     timeLeft = int(content.Length.ToInt() - msg.GetIndex())
                     endString = "End Time: " + RRmktime(date.AsSeconds()+timeLeft) + "     (" + GetDurationString(timeLeft,0,1,1) + ")" 'always show min/secs
@@ -228,9 +228,9 @@ Function DisplayVideo(content As Object)
             else if msg.isStatusMessage()
                 'print "Video status: "; msg.GetIndex(); " " msg.GetData() 
             else if msg.isRequestFailed()
-                print "play failed: "; msg.GetMessage()
+		Debug("trailer play failed" + msg.GetMessage())
             else
-                print "Unknown event: "; msg.GetType(); " msg: "; msg.GetMessage()
+                'print "Unknown event: "; msg.GetType(); " msg: "; msg.GetMessage()
             end if
         end if
     end while
@@ -313,7 +313,7 @@ Sub youtube_display_video_list(videos As Object, title As String, links=invalid,
         screen.showMessage("Loading...")
     end if
     m.CurrentPageTitle = title
-    print "-----" + title
+
     if videos.Count() > 0 then
         metadata=GetVideoMetaData(videos)
 
@@ -347,7 +347,6 @@ Sub youtube_display_video_list(videos As Object, title As String, links=invalid,
                         video[set_idx].FullHD = true
                         Debug("is FULL HD")
                     end if
-                    'printany(5,"1",video[set_idx])
                     DisplayVideo(video[set_idx])
                 end if
             end Function]
@@ -400,7 +399,7 @@ Sub youtube_display_video_springboard(theVideo As Object, breadcrumb As String, 
                 'print "Closing springboard screen"
                 exit while
             else if msg.isButtonPressed()
-                print "Button pressed: "; msg.GetIndex(); " " msg.GetData()
+                'print "Button pressed: "; msg.GetIndex(); " " msg.GetData()
                 if msg.GetIndex() = 0 then
                     DisplayVideo(m.video) ' Play Button
                 else if (msg.GetIndex() = 1) then ' Play All
@@ -435,8 +434,8 @@ Sub youtube_display_video_springboard(theVideo As Object, breadcrumb As String, 
                             ' Last video is the 'next' video link
                             idx = videos.Count() - 2
                         end if
-                        ' should really be a better function
-                        print videos[idx].title
+                        ' should really be a better function TODO
+                        ' print videos[idx].title
                         result = video_get_qualities(videos[idx].id)
                         if result<>invalid
                             videos[idx].Streams = result
@@ -463,8 +462,8 @@ Sub youtube_display_video_springboard(theVideo As Object, breadcrumb As String, 
                             ' Last video is the 'next' video link
                             idx = 0
                         end if
-                        print videos[idx].title
-                        ' should really be a better function
+                        ' print videos[idx].title
+                        ' should really be a better function TODO
                         result = video_get_qualities(videos[idx].id)
                         if result<>invalid
                             videos[idx].Streams = result
@@ -486,7 +485,7 @@ Sub youtube_display_video_springboard(theVideo As Object, breadcrumb As String, 
                     end if
                 end if
             else
-                print "Unknown event: "; msg.GetType(); " msg: "; msg.GetMessage()
+                'print "Unknown event: "; msg.GetType(); " msg: "; msg.GetMessage()
             end if
         end If
     end while
@@ -748,7 +747,7 @@ Sub Dbg(pre As Dynamic, o=invalid As Dynamic)
     if Len(s) > 4000
         s = Left(s, 4000)
     end if
-    print p + s
+    'print p + s
 End Sub
 
 Function GetConnectionFailedText() as String
@@ -793,7 +792,7 @@ Sub ShowDialog1Button(title As dynamic, text As dynamic, but1 As String, quickRe
                 'print "Screen closed"
                 return
             else if dlgMsg.isButtonPressed()
-                print "Button pressed: "; dlgMsg.GetIndex(); " " dlgMsg.GetData()
+                'print "Button pressed: "; dlgMsg.GetIndex(); " " dlgMsg.GetData()
                 return
             end if
         end if
@@ -826,7 +825,7 @@ Function ShowDialog2Buttons(title As dynamic, text As dynamic, but1 As String, b
                 dialog = invalid
                 return 0
             else if dlgMsg.isButtonPressed()
-                print "Button pressed: "; dlgMsg.GetIndex(); " " dlgMsg.GetData()
+                'print "Button pressed: "; dlgMsg.GetIndex(); " " dlgMsg.GetData()
                 dialog = invalid
                 return dlgMsg.GetIndex()
             end if
@@ -868,7 +867,7 @@ end function
 Function uitkDoPosterMenu(posterdata, screen, onselect_callback=invalid, onplay_callback=invalid) As Integer
 
         if type(screen)<>"roPosterScreen" then
-                print "illegal type/value for screen passed to uitkDoPosterMenu()" 
+                Debug("illegal type/value for screen passed to uitkDoPosterMenu()")
                 return -1
         end if
         
@@ -877,11 +876,9 @@ Function uitkDoPosterMenu(posterdata, screen, onselect_callback=invalid, onplay_
 
     while true
         msg = wait(0, screen.GetMessagePort())
-                
-                'print "uitkDoPosterMenu | msg type = ";type(msg)
-                
+               
                 if type(msg) = "roPosterScreenEvent" then
-                        print "event.GetType()=";msg.GetType(); " event.GetMessage()= "; msg.GetMessage()
+                        'print "event.GetType()=";msg.GetType(); " event.GetMessage()= "; msg.GetMessage()
                         if msg.isListItemSelected() then
                                 if onselect_callback<>invalid then
                                         selecttype = onselect_callback[0]
@@ -960,7 +957,7 @@ end function
 Function uitkDoListMenu(posterdata, screen, onselect_callback=invalid) As Integer
 
     if type(screen)<>"roListScreen" then
-        print "illegal type/value for screen passed to uitkDoListMenu()" 
+        Debug("illegal type/value for screen passed to uitkDoListMenu()")
         return -1
     end if
     
@@ -969,10 +966,8 @@ Function uitkDoListMenu(posterdata, screen, onselect_callback=invalid) As Intege
     while true
         msg = wait(0, screen.GetMessagePort())
         
-        'print "uitkDoPosterMenu | msg type = ";type(msg)
-        
         if type(msg) = "roListScreenEvent" then
-            print "event.GetType()=";msg.GetType(); " Event.GetMessage()= "; msg.GetMessage()
+            'print "event.GetType()=";msg.GetType(); " Event.GetMessage()= "; msg.GetMessage()
             if msg.isListItemSelected() then
                 if onselect_callback<>invalid then
                     selecttype = onselect_callback[0]

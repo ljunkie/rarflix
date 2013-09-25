@@ -88,7 +88,7 @@ Function photoPlayerHandleMessage(msg) As Boolean
                       ' print "Forcing Overlay"
                        m.screen.SetTextOverlayHoldTime(0)
                        m.screen.SetTextOverlayIsVisible(true)
-                       print "sleeping to show overlay"
+                       Debug("sleeping " + tostr(time) + "to show overlay")
                        sleep(time) ' sleeping to show overlay, otherwise we just get a blip (even with m.screen.SetTextOverlayHoldTime(1000)
                        m.screen.SetTextOverlayIsVisible(false)
                        m.screen.SetTextOverlayHoldTime(time)

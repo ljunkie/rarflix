@@ -95,7 +95,7 @@ Sub setVideoBasics(video, container, item)
 
         if video.grandparentKey = invalid and container.xml@key <> invalid then 
             video.grandparentKey = container.xml@key
-            print "---------------------- setting grandparent key to " + tostr(video.grandparentKey + " " + video.showTitle)
+            Debug("----- setting grandparent key to " + tostr(video.grandparentKey + " " + video.showTitle))
         end if
     end if
 

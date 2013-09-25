@@ -311,7 +311,7 @@ function RFcreateCastAndCrewScreen(item as object) as Dynamic
     obj.HandleMessage = RFCastAndCrewHandleMessage ' override default Handler
 
     server = obj.item.metadata.server
-    print "------ requesting metadata to get required librarySection " + server.serverUrl + obj.item.metadata.key
+    Debug("------ requesting metadata to get required librarySection " + server.serverUrl + obj.item.metadata.key)
     container = createPlexContainerForUrl(server, server.serverUrl, obj.item.metadata.key)
 
     if container <> invalid then
@@ -324,7 +324,7 @@ function RFcreateCastAndCrewScreen(item as object) as Dynamic
         m.viewcontroller.UpdateScreenProperties(obj)
         m.viewcontroller.PushScreen(obj)
     else
-        print "unexpected error in RFshowCastAndCrewScreen"
+        Debug("FAIL: unexpected error in RFshowCastAndCrewScreen")
         return -1
     end if
 
@@ -337,9 +337,9 @@ Function RFCastAndCrewHandleMessage(msg) As Boolean
 
     if type(msg) = "roPosterScreenEvent" then
         handled = true
-        print "showPosterScreen | msg = "; msg.GetMessage() " | index = "; msg.GetIndex()
+        'print "showPosterScreen | msg = "; msg.GetMessage() " | index = "; msg.GetIndex()
         if msg.isListItemSelected() then
-            print "list item selected | current show = "; msg.GetIndex() 
+            'print "list item selected | current show = "; msg.GetIndex() 
             RFcreateItemsForCastCrewScreen(obj,msg.GetIndex())
         else if msg.isScreenClosed() then
             handled = true
@@ -354,7 +354,7 @@ Function getPostersForCastCrew(item As Object, librarySection as string) As Obje
     server = item.metadata.server
 
     ' we can modify this if PMS ever keeps images for other cast & crew members. Actors only for now: http://10.69.1.12:32400/library/sections/6/actor
-    print "------ requesting FULL list of actors to supply images " + server.serverurl + "/library/sections/" + librarySection + "/actor"
+    Debug("------ requesting FULL list of actors to supply images " + server.serverurl + "/library/sections/" + librarySection + "/actor")
     container = createPlexContainerForUrl(server, server.serverurl, "/library/sections/" + librarySection + "/actor")
 
     'names = container.GetNames()
@@ -404,9 +404,9 @@ Function RFcreateItemsForCastCrewScreen(obj as Object, idx as integer) As Intege
             dummyItem.sourceUrl = server.serverurl + "/library/sections/" + librarySection + "/" + lcase(cast.itemtype) + "/" + cast.id
             dummyItem.key = ""
         end if
+	Debug("------ item sourceurl+key " + dummyItem.sourceUrl + dummyItem.key)
 
-	print "-------------------------- " + dummyItem.sourceUrl + dummyItem.key
-        print "------ requesting metadata to get required librarySection " + server.serverUrl + "library/sections/" + librarySection
+        Debug("------ requesting metadata to get required librarySection " + server.serverUrl + "library/sections/" + librarySection)
         container = createPlexContainerForUrl(server, server.serverUrl, "library/sections/" + librarySection)        
         bctype1 = "Content"
         if container.xml@title1 <> invalid then bctype1 = container.xml@title1 
@@ -424,7 +424,7 @@ Function RFcreateItemsForCastCrewScreen(obj as Object, idx as integer) As Intege
         breadcrumbs = [server.name,bctype1 + " " + bctype2 + " " + cast.name]
         dummyItem.server = server
         dummyItem.viewGroup = "secondary"
-        Debug( "------------ trying to get movies for cast member: " + cast.name + ":" + lcase(cast.itemtype) + " @ " + dummyItem.sourceUrl)
+        Debug( "----- trying to get movies for cast member: " + cast.name + ":" + lcase(cast.itemtype) + " @ " + dummyItem.sourceUrl)
         m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
         end if
     return 1

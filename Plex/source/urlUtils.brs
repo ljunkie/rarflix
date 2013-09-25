@@ -129,7 +129,7 @@ Function http_get_to_string_with_timeout(seconds as Integer, headers=invalid As 
     ' added for trailer/youtube support - RR
     if headers<>invalid then
         for each key in headers
-            print key,headers[key]
+            'print key,headers[key]
             m.Http.AddHeader(key, headers[key])
         end for
     end if
