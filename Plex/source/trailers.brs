@@ -172,7 +172,8 @@ Sub youtube_search(keyword as string, year = "invalid" as string )
     
     if videos.Count() > 0 then
         dialog.Close()
-        m.youtube.DisplayVideoList(videos, "Search Results for "+Chr(39)+keyword+Chr(39), xml.link, invalid)
+'        m.youtube.DisplayVideoList(videos, "Search Results for "+Chr(39)+keyword+Chr(39), xml.link, invalid)
+        m.youtube.DisplayVideoList(videos, keyword, xml.link, invalid)
     else
         dialog.Close():ShowErrorDialog("No videos match your search","Search results")
     end if
@@ -212,7 +213,7 @@ Function DisplayVideo(content As Object)
             else if msg.isPlaybackPosition() then
                 if msg.GetIndex() > 0
                 date = CreateObject("roDateTime")
-		endString = "invalid"
+            endString = "invalid"
                 if content.Length <> invalid and content.Length.ToInt() > 0 then
                     timeLeft = int(content.Length.ToInt() - msg.GetIndex())
                     endString = "End Time: " + RRmktime(date.AsSeconds()+timeLeft) + "     (" + GetDurationString(timeLeft,0,1,1) + ")" 'always show min/secs
@@ -845,17 +846,11 @@ Function uitkPreShowPosterMenu(ListStyle="flat-category" as String, breadA=inval
     screen = CreateObject("roPosterScreen")
     screen.SetMessagePort(port)
 
-   ' hack to show breadCrumbs for trailer movie - we don't care what was passed in this context since this is only used for trailers...
-    obj = m.viewcontroller.screens.peek()
-    if obj.metadata.title <> invalid or obj.metadata.umtitle <> invalid then
-        screen.SetBreadcrumbText("Movie Trailers", firstof(obj.metadata.umtitle, obj.metadata.title))
-    else
-        if breadA<>invalid and breadB<>invalid then
-            screen.SetBreadcrumbText(breadA, breadB)
-        else if breadA<>invalid and breadB = invalid then
-            screen.SetTitle(breadA)
-            screen.SetBreadcrumbText(breadA, "")
-        end if
+    if breadA<>invalid and breadB<>invalid then
+        screen.SetBreadcrumbText(breadA, breadB)
+    else if breadA<>invalid and breadB = invalid then
+        screen.SetTitle(breadA)
+        screen.SetBreadcrumbText("Movie Trailers", breadA)
     end if
 
     if ListStyle = "" OR ListStyle = invalid then
@@ -863,7 +858,6 @@ Function uitkPreShowPosterMenu(ListStyle="flat-category" as String, breadA=inval
     end if
 
     screen.SetListStyle(ListStyle)
-'    screen.SetListStyle("arced-square")
     screen.SetListDisplayMode("scale-to-fit")
     screen.SetListDisplayMode("zoom-to-fill")
     screen.Show()
@@ -936,7 +930,13 @@ Function uitkDoPosterMenu(posterdata, screen, onselect_callback=invalid, onplay_
                                 userdata2 = onplay_callback[2]
                                 f = onplay_callback[3]
                                 f(userdata1, userdata2, idx%)
+                            else if (msg.GetIndex() = 10) then
+                                print "TODO info button (maybe allow search  for original title or enter text to search?"
+                                'container = createPlexContainerForUrl(server, server.serverUrl, obj.item.metadata.key)
+                                'if container <> invalid and container.xml@originalTitle etc...
+  	                        'youtube_search(container.xml@originalTitle , year..) -- replace screen?
                             end if 
+
                         end if
         end if
         end while

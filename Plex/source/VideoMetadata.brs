@@ -77,8 +77,26 @@ Sub setVideoBasics(video, container, item)
     if item@grandparentKey <> invalid then
        video.grandparentKey = item@grandparentKey
     end if
+    if item@grandparentTitle <> invalid then
+       video.ShowTitle = item@grandparentTitle
+    end if
+
     if item@parentKey <> invalid then
-       video.parentKey = item@parentKey
+        video.parentKey = item@parentKey
+        if video.showTitle = invalid then
+            if container.xml@grandparentTitle <> invalid then 
+                video.ShowTitle = container.xml@grandparentTitle
+            else if container.xml@title2 <> invalid then 
+                video.ShowTitle = container.xml@title2
+            else
+                video.ShowTitle = "invalid"
+            end if
+        end if
+
+        if video.grandparentKey = invalid and container.xml@key <> invalid then 
+            video.grandparentKey = container.xml@key
+            print "---------------------- setting grandparent key to " + tostr(video.grandparentKey + " " + video.showTitle)
+        end if
     end if
 
     ' Bookmark position represents the last watched so a video could be marked watched but
@@ -97,7 +115,6 @@ Sub setVideoBasics(video, container, item)
         seasonStr = invalid
         if item@grandparentTitle <> invalid then
             video.ShortDescriptionLine1 = item@grandparentTitle + ": " + video.ShortDescriptionLine1
-            video.ShowTitle = item@grandparentTitle
         end if
         if item@index <> invalid then
             video.EpisodeNumber = item@index

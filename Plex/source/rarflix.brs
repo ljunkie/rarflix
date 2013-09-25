@@ -455,3 +455,64 @@ Function ShowPleaseWait(title As dynamic, text As dynamic) As Object
     return dialog
 End Function
 
+
+
+sub rfVideoMoreButton(m as Object) as Dynamic
+                dialog = createBaseDialog()
+                dialog.Title = ""
+                dialog.Text = ""
+                dialog.Item = m.metadata
+
+                'if m.metadata.grandparentKey = invalid then
+                if m.metadata.ContentType = "movie"  then
+                    dialog.SetButton("options", "Playback options")
+                end if
+
+                ' display View All Seasons if we have grandparentKey -- entered from a episode
+                if m.metadata.grandparentKey <> invalid then ' global on deck does not work with this
+                'if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
+                    dialog.SetButton("showFromEpisode", "View All Seasons of " + m.metadata.ShowTitle )
+                end if
+                ' display View specific season if we have parentKey/parentIndex -- entered from a episode
+                if m.metadata.parentKey <> invalid AND m.metadata.parentIndex <> invalid then  ' global on deck does not work with this
+                'if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
+                   dialog.SetButton("seasonFromEpisode", "View Season " + m.metadata.parentIndex)
+                end if
+
+                ' if m.metadata.ContentType = "movie"  or m.metadata.ContentType = "show"  or m.metadata.ContentType = "episode"  then
+                if m.metadata.ContentType = "movie" then ' TODO - try and make this work with TV shows ( seems it only works for episodes -- but not well ) 
+                    dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
+                end if
+
+                ' Trailers link - RR (last now that we include it on the main screen .. well before delete - people my be used to delete being second to last)
+                'if m.metadata.grandparentKey = invalid then
+                if m.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
+                    dialog.SetButton("getTrailers", "Trailer")
+                end if
+
+                supportedIdentifier = (m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
+                if supportedIdentifier then
+                    if m.metadata.viewCount <> invalid AND val(m.metadata.viewCount) > 0 then
+                        dialog.SetButton("unscrobble", "Mark as unwatched")
+                    else
+                        if m.metadata.viewOffset <> invalid AND val(m.metadata.viewOffset) > 0 then
+                            dialog.SetButton("unscrobble", "Mark as unwatched")
+                        end if
+                    end if
+                    dialog.SetButton("scrobble", "Mark as watched")
+                end if
+
+                if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
+                    dialog.SetButton("delete", "Delete permanently")
+                end if
+
+                ' set this to last -- unless someone complains
+                if m.metadata.ContentType = "movie" or m.metadata.ContentType = "episode" or m.metadata.ContentType = "show"  then
+                    dialog.SetButton("rate", "_rate_")
+                end if
+
+                dialog.SetButton("close", "Back")
+                dialog.HandleButton = videoDialogHandleButton
+                dialog.ParentScreen = m
+                dialog.Show()
+end sub

@@ -121,6 +121,10 @@ Function dialogHandleMessage(msg) As Boolean
         if msg.isScreenClosed() then
             closeScreens = true
             m.ViewController.PopScreen(m)
+        else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then
+            print "closeDialog"
+            closeScreens = true
+            m.ViewController.PopScreen(m)
         else if msg.isButtonPressed() then
             command = m.ButtonCommands[msg.getIndex()]
             Debug("Button pressed: " + tostr(command))
