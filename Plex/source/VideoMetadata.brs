@@ -94,8 +94,8 @@ Sub setVideoBasics(video, container, item)
         end if
 
         if video.grandparentKey = invalid and container.xml@key <> invalid then 
-            video.grandparentKey = container.xml@key
-            Debug("----- setting grandparent key to " + tostr(video.grandparentKey + " " + video.showTitle))
+            video.grandparentKey = "/library/metadata/" + tostr(container.xml@key)
+            Debug("----- setting grandparent key to " + video.grandparentKey + " " + video.showTitle)
         end if
     end if
 
