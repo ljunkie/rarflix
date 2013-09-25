@@ -293,11 +293,12 @@ Function videoDialogHandleButton(command, data) As Boolean
         obj.closeOnActivate = true
         closeDialog = true
     else if command = "showFromEpisode" then
+        breadcrumbs = ["All Seasons",obj.metadata.showtitle]
         dummyItem = CreateObject("roAssociativeArray")
         dummyItem.ContentType = "series"
         dummyItem.key = obj.metadata.grandparentKey + "/children"
         dummyItem.server = obj.metadata.server
-        obj.ViewController.CreateScreenForItem(dummyItem, invalid, ["Series"])
+        obj.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
         closeDialog = true
     else if command = "getTrailers" then
         if obj.metaData.OrigReleaseDate <> invalid then
@@ -329,11 +330,12 @@ Function videoDialogHandleButton(command, data) As Boolean
         obj.checkChangesOnActivate = true
         closeDialog = true
     else if command = "seasonFromEpisode" then
+        breadcrumbs = [obj.metadata.showtitle, "Season " + obj.metadata.parentindex]
         dummyItem = CreateObject("roAssociativeArray")
         dummyItem.ContentType = "series"
         dummyItem.key = obj.metadata.parentKey + "/children"
         dummyItem.server = obj.metadata.server
-        obj.ViewController.CreateScreenForItem(dummyItem, invalid, ["Series"])
+        obj.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
         closeDialog = true
     else if command = "rate" then
         Debug("videoHandleMessage:: Rate audio for key " + tostr(obj.metadata.ratingKey))
