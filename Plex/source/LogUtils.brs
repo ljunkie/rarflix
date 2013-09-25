@@ -149,6 +149,7 @@ End Function
 
 Sub loggerEnablePapertrail(minutes=20, pms=invalid)
     myPlex = GetGlobalAA().Lookup("myplex")
+    aa = GetGlobalAA()
     if myPlex = invalid OR NOT myPlex.IsSignedIn then return
 
     ' Create the remote syslog socket
@@ -162,7 +163,9 @@ Sub loggerEnablePapertrail(minutes=20, pms=invalid)
     udp.setMessagePort(port)
 
     addr.setHostname("logs.papertrailapp.com")
-    addr.setPort(60969)
+'    addr.setHostname("rarflix.rarforge.com")
+'    addr.setPort(60969)
+    addr.setPort(26634)
     udp.setSendToAddress(addr)
 
     m.SyslogSocket = udp
@@ -176,7 +179,9 @@ Sub loggerEnablePapertrail(minutes=20, pms=invalid)
     ' enabled, the logs will continue to be associated with the original
     ' account.
 
-    m.SyslogHeader = "<135> PlexForRoku: [" + myPlex.Username + "] "
+    tag = aa.appName + "_" + aa.appVersionStr + "_" + aa.rokuUniqueID
+
+    m.SyslogHeader = "<135> " + tag + ": [" + myPlex.Username + "] "
 
     ' Enable papertrail logging for the PMS, too.
     if pms <> invalid then
