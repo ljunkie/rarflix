@@ -125,45 +125,7 @@ Function dialogHandleMessage(msg) As Boolean
             command = m.ButtonCommands[msg.getIndex()]
             Debug("Button pressed: " + tostr(command))
             done = true
-            r = CreateObject("roRegex", "showPeople=", "i")
-            if r.IsMatch(command) then
-               print "------------------------------------------------" + command
-               re = CreateObject("roRegex", "=", "") ' only grab the year
-               peeptype = re.split(command)[1]
-               actorid = re.split(command)[2]
-               actorName = re.split(command)[3]
-
-	       print peeptype
-	       print actorid
-	       print actorName
-
-                obj = m.parentscreen.parentscreen
-                sourceUrl = obj.item.sourceUrl
-                detailKey = obj.item.ratingKey
-                server = obj.item.server
-                serverurl = server.serverurl
-                container = createPlexContainerForUrl(server, sourceUrl, detailKey)
-                if container <> invalid then
-                     'videoItemXml = container.xml.Video[0]
-		     librarySection = container.xml@librarySectionID
-		     if librarySection = invalid then librarySection = container.xml.video[0]@librarySectionID
-                     if librarySection <> invalid then 
-		         print "------------------------------ library section:" + librarySection
-                         dummyItem = CreateObject("roAssociativeArray")
-                    	breadcrumbs = ["Actor List",actorName]
-                         dummyItem.key = ""
-                         dummyItem.sourceUrl = serverurl + "/library/sections/" + librarySection + "/" + peeptype + "/" + actorid
-               	
-                         dummyItem.server = obj.item.server
-                         dummyItem.viewGroup = "secondary"
-               
-                         obj.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
-                      end if
-                end if
-
-              closeDialog = true
-
-            else if m.HandleButton <> invalid then
+            if m.HandleButton <> invalid then
                 done = m.HandleButton(command, msg.getData())
             end if
             if done then

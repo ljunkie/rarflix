@@ -498,6 +498,8 @@ Function FullUrl(serverUrl, sourceUrl, key) As String
         url = Mid(key, url_start, url_end - url_start)
         o = CreateObject("roUrlTransfer")
         return o.Unescape(url)
+    else if left(key, 6) = "filter" and sourceUrl <> invalid then ' ljunkie - special key to allow filter searches (currently used for Cast and Crew)
+         finalUrl = sourceUrl + Right(key, len(key) - 6)
     else
         keyTokens = CreateObject("roArray", 2, true)
         if key <> Invalid then

@@ -304,32 +304,109 @@ Function createHideRowsPrefsScreen(viewController) As Object
     return obj
 End Function
 
-
-sub RFcreateActorListScreen()
-  ' create our screen
-  screen = CreateObject("roPosterScreen") 
-
-  ' setup a message port so we can receive event information
-  port = CreateObject("roMessagePort")
-  screen.SetMessagePort(port)
-
-  ' change the screen's message text
-  screen.ShowMessage("Hello World!")
-  screen.Show()
-
-  ' start our event loop
-  while true
-    msg = Wait(0, port) ' wait for an event
-
-    if type(msg) = "roPosterScreenEvent"
-      ' we got a poster screen event
-      if msg.isScreenClosed()
-        ' the user closed the screen
-        exit while
-      end if
+function RFshowCastAndCrewScreen(item as object) as Dynamic
+    obj = CreateObject("roAssociativeArray")
+    obj = createPosterScreen(item, m.viewcontroller)
+    screenName = "Cast & Crew List"
+    obj.HandleMessage = RFCastAndCrewHandleMessage ' override default Handler
+   
+    if obj=invalid then
+        print "unexpected error in createPosterScreen"
+        return -1
     end if
-  end while
 
-  screen.Close()
-  ' any time all screens in a channel are closed, the channel will exit
-end sub
+    obj.screen.SetContentList(getPostersForCastCrew(item))
+    obj.ScreenName = screenName
+
+    breadcrumbs = ["The Cast & Crew",item.metadata.title] ' to be cast and crew?
+    m.viewcontroller.AddBreadcrumbs(obj, breadcrumbs)
+    m.viewcontroller.UpdateScreenProperties(obj)
+    m.viewcontroller.PushScreen(obj)
+
+    obj.screen.Show()
+
+    return obj
+end function
+
+Function RFCastAndCrewHandleMessage(msg) As Boolean
+    obj = m.viewcontroller.screens.peek()
+    screen = obj.screen
+    handled = false
+
+    if type(msg) = "roPosterScreenEvent" then
+        handled = true
+        print "showPosterScreen | msg = "; msg.GetMessage() " | index = "; msg.GetIndex()
+        if msg.isListItemSelected() then
+            print "list item selected | current show = "; msg.GetIndex() 
+            displayCastCrewScreen(obj,msg.GetIndex())
+        else if msg.isScreenClosed() then
+            handled = true
+            m.ViewController.PopScreen(m.viewcontroller.screens.Peek())
+        end if
+    end If
+
+ return handled
+End Function
+
+Function displayCastCrewScreen(obj as Object, idx as integer) As Integer
+    cast = obj.item.metadata.castcrewlist[idx]
+
+    server = obj.item.metadata.server
+    serverurl = server.serverurl
+    ratingKey = obj.item.metadata.ratingkey
+    container = createPlexContainerForUrl(server, serverUrl, obj.item.metadata.key)
+    if container <> invalid then
+        librarySection = container.xml@librarySectionID
+        if librarySection <> invalid then 
+            print "------------------------------ library section:" + librarySection
+            dummyItem = CreateObject("roAssociativeArray")
+
+            if cast.itemtype = "writer" or cast.itemtype = "producer" then ' writer and producer are not listed secondaries ( must use filter - hack in PlexMediaServer.brs:FullUrl function )
+                dummyItem.sourceUrl = serverurl + "/library/sections/" + librarySection + "/all"
+                dummyItem.key = "filter?type=1&" + cast.itemtype + "=" + cast.id + "&X-Plex-Container-Start=0" ' filter? is the key to the hack
+            else
+                dummyItem.sourceUrl = serverurl + "/library/sections/" + librarySection + "/" + cast.itemtype + "/" + cast.id
+                dummyItem.key = ""
+            end if
+
+            if cast.itemtype = "writer" then
+                bctype = "written by"
+            else if cast.itemtype = "producer" then 
+                bctype = "produced by"
+            else if cast.itemtype = "director" then 
+                bctype = "directed by"
+            else
+                bctype = "with"
+            end if
+            breadcrumbs = ["","Movies " + bctype + " " + cast.name]
+
+            dummyItem.server = server
+            dummyItem.viewGroup = "secondary"
+	    Debug( "------------ trying to get movies for cast member: " + cast.name + ":" + cast.itemtype + " @ " + dummyItem.sourceUrl)
+            m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
+        end if
+    end if
+    return 1
+End Function
+
+Function getPostersForCastCrew(item As Object) As Object
+     'http://10.69.1.12:32400/library/sections/6/actor
+
+     ' TODO get cast and crew thumbs if exist
+     '   SDPosterUrl:"http://d3gtl9l2a4fn1j.cloudfront.net/t/p/original/igMZZmqf8Dl4gGHQ5cphP9mS3m9.jpg",
+     '   HDPosterUrl:"http://d3gtl9l2a4fn1j.cloudfront.net/t/p/original/igMZZmqf8Dl4gGHQ5cphP9mS3m9.jpg"
+
+     list = []
+     for each i in item.metadata.castcrewList
+            values = {
+                ShortDescriptionLine1:i.name,
+                ShortDescriptionLine2: i.itemtype,
+                SDPosterUrl:i.imageSD,
+                HDPosterUrl:i.imageHD,
+                itemtype: i.itemtype,
+            }
+            list.Push(values)        
+     next
+    return list
+
+End Function

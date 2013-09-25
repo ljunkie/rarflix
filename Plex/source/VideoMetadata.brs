@@ -235,25 +235,38 @@ Sub setVideoDetails(video, container, videoItemXml, hasDetails=true)
     ' Everything else requires a Video item, which we might not have for clips.
     if videoItemXml = invalid then return
 
-    video.ActorsList  = [] ' ljunkie - list of actors for links later
-    video.DirectorList  = [] ' ljunkie - list of actors for links later
-    video.WriterList  = [] ' ljunkie - list of actors for links later
+    ' ljunkie - actors/directors/writers screen addition
+    video.CastCrewList   = []
 
+    default_img = "/:/resources/actor-icon.png"
+    sizes = ImageSizes("movie", "movie")
+
+    SDThumb = video.server.TranscodedImage(video.server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
+    HDThumb = video.server.TranscodedImage(video.server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
+    SDThumb = SDThumb + "&X-Plex-Token=" + video.server.AccessToken
+    HDThumb = HDThumb + "&X-Plex-Token=" + video.server.AccessToken
+    ' end thumbs - ljunkie
+ 
     video.Actors = CreateObject("roArray", 15, true)
     for each Actor in videoItemXml.Role
-        video.ActorsList.Push({ name: Actor@tag, id: Actor@id, role: Actor@role })
+        video.CastCrewList.Push({ name: Actor@tag, id: Actor@id, role: Actor@role, imageHD: HDThumb, imageSD: SDThumb, itemtype: "actor" })
         video.Actors.Push(Actor@tag) ' original field
     next
 
     video.Director = CreateObject("roArray", 3, true)
     for each Director in videoItemXml.Director
-        video.ActorsList.Push({ name: Director@tag, id: Director@id })
-        video.Director.Push(Director@tag)
+        video.CastCrewList.Push({ name: Director@tag, id: Director@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "director" })
+        video.Director.Push(Director@tag) ' original field
     next
 
     for each Writer in videoItemXml.Writer
-        video.WriterList.Push({ name: Writer@tag, id: Writer@id })
-         '  video.Director.Push(Director@tag)
+        video.CastCrewList.Push({ name: Writer@tag, id: Writer@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "writer" })
+        ' video.Writer.Push(Writer@tag) ' not implemented
+    next
+
+    for each Producer in videoItemXml.Producer
+        video.CastCrewList.Push({ name: Producer@tag, id: Producer@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "producer" })
+        ' video.Producer.Push(Producer@tag) ' not implemented
     next
 
     video.Categories = CreateObject("roArray", 15, true)

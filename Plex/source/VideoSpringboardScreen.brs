@@ -224,7 +224,6 @@ Function videoHandleMessage(msg) As Boolean
                 'if m.metadata.grandparentKey = invalid then
                 if m.metadata.ContentType = "movie"  then
                     dialog.SetButton("options", "Playback options")
-                    dialog.SetButton("rate", "_rate_")
                 end if
 
                 ' display View All Seasons if we have grandparentKey -- entered from a episode
@@ -238,6 +237,10 @@ Function videoHandleMessage(msg) As Boolean
                    dialog.SetButton("seasonFromEpisode", "View Season " + m.metadata.parentIndex)
                 end if
 
+                ' if m.metadata.ContentType = "movie"  or m.metadata.ContentType = "show"  or m.metadata.ContentType = "episode"  then
+                if m.metadata.ContentType = "movie" then ' TODO - try and make this work with TV shows ( seems it only works for episodes -- but not well ) 
+                    dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
+                end if
 
                 ' Trailers link - RR (last now that we include it on the main screen .. well before delete - people my be used to delete being second to last)
                 'if m.metadata.grandparentKey = invalid then
@@ -261,13 +264,9 @@ Function videoHandleMessage(msg) As Boolean
                     dialog.SetButton("delete", "Delete permanently")
                 end if
 
-                if m.metadata.ContentType = "episode" or m.metadata.ContentType = "show"  then
-                   ' dialog.SetButton("options", "Playback options")
+                ' set this to last -- unless someone complains
+                if m.metadata.ContentType = "movie" or m.metadata.ContentType = "episode" or m.metadata.ContentType = "show"  then
                     dialog.SetButton("rate", "_rate_")
-                end if
-
-                if m.metadata.ContentType = "movie"  or m.metadata.ContentType = "show"  or m.metadata.ContentType = "episode"  then
-                    dialog.SetButton("RFactorList", "Actors")
                 end if
 
                 dialog.SetButton("close", "Back")
@@ -360,30 +359,9 @@ Function videoDialogHandleButton(command, data) As Boolean
         end if
         youtube_search(tostr(obj.metadata.RFSearchTitle),tostr(year))
         closeDialog = true
-
-    else if command = "RFactorList" then
-                dialog = createBaseDialog()
-                dialog.Title = "Actors"
-                dialog.Text = "Actors"
-                dialog.Item = obj
-                dialog.Server = obj.metadata.server
-                ' Should change this into a screen -- or figure out if dialogs can scroll? TODO
-                for each item in obj.metadata.actorsList
-                    dialog.SetButton("showPeople=actor="+tostr(item.id)+"="+item.name, item.name )
-                next
-
-'                for each item in obj.metadata.directorList
-'                    dialog.SetButton("showPeople=director="+tostr(item.id)+"="+item.name, "Director: "+item.name )
-'                next
-
-'                for each item in obj.metadata.writerList
-'                    dialog.SetButton("showPeople=writer="+tostr(item.id)+"="+item.name, "Writer: " + item.name )
-'                next
-
-                dialog.SetButton("close", "Back")
-                dialog.HandleButton = videoDialogHandleButton
-                dialog.ParentScreen = m
-                dialog.Show()
+    else if command = "RFCastAndCrewList" then
+        RFshowCastAndCrewScreen(obj)
+        closeDialog = true
     else if command = "scrobble" then
         obj.metadata.server.Scrobble(obj.metadata.ratingKey, obj.metadata.mediaContainerIdentifier)
         obj.Refresh(true)
