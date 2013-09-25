@@ -58,9 +58,6 @@ Sub Main(args)
     'prepare the screen for display and get ready to begin
     controller = createViewController()
     controller.Show()
-
-
-
 End Sub
 
 Sub initGlobals()

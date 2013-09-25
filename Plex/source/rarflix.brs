@@ -19,6 +19,7 @@ Sub InitRARFlix()
     Debug("rf_searchtitle: " + tostr(RegRead("rf_searchtitle", "preferences")))
     Debug("============================================================================")
 
+
 end sub
 
 
@@ -309,8 +310,9 @@ function RFshowCastAndCrewScreen(item as object) as Dynamic
     obj = createPosterScreen(item, m.viewcontroller)
     screenName = "Cast & Crew List"
     obj.HandleMessage = RFCastAndCrewHandleMessage ' override default Handler
-   
-    if obj=invalid then
+
+
+   if obj=invalid then
         print "unexpected error in createPosterScreen"
         return -1
     end if
@@ -396,8 +398,47 @@ Function getPostersForCastCrew(item As Object) As Object
      '   SDPosterUrl:"http://d3gtl9l2a4fn1j.cloudfront.net/t/p/original/igMZZmqf8Dl4gGHQ5cphP9mS3m9.jpg",
      '   HDPosterUrl:"http://d3gtl9l2a4fn1j.cloudfront.net/t/p/original/igMZZmqf8Dl4gGHQ5cphP9mS3m9.jpg"
 
+
+    server = item.metadata.server
+
+    ' we can modify this if PMS every keeps imaages for other cast & crew members than just actors
+    ' TODO -- need section
+    container = createPlexContainerForUrl(server, server.serverurl, "/library/sections/6/actor")
+
+     'names = container.GetNames()
+     keys = container.GetKeys()
      list = []
+     sizes = ImageSizes("movie", "movie")
      for each i in item.metadata.castcrewList
+
+          print i.id
+          for index = 0 to keys.Count() - 1
+              'print index
+              'key = container.xml.Directory[index]@key     
+              
+              if keys[index] = i.id then 
+
+
+
+               default_img = container.xml.Directory[index]@thumb
+               i.imageSD = server.TranscodedImage(server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
+               i.imageHD = server.TranscodedImage(server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
+               i.imageSD = i.imageSD + "&X-Plex-Token=" + server.AccessToken
+               i.imageHD = i.imageHD + "&X-Plex-Token=" + server.AccessToken
+               print i.imageHD
+                 'i.imageHD = container.xml.Directory[index]@thumb
+                 'i.imageSD = container.xml.Directory[index]@thumb
+		 'print "WOOOOOOOOOOOHOOOOOOOOOO - poster" + i.imageHD
+		 'print "WOOOOOOOOOOOHOOOOOOOOOO - poster" + i.imageSD
+                 exit for
+              end if
+              'thumb = container.xml.Directory[0]@thumb
+              'title = container.xml.Directory[0]@title
+              'm.contentArray[index] = status
+          end for
+
+ 
+
             values = {
                 ShortDescriptionLine1:i.name,
                 ShortDescriptionLine2: i.itemtype,
