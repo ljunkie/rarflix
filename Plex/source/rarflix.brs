@@ -491,14 +491,16 @@ sub rfVideoMoreButton(m as Object) as Dynamic
 
     supportedIdentifier = (m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
     if supportedIdentifier then
-        if m.metadata.viewCount <> invalid AND val(m.metadata.viewCount) > 0 then
+        if m.metadata.viewOffset <> invalid AND val(m.metadata.viewOffset) > 0 then ' partially watched
             dialog.SetButton("unscrobble", "Mark as unwatched")
-        else
-            if m.metadata.viewOffset <> invalid AND val(m.metadata.viewOffset) > 0 then
-                dialog.SetButton("unscrobble", "Mark as unwatched")
-            end if
+            dialog.SetButton("scrobble", "Mark as watched")
+        else if m.metadata.viewCount <> invalid AND val(m.metadata.viewCount) > 0 then ' watched
+            dialog.SetButton("unscrobble", "Mark as unwatched")
+            ' no need to show watched button (already watched)
+        else if m.metadata.viewCount = invalid then  ' not watched
+            dialog.SetButton("scrobble", "Mark as watched")
+            ' no need to show unwatched 
         end if
-        dialog.SetButton("scrobble", "Mark as watched")
     end if
 
     if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
