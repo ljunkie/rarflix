@@ -251,24 +251,24 @@ Sub setVideoDetails(video, container, videoItemXml, hasDetails=true)
  
     video.Actors = CreateObject("roArray", 15, true)
     for each Actor in videoItemXml.Role
-        video.CastCrewList.Push({ name: Actor@tag, id: Actor@id, role: Actor@role, imageHD: HDThumb, imageSD: SDThumb, itemtype: "actor" })
+        video.CastCrewList.Push({ name: Actor@tag, id: Actor@id, role: Actor@role, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Actor" })
         video.Actors.Push(Actor@tag) ' original field
     next
 
     video.Director = CreateObject("roArray", 3, true)
     for each Director in videoItemXml.Director
-        video.CastCrewList.Push({ name: Director@tag, id: Director@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "director" })
+        video.CastCrewList.Push({ name: Director@tag, id: Director@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Director" })
         video.Director.Push(Director@tag) ' original field
-    next
-
-    for each Writer in videoItemXml.Writer
-        video.CastCrewList.Push({ name: Writer@tag, id: Writer@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "writer" })
-        ' video.Writer.Push(Writer@tag) ' not implemented
     next
 
     for each Producer in videoItemXml.Producer
         video.CastCrewList.Push({ name: Producer@tag, id: Producer@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "producer" })
         ' video.Producer.Push(Producer@tag) ' not implemented
+    next
+
+    for each Writer in videoItemXml.Writer
+        video.CastCrewList.Push({ name: Writer@tag, id: Writer@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Writer" })
+        ' video.Writer.Push(Writer@tag) ' not implemented
     next
 
     video.Categories = CreateObject("roArray", 15, true)

@@ -320,7 +320,7 @@ function RFshowCastAndCrewScreen(item as object) as Dynamic
         obj.screen.SetContentList(getPostersForCastCrew(item,obj.librarySection))
         obj.ScreenName = screenName
 
-        breadcrumbs = ["The Cast & Crew",item.metadata.title]
+        breadcrumbs = ["The Cast & Crew", firstof(item.metadata.origtitle, item.metadata.title)]
         m.viewcontroller.AddBreadcrumbs(obj, breadcrumbs)
         m.viewcontroller.UpdateScreenProperties(obj)
         m.viewcontroller.PushScreen(obj)
@@ -391,7 +391,7 @@ Function getPostersForCastCrew(item As Object, librarySection as string) As Obje
             ShortDescriptionLine2: i.itemtype,
             SDPosterUrl:i.imageSD,
             HDPosterUrl:i.imageHD,
-            itemtype: i.itemtype,
+            itemtype: lcase(i.itemtype),
             }
         list.Push(values)        
 
@@ -409,28 +409,34 @@ Function displayCastCrewScreen(obj as Object, idx as integer) As Integer
     librarySection = obj.librarySection
     if librarySection <> invalid then 
         dummyItem = CreateObject("roAssociativeArray")
-        if cast.itemtype = "writer" or cast.itemtype = "producer" then ' writer and producer are not listed secondaries ( must use filter - hack in PlexMediaServer.brs:FullUrl function )
+        if lcase(cast.itemtype) = "writer" or lcase(cast.itemtype) = "producer" then ' writer and producer are not listed secondaries ( must use filter - hack in PlexMediaServer.brs:FullUrl function )
             dummyItem.sourceUrl = serverurl + "/library/sections/" + librarySection + "/all"
-            dummyItem.key = "filter?type=1&" + cast.itemtype + "=" + cast.id + "&X-Plex-Container-Start=0" ' prepend "filter" to the key, is the key to the hack
+            dummyItem.key = "filter?type=1&" + lcase(cast.itemtype) + "=" + cast.id + "&X-Plex-Container-Start=0" ' prepend "filter" to the key, is the key to the hack
         else
-            dummyItem.sourceUrl = serverurl + "/library/sections/" + librarySection + "/" + cast.itemtype + "/" + cast.id
+            dummyItem.sourceUrl = serverurl + "/library/sections/" + librarySection + "/" + lcase(cast.itemtype) + "/" + cast.id
             dummyItem.key = ""
         end if
-        
+
+	print "-------------------------- " + dummyItem.sourceUrl + dummyItem.key
+        print "------ requesting metadata to get required librarySection " + serverUrl + "library/sections/" + librarySection
+        container = createPlexContainerForUrl(server, serverUrl, "library/sections/" + librarySection)        
+        bctype1 = "Content"
+        if container.xml@title1 <> invalid then bctype1 = container.xml@title1 
+
         if cast.itemtype = "writer" then
-            bctype = "written by"
+            bctype2 = "Written by"
         else if cast.itemtype = "producer" then 
-            bctype = "produced by"
+            bctype2 = "Produced by"
         else if cast.itemtype = "director" then 
-            bctype = "directed by"
+            bctype2 = "Directed by"
         else
-            bctype = "with"
+            bctype2 = "with"
         end if
         
-        breadcrumbs = ["","Movies " + bctype + " " + cast.name]
+        breadcrumbs = ["",bctype1 + " " + bctype2 + " " + cast.name]
         dummyItem.server = server
         dummyItem.viewGroup = "secondary"
-        Debug( "------------ trying to get movies for cast member: " + cast.name + ":" + cast.itemtype + " @ " + dummyItem.sourceUrl)
+        Debug( "------------ trying to get movies for cast member: " + cast.name + ":" + lcase(cast.itemtype) + " @ " + dummyItem.sourceUrl)
         m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
         end if
     return 1

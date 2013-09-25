@@ -105,8 +105,10 @@ Sub videoSetupButtons()
           end if
 
 	' more buttong if TV SHOW ( only if grandparent key is available,stops loops) OR if this is Movie
-	  if m.metadata.grandparentKey <> invalid or m.metadata.ContentType = "movie" then
+	  if m.metadata.grandparentKey <> invalid  then
               m.AddButton("More...", "more")
+	  else if m.metadata.ContentType = "movie" then
+              m.AddButton("Cast, Rate & More...", "more")
 	  end if
 
         ' Show rating bar if the content is a show or an episode - we might want this to be the delete button. We will see
