@@ -303,8 +303,8 @@ Function createHideRowsPrefsScreen(viewController) As Object
 End Function
 
 
-' Function to create and SHOW the Actors/Writers/Directors/etc for a given Movie Title
-function RFshowCastAndCrewScreen(item as object) as Dynamic
+' Function to create screen for Actors/Writers/Directors/etc for a given Movie Title
+function RFcreateCastAndCrewScreen(item as object) as Dynamic
     obj = CreateObject("roAssociativeArray")
     obj = createPosterScreen(item, m.viewcontroller)
     screenName = "Cast & Crew List"
@@ -323,16 +323,13 @@ function RFshowCastAndCrewScreen(item as object) as Dynamic
         m.viewcontroller.AddBreadcrumbs(obj, breadcrumbs)
         m.viewcontroller.UpdateScreenProperties(obj)
         m.viewcontroller.PushScreen(obj)
-
-        obj.screen.Show()
     else
         print "unexpected error in RFshowCastAndCrewScreen"
         return -1
     end if
 
-    return obj
+    return obj.screen
 end function
-
 
 Function RFCastAndCrewHandleMessage(msg) As Boolean
     obj = m.viewcontroller.screens.peek()
@@ -343,7 +340,7 @@ Function RFCastAndCrewHandleMessage(msg) As Boolean
         print "showPosterScreen | msg = "; msg.GetMessage() " | index = "; msg.GetIndex()
         if msg.isListItemSelected() then
             print "list item selected | current show = "; msg.GetIndex() 
-            displayCastCrewScreen(obj,msg.GetIndex())
+            RFcreateItemsForCastCrewScreen(obj,msg.GetIndex())
         else if msg.isScreenClosed() then
             handled = true
             m.ViewController.PopScreen(obj)
@@ -353,16 +350,10 @@ Function RFCastAndCrewHandleMessage(msg) As Boolean
  return handled
 End Function
 
-
 Function getPostersForCastCrew(item As Object, librarySection as string) As Object
     server = item.metadata.server
 
     ' we can modify this if PMS ever keeps images for other cast & crew members. Actors only for now: http://10.69.1.12:32400/library/sections/6/actor
-    dialog = createBaseDialog()
-    dialog.Title = ""
-    dialog.Text = ""
-    dialog=ShowPleaseWait("Please wait","Gathering the Cast and Crew")
-
     print "------ requesting FULL list of actors to supply images " + server.serverurl + "/library/sections/" + librarySection + "/actor"
     container = createPlexContainerForUrl(server, server.serverurl, "/library/sections/" + librarySection + "/actor")
 
@@ -395,12 +386,11 @@ Function getPostersForCastCrew(item As Object, librarySection as string) As Obje
         list.Push(values)        
 
     next
-    dialog.Close()
     return list
 End Function
 
 ' Screen show show Movies with Actor/Director/Writer/etc.. 
-Function displayCastCrewScreen(obj as Object, idx as integer) As Integer
+Function RFcreateItemsForCastCrewScreen(obj as Object, idx as integer) As Integer
     cast = obj.item.metadata.castcrewlist[idx]
     server = obj.item.metadata.server
     librarySection = obj.librarySection
@@ -438,5 +428,30 @@ Function displayCastCrewScreen(obj as Object, idx as integer) As Integer
         m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
         end if
     return 1
+End Function
+
+
+Function ShowPleaseWait(title As dynamic, text As dynamic) As Object
+    if not isstr(title) title = ""
+    if not isstr(text) text = ""
+
+    port = CreateObject("roMessagePort")
+    dialog = invalid
+
+    'the OneLineDialog renders a single line of text better
+    'than the MessageDialog.
+
+    if text = ""
+        dialog = CreateObject("roOneLineDialog")
+    else
+        dialog = CreateObject("roMessageDialog")
+        dialog.SetText(text)
+    end if
+
+    dialog.SetMessagePort(port)
+    dialog.SetTitle(title)
+    dialog.ShowBusyAnimation()
+    dialog.Show()
+    return dialog
 End Function
 

@@ -95,9 +95,6 @@ Function handleYoutubeError(rsp) As Dynamic
 End Function
 
 Sub youtube_search(keyword as string, year = "invalid" as string )
-    dialog = createBaseDialog()
-    dialog.Title = ""
-    dialog.Text = ""
     dialog=ShowPleaseWait("Please wait","Searching TMDB & YouTube for " + Quote()+keyword+Quote())
     origSearch_trailer = keyword + " trailer"
     searchString_trailer = URLEncode(origSearch_trailer)
@@ -572,31 +569,6 @@ End Function
 Function Quote()
     q$ = Chr(34)
     return q$
-End Function
-
-Function ShowPleaseWait(title As dynamic, text As dynamic) As Object
-    if not isstr(title) title = ""
-    if not isstr(text) text = ""
-
-    port = CreateObject("roMessagePort")
-    dialog = invalid
-
-    'the OneLineDialog renders a single line of text better
-    'than the MessageDialog.
-
-    if text = ""
-        dialog = CreateObject("roOneLineDialog")
-    else
-        dialog = CreateObject("roMessageDialog")
-        dialog.SetText(text)
-    end if
-
-    dialog.SetMessagePort(port)
-
-    dialog.SetTitle(title)
-    dialog.ShowBusyAnimation()
-    dialog.Show()
-    return dialog
 End Function
 
 Sub youtube_fetch_video_list(APIRequest As Dynamic, title As String)

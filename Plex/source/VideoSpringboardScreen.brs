@@ -362,7 +362,11 @@ Function videoDialogHandleButton(command, data) As Boolean
         youtube_search(tostr(obj.metadata.RFSearchTitle),tostr(year))
         closeDialog = true
     else if command = "RFCastAndCrewList" then
-        RFshowCastAndCrewScreen(obj)
+        m.ViewController.PopScreen(m) ' close dialog before we show the Cast&Crew screen
+        dialog = ShowPleaseWait("Please wait","Gathering the Cast and Crew for " + firstof(obj.metadata.origtitle,obj.metadata.title))
+        screen = RFcreateCastAndCrewScreen(obj)
+        screen.Show()
+        dialog.Close()
         closeDialog = true
     else if command = "scrobble" then
         obj.metadata.server.Scrobble(obj.metadata.ratingKey, obj.metadata.mediaContainerIdentifier)
