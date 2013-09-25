@@ -1,0 +1,10 @@
+#### INFO button (asterisk)
+
+-- during a msg wait - two ways to know if the * button is pressed
+if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then
+
+
+####
+
+
+####
