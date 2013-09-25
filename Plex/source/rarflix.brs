@@ -319,7 +319,7 @@ function RFcreateCastAndCrewScreen(item as object) as Dynamic
         obj.screen.SetContentList(getPostersForCastCrew(item,obj.librarySection))
         obj.ScreenName = screenName
 
-        breadcrumbs = ["The Cast & Crew", firstof(item.metadata.origtitle, item.metadata.title)]
+        breadcrumbs = ["The Cast & Crew", firstof(item.metadata.umtitle, item.metadata.title)]
         m.viewcontroller.AddBreadcrumbs(obj, breadcrumbs)
         m.viewcontroller.UpdateScreenProperties(obj)
         m.viewcontroller.PushScreen(obj)

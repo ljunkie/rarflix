@@ -70,8 +70,8 @@ Function createBaseMetadata(container, item, thumb=invalid) As Object
         end if
 
         ' set the original variables before we overwrite - we may want them later
-        metadata.OrigTitle = metadata.Title
-        metadata.OrigShortDescriptionLine1 = metadata.ShortDescriptionLine1
+        metadata.umTitle = metadata.Title ' change from OrigTitle -- confustion with originalTitle and unmodified Title
+        ' metadata.OrigShortDescriptionLine1 = metadata.ShortDescriptionLine1 - TOREMOVE
     
         ' append title differently based on leaf/viewed
         ' I might what to check the type here - not sure how this looks for types other than shows (TODO)
