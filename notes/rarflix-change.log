@@ -2,6 +2,7 @@ NOTE: breadcrumbs are the TOP Right area of the screen, says something like "Mov
 
 
 ### 2.6.12-1
+* (*) other items not handled, having their own specific dialog for the info key will bring up the Main Preferences screen
 
 * (*) "Info Button" added to other areas ( movie or tv types )
     - Global OnDeck and Recently Added

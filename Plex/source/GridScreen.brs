@@ -191,7 +191,14 @@ Function gridHandleMessage(msg) As Boolean
                     obj.Item = context[m.focusedIndex]
                     rfVideoMoreButtonFromGrid(obj)
                 else 
-                   Debug("Info Button (*) not handled for content type: " +  tostr(itype))
+		    'for now we will show the preferences screen :)
+                    prefs = CreateObject("roAssociativeArray")
+                    prefs.sourceUrl = ""
+                    prefs.ContentType = "prefs"
+                    prefs.Key = "globalprefs"
+                    prefs.Title = "Preferences"
+                    m.ViewController.CreateScreenForItem(prefs, invalid, ["Preferences"])
+                    Debug("Info Button (*) not handled for content type: " +  tostr(itype) + " using default prefs screen")
                 end if
         else if msg.isRemoteKeyPressed() then
             if msg.GetIndex() = 13 then
