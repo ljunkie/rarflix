@@ -187,7 +187,7 @@ Function gridHandleMessage(msg) As Boolean
                 itype = context[m.focusedIndex].contenttype
                 audioplayer = GetViewController().AudioPlayer
                 ' might want to extend this to the other screen except for Video Details ( odd things can happen ) TODO
-                if (m.screenname <> invalid and lcase(m.screenname) = "home" or m.screenid = -1) and (audioplayer.ispaused or audioplayer.isplaying) then 
+                if (m.screenname <> invalid and lcase(m.screenname) = "home" or m.screenid = -1) and (audioplayer.ispaused or audioplayer.isplaying or audioplayer.context <> invalid) then 
                     debug("---- skipping Remote Info Key -- audio is playing/paused on HOME screen")
                 else
                     if tostr(itype) <> "invalid" and (itype = "movie"  or itype = "show" or itype = "episode") then
