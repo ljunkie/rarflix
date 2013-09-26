@@ -18,6 +18,7 @@ Sub InitRARFlix()
     Debug("rf_uw_movie_rows: " + tostr(RegRead("rf_uw_movie_rows", "preferences")))
     Debug("rf_searchtitle: " + tostr(RegRead("rf_searchtitle", "preferences")))
     Debug("============================================================================")
+
 end sub
 
 
@@ -283,6 +284,7 @@ Function createHideRowsPrefsScreen(viewController) As Object
     ]
     obj.Screen.SetHeader("Hide or Show Rows for Library Sections")
 
+    ReorderItemsByKeyPriority(PlexRows, RegRead("section_row_order", "preferences", ""))
     for each item in PlexRows
         rf_hide_key = "rf_hide_"+item.key
         if item.key = "_search_" then item.key = "search" 'special case
