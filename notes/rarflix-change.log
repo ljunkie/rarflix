@@ -30,6 +30,7 @@ NOTE: breadcrumbs are the TOP Right area of the screen, says something like "Mov
 * Remote Logging: If enabled, they will not go to PlexServers any more.
     - I suggest to never use this unless you are testing with me
 
+* Show the option to Hide Rows in the preferred Row Order
 
 * Fix: updated logic in the more dialog for mark was watched/unwated; only show watched/unwatched when it make sense!
 * Fix: Breadcrumbs updated when selecting "All Seasons of {ShowTitle}" or "Season {#}" insead of just diplaying "Series"

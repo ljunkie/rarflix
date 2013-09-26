@@ -379,16 +379,16 @@ Sub vcShowReleaseNotes()
     header = ""
     title = GetGlobal("appName") + " updated to " + GetGlobal("appVersionStr")
     paragraphs = []
+    paragraphs.Push("New: View the Cast and Crew for Movies")
+    paragraphs.Push("New: (*) Remote Button works in Video Details")
     paragraphs.Push("New: Unwatched Rows: Prefs-> Section Display-> Reorder Rows")
     paragraphs.Push("New: RARFflix preferences - toggles for mods")
-    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+" * Hide Rows")
-    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+" * Home Screen Clock ")
-    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+" * Dynamic Headers ")
-    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+" * TV Show Season (watched status)")
-    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+" * Time & Watched Time on HUD (channels/web clips)")
-    paragraphs.Push(" ")
+    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+" Hide Rows, Clock, Dynamic Headers, Search Title, etc.. ")
+    paragraphs.Push("New: Movie Trailers enhancements - navigation, play from list, play all")
     paragraphs.Push("+ Movie Trailers, Rotten Tomatoes Ratings, HUD mods, other misc updates")
+    paragraphs.Push(" ")
     paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+" ** Please let me know of issues - rarflix@rarforge.com **")
+
     screen = createParagraphScreen(header, paragraphs, m)
     screen.ScreenName = "Release Notes"
     screen.Screen.SetTitle(title)
