@@ -180,6 +180,8 @@ Sub youtube_search(keyword as string, year = "invalid" as string )
 End Sub
 
 Function DisplayVideo(content As Object)
+    baseStopAudioPlayer()
+
     p = CreateObject("roMessagePort")
     video = CreateObject("roVideoScreen")
     video.setMessagePort(p)
