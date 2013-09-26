@@ -1,7 +1,17 @@
 NOTE: breadcrumbs are the TOP Right area of the screen, says something like "Movies * Recently Added"
 
-### 2.6.12
 
+### 2.6.12-1
+
+* (*) "Info Button" added to other areas ( movie or tv types )
+    - Global OnDeck and Recently Added
+    - Movie Section
+    - TV Section
+
+* Toggle for Critics/Audience Score: also display a * on the rating if the score used is not the preferred rating
+
+
+### 2.6.12
 
 * Update breadcrumb on the Global (home screen) Recently Added content.
 

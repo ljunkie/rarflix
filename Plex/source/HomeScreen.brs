@@ -17,6 +17,10 @@ Function createHomeScreen(viewController) As Object
 End Function
 
 Sub refreshHomeScreen(changes)
+    if type(changes) = "Boolean" and changes then
+        changes = CreateObject("roAssociativeArray") ' hack for info button from grid screen (mark as watched) -- TODO later and find out why this is a Boolean
+        'changes["servers"] = "true"
+    end if
     ' printAny(5","1",changes) ' this prints better than printAA
     ' ljunkie Enum Changes - we could just look at changes ( but without _previous_ ) we don't know if this really changed.
     if changes.DoesExist("rf_hs_clock") and changes.DoesExist("_previous_rf_hs_clock") and changes["rf_hs_clock"] <> changes["_previous_rf_hs_clock"] then

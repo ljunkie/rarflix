@@ -471,63 +471,131 @@ End Function
 
 
 
-sub rfVideoMoreButton(m as Object) as Dynamic
+sub rfVideoMoreButton(obj as Object) as Dynamic
     dialog = createBaseDialog()
     dialog.Title = ""
     dialog.Text = ""
-    dialog.Item = m.metadata
-               'if m.metadata.grandparentKey = invalid then
-    if m.metadata.ContentType = "movie"  then
+    dialog.Item = obj.metadata
+               'if obj.metadata.grandparentKey = invalid then
+    if obj.metadata.ContentType = "movie"  then
         dialog.SetButton("options", "Playback options")
     end if
 
     ' display View All Seasons if we have grandparentKey -- entered from a episode
-    if m.metadata.grandparentKey <> invalid then ' global on deck does not work with this
-    'if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
-        dialog.SetButton("showFromEpisode", "View All Seasons of " + m.metadata.ShowTitle )
+    if obj.metadata.grandparentKey <> invalid then ' global on deck does not work with this
+    'if obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode"  then
+        dialog.SetButton("showFromEpisode", "View All Seasons of " + obj.metadata.ShowTitle )
     end if
     ' display View specific season if we have parentKey/parentIndex -- entered from a episode
-    if m.metadata.parentKey <> invalid AND m.metadata.parentIndex <> invalid then  ' global on deck does not work with this
-    'if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
-       dialog.SetButton("seasonFromEpisode", "View Season " + m.metadata.parentIndex)
+    if obj.metadata.parentKey <> invalid AND obj.metadata.parentIndex <> invalid then  ' global on deck does not work with this
+    'if obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode"  then
+       dialog.SetButton("seasonFromEpisode", "View Season " + obj.metadata.parentIndex)
     end if
 
-    ' if m.metadata.ContentType = "movie"  or m.metadata.ContentType = "show"  or m.metadata.ContentType = "episode"  then
-    if m.metadata.ContentType = "movie" then ' TODO - try and make this work with TV shows ( seems it only works for episodes -- but not well ) 
+    ' if obj.metadata.ContentType = "movie"  or obj.metadata.ContentType = "show"  or obj.metadata.ContentType = "episode"  then
+    if obj.metadata.ContentType = "movie" then ' TODO - try and make this work with TV shows ( seems it only works for episodes -- but not well ) 
         dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
     end if
 
     ' Trailers link - RR (last now that we include it on the main screen .. well before delete - people my be used to delete being second to last)
-    'if m.metadata.grandparentKey = invalid then
-    if m.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
+    'if obj.metadata.grandparentKey = invalid then
+    if obj.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
         dialog.SetButton("getTrailers", "Trailer")
     end if
 
-    supportedIdentifier = (m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
+    supportedIdentifier = (obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
     if supportedIdentifier then
-        if m.metadata.viewOffset <> invalid AND val(m.metadata.viewOffset) > 0 then ' partially watched
+        if obj.metadata.viewOffset <> invalid AND val(obj.metadata.viewOffset) > 0 then ' partially watched
             dialog.SetButton("unscrobble", "Mark as unwatched")
             dialog.SetButton("scrobble", "Mark as watched")
-        else if m.metadata.viewCount <> invalid AND val(m.metadata.viewCount) > 0 then ' watched
+        else if obj.metadata.viewCount <> invalid AND val(obj.metadata.viewCount) > 0 then ' watched
             dialog.SetButton("unscrobble", "Mark as unwatched")
             ' no need to show watched button (already watched)
-        else if m.metadata.viewCount = invalid then  ' not watched
+        else if obj.metadata.viewCount = invalid then  ' not watched
             dialog.SetButton("scrobble", "Mark as watched")
             ' no need to show unwatched 
         end if
     end if
 
-    if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
+    if obj.metadata.server.AllowsMediaDeletion AND obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
         dialog.SetButton("delete", "Delete permanently")
     end if
 
     ' set this to last -- unless someone complains
-    if m.metadata.ContentType = "movie" or m.metadata.ContentType = "episode" or m.metadata.ContentType = "show"  then
+    if obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "episode" or obj.metadata.ContentType = "show"  then
         dialog.SetButton("rate", "_rate_")
     end if
 
     dialog.SetButton("close", "Back")
     dialog.HandleButton = videoDialogHandleButton
-    dialog.ParentScreen = m
+    dialog.ParentScreen = obj
+    dialog.Show()
+end sub
+
+
+
+sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
+    ' this shoudl probably just be combined into rfVideoMoreButton -- TODO
+    dialog = createBaseDialog()
+    dialog.Title = ""
+    dialog.Text = ""
+    dialog.Item = obj.metadata
+
+
+    ' hack for global recenlty added ( tv shows are displayed as seasons )
+    if obj.metadata.type = "season" and obj.metadata.grandparentKey = invalid then 
+        ' available: obj.metadata.key = "/library/metadata/88482/childen'
+        re = CreateObject("roRegex", "/children", "i")
+        obj.metadata.parentKey = re.ReplaceAll(obj.metadata.key, "")
+        container = createPlexContainerForUrl(obj.metadata.server, obj.metadata.server.serverUrl, obj.metadata.parentKey)
+        if container <> invalid then
+            obj.metadata.grandparentKey = container.xml.Directory[0]@parentKey
+            obj.metadata.parentIndex = container.xml.Directory[0]@index
+            obj.metadata.ShowTitle = container.xml.Directory[0]@parentTitle
+        end if
+    end if
+    ' end hack
+
+    ' display View All Seasons if we have grandparentKey -- entered from a episode
+    if obj.metadata.grandparentKey <> invalid then ' global on deck does not work with this
+        dialog.SetButton("showFromEpisode", "View All Seasons of " + tostr(obj.metadata.ShowTitle) )
+    end if
+    ' display View specific season if we have parentKey/parentIndex -- entered from a episode
+    if obj.metadata.parentKey <> invalid AND obj.metadata.parentIndex <> invalid then  ' global on deck does not work with this
+       dialog.SetButton("seasonFromEpisode", "View Season " + obj.metadata.parentIndex)
+    end if
+
+    ' if obj.metadata.ContentType = "movie"  or obj.metadata.ContentType = "show"  or obj.metadata.ContentType = "episode"  then
+    if obj.metadata.ContentType = "movie" then ' TODO - try and make this work with TV shows ( seems it only works for episodes -- but not well ) 
+        dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
+    end if
+
+    ' Trailers link - RR (last now that we include it on the main screen .. well before delete - people my be used to delete being second to last)
+    'if obj.metadata.grandparentKey = invalid then
+    if obj.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
+        dialog.SetButton("getTrailers", "Trailer")
+    end if
+
+    supportedIdentifier = (obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
+    if supportedIdentifier then
+        if obj.metadata.viewOffset <> invalid AND val(obj.metadata.viewOffset) > 0 then ' partially watched
+            dialog.SetButton("unscrobble", "Mark as unwatched")
+            dialog.SetButton("scrobble", "Mark as watched")
+        else if obj.metadata.viewCount <> invalid AND val(obj.metadata.viewCount) > 0 then ' watched
+            dialog.SetButton("unscrobble", "Mark as unwatched")
+            ' no need to show watched button (already watched)
+        else if obj.metadata.viewCount = invalid then  ' not watched
+            dialog.SetButton("scrobble", "Mark as watched")
+            ' no need to show unwatched 
+        end if
+    end if
+
+    if obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "episode" or obj.metadata.ContentType = "show"  then
+        dialog.SetButton("rate", "_rate_")
+    end if
+
+    dialog.SetButton("close", "Back")
+    dialog.HandleButton = videoDialogHandleButton
+    dialog.ParentScreen = obj
     dialog.Show()
 end sub

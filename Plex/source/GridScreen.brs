@@ -181,6 +181,18 @@ Function gridHandleMessage(msg) As Boolean
 
                 m.Loader.LoadMoreContent(m.selectedRow, 2)
             end if
+        else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then ' ljunkie - use * for more options on focused item
+                'print "* butting pressed"
+                context = m.contentArray[m.selectedRow]
+                itype = context[m.focusedIndex].contenttype
+                if tostr(itype) <> "invalid" and (itype = "movie"  or itype = "show" or itype = "episode") then
+                    obj = m.viewcontroller.screens.peek()
+                    obj.metadata = context[m.focusedIndex]
+                    obj.Item = context[m.focusedIndex]
+                    rfVideoMoreButtonFromGrid(obj)
+                else 
+                   Debug("Info Button (*) not handled for content type: " +  tostr(itype))
+                end if
         else if msg.isRemoteKeyPressed() then
             if msg.GetIndex() = 13 then
                 Debug("Playing item directly from grid")
