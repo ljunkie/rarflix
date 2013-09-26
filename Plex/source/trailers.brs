@@ -180,10 +180,10 @@ Sub youtube_search(keyword as string, year = "invalid" as string )
 End Sub
 
 Function DisplayVideo(content As Object)
-    ' stop and cleanup any audioplayer - this will resets the audioController and loose state ( for now we have to do this, there are bugs that arise when we don't )
+    ' stop and cleanup any audioplayer - 
     m.ViewController.AudioPlayer.Stop()
-    m.ViewController.AudioPlayer = invalid
-    m.ViewController.AudioPlayer = createAudioPlayer(m.ViewController) ' this allows the default Option button to work for other things again (how does one normally clear audioPlayer)
+'    m.ViewController.AudioPlayer = invalid  ' Plex doesn't do this now.. but it seems once you start the AudioPlayer, it never really exists??
+'    m.ViewController.AudioPlayer = createAudioPlayer(m.ViewController) ' this allows the default Option button to work for other things again (how does one normally clear audioPlayer)
 
     p = CreateObject("roMessagePort")
     video = CreateObject("roVideoScreen")
