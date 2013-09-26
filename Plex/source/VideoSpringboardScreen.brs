@@ -84,18 +84,34 @@ Sub videoSetupButtons()
             tomatoData = m.metadata.tomatoData
             rating_string = "Not Found"
             if tomatoData <> invalid AND tomatoData.ratings <> invalid AND tomatoData.ratings.critics_score <> invalid then
-                if tomatoData.ratings.critics_score = -1 AND tomatoData.ratings.audience_score > 0
-                    rating_string = tostr(tomatoData.ratings.audience_score) + "%"
-                else if tomatoData.ratings.critics_score = -1 then
-                    rating_string = "Not rated"
-                else
-		    ' I prefer the audience score vs the critics - RR - maybe we can make this a setting if needed
-		    'rating_string = tostr(tomatoData.ratings.critics_score) + "%"
-                    rating_string = tostr(tomatoData.ratings.audience_score) + "%"
-                endif
-            endif
-            m.AddButton(rating_string + " on Rotten Tomatoes", "tomatoes")
-        endif
+		append_string = "on Rotten Tomatoes"
+                if RegRead("rf_rottentomatoes_score", "preferences", "audience") = "critic" then 
+                    rating = tomatoData.ratings.critics_score
+                else 
+                    rating = tomatoData.ratings.audience_score
+                end if
+
+                if rating = invalid or rating < 0 then 
+                    Debug("RT rating is invalid/-1 -- trying to find a valid rating")
+                    if tomatoData.ratings.audience_score > 0
+                        rating = tomatoData.ratings.audience_score
+                        append_string = append_string + " *"
+                    else if NOT tomatoData.ratings.critics_score = -1 then
+                        rating = tomatoData.ratings.critics_score
+                        append_string = append_string + " *"
+                    else 
+                        rating = -1
+                    end if
+                end if
+
+                if rating = -1 then
+                    rating_string = "Not Found"
+                else 
+                    rating_string = tostr(rating) + "%"
+                end if
+            end if
+            m.AddButton(rating_string + " " + append_string, "tomatoes")
+        end if
 
 
           if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
@@ -258,15 +274,18 @@ Function videoHandleMessage(msg) As Boolean
                 dialog = createBaseDialog()
                 dialog.Title = "Rotten Tomatoes Review"
                 review_text = "'" + m.metadata.RFSearchTitle + "' could not be located on Rotten Tomatoes... sorry."
-		if m.metadata.tomatoData <> invalid  then 
-		     review_text = tostr(m.metadata.tomatoData.ratings.critics_score) + "%  Critic's score" + chr(10)
-		     review_text = review_text + tostr(m.metadata.tomatoData.ratings.audience_score) + "% Audience's score" + chr(10)
-		     if m.metadata.tomatoData.critics_consensus <> invalid then
+                if m.metadata.tomatoData <> invalid  then 
+                    if m.metadata.tomatoData.ratings.critics_score = -1 then
+                        review_text = "Not Rated by Critics" + chr(10)
+                    else
+                        review_text = tostr(m.metadata.tomatoData.ratings.critics_score) + "%  Critic's score" + chr(10)
+                    end if
+                    review_text = review_text + tostr(m.metadata.tomatoData.ratings.audience_score) + "% Audience's score" + chr(10)
+                    if m.metadata.tomatoData.critics_consensus <> invalid then
                         review_text = review_text + chr(10) + tostr(m.metadata.tomatoData.critics_consensus) + chr(10)
-                     end if
-		end if
-
-		dialog.Text = review_text
+                    end if
+                end if
+                dialog.Text = review_text
                 dialog.SetButton("getTrailers", "Trailer")
                 dialog.SetButton("close", "Back")
                 dialog.HandleButton = videoDialogHandleButton

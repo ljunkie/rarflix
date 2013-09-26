@@ -161,6 +161,17 @@ Function createRARFlixPrefsScreen(viewController) As Object
         default: "enabled"
     }
 
+    ' Rotten Tomatoes
+    rt_prefs_score = [
+        { title: "Critic's", EnumValue: "critic", ShortDescriptionLine2: "Use Critic's Score" },
+        { title: "Audience's", EnumValue: "audience", ShortDescriptionLine2: "Use Audience's Score" },
+    ]
+    obj.Prefs["rf_rottentomatoes_score"] = {
+        values: rt_prefs_score,
+        heading: "Score to display on the Movie Details Screen",
+        default: "audience"
+    }
+
     ' RT/Trailers - search title
     rt_prefs = [
         { title: "Title", EnumValue: "title", ShortDescriptionLine2: "Search by Movie Title" },
@@ -212,13 +223,14 @@ Function createRARFlixPrefsScreen(viewController) As Object
 
     obj.Screen.SetHeader("RARFlix Preferences")
 
-    obj.AddItem({title: "Rotten Tomatoes"}, "rf_rottentomatoes", obj.GetEnumValue("rf_rottentomatoes"))
+    obj.AddItem({title: "Hide Rows"}, "hide_rows_prefs")
     obj.AddItem({title: "Movie Trailers"}, "rf_trailers", obj.GetEnumValue("rf_trailers"))
+    obj.AddItem({title: "Rotten Tomatoes"}, "rf_rottentomatoes", obj.GetEnumValue("rf_rottentomatoes"))
+    obj.AddItem({title: "Rotten Tomatoes Score"}, "rf_rottentomatoes_score", obj.GetEnumValue("rf_rottentomatoes_score"))
     obj.AddItem({title: "Trailers/Rotten Tomatoes Search by"}, "rf_searchtitle", obj.GetEnumValue("rf_searchtitle"))
     obj.AddItem({title: "Dynamic Headers"}, "rf_bcdynamic", obj.GetEnumValue("rf_bcdynamic"))
     obj.AddItem({title: "TV Titles (Watched Status)"}, "rf_tvwatch", obj.GetEnumValue("rf_tvwatch"))
     obj.AddItem({title: "Clock on Home Screen"}, "rf_hs_clock", obj.GetEnumValue("rf_hs_clock"))
-    obj.AddItem({title: "Hide Rows"}, "hide_rows_prefs")
     ' now part of the Hide Rows
     ' obj.AddItem({title: "Unwatched Movie Rows"}, "rf_uw_movie_rows", obj.GetEnumValue("rf_uw_movie_rows"))
 
