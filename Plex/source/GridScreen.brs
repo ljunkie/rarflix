@@ -185,20 +185,26 @@ Function gridHandleMessage(msg) As Boolean
                 'print "* butting pressed"
                 context = m.contentArray[m.selectedRow]
                 itype = context[m.focusedIndex].contenttype
-                if tostr(itype) <> "invalid" and (itype = "movie"  or itype = "show" or itype = "episode") then
-                    obj = m.viewcontroller.screens.peek()
-                    obj.metadata = context[m.focusedIndex]
-                    obj.Item = context[m.focusedIndex]
-                    rfVideoMoreButtonFromGrid(obj)
-                else 
-		    'for now we will show the preferences screen :)
-                    prefs = CreateObject("roAssociativeArray")
-                    prefs.sourceUrl = ""
-                    prefs.ContentType = "prefs"
-                    prefs.Key = "globalprefs"
-                    prefs.Title = "Preferences"
-                    m.ViewController.CreateScreenForItem(prefs, invalid, ["Preferences"])
-                    Debug("Info Button (*) not handled for content type: " +  tostr(itype) + " using default prefs screen")
+                audioplayer = GetViewController().AudioPlayer
+                ' might want to extend this to the other screen except for Video Details ( odd things can happen ) TODO
+                if (m.screenname <> invalid and lcase(m.screenname) = "home" or m.screenid = -1) and (audioplayer.ispaused or audioplayer.isplaying) then 
+                    debug("---- skipping Remote Info Key -- audio is playing/paused on HOME screen")
+                else
+                    if tostr(itype) <> "invalid" and (itype = "movie"  or itype = "show" or itype = "episode") then
+                        obj = m.viewcontroller.screens.peek()
+                        obj.metadata = context[m.focusedIndex]
+                        obj.Item = context[m.focusedIndex]
+                        rfVideoMoreButtonFromGrid(obj)
+                    else 
+                        'for now we will show the preferences screen :)
+                        prefs = CreateObject("roAssociativeArray")
+                        prefs.sourceUrl = ""
+                        prefs.ContentType = "prefs"
+                        prefs.Key = "globalprefs"
+                        prefs.Title = "Preferences"
+                        m.ViewController.CreateScreenForItem(prefs, invalid, ["Preferences"])
+                        Debug("Info Button (*) not handled for content type: " +  tostr(itype) + " using default prefs screen")
+                    end if
                 end if
         else if msg.isRemoteKeyPressed() then
             if msg.GetIndex() = 13 then

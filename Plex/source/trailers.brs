@@ -180,7 +180,10 @@ Sub youtube_search(keyword as string, year = "invalid" as string )
 End Sub
 
 Function DisplayVideo(content As Object)
-    baseStopAudioPlayer()
+    ' stop and cleanup any audioplayer - this will resets the audioController and loose state ( for now we have to do this, there are bugs that arise when we don't )
+    m.ViewController.AudioPlayer.Stop()
+    m.ViewController.AudioPlayer = invalid
+    m.ViewController.AudioPlayer = createAudioPlayer(m.ViewController) ' this allows the default Option button to work for other things again (how does one normally clear audioPlayer)
 
     p = CreateObject("roMessagePort")
     video = CreateObject("roVideoScreen")
