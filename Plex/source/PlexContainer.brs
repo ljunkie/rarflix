@@ -115,12 +115,13 @@ Sub containerParseXml()
             ' removed TOGGLE for this since we have a toggle to hide or show rows now 'old: if RegRead("rf_uw_movie_rows", "preferences", "enabled") = "enabled" then 	    
             if n@key = "all" and n@title = "All Movies" and m.xml@identifier = "com.plexapp.plugins.library" and m.xml@content = "secondary" then 
                 topass = m ' probably not needed - TODO
+                size_limit = RegRead("rf_unwatched_limit", "preferences","100") 'gobal size limit Toggle for unwatched rows
                 
                 ' unwatched recently released
                 new_key = "all?type=1&unwatched=1&sort=originallyAvailableAt:desc"
                 if RegRead("rf_hide_"+new_key, "preferences", "show") = "show" then 
                     metadata = newDirectoryMetadata(topass, n)
-                    metadata.key = new_key
+                    metadata.key = new_key + "&X-Plex-Container-Start=0&X-Plex-Container-Size=" + size_limit
                     metadata.title = "Recently Released (unwatched)"
                     m.metadata.Push(metadata)
                     m.names.Push(metadata.title)
@@ -131,7 +132,7 @@ Sub containerParseXml()
                 new_key = "all?type=1&unwatched=1&sort=addedAt:desc"
                 if RegRead("rf_hide_"+new_key, "preferences", "show") = "show" then 
                     metadata = newDirectoryMetadata(topass, n)
-                    metadata.key = new_key
+                    metadata.key = new_key + "&X-Plex-Container-Start=0&X-Plex-Container-Size=" + size_limit
                     metadata.title = "Recently Added (unwatched)"
                     m.metadata.Push(metadata)
                     m.names.Push(metadata.title)

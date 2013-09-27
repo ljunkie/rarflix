@@ -2,21 +2,28 @@
 Sub InitRARFlix() 
     RegRead("rf_bcdynamic", "preferences","enabled")
     RegRead("rf_rottentomatoes", "preferences","enabled")
+    RegRead("rf_rottentomatoes_score", "preferences","audience")
     RegRead("rf_trailers", "preferences","enabled")
     RegRead("rf_tvwatch", "preferences","enabled")
     RegRead("rf_uw_movie_rows", "preferences","enabled")
     RegRead("rf_searchtitle", "preferences","title")
+'    RegDelete("rf_unwatched_limit", "preferences")
+    RegRead("rf_unwatched_limit", "preferences","200") ' no toggle yet
+    RegRead("rf_hs_clock", "preferences", "enabled")
 
     ' ljunkie Youtube Trailers (extended to TMDB)
     m.youtube = InitYouTube()
 
     Debug("=======================RARFLIX SETTINGS ====================================")
     Debug("rf_bcdynamic: " + tostr(RegRead("rf_bcdynamic", "preferences")))
+    Debug("rf_hs_clock: " + tostr(RegRead("rf_hs_clock", "preferences")))
     Debug("rf_rottentomatoes: " + tostr(RegRead("rf_rottentomatoes", "preferences")))
+    Debug("rf_rottentomatoes_score: " + tostr(RegRead("rf_rottentomatoes_score", "preferences")))
     Debug("rf_trailers: " + tostr(RegRead("rf_trailers", "preferences")))
     Debug("rf_tvwatch: " + tostr(RegRead("rf_tvwatch", "preferences")))
     Debug("rf_uw_movie_rows: " + tostr(RegRead("rf_uw_movie_rows", "preferences")))
     Debug("rf_searchtitle: " + tostr(RegRead("rf_searchtitle", "preferences")))
+    Debug("rf_unwatched_limit: " + tostr(RegRead("rf_unwatched_limit", "preferences")))
     Debug("============================================================================")
 
 end sub

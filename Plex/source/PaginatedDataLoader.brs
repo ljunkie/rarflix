@@ -192,6 +192,17 @@ Sub loaderOnUrlEvent(msg, requestContext)
         totalSize = container.Count()
     end if
 
+    ' ljunkie - hack to limit the unwatched rows ( we can remove this if Plex ever gives us Unwatched Recently Added/Released Directories )
+    ' INFO: Normally Plex will continue to load data when the "loaded content size" < "XML MediaContainer totalSize" ( status.countLoaded < totalSize )
+    ' Since we are specifying the Container-Size - we will never be able to load the totalSize; reset the totalSize to "MediaContainer Size"
+    r = CreateObject("roRegex", "all\?.*X-Plex-Container-Size\=", "i")
+    if r.IsMatch(container.sourceurl) then
+        totalSize = container.Count()
+        Debug("----------- " + container.sourceurl)
+        Debug("----------- RF force container (stop loading) after X-Plex-Container-Size=" + tostr(totalSize))
+    end if
+    ' end hack
+
     if totalSize <= 0 then
         status.loadStatus = 2
         startItem = 0
