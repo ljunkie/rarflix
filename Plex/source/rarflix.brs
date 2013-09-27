@@ -473,8 +473,8 @@ End Function
 
 sub rfVideoMoreButton(obj as Object) as Dynamic
     dialog = createBaseDialog()
-    dialog.Title = ""
-    dialog.Text = ""
+    dialog.Title = firstof(obj.metadata.showtitle, obj.metadata.umtitle, obj.metadata.umtitle)
+    dialog.Text = firstof(obj.metadata.shortdescriptionline2,  obj.metadata.shortdescriptionline1)
     dialog.Item = obj.metadata
                'if obj.metadata.grandparentKey = invalid then
     if obj.metadata.ContentType = "movie"  then
@@ -537,10 +537,9 @@ end sub
 sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     ' this shoudl probably just be combined into rfVideoMoreButton -- TODO
     dialog = createBaseDialog()
-    dialog.Title = ""
-    dialog.Text = ""
+    dialog.Title = firstof(obj.metadata.showtitle, obj.metadata.umtitle, obj.metadata.umtitle)
+    dialog.Text = firstof(obj.metadata.shortdescriptionline2,  obj.metadata.shortdescriptionline1)
     dialog.Item = obj.metadata
-
 
     ' hack for global recenlty added ( tv shows are displayed as seasons )
     if obj.metadata.type = "season" and obj.metadata.grandparentKey = invalid then 
@@ -591,6 +590,7 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     end if
 
     if obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "episode" or obj.metadata.ContentType = "show"  then
+        if obj.Item.StarRating = invalid then obj.Item.StarRating = 0
         dialog.SetButton("rate", "_rate_")
     end if
 

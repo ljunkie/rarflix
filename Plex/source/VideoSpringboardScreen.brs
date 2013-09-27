@@ -83,8 +83,8 @@ Sub videoSetupButtons()
         if m.metadata.ContentType = "movie" AND RegRead("rf_rottentomatoes", "preferences", "enabled") = "enabled" then 
             tomatoData = m.metadata.tomatoData
             rating_string = "Not Found"
+            append_string = "on Rotten Tomatoes"
             if tomatoData <> invalid AND tomatoData.ratings <> invalid AND tomatoData.ratings.critics_score <> invalid then
-		append_string = "on Rotten Tomatoes"
                 if RegRead("rf_rottentomatoes_score", "preferences", "audience") = "critic" then 
                     rating = tomatoData.ratings.critics_score
                 else 
