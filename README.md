@@ -1,4 +1,8 @@
-# Plex/Roku
+# RARflix - Modified Plex for Roku
+
+
+[![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=CHRZ55VCAJSYG)
+
 
 The official Plex client for the Roku. This client is maintained by a
 combination of Plex developers and community volunteers. We *love* contributors,
