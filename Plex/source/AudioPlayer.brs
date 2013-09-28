@@ -217,19 +217,23 @@ End Sub
 
 Sub audioPlayerShowContextMenu()
     dialog = createBaseDialog()
-    dialog.Title = "Now Playing"
-    dialog.Text = firstOf(m.Context[m.CurIndex].Title, "")
+    dialog.Title = "Now Playing" 
+
+    dialog.Text =               "  Artist: " + firstOf(m.Context[m.CurIndex].Artist, "") + chr(10)
+    dialog.Text = dialog.Text + "Album: " + firstOf(m.Context[m.CurIndex].Album, "")
+    if m.Context[m.CurIndex].releasedate <> invalid then dialog.Text = dialog.Text + " (" + m.Context[m.CurIndex].releasedate + ")"
+
+    
 
     ' ljunkie - append current status in audio in the dialog title
-    append = invalid
     if m.ispaused then 
-        append = "(paused)"
+        dialog.Title = "Now Paused" 
     else if m.isplaying  then
         'append = "(playing)"
     else 
-        append = "(stopped)"
+        dialog.Title = "Now Stopped" 
     end if
-    if append <> invalid then dialog.Title = dialog.Title + " " + append
+    dialog.Title = dialog.Title + " - " + firstOf(m.Context[m.CurIndex].Title, "")
 
     ' ljunkie - slideshow fun
     count = m.viewcontroller.screens.count() - 1
@@ -237,7 +241,7 @@ Sub audioPlayerShowContextMenu()
     if count > 1 and type(m.viewcontroller.screens[count].screen)  = "roSlideShow" then 
       m.slideshow = m.viewcontroller.screens[count]
       if type(m.slideshow.CurIndex) = "roInteger" and type(m.slideshow.items) = "roArray" then  ' ljunkie - show the photo title a slide show is in progress
-          dialog.Text = "Audio: " + dialog.Text + chr(10) + "Photo: " + m.slideshow.items[m.slideshow.CurIndex].textoverlayul
+          dialog.Text = dialog.Text + chr(10) + " Photo: " + m.slideshow.items[m.slideshow.CurIndex].textoverlayul
       end if 
     end if 
 
