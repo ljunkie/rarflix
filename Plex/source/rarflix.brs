@@ -620,9 +620,9 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     end if
 
     ' hack for global recenlty added ( tv shows are displayed as seasons )
-    if obj.metadata.type = "season" and obj.metadata.grandparentKey = invalid then 
+    if (obj.metadata.type = "season") and obj.metadata.grandparentKey = invalid then 
         ' available: obj.metadata.key = "/library/metadata/88482/childen'
-        re = CreateObject("roRegex", "/children", "i")
+        re = CreateObject("roRegex", "/children.*", "i")
         obj.metadata.parentKey = re.ReplaceAll(obj.metadata.key, "")
         container = createPlexContainerForUrl(obj.metadata.server, obj.metadata.server.serverUrl, obj.metadata.parentKey)
         if container <> invalid then
@@ -630,6 +630,14 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
             obj.metadata.parentIndex = container.xml.Directory[0]@index
             obj.metadata.ShowTitle = container.xml.Directory[0]@parentTitle
         end if
+    else if (obj.metadata.type = "show") and obj.metadata.grandparentKey = invalid then 
+        ' object type is a show -- we have all we need
+        re = CreateObject("roRegex", "/children.*", "i")
+        obj.metadata.grandparentKey = re.ReplaceAll(obj.metadata.key, "")
+        obj.metadata.ShowTitle = firstof(obj.metadata.umtitle, obj.metadata.showtitle, obj.metadata.title)
+        'end if
+    else if obj.metadata.grandparentKey = invalid then 
+         Debug("---- we should probably handle " + obj.metadata.type + "? figure out the parentKey/grandparentkey for: " + obj.metadata.key)
     end if
     ' end hack
 

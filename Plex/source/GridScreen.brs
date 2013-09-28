@@ -191,7 +191,7 @@ Function gridHandleMessage(msg) As Boolean
                 if (m.screenname <> invalid and lcase(m.screenname) = "home" or m.screenid = -1) and (audioplayer.ispaused or audioplayer.isplaying or audioplayer.context <> invalid) then 
                     debug("---- skipping Remote Info Key -- audio is playing/paused on HOME screen")
                 else
-                    if tostr(itype) <> "invalid" and (itype = "movie"  or itype = "show" or itype = "episode" or itype = "season") then
+                    if tostr(itype) <> "invalid" and (itype = "movie"  or itype = "show" or itype = "episode" or itype = "season" or itype = "series") then
                         obj = m.viewcontroller.screens.peek()
                         obj.metadata = context[m.focusedIndex]
                         obj.Item = context[m.focusedIndex]
