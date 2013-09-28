@@ -265,7 +265,9 @@ Sub setVideoDetails(video, container, videoItemXml, hasDetails=true)
         HDThumb = HDThumb + "&X-Plex-Token=" + video.server.AccessToken
     end if
     ' end thumbs - ljunkie
- 
+
+    'ondeck doesn't give actor/director/etc id's -- so we will force this in rarflix.brs:getPostersForCastCrew
+    ' so we will end up doing this all over again in the getPostersForCastCrew
     video.Actors = CreateObject("roArray", 15, true)
     for each Actor in videoItemXml.Role
         video.CastCrewList.Push({ name: Actor@tag, id: Actor@id, role: Actor@role, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Actor" })
