@@ -441,14 +441,18 @@ Function getPostersForCastCrew(item As Object, librarySection as string) As Obje
     Debug("------ requesting FULL list of actors to supply images " + server.serverurl + "/library/sections/" + librarySection + "/actor")
     container = createPlexContainerForUrl(server, server.serverurl, "/library/sections/" + librarySection + "/actor")
 
-    'names = container.GetNames()
+    names = container.GetNames()
     keys = container.GetKeys()
     list = []
     sizes = ImageSizes("movie", "movie")
     for each i in item.metadata.castcrewList
         for index = 0 to keys.Count() - 1
+            ' sometimes the @id is not supplied in the PMS xml api -- so we will force it
+            if i.id = invalid and names[index] = i.name then 
+              Debug("---- no cast.id from XML - forcing actor key to " + i.name + " to " + keys[index])
+              i.id = keys[index]
+            end if
             if keys[index] = i.id then 
-
                 default_img = container.xml.Directory[index]@thumb
                 i.imageSD = server.TranscodedImage(server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
                 i.imageHD = server.TranscodedImage(server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
@@ -478,8 +482,7 @@ Function RFcreateItemsForCastCrewScreen(obj as Object, idx as integer) As Intege
     cast = obj.item.metadata.castcrewlist[idx]
     server = obj.item.metadata.server
     librarySection = obj.librarySection
-
-    if librarySection <> invalid then 
+    if librarySection <> invalid and cast.id <> invalid then 
         dummyItem = CreateObject("roAssociativeArray")
         if lcase(cast.itemtype) = "writer" or lcase(cast.itemtype) = "producer" then ' writer and producer are not listed secondaries ( must use filter - hack in PlexMediaServer.brs:FullUrl function )
             dummyItem.sourceUrl = server.serverurl + "/library/sections/" + librarySection + "/all"
@@ -510,6 +513,8 @@ Function RFcreateItemsForCastCrewScreen(obj as Object, idx as integer) As Intege
         dummyItem.viewGroup = "secondary"
         Debug( "----- trying to get movies for cast member: " + cast.name + ":" + lcase(cast.itemtype) + " @ " + dummyItem.sourceUrl)
         m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
+        else
+            Debug("cannot link cast member to item; cast.id:" + tostr(cast.id) + " librarySection:" + librarySection)
         end if
     return 1
 End Function
@@ -543,10 +548,10 @@ End Function
 
 sub rfVideoMoreButton(obj as Object) as Dynamic
     dialog = createBaseDialog()
-    dialog.Title = firstof(obj.metadata.showtitle, obj.metadata.umtitle, obj.metadata.umtitle)
-    dialog.Text = firstof(obj.metadata.shortdescriptionline2,  obj.metadata.shortdescriptionline1)
+    dialog.Title = firstof(obj.metadata.showtitle, obj.metadata.umtitle, obj.metadata.title)
+    dialog.Text = truncateString(obj.metadata.shortdescriptionline2,220)
     dialog.Item = obj.metadata
-               'if obj.metadata.grandparentKey = invalid then
+    'if obj.metadata.grandparentKey = invalid then
     if obj.metadata.ContentType = "movie"  then
         dialog.SetButton("options", "Playback options")
     end if
@@ -619,8 +624,9 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
         dialog.Text = firstof(obj.metadata.shortdescriptionline2,  obj.metadata.shortdescriptionline1)
         dialog.Text = dialog.Text + chr(10) + chr(32) + chr(32) +chr(32) +firstof(obj.metadata.description, obj.metadata.umtitle)
     else 
+        ' movies -- the description is too much
         dialog.Title = firstof(obj.metadata.showtitle, obj.metadata.umtitle, obj.metadata.title)
-        dialog.Text = firstof(obj.metadata.shortdescriptionline2,  obj.metadata.shortdescriptionline1)
+        dialog.Text = truncateString(obj.metadata.shortdescriptionline2,300)
      end if
 
     dialog.Item = obj.metadata

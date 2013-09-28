@@ -265,25 +265,33 @@ Sub setVideoDetails(video, container, videoItemXml, hasDetails=true)
         HDThumb = HDThumb + "&X-Plex-Token=" + video.server.AccessToken
     end if
     ' end thumbs - ljunkie
- 
+
+    'ondeck doesn't give actor/director/etc id's -- so we will force this in rarflix.brs:getPostersForCastCrew
+    castxml = videoItemXml 'only for the cast info - we might overrite it
+    '    r = CreateObject("roRegex", "/library/onDeck", "i")
+    '    if r.IsMatch(container.sourceurl) and (m.viewcontroller.screens.peek().screenid = -1) and video.type = "movie" then
+    '        container2 = createPlexContainerForUrl(container.server, container.server.serverUrl, videoItemXml@key)        
+    '        castxml = container2.xml.Video[0]
+    '    end if
+
     video.Actors = CreateObject("roArray", 15, true)
-    for each Actor in videoItemXml.Role
+    for each Actor in castxml.Role
         video.CastCrewList.Push({ name: Actor@tag, id: Actor@id, role: Actor@role, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Actor" })
         video.Actors.Push(Actor@tag) ' original field
     next
 
     video.Director = CreateObject("roArray", 3, true)
-    for each Director in videoItemXml.Director
+    for each Director in castxml.Director
         video.CastCrewList.Push({ name: Director@tag, id: Director@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Director" })
         video.Director.Push(Director@tag) ' original field
     next
 
-    for each Producer in videoItemXml.Producer
+    for each Producer in castxml.Producer
         video.CastCrewList.Push({ name: Producer@tag, id: Producer@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "producer" })
         ' video.Producer.Push(Producer@tag) ' not implemented
     next
 
-    for each Writer in videoItemXml.Writer
+    for each Writer in castxml.Writer
         video.CastCrewList.Push({ name: Writer@tag, id: Writer@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Writer" })
         ' video.Writer.Push(Writer@tag) ' not implemented
     next
