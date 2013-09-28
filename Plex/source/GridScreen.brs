@@ -187,16 +187,32 @@ Function gridHandleMessage(msg) As Boolean
                 itype = context[m.focusedIndex].contenttype
                 if itype = invalid then itype = context[m.focusedIndex].type
                 audioplayer = GetViewController().AudioPlayer
-                ' might want to extend this to the other screen except for Video Details ( odd things can happen ) TODO
-                if (m.screenname <> invalid and lcase(m.screenname) = "home" or m.screenid = -1) and (audioplayer.ispaused or audioplayer.isplaying or audioplayer.context <> invalid) then 
-                    debug("---- skipping Remote Info Key -- audio is playing/paused on HOME screen")
+
+                ' some crazy logic here.. to clean up
+                ' if audio is playing or paused -- DO not show the dialog or new screen - audio dialog will come up
+                ' if audio is NOT playing or paused -- ONLY show the dialog or new screen if the section is HOME, movie or show as that's all we handle for now
+                ' also verify audioplayer.context -- this means there is actually context to play - otherwise it might just be theme music
+                sn = m.screenname
+                if  audioplayer.ispaused or audioplayer.isplaying and audioplayer.context <> invalid
+                    print audioplayer
+                    'print audioplayer.context[0]
+                    debug("---- skipping Remote Info Key -- audio is playing/paused")
+                else if  audioplayer.ContextScreenID <> invalid and sn <> "Home" and sn <> "Section: movie" and sn <> "Section: show" then 
+                    print audioplayer
+                    'print audioplayer.context[0]
+                    debug("---- skipping Remote Info Key -- audio has context and screen is not HOME, Movie or Show")
                 else
+                    if type(audioplayer.context) = "roArray"  then 
+                        debug("---- Audio Player has context - but it's ok to show the Dialog")
+                        print audioplayer
+                        'print audioplayer.context[0]
+                    end if 
                     if tostr(itype) <> "invalid" and (itype = "movie"  or itype = "show" or itype = "episode" or itype = "season" or itype = "series") then
                         obj = m.viewcontroller.screens.peek()
                         obj.metadata = context[m.focusedIndex]
                         obj.Item = context[m.focusedIndex]
                         rfVideoMoreButtonFromGrid(obj)
-                    else 
+                    else if audioplayer.ContextScreenID = invalid ' only create this extra screen if audioPlayer doesn't have context
                         'for now we will show the preferences screen :)
                         prefs = CreateObject("roAssociativeArray")
                         prefs.sourceUrl = ""
@@ -205,7 +221,9 @@ Function gridHandleMessage(msg) As Boolean
                         prefs.Title = "Preferences"
                         m.ViewController.CreateScreenForItem(prefs, invalid, ["Preferences"])
                         Debug("Info Button (*) not handled for content type: " +  tostr(itype) + " - using default prefs screen")
-                    end if
+                    else
+                        Debug("--- Not show prefs on " + itype)
+                    end if 
                 end if
         else if msg.isRemoteKeyPressed() then
             if msg.GetIndex() = 13 then

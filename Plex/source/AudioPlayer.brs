@@ -74,10 +74,19 @@ Function audioPlayerHandleMessage(msg) As Boolean
             m.CurIndex = newIndex
         else if msg.isRequestFailed() then
             Debug("Audio playback failed")
-            maxIndex = m.Context.Count() - 1
-            newIndex = m.CurIndex + 1
-            if newIndex > maxIndex then newIndex = 0
-            m.CurIndex = newIndex
+            Debug("Audio playback failed")
+            Debug("Audio playback failed")
+            print "failed to play song:"; msg.GetData()
+            print "failed to play song:"; msg.GetData()
+            print "failed to play song:"; msg.GetData()
+            print m
+	    print m.Context.Count()
+	    printany(6,"1",m.Context)
+
+            'maxIndex = m.Context.Count() - 1
+            'newIndex = m.CurIndex + 1
+            'if newIndex > maxIndex then newIndex = 0
+            'm.CurIndex = newIndex
         else if msg.isListItemSelected() then
             Debug("Starting to play track: " + tostr(item.Url))
             m.IsPlaying = true
@@ -220,6 +229,17 @@ Sub audioPlayerShowContextMenu()
     dialog.Title = "Now Playing"
     dialog.Text = firstOf(m.Context[m.CurIndex].Title, "")
 
+    append = invalid
+    if m.ispaused then 
+        append = "(paused)"
+    else if m.isplaying  then
+        'append = "(playing)"
+    else 
+        append = "(stopped)"
+    end if
+    if append <> invalid then dialog.Title = dialog.Title + " " + append
+
+
     if m.IsPlaying then
         dialog.SetButton("pause", "Pause")
     else if m.IsPaused then
@@ -228,6 +248,8 @@ Sub audioPlayerShowContextMenu()
         dialog.SetButton("play", "Play")
     end if
     dialog.SetButton("stop", "Stop")
+    dialog.SetButton("pauseAll", "Pause All - todo")
+    dialog.SetButton("resumeAll", "Resume All - todo")
 
     if m.Context.Count() > 1 then
         dialog.SetButton("next_track", "Next Track")
@@ -251,7 +273,11 @@ Function audioPlayerMenuHandleButton(command, data) As Boolean
         obj.Play()
     else if command = "pause" then
         obj.Pause()
+    else if command = "pauseAll" then
+        obj.Pause()
     else if command = "resume" then
+        obj.Resume()
+    else if command = "resumeAll" then
         obj.Resume()
     else if command = "stop" then
         obj.Stop()
