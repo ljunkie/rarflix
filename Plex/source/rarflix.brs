@@ -614,6 +614,10 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     if (obj.metadata.type = "season") then 
         dialog.Title = firstof(obj.metadata.title, obj.metadata.umtitle, obj.metadata.title)
         dialog.Text = ""
+    else if (obj.metadata.type = "episode") then 
+        dialog.Title = firstof(obj.metadata.showtitle, obj.metadata.title)
+        dialog.Text = firstof(obj.metadata.shortdescriptionline2,  obj.metadata.shortdescriptionline1)
+        dialog.Text = dialog.Text + chr(10) + chr(32) + chr(32) +chr(32) +firstof(obj.metadata.description, obj.metadata.umtitle)
     else 
         dialog.Title = firstof(obj.metadata.showtitle, obj.metadata.umtitle, obj.metadata.title)
         dialog.Text = firstof(obj.metadata.shortdescriptionline2,  obj.metadata.shortdescriptionline1)
