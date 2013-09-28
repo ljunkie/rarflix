@@ -20,6 +20,7 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
     obj.Screen = screen
     if type(context) = "roArray" then
         obj.Item = context[contextIndex]
+        obj.Items = context ' ljunkie - set items for access later
         AddAccountHeaders(screen, obj.Item.server.AccessToken)
         screen.SetContentList(context)
         screen.SetNext(contextIndex, true)
@@ -55,7 +56,7 @@ Function photoPlayerHandleMessage(msg) As Boolean
 
             m.ViewController.PopScreen(m)
         else if msg.isPlaybackPosition() then
-            'm.CurIndex = msg.GetIndex()
+            m.CurIndex = msg.GetIndex() ' update current index
         else if msg.isRequestFailed() then
             Debug("preload failed: " + tostr(msg.GetIndex()))
         else if msg.isRequestInterrupted() then
@@ -66,6 +67,7 @@ Function photoPlayerHandleMessage(msg) As Boolean
             Debug("resumed")
         else if msg.isRemoteKeyPressed() then
             if msg.GetIndex() = 3 then
+                ' this needs work -- but the options button (*) now works to show the title.. so maybe another day
                 ol = RegRead("slideshow_overlay_force", "preferences","0")
                 time = invalid            
                 if ol = "0" then

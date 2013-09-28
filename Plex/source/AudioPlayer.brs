@@ -74,19 +74,10 @@ Function audioPlayerHandleMessage(msg) As Boolean
             m.CurIndex = newIndex
         else if msg.isRequestFailed() then
             Debug("Audio playback failed")
-            Debug("Audio playback failed")
-            Debug("Audio playback failed")
-            print "failed to play song:"; msg.GetData()
-            print "failed to play song:"; msg.GetData()
-            print "failed to play song:"; msg.GetData()
-            print m
-	    print m.Context.Count()
-	    printany(6,"1",m.Context)
-
-            'maxIndex = m.Context.Count() - 1
-            'newIndex = m.CurIndex + 1
-            'if newIndex > maxIndex then newIndex = 0
-            'm.CurIndex = newIndex
+            maxIndex = m.Context.Count() - 1
+            newIndex = m.CurIndex + 1
+            if newIndex > maxIndex then newIndex = 0
+            m.CurIndex = newIndex
         else if msg.isListItemSelected() then
             Debug("Starting to play track: " + tostr(item.Url))
             m.IsPlaying = true
@@ -229,6 +220,7 @@ Sub audioPlayerShowContextMenu()
     dialog.Title = "Now Playing"
     dialog.Text = firstOf(m.Context[m.CurIndex].Title, "")
 
+    ' ljunkie - append current status in audio in the dialog title
     append = invalid
     if m.ispaused then 
         append = "(paused)"
@@ -239,17 +231,26 @@ Sub audioPlayerShowContextMenu()
     end if
     if append <> invalid then dialog.Title = dialog.Title + " " + append
 
+    ' ljunkie - slideshow fun
+    count = m.viewcontroller.screens.count() - 1
+    m.slideshow = invalid
+    if count > 1 and type(m.viewcontroller.screens[count].screen)  = "roSlideShow" then 
+      m.slideshow = m.viewcontroller.screens[count]
+      if type(m.slideshow.CurIndex) = "roInteger" and type(m.slideshow.items) = "roArray" then  ' ljunkie - show the photo title a slide show is in progress
+          dialog.Text = "Audio: " + dialog.Text + chr(10) + "Photo: " + m.slideshow.items[m.slideshow.CurIndex].textoverlayul
+      end if 
+    end if 
 
     if m.IsPlaying then
         dialog.SetButton("pause", "Pause")
+        if m.slideshow <> invalid then dialog.SetButton("pauseAll", "Pause All")
     else if m.IsPaused then
-        dialog.SetButton("resume", "Play")
+        dialog.SetButton("resume", "Resume")
+        if m.slideshow <> invalid then dialog.SetButton("resumeAll", "Resume All")
     else
         dialog.SetButton("play", "Play")
     end if
     dialog.SetButton("stop", "Stop")
-    dialog.SetButton("pauseAll", "Pause All - todo")
-    dialog.SetButton("resumeAll", "Resume All - todo")
 
     if m.Context.Count() > 1 then
         dialog.SetButton("next_track", "Next Track")
@@ -274,10 +275,14 @@ Function audioPlayerMenuHandleButton(command, data) As Boolean
     else if command = "pause" then
         obj.Pause()
     else if command = "pauseAll" then
+        ' we only get here if we know we are playing a slideshow too
+        obj.slideshow.screen.Pause()
         obj.Pause()
     else if command = "resume" then
         obj.Resume()
     else if command = "resumeAll" then
+        ' we only get here if we know we are playing a slideshow too
+        obj.slideshow.screen.Resume()
         obj.Resume()
     else if command = "stop" then
         obj.Stop()
