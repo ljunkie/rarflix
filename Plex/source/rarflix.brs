@@ -436,33 +436,122 @@ End Function
 
 Function getPostersForCastCrew(item As Object, librarySection as string) As Object
     server = item.metadata.server
+  
+    ' current issue - Producers/Writer ID's are not available yet unless we are in the context of a video
+    ' I had a hack below to set the id name match, but that only works for actors/directors since those urls are available
+    ' so we have to be lame and just grant the metadata again... same idea as VideoMetaData.brs:setVideoDetails
+    container = createPlexContainerForUrl(item.metadata.server, item.metadata.server.serverUrl, item.metadata.key)        
+    castxml = container.xml.Video[0]
+    'stop
+
+    default_img = "/:/resources/actor-icon.png"
+    sizes = ImageSizes("movie", "movie")
+
+    SDThumb = item.metadata.server.TranscodedImage(item.metadata.server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
+    HDThumb = item.metadata.server.TranscodedImage(item.metadata.server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
+    if item.metadata.server.AccessToken <> invalid then
+        SDThumb = SDThumb + "&X-Plex-Token=" + item.metadata.server.AccessToken
+        HDThumb = HDThumb + "&X-Plex-Token=" + item.metadata.server.AccessToken
+    end if
+
+    CastCrewList   = []
+    for each Actor in castxml.Role
+        CastCrewList.Push({ name: Actor@tag, id: Actor@id, role: Actor@role, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Actor" })
+    next
+
+    for each Director in castxml.Director
+        CastCrewList.Push({ name: Director@tag, id: Director@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Director" })
+    next
+
+    for each Producer in castxml.Producer
+        CastCrewList.Push({ name: Producer@tag, id: Producer@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "producer" })
+    next
+
+    for each Writer in castxml.Writer
+        CastCrewList.Push({ name: Writer@tag, id: Writer@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Writer" })
+    next
+
+    item.metadata.castcrewList = CastCrewList ' lets override it now that we have valid metadata for cast members
 
     ' we can modify this if PMS ever keeps images for other cast & crew members. Actors only for now: http://10.69.1.12:32400/library/sections/6/actor
     Debug("------ requesting FULL list of actors to supply images " + server.serverurl + "/library/sections/" + librarySection + "/actor")
-    container = createPlexContainerForUrl(server, server.serverurl, "/library/sections/" + librarySection + "/actor")
+    container_a = createPlexContainerForUrl(server, server.serverurl, "/library/sections/" + librarySection + "/actor")
+    a_names = container_a.GetNames()
+    a_keys = container_a.GetKeys()
 
-    names = container.GetNames()
-    keys = container.GetKeys()
+    ' we will enable this again if Directors ever get thumbs..
+    'Debug("------ requesting FULL list of actors to supply images " + server.serverurl + "/library/sections/" + librarySection + "/director")
+    'container_d = createPlexContainerForUrl(server, server.serverurl, "/library/sections/" + librarySection + "/director")
+    'd_names = container_d.GetNames()
+    'd_keys = container_d.GetKeys()
+
     list = []
     sizes = ImageSizes("movie", "movie")
+
     for each i in item.metadata.castcrewList
-        for index = 0 to keys.Count() - 1
-            ' sometimes the @id is not supplied in the PMS xml api -- so we will force it
-            if i.id = invalid and names[index] = i.name then 
-              Debug("---- no cast.id from XML - forcing actor key to " + i.name + " to " + keys[index])
-              i.id = keys[index]
-            end if
-            if keys[index] = i.id then 
-                default_img = container.xml.Directory[index]@thumb
-                i.imageSD = server.TranscodedImage(server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
-                i.imageHD = server.TranscodedImage(server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
-                if server.AccessToken <> invalid then 
-                    i.imageSD = i.imageSD + "&X-Plex-Token=" + server.AccessToken
-                    i.imageHD = i.imageHD + "&X-Plex-Token=" + server.AccessToken
+        found = false
+        for index = 0 to a_keys.Count() - 1
+            if lcase(i.itemtype) = "actor" then  ' yea, only use the actors container if the item type is an actor
+                ' sometimes the @id is not supplied in the PMS xml api -- so we will force it
+                if i.id = invalid and a_names[index] = i.name then 
+                  Debug("---- no cast.id from XML - forcing actor key to " + i.name + " to " + a_keys[index])
+                  i.id = a_keys[index]
                 end if
-                exit for
+                if a_keys[index] = i.id then 
+                    found = true
+                    if container_a.xml.Directory[index]@thumb <> invalid then 
+                        default_img = container_a.xml.Directory[index]@thumb
+                        i.imageSD = server.TranscodedImage(server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
+                        i.imageHD = server.TranscodedImage(server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
+                        if server.AccessToken <> invalid then 
+                            i.imageSD = i.imageSD + "&X-Plex-Token=" + server.AccessToken
+                            i.imageHD = i.imageHD + "&X-Plex-Token=" + server.AccessToken
+                        end if
+                    end if
+                    exit for
+                end if
+            else
+                ' we will try and use the actor poster if the name matches
+                if a_names[index] = i.name then 
+                    Debug("---- non actor NAME match -- lets use thumb " + i.name + " to " + a_keys[index])
+                    if container_a.xml.Directory[index]@thumb <> invalid then 
+                        default_img = container_a.xml.Directory[index]@thumb
+                        i.imageSD = server.TranscodedImage(server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
+                        i.imageHD = server.TranscodedImage(server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
+                        if server.AccessToken <> invalid then 
+                            i.imageSD = i.imageSD + "&X-Plex-Token=" + server.AccessToken
+                            i.imageHD = i.imageHD + "&X-Plex-Token=" + server.AccessToken
+                        end if
+                    end if
+                    exit for
+                end if
             end if
+
         end for
+
+        ' Enable this if Directors ever get thumbs -- and remove the routine above using the actors image if the names match
+        '        if NOT found then 
+        '            for index = 0 to d_keys.Count() - 1
+        '                ' sometimes the @id is not supplied in the PMS xml api -- so we will force it
+        '                if i.id = invalid and d_names[index] = i.name then 
+        '                  Debug("---- no cast.id from XML - forcing actor key to " + i.name + " to " + d_keys[index])
+        '                  i.id = d_keys[index]
+        '                end if
+        '                if d_keys[index] = i.id then 
+        '                    found = true
+        '                    if container_d.xml.Directory[index]@thumb <> invalid then  ' these dont exist yet.. but maybe someday?
+        '                        default_img = container_d.xml.Directory[index]@thumb
+        '                        i.imageSD = server.TranscodedImage(server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
+        '                        i.imageHD = server.TranscodedImage(server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
+        '                        if server.AccessToken <> invalid then 
+        '                            i.imageSD = i.imageSD + "&X-Plex-Token=" + server.AccessToken
+        '                            i.imageHD = i.imageHD + "&X-Plex-Token=" + server.AccessToken
+        '                        end if
+        '                    end if
+        '                    exit for
+        '                end if
+        '            end for
+        '        end if
 
         values = {
             ShortDescriptionLine1:i.name,
