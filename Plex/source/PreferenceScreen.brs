@@ -259,7 +259,7 @@ Sub showPreferencesScreen()
     ' re-ordered - RR
     m.AddItem({title: "Plex Media Servers"}, "servers")
     m.AddItem({title: getCurrentMyPlexLabel()}, "myplex")
-    m.AddItem({title: "RARFlix Preferences"}, "rarflix_prefs")
+    m.AddItem({title: "RARflix Preferences", ShortDescriptionLine2: "the goods"}, "rarflix_prefs")
     m.AddItem({title: "Quality"}, "quality", m.GetEnumValue("quality"))
     m.AddItem({title: "Remote Quality"}, "quality_remote", m.GetEnumValue("quality_remote"))
     m.AddItem({title: "Direct Play"}, "directplay", m.GetEnumValue("directplay"))

@@ -1,7 +1,13 @@
-NOTE: breadcrumbs are the TOP Right area of the screen, says something like "Movies * Recently Added"
 
+### 2.6.12-2 (2013-09-27)
+* Complete re-write of adding cutom rows ( currenlty the 2 "unwatched" rows for movies )
+* Re-write of Hiding Rows:
+    - One can hide Recently Added, Recently Released/Aired rows per section type [movie,show,music]
+* New unwatched rows now have a limit of 200 items
+    - toggle to change limit in rarflix prefs
+* other misc cleanup
 
-### 2.6.12-1
+### 2.6.12-1 (2013-09-26)
 * (*) other items not handled, having their own specific dialog for the info key will bring up the Main Preferences screen
 
 * (*) "Info Button" added to other areas ( movie or tv types )
@@ -12,7 +18,7 @@ NOTE: breadcrumbs are the TOP Right area of the screen, says something like "Mov
 * Toggle for Critics/Audience Score: also display a * on the rating if the score used is not the preferred rating
 
 
-### 2.6.12
+### 2.6.12 (2013-09-25)
 
 * Update breadcrumb on the Global (home screen) Recently Added content.
 
@@ -71,3 +77,7 @@ NOTE: breadcrumbs are the TOP Right area of the screen, says something like "Mov
        (bug seen in official channel too)
 * fix: Crash when clicking the play button on a Photo folder (bug was only present in rarflixtest)
 
+
+
+NOTES: 
+ * breadcrumbs: the TOP Right area of the screen, says something like "Movies * Recently Added"

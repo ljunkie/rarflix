@@ -228,16 +228,41 @@ Function createRARFlixPrefsScreen(viewController) As Object
         default: "enabled"
     }
 
+
+    filter_limit = [
+        { title: "100", EnumValue: "100" },
+        { title: "200", EnumValue: "200" },
+        { title: "300", EnumValue: "300", ShortDescriptionLine2: "May cause Plex to be Sluggish"},
+        { title: "400", EnumValue: "400", ShortDescriptionLine2: "May cause Plex to be Sluggish"},
+        { title: "500", EnumValue: "500", ShortDescriptionLine2: "May cause Plex to be Sluggish"},
+        { title: "600", EnumValue: "600", ShortDescriptionLine2: "May cause Plex to be Sluggish"},
+        { title: "700", EnumValue: "700", ShortDescriptionLine2: "May cause Plex to be Sluggish"},
+        { title: "800", EnumValue: "800", ShortDescriptionLine2: "May cause Plex to be Sluggish"},
+        { title: "900", EnumValue: "900", ShortDescriptionLine2: "May cause Plex to be Sluggish"},
+        { title: "1000", EnumValue: "1000", ShortDescriptionLine2: "May cause Plex to be Sluggish"},
+        { title: "1500", EnumValue: "1500", ShortDescriptionLine2: "May cause Plex to be Sluggish"},
+        { title: "All", EnumValue: "9999", ShortDescriptionLine2: "May cause Plex to be Sluggish.. really?"},
+    ]
+    obj.Prefs["rf_rowfilter_limit"] = {
+        values: filter_limit,
+        heading: "Item limit for Unwatched Recently Added & Released [movies]",
+        default: "200"
+    }
+
+
     obj.Screen.SetHeader("RARFlix Preferences")
 
-    obj.AddItem({title: "Hide Rows"}, "hide_rows_prefs")
-    obj.AddItem({title: "Movie Trailers"}, "rf_trailers", obj.GetEnumValue("rf_trailers"))
-    obj.AddItem({title: "Rotten Tomatoes"}, "rf_rottentomatoes", obj.GetEnumValue("rf_rottentomatoes"))
-    obj.AddItem({title: "Rotten Tomatoes Score"}, "rf_rottentomatoes_score", obj.GetEnumValue("rf_rottentomatoes_score"))
-    obj.AddItem({title: "Trailers/Rotten Tomatoes Search by"}, "rf_searchtitle", obj.GetEnumValue("rf_searchtitle"))
-    obj.AddItem({title: "Dynamic Headers"}, "rf_bcdynamic", obj.GetEnumValue("rf_bcdynamic"))
-    obj.AddItem({title: "TV Titles (Watched Status)"}, "rf_tvwatch", obj.GetEnumValue("rf_tvwatch"))
+    obj.AddItem({title: "Hide Rows",ShortDescriptionLine2: "Sorry for the confusion..."}, "hide_rows_prefs")
+    obj.AddItem({title: "Section Display", ShortDescriptionLine2: "a plex original, for easy access"}, "sections")
+
+    obj.AddItem({title: "Movie Trailers", ShortDescriptionLine2: "Got Trailers?"}, "rf_trailers", obj.GetEnumValue("rf_trailers"))
+    obj.AddItem({title: "Rotten Tomatoes", ShortDescriptionLine2: "Movie Ratings from Rotten Tomatoes"}, "rf_rottentomatoes", obj.GetEnumValue("rf_rottentomatoes"))
+    obj.AddItem({title: "Rotten Tomatoes Score", ShortDescriptionLine2: "Who do you trust more..." + chr(10) + "A Critic or an Audience?"}, "rf_rottentomatoes_score", obj.GetEnumValue("rf_rottentomatoes_score"))
+    obj.AddItem({title: "Trailers/Tomatoes Search by", ShortDescriptionLine2: "You probably don't want to change this"}, "rf_searchtitle", obj.GetEnumValue("rf_searchtitle"))
+    obj.AddItem({title: "Dynamic Headers", ShortDescriptionLine2: "Info on the top Right of the Screen"}, "rf_bcdynamic", obj.GetEnumValue("rf_bcdynamic"))
+    obj.AddItem({title: "TV Show (Watched Status)", ShortDescriptionLine2: "feels good enabled"}, "rf_tvwatch", obj.GetEnumValue("rf_tvwatch"))
     obj.AddItem({title: "Clock on Home Screen"}, "rf_hs_clock", obj.GetEnumValue("rf_hs_clock"))
+    obj.AddItem({title: "Unwatched Added/Released", ShortDescriptionLine2: "Item limit for unwatched Recently Added &" + chr(10) +"Recently Released rows [movies]"}, "rf_rowfilter_limit", obj.GetEnumValue("rf_rowfilter_limit"))
     ' now part of the Hide Rows
     ' obj.AddItem({title: "Unwatched Movie Rows"}, "rf_uw_movie_rows", obj.GetEnumValue("rf_uw_movie_rows"))
 
@@ -259,6 +284,10 @@ Function prefsRARFflixHandleMessage(msg) As Boolean
             if command = "hide_rows_prefs" then
                 screen = createHideRowsPrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["Hide Rows Preferences"])
+                screen.Show()
+            else if command = "sections" then
+                screen = createSectionDisplayPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["Section Display Preferences"])
                 screen.Show()
             else if command = "close" then
                 m.Screen.Close()
