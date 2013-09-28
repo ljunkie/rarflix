@@ -603,13 +603,21 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
 end sub
 
 
+sub fakeRefresh(force=false) 
+    Debug("refresh? nah... faked it for now...")
+'fake it for now
+end sub 
 
 sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
-    ' this shoudl probably just be combined into rfVideoMoreButton -- TODO
+    ' this should probably just be combined into rfVideoMoreButton  ( there are some caveats though and maybe more to come.. so until this has been finalized )
     dialog = createBaseDialog()
     dialog.Title = firstof(obj.metadata.showtitle, obj.metadata.umtitle, obj.metadata.umtitle)
     dialog.Text = firstof(obj.metadata.shortdescriptionline2,  obj.metadata.shortdescriptionline1)
     dialog.Item = obj.metadata
+
+    if type(obj.Refresh) <> "Function" then 
+      obj.Refresh = fakeRefresh ' sbRefresh is called normally - in a poster screen this doesn't happen?
+    end if
 
     ' hack for global recenlty added ( tv shows are displayed as seasons )
     if obj.metadata.type = "season" and obj.metadata.grandparentKey = invalid then 
