@@ -77,7 +77,6 @@ Sub containerParseXml()
     for each n in nodes
         nodeType = firstOf(n@type, m.ViewGroup)
 
-        hide_row = false 'ljunkie 
         if n@scanner <> invalid OR n@agent <> invalid then
             metadata = newDirectoryMetadata(m, n)
             metadata.contentType = "section"
@@ -111,48 +110,6 @@ Sub containerParseXml()
         else if n@search = "1" then
             metadata = newSearchMetadata(m, n)
         else if n.GetName() = "Directory" then
-            ' ljunkie add here? for custom rows
-            ' removed TOGGLE for this since we have a toggle to hide or show rows now 'old: if RegRead("rf_uw_movie_rows", "preferences", "enabled") = "enabled" then 	    
-            if n@key = "all" and n@title = "All Movies" and m.xml@identifier = "com.plexapp.plugins.library" and m.xml@content = "secondary" then 
-                topass = m ' probably not needed - TODO
-                size_limit = RegRead("rf_unwatched_limit", "preferences","100") 'gobal size limit Toggle for unwatched rows
-                
-                ' unwatched recently released
-                new_key = "all?type=1&unwatched=1&sort=originallyAvailableAt:desc"
-                if RegRead("rf_hide_"+new_key, "preferences", "show") = "show" then 
-                    metadata = newDirectoryMetadata(topass, n)
-                    metadata.key = new_key + "&X-Plex-Container-Start=0&X-Plex-Container-Size=" + size_limit
-                    metadata.title = "Recently Released (unwatched)"
-                    m.metadata.Push(metadata)
-                    m.names.Push(metadata.title)
-                    m.keys.Push(metadata.key)
-                end if
-
-                ' unwatched recently added
-                new_key = "all?type=1&unwatched=1&sort=addedAt:desc"
-                if RegRead("rf_hide_"+new_key, "preferences", "show") = "show" then 
-                    metadata = newDirectoryMetadata(topass, n)
-                    metadata.key = new_key + "&X-Plex-Container-Start=0&X-Plex-Container-Size=" + size_limit
-                    metadata.title = "Recently Added (unwatched)"
-                    m.metadata.Push(metadata)
-                    m.names.Push(metadata.title)
-                    m.keys.Push(metadata.key)
-                end if
-   
-               ' shows have a different way to filter (&unwatchedLeaves=1) -- but it's too slow to use right now
-               ' else if n@key = "all" and n@title = "All Shows" and m.xml@identifier = "com.plexapp.plugins.library" and m.xml@content = "secondary" then 
-               ' shows have a different key -- but it's too slow to use right now
-               ' recently released: metadata.key = "all?type=2&unwatchedLeaves=1&sort=originallyAvailableAt:desc"
-               ' recently added: metadata.key = "all?type=2&unwatchedLeaves=1&sort=addedAt:desc"
-            end if
-
-            ' ljunkie - Check if we have hidden this row (normal directory listing from PMS XML) 
-            if m.xml@content = "secondary" AND RegRead("rf_hide_" + n@key, "preferences", "show") <> "show" then 
-                hide_row = true ' we will not push metadata to screen if this is set
-                Debug("-- rarflix prefs - hide row enabled for: " + n@key)
-            end if
-
-            ' orignally load what was called 
             metadata = newDirectoryMetadata(m, n)       
         else if nodeType = "movie" OR nodeType = "episode" then
             metadata = newVideoMetadata(m, n, m.ParseDetails)
@@ -169,17 +126,14 @@ Sub containerParseXml()
             metadata = newDirectoryMetadata(m, n)
         end if
 
-        ' ljunkie - Hide Rows
-        if NOT hide_row then 
-            if metadata.search = true AND m.SeparateSearchItems then
-                m.search.Push(metadata)
-            else if metadata.setting = true then
-                m.settings.Push(metadata)
-            else
-                m.metadata.Push(metadata)
-                m.names.Push(metadata.Title)
-                m.keys.Push(metadata.Key)
-            end if
+        if metadata.search = true AND m.SeparateSearchItems then
+            m.search.Push(metadata)
+        else if metadata.setting = true then
+            m.settings.Push(metadata)
+        else
+            m.metadata.Push(metadata)
+            m.names.Push(metadata.Title)
+            m.keys.Push(metadata.Key)
         end if
     next
 

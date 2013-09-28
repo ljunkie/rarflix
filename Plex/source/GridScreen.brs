@@ -54,8 +54,8 @@ Function createGridScreenForItem(item, viewController, style) As Object
 
     container = createPlexContainerForUrl(item.server, item.sourceUrl, item.key)
     container.SeparateSearchItems = true
-    ' ljunkie -- testing lazy load (TODO)
-    obj.Loader = createPaginatedLoader(container, 8, 75)
+    ' ljunkie -- pass item to paginated loader
+    obj.Loader = createPaginatedLoader(container, 8, 75, item)
     obj.Loader.Listener = obj
 
     ' Don't play theme music on top of grid screens on the older Roku models.

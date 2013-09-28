@@ -1,14 +1,15 @@
 ' other functions required for my mods
 Sub InitRARFlix() 
+    'RegDelete("rf_unwatched_limit", "preferences")
+    'RegDelete("rf_uw_movie_rows", "preferences")
+ 
     RegRead("rf_bcdynamic", "preferences","enabled")
     RegRead("rf_rottentomatoes", "preferences","enabled")
     RegRead("rf_rottentomatoes_score", "preferences","audience")
     RegRead("rf_trailers", "preferences","enabled")
     RegRead("rf_tvwatch", "preferences","enabled")
-    RegRead("rf_uw_movie_rows", "preferences","enabled")
     RegRead("rf_searchtitle", "preferences","title")
-'    RegDelete("rf_unwatched_limit", "preferences")
-    RegRead("rf_unwatched_limit", "preferences","200") ' no toggle yet
+    RegRead("rf_rowfilter_limit", "preferences","200") ' no toggle yet
     RegRead("rf_hs_clock", "preferences", "enabled")
 
     ' ljunkie Youtube Trailers (extended to TMDB)
@@ -21,9 +22,8 @@ Sub InitRARFlix()
     Debug("rf_rottentomatoes_score: " + tostr(RegRead("rf_rottentomatoes_score", "preferences")))
     Debug("rf_trailers: " + tostr(RegRead("rf_trailers", "preferences")))
     Debug("rf_tvwatch: " + tostr(RegRead("rf_tvwatch", "preferences")))
-    Debug("rf_uw_movie_rows: " + tostr(RegRead("rf_uw_movie_rows", "preferences")))
     Debug("rf_searchtitle: " + tostr(RegRead("rf_searchtitle", "preferences")))
-    Debug("rf_unwatched_limit: " + tostr(RegRead("rf_unwatched_limit", "preferences")))
+    Debug("rf_rowfilter_limit: " + tostr(RegRead("rf_rowfilter_limit", "preferences")))
     Debug("============================================================================")
 
 end sub
@@ -280,12 +280,12 @@ Function createHideRowsPrefsScreen(viewController) As Object
         { title: "All Items", key: "all" },
         { title: "On Deck", key: "onDeck" },
         { title: "Recently Added", key: "recentlyAdded" },
-        { title: "Recently Released/Aired", key: "newest" },
+        { title: "Recently Released", key: "newest" },
         { title: "Unwatched", key: "unwatched" },
-        { title: "Recently Added (unwatched)", key: "all?type=1&unwatched=1&sort=addedAt:desc" },
-        { title: "Recently Released (unwatched)", key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc" },
+        { title: "[movie] Recently Added (uw)", key: "all?type=1&unwatched=1&sort=addedAt:desc" }, 'movie/film for now
+        { title: "[movie] Recently Released (uw)", key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc" }, 'movie/film for now
         { title: "Recently Viewed", key: "recentlyViewed" },
-        { title: "Recently Viewed Shows", key: "recentlyViewedShows" },
+        { title: "[tv] Recently Viewed Shows", key: "recentlyViewedShows" },
         { title: "By Album", key: "albums" },
         { title: "By Collection", key: "collection" },
         { title: "By Genre", key: "genre" },
@@ -304,19 +304,53 @@ Function createHideRowsPrefsScreen(viewController) As Object
     obj.Screen.SetHeader("Hide or Show Rows for Library Sections")
 
     ReorderItemsByKeyPriority(PlexRows, RegRead("section_row_order", "preferences", ""))
+
     for each item in PlexRows
-        rf_hide_key = "rf_hide_"+item.key
         if item.key = "_search_" then item.key = "search" 'special case
+        rf_hide_key = "rf_hide_"+item.key
+
+        ' allow one to Hide Recently Released and Recently Added if Movie/Show/Music - would really be nice to reorder per section.. but that's another time (TODO)
+        if item.key = "newest" or item.key = "recentlyAdded" then 
+            itypes = [
+                { type: "movie", short: "[movie]", },
+                { type: "artist", short: "[music]", },
+                { type: "show", short: "[tv]", newest: "Recently Aired" },
+            ]
+
+            for each it in itypes
+                new_hide_key = rf_hide_key + "_" + it.type
+                title = it.short + " " + item.title
+                if it[item.key] <> invalid then title = it.short + " " + it[item.key]
+
+                values = [
+                    { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: title },
+                    { title: "Show", EnumValue: "show", ShortDescriptionLine2: title },
+                ]
+                obj.Prefs[new_hide_key] = {
+                    values: values,
+                    heading: "Show or Hide Row",
+                    default: "show"
+                }
+                if (it.type = "artist" and item.key <> "newest") or ( it.type <> "artist")   then
+                    obj.AddItem({title: title}, new_hide_key, obj.GetEnumValue(new_hide_key))
+                end if
+            end for
+        end if ' else  -- allow other sections to hide recenltyAdded/released normally
+
+        if item.key = "recentlyAdded" then item.title = "[other] Recently Added"
+        if item.key = "newest" then item.title = "[other] Recently Released"
         values = [
             { title: "Hide", EnumValue: "hide", ShortDescriptionLine2: item.title },
             { title: "Show", EnumValue: "show", ShortDescriptionLine2: item.title },
         ]
         obj.Prefs[rf_hide_key] = {
-           values: values,
-           heading: "Show or Hide Row",
-           default: "show"
+            values: values,
+            heading: "Show or Hide Row",
+            default: "show"
         }
-        obj.AddItem({title: item.title}, rf_hide_key, obj.GetEnumValue(rf_hide_key))
+        if NOT item.key = "newest" then ' others don't have this yet
+            obj.AddItem({title: item.title}, rf_hide_key, obj.GetEnumValue(rf_hide_key))
+        end if
     next
    
     obj.AddItem({title: "Close"}, "close")
