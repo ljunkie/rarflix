@@ -611,8 +611,14 @@ end sub
 sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     ' this should probably just be combined into rfVideoMoreButton  ( there are some caveats though and maybe more to come.. so until this has been finalized )
     dialog = createBaseDialog()
-    dialog.Title = firstof(obj.metadata.showtitle, obj.metadata.umtitle, obj.metadata.umtitle)
-    dialog.Text = firstof(obj.metadata.shortdescriptionline2,  obj.metadata.shortdescriptionline1)
+    if (obj.metadata.type = "season") then 
+        dialog.Title = firstof(obj.metadata.title, obj.metadata.umtitle, obj.metadata.title)
+        dialog.Text = ""
+    else 
+        dialog.Title = firstof(obj.metadata.showtitle, obj.metadata.umtitle, obj.metadata.title)
+        dialog.Text = firstof(obj.metadata.shortdescriptionline2,  obj.metadata.shortdescriptionline1)
+     end if
+
     dialog.Item = obj.metadata
 
     if type(obj.Refresh) <> "Function" then 
