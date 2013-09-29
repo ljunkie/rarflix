@@ -11,6 +11,7 @@ Sub InitRARFlix()
     RegRead("rf_searchtitle", "preferences","title")
     RegRead("rf_rowfilter_limit", "preferences","200") ' no toggle yet
     RegRead("rf_hs_clock", "preferences", "enabled")
+    RegRead("rf_focus_unwatched", "preferences", "enabled")
 
     ' ljunkie Youtube Trailers (extended to TMDB)
     m.youtube = InitYouTube()
@@ -24,6 +25,7 @@ Sub InitRARFlix()
     Debug("rf_tvwatch: " + tostr(RegRead("rf_tvwatch", "preferences")))
     Debug("rf_searchtitle: " + tostr(RegRead("rf_searchtitle", "preferences")))
     Debug("rf_rowfilter_limit: " + tostr(RegRead("rf_rowfilter_limit", "preferences")))
+    Debug("rf_focus_unwatched: " + tostr(RegRead("rf_focus_unwatched", "preferences")))
     Debug("============================================================================")
 
 end sub
@@ -228,6 +230,18 @@ Function createRARFlixPrefsScreen(viewController) As Object
         default: "enabled"
     }
 
+    ' focus to the unwatched item in a postescreen -  maybe others later
+    focus_unwatched = [
+        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "",}
+        { title: "Disabled", EnumValue: "disabled" },
+
+    ]
+    obj.Prefs["rf_focus_unwatched"] = {
+        values: focus_unwatched,
+        heading: "Focus on the first Unwatched item"
+        default: "enabled"
+    }
+
 
     filter_limit = [
         { title: "100", EnumValue: "100" },
@@ -261,6 +275,7 @@ Function createRARFlixPrefsScreen(viewController) As Object
     obj.AddItem({title: "Trailers/Tomatoes Search by", ShortDescriptionLine2: "You probably don't want to change this"}, "rf_searchtitle", obj.GetEnumValue("rf_searchtitle"))
     obj.AddItem({title: "Dynamic Headers", ShortDescriptionLine2: "Info on the top Right of the Screen"}, "rf_bcdynamic", obj.GetEnumValue("rf_bcdynamic"))
     obj.AddItem({title: "TV Show (Watched Status)", ShortDescriptionLine2: "feels good enabled"}, "rf_tvwatch", obj.GetEnumValue("rf_tvwatch"))
+    obj.AddItem({title: "Focus on Unwatched", ShortDescriptionLine2: "Default to the first unwatched item"}, "rf_focus_unwatched", obj.GetEnumValue("rf_focus_unwatched"))
     obj.AddItem({title: "Clock on Home Screen"}, "rf_hs_clock", obj.GetEnumValue("rf_hs_clock"))
     obj.AddItem({title: "Unwatched Added/Released", ShortDescriptionLine2: "Item limit for unwatched Recently Added &" + chr(10) +"Recently Released rows [movies]"}, "rf_rowfilter_limit", obj.GetEnumValue("rf_rowfilter_limit"))
     ' now part of the Hide Rows

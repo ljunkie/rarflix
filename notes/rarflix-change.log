@@ -1,7 +1,8 @@
-
 ### 2.6.13-1  (2013-09-29)
 * Fixed some logic with the Audio Dialog buttons when playing slideshow
 * focus last selection from the Audio Dialog
+* keep the button selected in focus on the SpringBoard screens ( Video Details/ Photo Details/ etc)
+* Focus on the first unwatched item - this can be toggles in rarflix prefs
 
 ### 2.6.13  (2013-09-28)
 * Fixed crash with Cast & Crew from other areas than the Video Details
@@ -9,7 +10,6 @@
 * Updated the Audio Dialog with more information - Artist/Album/Year
 * Show File name in Audio Dialog with playing a slide show
 
-	
 ### 2.6.12-2 (2013-09-27)
 * Complete re-write of adding cutom rows ( currenlty the 2 "unwatched" rows for movies )
 * Re-write of Hiding Rows:

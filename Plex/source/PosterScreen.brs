@@ -253,7 +253,17 @@ Sub posterShowContentList(index)
         end if
     else
         m.Screen.Show()
-        m.Screen.SetFocusedListItem(status.focusedIndex)
+        ' ljunkie - if we have set the prefence to focus on unwatched -- lets do that!
+        if RegRead("rf_focus_unwatched", "preferences", "enabled") = "enabled" then
+            if status.focusedIndex <> invalid and status.focusedIndex = 0 then ' only continue if the first item is 0, otherwise we might of came here with a purpose!
+                for index = 0 to status.content.Count() - 1
+                    if status.content[index].viewcount = invalid then exit for
+                end for
+                m.Screen.SetFocusedListItem(index) ' this will either be the last item of the first unwatched
+            end if
+        else 
+            m.Screen.SetFocusedListItem(status.focusedIndex)
+        end if
     end if
 End Sub
 
