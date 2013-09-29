@@ -13,6 +13,8 @@ Function createBaseSpringboardScreen(context, index, viewController, includePred
     screen = CreateObject("roSpringboardScreen")
     screen.SetMessagePort(obj.Port)
 
+    screen.UseStableFocus(true) ' ljunkie - setting this globally - might want to toggle this or only enable for Video?
+
     ' Filter out anything in the context that can't be shown on a springboard.
     contextCopy = []
     i = 0

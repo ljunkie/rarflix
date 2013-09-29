@@ -1,6 +1,8 @@
 Function createVideoSpringboardScreen(context, index, viewController) As Object
     obj = createBaseSpringboardScreen(context, index, viewController)
 
+    'obj.screen.UseStableFocus(true) ' ljunkie - set this globally instead BaseSpringboardScreen.brs:createBaseSpringboardScreen
+
     ' Our item's content-type affects the poster dimensions here, so treat
     ' clips as episodes.
     if obj.Item.ContentType = "clip" then
