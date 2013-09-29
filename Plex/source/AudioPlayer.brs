@@ -256,6 +256,7 @@ Sub audioPlayerShowContextMenu()
     end if
     dialog.SetButton("stop", "Stop")
 
+
     if m.Context.Count() > 1 then
         dialog.SetButton("next_track", "Next Track")
         dialog.SetButton("prev_track", "Previous Track")
@@ -263,6 +264,11 @@ Sub audioPlayerShowContextMenu()
 
     dialog.SetButton("show", "Go to Now Playing")
     dialog.SetButton("close", "Close")
+
+    if m.slideshow <> invalid then
+        dialog.FocusedButton = 1
+        'dialog.SetFocusedMenuItem(1)
+    end if
 
     dialog.HandleButton = audioPlayerMenuHandleButton
     dialog.ParentScreen = m

@@ -53,6 +53,12 @@ Sub dialogRefresh()
         overlay = false
     end if
 
+   print "woooooooooooooooooohoooooooooooooooooooooooooooo"
+   print "woooooooooooooooooohoooooooooooooooooooooooooooo"
+   print "woooooooooooooooooohoooooooooooooooooooooooooooo"
+
+
+
     m.Screen = CreateObject("roMessageDialog")
     m.Screen.SetMessagePort(m.Port)
     m.Screen.SetMenuTopLeft(true)
@@ -78,6 +84,11 @@ Sub dialogRefresh()
         end if
         buttonCount = buttonCount + 1
     next
+
+    m.Screen.SetFocusedMenuItem(1)
+    if m.FocusedButton <> invalid then
+        m.Screen.SetFocusedMenuItem(1)
+    end if
 
     m.Screen.Show()
 End Sub
