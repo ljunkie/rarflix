@@ -31,6 +31,9 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
         screen.SetNext(0, true)
     end if
 
+    obj.IsPaused = false
+    m.ViewController.AudioPlayer.focusedbutton = 0
+
     obj.HandleMessage = photoPlayerHandleMessage
 
     obj.playbackTimer = createTimer()
@@ -63,8 +66,10 @@ Function photoPlayerHandleMessage(msg) As Boolean
             Debug("preload interrupted: " + tostr(msg.GetIndex()))
         else if msg.isPaused() then
             Debug("paused")
+            m.isPaused = true
         else if msg.isResumed() then
             Debug("resumed")
+            m.isPaused = false
         else if msg.isRemoteKeyPressed() then
             if msg.GetIndex() = 3 then
                 ' this needs work -- but the options button (*) now works to show the title.. so maybe another day

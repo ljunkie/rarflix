@@ -242,20 +242,41 @@ Sub audioPlayerShowContextMenu()
       m.slideshow = m.viewcontroller.screens[count]
       if type(m.slideshow.CurIndex) = "roInteger" and type(m.slideshow.items) = "roArray" then  ' ljunkie - show the photo title a slide show is in progress
           dialog.Text = dialog.Text + chr(10) + " Photo: " + m.slideshow.items[m.slideshow.CurIndex].textoverlayul
+          if m.slideshow.isPaused = invalid then m.slideshow.isPaused = false
       end if 
     end if 
 
-    if m.IsPlaying then
-        dialog.SetButton("pause", "Pause")
-        if m.slideshow <> invalid then dialog.SetButton("pauseAll", "Pause All")
-    else if m.IsPaused then
-        dialog.SetButton("resume", "Resume")
-        if m.slideshow <> invalid then dialog.SetButton("resumeAll", "Resume All")
-    else
-        dialog.SetButton("play", "Play")
-    end if
-    dialog.SetButton("stop", "Stop")
+    if m.focusedbutton = invalid then m.focusedbutton = 0 
+    focusbutton = m.focusedbutton
+    append = ""
 
+    ' slide shows get more buttons
+    if m.slideshow <> invalid
+        append = " Audio"
+        variable = 0 ' variable buttongs.. we might have to +1 our focusedButton - logic will break if we add more buttons, so keep note of that
+        if m.slideshow.isPaused or m.isPaused then
+            dialog.SetButton("resumeAll", "Resume All")
+            variable = variable +1
+        end if
+        if NOT m.slideshow.isPaused or m.isPlaying then 
+            dialog.SetButton("pauseAll", "Pause All")
+            variable = variable +1
+        end if
+        if variable = 2 then focusbutton = focusbutton + 1
+    end if
+
+    if m.IsPlaying then
+        dialog.SetButton("pause", "Pause" + append)
+    else if m.IsPaused then
+        dialog.SetButton("resume", "Resume" + append)
+    else
+        dialog.SetButton("play", "Play" + append)
+    end if
+
+
+    if m.IsPlaying or m.IsPaused then ' only show if paused of playing
+        dialog.SetButton("stop", "Stop" + append)
+    end if 
 
     if m.Context.Count() > 1 then
         dialog.SetButton("next_track", "Next Track")
@@ -265,12 +286,25 @@ Sub audioPlayerShowContextMenu()
     dialog.SetButton("show", "Go to Now Playing")
     dialog.SetButton("close", "Close")
 
-    if m.slideshow <> invalid then
-        dialog.FocusedButton = 1
-        'dialog.SetFocusedMenuItem(1)
+    ' ljunkie - focus to last set button ( logic needs clean up now that set set the dialog.FocusedButton after)
+    if m.IsPlaying or m.IsPaused then ' set focus only it playing or paused - otherwsie it should just be play
+        'dialog.FocusedButton = focusbutton
+    else if NOT m.IsPlaying and NOT m.IsPaused then
+        if m.slideshow <> invalid then ' if slideshow ( audio not playing or paused ) set to resume audio
+            focusbutton = 1 
+            Debug("not playing/paused - with slideshow: setting focused button to 1")
+        else 
+            focusbutton = 0 ' Play Audio 
+            Debug("not playing/paused: setting focused button to 0")
+        end if
+    else 
+        Debug("NO match - setting focus to 0")
+        focusbutton = 0 ' Play Audio
     end if
 
+    dialog.FocusedButton = focusbutton
     dialog.HandleButton = audioPlayerMenuHandleButton
+    dialog.SetFocusButton = dialogSetFocusButton
     dialog.ParentScreen = m
     dialog.Show()
 End Sub
@@ -281,19 +315,29 @@ Function audioPlayerMenuHandleButton(command, data) As Boolean
     obj = m.ParentScreen
 
     if command = "play" then
+        obj.focusedbutton = 0 
         obj.Play()
     else if command = "pause" then
         obj.Pause()
     else if command = "pauseAll" then
+        obj.focusedbutton = 0 
         ' we only get here if we know we are playing a slideshow too
         obj.slideshow.screen.Pause()
+        obj.slideshow.isPaused = true
         obj.Pause()
     else if command = "resume" then
+        obj.focusedbutton = 0 
         obj.Resume()
     else if command = "resumeAll" then
+        obj.focusedbutton = 0
         ' we only get here if we know we are playing a slideshow too
         obj.slideshow.screen.Resume()
-        obj.Resume()
+        obj.slideshow.isPaused = false
+        if obj.ispaused then 
+            obj.Resume()
+        else if NOT obj.isplaying then 
+            obj.Play()
+        end if 
     else if command = "stop" then
         obj.Stop()
     else if command = "next_track" then
@@ -301,11 +345,14 @@ Function audioPlayerMenuHandleButton(command, data) As Boolean
     else if command = "prev_track" then
         obj.Prev()
     else if command = "show" then
+        obj.focusedbutton = 0
+
         dummyItem = CreateObject("roAssociativeArray")
         dummyItem.ContentType = "audio"
         dummyItem.Key = "nowplaying"
         obj.ViewController.CreateScreenForItem(dummyItem, invalid, ["Now Playing"])
     else if command = "close" then
+        obj.focusedbutton = 0 
         return true
     end if
 

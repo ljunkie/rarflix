@@ -15,6 +15,7 @@ Function createBaseDialog() As Object
     obj.Facade = invalid
     obj.Buttons = []
     obj.HandleButton = invalid
+    obj.SetFocusButton = invalid
     obj.Title = invalid
     obj.Text = invalid
     obj.Item = invalid
@@ -53,12 +54,6 @@ Sub dialogRefresh()
         overlay = false
     end if
 
-   print "woooooooooooooooooohoooooooooooooooooooooooooooo"
-   print "woooooooooooooooooohoooooooooooooooooooooooooooo"
-   print "woooooooooooooooooohoooooooooooooooooooooooooooo"
-
-
-
     m.Screen = CreateObject("roMessageDialog")
     m.Screen.SetMessagePort(m.Port)
     m.Screen.SetMenuTopLeft(true)
@@ -85,9 +80,9 @@ Sub dialogRefresh()
         buttonCount = buttonCount + 1
     next
 
-    m.Screen.SetFocusedMenuItem(1)
+    ' ljunkie - allow us to focus on a specific button
     if m.FocusedButton <> invalid then
-        m.Screen.SetFocusedMenuItem(1)
+        m.Screen.SetFocusedMenuItem(m.FocusedButton)
     end if
 
     m.Screen.Show()
@@ -140,6 +135,11 @@ Function dialogHandleMessage(msg) As Boolean
             command = m.ButtonCommands[msg.getIndex()]
             Debug("Button pressed: " + tostr(command))
             done = true
+            ' ljunkie - if screen has a SetFocusButton function call it before the normal handle buttom; dialog.SetFocusButton = dialogSetFocusButton
+            if m.SetFocusButton <> invalid then 
+                m.SetFocusButton(msg.getIndex())
+            end if 
+            ' ljunkie - we can not override the *.FocusedButton in the HandleButton if needed
             if m.HandleButton <> invalid then
                 done = m.HandleButton(command, msg.getData())
             end if
@@ -217,4 +217,9 @@ Function popupHandleButton(key, data) As Boolean
 
     return true
 End Function
+
+Function dialogSetFocusButton(index) As Boolean
+    obj = m.ParentScreen
+    obj.FocusedButton = index
+end function
 
