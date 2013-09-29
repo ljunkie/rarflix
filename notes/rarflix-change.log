@@ -1,4 +1,15 @@
 
+### 2.6.13-1  (2013-09-29)
+* Fixed some logic with the Audio Dialog buttons when playing slideshow
+* focus last selection from the Audio Dialog
+
+### 2.6.13  (2013-09-28)
+* Fixed crash with Cast & Crew from other areas than the Video Details
+* Added Pause All/Resume All on Audio Dialog with Playing a slideshow
+* Updated the Audio Dialog with more information - Artist/Album/Year
+* Show File name in Audio Dialog with playing a slide show
+
+	
 ### 2.6.12-2 (2013-09-27)
 * Complete re-write of adding cutom rows ( currenlty the 2 "unwatched" rows for movies )
 * Re-write of Hiding Rows:
