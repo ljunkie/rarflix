@@ -1,7 +1,7 @@
 ' other functions required for my mods
 Sub InitRARFlix() 
     'RegDelete("rf_unwatched_limit", "preferences")
-   RegDelete("rf_user_rating_only", "preferences")
+    'RegDelete("rf_user_rating_only", "preferences")
  
     RegRead("rf_bcdynamic", "preferences","enabled")
     RegRead("rf_rottentomatoes", "preferences","enabled")
