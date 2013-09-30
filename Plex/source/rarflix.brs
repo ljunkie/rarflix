@@ -814,6 +814,7 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
 
     if obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "episode" or obj.metadata.ContentType = "show"  then
         if obj.Item.StarRating = invalid then obj.Item.StarRating = 0
+        if obj.Item.origStarRating = invalid then obj.Item.origStarRating = 0
         dialog.SetButton("rate", "_rate_")
     end if
 
