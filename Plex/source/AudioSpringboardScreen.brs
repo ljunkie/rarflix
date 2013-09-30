@@ -82,6 +82,9 @@ Sub audioSetupButtons()
     if m.metadata.StarRating = invalid then
         m.metadata.StarRating = 0
     endif
+    if m.metadata.origStarRating = invalid then
+        m.metadata.origStarRating = 0
+    endif
 
     m.AddButton("more...", "more")
 End Sub

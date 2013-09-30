@@ -198,13 +198,24 @@ Sub setVideoBasics(video, container, item)
 
     video.Rating = firstOf(item@contentRating, container.xml@grandparentContentRating)
     rating = item@rating
+    ropt = RegRead("rf_user_rating_only", "preferences","user_prefer") ' ljunkie - how should we display user/default star ratings
+
     if rating <> invalid then
-        video.StarRating = int(val(rating)*10)
+        if ropt = "disabled" or ropt = "user_prefer" then
+            video.origStarRating = int(val(rating)*10) ' base line for user rating
+            video.StarRating = int(val(rating)*10) ' set star rating if user_rating_only is disabled
+        else 
+            video.origStarRating = int(0)
+        end if 
     endif
 
     userRating = item@userRating
     if userRating <> invalid then
 	video.UserRating =  int(val(userRating)*10)
+        ' if prefer user rating OR we ONLY show user ratings, then override the starRating if it exists
+        if ropt = "user_prefer" or ropt = "user_only" then
+            video.StarRating =  int(val(userRating)*10)
+        end if
     else
 	video.UserRating =  0
     endif

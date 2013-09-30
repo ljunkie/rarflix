@@ -17,6 +17,10 @@ End Function
 Sub photoSetupButtons()
     m.ClearButtons()
 
+   if m.metadata.starrating = invalid then 'ljunkie - don't show starts if invalid
+        m.Screen.SetStaticRatingEnabled(false)
+   end if
+
     m.AddButton("Show", "show")
     m.AddButton("Slideshow", "slideshow")
     m.AddButton("Next Photo", "next")
@@ -28,12 +32,15 @@ Sub photoSetupButtons()
     if m.metadata.StarRating = invalid then
         m.metadata.StarRating = 0
     endif
+    if m.metadata.origStarRating = invalid then
+        m.metadata.origStarRating = 0
+    endif
 
     ' When delete is present, put delete and rate in a separate dialog.
     if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
         m.AddButton("More...", "more")
     else
-        m.AddRatingButton(m.metadata.UserRating, m.metadata.StarRating, "ratePhoto")
+        m.AddRatingButton(m.metadata.UserRating, m.metadata.origStarRating, "ratePhoto")
     end if
 End Sub
 

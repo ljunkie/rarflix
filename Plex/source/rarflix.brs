@@ -1,7 +1,7 @@
 ' other functions required for my mods
 Sub InitRARFlix() 
     'RegDelete("rf_unwatched_limit", "preferences")
-    'RegDelete("rf_uw_movie_rows", "preferences")
+   RegDelete("rf_user_rating_only", "preferences")
  
     RegRead("rf_bcdynamic", "preferences","enabled")
     RegRead("rf_rottentomatoes", "preferences","enabled")
@@ -12,6 +12,7 @@ Sub InitRARFlix()
     RegRead("rf_rowfilter_limit", "preferences","200") ' no toggle yet
     RegRead("rf_hs_clock", "preferences", "enabled")
     RegRead("rf_focus_unwatched", "preferences", "enabled")
+    RegRead("rf_user_rating_only", "preferences", "user_prefer") ' this will show the original star rating as the users if it exists. seems safe to set at first
 
     ' ljunkie Youtube Trailers (extended to TMDB)
     m.youtube = InitYouTube()
@@ -26,6 +27,7 @@ Sub InitRARFlix()
     Debug("rf_searchtitle: " + tostr(RegRead("rf_searchtitle", "preferences")))
     Debug("rf_rowfilter_limit: " + tostr(RegRead("rf_rowfilter_limit", "preferences")))
     Debug("rf_focus_unwatched: " + tostr(RegRead("rf_focus_unwatched", "preferences")))
+    Debug("rf_user_rating_only: " + tostr(RegRead("rf_user_rating_only", "preferences")))
     Debug("============================================================================")
 
 end sub
@@ -243,6 +245,20 @@ Function createRARFlixPrefsScreen(viewController) As Object
     }
 
 
+    ' user ratings only
+    user_ratings = [
+        { title: "Only Your Ratings", EnumValue: "user_only", ShortDescriptionLine2: "Display your Star Ratings Only",}
+        { title: "Prefer Your Ratings", EnumValue: "user_prefer", ShortDescriptionLine2: "Prefer your Ratings over the Default",}
+        { title: "Default", EnumValue: "disabled" },
+
+    ]
+    obj.Prefs["rf_user_rating_only"] = {
+        values: user_ratings,
+        heading: "Only show or Prefer your Star Ratings"
+        default: "disabled"
+    }
+
+
     filter_limit = [
         { title: "100", EnumValue: "100" },
         { title: "200", EnumValue: "200" },
@@ -278,6 +294,7 @@ Function createRARFlixPrefsScreen(viewController) As Object
     obj.AddItem({title: "Focus on Unwatched", ShortDescriptionLine2: "Default to the first unwatched item"}, "rf_focus_unwatched", obj.GetEnumValue("rf_focus_unwatched"))
     obj.AddItem({title: "Clock on Home Screen"}, "rf_hs_clock", obj.GetEnumValue("rf_hs_clock"))
     obj.AddItem({title: "Unwatched Added/Released", ShortDescriptionLine2: "Item limit for unwatched Recently Added &" + chr(10) +"Recently Released rows [movies]"}, "rf_rowfilter_limit", obj.GetEnumValue("rf_rowfilter_limit"))
+    obj.AddItem({title: "Star Ratings Override", ShortDescriptionLine2: "Only show or Prefer"+chr(10)+"Star Ratings that you have set"}, "rf_user_rating_only", obj.GetEnumValue("rf_user_rating_only"))
     ' now part of the Hide Rows
     ' obj.AddItem({title: "Unwatched Movie Rows"}, "rf_uw_movie_rows", obj.GetEnumValue("rf_uw_movie_rows"))
 

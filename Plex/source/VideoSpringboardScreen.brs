@@ -36,6 +36,11 @@ End Function
 Sub videoSetupButtons()
     m.ClearButtons()
 
+   if m.metadata.starrating = invalid then 'ljunkie - don't show starts if invalid
+        m.Screen.SetStaticRatingEnabled(false)
+   end if
+
+
     m.AddButton(m.PlayButtonStates[m.PlayButtonState].label, "play")
     Debug("Media = " + tostr(m.media))
     Debug("Can direct play = " + tostr(videoCanDirectPlay(m.media)))
@@ -81,6 +86,9 @@ Sub videoSetupButtons()
             m.metadata.StarRating = 0
         endif
 
+       print m.metadata.UserRating
+       print m.metadata.StarRating
+
         ' Rotten Tomatoes ratings, if enabled
         if m.metadata.ContentType = "movie" AND RegRead("rf_rottentomatoes", "preferences", "enabled") = "enabled" then 
             tomatoData = m.metadata.tomatoData
@@ -122,16 +130,16 @@ Sub videoSetupButtons()
               end if
           end if
 
+        ' Show rating bar if the content is a show or an episode - we might want this to be the delete button. We will see
+          if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode" or RegRead("rf_rottentomatoes", "preferences", "enabled") = "disabled" then
+               m.AddRatingButton(m.metadata.UserRating, m.metadata.origStarRating, "rateVideo")
+	  end if
+
 	' more buttong if TV SHOW ( only if grandparent key is available,stops loops) OR if this is Movie
 	  if m.metadata.grandparentKey <> invalid  then
               m.AddButton("More...", "more")
 	  else if m.metadata.ContentType = "movie" then
               m.AddButton("Cast, Rate & More...", "more")
-	  end if
-
-        ' Show rating bar if the content is a show or an episode - we might want this to be the delete button. We will see
-          if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
-               m.AddRatingButton(m.metadata.UserRating, m.metadata.StarRating, "rateVideo")
 	  end if
 
     end if
