@@ -1,3 +1,8 @@
+### 2.6.13-2  (2013-09-29) - to update on forums
+* Toggle to Prefer user Ratings over Default, only show user ratings or just use the Original Default
+* Music ratings are now displayed correctly
+
+
 ### 2.6.13-1  (2013-09-29)
 * Fixed some logic with the Audio Dialog buttons when playing slideshow
 * focus last selection from the Audio Dialog
