@@ -47,6 +47,22 @@ Function newAlbumMetadata(container, item, detailed=true) As Object
     album.Album = firstOf(item@title, item@album)
     album.ReleaseDate = firstOf(item@originallyAvailableAt, item@year)
 
+    epoch = item@addedAt
+    if epoch <> invalid then 
+        date = CreateObject("roDateTime")
+        date.FromSeconds(epoch.toInt())
+        date.ToLocalTime()
+        album.AddDate = date.AsDateString("short-month-short-weekday")
+	print type(album.ReleaseDate)
+	print type(album.AddDate)
+        if album.ReleaseDate <> invalid then 
+            album.ReleaseDate = "Released: " + album.ReleaseDate + chr(10) + "    Added: " + album.AddDate
+        else 
+	    print container.sourceurl
+            album.ReleaseDate = "Added: " + album.AddDate
+        end if
+    end if
+
     if album.Title = invalid then
         album.Title = album.Album
         album.ShortDescriptionLine1 = album.Title
