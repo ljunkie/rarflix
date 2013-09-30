@@ -85,9 +85,9 @@ Sub videoSetupButtons()
         if m.metadata.StarRating = invalid then
             m.metadata.StarRating = 0
         endif
-
-       print m.metadata.UserRating
-       print m.metadata.StarRating
+        if m.metadata.origStarRating = invalid then
+            m.metadata.origStarRating = 0
+        endif
 
         ' Rotten Tomatoes ratings, if enabled
         if m.metadata.ContentType = "movie" AND RegRead("rf_rottentomatoes", "preferences", "enabled") = "enabled" then 

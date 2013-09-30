@@ -205,7 +205,7 @@ Sub setVideoBasics(video, container, item)
             video.origStarRating = int(val(rating)*10) ' base line for user rating
             video.StarRating = int(val(rating)*10) ' set star rating if user_rating_only is disabled
         else 
-            video.origStarRating = int(0)
+            video.origStarRating = 0
         end if 
     endif
 

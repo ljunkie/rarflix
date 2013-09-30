@@ -73,6 +73,8 @@ Sub dialogRefresh()
         cmd = button.Next()
         m.ButtonCommands[buttonCount] = cmd
         if button[cmd] = "_rate_" then
+	    if m.Item.UserRating = invalid then m.Item.origStarRating = 0
+            if m.Item.origStarRating = invalid then m.Item.origStarRating = 0
             m.Screen.AddRatingButton(buttonCount, m.Item.UserRating, m.Item.origStarRating, "")
         else
             m.Screen.AddButton(buttonCount, button[cmd])

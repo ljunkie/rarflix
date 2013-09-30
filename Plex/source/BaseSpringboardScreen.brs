@@ -266,6 +266,8 @@ Sub sbAddButton(label, command)
 End Sub
 
 Sub sbAddRatingButton(userRating, rating, command)
+    if userRating = invalid then userRating = 0
+    if rating = invalid then rating = 0
     m.Screen.AddRatingButton(m.buttonCount, userRating, rating)
     m.buttonCommands[str(m.buttonCount)] = command
     m.buttonCount = m.buttonCount + 1

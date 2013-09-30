@@ -12,9 +12,8 @@ Function createBasePhotoMetadata(container, item) As Object
     if userRating <> invalid then
 	metadata.UserRating =  int(val(userRating)*10)
         ' if prefer user rating OR we ONLY show user ratings, then override the starRating if it exists (isn't need for photos yet)
-        ' if ropt = "user_prefer" or ropt = "user_only" then
+        ' refer to VideoMetadata if these defaults ever change
             metadata.StarRating =  int(val(userRating)*10)
-        ' end if
     else
 	metadata.UserRating =  0
     end if
