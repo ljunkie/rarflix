@@ -365,13 +365,44 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
     ' Prompt about resuming if there's an offset and the caller didn't specify a seek value.
     if seekValue = invalid then
         if metadata.viewOffset <> invalid then
+            ' check to see if this is from the /status/session source -- if so we are trying to resume with someone else ( so let's get new data )
+            
             offsetSeconds = fix(val(metadata.viewOffset)/1000)
+
+            ' ljunkie - resume video from Now Playing? we should set metadata in VideoMetatdata to more useful info TODO
+            re = CreateObject("roRegex", "/status/session", "i")
+            resume_with_user = invalid
+	    if re.IsMatch(metadata.sourceurl) then
+                resume_with_user = 1
+            end if 
 
             dlg = createBaseDialog()
             dlg.Title = "Play Video"
-            dlg.SetButton("resume", "Resume from " + TimeDisplay(offsetSeconds))
+
+            if resume_with_user = invalid then 
+                dlg.SetButton("resume", "Resume from " + TimeDisplay(offsetSeconds) + extra)
+            else 
+                dlg.SetButton("resume", "Sync Video with User")
+            end if
+
             dlg.SetButton("play", "Play from beginning")
             dlg.Show(true)
+
+
+            if resume_with_user <> invalid
+                container = createPlexContainerForUrl(metadata.server, metadata.sourceurl, "")
+                keys = container.getkeys()
+                for index = 0 to keys.Count() - 1
+                    print "searching for key " + metadata.key ' NEED to verify it's the same user too -- we might have the same video playing
+                    if keys[index] = metadata.key then 
+		        Debug( "----- original offset " + metadata.viewOffset)
+                        metadata = container.metadata[index]
+                        metadata.viewOffset = tostr(metadata.viewOffset.toint() + int(10000)) ' just best guess. add on a few seconds since it takes time to buffer
+		        Debug( "----- new offset " + metadata.viewOffset) + "(added a few seconds for buffer start)")
+                        exit for
+                    end if
+                end for
+            end if
 
             if dlg.Result = invalid then return invalid
             if dlg.Result = "resume" then
