@@ -323,7 +323,7 @@ Function videoPlayerHandleMessage(msg) As Boolean
                 if m.VideoItem.Duration > 0 then
                     duration = int(m.VideoItem.Duration/1000)
                     timeLeft = int(Duration - msg.GetIndex())
-                    endString = "End Time: " + RRmktime(date.AsSeconds()+timeLeft) + "     (" + GetDurationString(timeLeft,0,1,1) + ")" 'always show min/secs
+                    endString = "End Time: " + RRmktime(date.AsSeconds()+timeLeft) + "  (" + GetDurationString(timeLeft,0,1,1) + ")" + "  Watched: " + GetDurationString(int(msg.GetIndex()))                    
                 else
                     ' include current time and watched time when video duration is unavailable (HLS & web videos)
                     watchedString = "Time: " + RRmktime(date.AsSeconds()) + "     Watched: " + GetDurationString(int(msg.GetIndex()))                    
