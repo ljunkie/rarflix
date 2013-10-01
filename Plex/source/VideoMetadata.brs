@@ -223,8 +223,13 @@ Sub setVideoBasics(video, container, item)
 
 
     if item.user@id <> invalid then 
+        ' save any variables we change for later
+        video.nowPlaying_orig_title = video.title
+        video.nowPlaying_orig_description = video.description
         video.description = "Progress: " + GetDurationString(int(video.viewoffset.toint()/1000)) + " on " + firstof(item.Player@title, item.Player@platform)
-        video.title = UcaseFirst(item.user@title,true) + " " + UcaseFirst(item.Player@state) + ": "  + video.umtitle
+        video.title = UcaseFirst(item.user@title,true) + " " + UcaseFirst(item.Player@state) + ": "  + video.CleanTitle
+        ' set nowPlaying info for later
+        video.nowPlaying_maid = item.Player@machineIdentifier ' use to verify the stream we are syncing is the same
         video.nowPlaying_user = item.user@title
         video.nowPlaying_state = item.Player@state
         video.nowPlaying_platform = item.Player@platform

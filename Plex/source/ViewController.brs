@@ -370,10 +370,14 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
             offsetSeconds = fix(val(metadata.viewOffset)/1000)
 
             ' ljunkie - resume video from Now Playing? we should set metadata in VideoMetatdata to more useful info TODO
-            re = CreateObject("roRegex", "/status/session", "i")
+            ' re = CreateObject("roRegex", "/status/session", "i")
+	    ' if re.IsMatch(metadata.sourceurl) then
+
             resume_with_user = invalid
-	    if re.IsMatch(metadata.sourceurl) then
+            if metadata.nowPlaying_maid <> invalid then 
                 resume_with_user = 1
+            else 
+                stop
             end if 
 
             dlg = createBaseDialog()
@@ -382,19 +386,24 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
             if resume_with_user = invalid then 
                 dlg.SetButton("resume", "Resume from " + TimeDisplay(offsetSeconds) + extra)
             else 
-                dlg.SetButton("resume", "Sync Video with User")
+                user = "User"
+                if metadata.nowPlaying_user <> invalid then user = UCasefirst(metadata.nowPlaying_user,true)
+                dlg.SetButton("resume", "Sync Video with " + user)
             end if
 
             dlg.SetButton("play", "Play from beginning")
             dlg.Show(true)
 
 
-            if resume_with_user <> invalid
+            if resume_with_user <> invalid and dlg.Result = "resume" ' 
                 container = createPlexContainerForUrl(metadata.server, metadata.sourceurl, "")
                 keys = container.getkeys()
+                found = invalid
                 for index = 0 to keys.Count() - 1
-                    print "searching for key " + metadata.key ' NEED to verify it's the same user too -- we might have the same video playing
-                    if keys[index] = metadata.key then 
+                    print "Searching for key:" + metadata.key + " and machineID:" + metadata.nowPlaying_maid ' verify same machineID to sync (multiple people can be streaming same content)
+                    if keys[index] = metadata.key and container.xml.Video[index].Player@machineIdentifier = metadata.nowPlaying_maid then 
+                        Debug("---- Sync Playback found: key:" + metadata.key + ", machineID:" + metadata.nowPlaying_maid + " @ " + metadata.sourceurl)
+                        found = true
 		        Debug("----- original offset " + metadata.viewOffset)
                         metadata = container.metadata[index]
                         metadata.viewOffset = tostr(metadata.viewOffset.toint() + int(10000)) ' just best guess. add on a few seconds since it takes time to buffer
@@ -402,9 +411,18 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
                         exit for
                     end if
                 end for
+                ' let's verify we actually found a match - otherwise we will be playing an offset that doesn't even matter
+                if found = invalid then
+                    Debug("---- Sync Playback failed: key:" + metadata.key + ", machineID:" + metadata.nowPlaying_maid + " DO not exist @ " + metadata.sourceurl)
+                    dlg = createBaseDialog()
+                    dlg.Title = "Sorry... Cannot Sync Playback"
+                    dlg.text = "The user has stopped playing the content" + chr(10)
+                    dlg.SetButton("invalid", "close")
+                    dlg.Show(true)
+                end if
             end if
 
-            if dlg.Result = invalid then return invalid
+            if dlg.Result = invalid or dlg.Result = "invalid" then return invalid
             if dlg.Result = "resume" then
                 seekValue = int(val(metadata.viewOffset))
             else
