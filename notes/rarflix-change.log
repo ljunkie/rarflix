@@ -1,21 +1,30 @@
-### 2.6.13-2  (2013-09-29) - to update on forums
+### v2.6.13 (2013-10-01) Final Release
+
+### 2.6.13-test-2  (2013-09-29) - to update on forums
+* Photo Section: default to landscape instead of portrait (movie posters)
+* Photo Sectino: use Photo-Fit
+* Toggle for the UP Button behavious. What to do when you hit up on the top row ( only works on screens with rows )
+* Include the watched time on the HUD
+
+### 2.6.13-test-2  (2013-09-29) - to update on forums
 * Toggle to Prefer user Ratings over Default, only show user ratings or just use the Original Default
 * Music ratings are now displayed correctly
+* Include Date Added for music
 
 
-### 2.6.13-1  (2013-09-29)
+### 2.6.13-test-1  (2013-09-29)
 * Fixed some logic with the Audio Dialog buttons when playing slideshow
 * focus last selection from the Audio Dialog
 * keep the button selected in focus on the SpringBoard screens ( Video Details/ Photo Details/ etc)
 * Focus on the first unwatched item - this can be toggles in rarflix prefs
 
-### 2.6.13  (2013-09-28)
+### 2.6.13-test  (2013-09-28)
 * Fixed crash with Cast & Crew from other areas than the Video Details
 * Added Pause All/Resume All on Audio Dialog with Playing a slideshow
 * Updated the Audio Dialog with more information - Artist/Album/Year
 * Show File name in Audio Dialog with playing a slide show
 
-### 2.6.12-2 (2013-09-27)
+### 2.6.12-test-2 (2013-09-27)
 * Complete re-write of adding cutom rows ( currenlty the 2 "unwatched" rows for movies )
 * Re-write of Hiding Rows:
     - One can hide Recently Added, Recently Released/Aired rows per section type [movie,show,music]
@@ -23,7 +32,7 @@
     - toggle to change limit in rarflix prefs
 * other misc cleanup
 
-### 2.6.12-1 (2013-09-26)
+### 2.6.12-test-1 (2013-09-26)
 * (*) other items not handled, having their own specific dialog for the info key will bring up the Main Preferences screen
 
 * (*) "Info Button" added to other areas ( movie or tv types )
@@ -34,13 +43,13 @@
 * Toggle for Critics/Audience Score: also display a * on the rating if the score used is not the preferred rating
 
 
-### 2.6.12 (2013-09-25)
+### 2.6.12-test (2013-09-25)
 
 * Update breadcrumb on the Global (home screen) Recently Added content.
 
 * (*) "Info Button" now works in Video Details Screen
     - It will activate the "more..." button dialog
-    - In the dialog, the (*) will close dialog
+     - In the dialog, the (*) will close dialog
     - Initial addition, so let me know your thoughts
 
 * Cast and Crew for Movies: Check out the MORE button / "Cast & Crew"
@@ -71,7 +80,7 @@
 * Fix: Depending on how one entered a TV Episode, the more button wouldn't exist due to data missing from the PMS response. We now obtain the needed info another way when missing.
 
 
-### 2.6.11
+### 2.6.11-test
 
 * RARflix Preferences section: my mods that haven't made it into the Official Channel will usually be here
 * Hide Rows: you can now hide rows instead of reordering them, which you can still do too. ( not per section though )
@@ -94,6 +103,9 @@
 * fix: Crash when clicking the play button on a Photo folder (bug was only present in rarflixtest)
 
 
+
+### 2.6.9 Initial RARflix Version Release
+* changes in the forums.. to add later
 
 NOTES: 
  * breadcrumbs: the TOP Right area of the screen, says something like "Movies * Recently Added"
