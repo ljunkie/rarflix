@@ -53,8 +53,6 @@ Function newAlbumMetadata(container, item, detailed=true) As Object
         date.FromSeconds(epoch.toInt())
         date.ToLocalTime()
         album.AddDate = date.AsDateString("short-month-short-weekday")
-	print type(album.ReleaseDate)
-	print type(album.AddDate)
         if album.ReleaseDate <> invalid then 
             album.ReleaseDate = "Released: " + album.ReleaseDate + chr(10) + "    Added: " + album.AddDate
         else 
