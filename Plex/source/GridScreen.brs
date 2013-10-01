@@ -5,6 +5,10 @@
 Function createGridScreen(viewController, style="flat-movie", upBehavior="exit") As Object
     Debug("######## Creating Grid Screen ########")
 
+    if upBehavior <> "stop" then ' allow us to force a stop
+        upBehavior = RegRead("rf_up_behavior", "preferences", "exit")
+    end if
+
     setGridTheme(style)
 
     screen = CreateObject("roAssociativeArray")
@@ -16,7 +20,7 @@ Function createGridScreen(viewController, style="flat-movie", upBehavior="exit")
 
     ' If we don't know exactly what we're displaying, scale-to-fit looks the
     ' best. Anything else makes something look horrible when the grid has
-    ' some combination of posters and video frames.
+    ' some combination of posters and video frames. 
     grid.SetDisplayMode("scale-to-fit")
     grid.SetGridStyle(style)
     grid.SetUpBehaviorAtTopRow(upBehavior)
@@ -54,8 +58,8 @@ Function createGridScreenForItem(item, viewController, style) As Object
 
     container = createPlexContainerForUrl(item.server, item.sourceUrl, item.key)
     container.SeparateSearchItems = true
-    ' ljunkie -- testing lazy load (TODO)
-    obj.Loader = createPaginatedLoader(container, 8, 75)
+    ' ljunkie -- pass item to paginated loader
+    obj.Loader = createPaginatedLoader(container, 8, 75, item)
     obj.Loader.Listener = obj
 
     ' Don't play theme music on top of grid screens on the older Roku models.
@@ -81,7 +85,7 @@ Function showGridScreen() As Integer
         dialog = createBaseDialog()
         dialog.Facade = facade
         dialog.Title = "Content Unavailable"
-        dialog.Text = "An error occurred while trying to load this content, make sure the server is running."
+        dialog.Text = "An error occurred while trying to load this content, make sure the server is running (did you hide all the rows?)."
         dialog.Show()
 
         m.popOnActivate = true
@@ -142,6 +146,9 @@ Function gridHandleMessage(msg) As Boolean
             if item <> invalid then
                 if item.ContentType = "series" then
                     breadcrumbs = [item.Title]
+                ' ljunkie - removed for now - it's not used - override in videoGetMediaDetails() when dynamic breadcrumbs are enabled
+                ' else if item.ContentType = "episode" then
+                '     breadcrumbs = [item.ShowTitle, item.episodestr, ""]
                 else if item.ContentType = "section" then
                     breadcrumbs = [item.server.name, item.Title]
                 else
@@ -178,6 +185,50 @@ Function gridHandleMessage(msg) As Boolean
 
                 m.Loader.LoadMoreContent(m.selectedRow, 2)
             end if
+        else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then ' ljunkie - use * for more options on focused item
+                'print "* butting pressed"
+                context = m.contentArray[m.selectedRow]
+                itype = context[m.focusedIndex].contenttype
+                if itype = invalid then itype = context[m.focusedIndex].type
+                audioplayer = GetViewController().AudioPlayer
+
+                ' some crazy logic here.. to clean up
+                ' if audio is playing or paused -- DO not show the dialog or new screen - audio dialog will come up
+                ' if audio is NOT playing or paused -- ONLY show the dialog or new screen if the section is HOME, movie or show as that's all we handle for now
+                ' also verify audioplayer.context -- this means there is actually context to play - otherwise it might just be theme music
+                sn = m.screenname
+                if  audioplayer.ispaused or audioplayer.isplaying and audioplayer.context <> invalid
+                    print audioplayer
+                    'print audioplayer.context[0]
+                    debug("---- skipping Remote Info Key -- audio is playing/paused")
+                else if  audioplayer.ContextScreenID <> invalid and sn <> "Home" and sn <> "Section: movie" and sn <> "Section: show" then 
+                    print audioplayer
+                    'print audioplayer.context[0]
+                    debug("---- skipping Remote Info Key -- audio has context and screen is not HOME, Movie or Show")
+                else
+                    if type(audioplayer.context) = "roArray"  then 
+                        debug("---- Audio Player has context - but it's ok to show the Dialog")
+                        print audioplayer
+                        'print audioplayer.context[0]
+                    end if 
+                    if tostr(itype) <> "invalid" and (itype = "movie"  or itype = "show" or itype = "episode" or itype = "season" or itype = "series") then
+                        obj = m.viewcontroller.screens.peek()
+                        obj.metadata = context[m.focusedIndex]
+                        obj.Item = context[m.focusedIndex]
+                        rfVideoMoreButtonFromGrid(obj)
+                    else if audioplayer.ContextScreenID = invalid ' only create this extra screen if audioPlayer doesn't have context
+                        'for now we will show the preferences screen :)
+                        prefs = CreateObject("roAssociativeArray")
+                        prefs.sourceUrl = ""
+                        prefs.ContentType = "prefs"
+                        prefs.Key = "globalprefs"
+                        prefs.Title = "Preferences"
+                        m.ViewController.CreateScreenForItem(prefs, invalid, ["Preferences"])
+                        Debug("Info Button (*) not handled for content type: " +  tostr(itype) + " - using default prefs screen")
+                    else
+                        Debug("--- Not show prefs on " + itype)
+                    end if 
+                end if
         else if msg.isRemoteKeyPressed() then
             if msg.GetIndex() = 13 then
                 Debug("Playing item directly from grid")

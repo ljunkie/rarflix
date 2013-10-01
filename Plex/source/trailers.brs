@@ -3,14 +3,6 @@ Function LoadYouTube() As Object
 End Function
 
 Function InitYouTube() As Object
-    ' enabled trailers by default 
-    trailersEnabled = RegRead("trailers", "preferences")
-    ' set if invalid or if the typo happened - we can take this out after a while
-    if trailersEnabled = invalid or trailersEnabled = "enabled_tmbd_ytfb" then
-        RegWrite("trailers", "enabled", "preferences")
-    end if
-
-
     this = CreateObject("roAssociativeArray")
     this.protocol = "http"
     this.scope = this.protocol + "://gdata.youtube.com"
@@ -40,8 +32,9 @@ Function InitYouTube() As Object
     this.newVideoListFromXML = youtube_new_video_list
     this.newVideoFromXML = youtube_new_video
 
+    this.BuildButtons = build_buttons
 
-    print "YouTube: init complete"
+    Debug("Trailers(YouTube): init complete")
     return this
 End Function
 
@@ -64,15 +57,13 @@ Function youtube_exec_api(request As Dynamic) As Object
     else
         http = NewHttp(m.prefix + "/" + url_stub)
     end if
-'    http = NewHttp("http://www.rarforge.com")
+
     Debug("url: " + tostr(m.prefix + "/" + url_stub))
     if not headers.DoesExist("GData-Version") then headers.AddReplace("GData-Version", "2") 
 
     http.method = method
-    'print "----------------------------------"
     if postdata<>invalid then
         rsp=http.PostFromStringWithTimeout(postdata, 10, headers)
-        'print "postdata:",postdata
     else
         rsp=http.getToStringWithTimeout(10, headers)
     end if
@@ -104,9 +95,6 @@ Function handleYoutubeError(rsp) As Dynamic
 End Function
 
 Sub youtube_search(keyword as string, year = "invalid" as string )
-    dialog = createBaseDialog()
-    dialog.Title = ""
-    dialog.Text = ""
     dialog=ShowPleaseWait("Please wait","Searching TMDB & YouTube for " + Quote()+keyword+Quote())
     origSearch_trailer = keyword + " trailer"
     searchString_trailer = URLEncode(origSearch_trailer)
@@ -118,59 +106,58 @@ Sub youtube_search(keyword as string, year = "invalid" as string )
     Videos=CreateObject("roList")
 
     if year <> "invalid" then
-       re = CreateObject("roRegex", "-", "") ' only grab the year
-       year = re.split(year)[0]
-       s_tmdb = m.youtube.ExecTmdbAPI("search/movie?query="+searchString+"&page=1&include_adult=false&year=" + tostr(year))["json"]
-       if s_tmdb.results.count() = 0 then
-         Debug("---------------- no match found with year.. try again")
-         year = "invalid" ' invalidate year to try again without it
-       end if
+        re = CreateObject("roRegex", "-", "") ' only grab the year
+        year = re.split(year)[0]
+        s_tmdb = m.youtube.ExecTmdbAPI("search/movie?query="+searchString+"&page=1&include_adult=false&year=" + tostr(year))["json"]
+        if s_tmdb.results.count() = 0 then
+            Debug("---------------- no match found with year.. try again")
+            year = "invalid" ' invalidate year to try again without it
+        end if
     end if
     
     ' try TMDB lookup without year
     if year = "invalid" then
-       s_tmdb = m.youtube.ExecTmdbAPI("search/movie?query="+searchString+"&page=1&include_adult=false")["json"]
+        s_tmdb = m.youtube.ExecTmdbAPI("search/movie?query="+searchString+"&page=1&include_adult=false")["json"]
     end if
 
     ' locate trailers for video
     if s_tmdb.results.count() > 0 and tostr(s_tmdb.results[0].id) <> "invalid"  then
-       s_tmdb = m.youtube.ExecTmdbAPI("movie/"+tostr(s_tmdb.results[0].id)+"/trailers?page=1")["json"]
+        s_tmdb = m.youtube.ExecTmdbAPI("movie/"+tostr(s_tmdb.results[0].id)+"/trailers?page=1")["json"]
     end if
 
-'    printAA(s_tmdb)
     if type (s_tmdb) = "roAssociativeArray" and type(s_tmdb.youtube) = "roArray"  then 
-       for each trailer in s_tmdb.youtube
+        for each trailer in s_tmdb.youtube
             Debug("Found YouTube Trailer from TMDB")
-            PrintAA(trailer)
+            'PrintAA(trailer)
             re = CreateObject("roRegex", "&", "") ' seems some urls have &hd=1 .. maybe more to come
-	    source = re.split(trailer.Source)[0]
+            source = re.split(trailer.Source)[0]
 
             ' verify it's playable first
             if video_check_embed(source) <> "invalid" then
-              xml=m.youtube.ExecServerAPI("videos/" + source)["xml"]
-              if isxmlelement(xml) then 
-                  ' single video will be retured.. call newVideoFromXML
-                  video=m.youtube.newVideoFromXML(xml, searchString, "TMDb", "themoviedb.org")
-                  Videos.Push(video)      
-               else 
-                   Debug("---------------------- Failed to get TMDB YouTube Trailer ")
-              end if
-             end if
+                xml=m.youtube.ExecServerAPI("videos/" + source)["xml"]
+                if isxmlelement(xml) then 
+                    ' single video will be retured.. call newVideoFromXML
+                    video=m.youtube.newVideoFromXML(xml, searchString, "TMDb", "themoviedb.org")
+                    Videos.Push(video)
+                else 
+                    Debug("---------------------- Failed to get TMDB YouTube Trailer ")
+                end if
+            end if
         end for
     end if
 
     ' join raw youtube videos - maybe make this a toggle? some may ONLY want TMDB
-    trailerTypes = RegRead("trailers", "preferences")
+    trailerTypes = RegRead("rf_trailers", "preferences")
     includeYouTubeRaw = 0
-    
+ 
     if trailerTypes = "enabled"  then 
-         print "------------ Included raw youtube trailer search (trailers: enabled) ------------------ trailer:" + trailerTypes
-         includeYouTubeRaw = 1 ' include youtube trailers when 'enabled' is set -- grab everything
+        Debug("------------ Included raw youtube trailer search (trailers: enabled) ------------------ trailer:" + trailerTypes)
+        includeYouTubeRaw = 1 ' include youtube trailers when 'enabled' is set -- grab everything
     else if videos.Count() = 0 and trailerTypes = "enabled_tmdb_ytfb"  then 
-         print "------------ Included raw youtube trailer search (trailers: enabled_tmdb_ytfb and 0 TMDB found) ------------------ trailer:" + trailerTypes
-         includeYouTubeRaw = 1 ' include youtube trailers when youtube fallback is enabled and we didn't find any trailers on tmdb
+        Debug("------------ Included raw youtube trailer search (trailers: enabled_tmdb_ytfb and 0 TMDB found) ------------------ trailer:" + trailerTypes)
+        includeYouTubeRaw = 1 ' include youtube trailers when youtube fallback is enabled and we didn't find any trailers on tmdb
     else 
-         print "------------ skipping raw youtube trailer search (found trailers on TMDB) ------------------ trailer:" + trailerTypes
+        Debug("------------ skipping raw youtube trailer search (found trailers on TMDB) ------------------ trailer:" + trailerTypes)
     end if
 
     ' so - should we include the raw yourube search?
@@ -185,46 +172,75 @@ Sub youtube_search(keyword as string, year = "invalid" as string )
     
     if videos.Count() > 0 then
         dialog.Close()
-        m.youtube.DisplayVideoList(videos, "Search Results for "+Chr(39)+keyword+Chr(39), xml.link, invalid)
+'        m.youtube.DisplayVideoList(videos, "Search Results for "+Chr(39)+keyword+Chr(39), xml.link, invalid)
+        m.youtube.DisplayVideoList(videos, keyword, xml.link, invalid)
     else
         dialog.Close():ShowErrorDialog("No videos match your search","Search results")
     end if
 End Sub
 
-Sub DisplayVideo(content As Object)
+Function DisplayVideo(content As Object)
+    ' stop and cleanup any audioplayer - 
+    m.ViewController.AudioPlayer.Stop()
+'    m.ViewController.AudioPlayer = invalid  ' Plex doesn't do this now.. but it seems once you start the AudioPlayer, it never really exists??
+'    m.ViewController.AudioPlayer = createAudioPlayer(m.ViewController) ' this allows the default Option button to work for other things again (how does one normally clear audioPlayer)
+
     p = CreateObject("roMessagePort")
     video = CreateObject("roVideoScreen")
     video.setMessagePort(p)
     video.SetPositionNotificationPeriod(5)
-    content.releaseDate = "Played: " + GetDurationString(0,0,1,1) ' just to keep the format the same on initial start
-    'PrintAA(content)
+
+    date = CreateObject("roDateTime")
+    endString = "invalid"
+    if content.Length <> invalid and content.Length.ToInt() > 0 then
+        timeLeft = content.Length.ToInt()
+        endString = "End Time: " + RRmktime(date.AsSeconds()+timeLeft) + "     (" + GetDurationString(timeLeft,0,1,1) + ")" 'always show min/secs
+    else
+        endString = "Time: " + RRmktime(date.AsSeconds()) + "     Watched: " + GetDurationString(int(msg.GetIndex()))
+    end if
+    if endString <> "invalid" then content.releasedate = endString
+
     video.SetContent(content)
     video.show()
-    
+    ret = -1
     while true
         msg = wait(0, video.GetMessagePort())
         if type(msg) = "roVideoScreenEvent"
-            if msg.isScreenClosed() then 
+            if (Instr(1, msg.getMessage(), "interrupted") > 0) then
+                ret = 1
+            else if msg.isScreenClosed() then 
+                content.releasedate = "" 'reset release date -- we don't want dynamic the HUD info displayed in the details
+                video.SetContent(content)
                 video.Close()
                 exit while
             else if msg.isStreamStarted() then
-		'print "Video status: "; msg.GetIndex(); " " msg.GetInfo() 
+                'print "Video status: "; msg.GetIndex(); " " msg.GetInfo() 
             else if msg.isPlaybackPosition() then
-                'print "Video GetIndex: "; msg.GetIndex()
                 if msg.GetIndex() > 0
-		    content.releaseDate = "Played: " + GetDurationString(msg.GetIndex(),0,1,1)
-                    video.SetContent(content)
+                date = CreateObject("roDateTime")
+                endString = "invalid"
+                if content.Length <> invalid and content.Length.ToInt() > 0 then
+                    timeLeft = int(content.Length.ToInt() - msg.GetIndex())
+                    endString = "End Time: " + RRmktime(date.AsSeconds()+timeLeft) + "     (" + GetDurationString(timeLeft,0,1,1) + ")" 'always show min/secs
+                else
+                    endString = "Time: " + RRmktime(date.AsSeconds()) + "     Watched: " + GetDurationString(int(msg.GetIndex()))
                 end if
-	    else if msg.isStatusMessage()
+                
+                if endString <> "invalid" then content.releasedate = endString
+
+                video.SetContent(content)
+                end if
+            else if msg.isStatusMessage()
                 'print "Video status: "; msg.GetIndex(); " " msg.GetData() 
             else if msg.isRequestFailed()
-                print "play failed: "; msg.GetMessage()
+		Debug("trailer play failed" + msg.GetMessage())
             else
-                print "Unknown event: "; msg.GetType(); " msg: "; msg.GetMessage()
+                'print "Unknown event: "; msg.GetType(); " msg: "; msg.GetMessage()
             end if
         end if
     end while
-End Sub
+    return ret
+End function
 
 Function parseVideoFormatsMap(videoInfo As String) As Object
 
@@ -238,10 +254,10 @@ Function parseVideoFormatsMap(videoInfo As String) As Object
     if videoFormatsMatches[0]<>invalid then
         videoFormats = videoFormatsMatches[1]
     else
-        print "parseVideoFormatsMap: didn't find any video formats"
-        print "---------------------------------------------------"
-        print videoInfo
-        print "---------------------------------------------------"
+        Debug("parseVideoFormatsMap: didn't find any video formats")
+        Debug("---------------------------------------------------")
+        Debug(videoInfo)
+        Debug("---------------------------------------------------")
         return invalid
     end if
 
@@ -319,52 +335,66 @@ Sub youtube_display_video_list(videos As Object, title As String, links=invalid,
                 if video[set_idx]["action"]<>invalid then
                     youtube.FetchVideoList(video[set_idx]["pageURL"], youtube.CurrentPageTitle)
                 else
-                    youtube.VideoDetails(video[set_idx], youtube.CurrentPageTitle)
+                    youtube.VideoDetails(video[set_idx], youtube.CurrentPageTitle, video, set_idx)
                 end if
             end function]
-        uitkDoPosterMenu(metadata, screen, onselect)
+        onplay = [1, metadata, m,
+            Function(video, youtube, set_idx)
+                streamQualities = video_get_qualities(video[set_idx].id)
+                if streamQualities <> invalid then
+                    video[set_idx].Streams = streamQualities
+                    if streamQualities.Peek()["contentid"].toInt() > 18
+                        Debug("is HD")
+                        video[set_idx].HDBranded = true
+                        video[set_idx].FullHD = false
+                    else if streamQualities.Peek()["contentid"].toInt() = 37
+                        video[set_idx].HDBranded = true
+                        video[set_idx].FullHD = true
+                        Debug("is FULL HD")
+                    end if
+                    DisplayVideo(video[set_idx])
+                end if
+            end Function]
+        uitkDoPosterMenu(metadata, screen, onselect, onplay) 
     else
         uitkDoMessage("No videos found.", screen)
     end if
 End Sub
 
-Sub youtube_display_video_springboard(video As Object, breadcrumb As String)
+Sub youtube_display_video_springboard(theVideo As Object, breadcrumb As String, videos=invalid, idx=invalid)
     p = CreateObject("roMessagePort")
     screen = CreateObject("roSpringboardScreen")
     screen.SetMessagePort(p)
-
     m.screen=screen
-    m.video=video
-
+    m.video=theVideo
     screen.SetDescriptionStyle("movie")
-    screen.AllowNavLeft(true)
-    screen.AllowNavRight(true)
+    if (videos.Count() > 1) then
+        screen.AllowNavLeft(true)
+        screen.AllowNavRight(true)
+    end if
     screen.SetPosterStyle("rounded-rect-16x9-generic")
     screen.SetDisplayMode("zoom-to-fill")
     screen.SetBreadcrumbText(breadcrumb, "Video")
 
-    buttons = CreateObject("roAssociativeArray")
-
-    streamQualities = video_get_qualities(video.id)
+    streamQualities = video_get_qualities(m.video.id)
     if streamQualities<>invalid
-        video.Streams = streamQualities
+        m.video.Streams = streamQualities
         
         if streamQualities.Peek()["contentid"].toInt() > 18
-	    Debug("is HD")
-            video.HDBranded = true
-            video.FullHD = false
+            Debug("is HD")
+            m.video.HDBranded = true
+            m.video.FullHD = false
         else if streamQualities.Peek()["contentid"].toInt() = 37
-            video.HDBranded = true
-            video.FullHD = true
-	    Debug("is FULL HD")
+            m.video.HDBranded = true
+            m.video.FullHD = true
+            Debug("is FULL HD")
         end if
-
-        buttons["play"] = screen.AddButton(0, "Play")
     end if
 
-    'video.ReleaseDate = video.shortdescriptionline1
+    'buttons = CreateObject("roAssociativeArray")
+    buttons = m.BuildButtons()
 
-    screen.SetContent(video)
+    screen.SetContent(m.video)
     screen.Show()
 
     while true
@@ -374,13 +404,94 @@ Sub youtube_display_video_springboard(video As Object, breadcrumb As String)
                 'print "Closing springboard screen"
                 exit while
             else if msg.isButtonPressed()
-                print "Button pressed: "; msg.GetIndex(); " " msg.GetData()
+                'print "Button pressed: "; msg.GetIndex(); " " msg.GetData()
                 if msg.GetIndex() = 0 then
-                    DisplayVideo(video)
-                endif
+                    DisplayVideo(m.video) ' Play Button
+                else if (msg.GetIndex() = 1) then ' Play All
+                    for i = idx to videos.Count() - 2 Step +1 ' last video is button
+                        selectedVideo = videos[i]
+                        if selectedVideo.id <> invalid then 
+                            result = video_get_qualities(selectedVideo.id)
+                            if result<>invalid
+                                selectedVideo.Streams = result
+                                if result.Peek()["contentid"].toInt() > 18
+                                    Debug("is HD")
+                                    selectedVideo.HDBranded = true
+                                    selectedVideo.FullHD = false
+                                else if result.Peek()["contentid"].toInt() = 37
+                                    selectedVideo.HDBranded = true
+                                    selectedVideo.FullHD = true
+                                    Debug("is FULL HD")
+                                end if
+                                ret = DisplayVideo(selectedVideo)
+                                if (ret > 0) then
+                                    Exit For
+                                end if
+                            end if
+                        end if
+                    end for
+                end if
+            else if (msg.isRemoteKeyPressed()) then
+                if (msg.GetIndex() = 4) then  ' left
+                    if (videos.Count() > 1) then
+                        idx = idx - 1
+                        if ( idx < 0 ) then
+                            ' Last video is the 'next' video link
+                            idx = videos.Count() - 2
+                        end if
+                        ' should really be a better function TODO
+                        ' print videos[idx].title
+                        result = video_get_qualities(videos[idx].id)
+                        if result<>invalid
+                            videos[idx].Streams = result
+                            
+                            if result.Peek()["contentid"].toInt() > 18
+                                Debug("is HD")
+                                videos[idx].HDBranded = true
+                                videos[idx].FullHD = false
+                            else if result.Peek()["contentid"].toInt() = 37
+                                videos[idx].HDBranded = true
+                                videos[idx].FullHD = true
+                                Debug("is FULL HD")
+                            end if
+                        end if
+                        ' end
+                        m.video = videos[idx]
+                        buttons = m.BuildButtons()
+                        screen.SetContent( m.video )
+                    end if
+                else if (msg.GetIndex() = 5) then ' right
+                    if (videos.Count() > 1) then
+                        idx = idx + 1
+                        if ( idx = videos.Count() - 1 ) then
+                            ' Last video is the 'next' video link
+                            idx = 0
+                        end if
+                        ' print videos[idx].title
+                        ' should really be a better function TODO
+                        result = video_get_qualities(videos[idx].id)
+                        if result<>invalid
+                            videos[idx].Streams = result
+                            
+                            if result.Peek()["contentid"].toInt() > 18
+                                Debug("is HD")
+                                videos[idx].HDBranded = true
+                                videos[idx].FullHD = false
+                            else if result.Peek()["contentid"].toInt() = 37
+                                videos[idx].HDBranded = true
+                                videos[idx].FullHD = true
+                                Debug("is FULL HD")
+                            end if
+                        end if
+                        ' end
+                        m.video = videos[idx]
+                        buttons = m.BuildButtons()
+                        screen.SetContent( m.video )
+                    end if
+                end if
             else
-                print "Unknown event: "; msg.GetType(); " msg: "; msg.GetMessage()
-            endif
+                'print "Unknown event: "; msg.GetType(); " msg: "; msg.GetMessage()
+            end if
         end If
     end while
 End Sub
@@ -430,16 +541,16 @@ Function video_check_embed(videoID as String) As string
     rsp = http.getToStringWithTimeout(10)
     r = CreateObject("roRegex", "status=fail", "i")
     if r.IsMatch(rsp) then
-          r = CreateObject("roRegex", "reason=([^(&|\$)]+)", "i")
-          if r.IsMatch(rsp) then
+        r = CreateObject("roRegex", "reason=([^(&|\$)]+)", "i")
+        if r.IsMatch(rsp) then
             reason = r.Match(rsp)
             Debug("-------" + videoID +"------------- this YouTube Video is not playable:" + URLDecode(tostr(reason[0])))
-          else 
-             r = CreateObject("roRegex", "Embedding\+disabled", "i")
-             if r.IsMatch(rsp) then
-               Debug("-------" + videoID +"------------- this YouTube Video is not playable -- embedding disabled")
-             end if
-           end if
+        else 
+            r = CreateObject("roRegex", "Embedding\+disabled", "i")
+            if r.IsMatch(rsp) then
+                Debug("-------" + videoID +"------------- this YouTube Video is not playable -- embedding disabled")
+            end if
+        end if
     else 
         ' no failure - we can embed this
         return "playable"
@@ -465,31 +576,6 @@ Function Quote()
     return q$
 End Function
 
-Function ShowPleaseWait(title As dynamic, text As dynamic) As Object
-    if not isstr(title) title = ""
-    if not isstr(text) text = ""
-
-    port = CreateObject("roMessagePort")
-    dialog = invalid
-
-    'the OneLineDialog renders a single line of text better
-    'than the MessageDialog.
-
-    if text = ""
-        dialog = CreateObject("roOneLineDialog")
-    else
-        dialog = CreateObject("roMessageDialog")
-        dialog.SetText(text)
-    endif
-
-    dialog.SetMessagePort(port)
-
-    dialog.SetTitle(title)
-    dialog.ShowBusyAnimation()
-    dialog.Show()
-    return dialog
-End Function
-
 Sub youtube_fetch_video_list(APIRequest As Dynamic, title As String)
     
     ' fields = m.FieldsToInclude
@@ -509,19 +595,19 @@ Sub youtube_fetch_video_list(APIRequest As Dynamic, title As String)
 End Sub
 
 Function youtube_new_video_list(xmllist As Object, videolist = invalid as Object, searchString = "invalid" as String) As Object
-    print "youtube_new_video_list init"
+    'print "youtube_new_video_list init"
 
     if videolist = invalid then
         videolist=CreateObject("roList")
     end if
 
     for each record in xmllist
-           'ljunkie - might be slower -- but at least all the videos will play instead of having random videos that fail
-            source = record.GetNamedElements("media:group")[0].GetNamedElements("yt:videoid")[0].GetText()
-            if video_check_embed(source) <> "invalid" then
-             video=m.newVideoFromXML(record, SearchString)
-             videolist.Push(video)
-            end if
+        'ljunkie - might be slower -- but at least all the videos will play instead of having random videos that fail
+        source = record.GetNamedElements("media:group")[0].GetNamedElements("yt:videoid")[0].GetText()
+        if video_check_embed(source) <> "invalid" then
+            video=m.newVideoFromXML(record, SearchString)
+            videolist.Push(video)
+        end if
     next
     return videolist
 End Function
@@ -543,6 +629,7 @@ Function youtube_new_video(xml As Object, searchString = "invalid" as String, pr
     video.GetThumb=get_xml_thumb
     video.GetEditLink=get_xml_edit_link
     video.GetEditLink=get_xml_edit_link
+    video.GetLength=get_length 
     'video.GetLinks=function():return m.xml.GetNamedElements("link"):end function
     'video.GetURL=video_get_url
     video.Provider=provider
@@ -553,11 +640,11 @@ End Function
 
 Function GetVideoMetaData(videos As Object)
     metadata=[]
-        
+
     for each video in videos
         meta=CreateObject("roAssociativeArray")
         meta.ContentType="movie"
-        
+
         meta.ID=video.GetID()
         meta.provider=video.Provider
         meta.providerLong=video.ProviderLong
@@ -568,19 +655,24 @@ Function GetVideoMetaData(videos As Object)
         meta.Categories=video.GetCategory()
         meta.StarRating=video.GetRating()
         meta.ShortDescriptionLine1=meta.Title
+
+        if tostr(meta.provider) <> "YouTube" then
+            meta.ShortDescriptionLine2 = "Provided by: " + meta.providerLong
+        else 
+            meta.ShortDescriptionLine2 = "Provided by: YouTube search for '" + tostr(video.SearchString) +"'"
+        end if
+        meta.ShortDescriptionLine2  = GetDurationString(video.GetLength()) + " - " + meta.ShortDescriptionLine2
+
         meta.SDPosterUrl=video.GetThumb()
         meta.HDPosterUrl=video.GetThumb()
-
+        meta.Length=video.GetLength() 
 
         ' cleanup Description
         output = meta.Description
         re = CreateObject("roRegex", "\s+", "i")
         output = re.ReplaceAll(output, ". ")
-	if tostr(meta.provider) <> "YouTube" then
-           meta.Description = "Provided by: " + meta.providerLong + chr(10) + output
-	else 
-           meta.Description = "Provided by: YouTube search for '" + tostr(video.SearchString) +"'" + chr(10) + output
-        end if
+        meta.Description = output
+
         meta.ShortDescriptionLine1 = meta.ShortDescriptionLine1 + " [" + meta.provider + "]"
 
         meta.xml=video.xml
@@ -659,8 +751,8 @@ Sub Dbg(pre As Dynamic, o=invalid As Dynamic)
     if s = invalid s = "???: " + type(o)
     if Len(s) > 4000
         s = Left(s, 4000)
-    endif
-    print p + s
+    end if
+    'print p + s
 End Sub
 
 Function GetConnectionFailedText() as String
@@ -705,10 +797,10 @@ Sub ShowDialog1Button(title As dynamic, text As dynamic, but1 As String, quickRe
                 'print "Screen closed"
                 return
             else if dlgMsg.isButtonPressed()
-                print "Button pressed: "; dlgMsg.GetIndex(); " " dlgMsg.GetData()
+                'print "Button pressed: "; dlgMsg.GetIndex(); " " dlgMsg.GetData()
                 return
-            endif
-        endif
+            end if
+        end if
     end while
 End Sub
 
@@ -738,11 +830,11 @@ Function ShowDialog2Buttons(title As dynamic, text As dynamic, but1 As String, b
                 dialog = invalid
                 return 0
             else if dlgMsg.isButtonPressed()
-                print "Button pressed: "; dlgMsg.GetIndex(); " " dlgMsg.GetData()
+                'print "Button pressed: "; dlgMsg.GetIndex(); " " dlgMsg.GetData()
                 dialog = invalid
                 return dlgMsg.GetIndex()
-            endif
-        endif
+            end if
+        end if
     end while
 End Function
 
@@ -754,49 +846,49 @@ End Function
 
 ' uitk Poster/Grids -- remove these and use Plex functions (TODO)
 Function uitkPreShowPosterMenu(ListStyle="flat-category" as String, breadA=invalid, breadB=invalid) As Object
-	port=CreateObject("roMessagePort")
-	screen = CreateObject("roPosterScreen")
-	screen.SetMessagePort(port)
+    port=CreateObject("roMessagePort")
+    screen = CreateObject("roPosterScreen")
+    screen.SetMessagePort(port)
 
-	if breadA<>invalid and breadB<>invalid then
-		screen.SetBreadcrumbText(breadA, breadB)
-        else if breadA<>invalid and breadB = invalid then
+    if breadA<>invalid and breadB<>invalid then
+        screen.SetBreadcrumbText(breadA, breadB)
+    else if breadA<>invalid and breadB = invalid then
         screen.SetTitle(breadA)
-	end if
+        screen.SetBreadcrumbText("Movie Trailers", breadA)
+    end if
 
     if ListStyle = "" OR ListStyle = invalid then
         ListStyle = "flat-category"
     end if
 
-	screen.SetListStyle(ListStyle)
-	screen.SetListDisplayMode("scale-to-fit")
-	 screen.SetListDisplayMode("zoom-to-fill")
-	screen.Show()
+    screen.SetListStyle(ListStyle)
+    screen.SetListDisplayMode("scale-to-fit")
+    screen.SetListDisplayMode("zoom-to-fill")
+    screen.Show()
+    return screen
 
-	return screen
 end function
 
-Function uitkDoPosterMenu(posterdata, screen, onselect_callback=invalid) As Integer
+Function uitkDoPosterMenu(posterdata, screen, onselect_callback=invalid, onplay_callback=invalid) As Integer
 
-	if type(screen)<>"roPosterScreen" then
-		print "illegal type/value for screen passed to uitkDoPosterMenu()" 
-		return -1
-	end if
-	
-	screen.SetContentList(posterdata)
+        if type(screen)<>"roPosterScreen" then
+                Debug("illegal type/value for screen passed to uitkDoPosterMenu()")
+                return -1
+        end if
+        
+        screen.SetContentList(posterdata)
+        idx% = 0
 
     while true
         msg = wait(0, screen.GetMessagePort())
-		
-		'print "uitkDoPosterMenu | msg type = ";type(msg)
-		
-		if type(msg) = "roPosterScreenEvent" then
-			print "event.GetType()=";msg.GetType(); " event.GetMessage()= "; msg.GetMessage()
-			if msg.isListItemSelected() then
-				if onselect_callback<>invalid then
-					selecttype = onselect_callback[0]
-					if selecttype=0 then
-						this = onselect_callback[1]
+               
+                if type(msg) = "roPosterScreenEvent" then
+                        'print "event.GetType()=";msg.GetType(); " event.GetMessage()= "; msg.GetMessage()
+                        if msg.isListItemSelected() then
+                                if onselect_callback<>invalid then
+                                        selecttype = onselect_callback[0]
+                                        if selecttype=0 then
+                                                this = onselect_callback[1]
                         selected_callback=onselect_callback[msg.GetIndex()+2]
                         if islist(selected_callback) then
                             f=selected_callback[0]
@@ -820,20 +912,36 @@ Function uitkDoPosterMenu(posterdata, screen, onselect_callback=invalid) As Inte
                                 this[selected_callback]()
                             end if
                         end if
-					else if selecttype=1 then
-						userdata1=onselect_callback[1]
-						userdata2=onselect_callback[2]
-						f=onselect_callback[3]
-						f(userdata1, userdata2, msg.GetIndex())
-					end if
-				else
-					return msg.GetIndex()
-				end if
-			else if msg.isScreenClosed() then
-				return -1
-			end if
+                                        else if selecttype=1 then
+                                                userdata1=onselect_callback[1]
+                                                userdata2=onselect_callback[2]
+                                                f=onselect_callback[3]
+                                                f(userdata1, userdata2, msg.GetIndex())
+                                        end if
+                                else
+                                        return msg.GetIndex()
+                                end if
+                        else if msg.isScreenClosed() then
+                                return -1
+                        else if (msg.isListItemFocused()) then
+                            idx% = msg.GetIndex()
+                        else if (msg.isRemoteKeyPressed()) then
+                            ' If the play button is pressed on the video list, and the onplay_callback is valid, play the video
+                            if (onplay_callback <> invalid AND msg.GetIndex() = 13) then
+                                userdata1 = onplay_callback[1]
+                                userdata2 = onplay_callback[2]
+                                f = onplay_callback[3]
+                                f(userdata1, userdata2, idx%)
+                            else if (msg.GetIndex() = 10) then
+                                print "TODO info button (maybe allow search  for original title or enter text to search?"
+                                'container = createPlexContainerForUrl(server, server.serverUrl, obj.item.metadata.key)
+                                'if container <> invalid and container.xml@originalTitle etc...
+  	                        'youtube_search(container.xml@originalTitle , year..) -- replace screen?
+                            end if 
+
+                        end if
         end if
-	end while
+        end while
 End Function
 
 Function uitkPreShowListMenu(breadA=invalid, breadB=invalid) As Object
@@ -854,7 +962,7 @@ end function
 Function uitkDoListMenu(posterdata, screen, onselect_callback=invalid) As Integer
 
     if type(screen)<>"roListScreen" then
-        print "illegal type/value for screen passed to uitkDoListMenu()" 
+        Debug("illegal type/value for screen passed to uitkDoListMenu()")
         return -1
     end if
     
@@ -863,10 +971,8 @@ Function uitkDoListMenu(posterdata, screen, onselect_callback=invalid) As Intege
     while true
         msg = wait(0, screen.GetMessagePort())
         
-        'print "uitkDoPosterMenu | msg type = ";type(msg)
-        
         if type(msg) = "roListScreenEvent" then
-            print "event.GetType()=";msg.GetType(); " Event.GetMessage()= "; msg.GetMessage()
+            'print "event.GetType()=";msg.GetType(); " Event.GetMessage()= "; msg.GetMessage()
             if msg.isListItemSelected() then
                 if onselect_callback<>invalid then
                     selecttype = onselect_callback[0]
@@ -940,7 +1046,7 @@ Function uitkDoCategoryMenu(categoryList, screen, content_callback, onclick_call
                 content_f=content_callback[2]
                 
                 contentlist=content_f(contentdata1, contentdata2, category_idx)
-    
+
                 if contentlist.Count()=0 then
                     screen.SetContentList([])
                     screen.ShowMessage("No viewable content in this section")
@@ -1002,12 +1108,9 @@ Function tmdb_exec_api(request As Dynamic) As Object
 
 
     if not headers.DoesExist("Accept") then headers.AddReplace("Accept", "application/json") 
-    'xhr.setRequestHeader("Accept", "application/json");
     http.method = method
-    'print "----------------------------------"
     if postdata<>invalid then
         rsp=http.PostFromStringWithTimeout(postdata, 10, headers)
-        'print "postdata:",postdata
     else
         rsp=http.getToStringWithTimeout(10, headers)
     end if
@@ -1021,3 +1124,21 @@ Function tmdb_exec_api(request As Dynamic) As Object
     return returnObj
 End Function
 
+
+Function get_length() As Dynamic
+    durations = m.xml.GetNamedElements("media:group")[0].GetNamedElements("yt:duration")
+    if (durations.Count() > 0) then
+        return durations.GetAttributes()["seconds"]
+    end if
+End Function
+
+
+
+Function build_buttons() as Object
+    m.screen.ClearButtons()
+    buttons = CreateObject("roAssociativeArray")
+
+    buttons["play"] = m.screen.AddButton(0, "Play")
+    buttons["play_all"] = m.screen.AddButton(1, "Play All") ' might add this option
+    return buttons
+End Function

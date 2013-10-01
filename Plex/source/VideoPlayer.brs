@@ -141,6 +141,8 @@ Function videoPlayerCreateVideoPlayer()
 
     videoItem.Duration = mediaItem.duration ' set duration - used for EndTime/TimeLeft on HUD  - ljunkie
 
+    if videoItem.ReleaseDate = "invalid" then  videoItem.ReleaseDate = "" ' we never want to display invalid
+
     if videoItem.IsTranscoded then
         server = videoItem.TranscodeServer
         videoItem.ReleaseDate = videoItem.ReleaseDate + "   Transcoded"
@@ -314,14 +316,18 @@ Function videoPlayerHandleMessage(msg) As Boolean
             m.SendTimeline(true)
 
             ' START: EndTime and Time Left to HUD - ljunkie
-	    if msg.GetIndex() > 0 AND m.VideoItem.Duration > 0 then
-	        'printAA(m.VideoItem)
-                duration = int(m.VideoItem.Duration/1000)
+	    endString = "invalid"
+	    watchedString = "invalid"
+	    if msg.GetIndex() > 0 then
                 date = CreateObject("roDateTime")
-                timeLeft = int(Duration - msg.GetIndex())
-                endString = RRmktime(date.AsSeconds()+timeLeft)
-                endString = endString + " (" + GetDurationString(timeLeft,0,1,1) + ")" 'always show min/secs
-
+                if m.VideoItem.Duration > 0 then
+                    duration = int(m.VideoItem.Duration/1000)
+                    timeLeft = int(Duration - msg.GetIndex())
+                    endString = "End Time: " + RRmktime(date.AsSeconds()+timeLeft) + "  (" + GetDurationString(timeLeft,0,1,1) + ")" + "  Watched: " + GetDurationString(int(msg.GetIndex()))                    
+                else
+                    ' include current time and watched time when video duration is unavailable (HLS & web videos)
+                    watchedString = "Time: " + RRmktime(date.AsSeconds()) + "     Watched: " + GetDurationString(int(msg.GetIndex()))                    
+                end if
 		' set the HUD
                 content = CreateObject("roAssociativeArray")
                 content = m.VideoItem ' assign Video item and reset other keys
@@ -331,14 +337,21 @@ Function videoPlayerHandleMessage(msg) As Boolean
                 content.length = m.VideoItem.duration
                 content.title = m.VideoItem.title
 
-		if tostr(m.VideoItem.rokustreambitrate) <> "invalid" then
+                ' overwrite release date now
+                content.releasedate = m.VideoItem.OrigHUDreleasedate
+
+		if tostr(m.VideoItem.rokustreambitrate) <> "invalid" and validint(m.VideoItem.rokustreambitrate) > 0 then
 	  	    bitrate = RRbitrate(m.VideoItem.rokustreambitrate)
 		    'if tostr(m.videoItem.IsTranscoded) = "false" then
                         'bitrate = chr(10) + bitrate ' put bitrate on a new line -- string might be too long
 		    'end if
-                    content.releasedate = m.VideoItem.OrigHUDreleasedate + " " + bitrate
+                    content.releasedate = content.releasedate + " " + bitrate
                 end if
-                content.releasedate = content.releasedate + chr(10) + chr(10) + "End Time: " + endString 'two line breaks - easier to read ( yea it makes the hug larger...)                     
+
+                content.releasedate = content.releasedate + chr(10) + chr(10)  'two line breaks - easier to read
+                if endString <> "invalid" then content.releasedate = content.releasedate +  endString
+                if watchedString <> "invalid" then content.releasedate = content.releasedate + watchedString
+             
 		' update HUD
                 m.Screen.SetContent(content)
             end if

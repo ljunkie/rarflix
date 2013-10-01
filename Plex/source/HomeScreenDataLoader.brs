@@ -51,6 +51,13 @@ Function createHomeScreenDataLoader(listener)
         loader.RowIndexes[row.key] = loader.CreateRow(row.title)
     next
 
+    ' Kick off myPlex requests if we're signed in.
+    myPlex = GetMyPlexManager()
+    myPlex.CheckAuthentication()
+    if myPlex.IsSignedIn then
+        loader.CreateMyPlexRequests(false)
+    end if
+
     ' Kick off an asynchronous GDM discover.
     if RegRead("autodiscover", "preferences", "1") = "1" then
         loader.GDM = createGDMDiscovery(GetViewController().GlobalMessagePort, loader)
@@ -65,13 +72,6 @@ Function createHomeScreenDataLoader(listener)
     for each server in configuredServers
         loader.CreateServerRequests(server, false, false)
     next
-
-    ' Kick off myPlex requests if we're signed in.
-    myPlex = GetMyPlexManager()
-    myPlex.CheckAuthentication()
-    if myPlex.IsSignedIn then
-        loader.CreateMyPlexRequests(false)
-    end if
 
     ' Create a static item for prefs and put it in the Misc row.
     prefs = CreateObject("roAssociativeArray")

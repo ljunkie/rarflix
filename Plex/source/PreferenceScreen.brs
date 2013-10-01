@@ -118,6 +118,7 @@ Sub prefsHandleEnumPreference(regKey, index)
     m.currentRegKey = regKey
     label = m.contentArray[index].OrigTitle
     pref = m.Prefs[regKey]
+    m.Changes.AddReplace("_previous_"+regKey, RegRead(regKey, "preferences", pref.default)) ' ljunkie - set _previous_ value to key off of later
     screen = m.ViewController.CreateEnumInputScreen(pref.values, RegRead(regKey, "preferences", pref.default), pref.heading, [label], false)
     screen.Listener = m
     screen.Show()
@@ -169,6 +170,7 @@ End Sub
 Function prefsGetEnumValue(regKey)
     pref = m.Prefs[regKey]
     value = RegRead(regKey, "preferences", pref.default)
+    m.Changes.AddReplace(regKey, value) ' ljunkie add changes, we can key of changes: 'm.Changes["_prev_{regKey}"] will have the previously selection
     for each item in pref.values
         if value = item.EnumValue then
             return item.title
@@ -241,30 +243,6 @@ Function createPreferencesScreen(viewController) As Object
         default: "random"
     }
 
-    ' Rotten Tomatoes
-    rottentomatoes = [
-        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Get ratings from RottenTomatoes" },
-        { title: "Enabled", EnumValue: "enabled" }
-    ]
-    obj.Prefs["rottentomatoes"] = {
-        values: rottentomatoes,
-        heading: "Rotten Tomatoes",
-        default: "disabled"
-    }
-
-    ' Trailers
-    trailers = [
-        { title: "Enabled TMDB & Youtube", EnumValue: "enabled", ShortDescriptionLine2: "Get Movies Trailers" },
-        { title: "Enabled TMDB w/ Youtube Fallback", EnumValue: "enabled_tmdb_ytfb" }
-        { title: "Disabled", EnumValue: "disabled"}
-
-    ]
-    obj.Prefs["trailers"] = {
-        values: trailers,
-        heading: "Movie Trailers",
-        default: "enabled_tmdb_yt"
-    }
-
     obj.myplex = GetGlobalAA().Lookup("myplex")
     obj.checkMyPlexOnActivate = false
 
@@ -278,13 +256,12 @@ Sub showPreferencesScreen()
     m.Screen.SetTitle("Preferences v" + GetGlobalAA().Lookup("appVersionStr"))
     m.Screen.SetHeader("Set Plex Channel Preferences")
 
-    ' re-orderd - RR
+    ' re-ordered - RR
     m.AddItem({title: "Plex Media Servers"}, "servers")
     m.AddItem({title: getCurrentMyPlexLabel()}, "myplex")
+    m.AddItem({title: "RARflix Preferences", ShortDescriptionLine2: "the goods"}, "rarflix_prefs")
     m.AddItem({title: "Quality"}, "quality", m.GetEnumValue("quality"))
     m.AddItem({title: "Remote Quality"}, "quality_remote", m.GetEnumValue("quality_remote"))
-    m.AddItem({title: "Rotten Tomatoes"}, "rottentomatoes", m.GetEnumValue("rottentomatoes"))
-    m.AddItem({title: "Movie Trailers"}, "trailers", m.GetEnumValue("trailers"))
     m.AddItem({title: "Direct Play"}, "directplay", m.GetEnumValue("directplay"))
     m.AddItem({title: "Audio Preferences"}, "audio_prefs")
     m.AddItem({title: "Home Screen"}, "homescreen")
@@ -365,8 +342,7 @@ Function prefsMainHandleMessage(msg) As Boolean
                     m.ViewController.InitializeOtherScreen(screen, invalid)
                     screen.Show()
                 end if
-            ' removed 5.1 (finepointone) -- moved to audio prefs RR
-            else if command = "quality" OR command = "quality_remote" OR command = "level" OR command = "directplay" OR command = "screensaver" OR command = "rottentomatoes" OR command = "trailers" then
+            else if command = "quality" OR command = "quality_remote" OR command = "level" OR command = "directplay" OR command = "screensaver" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "slideshow" then
                 screen = createSlideshowPrefsScreen(m.ViewController)
@@ -399,6 +375,10 @@ Function prefsMainHandleMessage(msg) As Boolean
             else if command = "audio_prefs" then
                 screen = createAudioPrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["Audio Preferences"])
+                screen.Show()
+            else if command = "rarflix_prefs" then
+                screen = createRARFlixPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["RARFlix Preferences"])
                 screen.Show()
             else if command = "close" then
                 m.Screen.Close()
@@ -594,15 +574,15 @@ Function createAdvancedPrefsScreen(viewController) As Object
     ' H.264 Level
     levels = [
         { title: "Level 4.0 (Supported)", EnumValue: "40" },
-        { title: "Level 4.1", EnumValue: "41", ShortDescriptionLine2: "This level may not be supported well." },
+        { title: "Level 4.1 (Supported)", EnumValue: "41" },
         { title: "Level 4.2", EnumValue: "42", ShortDescriptionLine2: "This level may not be supported well." },
         { title: "Level 5.0", EnumValue: "50", ShortDescriptionLine2: "This level may not be supported well." },
         { title: "Level 5.1", EnumValue: "51", ShortDescriptionLine2: "This level may not be supported well." }
     ]
     obj.Prefs["level"] = {
         values: levels,
-        heading: "Use specific H264 level. Only 4.0 is officially supported.",
-        default: "40"
+        heading: "Use specific H264 level. Up to 4.1 is officially supported.",
+        default: "41"
     }
 
     ' HLS seconds per segment
@@ -1433,11 +1413,11 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
     values = [
         { title: "All Items", key: "all" },
         { title: "On Deck", key: "onDeck" },
-        { title: "Recently Viewed Shows", key: "recentlyViewedShows" },
         { title: "Recently Added", key: "recentlyAdded" },
         { title: "Recently Released/Aired", key: "newest" },
         { title: "Unwatched", key: "unwatched" },
         { title: "Recently Viewed", key: "recentlyViewed" },
+        { title: "Recently Viewed Shows", key: "recentlyViewedShows" },
         { title: "By Album", key: "albums" },
         { title: "By Collection", key: "collection" },
         { title: "By Genre", key: "genre" },
@@ -1453,6 +1433,11 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
         { title: "By Folder", key: "folder" },
         { title: "Search", key: "_search_" }
     ]
+
+    ' Unshift these in -- easier to remember to merge with PlexTest
+    values.Unshift({ title: "[movie] Recently Added (uw)", key: "all?type=1&unwatched=1&sort=addedAt:desc" })
+    values.Unshift({ title: "[movie] Recently Released (uw)", key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc" })
+
     obj.Prefs["section_row_order"] = {
         values: values,
         default: ""

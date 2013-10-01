@@ -332,7 +332,12 @@ Sub ReorderItemsByKeyPriority(items, keys)
     for j = keys.Count() - 1 to 0 step -1
         key = keys[j]
         for i = 0 to items.Count() - 1
-            if items[i].key = key then
+            ' ljunkie - we want to be able to change the Plex-Container size with a toggle-- we will strip this from the key to match the order
+            r  = CreateObject("roRegex", "\&X-Plex-Container-Start=0\&X-Plex-Container-Size\=.*", "")
+            rf_test = invalid           
+            if r.IsMatch(items[i].key) then rf_test = r.replace(items[i].key,"")
+
+            if (items[i].key = key) or (rf_test <> invalid and rf_test = key) then
                 item = items[i]
                 items.Delete(i)
                 items.Unshift(item)
@@ -357,4 +362,28 @@ Function CheckMinimumVersion(versionArr, requiredVersion) As Boolean
         index = index + 1
     next
     return true
+End Function
+
+Function CurrentTimeAsString(localized=true As Boolean) As String
+    time = CreateObject("roDateTime")
+
+    if localized then
+        time.ToLocalTime()
+    end if
+
+    hours = time.GetHours()
+    if hours >= 12 then
+        hours = hours - 12
+        suffix = " pm"
+    else
+        suffix = " am"
+    end if
+    if hours = 0 then hours = 12
+    timeStr = tostr(hours) + ":"
+
+    minutes = time.GetMinutes()
+    if minutes < 10 then
+        timeStr = timeStr + "0"
+    end if
+    return timeStr + tostr(minutes) + suffix
 End Function

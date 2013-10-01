@@ -7,6 +7,18 @@ Function createBasePhotoMetadata(container, item) As Object
 
     metadata.ratingKey = item@ratingKey
 
+    ' photos don't have a default - so only userrating for now
+    userRating = item@userRating
+    if userRating <> invalid then
+	metadata.UserRating =  int(val(userRating)*10)
+        ' if prefer user rating OR we ONLY show user ratings, then override the starRating if it exists (isn't need for photos yet)
+        ' refer to VideoMetadata if these defaults ever change
+            metadata.StarRating =  int(val(userRating)*10)
+    else
+	metadata.UserRating =  0
+    end if
+
+
     ' We never need to fetch and parse additional details for audio metadata
     metadata.HasDetails = True
 

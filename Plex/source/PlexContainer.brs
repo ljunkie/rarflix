@@ -110,7 +110,7 @@ Sub containerParseXml()
         else if n@search = "1" then
             metadata = newSearchMetadata(m, n)
         else if n.GetName() = "Directory" then
-            metadata = newDirectoryMetadata(m, n)
+            metadata = newDirectoryMetadata(m, n)       
         else if nodeType = "movie" OR nodeType = "episode" then
             metadata = newVideoMetadata(m, n, m.ParseDetails)
         else if nodeType = "clip" OR n.GetName() = "Video" then

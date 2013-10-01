@@ -113,6 +113,23 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         item = context
     end if
 
+    ' ljunkie - reset breadcrumb for TV show if tv watched status enabled and title <> umtitle (post and grid view supported)
+    if RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" and (item.type = "show" or item.viewgroup = "season" or item.viewgroup = "show" or item.viewgroup = "episode") then
+        if item.umtitle <> invalid and breadcrumbs[0] <> invalid and breadcrumbs[0] = item.title then 
+	    Debug("tv watched status enabled: setting breadcrumb back to original title; change from " + breadcrumbs[0] + " -to- " + item.umtitle)
+            breadcrumbs[0] = item.umtitle
+        else if item.parentindex <> invalid and item.viewgroup = "episode" then 
+	    Debug("tv watched status enabled: setting breadcrumb back to original title (tv gridview?); change from " + breadcrumbs[0] + " -to- " + item.umtitle)
+            breadcrumbs[0] = "Season " + tostr(item.parentindex)
+            breadcrumbs[1] = ""
+	else 
+            Debug("tv watched status enabled: DID not match criteria(1) -- NOT setting breadcrumb back to original title; change from " + breadcrumbs[0] + " -to- " + item.umtitle)
+        end if
+    ' this causes a crash in playing Photos from Year with the play button -- not need for this anyways..
+    'else if RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" and item.umtitle <> invalid and breadcrumbs[0] <> invalid and breadcrumbs[0] = item.title then 
+    '	 Debug("tv watched status enabled: DID not match criteria(2) -- NOT setting breadcrumb back to original title; change from " + breadcrumbs[0] + " -to- " + item.umtitle)
+    end if
+
     contentType = item.ContentType
     viewGroup = item.viewGroup
     if viewGroup = invalid then viewGroup = ""
@@ -159,8 +176,20 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if contentType = "section" then
         RegWrite("lastMachineID", item.server.machineID)
         RegWrite("lastSectionKey", item.key)
-        screen = createGridScreenForItem(item, m, "flat-movie")
+
         screenName = "Section: " + tostr(item.type)
+        if tostr(item.type) = "artist" then 
+            Debug("---- override photo-fit/flat-square for section with content of " + tostr(item.type))
+            screen = createGridScreenForItem(item, m, "flat-square")
+            screen.screen.SetDisplayMode("Photo-Fit")
+            screen.screen.SetListPosterStyles("landscape")
+        else if tostr(item.type) = "photo" then 
+            Debug("---- override photo-fit/flat-16x9 for section with content of " + tostr(item.type))
+            screen = createGridScreenForItem(item, m, "flat-16X9")
+            screen.screen.SetDisplayMode("Photo-Fit")
+        else 
+            screen = createGridScreenForItem(item, m, "flat-movie") ' some might fair better with flat-square? (TODO)
+        end if
     else if contentType = "playlists" then
         screen = createGridScreenForItem(item, m, "flat-16X9")
         screenName = "Playlist Grid"
@@ -278,8 +307,38 @@ End Function
 
 Function vcCreateContextMenu()
     ' Our context menu is only relevant if the audio player has content.
+    ' ljunkie -- we need some more checks here -- if audio is not playing/etc and we want to use the asterisk button for other things.. how do we work this?
+    ' TODO
     if m.AudioPlayer.ContextScreenID = invalid then return invalid
 
+    ' ljunkie - I know.. more crazy logic -- TODO cleanup
+    if NOT m.audioplayer.ispaused and NOT m.audioplayer.isplaying then ' always show music options when music is paused or playing
+       Debug( "-------------------------------------------------------------")
+       Debug( "------------------show audio dialog -------------------------")
+       screen = m.screens.peek()
+       if type(screen.screen) = "roMessageDialog" then  ' if we already have a new dialog - lets not replace it
+           Debug( "---disabling audio dialog for a new DIALOG" + screen.screenname + " type: type(screen.screen)")
+           return invalid        
+       else if screen.screenname = "Home" or screen.screenname = "Section: movie" or screen.screenname = "Section: show" then ' this might need some cleanup ( we only care to disable if home, movie, shows )
+           if screen.selectedrow <> invalid and screen.focusedindex <> invalid and type(screen.contentarray[screen.selectedrow][screen.focusedindex]) = "roAssociativeArray" then
+               itype = screen.contentarray[screen.selectedrow][screen.focusedindex].type ' movie, show, photo, episode, etc..
+               ctype = screen.contentarray[screen.selectedrow][screen.focusedindex].contenttype ' section
+               if ctype <> "section" and ctype <> "album" and ctype <> "channel" ' allow audio dialog for content that doesn't have special dialogs ( wonder if there is a list of contenttypes somewhere?)
+                   Debug( "---disabling audio dialog for ctype " + ctype + " " + itype + " " + screen.screenname + " type: type(screen.screen)")
+                   return invalid
+               end if
+               Debug( "--- showing audio dialog for itype " + itype + " " + screen.screenname + " type: type(screen.screen)")
+           else 
+               Debug( "---disabling audio dialog for " + screen.screenname + " type: type(screen.screen)")
+               return invalid        
+           end if
+       else 
+           Debug( "---- showing audio dialog -- AUDIO is not paused and not playing -- should we show the screen here?" + screen.screenname + " type: type(screen.screen)")
+       end if 
+       Debug( "-------------------------------------------------------------")
+    end if
+
+    ' if we haven't returned invalid from the crazy logic above.. then I guess we are showing the audio dialog
     return m.AudioPlayer.ShowContextMenu()
 End Function
 
@@ -359,22 +418,30 @@ Function vcIsVideoPlaying() As Boolean
 End Function
 
 Sub vcShowReleaseNotes()
-    header = GetGlobal("appName") + " has been updated to " + GetGlobal("appVersionStr")
+    header = ""
+    title = GetGlobal("appName") + " updated to " + GetGlobal("appVersionStr")
     paragraphs = []
-    paragraphs.Push("Changes in this version include:")
-    paragraphs.Push(" - Trailer Support for Movies: TMDB * YouTube")
-    paragraphs.Push(" - EndDate/Time, Bitrate on HUD (down buttong during video play)")
-    paragraphs.Push(" -- Custom changes made --")
-    paragraphs.Push(" - Audio Preference updates: 5.1 and DTS settings")
-    paragraphs.Push(" - Rotten Tomatoes Critic/User Ratings (Enable in Preferences).")
-    paragraphs.Push(" - Enter Season or Specific Season from Episode (More... button)")
-    paragraphs.Push(" - Release Date, Direct/Transcoded info on HUD")
-    paragraphs.Push(" - other minor changes")
-    paragraphs.Push(" Enjoy. -Rob")
+    paragraphs.Push("New: View the Cast and Crew for Movies")
+    paragraphs.Push("New: ( * ) Remote Button works is most areas - try it!")
+    paragraphs.Push("New: Hide some rows per section type [movie,tv,music]")
+    paragraphs.Push("New: Unwatched Rows: Prefs-> Section Display-> Reorder Rows")
+    paragraphs.Push("New: RARFflix preferences - toggles for mods")
+    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+" Hide Rows, Clock, Dynamic Headers, Search Title, etc.. ")
+    paragraphs.Push("New: Movie Trailers enhancements - navigation, play from list, play all")
+    paragraphs.Push("+ Movie Trailers, Rotten Tomatoes Ratings, HUD mods, other misc updates")
+    paragraphs.Push(" ")
+    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+" ** Please let me know of issues - rarflix@rarforge.com **")
 
     screen = createParagraphScreen(header, paragraphs, m)
     screen.ScreenName = "Release Notes"
+    screen.Screen.SetTitle(title)
     m.InitializeOtherScreen(screen, invalid)
+
+    ' As a one time fix, if the user is just updating and previously specifically
+    ' set the H.264 level preference to 4.0, update it to 4.1.
+    if RegRead("level", "preferences", "41") = "40" then
+        RegWrite("level", "41", "preferences")
+    end if
 
     screen.Show()
 End Sub
@@ -482,7 +549,7 @@ Sub vcPopScreen(screen)
         Debug("Top of stack is once again: " + screenName)
         m.Analytics.TrackScreen(screenName)
         newScreen.Activate(screen)
-        RRbreadcrumbDate(newScreen)
+        RRbreadcrumbDate(newScreen) ' ljunkie - clock
     end if
 
     ' If some other screen requested this close, let it know.

@@ -31,6 +31,13 @@ Sub Main(args)
 
     RegDelete("quality_override", "preferences")
 
+    ' ljunkie - remove prefs on start - testing
+    RegDelete("rf_bcdynamic", "preferences")
+    RegDelete("rf_rottentomatoes", "preferences")
+    RegDelete("rf_trailers", "preferences")
+    RegDelete("rf_tvwatch", "preferences")
+
+
     ' Convert the old theme music preference to the new one
     oldThemeMusic = RegRead("play_theme_music", "preferences", "")
     if oldThemeMusic <> "" then
@@ -45,9 +52,8 @@ Sub Main(args)
 
     initGlobals()
 
-    ' Youtube Trailers - RR
-    m.youtube = InitYouTube()
-    youtube = LoadYouTube()
+    ' youtube = LoadYouTube() not needed
+    rarflix = InitRARFlix() 
 
     'prepare the screen for display and get ready to begin
     controller = createViewController()
@@ -66,6 +72,7 @@ Sub initGlobals()
     GetGlobalAA().AddReplace("rokuVersionStr", versionStr)
     GetGlobalAA().AddReplace("rokuVersionArr", [major, minor, build])
 
+    Debug("UTC time: " + CurrentTimeAsString(false))
     Debug("Roku version: " + versionStr + " (" + version + ")")
 
     manifest = ReadAsciiFile("pkg:/manifest")

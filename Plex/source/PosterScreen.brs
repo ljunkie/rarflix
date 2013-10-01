@@ -170,6 +170,18 @@ Function posterHandleMessage(msg) As Boolean
                 m.Screen.SetContentList(status.content)
                 status.lastUpdatedSize = status.content.Count()
             end if
+        else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then ' ljunkie - use * for more options on focused item
+                ' currently just a reminder stub - info button for the episode -- TODO -- definitely wrong
+                content = m.contentArray[m.focusedList].content[m.contentArray[m.focusedList].focusedindex]
+                itype = content.type
+                'if tostr(itype) <> "invalid" and itype = "episode" then
+                '    obj = m.viewcontroller.screens.peek() ' probably wrong..
+                '    obj.metadata = m.contentArray[m.focusedList].content[m.contentArray[m.focusedList].focusedindex]
+                '    obj.Item = m.contentArray[m.focusedList].content[m.contentArray[m.focusedList].focusedindex]
+                '    rfVideoMoreButtonFromGrid(obj)
+                'else 
+                   Debug("Info Button (*) not handled for content type: " +  tostr(itype))
+                'end if
         else if msg.isRemoteKeyPressed() then
             if msg.GetIndex() = 13 then
                 Debug("Playing item directly from poster screen")
@@ -222,7 +234,7 @@ Sub posterShowContentList(index)
     end if
 
     Debug("Showing screen with " + tostr(status.content.Count()) + " elements")
-    Debug("List style is " + tostr(status.listStyle) + ", " + tostr(status.listDisplayMode))
+    'Debug("List style is " + tostr(status.listStyle) + ", " + tostr(status.listDisplayMode)) ' redundant now
 
     if status.content.Count() = 0 AND NOT m.FilterMode then
         if m.DialogShown then
@@ -241,7 +253,17 @@ Sub posterShowContentList(index)
         end if
     else
         m.Screen.Show()
-        m.Screen.SetFocusedListItem(status.focusedIndex)
+        ' ljunkie - if we have set the prefence to focus on unwatched -- lets do that!
+        if RegRead("rf_focus_unwatched", "preferences", "enabled") = "enabled" then
+            if status.focusedIndex <> invalid and status.focusedIndex = 0 then ' only continue if the first item is 0, otherwise we might of came here with a purpose!
+                for index = 0 to status.content.Count() - 1
+                    if status.content[index].viewcount = invalid then exit for
+                end for
+                m.Screen.SetFocusedListItem(index) ' this will either be the last item of the first unwatched
+            end if
+        else 
+            m.Screen.SetFocusedListItem(status.focusedIndex)
+        end if
     end if
 End Sub
 
@@ -250,13 +272,17 @@ Function getDefaultListStyle(viewGroup, contentType) As Object
     aa.style = "arced-square"
     aa.display = "scale-to-fit"
 
+
     if viewGroup = "episode" AND contentType = "episode" then
         aa.style = "flat-episodic"
         aa.display = "zoom-to-fill"
     else if viewGroup = "movie" OR viewGroup = "show" OR viewGroup = "season" OR viewGroup = "episode" then
         aa.style = "arced-portrait"
+    else if viewGroup = "photo" then 
+        aa.style = "arced-landscape"
+        aa.display = "photo-fit"
     end if
-
+    Debug("--- Poster Style for " + viewGroup + " " + aa.style +":"+aa.display)
     return aa
 End Function
 

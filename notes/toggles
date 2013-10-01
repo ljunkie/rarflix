@@ -1,0 +1,28 @@
+==Toggles done==
+* Rotten Tomatoes integration for Movies ( user ratings default )
+* Movie Trailers: Streamed from Youtube (TMDb)
+* Home Screen Clock: Add time/date to Main Screen
+* Hide Rows - hide rows from sections (gobal)
+* Dynamic Headers - Change breadcrumbs (top right) for OnDeck/RecentlyAdded/etc - when content is dynamic left/right button
+* TV Show Titles - append watched status
+
+==Toggle maybe==
+ --- HUD info ---
+* HUD: EndTime, Time Left and Average Bitrate added to HUD
+* HUD: display current time and time watched when video duration is unavailable ( usually queue videos, some channels, trailers ) -
+ -- others --
+* ReFrames upped to 9 ( may direct play more media )
+
+
+==Mods not requiring toggles==
+  -- required for space issue --
+* New Dialog for Mark as watched/unwatched for partially watched content 
+
+ -- in plex official channel --
+* Enter a specific season/show from an episode 
+* (PlexTest) Audio Preferences: DTS enable/disable option
+* (PlexTest) Audio Preferences: Moved some settings under the advanced settings that have to do with Audio to this section
+* (PlexTest) Clock on main Screen (but I am adding a toggle since I am doing it differently )
+
+ -- fixes --
+* (PlexTest) Fix: TV marked as watched/unwatched does not function as it should - fixed: github

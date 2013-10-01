@@ -3,7 +3,7 @@
 '* like the grid screen that want to load additional data in the background.
 '*
 
-Function createPaginatedLoader(container, initialLoadSize, pageSize)
+Function createPaginatedLoader(container, initialLoadSize, pageSize, item = invalid as dynamic)
     loader = CreateObject("roAssociativeArray")
     initDataLoader(loader)
 
@@ -16,6 +16,53 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize)
     loader.contentArray = []
 
     keys = container.GetKeys()
+
+    ' Hide Rows - ljunkie ( remove key and loader.names )
+    if type(item) = "roAssociativeArray" and item.contenttype = "section" then 
+        itype = item.type
+        for index = 0 to keys.Count() - 1
+            if keys[index] <> invalid then  ' delete from underneath does this
+                hide = false
+                rf_hide_key = "rf_hide_" + keys[index]
+
+                ' recenltyAdded and newest(recently Release/Aired) are special/hidden per type
+                if keys[index] = "recentlyAdded" or keys[index] = "newest" and (itype = "movie" or itype = "show" or itype = "artist") then 
+                    rf_hide_key = rf_hide_key + "_" + itype 'print "Checking " + keys[index] + " for specific type of hide: " + itype
+                end if
+
+                if RegRead(rf_hide_key, "preferences", "show") <> "show"  then 
+                    Debug("---- ROW HIDDEN: " + keys[index] + " - hide specified via reg " + rf_hide_key )
+                    keys.Delete(index)
+                    loader.names.Delete(index)
+                    index = index - 1
+                end if
+            end if
+        end for
+    end if
+    ' End Hide Rows
+
+    ' ljunkie - CUSTOM new rows (movies only for now) -- allow new rows based on allows PLEX filters
+    if type(item) = "roAssociativeArray" and item.contenttype = "section" and item.type = "movie" then 
+        size_limit = RegRead("rf_rowfilter_limit", "preferences","200") 'gobal size limit Toggle for filter rows
+
+        ' unwatched recently released
+        new_key = "all?type=1&unwatched=1&sort=originallyAvailableAt:desc"
+        if RegRead("rf_hide_"+new_key, "preferences", "show") = "show" then 
+            new_key = new_key + "&X-Plex-Container-Start=0&X-Plex-Container-Size=" + size_limit
+            keys.Push(new_key)
+            loader.names.Push("Recently Released (unwatched)")
+        end if
+
+        ' unwatched recently Added
+        new_key = "all?type=1&unwatched=1&sort=addedAt:desc"
+        if RegRead("rf_hide_"+new_key, "preferences", "show") = "show" then 
+            new_key = new_key + "&X-Plex-Container-Start=0&X-Plex-Container-Size=" + size_limit
+            keys.Push(new_key)
+            loader.names.Push("Recently Added (unwatched)")
+        end if
+    end if
+    ' END custom rows
+
     for index = 0 to keys.Count() - 1
         status = CreateObject("roAssociativeArray")
         status.content = []
@@ -29,17 +76,19 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize)
     end for
 
     ' Set up search nodes as the last row if we have any
-    searchItems = container.GetSearch()
-    if searchItems.Count() > 0 then
-        status = CreateObject("roAssociativeArray")
-        status.content = searchItems
-        status.loadStatus = 0
-        status.key = "_search_"
-        status.name = "Search"
-        status.pendingRequests = 0
-        status.countLoaded = 0
-
-        loader.contentArray.Push(status)
+    if RegRead("rf_hide_search", "preferences", "show") = "show" then     ' ljunkie - or hide it ( why would someone do this? but here is the option...)
+        searchItems = container.GetSearch()
+        if searchItems.Count() > 0 then
+            status = CreateObject("roAssociativeArray")
+            status.content = searchItems
+            status.loadStatus = 0
+            status.key = "_search_"
+            status.name = "Search"
+            status.pendingRequests = 0
+            status.countLoaded = 0
+    
+            loader.contentArray.Push(status)
+        end if
     end if
 
     ' Reorder container sections so that frequently accessed sections
@@ -49,7 +98,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize)
     for index = 0 to loader.contentArray.Count() - 1
         status = loader.contentArray[index]
         loader.names[index] = status.name
-        if status.key = "_search_" then
+         if status.key = "_search_" then
             status.key = invalid
         end if
     next
@@ -132,6 +181,16 @@ End Sub
 Sub loaderStartRequest(row, startItem, count)
     status = m.contentArray[row]
     request = CreateObject("roAssociativeArray")
+    ' REM ljunkie - need to add more rows? wrong section - but this section could override a row (might be useful if we can get toggles working)
+    ' if status.key = "recentlyAdded" then
+    '     status.key = "all?type=1&unwatched=1&sort=addedAt:desc"
+    ' end if
+    '
+    ' if status.key = "newest" then
+    '     status.key = "all?type=1&unwatched=1&sort=originallyAvailableAt:desc"
+    ' end if
+    ' print "start request ---------------------- " + status.key
+
     httpRequest = m.server.CreateRequest(m.sourceUrl, status.key)
     httpRequest.AddHeader("X-Plex-Container-Start", startItem.tostr())
     httpRequest.AddHeader("X-Plex-Container-Size", count.tostr())
@@ -175,6 +234,17 @@ Sub loaderOnUrlEvent(msg, requestContext)
     else
         totalSize = container.Count()
     end if
+
+    ' ljunkie - hack to limit the unwatched rows ( we can remove this if Plex ever gives us Unwatched Recently Added/Released Directories )
+    ' INFO: Normally Plex will continue to load data when the "loaded content size" < "XML MediaContainer totalSize" ( status.countLoaded < totalSize )
+    ' Since we are specifying the Container-Size - we will never be able to load the totalSize; reset the totalSize to "MediaContainer Size"
+    r = CreateObject("roRegex", "all\?.*X-Plex-Container-Size\=", "i")
+    if r.IsMatch(container.sourceurl) then
+        totalSize = container.Count()
+        Debug("----------- " + container.sourceurl)
+        Debug("----------- RF force container (stop loading) after X-Plex-Container-Size=" + tostr(totalSize))
+    end if
+    ' end hack
 
     if totalSize <= 0 then
         status.loadStatus = 2

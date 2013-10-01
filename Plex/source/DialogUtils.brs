@@ -15,6 +15,7 @@ Function createBaseDialog() As Object
     obj.Facade = invalid
     obj.Buttons = []
     obj.HandleButton = invalid
+    obj.SetFocusButton = invalid
     obj.Title = invalid
     obj.Text = invalid
     obj.Item = invalid
@@ -72,12 +73,19 @@ Sub dialogRefresh()
         cmd = button.Next()
         m.ButtonCommands[buttonCount] = cmd
         if button[cmd] = "_rate_" then
-            m.Screen.AddRatingButton(buttonCount, m.Item.UserRating, m.Item.StarRating, "")
+	    if m.Item.UserRating = invalid then m.Item.origStarRating = 0
+            if m.Item.origStarRating = invalid then m.Item.origStarRating = 0
+            m.Screen.AddRatingButton(buttonCount, m.Item.UserRating, m.Item.origStarRating, "")
         else
             m.Screen.AddButton(buttonCount, button[cmd])
         end if
         buttonCount = buttonCount + 1
     next
+
+    ' ljunkie - allow us to focus on a specific button
+    if m.FocusedButton <> invalid then
+        m.Screen.SetFocusedMenuItem(m.FocusedButton)
+    end if
 
     m.Screen.Show()
 End Sub
@@ -121,10 +129,19 @@ Function dialogHandleMessage(msg) As Boolean
         if msg.isScreenClosed() then
             closeScreens = true
             m.ViewController.PopScreen(m)
+        else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then
+            'print "closeDialog"
+            closeScreens = true
+            m.ViewController.PopScreen(m)
         else if msg.isButtonPressed() then
             command = m.ButtonCommands[msg.getIndex()]
             Debug("Button pressed: " + tostr(command))
             done = true
+            ' ljunkie - if screen has a SetFocusButton function call it before the normal handle buttom; dialog.SetFocusButton = dialogSetFocusButton
+            if m.SetFocusButton <> invalid then 
+                m.SetFocusButton(msg.getIndex())
+            end if 
+            ' ljunkie - we can not override the *.FocusedButton in the HandleButton if needed
             if m.HandleButton <> invalid then
                 done = m.HandleButton(command, msg.getData())
             end if
@@ -202,4 +219,9 @@ Function popupHandleButton(key, data) As Boolean
 
     return true
 End Function
+
+Function dialogSetFocusButton(index) As Boolean
+    obj = m.ParentScreen
+    obj.FocusedButton = index
+end function
 

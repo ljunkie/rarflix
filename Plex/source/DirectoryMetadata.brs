@@ -1,4 +1,4 @@
-
+' ljunkie - directory key from XML is parsed here - this is where RokuPlex get's is RowList
 Function newDirectoryMetadata(container, item) As Object
     directory = createBaseMetadata(container, item)
 

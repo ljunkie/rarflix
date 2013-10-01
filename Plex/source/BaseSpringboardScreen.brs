@@ -13,6 +13,8 @@ Function createBaseSpringboardScreen(context, index, viewController, includePred
     screen = CreateObject("roSpringboardScreen")
     screen.SetMessagePort(obj.Port)
 
+    screen.UseStableFocus(true) ' ljunkie - setting this globally - might want to toggle this or only enable for Video?
+
     ' Filter out anything in the context that can't be shown on a springboard.
     contextCopy = []
     i = 0
@@ -155,6 +157,17 @@ Function sbRefresh(force=false)
         end if
     end if
 
+    ' disable right/left for now -- until bug is fixed. Probably a better way to match this - but I don't know of it yet.
+    ' We should allow this if the NEXT content type left or right is also a movie.. TODO
+    '  ^ but again the user might wonder why it works sometimes and not others.. so maybe better to just keep disabled
+    r = CreateObject("roRegex", "library/recentlyAdded", "") ' note: only affect global recentlyAdded ( allows different content types )
+    if tostr(m.screenname) = "Preplay movie" and m.metadata.contenttype ="movie"  and r.Match(m.metadata.sourceurl)[0] <> invalid
+            Debug("------------ disabled right/left buttons on Recenlty Added - Preplay screen - and override breadcrumbs")
+            m.Screen.AllowNavLeft(false)
+            m.Screen.AllowNavRight(false)
+            m.screen.SetBreadcrumbText(m.metadata.server.name,"Recently Added")' override breadcrumb to - global recently added, let's show the server
+    end if
+
     ' See if we should switch the poster
     if m.metadata.SDDetailThumb <> invalid then
         m.metadata.SDPosterUrl = m.metadata.SDDetailThumb
@@ -253,6 +266,8 @@ Sub sbAddButton(label, command)
 End Sub
 
 Sub sbAddRatingButton(userRating, rating, command)
+    if userRating = invalid then userRating = 0
+    if rating = invalid then rating = 0
     m.Screen.AddRatingButton(m.buttonCount, userRating, rating)
     m.buttonCommands[str(m.buttonCount)] = command
     m.buttonCount = m.buttonCount + 1

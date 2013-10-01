@@ -50,6 +50,7 @@ End Sub
 Sub AddAccountHeaders(transferObj, token=invalid)
     if token <> invalid then
         transferObj.AddHeader("X-Plex-Token", token)
+        'Debug("adding token X-Plex-Token:"+token) sometimes I just want to test and verify we are pushing the headers for shared users
     end if
 
     myplex = GetMyPlexManager()
@@ -129,7 +130,7 @@ Function http_get_to_string_with_timeout(seconds as Integer, headers=invalid As 
     ' added for trailer/youtube support - RR
     if headers<>invalid then
         for each key in headers
-            print key,headers[key]
+            'print key,headers[key]
             m.Http.AddHeader(key, headers[key])
         end for
     end if

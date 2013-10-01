@@ -105,7 +105,7 @@ Sub analyticsSendTrackingRequest(vars)
 
     data = m.BaseData
     for each name in vars
-        data = data + "&" + name + "=" + request.Escape(vars[name])
+        if vars[name] <> invalid then data = data + "&" + name + "=" + request.Escape(vars[name])
     next
 
     Debug("Final analytics data: " + data)

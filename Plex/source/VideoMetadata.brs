@@ -77,8 +77,26 @@ Sub setVideoBasics(video, container, item)
     if item@grandparentKey <> invalid then
        video.grandparentKey = item@grandparentKey
     end if
+    if item@grandparentTitle <> invalid then
+       video.ShowTitle = item@grandparentTitle
+    end if
+
     if item@parentKey <> invalid then
-       video.parentKey = item@parentKey
+        video.parentKey = item@parentKey
+        if video.showTitle = invalid then
+            if container.xml@grandparentTitle <> invalid then 
+                video.ShowTitle = container.xml@grandparentTitle
+            else if container.xml@title2 <> invalid then 
+                video.ShowTitle = container.xml@title2
+            else
+                video.ShowTitle = "invalid"
+            end if
+        end if
+
+        if video.grandparentKey = invalid and container.xml@key <> invalid then 
+            video.grandparentKey = "/library/metadata/" + tostr(container.xml@key)
+            Debug("----- setting grandparent key to " + video.grandparentKey + " " + video.showTitle)
+        end if
     end if
 
     ' Bookmark position represents the last watched so a video could be marked watched but
@@ -128,11 +146,13 @@ Sub setVideoBasics(video, container, item)
         end if
 
         if episodeStr <> invalid AND seasonStr <> invalid then
-            if container.xml@mixedParents = "1" then
-                video.EpisodeStr = seasonStr + " " + episodeStr
-            else
-                video.EpisodeStr = episodeStr
-            end if
+             ' ljunkie - always show season/episode - keeps the formatting standard
+             video.EpisodeStr = seasonStr + " " + episodeStr
+            'if container.xml@mixedParents = "1" then
+            '   video.EpisodeStr = seasonStr + " " + episodeStr
+            'else
+            '    video.EpisodeStr = episodeStr
+            'end if
             video.OrigReleaseDate = video.ReleaseDate
             video.ReleaseDate = video.EpisodeStr
             video.TitleSeason = firstOf(item@title, item@name) + " - " + video.EpisodeStr
@@ -143,10 +163,24 @@ Sub setVideoBasics(video, container, item)
 
     video.CleanTitle = video.ShortDescriptionLine1
 
-    ' if a video has ever been watch mark as such, else mark partially if there's a recorded
-    ' offset
+    'ljunkie - search title for RT and Trailers. We will use CleanTitle unless overridden
+    if RegRead("rf_searchtitle", "preferences", "title") = "originalTitle" then    
+        video.RFSearchTitle = firstOf(item@originalTitle, item@title, item@name)
+    else 
+        video.RFSearchTitle = firstOf(item@title, item@name)
+    end if
+    'ljunkie - end search title
+
+    if tostr(video.EpisodeStr) <> "invalid" then
+        video.ShortDescriptionLine1 = video.CleanTitle + " - " + tostr(video.EpisodeStr)
+    end if
+
+    ' if a video has ever been watch mark as such, else mark partially if there's a recorded offset
+    ' ljunkie - we should mark it as watched & partially watched -- otherwise it's confusing when watched content is ondeck
     watched_status = "invalid"
-    if video.Watched then
+    if video.Watched AND video.viewOffset <> invalid AND val(video.viewOffset) > 0 then
+       watched_status = " (Watched+Restarted)" ' try and keep it show "Watched+Partially Watched" seems to long
+    else if video.Watched then
        watched_status = " (Watched)"
     else if video.viewOffset <> invalid AND val(video.viewOffset) > 0 then
        watched_status = " (Partially Watched)"
@@ -164,13 +198,24 @@ Sub setVideoBasics(video, container, item)
 
     video.Rating = firstOf(item@contentRating, container.xml@grandparentContentRating)
     rating = item@rating
+    ropt = RegRead("rf_user_rating_only", "preferences","user_prefer") ' ljunkie - how should we display user/default star ratings
+
     if rating <> invalid then
-        video.StarRating = int(val(rating)*10)
+        if ropt = "disabled" or ropt = "user_prefer" then
+            video.origStarRating = int(val(rating)*10) ' base line for user rating
+            video.StarRating = int(val(rating)*10) ' set star rating if user_rating_only is disabled
+        else 
+            video.origStarRating = 0
+        end if 
     endif
 
     userRating = item@userRating
     if userRating <> invalid then
 	video.UserRating =  int(val(userRating)*10)
+        ' if prefer user rating OR we ONLY show user ratings, then override the starRating if it exists
+        if ropt = "user_prefer" or ropt = "user_only" then
+            video.StarRating =  int(val(userRating)*10)
+        end if
     else
 	video.UserRating =  0
     endif
@@ -218,14 +263,44 @@ Sub setVideoDetails(video, container, videoItemXml, hasDetails=true)
     ' Everything else requires a Video item, which we might not have for clips.
     if videoItemXml = invalid then return
 
+    ' ljunkie - actors/directors/writers screen addition
+    video.CastCrewList   = []
+
+    default_img = "/:/resources/actor-icon.png"
+    sizes = ImageSizes("movie", "movie")
+
+    SDThumb = video.server.TranscodedImage(video.server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
+    HDThumb = video.server.TranscodedImage(video.server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
+    if video.server.AccessToken <> invalid then
+        SDThumb = SDThumb + "&X-Plex-Token=" + video.server.AccessToken
+        HDThumb = HDThumb + "&X-Plex-Token=" + video.server.AccessToken
+    end if
+    ' end thumbs - ljunkie
+
+    'ondeck doesn't give actor/director/etc id's -- so we will force this in rarflix.brs:getPostersForCastCrew
+    ' so we will end up doing this all over again in the getPostersForCastCrew
     video.Actors = CreateObject("roArray", 15, true)
     for each Actor in videoItemXml.Role
-        video.Actors.Push(Actor@tag)
+        video.CastCrewList.Push({ name: Actor@tag, id: Actor@id, role: Actor@role, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Actor" })
+        video.Actors.Push(Actor@tag) ' original field
     next
+
     video.Director = CreateObject("roArray", 3, true)
     for each Director in videoItemXml.Director
-        video.Director.Push(Director@tag)
+        video.CastCrewList.Push({ name: Director@tag, id: Director@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Director" })
+        video.Director.Push(Director@tag) ' original field
     next
+
+    for each Producer in videoItemXml.Producer
+        video.CastCrewList.Push({ name: Producer@tag, id: Producer@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "producer" })
+        ' video.Producer.Push(Producer@tag) ' not implemented
+    next
+
+    for each Writer in videoItemXml.Writer
+        video.CastCrewList.Push({ name: Writer@tag, id: Writer@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Writer" })
+        ' video.Writer.Push(Writer@tag) ' not implemented
+    next
+
     video.Categories = CreateObject("roArray", 15, true)
     for each Category in videoItemXml.Genre
         video.Categories.Push(Category@tag)

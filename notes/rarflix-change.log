@@ -1,0 +1,99 @@
+### 2.6.13-2  (2013-09-29) - to update on forums
+* Toggle to Prefer user Ratings over Default, only show user ratings or just use the Original Default
+* Music ratings are now displayed correctly
+
+
+### 2.6.13-1  (2013-09-29)
+* Fixed some logic with the Audio Dialog buttons when playing slideshow
+* focus last selection from the Audio Dialog
+* keep the button selected in focus on the SpringBoard screens ( Video Details/ Photo Details/ etc)
+* Focus on the first unwatched item - this can be toggles in rarflix prefs
+
+### 2.6.13  (2013-09-28)
+* Fixed crash with Cast & Crew from other areas than the Video Details
+* Added Pause All/Resume All on Audio Dialog with Playing a slideshow
+* Updated the Audio Dialog with more information - Artist/Album/Year
+* Show File name in Audio Dialog with playing a slide show
+
+### 2.6.12-2 (2013-09-27)
+* Complete re-write of adding cutom rows ( currenlty the 2 "unwatched" rows for movies )
+* Re-write of Hiding Rows:
+    - One can hide Recently Added, Recently Released/Aired rows per section type [movie,show,music]
+* New unwatched rows now have a limit of 200 items
+    - toggle to change limit in rarflix prefs
+* other misc cleanup
+
+### 2.6.12-1 (2013-09-26)
+* (*) other items not handled, having their own specific dialog for the info key will bring up the Main Preferences screen
+
+* (*) "Info Button" added to other areas ( movie or tv types )
+    - Global OnDeck and Recently Added
+    - Movie Section
+    - TV Section
+
+* Toggle for Critics/Audience Score: also display a * on the rating if the score used is not the preferred rating
+
+
+### 2.6.12 (2013-09-25)
+
+* Update breadcrumb on the Global (home screen) Recently Added content.
+
+* (*) "Info Button" now works in Video Details Screen
+    - It will activate the "more..." button dialog
+    - In the dialog, the (*) will close dialog
+    - Initial addition, so let me know your thoughts
+
+* Cast and Crew for Movies: Check out the MORE button / "Cast & Crew"
+    - Display a list of Actors/Directors/Producers and Writers for selected Movie
+    - Persons poster will be displayed if your PMS has a URL for them (depends on the scaper)
+    - Select a person to get a list of movies/content with them
+    - Listed content will show Server/Section name on the top right
+    - NOTE: people searches only work in the PMS by sections for now
+            This also doesn't work for TV shows yet. That's a PMS thing..
+
+* Trailers: multiple enhancements
+    - Play All Button (plays from selected video to the end of the list)
+    - Navigation - You can click left/right in the Video Details Screen for the previous or next trailer
+    - Video Length is now available. HUD has End Time & Time Watched
+    - Directly Play a video in the list with the Play Button
+    - Breadcrumbs are now updated ( empty before )
+
+* Toggle to search Trailers/Rotten Tomatoes by Title or ORIGINAL title [default: title]
+
+* Remote Logging: If enabled, they will not go to PlexServers any more.
+    - I suggest to never use this unless you are testing with me
+
+* Show the option to Hide Rows in the preferred Row Order
+
+* Fix: updated logic in the more dialog for mark was watched/unwated; only show watched/unwatched when it make sense!
+* Fix: Breadcrumbs updated when selecting "All Seasons of {ShowTitle}" or "Season {#}" insead of just diplaying "Series"
+* Fix: Recently Added (unwatched), Recently Released (unwatched) rows could not be hidden
+* Fix: Depending on how one entered a TV Episode, the more button wouldn't exist due to data missing from the PMS response. We now obtain the needed info another way when missing.
+
+
+### 2.6.11
+
+* RARflix Preferences section: my mods that haven't made it into the Official Channel will usually be here
+* Hide Rows: you can now hide rows instead of reordering them, which you can still do too. ( not per section though )
+* Ability to toggle all modes ( well most of them )
+* TV Titles watched status: will include (watched) or ( # of # watched) or (#)  for TV shows. Not really new, but some fixes added and of course a Toggle to turn it off
+* Toggle for the Clock
+* Added 2 more rows: (only applies to movies)  -- TV is possible, but the PMS is currently way to slow to filter results
+   1) Recenlty Released (unwatched)
+   2) Recenlty Added (unwatched)
+* HUD: display current time and time watched when video duration is unavailable ( usually queue videos, some channels, trailers )
+* SlideShow Overlay toggle:  toggle for text overlay during slideshow (down button) -- request
+* Merged Schuyler's updates from the PlexTest (v2.6.9) channel: http://forums.plexap...ku/#entry465759
+
+* fix: Remove "invalid" from HUD when Release Date is unavailable ( usually queue videos, some channels, trailers )
+* fix: Ability to delete queue items (only affected rarflix/rarflixtest )
+* fix: When browsing the global on deck (non shared users) entering a movie would allow you to click left or right.
+       If the next option was not a movie, you were given the option to "play" the content which would result in a crash.
+       Now we just limit the ability to click left or right - not really a complete fix, but will stop an accidental crash.
+       (bug seen in official channel too)
+* fix: Crash when clicking the play button on a Photo folder (bug was only present in rarflixtest)
+
+
+
+NOTES: 
+ * breadcrumbs: the TOP Right area of the screen, says something like "Movies * Recently Added"
