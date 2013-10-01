@@ -73,6 +73,7 @@ Sub setVideoBasics(video, container, item)
 
     video.ShortDescriptionLine1 = firstOf(item@title, item@name)
 
+
     'grandparentKey -- for episode - RR
     if item@grandparentKey <> invalid then
        video.grandparentKey = item@grandparentKey
@@ -220,6 +221,22 @@ Sub setVideoBasics(video, container, item)
 	video.UserRating =  0
     endif
 
+
+    if item.user@id <> invalid then 
+        ' save any variables we change for later
+        video.nowPlaying_orig_title = video.title
+        video.nowPlaying_orig_description = video.description
+        video.description = "Progress: " + GetDurationString(int(video.viewoffset.toint()/1000)) + " on " + firstof(item.Player@title, item.Player@platform)
+        video.title = UcaseFirst(item.user@title,true) + " " + UcaseFirst(item.Player@state) + ": "  + video.CleanTitle
+        ' set nowPlaying info for later
+        video.nowPlaying_maid = item.Player@machineIdentifier ' use to verify the stream we are syncing is the same
+        video.nowPlaying_user = item.user@title
+        video.nowPlaying_state = item.Player@state
+        video.nowPlaying_platform = item.Player@platform
+        video.nowPlaying_platform_title = item.Player@title
+    end if
+
+
     video.guid = item@guid
     video.url = item@url
 End Sub
@@ -300,6 +317,10 @@ Sub setVideoDetails(video, container, videoItemXml, hasDetails=true)
         video.CastCrewList.Push({ name: Writer@tag, id: Writer@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Writer" })
         ' video.Writer.Push(Writer@tag) ' not implemented
     next
+
+    'if videoItemXml.user@id <> invalid then 
+    '    video.ReleaseDate = videoItemXml.user@title + " " + videoItemXml.Player@state + " on " + firstof(videoItemXml.Player@title, videoItemXml.Player@platform)
+    'end if
 
     video.Categories = CreateObject("roArray", 15, true)
     for each Category in videoItemXml.Genre
