@@ -838,3 +838,33 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     dialog.ParentScreen = obj
     dialog.Show()
 end sub
+
+function UcaseFirst(var,strip = invalid) as dynamic
+ Debug("UcaseFirst start:" + var)
+ if strip <> invalid then ' extra function to strip chars/replace them - I didn't want to create another function
+     re = CreateObject("roRegex", "_", "i")
+     var = re.ReplaceAll(var, "       ")
+     re = CreateObject("roRegex", "rarforge", "i") ' just for me :)
+     var = re.ReplaceAll(var, "")
+     Debug("UcaseFirst strip:" + var)
+ end if
+
+ re = CreateObject("roRegex", "  ", "i") ' remove double spaces
+ var = re.ReplaceAll(var, " ")
+ Debug("UcaseFirst spaces:" + var)
+
+ ' Capitalize first of every word
+ parts = strTokenize(var, " ")
+ result = invalid
+ for each part in parts
+     if result = invalid then 
+         result = ucase(left(part,1))+right(part,len(part)-1)
+     else
+         result = result + " " + ucase(left(part,1))+right(part,len(part)-1)
+     end if
+ end for
+ if result <> invalid then var = result
+ Debug("UcaseFirst result:" + var)
+
+ return var ' return either modified or untouched var
+end function

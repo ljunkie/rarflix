@@ -163,6 +163,7 @@ Sub videoGetMediaDetails(content)
         rv = CreateObject("roRegex", "/recentlyViewed", "")
         rair = CreateObject("roRegex", "/newest", "")
         rallLeaves = CreateObject("roRegex", "/allLeaves", "")
+        rnp = CreateObject("roRegex", "/status/sessions", "")
 	'stop
 
         where = "invalid"
@@ -176,9 +177,15 @@ Sub videoGetMediaDetails(content)
 	   where = "Recently Aired"
         else if rallLeaves.Match(m.metadata.sourceurl)[0] <> invalid then
 	   where = "All Episodes"
+        else if rnp.Match(m.metadata.sourceurl)[0] <> invalid then
+	   where = "Now Playing"
         end if
-        
-        if m.metadata.ContentType = "episode" and tostr(m.metadata.ShowTitle) <> "invalid" and where <> "invalid" then 
+
+        if where = "Now Playing" then  ' set the now Playing bread crumbs to the - where/user
+           m.Screen.SetBreadcrumbEnabled(true)
+           m.Screen.SetBreadcrumbText(where, UcaseFirst(m.metadata.nowplaying_user,true))
+           Debug("Dynamically set Episode breadcrumbs; " + where + ": " + truncateString(m.metadata.ShowTitle,26))
+        else if m.metadata.ContentType = "episode" and tostr(m.metadata.ShowTitle) <> "invalid" and where <> "invalid" then 
            m.Screen.SetBreadcrumbEnabled(true)
            m.Screen.SetBreadcrumbText(where, truncateString(m.metadata.ShowTitle,26))
            Debug("Dynamically set Episode breadcrumbs; " + where + ": " + truncateString(m.metadata.ShowTitle,26))

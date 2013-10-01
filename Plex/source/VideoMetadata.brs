@@ -223,8 +223,12 @@ Sub setVideoBasics(video, container, item)
 
 
     if item.user@id <> invalid then 
-        video.description = item.user@title + " " + item.Player@state + " on " + firstof(item.Player@title, item.Player@platform) + chr(10) + video.description
-	video.title = video.umtitle + " ("+item.user@title +" "+ item.Player@state + ")"
+        video.description = "Progress: " + GetDurationString(int(video.viewoffset.toint()/1000)) + " on " + firstof(item.Player@title, item.Player@platform)
+        video.title = UcaseFirst(item.user@title,true) + " " + UcaseFirst(item.Player@state) + ": "  + video.umtitle
+        video.nowPlaying_user = item.user@title
+        video.nowPlaying_state = item.Player@state
+        video.nowPlaying_platform = item.Player@platform
+        video.nowPlaying_platform_title = item.Player@title
     end if
 
 
