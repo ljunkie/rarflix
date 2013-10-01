@@ -1,4 +1,5 @@
-# RARflix - Modified Plex for Roku
+# RARflix v2.6.13 (2013-10-01)
+# Modified Plex for Roku
 
 
 [![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=CHRZ55VCAJSYG)
