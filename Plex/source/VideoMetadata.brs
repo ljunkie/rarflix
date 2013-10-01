@@ -73,6 +73,7 @@ Sub setVideoBasics(video, container, item)
 
     video.ShortDescriptionLine1 = firstOf(item@title, item@name)
 
+
     'grandparentKey -- for episode - RR
     if item@grandparentKey <> invalid then
        video.grandparentKey = item@grandparentKey
@@ -220,6 +221,13 @@ Sub setVideoBasics(video, container, item)
 	video.UserRating =  0
     endif
 
+
+    if item.user@id <> invalid then 
+        video.description = item.user@title + " " + item.Player@state + " on " + firstof(item.Player@title, item.Player@platform) + chr(10) + video.description
+	video.title = video.umtitle + " ("+item.user@title +" "+ item.Player@state + ")"
+    end if
+
+
     video.guid = item@guid
     video.url = item@url
 End Sub
@@ -300,6 +308,10 @@ Sub setVideoDetails(video, container, videoItemXml, hasDetails=true)
         video.CastCrewList.Push({ name: Writer@tag, id: Writer@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Writer" })
         ' video.Writer.Push(Writer@tag) ' not implemented
     next
+
+    'if videoItemXml.user@id <> invalid then 
+    '    video.ReleaseDate = videoItemXml.user@title + " " + videoItemXml.Player@state + " on " + firstof(videoItemXml.Player@title, videoItemXml.Player@platform)
+    'end if
 
     video.Categories = CreateObject("roArray", 15, true)
     for each Category in videoItemXml.Genre

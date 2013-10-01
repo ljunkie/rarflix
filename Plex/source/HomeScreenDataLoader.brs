@@ -39,6 +39,7 @@ Function createHomeScreenDataLoader(listener)
         { title: "Channels", key: "channels" },
         { title: "Library Sections", key: "sections" },
         { title: "On Deck", key: "on_deck" },
+        { title: "Now Playing", key: "now_playing" },
         { title: "Recently Added", key: "recently_added" },
         { title: "Queue", key: "queue" },
         { title: "Recommendations", key: "recommendations" },
@@ -192,6 +193,19 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
         m.AddOrStartRequest(onDeck, m.RowIndexes["on_deck"], startRequests)
     else
         m.Listener.OnDataLoaded(m.RowIndexes["on_deck"], [], 0, 0, true)
+    end if
+
+    ' Request global on deck
+    view = RegRead("row_visibility_ondeck", "preferences", "") ' TODO
+    if view <> "hidden" then
+        onDeck = CreateObject("roAssociativeArray")
+        onDeck.server = server
+        onDeck.key = "/status/sessions"
+        onDeck.connectionUrl = connectionUrl
+        onDeck.requestType = "media"
+        m.AddOrStartRequest(onDeck, m.RowIndexes["now_playing"], startRequests)
+    else
+        m.Listener.OnDataLoaded(m.RowIndexes["now_playing"], [], 0, 0, true)
     end if
 
     ' Request recently added
@@ -827,6 +841,8 @@ Sub homeRefreshData()
     m.contentArray[m.RowIndexes["channels"]].loadedServers.Clear()
     m.contentArray[m.RowIndexes["on_deck"]].refreshContent = []
     m.contentArray[m.RowIndexes["on_deck"]].loadedServers.Clear()
+    m.contentArray[m.RowIndexes["now_playing"]].refreshContent = []
+    m.contentArray[m.RowIndexes["now_playing"]].loadedServers.Clear()
     m.contentArray[m.RowIndexes["recently_added"]].refreshContent = []
     m.contentArray[m.RowIndexes["recently_added"]].loadedServers.Clear()
 
@@ -847,6 +863,7 @@ Sub homeOnMyPlexChange()
         m.RemoveFromRowIf(m.RowIndexes["sections"], IsMyPlexServer)
         m.RemoveFromRowIf(m.RowIndexes["channels"], IsMyPlexServer)
         m.RemoveFromRowIf(m.RowIndexes["on_deck"], IsMyPlexServer)
+        m.RemoveFromRowIf(m.RowIndexes["now_playing"], IsMyPlexServer)
         m.RemoveFromRowIf(m.RowIndexes["recently_added"], IsMyPlexServer)
         m.RemoveFromRowIf(m.RowIndexes["misc"], IsMyPlexServer)
         m.RemoveFromRowIf(m.RowIndexes["queue"], AlwaysTrue)
@@ -859,6 +876,7 @@ Sub homeRemoveInvalidServers()
     m.RemoveFromRowIf(m.RowIndexes["sections"], IsInvalidServer)
     m.RemoveFromRowIf(m.RowIndexes["channels"], IsInvalidServer)
     m.RemoveFromRowIf(m.RowIndexes["on_deck"], IsInvalidServer)
+    m.RemoveFromRowIf(m.RowIndexes["now_playing"], IsInvalidServer)
     m.RemoveFromRowIf(m.RowIndexes["recently_added"], IsInvalidServer)
     m.RemoveFromRowIf(m.RowIndexes["misc"], IsInvalidServer)
 End Sub
