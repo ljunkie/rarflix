@@ -234,7 +234,7 @@ Sub posterShowContentList(index)
     end if
 
     Debug("Showing screen with " + tostr(status.content.Count()) + " elements")
-    Debug("List style is " + tostr(status.listStyle) + ", " + tostr(status.listDisplayMode))
+    'Debug("List style is " + tostr(status.listStyle) + ", " + tostr(status.listDisplayMode)) ' redundant now
 
     if status.content.Count() = 0 AND NOT m.FilterMode then
         if m.DialogShown then
@@ -272,13 +272,17 @@ Function getDefaultListStyle(viewGroup, contentType) As Object
     aa.style = "arced-square"
     aa.display = "scale-to-fit"
 
+
     if viewGroup = "episode" AND contentType = "episode" then
         aa.style = "flat-episodic"
         aa.display = "zoom-to-fill"
     else if viewGroup = "movie" OR viewGroup = "show" OR viewGroup = "season" OR viewGroup = "episode" then
         aa.style = "arced-portrait"
+    else if viewGroup = "photo" then 
+        aa.style = "arced-landscape"
+        aa.display = "photo-fit"
     end if
-
+    Debug("--- Poster Style for " + viewGroup + " " + aa.style +":"+aa.display)
     return aa
 End Function
 

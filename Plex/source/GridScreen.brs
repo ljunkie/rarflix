@@ -21,7 +21,6 @@ Function createGridScreen(viewController, style="flat-movie", upBehavior="exit")
     ' If we don't know exactly what we're displaying, scale-to-fit looks the
     ' best. Anything else makes something look horrible when the grid has
     ' some combination of posters and video frames. 
-    ' Except music and Photos? -- we should use photo-fit - ljunkie, we can override the in viewController
     grid.SetDisplayMode("scale-to-fit")
     grid.SetGridStyle(style)
     grid.SetUpBehaviorAtTopRow(upBehavior)
