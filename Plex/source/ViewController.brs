@@ -317,23 +317,26 @@ Function vcCreateContextMenu()
        Debug( "------------------show audio dialog -------------------------")
        screen = m.screens.peek()
        if type(screen.screen) = "roMessageDialog" then  ' if we already have a new dialog - lets not replace it
-           Debug( "---disabling audio dialog for a new DIALOG" + screen.screenname + " type: type(screen.screen)")
+           Debug( "---disabling audio dialog for a new DIALOG" + screen.screenname + " type:" + type(screen.screen))
            return invalid        
-       else if screen.screenname = "Home" or screen.screenname = "Section: movie" or screen.screenname = "Section: show" then ' this might need some cleanup ( we only care to disable if home, movie, shows )
+       else if screen.screenname = "Home" or screen.screenname = "Section: movie" or screen.screenname = "Preferences Main" or screen.screenname = "Section: show" then ' this might need some cleanup ( we only care to disable if home, movie, shows )
            if screen.selectedrow <> invalid and screen.focusedindex <> invalid and type(screen.contentarray[screen.selectedrow][screen.focusedindex]) = "roAssociativeArray" then
                itype = screen.contentarray[screen.selectedrow][screen.focusedindex].type ' movie, show, photo, episode, etc..
                ctype = screen.contentarray[screen.selectedrow][screen.focusedindex].contenttype ' section
-               if ctype <> "section" and ctype <> "album" and ctype <> "channel" ' allow audio dialog for content that doesn't have special dialogs ( wonder if there is a list of contenttypes somewhere?)
-                   Debug( "---disabling audio dialog for ctype " + ctype + " " + itype + " " + screen.screenname + " type: type(screen.screen)")
+               ' allow audio dialog for content that doesn't have special dialogs ( wonder if there is a list of contenttypes somewhere?)
+               if (itype = invalid and ctype <> "prefs")
+                   Debug( "---Allowing audio dialog for ctype:" + tostr(ctype) + " itype:" + tostr(itype) + " " + tostr(screen.screenname) + " type:" +  type(screen.screen))
+               else if ctype <> "section" and ctype <> "album" and ctype <> "channel" then
+                   Debug( "---disabling audio dialog for ctype:" + tostr(ctype) + " itype:" + tostr(itype) + " " + tostr(screen.screenname) + " type:" +  type(screen.screen))
                    return invalid
                end if
-               Debug( "--- showing audio dialog for itype " + itype + " " + screen.screenname + " type: type(screen.screen)")
+               Debug( "--- showing audio dialog for itype " + tostr(itype) + " " + tostr(screen.screenname) + " type:" + type(screen.screen))
            else 
-               Debug( "---disabling audio dialog for " + screen.screenname + " type: type(screen.screen)")
+               Debug( "---disabling audio dialog for " + tostr(screen.screenname) + " type:" + type(screen.screen))
                return invalid        
            end if
        else 
-           Debug( "---- showing audio dialog -- AUDIO is not paused and not playing -- should we show the screen here?" + screen.screenname + " type: type(screen.screen)")
+           Debug( "---- showing audio dialog -- AUDIO is not paused and not playing -- should we show the screen here?" + screen.screenname + " type:" +  type(screen.screen))
        end if 
        Debug( "-------------------------------------------------------------")
     end if
