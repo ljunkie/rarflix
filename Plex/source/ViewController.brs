@@ -395,10 +395,10 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
                 for index = 0 to keys.Count() - 1
                     print "searching for key " + metadata.key ' NEED to verify it's the same user too -- we might have the same video playing
                     if keys[index] = metadata.key then 
-		        Debug( "----- original offset " + metadata.viewOffset)
+		        Debug("----- original offset " + metadata.viewOffset)
                         metadata = container.metadata[index]
                         metadata.viewOffset = tostr(metadata.viewOffset.toint() + int(10000)) ' just best guess. add on a few seconds since it takes time to buffer
-		        Debug( "----- new offset " + metadata.viewOffset) + "(added a few seconds for buffer start)")
+		        Debug("----- new offset " + metadata.viewOffset + "(added a few seconds for buffer start)")
                         exit for
                     end if
                 end for
