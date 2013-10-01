@@ -56,7 +56,6 @@ Function newAlbumMetadata(container, item, detailed=true) As Object
         if album.ReleaseDate <> invalid then 
             album.ReleaseDate = "Released: " + album.ReleaseDate + chr(10) + "    Added: " + album.AddDate
         else 
-	    print container.sourceurl
             album.ReleaseDate = "Added: " + album.AddDate
         end if
     end if

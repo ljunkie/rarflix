@@ -195,8 +195,8 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
         m.Listener.OnDataLoaded(m.RowIndexes["on_deck"], [], 0, 0, true)
     end if
 
-    ' Request global on deck
-    view = RegRead("row_visibility_ondeck", "preferences", "") ' TODO
+    ' Request Now Playing
+    view = RegRead("row_visibility_now_playing", "preferences", "")
     if view <> "hidden" then
         onDeck = CreateObject("roAssociativeArray")
         onDeck.server = server
