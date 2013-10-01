@@ -428,9 +428,9 @@ Sub vcShowReleaseNotes()
     paragraphs.Push("New: RARFflix preferences - toggles for mods")
     paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+" Hide Rows, Clock, Dynamic Headers, Search Title, etc.. ")
     paragraphs.Push("New: Movie Trailers enhancements - navigation, play from list, play all")
-    paragraphs.Push("+ Movie Trailers, Rotten Tomatoes Ratings, HUD mods, other misc updates")
+    paragraphs.Push("+ Movie Trailers, Rotten Tomatoes, HUD mods, other many misc updates")
     paragraphs.Push(" ")
-    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+" ** Please let me know of issues - rarflix@rarforge.com **")
+    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+" ** Donate @ www.rarflix.com **")
 
     screen = createParagraphScreen(header, paragraphs, m)
     screen.ScreenName = "Release Notes"
