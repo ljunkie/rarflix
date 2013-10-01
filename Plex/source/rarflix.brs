@@ -436,29 +436,33 @@ End Function
 
 ' Function to create screen for Actors/Writers/Directors/etc for a given Movie Title
 function RFcreateCastAndCrewScreen(item as object) as Dynamic
-    obj = CreateObject("roAssociativeArray")
-    obj = createPosterScreen(item, m.viewcontroller)
-    screenName = "Cast & Crew List"
-    obj.HandleMessage = RFCastAndCrewHandleMessage ' override default Handler
-
-    server = obj.item.metadata.server
-    Debug("------ requesting metadata to get required librarySection " + server.serverUrl + obj.item.metadata.key)
-    container = createPlexContainerForUrl(server, server.serverUrl, obj.item.metadata.key)
-
-    if container <> invalid then
-        obj.librarySection = container.xml@librarySectionID
-        obj.screen.SetContentList(getPostersForCastCrew(item,obj.librarySection))
-        obj.ScreenName = screenName
-
-        breadcrumbs = ["The Cast & Crew", firstof(item.metadata.umtitle, item.metadata.title)]
-        m.viewcontroller.AddBreadcrumbs(obj, breadcrumbs)
-        m.viewcontroller.UpdateScreenProperties(obj)
-        m.viewcontroller.PushScreen(obj)
-    else
-        Debug("FAIL: unexpected error in RFshowCastAndCrewScreen")
-        return -1
+    if type(item.metadata.castcrewlist) = "roArray" and item.metadata.castcrewlist.count() > 0 then 
+        obj = CreateObject("roAssociativeArray")
+        obj = createPosterScreen(item, m.viewcontroller)
+        screenName = "Cast & Crew List"
+        obj.HandleMessage = RFCastAndCrewHandleMessage ' override default Handler
+    
+        server = obj.item.metadata.server
+        Debug("------ requesting metadata to get required librarySection " + server.serverUrl + obj.item.metadata.key)
+        container = createPlexContainerForUrl(server, server.serverUrl, obj.item.metadata.key)
+    
+        if container <> invalid then
+            obj.librarySection = container.xml@librarySectionID
+            obj.screen.SetContentList(getPostersForCastCrew(item,obj.librarySection))
+            obj.ScreenName = screenName
+    
+            breadcrumbs = ["The Cast & Crew", firstof(item.metadata.umtitle, item.metadata.title)]
+            m.viewcontroller.AddBreadcrumbs(obj, breadcrumbs)
+            m.viewcontroller.UpdateScreenProperties(obj)
+            m.viewcontroller.PushScreen(obj)
+        else
+            Debug("FAIL: unexpected error in RFshowCastAndCrewScreen")
+            return invalid
+        end if
+    else 
+        ShowErrorDialog("This title doesn't have any Cast or Crew memebers", firstof(item.metadata.umtitle, item.metadata.title))
+        return invalid
     end if
-
     return obj.screen
 end function
 
