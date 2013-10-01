@@ -362,7 +362,7 @@ Function videoDialogHandleButton(command, data) As Boolean
         m.ViewController.PopScreen(m) ' close dialog before we show the Cast&Crew screen
         dialog = ShowPleaseWait("Please wait","Gathering the Cast and Crew for '" + firstof(obj.metadata.umtitle,obj.metadata.title) + "'")
         screen = RFcreateCastAndCrewScreen(obj)
-        screen.Show()
+        if screen <> invalid then  screen.Show()
         dialog.Close()
         closeDialog = true
     else if command = "scrobble" then
