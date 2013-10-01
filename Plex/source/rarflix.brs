@@ -687,6 +687,8 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
     dialog.Title = firstof(obj.metadata.showtitle, obj.metadata.umtitle, obj.metadata.title)
     dialog.Text = truncateString(obj.metadata.shortdescriptionline2,220)
     dialog.Item = obj.metadata
+
+
     'if obj.metadata.grandparentKey = invalid then
     if obj.metadata.ContentType = "movie"  then
         dialog.SetButton("options", "Playback options")
@@ -726,15 +728,14 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
             dialog.SetButton("scrobble", "Mark as watched")
             ' no need to show unwatched 
         end if
-    end if
+        if obj.metadata.server.AllowsMediaDeletion AND obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
+            dialog.SetButton("delete", "Delete permanently")
+        end if
 
-    if obj.metadata.server.AllowsMediaDeletion AND obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
-        dialog.SetButton("delete", "Delete permanently")
-    end if
-
-    ' set this to last -- unless someone complains
-    if obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "episode" or obj.metadata.ContentType = "show"  then
-        dialog.SetButton("rate", "_rate_")
+        ' set this to last -- unless someone complains
+        if obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "episode" or obj.metadata.ContentType = "show"  then
+            dialog.SetButton("rate", "_rate_")
+        end if
     end if
 
     dialog.SetButton("close", "Back")
@@ -746,7 +747,7 @@ end sub
 
 sub fakeRefresh(force=false) 
     Debug("refresh? nah... faked it for now...")
-'fake it for now
+    'fake it for now
 end sub 
 
 sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
@@ -808,7 +809,6 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     end if
 
     ' Trailers link - RR (last now that we include it on the main screen .. well before delete - people my be used to delete being second to last)
-    'if obj.metadata.grandparentKey = invalid then
     if obj.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
         dialog.SetButton("getTrailers", "Trailer")
     end if
@@ -825,12 +825,15 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
             dialog.SetButton("scrobble", "Mark as watched")
             ' no need to show unwatched 
         end if
-    end if
 
-    if obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "episode" or obj.metadata.ContentType = "show"  then
-        if obj.Item.StarRating = invalid then obj.Item.StarRating = 0
-        if obj.Item.origStarRating = invalid then obj.Item.origStarRating = 0
-        dialog.SetButton("rate", "_rate_")
+        if obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "episode" or obj.metadata.ContentType = "show"  then
+            if obj.Item.StarRating = invalid then obj.Item.StarRating = 0
+            if obj.Item.origStarRating = invalid then obj.Item.origStarRating = 0
+            dialog.SetButton("rate", "_rate_")
+        end if
+
+        ' should we allow the delete from here?
+
     end if
 
     dialog.SetButton("close", "Back")
@@ -838,3 +841,33 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     dialog.ParentScreen = obj
     dialog.Show()
 end sub
+
+function UcaseFirst(var,strip = invalid) as dynamic
+ Debug("UcaseFirst start:" + var)
+ if strip <> invalid then ' extra function to strip chars/replace them - I didn't want to create another function
+     re = CreateObject("roRegex", "_", "i")
+     var = re.ReplaceAll(var, "       ")
+     re = CreateObject("roRegex", "rarforge", "i") ' just for me :)
+     var = re.ReplaceAll(var, "")
+     Debug("UcaseFirst strip:" + var)
+ end if
+
+ re = CreateObject("roRegex", "  ", "i") ' remove double spaces
+ var = re.ReplaceAll(var, " ")
+ Debug("UcaseFirst spaces:" + var)
+
+ ' Capitalize first of every word
+ parts = strTokenize(var, " ")
+ result = invalid
+ for each part in parts
+     if result = invalid then 
+         result = ucase(left(part,1))+right(part,len(part)-1)
+     else
+         result = result + " " + ucase(left(part,1))+right(part,len(part)-1)
+     end if
+ end for
+ if result <> invalid then var = result
+ Debug("UcaseFirst result:" + var)
+
+ return var ' return either modified or untouched var
+end function

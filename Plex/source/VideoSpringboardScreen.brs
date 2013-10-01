@@ -78,16 +78,6 @@ Sub videoSetupButtons()
       m.AddButton("Playback options", "options")
     end if
 
-    if supportedIdentifier then
-        if m.metadata.UserRating = invalid then
-            m.metadata.UserRating = 0
-        endif
-        if m.metadata.StarRating = invalid then
-            m.metadata.StarRating = 0
-        endif
-        if m.metadata.origStarRating = invalid then
-            m.metadata.origStarRating = 0
-        endif
 
         ' Rotten Tomatoes ratings, if enabled
         if m.metadata.ContentType = "movie" AND RegRead("rf_rottentomatoes", "preferences", "enabled") = "enabled" then 
@@ -124,6 +114,19 @@ Sub videoSetupButtons()
         end if
 
 
+
+
+    if supportedIdentifier then ' this is for delete and rating button 
+        if m.metadata.UserRating = invalid then
+            m.metadata.UserRating = 0
+        endif
+        if m.metadata.StarRating = invalid then
+            m.metadata.StarRating = 0
+        endif
+        if m.metadata.origStarRating = invalid then
+            m.metadata.origStarRating = 0
+        endif
+
           if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
               if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
                   m.AddButton("Delete permanently","delete")
@@ -135,6 +138,8 @@ Sub videoSetupButtons()
                m.AddRatingButton(m.metadata.UserRating, m.metadata.origStarRating, "rateVideo")
 	  end if
 
+    end if
+
 	' more buttong if TV SHOW ( only if grandparent key is available,stops loops) OR if this is Movie
 	  if m.metadata.grandparentKey <> invalid  then
               m.AddButton("More...", "more")
@@ -142,7 +147,8 @@ Sub videoSetupButtons()
               m.AddButton("Cast, Rate & More...", "more")
 	  end if
 
-    end if
+
+
 End Sub
 
 Sub videoGetMediaDetails(content)
@@ -163,6 +169,7 @@ Sub videoGetMediaDetails(content)
         rv = CreateObject("roRegex", "/recentlyViewed", "")
         rair = CreateObject("roRegex", "/newest", "")
         rallLeaves = CreateObject("roRegex", "/allLeaves", "")
+        rnp = CreateObject("roRegex", "/status/sessions", "")
 	'stop
 
         where = "invalid"
@@ -176,9 +183,23 @@ Sub videoGetMediaDetails(content)
 	   where = "Recently Aired"
         else if rallLeaves.Match(m.metadata.sourceurl)[0] <> invalid then
 	   where = "All Episodes"
+        else if rnp.Match(m.metadata.sourceurl)[0] <> invalid then
+	   where = "Now Playing"
         end if
-        
-        if m.metadata.ContentType = "episode" and tostr(m.metadata.ShowTitle) <> "invalid" and where <> "invalid" then 
+
+        if where = "Now Playing" then  ' set the now Playing bread crumbs to the - where/user and update metadata
+           m.Screen.SetBreadcrumbEnabled(true)
+           m.Screen.SetBreadcrumbText(where, UcaseFirst(m.metadata.nowplaying_user,true))
+           m.metadata.description = "Progress: " + GetDurationString(int(m.metadata.viewOffset.toint()/1000)) ' update progress - if we exit player
+           m.metadata.description = m.metadata.description + " on " + firstof(m.metadata.nowplaying_platform_title, m.metadata.nowplaying_platform, "")
+           m.metadata.description = m.metadata.description + chr(10) + m.metadata.nowPlaying_orig_description ' append the original description
+           if m.metadata.episodestr <> invalid then 
+               m.metadata.titleseason = m.metadata.cleantitle + " - " + m.metadata.episodestr
+           else
+               m.metadata.title = m.metadata.cleantitle
+           end if
+           Debug("Dynamically set Episode breadcrumbs; " + where + ": " + UcaseFirst(m.metadata.nowplaying_user,true))
+        else if m.metadata.ContentType = "episode" and tostr(m.metadata.ShowTitle) <> "invalid" and where <> "invalid" then 
            m.Screen.SetBreadcrumbEnabled(true)
            m.Screen.SetBreadcrumbText(where, truncateString(m.metadata.ShowTitle,26))
            Debug("Dynamically set Episode breadcrumbs; " + where + ": " + truncateString(m.metadata.ShowTitle,26))
