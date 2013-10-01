@@ -190,7 +190,11 @@ Function gridHandleMessage(msg) As Boolean
                 context = m.contentArray[m.selectedRow]
                 itype = context[m.focusedIndex].contenttype
                 if itype = invalid then itype = context[m.focusedIndex].type
+                ctype_o = context[m.focusedIndex].contenttype
+                itype_o = context[m.focusedIndex].type
+
                 audioplayer = GetViewController().AudioPlayer
+
 
                 ' some crazy logic here.. to clean up
                 ' if audio is playing or paused -- DO not show the dialog or new screen - audio dialog will come up
@@ -216,7 +220,7 @@ Function gridHandleMessage(msg) As Boolean
                         obj.metadata = context[m.focusedIndex]
                         obj.Item = context[m.focusedIndex]
                         rfVideoMoreButtonFromGrid(obj)
-                    else if audioplayer.ContextScreenID = invalid ' only create this extra screen if audioPlayer doesn't have context
+                    else if audioplayer.ContextScreenID = invalid or ctype_o = "prefs" ' only create this extra screen if audioPlayer doesn't have context
                         'for now we will show the preferences screen :)
                         prefs = CreateObject("roAssociativeArray")
                         prefs.sourceUrl = ""
@@ -226,7 +230,7 @@ Function gridHandleMessage(msg) As Boolean
                         m.ViewController.CreateScreenForItem(prefs, invalid, ["Preferences"])
                         Debug("Info Button (*) not handled for content type: " +  tostr(itype) + " - using default prefs screen")
                     else
-                        Debug("--- Not show prefs on " + itype)
+                        Debug("--- Not showing prefs on ctype:" + tostr(ctype_o) + " itype:" + tostr(itype_o) )
                     end if 
                 end if
         else if msg.isRemoteKeyPressed() then

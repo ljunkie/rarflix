@@ -794,7 +794,7 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
         obj.metadata.ShowTitle = firstof(obj.metadata.umtitle, obj.metadata.showtitle, obj.metadata.title)
         'end if
     else if obj.metadata.grandparentKey = invalid then 
-         Debug("---- we should probably handle " + obj.metadata.type + "? figure out the parentKey/grandparentkey for: " + obj.metadata.key)
+         Debug("---- we should probably handle " + tostr(obj.metadata.type) + "? figure out the parentKey/grandparentkey for: " + tostr(obj.metadata.key))
     end if
     ' end hack
 
