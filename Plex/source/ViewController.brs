@@ -176,8 +176,20 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if contentType = "section" then
         RegWrite("lastMachineID", item.server.machineID)
         RegWrite("lastSectionKey", item.key)
-        screen = createGridScreenForItem(item, m, "flat-movie")
+
         screenName = "Section: " + tostr(item.type)
+        if tostr(item.type) = "artist" then 
+            Debug("---- override photo-fit/flat-square for section with content of " + tostr(item.type))
+            screen = createGridScreenForItem(item, m, "flat-square")
+            screen.screen.SetDisplayMode("Photo-Fit")
+            screen.screen.SetListPosterStyles("landscape")
+        else if tostr(item.type) = "photo" then 
+            Debug("---- override photo-fit/flat-16x9 for section with content of " + tostr(item.type))
+            screen = createGridScreenForItem(item, m, "flat-16X9")
+            screen.screen.SetDisplayMode("Photo-Fit")
+        else 
+            screen = createGridScreenForItem(item, m, "flat-movie") ' some might fair better with flat-square? (TODO)
+        end if
     else if contentType = "playlists" then
         screen = createGridScreenForItem(item, m, "flat-16X9")
         screenName = "Playlist Grid"

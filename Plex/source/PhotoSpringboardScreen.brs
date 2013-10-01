@@ -5,6 +5,8 @@ End Function
 Function createPhotoSpringboardScreen(context, index, viewController) As Object
     obj = createBaseSpringboardScreen(context, index, viewController, itemIsPhoto)
 
+    obj.screen.SetDisplayMode("photo-fit") 
+    obj.screen.SetPosterStyle("rounded-rect-16x9-generic") ' makes more sense for photos (opt2: rounded-square-generic)
     obj.SetupButtons = photoSetupButtons
     obj.GetMediaDetails = photoGetMediaDetails
 

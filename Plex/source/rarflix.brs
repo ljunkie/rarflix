@@ -13,6 +13,7 @@ Sub InitRARFlix()
     RegRead("rf_hs_clock", "preferences", "enabled")
     RegRead("rf_focus_unwatched", "preferences", "enabled")
     RegRead("rf_user_rating_only", "preferences", "user_prefer") ' this will show the original star rating as the users if it exists. seems safe to set at first
+    RegRead("rf_up_behavior", "preferences", "exit") ' default is exit screen ( except for home )
 
     ' ljunkie Youtube Trailers (extended to TMDB)
     m.youtube = InitYouTube()
@@ -28,6 +29,7 @@ Sub InitRARFlix()
     Debug("rf_rowfilter_limit: " + tostr(RegRead("rf_rowfilter_limit", "preferences")))
     Debug("rf_focus_unwatched: " + tostr(RegRead("rf_focus_unwatched", "preferences")))
     Debug("rf_user_rating_only: " + tostr(RegRead("rf_user_rating_only", "preferences")))
+    Debug("rf_up_behavior: " + tostr(RegRead("rf_up_behavior", "preferences")))
     Debug("============================================================================")
 
 end sub
@@ -258,6 +260,18 @@ Function createRARFlixPrefsScreen(viewController) As Object
         default: "disabled"
     }
 
+    ' user ratings only
+    up_behavior = [
+        { title: "Previous Screen", EnumValue: "exit", ShortDescriptionLine2: "Go to the Previous Screen (go back)",}
+        { title: "Do Nothing", EnumValue: "stop", ShortDescriptionLine2: "Stay on Screen (do nothing)",}
+
+    ]
+    obj.Prefs["rf_up_behavior"] = {
+        values: up_behavior,
+        heading: "Up Key action when Top Row is Selected",
+        default: "exit"
+    }
+
 
     filter_limit = [
         { title: "100", EnumValue: "100" },
@@ -295,6 +309,7 @@ Function createRARFlixPrefsScreen(viewController) As Object
     obj.AddItem({title: "Clock on Home Screen"}, "rf_hs_clock", obj.GetEnumValue("rf_hs_clock"))
     obj.AddItem({title: "Unwatched Added/Released", ShortDescriptionLine2: "Item limit for unwatched Recently Added &" + chr(10) +"Recently Released rows [movies]"}, "rf_rowfilter_limit", obj.GetEnumValue("rf_rowfilter_limit"))
     obj.AddItem({title: "Star Ratings Override", ShortDescriptionLine2: "Only show or Prefer"+chr(10)+"Star Ratings that you have set"}, "rf_user_rating_only", obj.GetEnumValue("rf_user_rating_only"))
+    obj.AddItem({title: "Up Button (row screens)", ShortDescriptionLine2: "What to do when the UP button is " + chr(10) + "pressed on a screen with rows"}, "rf_up_behavior", obj.GetEnumValue("rf_up_behavior"))
     ' now part of the Hide Rows
     ' obj.AddItem({title: "Unwatched Movie Rows"}, "rf_uw_movie_rows", obj.GetEnumValue("rf_uw_movie_rows"))
 
