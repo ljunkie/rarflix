@@ -190,9 +190,11 @@ Sub videoGetMediaDetails(content)
         if where = "Now Playing" then  ' set the now Playing bread crumbs to the - where/user and update metadata
            m.Screen.SetBreadcrumbEnabled(true)
            m.Screen.SetBreadcrumbText(where, UcaseFirst(m.metadata.nowplaying_user,true))
-           m.metadata.description = "Progress: " + GetDurationString(int(m.metadata.viewOffset.toint()/1000)) ' update progress - if we exit player
-           m.metadata.description = m.metadata.description + " on " + firstof(m.metadata.nowplaying_platform_title, m.metadata.nowplaying_platform, "")
-           m.metadata.description = m.metadata.description + chr(10) + m.metadata.nowPlaying_orig_description ' append the original description
+           if m.metadata.viewOffset <> invalid then 
+               m.metadata.description = "Progress: " + GetDurationString(int(m.metadata.viewOffset.toint()/1000)) ' update progress - if we exit player
+               m.metadata.description = m.metadata.description + " on " + firstof(m.metadata.nowplaying_platform_title, m.metadata.nowplaying_platform, "")
+               m.metadata.description = m.metadata.description + chr(10) + m.metadata.nowPlaying_orig_description ' append the original description
+           end if
            if m.metadata.episodestr <> invalid then 
                m.metadata.titleseason = m.metadata.cleantitle + " - " + m.metadata.episodestr
            else
