@@ -385,7 +385,7 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
             dlg.Title = "Play Video"
 
             if resume_with_user = invalid then 
-                dlg.SetButton("resume", "Resume from " + TimeDisplay(offsetSeconds) + extra)
+                dlg.SetButton("resume", "Resume from " + TimeDisplay(offsetSeconds))
             else 
                 user = "User"
                 if metadata.nowPlaying_user <> invalid then user = UCasefirst(metadata.nowPlaying_user,true)
