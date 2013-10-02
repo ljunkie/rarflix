@@ -379,8 +379,6 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
             resume_with_user = invalid
             if metadata.nowPlaying_maid <> invalid then 
                 resume_with_user = 1
-            else 
-                stop
             end if 
 
             dlg = createBaseDialog()

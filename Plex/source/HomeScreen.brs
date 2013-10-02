@@ -108,10 +108,11 @@ Sub homeScreenOnTimerExpired(timer)
     if timer.Name = "nowplaying" AND m.ViewController.IsActiveScreen(m) then
         ' print "update now playing"
         m.loader.NowPlayingChange() ' refresh now playing -- it will only update if available to eu
-    else if timer.Name = "nowplaying" and m.viewcontroller.screens.peek().metadata.nowplaying_user <> invalid then
+    else if timer.Name = "nowplaying" and type(m.viewcontroller.screens.peek()) = "roAssociativeArray" then
         screen = m.viewcontroller.screens.peek()
-         'print screen.metadata
-        print "update NOW playing description with new time"
+        if screen.metadata <> invalid and screen.metadata.nowplaying_user <> invalid then
+            print "update NOW playing description with new time"
+        end if
         ' to update!
         'm.metadata.description = "Progress: " + GetDurationString(int(m.metadata.viewOffset.toint()/1000),0,1,1) ' update progress - if we exit player
         'm.metadata.description = m.metadata.description + " on " + firstof(m.metadata.nowplaying_platform_title, m.metadata.nowplaying_platform, "")
