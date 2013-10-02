@@ -22,6 +22,10 @@ Function createHomeScreen(viewController) As Object
     obj.clockTimer.SetDuration(20000, true) ' A little lag is fine here
     viewController.AddTimer(obj.clockTimer, obj) 
 
+    obj.npTimer = createTimer()
+    obj.npTimer.Name = "nowplaying"
+    obj.npTimer.SetDuration(10000, true) ' 10 seconds? too much?
+    viewController.AddTimer(obj.npTimer, obj) 
 
     return obj
 End Function
@@ -100,6 +104,10 @@ Sub homeScreenOnTimerExpired(timer)
     if timer.Name = "clock" AND m.ViewController.IsActiveScreen(m) then
         RRbreadcrumbDate(m.viewcontroller.screens[0])
         'm.Screen.SetBreadcrumbText("", CurrentTimeAsString())
+    end if
+    if timer.Name = "nowplaying" AND m.ViewController.IsActiveScreen(m) then
+        ' print "update now playing"
+        m.loader.NowPlayingChange() ' refresh now playing -- it will only update if available to eu
     end if
 End Sub 
 

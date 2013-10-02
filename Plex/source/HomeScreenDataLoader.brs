@@ -19,6 +19,7 @@ Function createHomeScreenDataLoader(listener)
     loader.OnUrlEvent = homeOnUrlEvent
     loader.OnServerDiscovered = homeOnServerDiscovered
     loader.OnMyPlexChange = homeOnMyPlexChange
+    loader.NowPlayingChange = rf_homeNowPlayingChange 'ljunkie - get ready for Now Playing Changes!
     loader.RemoveInvalidServers = homeRemoveInvalidServers
 
     loader.CreateRow = homeCreateRow
@@ -127,8 +128,8 @@ Function homeCreateRow(name) As Integer
     return index
 End Function
 
-Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refreshRequest As Boolean, connectionUrl=invalid)
-    if not refreshRequest then
+Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refreshRequest As Boolean, connectionUrl=invalid, rowkey=invalid)
+   if not refreshRequest then
         PutPlexMediaServer(server)
 
         ' Request server details (ensure we have a machine ID, check transcoding
@@ -142,84 +143,100 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
     end if
 
     ' Request sections
-    sections = CreateObject("roAssociativeArray")
-    sections.server = server
-    sections.key = "/library/sections"
-    sections.connectionUrl = connectionUrl
-
-    if server.owned then
-        m.AddOrStartRequest(sections, m.RowIndexes["sections"], startRequests)
-    else
-        m.AddOrStartRequest(sections, m.RowIndexes["shared_sections"], startRequests)
-        return
+    row = "sections"
+    if rowkey = invalid or rowkey = row then
+        sections = CreateObject("roAssociativeArray")
+        sections.server = server
+        sections.key = "/library/sections"
+        sections.connectionUrl = connectionUrl
+    
+        if server.owned then
+            m.AddOrStartRequest(sections, m.RowIndexes["sections"], startRequests)
+        else
+            m.AddOrStartRequest(sections, m.RowIndexes["shared_sections"], startRequests)
+            return
+        end if
     end if
 
     ' Request recently used channels
-    view = RegRead("row_visibility_channels", "preferences", "")
-    if view <> "hidden" then
-        channels = CreateObject("roAssociativeArray")
-        channels.server = server
-        channels.key = "/channels/recentlyViewed"
-        channels.connectionUrl = connectionUrl
-
-        allChannels = CreateObject("roAssociativeArray")
-        allChannels.Title = "More Channels"
-        if AreMultipleValidatedServers() then
-            allChannels.ShortDescriptionLine2 = "All channels on " + server.name
+    row = "channels"
+    if rowkey = invalid or rowkey = row then
+        view = RegRead("row_visibility_channels", "preferences", "")
+        if view <> "hidden" then
+            channels = CreateObject("roAssociativeArray")
+            channels.server = server
+            channels.key = "/channels/recentlyViewed"
+            channels.connectionUrl = connectionUrl
+    
+            allChannels = CreateObject("roAssociativeArray")
+            allChannels.Title = "More Channels"
+            if AreMultipleValidatedServers() then
+                allChannels.ShortDescriptionLine2 = "All channels on " + server.name
+            else
+                allChannels.ShortDescriptionLine2 = "All channels"
+            end if
+            allChannels.Description = allChannels.ShortDescriptionLine2
+            allChannels.server = server
+            allChannels.sourceUrl = ""
+            allChannels.Key = "/channels/all"
+            allChannels.connectionUrl = connectionUrl
+            allChannels.SDPosterURL = "file://pkg:/images/more.png"
+            allChannels.HDPosterURL = "file://pkg:/images/more.png"
+            channels.item = allChannels
+            m.AddOrStartRequest(channels, m.RowIndexes[row], startRequests)
         else
-            allChannels.ShortDescriptionLine2 = "All channels"
+            m.Listener.OnDataLoaded(m.RowIndexes[row], [], 0, 0, true)
         end if
-        allChannels.Description = allChannels.ShortDescriptionLine2
-        allChannels.server = server
-        allChannels.sourceUrl = ""
-        allChannels.Key = "/channels/all"
-        allChannels.connectionUrl = connectionUrl
-        allChannels.SDPosterURL = "file://pkg:/images/more.png"
-        allChannels.HDPosterURL = "file://pkg:/images/more.png"
-        channels.item = allChannels
-        m.AddOrStartRequest(channels, m.RowIndexes["channels"], startRequests)
-    else
-        m.Listener.OnDataLoaded(m.RowIndexes["channels"], [], 0, 0, true)
     end if
 
     ' Request global on deck
-    view = RegRead("row_visibility_ondeck", "preferences", "")
-    if view <> "hidden" then
-        onDeck = CreateObject("roAssociativeArray")
-        onDeck.server = server
-        onDeck.key = "/library/onDeck"
-        onDeck.connectionUrl = connectionUrl
-        onDeck.requestType = "media"
-        m.AddOrStartRequest(onDeck, m.RowIndexes["on_deck"], startRequests)
-    else
-        m.Listener.OnDataLoaded(m.RowIndexes["on_deck"], [], 0, 0, true)
+    row = "on_deck"
+    if rowkey = invalid or rowkey = row then
+        view = RegRead("row_visibility_ondeck", "preferences", "")
+        if view <> "hidden" then
+            onDeck = CreateObject("roAssociativeArray")
+            onDeck.server = server
+            onDeck.key = "/library/onDeck"
+            onDeck.connectionUrl = connectionUrl
+            onDeck.requestType = "media"
+            m.AddOrStartRequest(onDeck, m.RowIndexes[row], startRequests)
+        else
+            m.Listener.OnDataLoaded(m.RowIndexes[row], [], 0, 0, true)
+        end if
     end if
 
     ' Request Now Playing
-    view = RegRead("row_visibility_now_playing", "preferences", "")
-    if view <> "hidden" then
-        onDeck = CreateObject("roAssociativeArray")
-        onDeck.server = server
-        onDeck.key = "/status/sessions"
-        onDeck.connectionUrl = connectionUrl
-        onDeck.requestType = "media"
-        m.AddOrStartRequest(onDeck, m.RowIndexes["now_playing"], startRequests)
-    else
-        m.Listener.OnDataLoaded(m.RowIndexes["now_playing"], [], 0, 0, true)
-    end if
+    row = "now_playing"
+    if rowkey = invalid or rowkey = row then
+        view = RegRead("row_visibility_now_playing", "preferences", "")
+        if view <> "hidden" then
+            nowPlaying = CreateObject("roAssociativeArray")
+            nowPlaying.server = server
+            nowPlaying.key = "/status/sessions"
+            nowPlaying.connectionUrl = connectionUrl
+            nowPlaying.requestType = "media"
+            m.AddOrStartRequest(nowPlaying, m.RowIndexes[row], startRequests)
+        else
+            m.Listener.OnDataLoaded(m.RowIndexes[row], [], 0, 0, true)
+        end if
+    end if 
 
     ' Request recently added
-    view = RegRead("row_visibility_recentlyadded", "preferences", "")
-    if view <> "hidden" then
-        recents = CreateObject("roAssociativeArray")
-        recents.server = server
-        recents.key = "/library/recentlyAdded"
-        recents.connectionUrl = connectionUrl
-        recents.requestType = "media"
-        m.AddOrStartRequest(recents, m.RowIndexes["recently_added"], startRequests)
-    else
-        m.Listener.OnDataLoaded(m.RowIndexes["recently_added"], [], 0, 0, true)
-    end if
+    row = "recently_added"
+    if rowkey = invalid or rowkey = row then
+        view = RegRead("row_visibility_recentlyadded", "preferences", "")
+        if view <> "hidden" then
+            recents = CreateObject("roAssociativeArray")
+            recents.server = server
+            recents.key = "/library/recentlyAdded"
+            recents.connectionUrl = connectionUrl
+            recents.requestType = "media"
+            m.AddOrStartRequest(recents, m.RowIndexes[row], startRequests)
+        else
+            m.Listener.OnDataLoaded(m.RowIndexes[row], [], 0, 0, true)
+        end if
+     end if
+
 End Sub
 
 Sub homeCreateMyPlexRequests(startRequests As Boolean)
@@ -900,4 +917,22 @@ Sub homeOnTimerExpired(timer)
             m.Listener.OnDataLoaded(m.RowIndexes["misc"], status.content, 0, status.content.Count(), true)
         end if
     end if
+End Sub
+
+Sub rf_homeNowPlayingChange()
+    Debug("---- refreshing Now Playing")
+    ' RefreshData() -  homeRefreshData() this would refresh all.. but we don't want to do that ( I think )
+    ' might be usful to check audio now playing too
+
+    rowkey = "now_playing"
+    m.contentArray[m.RowIndexes[rowkey]].refreshContent = []
+    m.contentArray[m.RowIndexes[rowkey]].loadedServers.Clear()
+
+    for each server in GetOwnedPlexMediaServers()
+        m.CreateServerRequests(server, true, true, invalid, rowkey) ' only request the nowPlaying;/status/sessions
+        ' maybe we will update other later
+    next
+
+    ' Clear any screensaver images, use the default.
+    SaveImagesForScreenSaver(invalid, {}) ' do we need this?
 End Sub
