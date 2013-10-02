@@ -13,6 +13,16 @@ Function createHomeScreen(viewController) As Object
 
     obj.Refresh = refreshHomeScreen
 
+    obj.OnTimerExpired = homeScreenOnTimerExpired
+    obj.SuperActivate = obj.Activate
+    obj.Activate = homeScreenActivate
+
+    obj.clockTimer = createTimer()
+    obj.clockTimer.Name = "clock"
+    obj.clockTimer.SetDuration(20000, true) ' A little lag is fine here
+    viewController.AddTimer(obj.clockTimer, obj) 
+
+
     return obj
 End Function
 
@@ -84,3 +94,17 @@ Sub ShowHelpScreen()
 
     screen.Show()
 End Sub
+
+
+Sub homeScreenOnTimerExpired(timer)
+    if timer.Name = "clock" AND m.ViewController.IsActiveScreen(m) then
+        RRbreadcrumbDate(m.viewcontroller.screens[0])
+        'm.Screen.SetBreadcrumbText("", CurrentTimeAsString())
+    end if
+End Sub 
+
+Sub homeScreenActivate(priorScreen)
+    RRbreadcrumbDate(m.viewcontroller.screens[0])
+    'm.Screen.SetBreadcrumbText("", CurrentTimeAsString())
+    m.SuperActivate(priorScreen)
+End Sub 

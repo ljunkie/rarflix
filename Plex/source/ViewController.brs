@@ -600,7 +600,7 @@ Sub vcPopScreen(screen)
         Debug("Top of stack is once again: " + screenName)
         m.Analytics.TrackScreen(screenName)
         newScreen.Activate(screen)
-        RRbreadcrumbDate(newScreen) ' ljunkie - clock
+        'RRbreadcrumbDate(newScreen) ' ljunkie - clock
     end if
 
     ' If some other screen requested this close, let it know.
@@ -635,26 +635,6 @@ Sub vcShow()
     while m.screens.Count() > 0
         m.WebServer.prewait()
         msg = wait(timeout, m.GlobalMessagePort)
-
-        'ljunkie - minute refresh check - if minuteRefresh <> invalid, then it a brand spanking new minute
-        minuteRefresh = invalid
-        if lastmin <> invalid then 
-            date = CreateObject("roDateTime")
-            newmin = date.GetMinutes()
-            if newmin <> lastmin then 
-                'Debug(tostr(newmin) + " >  " + tostr(lastmin) + " minuteRefresh set")
-                minuteRefresh = 1
-                lastmin = date.GetMinutes()
-            end if
-        end if
-        ' end minute check
-
-        ' ljunkie - update clock on home screen (every minute) - only on roSocketEvent
-        if m.screens.Count() = 1 and type(msg) = "roSocketEvent" then 
-            if minuteRefresh <> invalid then
-                RRbreadcrumbDate(m.screens[0])
-            end if
-        end if
 
         if msg <> invalid then
             ' Printing debug information about every message may be overkill
