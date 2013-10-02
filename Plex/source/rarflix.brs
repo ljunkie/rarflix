@@ -474,8 +474,24 @@ Function RFCastAndCrewHandleMessage(msg) As Boolean
         handled = true
         'print "showPosterScreen | msg = "; msg.GetMessage() " | index = "; msg.GetIndex()
         if msg.isListItemSelected() then
-            'print "list item selected | current show = "; msg.GetIndex() 
-            RFcreateItemsForCastCrewScreen(obj,msg.GetIndex())
+            '  print "list item selected | current show = "; msg.GetIndex() 
+            '  now we will just show the customized search screen for the - actor.item
+            ' I know this works for actors - what about others? to test
+
+            cast = obj.item.metadata.castcrewlist[msg.GetIndex()]
+            screen = createGridScreen(m.viewcontroller, "flat-square")
+            screen.Loader = createCastLoader(cast)
+            screen.Loader.Listener = screen
+            screenName = "CastCrew"
+            
+            breadcrumbs = [cast.itemtype,cast.name]
+            screen.ScreenName = screenName
+
+            m.viewcontroller.AddBreadcrumbs(screen, breadcrumbs)
+            m.viewcontroller.UpdateScreenProperties(screen)
+            m.viewcontroller.PushScreen(screen)
+            screen.Show()
+        
         else if msg.isScreenClosed() then
             handled = true
             m.ViewController.PopScreen(obj)
@@ -616,49 +632,6 @@ Function getPostersForCastCrew(item As Object, librarySection as string) As Obje
     next
     return list
 End Function
-
-' Screen show show Movies with Actor/Director/Writer/etc.. 
-Function RFcreateItemsForCastCrewScreen(obj as Object, idx as integer) As Integer
-    cast = obj.item.metadata.castcrewlist[idx]
-    server = obj.item.metadata.server
-    librarySection = obj.librarySection
-    if librarySection <> invalid and cast.id <> invalid then 
-        dummyItem = CreateObject("roAssociativeArray")
-        if lcase(cast.itemtype) = "writer" or lcase(cast.itemtype) = "producer" then ' writer and producer are not listed secondaries ( must use filter - hack in PlexMediaServer.brs:FullUrl function )
-            dummyItem.sourceUrl = server.serverurl + "/library/sections/" + librarySection + "/all"
-            dummyItem.key = "filter?type=1&" + lcase(cast.itemtype) + "=" + cast.id + "&X-Plex-Container-Start=0" ' prepend "filter" to the key, is the key to the hack
-        else
-            dummyItem.sourceUrl = server.serverurl + "/library/sections/" + librarySection + "/" + lcase(cast.itemtype) + "/" + cast.id
-            dummyItem.key = ""
-        end if
-	Debug("------ item sourceurl+key " + dummyItem.sourceUrl + dummyItem.key)
-
-        Debug("------ requesting metadata to get required librarySection " + server.serverUrl + "library/sections/" + librarySection)
-        container = createPlexContainerForUrl(server, server.serverUrl, "library/sections/" + librarySection)        
-        bctype1 = "Content"
-        if container.xml@title1 <> invalid then bctype1 = container.xml@title1 
-
-        if cast.itemtype = "writer" then
-            bctype2 = "Written by"
-        else if cast.itemtype = "producer" then 
-            bctype2 = "Produced by"
-        else if cast.itemtype = "director" then 
-            bctype2 = "Directed by"
-        else
-            bctype2 = "with"
-        end if
-        
-        breadcrumbs = [server.name,bctype1 + " " + bctype2 + " " + cast.name]
-        dummyItem.server = server
-        dummyItem.viewGroup = "secondary"
-        Debug( "----- trying to get movies for cast member: " + cast.name + ":" + lcase(cast.itemtype) + " @ " + dummyItem.sourceUrl)
-        m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
-        else
-            Debug("cannot link cast member to item; cast.id:" + tostr(cast.id) + " librarySection:" + librarySection)
-        end if
-    return 1
-End Function
-
 
 Function ShowPleaseWait(title As dynamic, text As dynamic) As Object
     if not isstr(title) title = ""
