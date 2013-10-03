@@ -375,7 +375,9 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
             ' ljunkie - resume video from Now Playing? we should set metadata in VideoMetatdata to more useful info TODO
 
             resume_with_user = invalid
-            if metadata.nowPlaying_maid <> invalid then resume_with_user = 1 ' flag for later
+            if metadata.nowPlaying_maid <> invalid and metadata.isStopped = invalid then
+                resume_with_user = 1 ' flag for later
+            end if
 
             dlg = createBaseDialog()
             dlg.Title = "Play Video"
