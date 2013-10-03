@@ -282,7 +282,7 @@ Function getDefaultListStyle(viewGroup, contentType) As Object
         aa.style = "arced-landscape"
         aa.display = "photo-fit"
     end if
-    Debug("--- Poster Style for " + viewGroup + " " + aa.style +":"+aa.display)
+    Debug("--- Poster Style for " + tostr(viewGroup) + " " + tostr(aa.style) +":" + tostr(aa.display))  
     return aa
 End Function
 
