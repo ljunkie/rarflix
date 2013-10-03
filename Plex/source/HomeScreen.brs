@@ -111,12 +111,9 @@ Sub homeScreenOnTimerExpired(timer)
     else if timer.Name = "nowplaying" and type(m.viewcontroller.screens.peek()) = "roAssociativeArray" then
         screen = m.viewcontroller.screens.peek()
         if screen.metadata <> invalid and screen.metadata.nowplaying_user <> invalid then
-            print "update NOW playing description with new time"
+            rf_updateNowPlayingSB(screen)
         end if
-        ' to update!
-        'm.metadata.description = "Progress: " + GetDurationString(int(m.metadata.viewOffset.toint()/1000),0,1,1) ' update progress - if we exit player
-        'm.metadata.description = m.metadata.description + " on " + firstof(m.metadata.nowplaying_platform_title, m.metadata.nowplaying_platform, "")
-        'm.metadata.description = m.metadata.description + chr(10) + m.metadata.nowPlaying_orig_description ' append the original description
+ 
     end if
 End Sub 
 
@@ -125,3 +122,5 @@ Sub homeScreenActivate(priorScreen)
     'm.Screen.SetBreadcrumbText("", CurrentTimeAsString())
     m.SuperActivate(priorScreen)
 End Sub 
+
+

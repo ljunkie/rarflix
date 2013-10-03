@@ -222,12 +222,22 @@ Sub setVideoBasics(video, container, item)
     endif
 
 
-    if item.user@id <> invalid then 
+    if item.user@title <> invalid then 
         ' save any variables we change for later
         video.nowPlaying_orig_title = video.title
         video.nowPlaying_orig_description = video.description
-        video.description = "Progress: " + GetDurationString(int(video.viewoffset.toint()/1000),0,1,1) + " on " + firstof(item.Player@title, item.Player@platform)
+      
+        if video.viewoffset <> invalid then 
+             video.description = "Progress: " + GetDurationString(int(video.viewoffset.toint()/1000),0,1,1)
+        else 
+             video.description = "" ' sometime the offset is invalid, so we will just set it empty. It will be updated with the timer
+        end if
+
+        video.description = video.description + " on " + firstof(item.Player@title, item.Player@platform)
+        video.description = video.description + chr(10) + video.nowPlaying_orig_description
+        if video.server.name <> invalid then video.description = video.description + " [" + video.server.name + "]" ' show the server 
         video.title = UcaseFirst(item.user@title,true) + " " + UcaseFirst(item.Player@state) + ": "  + video.CleanTitle
+
         ' set nowPlaying info for later
         video.nowPlaying_maid = item.Player@machineIdentifier ' use to verify the stream we are syncing is the same
         video.nowPlaying_user = item.user@title

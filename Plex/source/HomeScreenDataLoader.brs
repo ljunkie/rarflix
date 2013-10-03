@@ -918,21 +918,3 @@ Sub homeOnTimerExpired(timer)
         end if
     end if
 End Sub
-
-Sub rf_homeNowPlayingChange()
-    Debug("---- refreshing Now Playing")
-    ' RefreshData() -  homeRefreshData() this would refresh all.. but we don't want to do that ( I think )
-    ' might be usful to check audio now playing too
-
-    rowkey = "now_playing"
-    m.contentArray[m.RowIndexes[rowkey]].refreshContent = []
-    m.contentArray[m.RowIndexes[rowkey]].loadedServers.Clear()
-
-    for each server in GetOwnedPlexMediaServers()
-        m.CreateServerRequests(server, true, true, invalid, rowkey) ' only request the nowPlaying;/status/sessions
-        ' maybe we will update other later
-    next
-
-    ' Clear any screensaver images, use the default.
-    SaveImagesForScreenSaver(invalid, {}) ' do we need this?
-End Sub

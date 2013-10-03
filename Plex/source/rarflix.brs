@@ -1,3 +1,8 @@
+'* Rob Reed: Cast and Crew functions
+'*  
+'* misc rarflix function
+'*
+
 ' other functions required for my mods
 Sub InitRARFlix() 
     'RegDelete("rf_unwatched_limit", "preferences")
@@ -138,19 +143,6 @@ End function
 Function createRARFlixPrefsScreen(viewController) As Object
     obj = createBasePrefsScreen(viewController)
     obj.HandleMessage = prefsRARFflixHandleMessage
-
-    ' Deprecated : part of Hide Rows 
-    ' Show 2 new fows for movies (unwatched: recenlty added and recently released )
-    '    rf_uw_movie_row_prefs = [
-    '        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Recenlty Added (unwatched)" + chr(10) + "Recenlty Released (unwatched)" },
-    '        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Recenlty Added (unwatched)" + chr(10) + "Recenlty Released (unwatched)" },
-    '    ]
-    '    obj.Prefs["rf_uw_movie_rows"] = {
-    '        values: rf_uw_movie_row_prefs,
-    '        heading: "Add unwatched Movie Rows",
-    '        default: "enabled"
-    '    }
-
 
     ' Home Screen clock
     rf_hs_clock_prefs = [
@@ -310,8 +302,6 @@ Function createRARFlixPrefsScreen(viewController) As Object
     obj.AddItem({title: "Unwatched Added/Released", ShortDescriptionLine2: "Item limit for unwatched Recently Added &" + chr(10) +"Recently Released rows [movies]"}, "rf_rowfilter_limit", obj.GetEnumValue("rf_rowfilter_limit"))
     obj.AddItem({title: "Star Ratings Override", ShortDescriptionLine2: "Only show or Prefer"+chr(10)+"Star Ratings that you have set"}, "rf_user_rating_only", obj.GetEnumValue("rf_user_rating_only"))
     obj.AddItem({title: "Up Button (row screens)", ShortDescriptionLine2: "What to do when the UP button is " + chr(10) + "pressed on a screen with rows"}, "rf_up_behavior", obj.GetEnumValue("rf_up_behavior"))
-    ' now part of the Hide Rows
-    ' obj.AddItem({title: "Unwatched Movie Rows"}, "rf_uw_movie_rows", obj.GetEnumValue("rf_uw_movie_rows"))
 
     obj.AddItem({title: "Close"}, "close")
     return obj
@@ -433,233 +423,6 @@ Function createHideRowsPrefsScreen(viewController) As Object
     return obj
 End Function
 
-
-' Function to create screen for Actors/Writers/Directors/etc for a given Movie Title
-function RFcreateCastAndCrewScreen(item as object) as Dynamic
-    if type(item.metadata.castcrewlist) = "roArray" and item.metadata.castcrewlist.count() > 0 then 
-        obj = CreateObject("roAssociativeArray")
-        obj = createPosterScreen(item, m.viewcontroller)
-        screenName = "Cast & Crew List"
-        obj.HandleMessage = RFCastAndCrewHandleMessage ' override default Handler
-    
-        server = obj.item.metadata.server
-        Debug("------ requesting metadata to get required librarySection " + server.serverUrl + obj.item.metadata.key)
-        container = createPlexContainerForUrl(server, server.serverUrl, obj.item.metadata.key)
-    
-        if container <> invalid then
-            obj.librarySection = container.xml@librarySectionID
-            obj.screen.SetContentList(getPostersForCastCrew(item,obj.librarySection))
-            obj.ScreenName = screenName
-    
-            breadcrumbs = ["The Cast & Crew", firstof(item.metadata.umtitle, item.metadata.title)]
-            m.viewcontroller.AddBreadcrumbs(obj, breadcrumbs)
-            m.viewcontroller.UpdateScreenProperties(obj)
-            m.viewcontroller.PushScreen(obj)
-        else
-            Debug("FAIL: unexpected error in RFshowCastAndCrewScreen")
-            return invalid
-        end if
-    else 
-        ShowErrorDialog("This title doesn't have any Cast or Crew memebers", firstof(item.metadata.umtitle, item.metadata.title))
-        return invalid
-    end if
-    return obj.screen
-end function
-
-Function RFCastAndCrewHandleMessage(msg) As Boolean
-    obj = m.viewcontroller.screens.peek()
-    handled = false
-
-    if type(msg) = "roPosterScreenEvent" then
-        handled = true
-        'print "showPosterScreen | msg = "; msg.GetMessage() " | index = "; msg.GetIndex()
-        if msg.isListItemSelected() then
-            'print "list item selected | current show = "; msg.GetIndex() 
-            RFcreateItemsForCastCrewScreen(obj,msg.GetIndex())
-        else if msg.isScreenClosed() then
-            handled = true
-            m.ViewController.PopScreen(obj)
-        end if
-    end If
-
- return handled
-End Function
-
-Function getPostersForCastCrew(item As Object, librarySection as string) As Object
-    server = item.metadata.server
-  
-    ' current issue - Producers/Writer ID's are not available yet unless we are in the context of a video
-    ' I had a hack below to set the id name match, but that only works for actors/directors since those urls are available
-    ' so we have to be lame and just grant the metadata again... same idea as VideoMetaData.brs:setVideoDetails
-    container = createPlexContainerForUrl(item.metadata.server, item.metadata.server.serverUrl, item.metadata.key)        
-    castxml = container.xml.Video[0]
-    'stop
-
-    default_img = "/:/resources/actor-icon.png"
-    sizes = ImageSizes("movie", "movie")
-
-    SDThumb = item.metadata.server.TranscodedImage(item.metadata.server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
-    HDThumb = item.metadata.server.TranscodedImage(item.metadata.server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
-    if item.metadata.server.AccessToken <> invalid then
-        SDThumb = SDThumb + "&X-Plex-Token=" + item.metadata.server.AccessToken
-        HDThumb = HDThumb + "&X-Plex-Token=" + item.metadata.server.AccessToken
-    end if
-
-    CastCrewList   = []
-    for each Actor in castxml.Role
-        CastCrewList.Push({ name: Actor@tag, id: Actor@id, role: Actor@role, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Actor" })
-    next
-
-    for each Director in castxml.Director
-        CastCrewList.Push({ name: Director@tag, id: Director@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Director" })
-    next
-
-    for each Producer in castxml.Producer
-        CastCrewList.Push({ name: Producer@tag, id: Producer@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "producer" })
-    next
-
-    for each Writer in castxml.Writer
-        CastCrewList.Push({ name: Writer@tag, id: Writer@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Writer" })
-    next
-
-    item.metadata.castcrewList = CastCrewList ' lets override it now that we have valid metadata for cast members
-
-    ' we can modify this if PMS ever keeps images for other cast & crew members. Actors only for now: http://10.69.1.12:32400/library/sections/6/actor
-    Debug("------ requesting FULL list of actors to supply images " + server.serverurl + "/library/sections/" + librarySection + "/actor")
-    container_a = createPlexContainerForUrl(server, server.serverurl, "/library/sections/" + librarySection + "/actor")
-    a_names = container_a.GetNames()
-    a_keys = container_a.GetKeys()
-
-    ' we will enable this again if Directors ever get thumbs..
-    'Debug("------ requesting FULL list of actors to supply images " + server.serverurl + "/library/sections/" + librarySection + "/director")
-    'container_d = createPlexContainerForUrl(server, server.serverurl, "/library/sections/" + librarySection + "/director")
-    'd_names = container_d.GetNames()
-    'd_keys = container_d.GetKeys()
-
-    list = []
-    sizes = ImageSizes("movie", "movie")
-
-    for each i in item.metadata.castcrewList
-        found = false
-        for index = 0 to a_keys.Count() - 1
-            if lcase(i.itemtype) = "actor" then  ' yea, only use the actors container if the item type is an actor
-                ' sometimes the @id is not supplied in the PMS xml api -- so we will force it
-                if i.id = invalid and a_names[index] = i.name then 
-                  Debug("---- no cast.id from XML - forcing actor key to " + i.name + " to " + a_keys[index])
-                  i.id = a_keys[index]
-                end if
-                if a_keys[index] = i.id then 
-                    found = true
-                    if container_a.xml.Directory[index]@thumb <> invalid then 
-                        default_img = container_a.xml.Directory[index]@thumb
-                        i.imageSD = server.TranscodedImage(server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
-                        i.imageHD = server.TranscodedImage(server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
-                        if server.AccessToken <> invalid then 
-                            i.imageSD = i.imageSD + "&X-Plex-Token=" + server.AccessToken
-                            i.imageHD = i.imageHD + "&X-Plex-Token=" + server.AccessToken
-                        end if
-                    end if
-                    exit for
-                end if
-            else
-                ' we will try and use the actor poster if the name matches
-                if a_names[index] = i.name then 
-                    Debug("---- non actor NAME match -- lets use thumb " + i.name + " to " + a_keys[index])
-                    if container_a.xml.Directory[index]@thumb <> invalid then 
-                        default_img = container_a.xml.Directory[index]@thumb
-                        i.imageSD = server.TranscodedImage(server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
-                        i.imageHD = server.TranscodedImage(server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
-                        if server.AccessToken <> invalid then 
-                            i.imageSD = i.imageSD + "&X-Plex-Token=" + server.AccessToken
-                            i.imageHD = i.imageHD + "&X-Plex-Token=" + server.AccessToken
-                        end if
-                    end if
-                    exit for
-                end if
-            end if
-
-        end for
-
-        ' Enable this if Directors ever get thumbs -- and remove the routine above using the actors image if the names match
-        '        if NOT found then 
-        '            for index = 0 to d_keys.Count() - 1
-        '                ' sometimes the @id is not supplied in the PMS xml api -- so we will force it
-        '                if i.id = invalid and d_names[index] = i.name then 
-        '                  Debug("---- no cast.id from XML - forcing actor key to " + i.name + " to " + d_keys[index])
-        '                  i.id = d_keys[index]
-        '                end if
-        '                if d_keys[index] = i.id then 
-        '                    found = true
-        '                    if container_d.xml.Directory[index]@thumb <> invalid then  ' these dont exist yet.. but maybe someday?
-        '                        default_img = container_d.xml.Directory[index]@thumb
-        '                        i.imageSD = server.TranscodedImage(server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
-        '                        i.imageHD = server.TranscodedImage(server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
-        '                        if server.AccessToken <> invalid then 
-        '                            i.imageSD = i.imageSD + "&X-Plex-Token=" + server.AccessToken
-        '                            i.imageHD = i.imageHD + "&X-Plex-Token=" + server.AccessToken
-        '                        end if
-        '                    end if
-        '                    exit for
-        '                end if
-        '            end for
-        '        end if
-
-        values = {
-            ShortDescriptionLine1:i.name,
-            ShortDescriptionLine2: i.itemtype,
-            SDPosterUrl:i.imageSD,
-            HDPosterUrl:i.imageHD,
-            itemtype: lcase(i.itemtype),
-            }
-        list.Push(values)        
-
-    next
-    return list
-End Function
-
-' Screen show show Movies with Actor/Director/Writer/etc.. 
-Function RFcreateItemsForCastCrewScreen(obj as Object, idx as integer) As Integer
-    cast = obj.item.metadata.castcrewlist[idx]
-    server = obj.item.metadata.server
-    librarySection = obj.librarySection
-    if librarySection <> invalid and cast.id <> invalid then 
-        dummyItem = CreateObject("roAssociativeArray")
-        if lcase(cast.itemtype) = "writer" or lcase(cast.itemtype) = "producer" then ' writer and producer are not listed secondaries ( must use filter - hack in PlexMediaServer.brs:FullUrl function )
-            dummyItem.sourceUrl = server.serverurl + "/library/sections/" + librarySection + "/all"
-            dummyItem.key = "filter?type=1&" + lcase(cast.itemtype) + "=" + cast.id + "&X-Plex-Container-Start=0" ' prepend "filter" to the key, is the key to the hack
-        else
-            dummyItem.sourceUrl = server.serverurl + "/library/sections/" + librarySection + "/" + lcase(cast.itemtype) + "/" + cast.id
-            dummyItem.key = ""
-        end if
-	Debug("------ item sourceurl+key " + dummyItem.sourceUrl + dummyItem.key)
-
-        Debug("------ requesting metadata to get required librarySection " + server.serverUrl + "library/sections/" + librarySection)
-        container = createPlexContainerForUrl(server, server.serverUrl, "library/sections/" + librarySection)        
-        bctype1 = "Content"
-        if container.xml@title1 <> invalid then bctype1 = container.xml@title1 
-
-        if cast.itemtype = "writer" then
-            bctype2 = "Written by"
-        else if cast.itemtype = "producer" then 
-            bctype2 = "Produced by"
-        else if cast.itemtype = "director" then 
-            bctype2 = "Directed by"
-        else
-            bctype2 = "with"
-        end if
-        
-        breadcrumbs = [server.name,bctype1 + " " + bctype2 + " " + cast.name]
-        dummyItem.server = server
-        dummyItem.viewGroup = "secondary"
-        Debug( "----- trying to get movies for cast member: " + cast.name + ":" + lcase(cast.itemtype) + " @ " + dummyItem.sourceUrl)
-        m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
-        else
-            Debug("cannot link cast member to item; cast.id:" + tostr(cast.id) + " librarySection:" + librarySection)
-        end if
-    return 1
-End Function
-
-
 Function ShowPleaseWait(title As dynamic, text As dynamic) As Object
     if not isstr(title) title = ""
     if not isstr(text) text = ""
@@ -689,7 +452,7 @@ End Function
 sub rfVideoMoreButton(obj as Object) as Dynamic
     dialog = createBaseDialog()
     dialog.Title = firstof(obj.metadata.showtitle, obj.metadata.umtitle, obj.metadata.title)
-    dialog.Text = truncateString(obj.metadata.shortdescriptionline2,220)
+    dialog.Text = truncateString(obj.metadata.shortdescriptionline2,200)
     dialog.Item = obj.metadata
 
 
@@ -709,9 +472,12 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
        dialog.SetButton("seasonFromEpisode", "View Season " + obj.metadata.parentIndex)
     end if
 
-    ' if obj.metadata.ContentType = "movie"  or obj.metadata.ContentType = "show"  or obj.metadata.ContentType = "episode"  then
-    if obj.metadata.ContentType = "movie" then ' TODO - try and make this work with TV shows ( seems it only works for episodes -- but not well ) 
+    if obj.metadata.type = "season" or obj.metadata.ContentType = "movie"  or obj.metadata.ContentType = "show"  or obj.metadata.ContentType = "episode"  or obj.metadata.ContentType = "series" then
+    'if obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "series" then ' TODO - try and make this work with TV shows ( seems it only works for episodes -- but not well ) 
         dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
+    else 
+       Debug("---- Cast and Crew are not available for " + tostr(obj.metadata.ContentType))
+       print obj.metadata
     end if
 
     ' Trailers link - RR (last now that we include it on the main screen .. well before delete - people my be used to delete being second to last)
@@ -754,6 +520,7 @@ sub fakeRefresh(force=false)
     'fake it for now
 end sub 
 
+' this should be merged with rfVideoMoreButton ( just need to add in the caveats)
 sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     ' this should probably just be combined into rfVideoMoreButton  ( there are some caveats though and maybe more to come.. so until this has been finalized )
     dialog = createBaseDialog()
@@ -767,8 +534,10 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     else 
         ' movies -- the description is too much
         dialog.Title = firstof(obj.metadata.showtitle, obj.metadata.umtitle, obj.metadata.title)
-        dialog.Text = truncateString(obj.metadata.shortdescriptionline2,300)
+        dialog.Text = obj.metadata.shortdescriptionline2
      end if
+
+    dialog.Text = truncateString(dialog.Text,200)
 
     dialog.Item = obj.metadata
 
@@ -807,14 +576,17 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
        dialog.SetButton("seasonFromEpisode", "View Season " + obj.metadata.parentIndex)
     end if
 
-    ' if obj.metadata.ContentType = "movie"  or obj.metadata.ContentType = "show"  or obj.metadata.ContentType = "episode"  then
-    if obj.metadata.ContentType = "movie" then ' TODO - try and make this work with TV shows ( seems it only works for episodes -- but not well ) 
-        dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
-    end if
-
     ' Trailers link - RR (last now that we include it on the main screen .. well before delete - people my be used to delete being second to last)
     if obj.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
         dialog.SetButton("getTrailers", "Trailer")
+    end if
+
+    ' cast and crew
+    if obj.metadata.type = "season" or obj.metadata.ContentType = "movie"  or obj.metadata.ContentType = "show"  or obj.metadata.ContentType = "episode"  or obj.metadata.ContentType = "series" then
+        dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
+    else
+       Debug(" Cast and Crew are not available for " + tostr(obj.metadata.ContentType))
+       print obj.metadata
     end if
 
     supportedIdentifier = (obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
@@ -847,18 +619,18 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
 end sub
 
 function UcaseFirst(var,strip = invalid) as dynamic
- Debug("UcaseFirst start:" + var)
+ 'Debug("UcaseFirst start:" + var)
  if strip <> invalid then ' extra function to strip chars/replace them - I didn't want to create another function
      re = CreateObject("roRegex", "_", "i")
      var = re.ReplaceAll(var, "       ")
      re = CreateObject("roRegex", "rarforge", "i") ' just for me :)
      var = re.ReplaceAll(var, "")
-     Debug("UcaseFirst strip:" + var)
+     'Debug("UcaseFirst strip:" + var)
  end if
 
  re = CreateObject("roRegex", "  ", "i") ' remove double spaces
  var = re.ReplaceAll(var, " ")
- Debug("UcaseFirst spaces:" + var)
+ 'Debug("UcaseFirst spaces:" + var)
 
  ' Capitalize first of every word
  parts = strTokenize(var, " ")
@@ -871,7 +643,8 @@ function UcaseFirst(var,strip = invalid) as dynamic
      end if
  end for
  if result <> invalid then var = result
- Debug("UcaseFirst result:" + var)
+ 'Debug("UcaseFirst result:" + var)
 
  return var ' return either modified or untouched var
 end function
+

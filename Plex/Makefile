@@ -26,13 +26,13 @@ num_functions := $(shell grep -ri --include=*.brs 'end \(function\|sub\)' . | wc
 
 .PHONY: manifest count_functions beta dev rel test rarflix
 
-beta: APPTITLE = PlexBeta
+beta: APPTITLE = RARflixBeta
 beta: $(APPNAME)
 
 test: APPTITLE = RARflixTest
 test: $(APPNAME)
 
-dev: APPTITLE = PlexDev
+dev: APPTITLE = RARflixDev
 dev: $(APPNAME)
 
 rel: APPTITLE = RARflix
