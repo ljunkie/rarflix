@@ -472,11 +472,12 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
        dialog.SetButton("seasonFromEpisode", "View Season " + obj.metadata.parentIndex)
     end if
 
-    if obj.metadata.ContentType = "movie"  or obj.metadata.ContentType = "show"  or obj.metadata.ContentType = "episode"  or obj.metadata.ContentType = "series" then
+    if obj.metadata.type = "season" or obj.metadata.ContentType = "movie"  or obj.metadata.ContentType = "show"  or obj.metadata.ContentType = "episode"  or obj.metadata.ContentType = "series" then
     'if obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "series" then ' TODO - try and make this work with TV shows ( seems it only works for episodes -- but not well ) 
         dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
     else 
        Debug("---- Cast and Crew are not available for " + tostr(obj.metadata.ContentType))
+       print obj.metadata
     end if
 
     ' Trailers link - RR (last now that we include it on the main screen .. well before delete - people my be used to delete being second to last)
@@ -575,16 +576,17 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
        dialog.SetButton("seasonFromEpisode", "View Season " + obj.metadata.parentIndex)
     end if
 
-    ' cast and crew
-    if obj.metadata.ContentType = "movie"  or obj.metadata.ContentType = "show"  or obj.metadata.ContentType = "episode"  or obj.metadata.ContentType = "series" then
-        dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
-    else
-       Debug(" Cast and Crew are not available for " + tostr(obj.metadata.ContentType))
-    end if
-
     ' Trailers link - RR (last now that we include it on the main screen .. well before delete - people my be used to delete being second to last)
     if obj.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
         dialog.SetButton("getTrailers", "Trailer")
+    end if
+
+    ' cast and crew
+    if obj.metadata.type = "season" or obj.metadata.ContentType = "movie"  or obj.metadata.ContentType = "show"  or obj.metadata.ContentType = "episode"  or obj.metadata.ContentType = "series" then
+        dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
+    else
+       Debug(" Cast and Crew are not available for " + tostr(obj.metadata.ContentType))
+       print obj.metadata
     end if
 
     supportedIdentifier = (obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
