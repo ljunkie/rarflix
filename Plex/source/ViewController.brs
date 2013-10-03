@@ -373,13 +373,11 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
             offsetSeconds = fix(val(metadata.viewOffset)/1000)
 
             ' ljunkie - resume video from Now Playing? we should set metadata in VideoMetatdata to more useful info TODO
-            ' re = CreateObject("roRegex", "/status/session", "i")
-	    ' if re.IsMatch(metadata.sourceurl) then
 
             resume_with_user = invalid
-            if metadata.nowPlaying_maid <> invalid then 
-                resume_with_user = 1
-            end if 
+            if metadata.nowPlaying_maid <> invalid and metadata.isStopped = invalid then
+                resume_with_user = 1 ' flag for later
+            end if
 
             dlg = createBaseDialog()
             dlg.Title = "Play Video"
@@ -395,26 +393,12 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
             dlg.SetButton("play", "Play from beginning")
             dlg.Show(true)
 
-
-            if resume_with_user <> invalid and dlg.Result = "resume" ' 
-                container = createPlexContainerForUrl(metadata.server, metadata.sourceurl, "")
-                keys = container.getkeys()
-                found = invalid
-                for index = 0 to keys.Count() - 1
-                    print "Searching for key:" + metadata.key + " and machineID:" + metadata.nowPlaying_maid ' verify same machineID to sync (multiple people can be streaming same content)
-                    if keys[index] = metadata.key and container.xml.Video[index].Player@machineIdentifier = metadata.nowPlaying_maid then 
-                        Debug("---- Sync Playback found: key:" + metadata.key + ", machineID:" + metadata.nowPlaying_maid + " @ " + metadata.sourceurl)
-                        found = true
-		        Debug("----- original offset " + metadata.viewOffset)
-                        metadata = container.metadata[index]
-                        metadata.viewOffset = tostr(metadata.viewOffset.toint() + int(10000)) ' just best guess. add on a few seconds since it takes time to buffer
-		        Debug("----- new offset " + metadata.viewOffset + "(added a few seconds for buffer start)")
-                        exit for
-                    end if
-                end for
-                ' let's verify we actually found a match - otherwise we will be playing an offset that doesn't even matter
-                if found = invalid then
-                    Debug("---- Sync Playback failed: key:" + metadata.key + ", machineID:" + metadata.nowPlaying_maid + " DO not exist @ " + metadata.sourceurl)
+            if resume_with_user <> invalid and dlg.Result = "resume"
+                ' sync called - we should get the most recent offset and resume
+                metadata = rfUpdateNowPlayingMetadata(metadata,10000)
+                ' if the viewOffset return is invalid - user has stopped playing
+                if metadata.viewOffset = invalid then
+                    Debug("---- Sync Playback failed: key:" + tostr(metadata.key) + ", machineID:" + tostr(metadata.nowPlaying_maid) + " DO not exist @ " + tostr(metadata.sourceurl))
                     dlg = createBaseDialog()
                     dlg.Title = "Sorry... Cannot Sync Playback"
                     dlg.text = "The user has stopped playing the content" + chr(10)
@@ -598,7 +582,7 @@ Sub vcPopScreen(screen)
         Debug("Top of stack is once again: " + screenName)
         m.Analytics.TrackScreen(screenName)
         newScreen.Activate(screen)
-        RRbreadcrumbDate(newScreen) ' ljunkie - clock
+        'RRbreadcrumbDate(newScreen) ' ljunkie - clock
     end if
 
     ' If some other screen requested this close, let it know.
@@ -633,26 +617,6 @@ Sub vcShow()
     while m.screens.Count() > 0
         m.WebServer.prewait()
         msg = wait(timeout, m.GlobalMessagePort)
-
-        'ljunkie - minute refresh check - if minuteRefresh <> invalid, then it a brand spanking new minute
-        minuteRefresh = invalid
-        if lastmin <> invalid then 
-            date = CreateObject("roDateTime")
-            newmin = date.GetMinutes()
-            if newmin <> lastmin then 
-                'Debug(tostr(newmin) + " >  " + tostr(lastmin) + " minuteRefresh set")
-                minuteRefresh = 1
-                lastmin = date.GetMinutes()
-            end if
-        end if
-        ' end minute check
-
-        ' ljunkie - update clock on home screen (every minute) - only on roSocketEvent
-        if m.screens.Count() = 1 and type(msg) = "roSocketEvent" then 
-            if minuteRefresh <> invalid then
-                RRbreadcrumbDate(m.screens[0])
-            end if
-        end if
 
         if msg <> invalid then
             ' Printing debug information about every message may be overkill

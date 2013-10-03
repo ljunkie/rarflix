@@ -13,6 +13,20 @@ Function createHomeScreen(viewController) As Object
 
     obj.Refresh = refreshHomeScreen
 
+    obj.OnTimerExpired = homeScreenOnTimerExpired
+    obj.SuperActivate = obj.Activate
+    obj.Activate = homeScreenActivate
+
+    obj.clockTimer = createTimer()
+    obj.clockTimer.Name = "clock"
+    obj.clockTimer.SetDuration(20000, true) ' A little lag is fine here
+    viewController.AddTimer(obj.clockTimer, obj) 
+
+    obj.npTimer = createTimer()
+    obj.npTimer.Name = "nowplaying"
+    obj.npTimer.SetDuration(10000, true) ' 10 seconds? too much?
+    viewController.AddTimer(obj.npTimer, obj) 
+
     return obj
 End Function
 
@@ -84,3 +98,29 @@ Sub ShowHelpScreen()
 
     screen.Show()
 End Sub
+
+
+Sub homeScreenOnTimerExpired(timer)
+    if timer.Name = "clock" AND m.ViewController.IsActiveScreen(m) then
+        RRbreadcrumbDate(m.viewcontroller.screens[0])
+        'm.Screen.SetBreadcrumbText("", CurrentTimeAsString())
+    end if
+    if timer.Name = "nowplaying" AND m.ViewController.IsActiveScreen(m) then
+        ' print "update now playing"
+        m.loader.NowPlayingChange() ' refresh now playing -- it will only update if available to eu
+    else if timer.Name = "nowplaying" and type(m.viewcontroller.screens.peek()) = "roAssociativeArray" then
+        screen = m.viewcontroller.screens.peek()
+        if screen.metadata <> invalid and screen.metadata.nowplaying_user <> invalid then
+            rf_updateNowPlayingSB(screen)
+        end if
+ 
+    end if
+End Sub 
+
+Sub homeScreenActivate(priorScreen)
+    RRbreadcrumbDate(m.viewcontroller.screens[0])
+    'm.Screen.SetBreadcrumbText("", CurrentTimeAsString())
+    m.SuperActivate(priorScreen)
+End Sub 
+
+

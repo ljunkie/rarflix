@@ -1362,14 +1362,13 @@ Function createHomeScreenPrefsScreen(viewController) As Object
     }
 
     obj.Screen.SetHeader("Change the appearance of the home screen")
-
+    obj.AddItem({title: "Reorder Home Rows", ShortDescriptionLine2: "A restart of the Channel is required"}, "home_row_order")
     obj.AddItem({title: "Queue"}, "playlist_view_queue", obj.GetEnumValue("playlist_view_queue"))
     obj.AddItem({title: "Recommendations"}, "playlist_view_recommendations", obj.GetEnumValue("playlist_view_recommendations"))
     obj.AddItem({title: "On Deck"}, "row_visibility_ondeck", obj.GetEnumValue("row_visibility_ondeck"))
     obj.AddItem({title: "Now Playing", ShortDescriptionLine2: "rarflix pref"}, "row_visibility_now_playing", obj.GetEnumValue("row_visibility_now_playing"))
     obj.AddItem({title: "Recently Added"}, "row_visibility_recentlyadded", obj.GetEnumValue("row_visibility_recentlyadded"))
     obj.AddItem({title: "Channels"}, "row_visibility_channels", obj.GetEnumValue("row_visibility_channels"))
-    obj.AddItem({title: "Reorder Rows"}, "home_row_order")
     obj.AddItem({title: "Close"}, "close")
 
     return obj
