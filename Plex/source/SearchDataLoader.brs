@@ -4,7 +4,7 @@
 '* is started for that provider.
 '*
 
-Function createSearchLoader(searchTerm)
+Function createSearchLoader(searchTerm,cast=invalid)
     loader = CreateObject("roAssociativeArray")
     initDataLoader(loader)
 
@@ -12,7 +12,12 @@ Function createSearchLoader(searchTerm)
     loader.GetLoadStatus = searchGetLoadStatus
     loader.GetPendingRequestCount = searchGetPendingRequestCount
 
+    loader.cast = invalid
     loader.SearchTerm = searchTerm
+    if cast <> invalid then  ' do normal search
+        loader.SearchTerm = cast.name
+        loader.cast = cast
+    end if
 
     loader.contentArray = []
     loader.PendingRequests = 0
@@ -31,7 +36,7 @@ Function createSearchLoader(searchTerm)
     loader.ArtistRow = loader.CreateRow("Artists", "artist")
     loader.AlbumRow = loader.CreateRow("Albums", "album")
     loader.TrackRow = loader.CreateRow("Tracks", "track")
-    loader.ActorRow = loader.CreateRow("Actors", "person")
+    if cast = invalid then loader.ActorRow = loader.CreateRow("Actors", "person")
     loader.ClipRow = loader.CreateRow("Clips", "clip")
 
     return loader
@@ -52,7 +57,9 @@ Function searchCreateRow(name, typeStr)
 End Function
 
 Sub searchStartRequest(server, url, title)
-    if instr(1, url, "?") > 0 then
+    if instr(1, url, "/people/") > 0 then
+        ' use the original URL
+    else if instr(1, url, "?") > 0 then
         url = url + "&query=" + HttpEncode(m.SearchTerm)
     else
         url = url + "?query=" + HttpEncode(m.SearchTerm)
@@ -86,7 +93,12 @@ Function searchLoadMoreContent(focusedRow, extraRows=0) As Boolean
         next
 
         for each server in GetOwnedPlexMediaServers()
-            m.StartRequest(server, "/search", "Root")
+            if m.cast = invalid then 
+                m.StartRequest(server, "/search", "Root")
+            else 
+                m.StartRequest(server, "/library/people/" + m.cast.id + "/media", "Root")
+                m.StartRequest(server, "/search", "Root") ' now included
+            end if
         next
 
         m.StartedRequests = true
@@ -129,7 +141,13 @@ Sub searchOnUrlEvent(msg, requestContext)
             if index = invalid then
                 item = invalid
             else
-                status = m.contentArray[index]
+                r = CreateObject("roRegex", "/search", "i")
+                if m.cast <> invalid and r.IsMatch(item.sourceurl) and (item.contenttype = "movie") then 
+                   Debug("---- skipping movie title:" + item.title + " when cast search - this is done by the people/id/media search -- no dupes!")
+                   item = invalid
+                else 
+                   status = m.contentArray[index]
+                end if
             end if
         end if
 
