@@ -1,3 +1,17 @@
+### v2.6.15 (2013-10-03)
+* Cast and Crew re-wrote
+    - Grid Screen is displayed for the selected cast member ( includes movies/shows/supported channel content/etc )
+    - It will resemble the search function - excluding the actor link since that's a little redundant
+    - If using a PMS server > 0.9.8.7 - you can view the cast and crew directly from TV shows/episode/seasons
+    - The way the cast & crew are queried has been updated - should display "more" cast & crew members ( depends on your own metadata )
+
+* Now Playing - many updates and fixes
+    - Will support all "owned/local" servers
+    - Periodically refreshes the Now playing row and the Now Playing Details Screen with the progress
+    - Will display the user has stopped watching the content on the Video Details screen
+    - Option to Resume Video when remote user has stopped the content
+    - other misc bugs and cleanup for now playing
+
 ### v2.6.14-test (2013-10-01)
 * Now Playing section on Home Screen
 * Now Playing: Sync play with remote user (this only starts the video at the offset of the remote user)
