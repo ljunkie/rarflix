@@ -1,5 +1,4 @@
 Sub rf_homeNowPlayingChange()
-    Debug("---- refreshing Now Playing")
     ' RefreshData() -  homeRefreshData() this would refresh all.. but we don't want to do that ( I think )
     ' might be usful to check audio now playing too
 
@@ -8,12 +7,12 @@ Sub rf_homeNowPlayingChange()
     m.contentArray[m.RowIndexes[rowkey]].loadedServers.Clear()
 
     for each server in GetOwnedPlexMediaServers()
-        m.CreateServerRequests(server, true, true, invalid, rowkey) ' only request the nowPlaying;/status/sessions
-        ' maybe we will update other later
+        if server.isavailable then ' only query server if available
+            Debug("---- refreshing Now Playing")
+            m.CreateServerRequests(server, true, true, invalid, rowkey) ' only request the nowPlaying;/status/sessions
+        end if
     next
 
-    ' Clear any screensaver images, use the default.
-    SaveImagesForScreenSaver(invalid, {}) ' do we need this?
 End Sub
 
 sub rf_updateNowPlayingSB(screen)
