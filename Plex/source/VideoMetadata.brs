@@ -222,7 +222,7 @@ Sub setVideoBasics(video, container, item)
     endif
 
 
-    if item.user@id <> invalid then 
+    if item.user@title <> invalid then 
         ' save any variables we change for later
         video.nowPlaying_orig_title = video.title
         video.nowPlaying_orig_description = video.description
