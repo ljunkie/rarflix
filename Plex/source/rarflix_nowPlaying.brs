@@ -29,7 +29,7 @@ sub rf_updateNowPlayingSB(screen)
         screen.metadata.description = " * User has stopped watching"
         screen.metadata.isStopped = true
         screen.metadata.viewOffset = orig_offset ' reset offset to this users offset, so they can resume even if EU stopped
-        Debug("setting the video Offset to your offset (not remote) - user has stopped but you should be able to resume!")
+        Debug("---- setting the video Offset to your offset (not remote) " + tostr(screen.metadata.viewOffset) + " - user has stopped but you should be able to resume!")
     end if
     screen.metadata.description = screen.metadata.description + " on " + firstof(screen.metadata.nowplaying_platform_title, screen.metadata.nowplaying_platform, "")
     if screen.metadata.server.name <> invalid then screen.metadata.description = screen.metadata.description + " [" + screen.metadata.server.name + "]" ' show the server 
@@ -41,18 +41,18 @@ sub rf_updateNowPlayingSB(screen)
     else
         screen.metadata.title = screen.metadata.cleantitle
     end if
-     screen.Screen.setContent(screen.metadata)
-    print "update NOW playing description with new time"
+    screen.Screen.setContent(screen.metadata)
+    Debug("Refreshing nowPlaying videoSpringBoard content")
 end sub
 
 function rfUpdateNowPlayingMetadata(metadata,time = 0 as integer) as object
-    container = createPlexContainerForUrl(metadata.server, metadata.serverurl, "/status/sessions")
+    container = createPlexContainerForUrl(metadata.server, metadata.server.serverurl, "/status/sessions")
     keys = container.getkeys()
     found = false
     for index = 0 to keys.Count() - 1
-        print "Searching for key:" + metadata.key + " and machineID:" + metadata.nowPlaying_maid ' verify same machineID to sync (multiple people can be streaming same content)
+        Debug("Searching for key:" + tostr(metadata.key) + " and machineID:" + tostr(metadata.nowPlaying_maid) ) ' verify same machineID to sync (multiple people can be streaming same content)
         if keys[index] = metadata.key and container.xml.Video[index].Player@machineIdentifier = metadata.nowPlaying_maid then 
-            Debug("----- nowPlaying match: key:" + tostr(metadata.key) + ", machineID:" + tostr(metadata.nowPlaying_maid) + " @ " + tostr(metadata.serverurl) + "/status/sessions")
+            Debug("----- nowPlaying match: key:" + tostr(metadata.key) + ", machineID:" + tostr(metadata.nowPlaying_maid) + " @ " + tostr(metadata.server.serverurl) + "/status/sessions")
             found = true
             Debug("----- prev offset " + tostr(metadata.viewOffset))
             metadata = container.metadata[index]
