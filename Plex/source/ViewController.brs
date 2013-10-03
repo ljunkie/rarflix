@@ -455,8 +455,9 @@ Sub vcShowReleaseNotes()
     header = ""
     title = GetGlobal("appName") + " updated to " + GetGlobal("appVersionStr")
     paragraphs = []
-    paragraphs.Push("New: Now Playing on the Home Screen!")
-    paragraphs.Push(" View the Cast and Crew for Movies")
+    paragraphs.Push("New: Now Playing on the Home Screen! (with periodic updates)")
+    paragraphs.Push("New: Cast & Crew works for more content")
+    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+ "+ Show All content for selected Cast Member")
     paragraphs.Push(" ( * ) Remote Button works is most areas - try it!")
     paragraphs.Push(" Hide some rows per section type [movie,tv,music]")
     paragraphs.Push(" RARFflix preferences - toggles for mods")
