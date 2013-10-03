@@ -1,3 +1,8 @@
+'* Rob Reed: Cast and Crew functions
+'*  
+'* misc rarflix function
+'*
+
 ' other functions required for my mods
 Sub InitRARFlix() 
     'RegDelete("rf_unwatched_limit", "preferences")
@@ -138,19 +143,6 @@ End function
 Function createRARFlixPrefsScreen(viewController) As Object
     obj = createBasePrefsScreen(viewController)
     obj.HandleMessage = prefsRARFflixHandleMessage
-
-    ' Deprecated : part of Hide Rows 
-    ' Show 2 new fows for movies (unwatched: recenlty added and recently released )
-    '    rf_uw_movie_row_prefs = [
-    '        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Recenlty Added (unwatched)" + chr(10) + "Recenlty Released (unwatched)" },
-    '        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Recenlty Added (unwatched)" + chr(10) + "Recenlty Released (unwatched)" },
-    '    ]
-    '    obj.Prefs["rf_uw_movie_rows"] = {
-    '        values: rf_uw_movie_row_prefs,
-    '        heading: "Add unwatched Movie Rows",
-    '        default: "enabled"
-    '    }
-
 
     ' Home Screen clock
     rf_hs_clock_prefs = [
@@ -310,8 +302,6 @@ Function createRARFlixPrefsScreen(viewController) As Object
     obj.AddItem({title: "Unwatched Added/Released", ShortDescriptionLine2: "Item limit for unwatched Recently Added &" + chr(10) +"Recently Released rows [movies]"}, "rf_rowfilter_limit", obj.GetEnumValue("rf_rowfilter_limit"))
     obj.AddItem({title: "Star Ratings Override", ShortDescriptionLine2: "Only show or Prefer"+chr(10)+"Star Ratings that you have set"}, "rf_user_rating_only", obj.GetEnumValue("rf_user_rating_only"))
     obj.AddItem({title: "Up Button (row screens)", ShortDescriptionLine2: "What to do when the UP button is " + chr(10) + "pressed on a screen with rows"}, "rf_up_behavior", obj.GetEnumValue("rf_up_behavior"))
-    ' now part of the Hide Rows
-    ' obj.AddItem({title: "Unwatched Movie Rows"}, "rf_uw_movie_rows", obj.GetEnumValue("rf_uw_movie_rows"))
 
     obj.AddItem({title: "Close"}, "close")
     return obj
@@ -433,200 +423,6 @@ Function createHideRowsPrefsScreen(viewController) As Object
     return obj
 End Function
 
-
-' Function to create screen for Actors/Writers/Directors/etc for a given Movie Title
-function RFcreateCastAndCrewScreen(item as object) as Dynamic
-    'print item.metadata
-
-    if item.metadata.grandparentkey <> invalid then 
-        item.metadata.castcrewlist = getCastAndCrew(item, item.metadata.grandparentkey) ' for now - TV shows only have actors/id on the actual SHOW
-    else
-        item.metadata.castcrewlist = getCastAndCrew(item, invalid)
-    end if
-
-    if type(item.metadata.castcrewlist) = "roArray" and item.metadata.castcrewlist.count() > 0 then 
-        obj = CreateObject("roAssociativeArray")
-        obj = createPosterScreen(item, m.viewcontroller)
-        screenName = "Cast & Crew List"
-        obj.HandleMessage = RFCastAndCrewHandleMessage ' override default Handler
-    
-        server = obj.item.metadata.server
-        Debug("------ requesting metadata to get required librarySection " + server.serverUrl + obj.item.metadata.key)
-        container = createPlexContainerForUrl(server, server.serverUrl, obj.item.metadata.key)
-    
-        if container <> invalid then
-            obj.librarySection = container.xml@librarySectionID
-            obj.screen.SetContentList(getPostersForCastCrew(item,obj.librarySection))
-            obj.ScreenName = screenName
-    
-            breadcrumbs = ["The Cast & Crew", firstof(item.metadata.cleantitle, item.metadata.umtitle, item.metadata.title)]
-            m.viewcontroller.AddBreadcrumbs(obj, breadcrumbs)
-            m.viewcontroller.UpdateScreenProperties(obj)
-            m.viewcontroller.PushScreen(obj)
-        else
-            Debug("FAIL: unexpected error in RFshowCastAndCrewScreen")
-            return invalid
-        end if
-    else 
-        ShowErrorDialog("This title doesn't have any Cast or Crew memebers", firstof(item.metadata.cleantitle, item.metadata.umtitle, item.metadata.title))
-        return invalid
-    end if
-    return obj.screen
-end function
-
-Function RFCastAndCrewHandleMessage(msg) As Boolean
-    obj = m.viewcontroller.screens.peek()
-    handled = false
-
-    if type(msg) = "roPosterScreenEvent" then
-        handled = true
-        'print "showPosterScreen | msg = "; msg.GetMessage() " | index = "; msg.GetIndex()
-        if msg.isListItemSelected() then
-            cast = obj.item.metadata.castcrewlist[msg.GetIndex()]
-            screen = createGridScreen(m.viewcontroller, "flat-square") ' flat-movie - larger?
-            if cast.id <> invalid and cast.name <> invalid then 
-                screen.Loader = createSearchLoader("invalid",cast)
-                screen.Loader.Listener = screen
-                breadcrumbs = [cast.itemtype,cast.name]
-                screen.ScreenName = "Cast and Crew"
-                m.viewcontroller.AddBreadcrumbs(screen, breadcrumbs)
-                m.viewcontroller.UpdateScreenProperties(screen)
-                m.viewcontroller.PushScreen(screen)
-                screen.Show()
-            else
-                Debug("Cast name and id are not set for " +  tostr(cast.name) + ":" + tostr(obj.item.metadata.key))
-            end if
-        else if msg.isScreenClosed() then
-            handled = true
-            m.ViewController.PopScreen(obj)
-        end if
-    end If
-
- return handled
-End Function
-
-function getCastAndCrew(item as object, key = invalid) as object
-    CastCrewList   = []
-
-    if key = invalid then key = item.metadata.key ' let us override the key, otherwise, use the item.metadata.key
-
-    ' current issue - Producers/Writer ID's are not available yet unless we are in the context of a video
-    container = createPlexContainerForUrl(item.metadata.server, item.metadata.server.serverUrl, key)        
-
-    if container.xml.Video[0] <> invalid then 
-        castxml = container.xml.Video[0]
-    else if container.xml.Directory[0] <> invalid  then
-       castxml = container.xml.Directory[0]
-    end if
-
-    if type(castxml) = "roXMLElement" then 
-    
-        default_img = "/:/resources/actor-icon.png"
-        sizes = ImageSizes("movie", "movie")
-    
-        SDThumb = item.metadata.server.TranscodedImage(item.metadata.server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
-        HDThumb = item.metadata.server.TranscodedImage(item.metadata.server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
-        if item.metadata.server.AccessToken <> invalid then
-            SDThumb = SDThumb + "&X-Plex-Token=" + item.metadata.server.AccessToken
-            HDThumb = HDThumb + "&X-Plex-Token=" + item.metadata.server.AccessToken
-        end if
-
-        for each Actor in castxml.Role
-            CastCrewList.Push({ name: Actor@tag, id: Actor@id, role: Actor@role, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Actor" })
-        next
-    
-        for each Director in castxml.Director
-            CastCrewList.Push({ name: Director@tag, id: Director@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Director" })
-        next
-    
-        for each Producer in castxml.Producer
-            CastCrewList.Push({ name: Producer@tag, id: Producer@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "producer" })
-        next
-    
-        for each Writer in castxml.Writer
-            CastCrewList.Push({ name: Writer@tag, id: Writer@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Writer" })
-        next
-    end if
-    return CastCrewList ' lets override it now that we have valid metadata for cast members
-end function 
-
-Function getPostersForCastCrew(item As Object, librarySection as string) As Object
-    server = item.metadata.server
-
-   ' find a better way to get all PEOPLES thumbs TODO
-
-  
-    ' current issue - Producers/Writer ID's are not available yet unless we are in the context of a video
-    ' I had a hack below to set the id name match, but that only works for actors/directors since those urls are available
-    ' so we have to be lame and just grant the metadata again... same idea as VideoMetaData.brs:setVideoDetails
-
-    default_img = "/:/resources/actor-icon.png"
-    sizes = ImageSizes("movie", "movie")
-
-    SDThumb = item.metadata.server.TranscodedImage(item.metadata.server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
-    HDThumb = item.metadata.server.TranscodedImage(item.metadata.server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
-    if item.metadata.server.AccessToken <> invalid then
-        SDThumb = SDThumb + "&X-Plex-Token=" + item.metadata.server.AccessToken
-        HDThumb = HDThumb + "&X-Plex-Token=" + item.metadata.server.AccessToken
-    end if
-
-    list = []
-    sizes = ImageSizes("movie", "movie")
-
-    for each i in item.metadata.castcrewList
-        wkey = "/lsibrary/people/"+i.id+"/media"
-        ' it would be nice if we could just get a full list of people from ther server, but not available - maybe later TODO
-        container = createPlexContainerForUrl(server, server.serverurl, "/search/actor/?query=" + HttpEncode(i.name))
-        names = container.GetNames()
-        keys = container.GetKeys()
-
-        for index = 0 to keys.Count() - 1
-            found = false
-            if keys[index] = wkey then 
-                 found = true
-                 if container.xml.Directory[index]@thumb <> invalid then 
-                    default_img = container.xml.Directory[index]@thumb
-                    i.imageSD = server.TranscodedImage(server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
-                    i.imageHD = server.TranscodedImage(server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
-                    if server.AccessToken <> invalid then 
-                        i.imageSD = i.imageSD + "&X-Plex-Token=" + server.AccessToken
-                        i.imageHD = i.imageHD + "&X-Plex-Token=" + server.AccessToken
-                    end if
-                end if
-                exit for
-            end if
-
-            ' this is probably not needed -- but it might be useful for other characters than actors
-            if NOT found then
-                if names[index] = i.name then 
-                     found = true
-                     if container.xml.Directory[index]@thumb <> invalid then 
-                        default_img = container.xml.Directory[index]@thumb
-                        i.imageSD = server.TranscodedImage(server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
-                        i.imageHD = server.TranscodedImage(server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
-                        if server.AccessToken <> invalid then 
-                            i.imageSD = i.imageSD + "&X-Plex-Token=" + server.AccessToken
-                            i.imageHD = i.imageHD + "&X-Plex-Token=" + server.AccessToken
-                        end if
-                    end if
-                    exit for
-                end if
-            end if
-        end for
-
-        values = {
-            ShortDescriptionLine1:i.name,
-            ShortDescriptionLine2: i.itemtype,
-            SDPosterUrl:i.imageSD,
-            HDPosterUrl:i.imageHD,
-            itemtype: lcase(i.itemtype),
-            }
-        list.Push(values)        
-
-    next
-    return list
-End Function
-
 Function ShowPleaseWait(title As dynamic, text As dynamic) As Object
     if not isstr(title) title = ""
     if not isstr(text) text = ""
@@ -723,6 +519,7 @@ sub fakeRefresh(force=false)
     'fake it for now
 end sub 
 
+' this should be merged with rfVideoMoreButton ( just need to add in the caveats)
 sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     ' this should probably just be combined into rfVideoMoreButton  ( there are some caveats though and maybe more to come.. so until this has been finalized )
     dialog = createBaseDialog()
