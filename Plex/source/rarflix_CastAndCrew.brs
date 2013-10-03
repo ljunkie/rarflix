@@ -35,7 +35,7 @@ function RFcreateCastAndCrewScreen(item as object) as Dynamic
 '            obj.screen.SetContentList(getPostersForCastCrew(item,obj.librarySection))
 ' END REMOVE
 
-        obj.screen.SetContentList(getPostersForCastCrew(item)
+        obj.screen.SetContentList(getPostersForCastCrew(item))
         obj.ScreenName = screenName
     
         breadcrumbs = ["The Cast & Crew", firstof(item.metadata.cleantitle, item.metadata.umtitle, item.metadata.title)]
