@@ -8,12 +8,14 @@
 
 ' Function to create posterScreen for Actors/Writers/Directors/etc content ( movies, shows, series, seasons, etc)
 function RFcreateCastAndCrewScreen(item as object) as Dynamic
-
     ' overwrite the castcrewlist array we might have set - many times it's imcomplete or empty (PMS is still implementing exposing Cast/Roles for content type)
+
     ' check if content has a grandparentKey -- if so, we need to get the cast from that ( api for episode/season do not list Roles correctly )
     if item.metadata.grandparentkey <> invalid then 
+        Debug(tostr(item.metadata.type) + " not supported " + item.metadata.key + " -- using the grandParentkey" + tostr(item.metadata.grandparentkey))
         item.metadata.castcrewlist = getCastAndCrew(item, item.metadata.grandparentkey)
     else
+        Debug(tostr(item.metadata.type) + " is supported -- using the key" + tostr(item.metadata.key))
         item.metadata.castcrewlist = getCastAndCrew(item, invalid)
     end if
 
@@ -23,18 +25,6 @@ function RFcreateCastAndCrewScreen(item as object) as Dynamic
         screenName = "Cast & Crew List"
         obj.HandleMessage = RFCastAndCrewHandleMessage ' override default Handler
     
-
-' TO REMOVE
-' server = obj.item.metadata.server
-' library section no longer needed
-'        Debug("------ requesting metadata to get required librarySection " + server.serverUrl + obj.item.metadata.key)
-'        container = createPlexContainerForUrl(server, server.serverUrl, obj.item.metadata.key)
-    
-'        if container <> invalid then
-'            obj.librarySection = container.xml@librarySectionID
-'            obj.screen.SetContentList(getPostersForCastCrew(item,obj.librarySection))
-' END REMOVE
-
         obj.screen.SetContentList(getPostersForCastCrew(item))
         obj.ScreenName = screenName
     
