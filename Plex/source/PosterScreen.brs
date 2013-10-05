@@ -180,7 +180,8 @@ Function posterHandleMessage(msg) As Boolean
                 m.Item = m.contentArray[m.focusedList].content[m.contentArray[m.focusedList].focusedindex]
                 rfVideoMoreButtonFromGrid(m)
             else 
-               Debug("Info Button (*) not handled for content type: " +  tostr(itype) + ":" + tostr(ctype) + ":" + tostr(vg))
+                Debug("Info Button (*) not handled for content type: " +  tostr(itype) + ":" + tostr(ctype) + ":" + tostr(vg))
+                rfMoreButtonFromGrid(m) 
             end if
         else if msg.isRemoteKeyPressed() then
             if msg.GetIndex() = 13 then

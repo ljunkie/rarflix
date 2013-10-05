@@ -767,3 +767,17 @@ sub HUDnotify(screen,obj = invalid)
         screen.Screen.SetContent(content_orig) ' reset HUD to our original content
     end if
 end sub
+sub rfMoreButtonFromGrid(m) 
+                        'for now we will show the preferences screen :)
+                        new = CreateObject("roAssociativeArray")
+                        new.sourceUrl = ""
+                        'new.ContentType = "prefs"
+                        'new.Key = "globalprefs"
+                        'new.Title = "Preferences"
+                        new.Key = "globalsearch"
+                        new.Title = "Search"
+                        new.ContentType = "search"
+                        breadcrumbs = ["Miscellaneous","Search"]
+                        m.ViewController.CreateScreenForItem(new, invalid, breadcrumbs)
+                        Debug("Info Button (*) not handled for content type: " +  tostr(itype) + " - using default " + new.ContentType + " screen")
+end sub
