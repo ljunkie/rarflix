@@ -1,8 +1,11 @@
-### v2.6.16-2 (2013-10-05) (silent update)
+### v2.6.15 (2013-10-05) Final Release (merge of RARflixTest)
+   - [merge of RARflixTest v2.6.16-1 without Now Playing Notifications]
+
+### v2.6.16-test-2 (2013-10-05) (silent update)
 * isRFtest() added - allow RARflix/RARflixTest to stay more in sync
    - Test/Dev options will just be limited if the appName is RARflix
 
-### v2.6.16-1 (2013-10-05) (silent update)
+### v2.6.16-test-1 (2013-10-05) (silent update)
 * Cast & Crew from a TV Series form the global now playing returned no results
 * Now Playing dialogs would sometimes leave invalid screens
 * Remote Option Key ( * ) is now valid from posterScreens (episodes, seasons, etc)
@@ -11,7 +14,7 @@
 * Now Playing: slow buffering would could cause a crash if you tried to view the Now Playing section ( viewOffset is invalid )
 
 
-### v2.6.16 (2013-10-04)
+### v2.6.16-test (2013-10-04)
 * Notification updates
     - First off -- we have Now Playing notifications in the channel!
     - Show multi notifications in the HUD - instead of one after another
@@ -20,7 +23,7 @@
     - Toggles: only show start, stop or all notifications
     - Toggles: only show notification when playing a video, not playing a video, both or disable them completely
 
-### v2.6.15 (2013-10-03)
+### v2.6.15-test (2013-10-03)
 * Cast and Crew re-wrote
     - Grid Screen is displayed for the selected cast member ( includes movies/shows/supported channel content/etc )
     - It will resemble the search function - excluding the actor link since that's a little redundant
@@ -39,7 +42,7 @@
 * Now Playing: Sync play with remote user (this only starts the video at the offset of the remote user)
                When the sync button is clicked, the most recent offset is queries and used
 
-### v2.6.13 (2013-10-01) Final Release
+### v2.6.13 (2013-10-01) Final Release (merge of RARflixTest)
 
 ### 2.6.13-test-2  (2013-09-29) - to update on forums
 * Photo Section: default to landscape instead of portrait (movie posters)
