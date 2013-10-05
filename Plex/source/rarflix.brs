@@ -4,7 +4,20 @@
 '*
 
 ' other functions required for my mods
+
+function isRFtest() as boolean
+    if GetGlobalAA().appName = "RARflix" then 
+        Debug("---- is Test Channel: false")
+        return false
+    end if
+
+    Debug("---- is Test Channel: true")
+    return true
+end function
+
 Sub InitRARFlix() 
+
+     GetGlobalAA()
     'RegDelete("rf_unwatched_limit", "preferences")
     'RegDelete("rf_user_rating_only", "preferences")
 
@@ -380,8 +393,10 @@ Function createRARFlixPrefsScreen(viewController) As Object
     obj.AddItem({title: "Unwatched Added/Released", ShortDescriptionLine2: "Item limit for unwatched Recently Added &" + chr(10) +"Recently Released rows [movies]"}, "rf_rowfilter_limit", obj.GetEnumValue("rf_rowfilter_limit"))
     obj.AddItem({title: "Star Ratings Override", ShortDescriptionLine2: "Only show or Prefer"+chr(10)+"Star Ratings that you have set"}, "rf_user_rating_only", obj.GetEnumValue("rf_user_rating_only"))
     obj.AddItem({title: "Up Button (row screens)", ShortDescriptionLine2: "What to do when the UP button is " + chr(10) + "pressed on a screen with rows"}, "rf_up_behavior", obj.GetEnumValue("rf_up_behavior"))
-    obj.AddItem({title: "Now Playing Notifications", ShortDescriptionLine2: "Want to be notified on Now Playing?"}, "rf_notify", obj.GetEnumValue("rf_notify"))
-    obj.AddItem({title: "Now Playing Notify Types", ShortDescriptionLine2: "When do you want to be notified?" + chr(10) + " On Start/Stop or Both"}, "rf_notify_np_type", obj.GetEnumValue("rf_notify_np_type"))
+    if isRFtest() then 
+        obj.AddItem({title: "Now Playing Notifications", ShortDescriptionLine2: "Want to be notified on Now Playing?"}, "rf_notify", obj.GetEnumValue("rf_notify"))
+        obj.AddItem({title: "Now Playing Notify Types", ShortDescriptionLine2: "When do you want to be notified?" + chr(10) + " On Start/Stop or Both"}, "rf_notify_np_type", obj.GetEnumValue("rf_notify_np_type"))
+    end if
 
     obj.AddItem({title: "Close"}, "close")
     return obj
@@ -769,16 +784,16 @@ sub HUDnotify(screen,obj = invalid)
 end sub
 
 sub rfDefRemoteOptionButton(m) 
-                        'for now we will show the preferences screen :)
-                        new = CreateObject("roAssociativeArray")
-                        new.sourceUrl = ""
-                        'new.ContentType = "prefs"
-                        'new.Key = "globalprefs"
-                        'new.Title = "Preferences"
-                        new.Key = "globalsearch"
-                        new.Title = "Search"
-                        new.ContentType = "search"
-                        breadcrumbs = ["Miscellaneous","Search"]
-                        m.ViewController.CreateScreenForItem(new, invalid, breadcrumbs)
-                        Debug("Showing remote option button screen ")
+    'for now we will show the preferences screen :)
+    new = CreateObject("roAssociativeArray")
+    new.sourceUrl = ""
+    'new.ContentType = "prefs"
+    'new.Key = "globalprefs"
+    'new.Title = "Preferences"
+    new.Key = "globalsearch"
+    new.Title = "Search"
+    new.ContentType = "search"
+    breadcrumbs = ["Miscellaneous","Search"]
+    m.ViewController.CreateScreenForItem(new, invalid, breadcrumbs)
+    Debug("Showing remote option button screen ")
 end sub

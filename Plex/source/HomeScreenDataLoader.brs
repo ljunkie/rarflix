@@ -228,20 +228,23 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
             end if
         end if
 
+
         ' Request Now Playing
-        row = "now_playing"
-        if rowkey = invalid or rowkey = row then
-            view = RegRead("row_visibility_now_playing", "preferences", "")
-            if view <> "hidden" then
-                nowPlaying = CreateObject("roAssociativeArray")
-                nowPlaying.server = server
-                nowPlaying.key = "/status/sessions"
-                nowPlaying.connectionUrl = connectionUrl
-                nowPlaying.requestType = "media"
-                m.AddOrStartRequest(nowPlaying, m.RowIndexes[row], startRequests)
-            else
-                m.Listener.OnDataLoaded(m.RowIndexes[row], [], 0, 0, true)
-            end if
+        if isRFtest() then
+            row = "now_playing"
+            if rowkey = invalid or rowkey = row then
+                view = RegRead("row_visibility_now_playing", "preferences", "")
+                if view <> "hidden" then
+                    nowPlaying = CreateObject("roAssociativeArray")
+                    nowPlaying.server = server
+                    nowPlaying.key = "/status/sessions"
+                    nowPlaying.connectionUrl = connectionUrl
+                    nowPlaying.requestType = "media"
+                    m.AddOrStartRequest(nowPlaying, m.RowIndexes[row], startRequests)
+                else
+                    m.Listener.OnDataLoaded(m.RowIndexes[row], [], 0, 0, true)
+                end if
+            end if 
         end if 
 
     end if
