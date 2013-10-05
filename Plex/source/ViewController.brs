@@ -579,6 +579,13 @@ Sub vcPopScreen(screen)
         m.Home = m.CreateHomeScreen()
     else if callActivate then
         newScreen = m.screens.Peek()
+        ' ljunkie - extra hack to cleanup the screen we are entering when invalid
+        if type(newScreen.Screen) = invalid then
+            Debug("---- Top screen invalid - popping ")
+            m.popscreen(newScreen)
+            newScreen = m.screens.Peek()
+        end if
+
         screenName = firstOf(newScreen.ScreenName, type(newScreen.Screen))
         Debug("Top of stack is once again: " + screenName)
         m.Analytics.TrackScreen(screenName)

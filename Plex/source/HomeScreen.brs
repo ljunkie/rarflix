@@ -112,6 +112,12 @@ Sub homeScreenOnTimerExpired(timer)
         notify = getNowPlayingNotifications()
         screen = m.viewcontroller.screens.peek()
 
+        ' hack to clean up screens - probably better elsewhere or to figure out why we have invalid screens
+        if type(screen.screen) = invalid then 
+            print "screen invalid - popping screen during nowplaying timer"
+            m.viewcontroller.popscreen(screen)
+        end if 
+
         if m.ViewController.IsActiveScreen(m) then ' HOME screen ( we don't notify, it has a row for this )
             m.loader.NowPlayingChange() ' refresh now playing row -- it will only update if available to eu
         else if type(screen.screen) = "roSpringboardScreen" and screen.metadata <> invalid and screen.metadata.nowplaying_user <> invalid  then 
