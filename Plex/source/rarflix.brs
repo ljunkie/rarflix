@@ -648,11 +648,15 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     ' end hack
 
     ' display View All Seasons if we have grandparentKey -- entered from a episode
-    if obj.metadata.grandparentKey <> invalid then ' global on deck does not work with this
-        dialog.SetButton("showFromEpisode", "View All Seasons of " + tostr(obj.metadata.ShowTitle) )
+    if obj.metadata.grandparentKey <> invalid then 
+        if obj.metadata.type = "season" and type(obj.screen) = "roPosterScreen"  then
+            ' this is a ALL seasons view on a posterscreen -- can we add mark as watched/unwatched to make them all??
+        else 
+            dialog.SetButton("showFromEpisode", "View All Seasons of " + tostr(obj.metadata.ShowTitle) )
+        end if
     end if
     ' display View specific season if we have parentKey/parentIndex -- entered from a episode
-    if obj.metadata.parentKey <> invalid AND obj.metadata.parentIndex <> invalid then  ' global on deck does not work with this
+    if obj.metadata.parentKey <> invalid AND obj.metadata.parentIndex <> invalid and type(obj.screen) <> "roPosterScreen" then 
        dialog.SetButton("seasonFromEpisode", "View Season " + obj.metadata.parentIndex)
     end if
 
