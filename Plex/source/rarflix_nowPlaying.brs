@@ -255,6 +255,8 @@ Function notifyDialogHandleButton(buttoncommand, index) As Boolean
         if dialog.idx > 0 then 
             focusbutton = 1
         end if
+    else if buttonCommand = "close" then
+        close_dialog = true
     end if
 
     if refresh then 
