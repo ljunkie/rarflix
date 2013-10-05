@@ -455,15 +455,18 @@ Sub vcShowReleaseNotes()
     header = ""
     title = GetGlobal("appName") + " updated to " + GetGlobal("appVersionStr")
     paragraphs = []
-    paragraphs.Push("New: Now Playing Notifications!")
-    paragraphs.Push("New: Now Playing on the Home Screen (with periodic updates)")
+    if isRFtest() then 
+        paragraphs.Push("New: Now Playing Notifications!")
+        paragraphs.Push("New: Now Playing on the Home Screen (with periodic updates)")
+    end if
     paragraphs.Push("New: Cast & Crew works for more content")
-    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+ "+ Show All content for selected Cast Member")
+    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+ "+ Show All content [movie/tv/other] for selected Cast Member")
     paragraphs.Push(" ( * ) Remote Button works is most areas - try it!")
     paragraphs.Push(" Hide some rows per section type [movie,tv,music]")
     paragraphs.Push(" RARFflix preferences - toggles for mods")
     paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+" Hide Rows, Clock, Dynamic Headers, Search Title, etc.. ")
     paragraphs.Push("+ Movie Trailers, Rotten Tomatoes Ratings, HUD mods, other misc updates")
+    if NOT isRFtest() then paragraphs.Push(" ")
     paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+" ** Donate @ www.rarflix.com **")
 
     screen = createParagraphScreen(header, paragraphs, m)
