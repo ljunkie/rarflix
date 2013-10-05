@@ -316,7 +316,7 @@ Function createRARFlixPrefsScreen(viewController) As Object
         default: "exit"
     }
 
-   ' enable notifications?  (if we add more events (currenlty now playing) we can add more toggles )
+   ' enable notifications?  (if we add more events (currently now playing) we can add more toggles )
     notifications = [
         { title: "Enabled", EnumValue: "enabled",}
         { title: "in Video Screen", EnumValue: "video", ShortDescriptionLine2: "Only show on Video Screen",}
@@ -481,7 +481,7 @@ Function createHideRowsPrefsScreen(viewController) As Object
                     obj.AddItem({title: title}, new_hide_key, obj.GetEnumValue(new_hide_key))
                 end if
             end for
-        end if ' else  -- allow other sections to hide recenltyAdded/released normally
+        end if ' else  -- allow other sections to hide recentlyAdded/released normally
 
         if item.key = "recentlyAdded" then item.title = "[other] Recently Added"
         if item.key = "newest" then item.title = "[other] Recently Released"
@@ -625,7 +625,7 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
       obj.Refresh = fakeRefresh ' sbRefresh is called normally - in a poster screen this doesn't happen?
     end if
 
-    ' hack for global recenlty added ( tv shows are displayed as seasons )
+    ' hack for global recently added ( tv shows are displayed as seasons )
     if (obj.metadata.type = "season") and obj.metadata.grandparentKey = invalid then 
         ' available: obj.metadata.key = "/library/metadata/88482/childen'
         re = CreateObject("roRegex", "/children.*", "i")

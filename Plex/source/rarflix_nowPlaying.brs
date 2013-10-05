@@ -155,7 +155,7 @@ function getNowPlayingNotifications() as object
                 GetGlobalAA().Delete(maid + "_title")
                 Debug("---- removing " + tostr(maid) + " from 'rf_notified' -- video playback stopped")
             else
-                Debug("----- " + tostr(maid) + " is found (currenlty playing)")
+                Debug("----- " + tostr(maid) + " is found (currently playing)")
             end if
         next
     end if    
