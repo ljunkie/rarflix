@@ -56,7 +56,11 @@ function rfUpdateNowPlayingMetadata(metadata,time = 0 as integer) as object
             found = true
             Debug("----- prev offset " + tostr(metadata.viewOffset))
             metadata = container.metadata[index]
-            metadata.viewOffset = tostr(metadata.viewOffset.toint() + int(time)) ' just best guess. add on a few seconds since it takes time to buffer
+            if metadata.viewOffset <> invalid then 
+                metadata.viewOffset = tostr(metadata.viewOffset.toint() + int(time)) ' just best guess. add on a few seconds since it takes time to buffer
+            else 
+                metadata.viewOffset = "0"
+            end if
             Debug("-----  new offset " + tostr(metadata.viewOffset))
             if time > 0 then  debug("----- added " + tostr(int(time/1000)) + " seconds to offset for sync")
             exit for
