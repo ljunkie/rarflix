@@ -234,8 +234,9 @@ Sub setVideoBasics(video, container, item)
         end if
 
         video.description = video.description + " on " + firstof(item.Player@title, item.Player@platform)
-        video.description = video.description + chr(10) + video.nowPlaying_orig_description
         if video.server.name <> invalid then video.description = video.description + " [" + video.server.name + "]" ' show the server 
+        video.nowPlaying_progress = video.description ' container for HUD notify
+        video.description = video.description + chr(10) + video.nowPlaying_orig_description
         video.title = UcaseFirst(item.user@title,true) + " " + UcaseFirst(item.Player@state) + ": "  + video.CleanTitle
 
         ' set nowPlaying info for later

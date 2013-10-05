@@ -7,6 +7,54 @@
 Sub InitRARFlix() 
     'RegDelete("rf_unwatched_limit", "preferences")
     'RegDelete("rf_user_rating_only", "preferences")
+
+    Debug("=======================RARFLIX SETTINGS ====================================")
+
+    ' purge specific sections - works for unclean exists ( add new sections to purge to "purge_sections")
+    Debug("---- purge registry settings for specific sections ---- ")
+    purge_sections = ["rf_notified"]
+    flush = false
+    reg = CreateObject("roRegistry")
+    reg_keys = reg.Getsectionlist()
+    for each purge in purge_sections 
+        for each sec in reg_keys
+            if purge = sec then 
+                Debug("    purging " + purge + " from registry")
+                reg.Delete(sec)
+                flush = true
+            end if 
+         next
+    next
+    if flush then 
+        reg.Flush()
+        Debug("    flushed changes to registry")
+    end if
+
+    '     this might be useful if we ever need to remove specific keys -- needs work since it was used for what I am doing above (above is better to flush all)
+    '     flush = []
+    '     for each sec_key in purge_sections 
+    '         sec = CreateObject("roRegistrySection", sec_key)
+    '         keys = sec.GetKeyList()
+    '         delete  = invalid
+    '         for each k in keys
+    '             delete = sec_key
+    '             Debug("    deleting " + tostr(k) + " from " + tostr(sec_key))
+    '             sec.Delete(k)
+    '         next
+    '         if delete <> invalid then flush.Push(delete)
+    '     next 
+    '
+    '     ' we only want to flush once per registry section     
+    '     if flush.Count() > 0 then
+    '         for each sec_key in flush
+    '             sec = CreateObject("roRegistrySection", sec_key)
+    '             sec.Flush()
+    '             Debug("Flush called for " + tostr(sec_key))
+    '         next
+    '     end if
+
+    Debug("---- end purge ----")
+
  
     RegRead("rf_bcdynamic", "preferences","enabled")
     RegRead("rf_rottentomatoes", "preferences","enabled")
@@ -19,11 +67,13 @@ Sub InitRARFlix()
     RegRead("rf_focus_unwatched", "preferences", "enabled")
     RegRead("rf_user_rating_only", "preferences", "user_prefer") ' this will show the original star rating as the users if it exists. seems safe to set at first
     RegRead("rf_up_behavior", "preferences", "exit") ' default is exit screen ( except for home )
+    RegRead("rf_notify", "preferences", "enabled") ' enabled:all, video:video only, nonvideo:non video, disabled:disabled (when to notify)
+    RegRead("rf_notify_np_type", "preferences", "all") ' now playing notify types
 
     ' ljunkie Youtube Trailers (extended to TMDB)
     m.youtube = InitYouTube()
 
-    Debug("=======================RARFLIX SETTINGS ====================================")
+
     Debug("rf_bcdynamic: " + tostr(RegRead("rf_bcdynamic", "preferences")))
     Debug("rf_hs_clock: " + tostr(RegRead("rf_hs_clock", "preferences")))
     Debug("rf_rottentomatoes: " + tostr(RegRead("rf_rottentomatoes", "preferences")))
@@ -35,6 +85,8 @@ Sub InitRARFlix()
     Debug("rf_focus_unwatched: " + tostr(RegRead("rf_focus_unwatched", "preferences")))
     Debug("rf_user_rating_only: " + tostr(RegRead("rf_user_rating_only", "preferences")))
     Debug("rf_up_behavior: " + tostr(RegRead("rf_up_behavior", "preferences")))
+    Debug("rf_notify: " + tostr(RegRead("rf_notify", "preferences")))
+    Debug("rf_notify_np_type: " + tostr(RegRead("rf_notify_np_type", "preferences")))
     Debug("============================================================================")
 
 end sub
@@ -264,6 +316,32 @@ Function createRARFlixPrefsScreen(viewController) As Object
         default: "exit"
     }
 
+   ' enable notifications?  (if we add more events (currenlty now playing) we can add more toggles )
+    notifications = [
+        { title: "Enabled", EnumValue: "enabled",}
+        { title: "in Video Screen", EnumValue: "video", ShortDescriptionLine2: "Only show on Video Screen",}
+        { title: "in NON Video Screens", EnumValue: "nonvideo", ShortDescriptionLine2: "Only when not Playing a Video",}
+        { title: "Disabled", EnumValue: "disabled",}
+
+    ]
+    obj.Prefs["rf_notify"] = {
+        values: notifications,
+        heading: "Show Now Playing Notifications",
+        default: "exit"
+    }
+
+    ' start, stop, all:enabled
+    np_notificationstypes = [
+        { title: "All", EnumValue: "all", ShortDescriptionLine2: "Notify on Start and Stop",}
+        { title: "Start", EnumValue: "start", ShortDescriptionLine2: "Notify on Start",}
+        { title: "Stop", EnumValue: "stop", ShortDescriptionLine2: "Notify on Stop",}
+    ]
+    obj.Prefs["rf_notify_np_type"] = {
+        values: np_notificationstypes,
+        heading: "When to Notify?",
+        default: "all"
+    }
+
 
     filter_limit = [
         { title: "100", EnumValue: "100" },
@@ -302,6 +380,8 @@ Function createRARFlixPrefsScreen(viewController) As Object
     obj.AddItem({title: "Unwatched Added/Released", ShortDescriptionLine2: "Item limit for unwatched Recently Added &" + chr(10) +"Recently Released rows [movies]"}, "rf_rowfilter_limit", obj.GetEnumValue("rf_rowfilter_limit"))
     obj.AddItem({title: "Star Ratings Override", ShortDescriptionLine2: "Only show or Prefer"+chr(10)+"Star Ratings that you have set"}, "rf_user_rating_only", obj.GetEnumValue("rf_user_rating_only"))
     obj.AddItem({title: "Up Button (row screens)", ShortDescriptionLine2: "What to do when the UP button is " + chr(10) + "pressed on a screen with rows"}, "rf_up_behavior", obj.GetEnumValue("rf_up_behavior"))
+    obj.AddItem({title: "Now Playing Notifications", ShortDescriptionLine2: "Want to be notified on Now Playing?"}, "rf_notify", obj.GetEnumValue("rf_notify"))
+    obj.AddItem({title: "Now Playing Notify Types", ShortDescriptionLine2: "When do you want to be notified?" + chr(10) + " On Start/Stop or Both"}, "rf_notify_np_type", obj.GetEnumValue("rf_notify_np_type"))
 
     obj.AddItem({title: "Close"}, "close")
     return obj
@@ -648,3 +728,39 @@ function UcaseFirst(var,strip = invalid) as dynamic
  return var ' return either modified or untouched var
 end function
 
+
+
+' Hack to show the HUD
+Sub SendRemoteKey(key)
+    di = CreateObject("roDeviceInfo")
+    ipaddrs = di.GetIPAddrs()
+    if ipaddrs.eth0 <> invalid then ipaddr = ipaddrs.eth0
+    if ipaddrs.eth1 <> invalid then ipaddr = ipaddrs.eth1
+    print "ipaddr: ";ipaddr
+    sleep(1000)
+
+    url = "http://"+ipaddr+":8060/keypress/" + key
+    print "sending key " + key + " " + url
+    xfer = CreateObject("roUrlTransfer")
+    xfer.SetUrl(url)
+    xfer.PostFromString("")
+End Sub
+
+
+' Hack to show a notification through the HUD
+sub HUDnotify(screen,obj = invalid) 
+    ' we must be in a roVideoScreen
+    if type(screen.screen) = "roVideoScreen" and type(obj) = "roArray" then
+        Debug("showing HUD notification")
+        content = CreateObject("roAssociativeArray")
+        content_orig = screen.VideoItem        ' set original content to reset
+        content.title = "Now Playing" ' we use the title for HUD messages ( less text )
+        content.releasedate = ""
+        for each i in obj
+            content.releasedate = content.releasedate + chr(10) + i.title + chr(10)  'chr(10) for spacing between notifications (works with 1 too)
+        next
+        screen.Screen.SetContent(content)      ' set new content for notification 
+        SendRemoteKey("Down")                  ' show HUD
+        screen.Screen.SetContent(content_orig) ' reset HUD to our original content
+    end if
+end sub
