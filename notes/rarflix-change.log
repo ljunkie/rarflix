@@ -1,3 +1,44 @@
+### v2.6.16-2 (2013-10-05) (silent update)
+* isRFtest() added - allow RARflix/RARflixTest to stay more in sync
+   - Test/Dev options will just be limited if the appName is RARflix
+
+### v2.6.16-1 (2013-10-05) (silent update)
+* Cast & Crew from a TV Series form the global now playing returned no results
+* Now Playing dialogs would sometimes leave invalid screens
+* Remote Option Key ( * ) is now valid from posterScreens (episodes, seasons, etc)
+* Remote Option Key will now bring up a global search instead of the prefs (when there isn't a special option)
+* Everyone can have a Global OnDeck ( this means you shared users )
+* Now Playing: slow buffering would could cause a crash if you tried to view the Now Playing section ( viewOffset is invalid )
+
+
+### v2.6.16 (2013-10-04)
+* Notification updates
+    - First off -- we have Now Playing notifications in the channel!
+    - Show multi notifications in the HUD - instead of one after another
+    - Show multi notifications in the Dialog ( next/previous buttons )
+    - Dialog Notification has a button to show All now playing items ( item selected from dialog will be initially shown of course ) AND left/right buttons work to switch between them
+    - Toggles: only show start, stop or all notifications
+    - Toggles: only show notification when playing a video, not playing a video, both or disable them completely
+
+### v2.6.15 (2013-10-03)
+* Cast and Crew re-wrote
+    - Grid Screen is displayed for the selected cast member ( includes movies/shows/supported channel content/etc )
+    - It will resemble the search function - excluding the actor link since that's a little redundant
+    - If using a PMS server > 0.9.8.7 - you can view the cast and crew directly from TV shows/episode/seasons
+    - The way the cast & crew are queried has been updated - should display "more" cast & crew members ( depends on your own metadata )
+
+* Now Playing - many updates and fixes
+    - Will support all "owned/local" servers
+    - Periodically refreshes the Now playing row and the Now Playing Details Screen with the progress
+    - Will display the user has stopped watching the content on the Video Details screen
+    - Option to Resume Video when remote user has stopped the content
+    - other misc bugs and cleanup for now playing
+
+### v2.6.14-test (2013-10-01)
+* Now Playing section on Home Screen
+* Now Playing: Sync play with remote user (this only starts the video at the offset of the remote user)
+               When the sync button is clicked, the most recent offset is queries and used
+
 ### v2.6.13 (2013-10-01) Final Release
 
 ### 2.6.13-test-2  (2013-09-29) - to update on forums

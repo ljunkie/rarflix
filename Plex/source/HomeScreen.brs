@@ -13,6 +13,22 @@ Function createHomeScreen(viewController) As Object
 
     obj.Refresh = refreshHomeScreen
 
+    obj.OnTimerExpired = homeScreenOnTimerExpired
+    obj.SuperActivate = obj.Activate
+    obj.Activate = homeScreenActivate
+
+    obj.clockTimer = createTimer()
+    obj.clockTimer.Name = "clock"
+    obj.clockTimer.SetDuration(20000, true) ' A little lag is fine here
+    viewController.AddTimer(obj.clockTimer, obj) 
+
+    if isRFtest() then 
+        obj.npTimer = createTimer()
+        obj.npTimer.Name = "nowplaying"
+        obj.npTimer.SetDuration(10000, true) ' 10 seconds? too much?
+        viewController.AddTimer(obj.npTimer, obj) 
+    end if
+
     return obj
 End Function
 
@@ -84,3 +100,55 @@ Sub ShowHelpScreen()
 
     screen.Show()
 End Sub
+
+
+Sub homeScreenOnTimerExpired(timer)
+    if timer.Name = "clock" AND m.ViewController.IsActiveScreen(m) then
+        RRbreadcrumbDate(m.viewcontroller.screens[0])
+        'm.Screen.SetBreadcrumbText("", CurrentTimeAsString())
+    end if
+
+    ' Now Playing and Notify Section (RARflixTest only)
+    if timer.Name = "nowplaying" and isRFtest() then
+
+        setnowplayingGlobals() ' set the now playing globals - mainly for notification logic, but we might use for now playing row
+        notify = getNowPlayingNotifications()
+        screen = m.viewcontroller.screens.peek()
+
+        ' hack to clean up screens - probably better elsewhere or to figure out why we have invalid screens
+        if type(screen.screen) = invalid then 
+            print "screen invalid - popping screen during nowplaying timer"
+            m.viewcontroller.popscreen(screen)
+        end if 
+
+        if m.ViewController.IsActiveScreen(m) then ' HOME screen ( we don't notify, it has a row for this )
+            m.loader.NowPlayingChange() ' refresh now playing row -- it will only update if available to eu
+        else if type(screen.screen) = "roSpringboardScreen" and screen.metadata <> invalid and screen.metadata.nowplaying_user <> invalid  then 
+            ' SB screen, we should update it (assuming so since we have the metadata ) - TODO we should verify the screen type/name
+            rf_updateNowPlayingSB(screen)
+        end if
+     
+        ' Notification routine
+        if notify <> invalid then ' we only get here if we have enabled notifications and we HAVE a notification
+            if type(screen) = "roAssociativeArray" then
+                if type(screen.screen) = "roVideoScreen" and RegRead("rf_notify","preferences","enabled") <> "nonvideo" then ' Video Screen - VideoPlayer (playing a video)
+                    HUDnotify(screen,notify)
+                else if RegRead("rf_notify","preferences","enabled") <> "video" then ' Non Video Screen
+                    ShowNotifyDialog(notify,0,true)
+                end if
+            end if
+        end if
+
+    end if ' end nowplaying timer
+
+End Sub 
+
+Sub homeScreenActivate(priorScreen)
+    ' on activation - we should run a fiew things
+    if isRFtest() then setnowplayingGlobals() ' set the now playing globals - mainly for notification logic, but we might use for now playing row
+    RRbreadcrumbDate(m.viewcontroller.screens[0])
+    'm.Screen.SetBreadcrumbText("", CurrentTimeAsString())
+    m.SuperActivate(priorScreen)
+End Sub 
+
+

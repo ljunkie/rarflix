@@ -25,5 +25,12 @@ api: /library/metadata/13945
 /sections/6/filter?type=1&key=producer&value=1463&title=Judd%20Apatow
 
 
+## actors
+## TV shows
+http://127.0.0.1:32400/library/sections/16/actor/8485
+http://127.0.0.1:32400/library/sections/6/actor/8485
+## movie
+http://127.0.0.1:32400/library/sections/6/actor/8485
 
 
+## It looks like actors thumbs are now included in the video details when it's movie: /library/metadata/13299

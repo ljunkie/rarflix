@@ -73,6 +73,7 @@ Sub setVideoBasics(video, container, item)
 
     video.ShortDescriptionLine1 = firstOf(item@title, item@name)
 
+
     'grandparentKey -- for episode - RR
     if item@grandparentKey <> invalid then
        video.grandparentKey = item@grandparentKey
@@ -93,8 +94,23 @@ Sub setVideoBasics(video, container, item)
             end if
         end if
 
+        ' hack to try and set the grandparentkey when PMS API doesn't return one
         if video.grandparentKey = invalid and container.xml@key <> invalid then 
-            video.grandparentKey = "/library/metadata/" + tostr(container.xml@key)
+            re = CreateObject("roRegex", "/children.*", "i")
+            if re.IsMatch(container.sourceurl) then
+                newurl = re.ReplaceAll(container.sourceurl, "")
+                gcontainer = createPlexContainerForUrl(container.server, newurl, "")
+                if container <> invalid then
+                    video.grandparentKey = gcontainer.xml.Directory[0]@parentKey
+                    'obj.metadata.parentIndex = gcontainer.xml.Directory[0]@index
+                    'obj.metadata.ShowTitle = gcontainer.xml.Directory[0]@parentTitle
+                    'print  "---- override - set grandparentKey to parent" + video.grandparentKey
+                end if            
+            else if container.xml@parentkey <> invalid then 
+                video.grandparentKey = "/library/metadata/" + tostr(container.xml@parentkey)
+            else 
+                video.grandparentKey = "/library/metadata/" + tostr(container.xml@key)
+            end if
             Debug("----- setting grandparent key to " + video.grandparentKey + " " + video.showTitle)
         end if
     end if
@@ -220,6 +236,33 @@ Sub setVideoBasics(video, container, item)
 	video.UserRating =  0
     endif
 
+
+    if item.user@title <> invalid then 
+        ' save any variables we change for later
+        video.nowPlaying_orig_title = video.title
+        video.nowPlaying_orig_description = video.description
+      
+        if video.viewoffset <> invalid then 
+             video.description = "Progress: " + GetDurationString(int(video.viewoffset.toint()/1000),0,1,1)
+        else 
+             video.description = "" ' sometime the offset is invalid, so we will just set it empty. It will be updated with the timer
+        end if
+
+        video.description = video.description + " on " + firstof(item.Player@title, item.Player@platform)
+        if video.server.name <> invalid then video.description = video.description + " [" + video.server.name + "]" ' show the server 
+        video.nowPlaying_progress = video.description ' container for HUD notify
+        video.description = video.description + chr(10) + video.nowPlaying_orig_description
+        video.title = UcaseFirst(item.user@title,true) + " " + UcaseFirst(item.Player@state) + ": "  + video.CleanTitle
+
+        ' set nowPlaying info for later
+        video.nowPlaying_maid = item.Player@machineIdentifier ' use to verify the stream we are syncing is the same
+        video.nowPlaying_user = item.user@title
+        video.nowPlaying_state = item.Player@state
+        video.nowPlaying_platform = item.Player@platform
+        video.nowPlaying_platform_title = item.Player@title
+    end if
+
+
     video.guid = item@guid
     video.url = item@url
 End Sub
@@ -300,6 +343,10 @@ Sub setVideoDetails(video, container, videoItemXml, hasDetails=true)
         video.CastCrewList.Push({ name: Writer@tag, id: Writer@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Writer" })
         ' video.Writer.Push(Writer@tag) ' not implemented
     next
+
+    'if videoItemXml.user@id <> invalid then 
+    '    video.ReleaseDate = videoItemXml.user@title + " " + videoItemXml.Player@state + " on " + firstof(videoItemXml.Player@title, videoItemXml.Player@platform)
+    'end if
 
     video.Categories = CreateObject("roArray", 15, true)
     for each Category in videoItemXml.Genre

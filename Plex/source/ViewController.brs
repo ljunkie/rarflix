@@ -368,15 +368,46 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
     ' Prompt about resuming if there's an offset and the caller didn't specify a seek value.
     if seekValue = invalid then
         if metadata.viewOffset <> invalid then
+            ' check to see if this is from the /status/session source -- if so we are trying to resume with someone else ( so let's get new data )
+            
             offsetSeconds = fix(val(metadata.viewOffset)/1000)
+
+            ' ljunkie - resume video from Now Playing? we should set metadata in VideoMetatdata to more useful info TODO
+
+            resume_with_user = invalid
+            if metadata.nowPlaying_maid <> invalid and metadata.isStopped = invalid then
+                resume_with_user = 1 ' flag for later
+            end if
 
             dlg = createBaseDialog()
             dlg.Title = "Play Video"
-            dlg.SetButton("resume", "Resume from " + TimeDisplay(offsetSeconds))
+
+            if resume_with_user = invalid then 
+                dlg.SetButton("resume", "Resume from " + TimeDisplay(offsetSeconds))
+            else 
+                user = "User"
+                if metadata.nowPlaying_user <> invalid then user = UCasefirst(metadata.nowPlaying_user,true)
+                dlg.SetButton("resume", "Sync Video with " + user)
+            end if
+
             dlg.SetButton("play", "Play from beginning")
             dlg.Show(true)
 
-            if dlg.Result = invalid then return invalid
+            if resume_with_user <> invalid and dlg.Result = "resume"
+                ' sync called - we should get the most recent offset and resume
+                metadata = rfUpdateNowPlayingMetadata(metadata,10000)
+                ' if the viewOffset return is invalid - user has stopped playing
+                if metadata.viewOffset = invalid then
+                    Debug("---- Sync Playback failed: key:" + tostr(metadata.key) + ", machineID:" + tostr(metadata.nowPlaying_maid) + " DO not exist @ " + tostr(metadata.sourceurl))
+                    dlg = createBaseDialog()
+                    dlg.Title = "Sorry... Cannot Sync Playback"
+                    dlg.text = "The user has stopped playing the content" + chr(10)
+                    dlg.SetButton("invalid", "close")
+                    dlg.Show(true)
+                end if
+            end if
+
+            if dlg.Result = invalid or dlg.Result = "invalid" then return invalid
             if dlg.Result = "resume" then
                 seekValue = int(val(metadata.viewOffset))
             else
@@ -424,15 +455,15 @@ Sub vcShowReleaseNotes()
     header = ""
     title = GetGlobal("appName") + " updated to " + GetGlobal("appVersionStr")
     paragraphs = []
-    paragraphs.Push("New: View the Cast and Crew for Movies")
-    paragraphs.Push("New: ( * ) Remote Button works is most areas - try it!")
-    paragraphs.Push("New: Hide some rows per section type [movie,tv,music]")
-    paragraphs.Push("New: Unwatched Rows: Prefs-> Section Display-> Reorder Rows")
-    paragraphs.Push("New: RARFflix preferences - toggles for mods")
+    paragraphs.Push("New: Now Playing Notifications!")
+    paragraphs.Push("New: Now Playing on the Home Screen (with periodic updates)")
+    paragraphs.Push("New: Cast & Crew works for more content")
+    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+ "+ Show All content for selected Cast Member")
+    paragraphs.Push(" ( * ) Remote Button works is most areas - try it!")
+    paragraphs.Push(" Hide some rows per section type [movie,tv,music]")
+    paragraphs.Push(" RARFflix preferences - toggles for mods")
     paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+" Hide Rows, Clock, Dynamic Headers, Search Title, etc.. ")
-    paragraphs.Push("New: Movie Trailers enhancements - navigation, play from list, play all")
-    paragraphs.Push("+ Movie Trailers, Rotten Tomatoes, HUD mods, other many misc updates")
-    paragraphs.Push(" ")
+    paragraphs.Push("+ Movie Trailers, Rotten Tomatoes Ratings, HUD mods, other misc updates")
     paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+" ** Donate @ www.rarflix.com **")
 
     screen = createParagraphScreen(header, paragraphs, m)
@@ -548,11 +579,18 @@ Sub vcPopScreen(screen)
         m.Home = m.CreateHomeScreen()
     else if callActivate then
         newScreen = m.screens.Peek()
+        ' ljunkie - extra hack to cleanup the screen we are entering when invalid
+        if type(newScreen.Screen) = invalid then
+            Debug("---- Top screen invalid - popping ")
+            m.popscreen(newScreen)
+            newScreen = m.screens.Peek()
+        end if
+
         screenName = firstOf(newScreen.ScreenName, type(newScreen.Screen))
         Debug("Top of stack is once again: " + screenName)
         m.Analytics.TrackScreen(screenName)
         newScreen.Activate(screen)
-        RRbreadcrumbDate(newScreen) ' ljunkie - clock
+        'RRbreadcrumbDate(newScreen) ' ljunkie - clock
     end if
 
     ' If some other screen requested this close, let it know.
@@ -587,26 +625,6 @@ Sub vcShow()
     while m.screens.Count() > 0
         m.WebServer.prewait()
         msg = wait(timeout, m.GlobalMessagePort)
-
-        'ljunkie - minute refresh check - if minuteRefresh <> invalid, then it a brand spanking new minute
-        minuteRefresh = invalid
-        if lastmin <> invalid then 
-            date = CreateObject("roDateTime")
-            newmin = date.GetMinutes()
-            if newmin <> lastmin then 
-                'Debug(tostr(newmin) + " >  " + tostr(lastmin) + " minuteRefresh set")
-                minuteRefresh = 1
-                lastmin = date.GetMinutes()
-            end if
-        end if
-        ' end minute check
-
-        ' ljunkie - update clock on home screen (every minute) - only on roSocketEvent
-        if m.screens.Count() = 1 and type(msg) = "roSocketEvent" then 
-            if minuteRefresh <> invalid then
-                RRbreadcrumbDate(m.screens[0])
-            end if
-        end if
 
         if msg <> invalid then
             ' Printing debug information about every message may be overkill

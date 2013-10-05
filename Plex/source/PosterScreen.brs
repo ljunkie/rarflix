@@ -171,17 +171,18 @@ Function posterHandleMessage(msg) As Boolean
                 status.lastUpdatedSize = status.content.Count()
             end if
         else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then ' ljunkie - use * for more options on focused item
-                ' currently just a reminder stub - info button for the episode -- TODO -- definitely wrong
-                content = m.contentArray[m.focusedList].content[m.contentArray[m.focusedList].focusedindex]
-                itype = content.type
-                'if tostr(itype) <> "invalid" and itype = "episode" then
-                '    obj = m.viewcontroller.screens.peek() ' probably wrong..
-                '    obj.metadata = m.contentArray[m.focusedList].content[m.contentArray[m.focusedList].focusedindex]
-                '    obj.Item = m.contentArray[m.focusedList].content[m.contentArray[m.focusedList].focusedindex]
-                '    rfVideoMoreButtonFromGrid(obj)
-                'else 
-                   Debug("Info Button (*) not handled for content type: " +  tostr(itype))
-                'end if
+            content = m.contentArray[m.focusedList].content[m.contentArray[m.focusedList].focusedindex]
+            itype = content.type
+            vg = content.viewgroup
+            ctype = content.contenttype
+            if (tostr(itype) <> "invalid" and itype = "episode") or (tostr(vg) <> "invalid" and vg = "season") then
+                m.metadata = m.contentArray[m.focusedList].content[m.contentArray[m.focusedList].focusedindex]
+                m.Item = m.contentArray[m.focusedList].content[m.contentArray[m.focusedList].focusedindex]
+                rfVideoMoreButtonFromGrid(m)
+            else 
+                Debug("Info Button (*) not handled for content type: " +  tostr(itype) + ":" + tostr(ctype) + ":" + tostr(vg))
+                rfDefRemoteOptionButton(m) 
+            end if
         else if msg.isRemoteKeyPressed() then
             if msg.GetIndex() = 13 then
                 Debug("Playing item directly from poster screen")
@@ -291,4 +292,3 @@ Sub posterSetListStyle(style, displayMode)
     m.ListDisplayMode = displayMode
     m.UseDefaultStyles = false
 End Sub
-

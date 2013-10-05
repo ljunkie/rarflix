@@ -25,7 +25,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
                 hide = false
                 rf_hide_key = "rf_hide_" + keys[index]
 
-                ' recenltyAdded and newest(recently Release/Aired) are special/hidden per type
+                ' recentlyAdded and newest(recently Release/Aired) are special/hidden per type
                 if keys[index] = "recentlyAdded" or keys[index] = "newest" and (itype = "movie" or itype = "show" or itype = "artist") then 
                     rf_hide_key = rf_hide_key + "_" + itype 'print "Checking " + keys[index] + " for specific type of hide: " + itype
                 end if
