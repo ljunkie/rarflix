@@ -767,7 +767,8 @@ sub HUDnotify(screen,obj = invalid)
         screen.Screen.SetContent(content_orig) ' reset HUD to our original content
     end if
 end sub
-sub rfMoreButtonFromGrid(m) 
+
+sub rfDefRemoteOptionButton(m) 
                         'for now we will show the preferences screen :)
                         new = CreateObject("roAssociativeArray")
                         new.sourceUrl = ""
@@ -779,5 +780,5 @@ sub rfMoreButtonFromGrid(m)
                         new.ContentType = "search"
                         breadcrumbs = ["Miscellaneous","Search"]
                         m.ViewController.CreateScreenForItem(new, invalid, breadcrumbs)
-                        Debug("Info Button (*) not handled for content type: " +  tostr(itype) + " - using default " + new.ContentType + " screen")
+                        Debug("Showing remote option button screen ")
 end sub

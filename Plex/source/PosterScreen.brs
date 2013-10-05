@@ -181,7 +181,7 @@ Function posterHandleMessage(msg) As Boolean
                 rfVideoMoreButtonFromGrid(m)
             else 
                 Debug("Info Button (*) not handled for content type: " +  tostr(itype) + ":" + tostr(ctype) + ":" + tostr(vg))
-                rfMoreButtonFromGrid(m) 
+                rfDefRemoteOptionButton(m) 
             end if
         else if msg.isRemoteKeyPressed() then
             if msg.GetIndex() = 13 then
@@ -292,4 +292,3 @@ Sub posterSetListStyle(style, displayMode)
     m.ListDisplayMode = displayMode
     m.UseDefaultStyles = false
 End Sub
-

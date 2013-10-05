@@ -221,7 +221,8 @@ Function gridHandleMessage(msg) As Boolean
                         obj.Item = context[m.focusedIndex]
                         rfVideoMoreButtonFromGrid(obj)
                     else if audioplayer.ContextScreenID = invalid or ctype_o = "prefs" ' only create this extra screen if audioPlayer doesn't have context
-                        rfMoreButtonFromGrid(m)
+                        Debug("Info Button (*) not handled for content type: " +  tostr(itype_o) + ":" + tostr(ctype_o))
+                        rfDefRemoteOptionButton(m)
                     else
                         Debug("--- Not showing prefs on ctype:" + tostr(ctype_o) + " itype:" + tostr(itype_o) )
                     end if 
