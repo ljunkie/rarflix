@@ -58,6 +58,7 @@ Sub dialogRefresh()
     m.Screen.SetMessagePort(m.Port)
     m.Screen.SetMenuTopLeft(true)
     m.Screen.EnableBackButton(true)
+    m.Screen.EnableOverlay(overlay)
 
     if m.Title <> invalid then m.Screen.SetTitle(m.Title)
     if m.Text <> invalid then m.Screen.SetText(m.Text)
