@@ -50,7 +50,7 @@ End Sub
 Sub AddAccountHeaders(transferObj, token=invalid)
     if token <> invalid then
         transferObj.AddHeader("X-Plex-Token", token)
-        'Debug("adding token X-Plex-Token:"+token) sometimes I just want to test and verify we are pushing the headers for shared users
+        'Debug("adding token X-Plex-Token:"+token)' sometimes I just want to test and verify we are pushing the headers for shared users
     end if
 
     myplex = GetMyPlexManager()

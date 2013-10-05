@@ -154,42 +154,12 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
             m.AddOrStartRequest(sections, m.RowIndexes["sections"], startRequests)
         else
             m.AddOrStartRequest(sections, m.RowIndexes["shared_sections"], startRequests)
-            return
-        end if
-    end if
-
-    ' Request recently used channels
-    row = "channels"
-    if rowkey = invalid or rowkey = row then
-        view = RegRead("row_visibility_channels", "preferences", "")
-        if view <> "hidden" then
-            channels = CreateObject("roAssociativeArray")
-            channels.server = server
-            channels.key = "/channels/recentlyViewed"
-            channels.connectionUrl = connectionUrl
-    
-            allChannels = CreateObject("roAssociativeArray")
-            allChannels.Title = "More Channels"
-            if AreMultipleValidatedServers() then
-                allChannels.ShortDescriptionLine2 = "All channels on " + server.name
-            else
-                allChannels.ShortDescriptionLine2 = "All channels"
-            end if
-            allChannels.Description = allChannels.ShortDescriptionLine2
-            allChannels.server = server
-            allChannels.sourceUrl = ""
-            allChannels.Key = "/channels/all"
-            allChannels.connectionUrl = connectionUrl
-            allChannels.SDPosterURL = "file://pkg:/images/more.png"
-            allChannels.HDPosterURL = "file://pkg:/images/more.png"
-            channels.item = allChannels
-            m.AddOrStartRequest(channels, m.RowIndexes[row], startRequests)
-        else
-            m.Listener.OnDataLoaded(m.RowIndexes[row], [], 0, 0, true)
+            'return we will continue now - hide specificis with " if server.owned then "
         end if
     end if
 
     ' Request global on deck
+    ' ljunkie - everyone gets on deck 
     row = "on_deck"
     if rowkey = invalid or rowkey = row then
         view = RegRead("row_visibility_ondeck", "preferences", "")
@@ -205,23 +175,9 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
         end if
     end if
 
-    ' Request Now Playing
-    row = "now_playing"
-    if rowkey = invalid or rowkey = row then
-        view = RegRead("row_visibility_now_playing", "preferences", "")
-        if view <> "hidden" then
-            nowPlaying = CreateObject("roAssociativeArray")
-            nowPlaying.server = server
-            nowPlaying.key = "/status/sessions"
-            nowPlaying.connectionUrl = connectionUrl
-            nowPlaying.requestType = "media"
-            m.AddOrStartRequest(nowPlaying, m.RowIndexes[row], startRequests)
-        else
-            m.Listener.OnDataLoaded(m.RowIndexes[row], [], 0, 0, true)
-        end if
-    end if 
 
     ' Request recently added
+    ' even though the access is granted for shared users, the results seem to be ZERO - ljunkie (maybe they are adding this to the PMS?)
     row = "recently_added"
     if rowkey = invalid or rowkey = row then
         view = RegRead("row_visibility_recentlyadded", "preferences", "")
@@ -236,6 +192,59 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
             m.Listener.OnDataLoaded(m.RowIndexes[row], [], 0, 0, true)
         end if
      end if
+
+
+    '  If server is owned...
+    if server.owned then
+
+        ' Request recently used channels
+        row = "channels"
+        if rowkey = invalid or rowkey = row then
+            view = RegRead("row_visibility_channels", "preferences", "")
+            if view <> "hidden" then
+                channels = CreateObject("roAssociativeArray")
+                channels.server = server
+                channels.key = "/channels/recentlyViewed"
+                channels.connectionUrl = connectionUrl
+        
+                allChannels = CreateObject("roAssociativeArray")
+                allChannels.Title = "More Channels"
+                if AreMultipleValidatedServers() then
+                    allChannels.ShortDescriptionLine2 = "All channels on " + server.name
+                else
+                    allChannels.ShortDescriptionLine2 = "All channels"
+                end if
+                allChannels.Description = allChannels.ShortDescriptionLine2
+                allChannels.server = server
+                allChannels.sourceUrl = ""
+                allChannels.Key = "/channels/all"
+                allChannels.connectionUrl = connectionUrl
+                allChannels.SDPosterURL = "file://pkg:/images/more.png"
+                allChannels.HDPosterURL = "file://pkg:/images/more.png"
+                channels.item = allChannels
+                m.AddOrStartRequest(channels, m.RowIndexes[row], startRequests)
+            else
+                m.Listener.OnDataLoaded(m.RowIndexes[row], [], 0, 0, true)
+            end if
+        end if
+
+        ' Request Now Playing
+        row = "now_playing"
+        if rowkey = invalid or rowkey = row then
+            view = RegRead("row_visibility_now_playing", "preferences", "")
+            if view <> "hidden" then
+                nowPlaying = CreateObject("roAssociativeArray")
+                nowPlaying.server = server
+                nowPlaying.key = "/status/sessions"
+                nowPlaying.connectionUrl = connectionUrl
+                nowPlaying.requestType = "media"
+                m.AddOrStartRequest(nowPlaying, m.RowIndexes[row], startRequests)
+            else
+                m.Listener.OnDataLoaded(m.RowIndexes[row], [], 0, 0, true)
+            end if
+        end if 
+
+    end if
 
 End Sub
 
@@ -879,8 +888,8 @@ Sub homeOnMyPlexChange()
     else
         m.RemoveFromRowIf(m.RowIndexes["sections"], IsMyPlexServer)
         m.RemoveFromRowIf(m.RowIndexes["channels"], IsMyPlexServer)
-        m.RemoveFromRowIf(m.RowIndexes["on_deck"], IsMyPlexServer)
         m.RemoveFromRowIf(m.RowIndexes["now_playing"], IsMyPlexServer)
+        m.RemoveFromRowIf(m.RowIndexes["on_deck"], IsMyPlexServer)
         m.RemoveFromRowIf(m.RowIndexes["recently_added"], IsMyPlexServer)
         m.RemoveFromRowIf(m.RowIndexes["misc"], IsMyPlexServer)
         m.RemoveFromRowIf(m.RowIndexes["queue"], AlwaysTrue)
