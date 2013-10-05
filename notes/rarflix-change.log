@@ -1,3 +1,7 @@
+### v2.6.16-2 (2013-10-05) (silent update)
+* isRFtest() added - allow RARflix/RARflixTest to stay more in sync
+   - Test/Dev options will just be limited if the appName is RARflix
+
 ### v2.6.16-1 (2013-10-05) (silent update)
 * Cast & Crew from a TV Series form the global now playing returned no results
 * Now Playing dialogs would sometimes leave invalid screens
