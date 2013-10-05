@@ -94,8 +94,23 @@ Sub setVideoBasics(video, container, item)
             end if
         end if
 
+        ' hack to try and set the grandparentkey when PMS API doesn't return one
         if video.grandparentKey = invalid and container.xml@key <> invalid then 
-            video.grandparentKey = "/library/metadata/" + tostr(container.xml@key)
+            re = CreateObject("roRegex", "/children.*", "i")
+            if re.IsMatch(container.sourceurl) then
+                newurl = re.ReplaceAll(container.sourceurl, "")
+                gcontainer = createPlexContainerForUrl(container.server, newurl, "")
+                if container <> invalid then
+                    video.grandparentKey = gcontainer.xml.Directory[0]@parentKey
+                    'obj.metadata.parentIndex = gcontainer.xml.Directory[0]@index
+                    'obj.metadata.ShowTitle = gcontainer.xml.Directory[0]@parentTitle
+                    'print  "---- override - set grandparentKey to parent" + video.grandparentKey
+                end if            
+            else if container.xml@parentkey <> invalid then 
+                video.grandparentKey = "/library/metadata/" + tostr(container.xml@parentkey)
+            else 
+                video.grandparentKey = "/library/metadata/" + tostr(container.xml@key)
+            end if
             Debug("----- setting grandparent key to " + video.grandparentKey + " " + video.showTitle)
         end if
     end if
