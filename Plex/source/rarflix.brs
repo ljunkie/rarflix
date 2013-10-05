@@ -736,11 +736,10 @@ Sub SendRemoteKey(key)
     ipaddrs = di.GetIPAddrs()
     if ipaddrs.eth0 <> invalid then ipaddr = ipaddrs.eth0
     if ipaddrs.eth1 <> invalid then ipaddr = ipaddrs.eth1
-    print "ipaddr: ";ipaddr
-    sleep(1000)
-
+    'print "ipaddr: ";ipaddr
+    'sleep(1000)
     url = "http://"+ipaddr+":8060/keypress/" + key
-    print "sending key " + key + " " + url
+    Debug("sending key " + tostr(key) + " " + tostr(url))
     xfer = CreateObject("roUrlTransfer")
     xfer.SetUrl(url)
     xfer.PostFromString("")
