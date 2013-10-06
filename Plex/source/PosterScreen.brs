@@ -175,7 +175,8 @@ Function posterHandleMessage(msg) As Boolean
             itype = content.type
             vg = content.viewgroup
             ctype = content.contenttype
-            if (tostr(itype) <> "invalid" and itype = "episode") or (tostr(vg) <> "invalid" and vg = "season") then
+            ' probably need to work in Audio dialog? TODO examples in GridScreen
+            if (tostr(itype) <> "invalid" and (itype = "movie"  or itype = "show" or itype = "episode" or itype = "season" or itype = "series")) or (tostr(vg) <> "invalid" and vg = "season") then
                 m.metadata = m.contentArray[m.focusedList].content[m.contentArray[m.focusedList].focusedindex]
                 m.Item = m.contentArray[m.focusedList].content[m.contentArray[m.focusedList].focusedindex]
                 rfVideoMoreButtonFromGrid(m)
