@@ -612,6 +612,11 @@ end sub
 
 sub fakeRefresh(force=false) 
     Debug("refresh? nah... faked it for now...")
+    if m.item <> invalid and type(m.item.refresh) = "roFunction" then 
+        m.item.refresh()
+    end if
+'    m.Screen.Show()
+'    stop
     'fake it for now
 end sub 
 

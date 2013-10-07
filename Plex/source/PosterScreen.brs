@@ -180,6 +180,7 @@ Function posterHandleMessage(msg) As Boolean
                 m.metadata = m.contentArray[m.focusedList].content[m.contentArray[m.focusedList].focusedindex]
                 m.Item = m.contentArray[m.focusedList].content[m.contentArray[m.focusedList].focusedindex]
                 rfVideoMoreButtonFromGrid(m)
+                m.refreshOnActivate = true
             else 
                 Debug("Info Button (*) not handled for content type: " +  tostr(itype) + ":" + tostr(ctype) + ":" + tostr(vg))
                 rfDefRemoteOptionButton(m) 
