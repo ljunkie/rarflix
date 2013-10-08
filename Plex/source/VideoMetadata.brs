@@ -244,6 +244,7 @@ Sub setVideoBasics(video, container, item)
       
         if video.viewoffset <> invalid then 
              video.description = "Progress: " + GetDurationString(int(video.viewoffset.toint()/1000),0,1,1)
+             video.description = video.description + " [" + percentComplete(video.viewOffset,video.length) + "%]"
         else 
              video.description = "" ' sometime the offset is invalid, so we will just set it empty. It will be updated with the timer
         end if

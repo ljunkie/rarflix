@@ -20,12 +20,13 @@ sub rf_updateNowPlayingSB(screen)
     new_metadata = rfUpdateNowPlayingMetadata(screen.metadata)
 
     if new_metadata.viewOffset <> invalid then
-        screen.metadata.description = " * Progress: " + GetDurationString(int(new_metadata.viewOffset.toint()/1000),0,1,1) ' update progress - if we exit player
         screen.metadata.isStopped = invalid
+        screen.metadata.description = " * Progress: " + GetDurationString(int(new_metadata.viewOffset.toint()/1000),0,1,1) ' update progress - if we exit player
+        screen.metadata.description = screen.metadata.description + " [" + percentComplete(new_metadata.viewOffset,new_metadata.length) + "%]"
         screen.metadata.viewOffset = new_metadata.viewOffset ' set new offset
     else 
-        screen.metadata.description = " * User has stopped watching"
         screen.metadata.isStopped = true
+        screen.metadata.description = " * User has stopped watching"
         screen.metadata.viewOffset = orig_offset
         Debug("---- setting the video Offset to your offset (not remote) " + tostr(orig_offset) + " - user has stopped but you should be able to resume!")
     end if
@@ -89,7 +90,7 @@ sub setnowplayingGlobals()
                     user = container.xml.Video[index].User@title
                     metadata = container.metadata[index]
                     platform = firstof(container.xml.Video[index].Player@title, container.xml.Video[index].Player@platform, "")
-                    length = firstof(container.xml.Video[index]@duration, 0)
+                    length = firstof(tostr((container.xml.Video[index]@duration).toint()/1000), 0)
                     if metadata.episodestr <> invalid then 
                         title = metadata.cleantitle + " - " + metadata.episodestr
                     else
@@ -126,9 +127,12 @@ function getNowPlayingNotifications() as object
                     Debug("skipping start notification due to prefs")
                 end if
                 RegWrite(nkey, "true", "rf_notified") 
+		' TODO - this global should really be an AA
                 GetGlobalAA().AddReplace(nkey + "_user", i.user)
                 GetGlobalAA().AddReplace(nkey + "_title", i.item.CleanTitle)
+                GetGlobalAA().AddReplace(nkey + "_length", i.length) 
             end if
+            GetGlobalAA().AddReplace(nkey + "_viewOffset", i.item.viewOffset)
             found.Push(nkey) ' save all now playing for the next checks
         next
     end if
@@ -148,6 +152,11 @@ function getNowPlayingNotifications() as object
 		n = CreateObject("roAssociativeArray")
                 n.type = "stop" 
                 n.title = UcaseFirst(GetGlobalAA().Lookup(maid + "_user"),true) + " stopped " + GetGlobalAA().Lookup(maid + "_title")
+
+                n.viewOffset = GetGlobalAA().Lookup(maid + "_viewOffset")
+                n.length = GetGlobalAA().Lookup(maid + "_length").toInt()
+		
+		n.title = "[" + percentComplete(n.viewOffset,n.length,true) + "%]" + " " + n.title
                 n.text = ""
                 if RegRead("rf_notify_np_type","preferences","all") <> "start"  then 
                     notify.Push(n) 
@@ -157,6 +166,8 @@ function getNowPlayingNotifications() as object
                 RegDelete(maid, "rf_notified")
                 GetGlobalAA().Delete(maid + "_user")
                 GetGlobalAA().Delete(maid + "_title")
+                GetGlobalAA().Delete(maid + "_length")
+                GetGlobalAA().Delete(maid + "_viewOffset")
                 Debug("---- removing " + tostr(maid) + " from 'rf_notified' -- video playback stopped")
             else
                 Debug("----- " + tostr(maid) + " is found (currently playing)")
@@ -170,6 +181,13 @@ function getNowPlayingNotifications() as object
 
     if notify.count() > 0 then return notify
     return invalid
+end function
+
+function percentComplete(viewOffset as dynamic, Length as dynamic, round=false as boolean) as String
+   'TODO - check if string or integer just to be safe
+   percent = int(((viewOffset.toInt()/1000)/length )*100)
+   if round and percent > 90 then return "100"
+   return tostr(percent)
 end function
 
 ' This needs some work - rough draft - should add link to view videoDetial screen from here
