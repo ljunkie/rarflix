@@ -308,40 +308,41 @@ End Function
 Function vcCreateContextMenu()
     ' Our context menu is only relevant if the audio player has content.
     ' ljunkie -- we need some more checks here -- if audio is not playing/etc and we want to use the asterisk button for other things.. how do we work this?
-    ' TODO
     if m.AudioPlayer.ContextScreenID = invalid then return invalid
 
-    ' ljunkie - I know.. more crazy logic -- TODO cleanup
-    if NOT m.audioplayer.ispaused and NOT m.audioplayer.isplaying then ' always show music options when music is paused or playing
-       Debug( "-------------------------------------------------------------")
-       Debug( "------------------show audio dialog -------------------------")
-       screen = m.screens.peek()
-       if type(screen.screen) = "roMessageDialog" then  ' if we already have a new dialog - lets not replace it
+    screen = m.screens.peek()
+    showDialog = false
+
+    if type(screen.screen) = "roMessageDialog" then  ' if we already have a new dialog - lets not replace it
            Debug( "---disabling audio dialog for a new DIALOG" + screen.screenname + " type:" + type(screen.screen))
-           return invalid        
-       else if screen.screenname = "Home" or screen.screenname = "Section: movie" or screen.screenname = "Preferences Main" or screen.screenname = "Section: show" then ' this might need some cleanup ( we only care to disable if home, movie, shows )
-           if screen.selectedrow <> invalid and screen.focusedindex <> invalid and type(screen.contentarray[screen.selectedrow][screen.focusedindex]) = "roAssociativeArray" then
-               itype = screen.contentarray[screen.selectedrow][screen.focusedindex].type ' movie, show, photo, episode, etc..
-               ctype = screen.contentarray[screen.selectedrow][screen.focusedindex].contenttype ' section
-               ' allow audio dialog for content that doesn't have special dialogs ( wonder if there is a list of contenttypes somewhere?)
-               if (itype = invalid and ctype <> "prefs")
-                   Debug( "---Allowing audio dialog for ctype:" + tostr(ctype) + " itype:" + tostr(itype) + " " + tostr(screen.screenname) + " type:" +  type(screen.screen))
-               else if ctype <> "section" and ctype <> "album" and ctype <> "channel" then
-                   Debug( "---disabling audio dialog for ctype:" + tostr(ctype) + " itype:" + tostr(itype) + " " + tostr(screen.screenname) + " type:" +  type(screen.screen))
-                   return invalid
-               end if
-               Debug( "--- showing audio dialog for itype " + tostr(itype) + " " + tostr(screen.screenname) + " type:" + type(screen.screen))
-           else 
-               Debug( "---disabling audio dialog for " + tostr(screen.screenname) + " type:" + type(screen.screen))
-               return invalid        
-           end if
-       else 
-           Debug( "---- showing audio dialog -- AUDIO is not paused and not playing -- should we show the screen here?" + screen.screenname + " type:" +  type(screen.screen))
-       end if 
-       Debug( "-------------------------------------------------------------")
+           return invalid
     end if
 
-    ' if we haven't returned invalid from the crazy logic above.. then I guess we are showing the audio dialog
+    itype = "invalid"
+    ctype = "invalid"
+    vtype = "invalid"
+    if screen.selectedrow <> invalid and screen.focusedindex <> invalid and type(screen.contentarray[screen.selectedrow][screen.focusedindex]) = "roAssociativeArray" then
+        itype = tostr(screen.contentarray[screen.selectedrow][screen.focusedindex].type) ' movie, show, photo, episode, etc..
+        ctype = tostr(screen.contentarray[screen.selectedrow][screen.focusedindex].contenttype) ' section
+        vtype = tostr(screen.contentarray[screen.selectedrow][screen.focusedindex].viewgroup)
+    end if
+
+    ' Audios is playing - we should show it if the selected type is a "section" -- maybe we should look at secondary? -- also allow invalids
+    if m.audioplayer.ispaused or m.audioplayer.isplaying then 
+        r = CreateObject("roRegex", "section|secondary", "i") ' section too - those are not special
+        'showDialog = (   (r.IsMatch(itype) or r.IsMatch(ctype) or r.IsMatch(vtype)) or (itype = "invalid" and ctype = "invalid" and vtype = "invalid") )
+        showDialog = ( (r.IsMatch(itype) or r.IsMatch(ctype) or r.IsMatch(vtype)) or (itype = "invalid"))
+    end if
+
+    ' always show dialog if audio/artist/album/track
+    ' we will also show if channel, preferences, search, playlists, clip as they have not special actions
+    if NOT showDialog then 
+        r = CreateObject("roRegex", "audio|artist|album|track|channel|pref|search|playlists|clip", "i") 
+        showDialog = (r.IsMatch(itype) or r.IsMatch(ctype) or r.IsMatch(vtype) or r.IsMatch(tostr(screen.screenname)))
+    end if
+
+    Debug("show audio dialog:" + tostr(showDialog) + "; itype:" +  tostr(itype) + "; ctype:" +  tostr(ctype) + "; vtype:" +  tostr(vtype) + "; screenname:" +  tostr(screen.screenname))
+    if NOT showDialog then return invalid
     return m.AudioPlayer.ShowContextMenu()
 End Function
 

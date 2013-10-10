@@ -824,5 +824,5 @@ sub rfDefRemoteOptionButton(m)
     new.ContentType = "search"
     breadcrumbs = ["Miscellaneous","Search"]
     m.ViewController.CreateScreenForItem(new, invalid, breadcrumbs)
-    Debug("Showing remote option button screen ")
+    Debug("Showing default serach screen - remote option button pressed ")
 end sub

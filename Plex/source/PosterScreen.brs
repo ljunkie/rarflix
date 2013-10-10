@@ -175,16 +175,19 @@ Function posterHandleMessage(msg) As Boolean
             itype = content.type
             vg = content.viewgroup
             ctype = content.contenttype
-            ' probably need to work in Audio dialog? TODO examples in GridScreen
+            audioplayer = GetViewController().AudioPlayer
+            sn = m.screenname
             if (tostr(itype) <> "invalid" and (itype = "movie"  or itype = "show" or itype = "episode" or itype = "season" or itype = "series")) or (tostr(vg) <> "invalid" and vg = "season") then
                 m.metadata = m.contentArray[m.focusedList].content[m.contentArray[m.focusedList].focusedindex]
                 m.Item = m.contentArray[m.focusedList].content[m.contentArray[m.focusedList].focusedindex]
                 rfVideoMoreButtonFromGrid(m)
                 m.refreshOnActivate = true
-            else 
-                Debug("Info Button (*) not handled for content type: " +  tostr(itype) + ":" + tostr(ctype) + ":" + tostr(vg))
-                rfDefRemoteOptionButton(m) 
-            end if
+            else if audioplayer.ContextScreenID = invalid then
+                Debug("Info Button (*) not handled for content type: " +  tostr(itype_o) + ":" + tostr(ctype))
+                rfDefRemoteOptionButton(m)
+            else
+                Debug("--- Not showing prefs on ctype:" + tostr(ctype) + " itype:" + tostr(itype) )
+            end if 
         else if msg.isRemoteKeyPressed() then
             if msg.GetIndex() = 13 then
                 Debug("Playing item directly from poster screen")
