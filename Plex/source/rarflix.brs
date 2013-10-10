@@ -68,6 +68,13 @@ Sub InitRARFlix()
 
     Debug("---- end purge ----")
 
+    ' Temporarily disable theme music due to bug - user can change it back if they really want it
+    if RegRead("rf_temp_thememusic", "preferences","first") = "first" then
+        prev_setting = RegRead("theme_music", "preferences","disabled")
+        Debug("first run - disabling theme music due to bug")
+        RegWrite("theme_music", "disabled", "preferences")
+        RegWrite("rf_temp_thememusic", prev_setting, "preferences")
+    end if
  
     RegRead("rf_bcdynamic", "preferences","enabled")
     RegRead("rf_rottentomatoes", "preferences","enabled")
@@ -100,6 +107,7 @@ Sub InitRARFlix()
     Debug("rf_up_behavior: " + tostr(RegRead("rf_up_behavior", "preferences")))
     Debug("rf_notify: " + tostr(RegRead("rf_notify", "preferences")))
     Debug("rf_notify_np_type: " + tostr(RegRead("rf_notify_np_type", "preferences")))
+    Debug("rf_temp_thememusic: " + tostr(RegRead("rf_temp_thememusic", "preferences")))
     Debug("============================================================================")
 
 end sub
