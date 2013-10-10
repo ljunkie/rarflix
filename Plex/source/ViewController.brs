@@ -582,11 +582,19 @@ Sub vcPopScreen(screen)
         m.Home = m.CreateHomeScreen()
     else if callActivate then
         newScreen = m.screens.Peek()
-        ' ljunkie - extra hack to cleanup the screen we are entering when invalid
+        ' ljunkie - extra hack to cleanup the screen we are entering when invalid or if trying to re-enter a dialog
         if type(newScreen.Screen) = invalid then
+            ' this should never happen
             Debug("---- Top screen invalid - popping ")
             m.popscreen(newScreen)
             newScreen = m.screens.Peek()
+        else if type(newScreen.Screen) = "roMessageDialog" then 
+            ' bug in the notifications dialog - when multiple come in, they are not tracked? these is just some hacky GC
+            Debug("---- Top screen is a Dialog -- that can't happen!")
+            m.popscreen(newScreen)
+            newScreen = m.screens.Peek()
+            print newScreen
+            print type(newScreen.Screen)
         end if
 
         screenName = firstOf(newScreen.ScreenName, type(newScreen.Screen))

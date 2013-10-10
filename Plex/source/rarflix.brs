@@ -611,7 +611,28 @@ end sub
 
 
 sub fakeRefresh(force=false) 
-    Debug("refresh? nah... faked it for now...")
+    Debug("refresh? it we have a valid item")
+    if m.item <> invalid and type(m.item.refresh) = "roFunction" then 
+        m.item.refresh()
+        Debug("refresh item")
+    end if
+
+    if type(m.screen) = "roPosterScreen" then 
+        if type(m.contentarray) = "roArray" then 
+            focusedIndex = m.contentarray[0].focusedindex
+            content = m.contentarray[0].content
+            if focusedIndex <> invalid and type(content) = "roArray" and type(content[focusedIndex]) = "roAssociativeArray" then 
+                if type(content[focusedIndex].refresh) = "roFunction" then  
+                    content[focusedIndex].refresh()
+                    m.screen.SetContentList(content)
+		    Debug("refresh content list!")
+                end if
+            end if
+        end if
+    end if
+'    stop
+'    m.Screen.Show()
+'    stop
     'fake it for now
 end sub 
 
