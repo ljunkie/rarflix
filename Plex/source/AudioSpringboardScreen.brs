@@ -129,49 +129,47 @@ Function audioHandleMessage(msg) As Boolean
                     audioPlayer.Prev()
                 end if
             else if buttonCommand = "more" then
-                dialog = createBaseDialog()
-                dialog.Title = ""
-                dialog.Text = ""
-                dialog.Item = m.metadata
-                if m.IsShuffled then
-                    dialog.SetButton("shuffle", "Shuffle: On")
-                else
-                    dialog.SetButton("shuffle", "Shuffle: Off")
-                end if
-
-                if audioPlayer.ContextScreenID = m.ScreenID then
-                    if audioPlayer.Loop then
-                        dialog.SetButton("loop", "Loop: On")
-                    else
-                        dialog.SetButton("loop", "Loop: Off")
-                    end if
-                end if
-
-                dialog.SetButton("rate", "_rate_")
-                if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
-                    dialog.SetButton("delete", "Delete permanently")
-                end if
-                dialog.SetButton("close", "Back")
-                dialog.HandleButton = audioDialogHandleButton
-                dialog.ParentScreen = m
-                dialog.Show()
+                rfCreateAudioSBdialog(m)
             else
                 handled = false
             end if
             m.SetupButtons()
+        else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then ' ljunkie - use * for more options on focused item
+                rfCreateAudioSBdialog(m)
         else if msg.isRemoteKeyPressed() then
             handled = true
             button = msg.GetIndex()
             Debug("Remote Key button = " + tostr(button))
 
-            if button = 5 or button = 9 ' next
-                if m.GotoNextItem() then
-                    audioPlayer.Next()
-                end if
-            else if button = 4 or button = 8 ' prev
-                if m.GotoPrevItem() then
-                    audioPlayer.Prev()
-                end if
+            if button = 8 and audioplayer.IsPlaying then ' rewind
+                 curOffset = audioplayer.GetPlaybackProgress()
+                 newOffset = (curOffset*1000)-10000
+                 if newOffset < 0 then newOffset = 0
+                 Debug(tostr(newOffset))
+                 audioPlayer.audioPlayer.Seek(newOffset)
+                 audioPlayer.playbackOffset = newOffset/1000
+                 audioPlayer.playbackTimer.Mark()
+            else if button = 9 and audioplayer.IsPlaying then ' forward
+                 curOffset = audioplayer.GetPlaybackProgress()
+                 newOffset = (curOffset*1000)+10000
+                 duration = audioplayer.context[audioplayer.curindex].duration*1000
+                 if newOffset < int(duration) then 
+                     Debug(tostr(newOffset))
+                     audioPlayer.audioPlayer.Seek(newOffset)
+                     audioPlayer.playbackOffset = newOffset/1000
+                     audioPlayer.playbackTimer.Mark()
+                 end if
+
+            else if button = 5 then ' next             'if button = 5 or button = 9 ' next
+                 play = (m.Playstate = 2) ' Allow right/left in springboard when item selected is NOT the on playing
+                 if m.GotoNextItem() then
+                     audioPlayer.Next(play)
+                 end if
+            else if button = 4 then ' prev'            else if button = 4 or button = 8 ' prev
+                 play = (m.Playstate = 2) ' Allow right/left in springboard when item selected is NOT the on playing
+                 if m.GotoPrevItem() then
+                     audioPlayer.Prev(play)
+                 end if
             end if
             m.SetupButtons()
         end if
@@ -241,6 +239,12 @@ Function audioDialogHandleButton(command, data) As Boolean
         if audioPlayer.ContextScreenID = obj.ScreenID
             audioPlayer.SetContext(obj.Context, obj.CurIndex, obj, false)
         end if
+    else if command = "show" then
+        dummyItem = CreateObject("roAssociativeArray")
+        dummyItem.ContentType = "audio"
+        dummyItem.Key = "nowplaying"
+        obj.ViewController.CreateScreenForItem(dummyItem, invalid, ["","Now Playing"])
+        return true
     else if command = "loop" then
         audioPlayer = GetViewController().AudioPlayer
         if audioPlayer.Loop then
@@ -267,3 +271,33 @@ Function audioDialogHandleButton(command, data) As Boolean
     end if
     return false
 End Function
+
+sub rfCreateAudioSBdialog(m)
+    audioPlayer = GetViewController().AudioPlayer
+    dialog = createBaseDialog()
+    dialog.Title = ""
+    dialog.Text = ""
+    dialog.Item = m.metadata
+    if m.IsShuffled then
+        dialog.SetButton("shuffle", "Shuffle: On")
+    else
+        dialog.SetButton("shuffle", "Shuffle: Off")
+    end if
+    if audioPlayer.ContextScreenID = m.ScreenID then
+        if audioPlayer.Loop then
+            dialog.SetButton("loop", "Loop: On")
+        else
+            dialog.SetButton("loop", "Loop: Off")
+        end if
+    else
+        dialog.SetButton("show", "Go to Now Playing")
+    end if
+     dialog.SetButton("rate", "_rate_")
+    if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
+        dialog.SetButton("delete", "Delete permanently")
+    end if
+    dialog.SetButton("close", "Back")
+    dialog.HandleButton = audioDialogHandleButton
+    dialog.ParentScreen = m
+    dialog.Show()
+end sub

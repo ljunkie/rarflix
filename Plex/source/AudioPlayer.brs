@@ -87,6 +87,14 @@ Function audioPlayerHandleMessage(msg) As Boolean
             m.ViewController.DestroyGlitchyScreens()
         else if msg.isStatusMessage() then
             'Debug("Audio player status: " + tostr(msg.getMessage()))
+            Debug("Audio player status (duplicates ok): " + tostr(msg.getMessage()))
+            if tostr(msg.getMessage()) = "playback stopped" then 
+                m.IsPlaying = false
+                m.IsPaused = false
+            else if tostr(msg.getMessage()) = "start of play" then 
+                m.IsPlaying = true
+                m.IsPaused = false
+            end if
         else if msg.isFullResult() then
             Debug("Playback of entire audio list finished")
             m.Stop()
@@ -145,30 +153,37 @@ Sub audioPlayerStop()
     end if
 End Sub
 
-Sub audioPlayerNext()
+Sub audioPlayerNext(play=true)
     if m.Context = invalid then return
 
     maxIndex = m.Context.Count() - 1
     newIndex = m.CurIndex + 1
 
     if newIndex > maxIndex then newIndex = 0
-
-    m.Stop()
+    ' Allow right/left in springboard when item selected is NOT the on playing
     m.CurIndex = newIndex
-    m.audioPlayer.SetNext(newIndex)
-    m.Play()
+
+    if play then 
+        m.Stop()
+        m.audioPlayer.SetNext(newIndex)
+        m.Play()
+    end if
 End Sub
 
-Sub audioPlayerPrev()
+Sub audioPlayerPrev(play=true)
     if m.Context = invalid then return
 
     newIndex = m.CurIndex - 1
     if newIndex < 0 then newIndex = m.Context.Count() - 1
 
-    m.Stop()
+    ' Allow right/left in springboard when item selected is NOT the on playing
     m.CurIndex = newIndex
-    m.audioPlayer.SetNext(newIndex)
-    m.Play()
+
+    if play then 
+        m.Stop()
+        m.audioPlayer.SetNext(newIndex)
+        m.Play()
+    end if
 End Sub
 
 Sub audioPlayerSetContext(context, contextIndex, screen, startPlayer)
@@ -346,11 +361,10 @@ Function audioPlayerMenuHandleButton(command, data) As Boolean
         obj.Prev()
     else if command = "show" then
         obj.focusedbutton = 0
-
         dummyItem = CreateObject("roAssociativeArray")
         dummyItem.ContentType = "audio"
         dummyItem.Key = "nowplaying"
-        obj.ViewController.CreateScreenForItem(dummyItem, invalid, ["Now Playing"])
+        obj.ViewController.CreateScreenForItem(dummyItem, invalid, ["","Now Playing"])
     else if command = "close" then
         obj.focusedbutton = 0 
         return true
