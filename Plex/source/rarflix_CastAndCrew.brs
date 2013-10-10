@@ -126,7 +126,7 @@ Function getPostersForCastCrew(item As Object) As Object
     sizes = ImageSizes("movie", "movie")
 
     for each i in item.metadata.castcrewList
-        wkey = "/lsibrary/people/"+i.id+"/media"
+        wkey = "/library/people/"+i.id+"/media"
         ' it would be nice if we could just get a full list of people from ther server, but not available - maybe later TODO
         container = createPlexContainerForUrl(server, server.serverurl, "/search/actor/?query=" + HttpEncode(i.name))
         keys = container.GetKeys()
