@@ -5,6 +5,7 @@
 Function createHomeScreenDataLoader(listener)
     loader = CreateObject("roAssociativeArray")
     initDataLoader(loader)
+    imageDir = GetGlobalAA().Lookup("rf_theme_dir")
 
     ' TODO(schuyler): This feels like cheating...
     loader.ScreenID = -1
@@ -82,8 +83,8 @@ Function createHomeScreenDataLoader(listener)
     prefs.Key = "globalprefs"
     prefs.Title = "Preferences"
     prefs.ShortDescriptionLine1 = "Preferences"
-    prefs.SDPosterURL = "file://pkg:/images/gear.png"
-    prefs.HDPosterURL = "file://pkg:/images/gear.png"
+    prefs.SDPosterURL = imageDir + "gear.png"
+    prefs.HDPosterURL = imageDir + "gear.png"
     loader.contentArray[loader.RowIndexes["misc"]].content.Push(prefs)
 
     ' Create an item for Now Playing in the Misc row that will be shown while
@@ -94,8 +95,8 @@ Function createHomeScreenDataLoader(listener)
     nowPlaying.Key = "nowplaying"
     nowPlaying.Title = "Now Playing"
     nowPlaying.ShortDescriptionLine1 = "Now Playing"
-    nowPlaying.SDPosterURL = "file://pkg:/images/section-music.png"
-    nowPlaying.HDPosterURL = "file://pkg:/images/section-music.png"
+    nowPlaying.SDPosterURL = imageDir + "section-music.png"
+    nowPlaying.HDPosterURL = imageDir + "section-music.png"
     nowPlaying.CurIndex = invalid
     loader.nowPlayingItem = nowPlaying
 
@@ -129,6 +130,8 @@ Function homeCreateRow(name) As Integer
 End Function
 
 Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refreshRequest As Boolean, connectionUrl=invalid, rowkey=invalid)
+   imageDir =GetGlobalAA().Lookup("rf_theme_dir")
+
    if not refreshRequest then
         PutPlexMediaServer(server)
 
@@ -193,7 +196,6 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
         end if
      end if
 
-
     '  If server is owned...
     if server.owned then
 
@@ -219,8 +221,8 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
                 allChannels.sourceUrl = ""
                 allChannels.Key = "/channels/all"
                 allChannels.connectionUrl = connectionUrl
-                allChannels.SDPosterURL = "file://pkg:/images/more.png"
-                allChannels.HDPosterURL = "file://pkg:/images/more.png"
+                allChannels.SDPosterURL = imageDir + "more.png"
+                allChannels.HDPosterURL = imageDir + "more.png"
                 channels.item = allChannels
                 m.AddOrStartRequest(channels, m.RowIndexes[row], startRequests)
             else
@@ -277,6 +279,7 @@ Sub homeCreateAllPlaylistRequests(startRequests As Boolean)
 End Sub
 
 Sub homeCreatePlaylistRequests(name, title, description, row, startRequests)
+    imageDir = GetGlobalAA().Lookup("rf_theme_dir")
     view = RegRead("playlist_view_" + name, "preferences", "unwatched")
     if view = "hidden" then
         m.Listener.OnDataLoaded(row, [], 0, 0, true)
@@ -297,8 +300,8 @@ Sub homeCreatePlaylistRequests(name, title, description, row, startRequests)
     allItems.server = currentItems.server
     allItems.sourceUrl = ""
     allItems.Key = "/pms/playlists/" + name
-    allItems.SDPosterURL = "file://pkg:/images/more.png"
-    allItems.HDPosterURL = "file://pkg:/images/more.png"
+    allItems.SDPosterURL = imageDir + "more.png"
+    allItems.HDPosterURL = imageDir + "more.png"
     allItems.ContentType = "playlists"
     currentItems.item = allItems
     currentItems.emptyItem = allItems
@@ -455,6 +458,7 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
 End Function
 
 Sub homeOnUrlEvent(msg, requestContext)
+    imageDir =GetGlobalAA().Lookup("rf_theme_dir")
     status = invalid
     if requestContext.row <> invalid then
         status = m.contentArray[requestContext.row]
@@ -735,8 +739,8 @@ Sub homeOnUrlEvent(msg, requestContext)
                         channelDir.ShortDescriptionLine2 = "Browse channels to install"
                     end if
                     channelDir.Description = channelDir.ShortDescriptionLine2
-                    channelDir.SDPosterURL = "file://pkg:/images/more.png"
-                    channelDir.HDPosterURL = "file://pkg:/images/more.png"
+                    channelDir.SDPosterURL = imageDir + "more.png"
+                    channelDir.HDPosterURL = imageDir + "more.png"
                     status.content.Push(channelDir)
                 end if
 
@@ -758,8 +762,8 @@ Sub homeOnUrlEvent(msg, requestContext)
                     univSearch.Title = "Search"
                     univSearch.Description = "Search for items across all your sections and channels"
                     univSearch.ShortDescriptionLine2 = univSearch.Description
-                    univSearch.SDPosterURL = "file://pkg:/images/search.png"
-                    univSearch.HDPosterURL = "file://pkg:/images/search.png"
+                    univSearch.SDPosterURL = imageDir + "search.png"
+                    univSearch.HDPosterURL = imageDir + "search.png"
                     status.content.Unshift(univSearch)
                     m.Listener.OnDataLoaded(m.RowIndexes["misc"], status.content, 0, status.content.Count(), true)
                 else

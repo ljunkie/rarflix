@@ -545,7 +545,7 @@ End Function
 
 
 '* Constructs an image based on a PMS url with the specific width and height.
-Function TranscodedImage(queryUrl, imagePath, width, height, forceBackgroundColor="363636") As String
+Function TranscodedImage(queryUrl, imagePath, width, height, forceBackgroundColor=GetGlobalAA().Lookup("rfBGcolor")) As String
     imageUrl = FullUrl(m.serverUrl, queryUrl, imagePath)
     if NOT m.SupportsPhotoTranscoding then return imageUrl
     imageUrl = m.ConvertURLToLoopback(imageUrl)

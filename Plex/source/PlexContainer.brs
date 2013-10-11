@@ -62,6 +62,7 @@ End Function
 
 Sub containerParseXml()
     if m.Parsed then return
+    imageDir = GetGlobalAA().Lookup("rf_theme_dir")
 
     ' If this container has an error message, show it now
     if isnonemptystr(m.xml@header) AND isnonemptystr(m.xml@message) then
@@ -82,13 +83,13 @@ Sub containerParseXml()
             metadata.contentType = "section"
             if n@thumb = invalid then
                 if metadata.Type = "movie" then
-                    thumb = "file://pkg:/images/section-movie.png"
+                    thumb = imageDir + "section-movie.png"
                 else if metadata.Type = "show" then
-                    thumb = "file://pkg:/images/section-tv.png"
+                    thumb = imageDir + "section-tv.png"
                 else if metadata.Type = "artist" then
-                    thumb = "file://pkg:/images/section-music.png"
+                    thumb = imageDir + "section-music.png"
                 else if metadata.Type = "photo" then
-                    thumb = "file://pkg:/images/section-photo.png"
+                    thumb = imageDir + "section-photo.png"
                 else
                     thumb = invalid
                 end if

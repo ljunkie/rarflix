@@ -5,13 +5,19 @@
 
 ' other functions required for my mods
 
+function isRFdev() as boolean
+    ' dev only
+    if GetGlobalAA().appName = "RARflixDev" then 
+        return true
+    end if
+    return false
+end function
+
 function isRFtest() as boolean
+    ' test and dev 
     if GetGlobalAA().appName = "RARflix" then 
-        Debug("---- is Test Channel: false")
         return false
     end if
-
-    Debug("---- is Test Channel: true")
     return true
 end function
 
@@ -230,6 +236,16 @@ Function createRARFlixPrefsScreen(viewController) As Object
         default: "enabled"
     }
 
+    rf_theme = [
+        { title: "Original", EnumValue: "original", },
+        { title: "Black", EnumValue: "black", },
+    ]
+    obj.Prefs["rf_theme"] = {
+        values: rf_theme,
+        heading: "Theme for Channel",
+        default: "original"
+    }
+
     ' Rotten Tomatoes
     rt_prefs = [
         { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Display Ratings from RottenTomatoes" },
@@ -399,7 +415,9 @@ Function createRARFlixPrefsScreen(viewController) As Object
 
 
     obj.Screen.SetHeader("RARFlix Preferences")
-
+    if isRFdev() then 
+       obj.AddItem({title: "Theme"}, "rf_theme", obj.GetEnumValue("rf_theme"))
+    end if
     obj.AddItem({title: "Hide Rows",ShortDescriptionLine2: "Sorry for the confusion..."}, "hide_rows_prefs")
     obj.AddItem({title: "Section Display", ShortDescriptionLine2: "a plex original, for easy access"}, "sections")
 

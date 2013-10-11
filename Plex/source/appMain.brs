@@ -182,34 +182,39 @@ Sub initTheme()
     app = CreateObject("roAppManager")
     theme = CreateObject("roAssociativeArray")
 
+    rfTheme = RegRead("rf_theme", "preferences", "original")
+    if rfTheme = "black" then 
+        GetGlobalAA().AddReplace("rf_theme_dir", "file://pkg:/images/black/")
+        GetGlobalAA().AddReplace("rfBGcolor", "000000")
+    else 
+        GetGlobalAA().AddReplace("rf_theme_dir", "file://pkg:/images/")
+        GetGlobalAA().AddReplace("rfBGcolor", "363636")
+    end if
+    imageDir = GetGlobalAA().Lookup("rf_theme_dir")
+
     theme.OverhangOffsetSD_X = "72"
     theme.OverhangOffsetSD_Y = "10"
-    theme.OverhangSliceSD = "pkg:/images/Background_SD.jpg"
-    theme.OverhangLogoSD  = "pkg:/images/logo_final_SD.png"
+    theme.OverhangSliceSD = imageDir + "Background_SD.jpg"
+    theme.OverhangLogoSD  = "pkg:/images/logo_final_SD.png" ' logo is transparent
 
     theme.OverhangOffsetHD_X = "125"
     theme.OverhangOffsetHD_Y = "10"
-    theme.OverhangSliceHD = "pkg:/images/Background_HD.jpg"
-    theme.OverhangLogoHD  = "pkg:/images/logo_final_HD.png"
+    theme.OverhangSliceHD = imageDir + "Background_HD.jpg"
+    theme.OverhangLogoHD  = "pkg:/images/logo_final_HD.png" ' logo is transparent
 
     theme.GridScreenLogoOffsetHD_X = "125"
     theme.GridScreenLogoOffsetHD_Y = "10"
-    theme.GridScreenOverhangSliceHD = "pkg:/images/Background_HD.jpg"
-    theme.GridScreenLogoHD  = "pkg:/images/logo_final_HD.png"
+    theme.GridScreenOverhangSliceHD = imageDir + "Background_HD.jpg"
+    theme.GridScreenLogoHD  = "pkg:/images/logo_final_HD.png" ' logo is transparent
     theme.GridScreenOverhangHeightHD = "99"
 
     theme.GridScreenLogoOffsetSD_X = "72"
     theme.GridScreenLogoOffsetSD_Y = "10"
-    theme.GridScreenOverhangSliceSD = "pkg:/images/Background_SD.jpg"
-    theme.GridScreenLogoSD  = "pkg:/images/logo_final_SD.png"
+    theme.GridScreenOverhangSliceSD = imageDir + "Background_SD.jpg"
+    theme.GridScreenLogoSD  = "pkg:/images/logo_final_SD.png" ' logo is transparent
     theme.GridScreenOverhangHeightSD = "66"
 
-    ' We want to use a dark background throughout, just like the default
-    ' grid. Unfortunately that means we need to change all sorts of stuff.
-    ' The general idea is that we have a small number of colors for text
-    ' and try to set them appropriately for each screen type.
-
-    background = "#363636"
+    background = "#" + GetGlobalAA().Lookup("rfBGcolor")
     titleText = "#BFBFBF"
     normalText = "#999999"
     detailText = "#74777A"

@@ -312,19 +312,20 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
 End Sub
 
 Sub setGridTheme(style as String)
+    imageDir = GetGlobalAA().Lookup("rf_theme_dir")
     ' This has to be done before the CreateObject call. Once the grid has
     ' been created you can change its style, but you can't change its theme.
 
     app = CreateObject("roAppManager")
     if style = "flat-square" then
-        app.SetThemeAttribute("GridScreenFocusBorderHD", "pkg:/images/border-square-hd.png")
-        app.SetThemeAttribute("GridScreenFocusBorderSD", "pkg:/images/border-square-sd.png")
+        app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-square-hd.png")
+        app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-square-sd.png")
     else if style = "flat-16X9" then
-        app.SetThemeAttribute("GridScreenFocusBorderHD", "pkg:/images/border-episode-hd.png")
-        app.SetThemeAttribute("GridScreenFocusBorderSD", "pkg:/images/border-episode-sd.png")
+        app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-episode-hd.png")
+        app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-episode-sd.png")
     else if style = "flat-movie" then
-        app.SetThemeAttribute("GridScreenFocusBorderHD", "pkg:/images/border-movie-hd.png")
-        app.SetThemeAttribute("GridScreenFocusBorderSD", "pkg:/images/border-movie-sd.png")
+        app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-movie-hd.png")
+        app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-movie-sd.png")
     end if
 End Sub
 

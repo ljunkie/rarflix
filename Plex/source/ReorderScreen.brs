@@ -6,6 +6,8 @@ Function createReorderScreen(items, viewController)
     obj = CreateObject("roAssociativeArray")
     initBaseScreen(obj, viewController)
 
+    imageDir = GetGlobalAA().Lookup("rf_theme_dir")
+
     screen = CreateObject("roListScreen")
     screen.SetMessagePort(obj.Port)
 
@@ -25,8 +27,8 @@ Function createReorderScreen(items, viewController)
 
     for each item in items
         if item.SDPosterURL = invalid then
-            item.SDPosterURL = "file://pkg:/images/gear.png"
-            item.HDPosterURL = "file://pkg:/images/gear.png"
+            item.SDPosterURL = imageDir + "gear.png"
+            item.HDPosterURL = imageDir + "gear.png"
         end if
 
         obj.contentArray.Push(item)
