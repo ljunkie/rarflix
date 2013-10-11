@@ -785,14 +785,6 @@ Sub homeOnUrlEvent(msg, requestContext)
                 newServer.AccessToken = firstOf(serverElem@accessToken, GetMyPlexManager().AuthToken)
                 newServer.synced = (serverElem@synced = "1")
 
-                ' If we got local addresses, kick off simultaneous requests for all
-                ' of them. The first one back will win, so we should always use the
-                ' most efficient connection.
-                localAddresses = strTokenize(serverElem@localAddresses, ",")
-                for each localAddress in localAddresses
-                    m.CreateServerRequests(newServer, true, false, "http://" + localAddress + ":32400")
-                next
-
                 if serverElem@owned = "1" then
                     newServer.name = firstOf(serverElem@name, newServer.name)
                     newServer.owned = true
@@ -801,6 +793,15 @@ Sub homeOnUrlEvent(msg, requestContext)
                     newServer.name = firstOf(serverElem@name, newServer.name) + " (shared by " + serverElem@sourceTitle + ")"
                     newServer.owned = false
                 end if
+
+                ' If we got local addresses, kick off simultaneous requests for all
+                ' of them. The first one back will win, so we should always use the
+                ' most efficient connection.
+                localAddresses = strTokenize(serverElem@localAddresses, ",")
+                for each localAddress in localAddresses
+                    m.CreateServerRequests(newServer, true, false, "http://" + localAddress + ":32400")
+                next
+
                 m.CreateServerRequests(newServer, true, false)
 
                 Debug("Added myPlex server: " + tostr(newServer.name))
