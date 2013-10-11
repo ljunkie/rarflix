@@ -95,6 +95,16 @@ Function newTrackMetadata(container, item, detailed=true) As Object
         track.AlbumYear = container.xml@parentYear
     end if
 
+    displayArtist = RegRead("rf_music_artist", "preferences", "track")
+    if displayArtist = "track" then     
+        track.Artist = firstOf(item@originalTitle, container.xml@title1)
+    else if displayArtist = "various" then     
+        r = CreateObject("roRegex", "various|invalid", "i") ' section too - those are not special
+        if r.IsMatch(tostr(track.Artist)) then 
+            track.Artist = firstOf(item@originalTitle, container.xml@title1)
+        end if
+    end if
+
     track.EpisodeNumber = item@index
     duration = firstOf(item@duration, item@totalTime)
     if duration <> invalid then track.Duration = int(val(duration)/1000)

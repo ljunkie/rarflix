@@ -76,6 +76,7 @@ Sub InitRARFlix()
         RegWrite("rf_temp_thememusic", prev_setting, "preferences")
     end if
  
+    RegRead("rf_music_artist", "preferences","track")
     RegRead("rf_bcdynamic", "preferences","enabled")
     RegRead("rf_rottentomatoes", "preferences","enabled")
     RegRead("rf_rottentomatoes_score", "preferences","audience")
@@ -108,6 +109,7 @@ Sub InitRARFlix()
     Debug("rf_notify: " + tostr(RegRead("rf_notify", "preferences")))
     Debug("rf_notify_np_type: " + tostr(RegRead("rf_notify_np_type", "preferences")))
     Debug("rf_temp_thememusic: " + tostr(RegRead("rf_temp_thememusic", "preferences")))
+    Debug("rf_music_artist: " + tostr(RegRead("rf_music_artist", "preferences")))
     Debug("============================================================================")
 
 end sub
@@ -311,6 +313,17 @@ Function createRARFlixPrefsScreen(viewController) As Object
         default: "enabled"
     }
 
+    ' focus to the unwatched item in a postescreen -  maybe others later
+    music_artist = [
+        { title: "Track", EnumValue: "track", ShortDescriptionLine2: "Track Artist",}
+        { title: "Album", EnumValue: "album", ShortDescriptionLine2: "Album Artist",}
+        { title: "Various", EnumValue: "various", ShortDescriptionLine2: "Track Artist when Various Artists",}
+    ]
+    obj.Prefs["rf_music_artist"] = {
+        values: music_artist,
+        heading: "Display Artist when Playing a Track"
+        default: "enabled"
+    }
 
     ' user ratings only
     user_ratings = [
@@ -401,6 +414,8 @@ Function createRARFlixPrefsScreen(viewController) As Object
     obj.AddItem({title: "Unwatched Added/Released", ShortDescriptionLine2: "Item limit for unwatched Recently Added &" + chr(10) +"Recently Released rows [movies]"}, "rf_rowfilter_limit", obj.GetEnumValue("rf_rowfilter_limit"))
     obj.AddItem({title: "Star Ratings Override", ShortDescriptionLine2: "Only show or Prefer"+chr(10)+"Star Ratings that you have set"}, "rf_user_rating_only", obj.GetEnumValue("rf_user_rating_only"))
     obj.AddItem({title: "Up Button (row screens)", ShortDescriptionLine2: "What to do when the UP button is " + chr(10) + "pressed on a screen with rows"}, "rf_up_behavior", obj.GetEnumValue("rf_up_behavior"))
+    obj.AddItem({title: "Music Artists", ShortDescriptionLine2: "Artist to display for a track"}, "rf_music_artist", obj.GetEnumValue("rf_music_artist"))
+
     if isRFtest() then 
         obj.AddItem({title: "Now Playing Notifications", ShortDescriptionLine2: "Want to be notified on Now Playing?"}, "rf_notify", obj.GetEnumValue("rf_notify"))
         obj.AddItem({title: "Now Playing Notify Types", ShortDescriptionLine2: "When do you want to be notified?" + chr(10) + " On Start/Stop or Both"}, "rf_notify_np_type", obj.GetEnumValue("rf_notify_np_type"))
