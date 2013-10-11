@@ -60,7 +60,7 @@ Function createBaseMetadata(container, item, thumb=invalid) As Object
     metadata.sourceTitle = item@sourceTitle
 
     ' START: ljunkie - leafCount viewedLeafCount ( how many items, how many items watched)
-    if RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" then 
+    if (tostr(metadata.viewgroup) <> "album" and tostr(metadata.type) <> "album") and  RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" then 
         if item@leafCount <> invalid  then
            metadata.leafCount = item@leafCount
         end if
