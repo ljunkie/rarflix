@@ -115,7 +115,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
 
     ' ljunkie - reset breadcrumb for TV show if tv watched status enabled and title <> umtitle (post and grid view supported)
     if RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" and (item.type = "show" or item.viewgroup = "season" or item.viewgroup = "show" or item.viewgroup = "episode") then
-        if item.umtitle <> invalid and breadcrumbs[0] <> invalid and breadcrumbs[0] = item.title then 
+        if item.umtitle <> invalid and ( type(breadcrumbs) = "roArray" and breadcrumbs[0] <> invalid and breadcrumbs[0] = item.title) or (breadcrumbs = invalid) then 
 	    Debug("tv watched status enabled: setting breadcrumb back to original title; change from " + breadcrumbs[0] + " -to- " + item.umtitle)
             breadcrumbs[0] = item.umtitle
         else if item.parentindex <> invalid and item.viewgroup = "episode" then 
@@ -444,7 +444,17 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
         return m.CreateVideoPlayer(item, seekValue, directplay)
     else
         Debug("Not sure how to play item of type " + tostr(item.ContentType))
-        return m.CreateScreenForItem(context, contextIndex, invalid)
+ 	' ljunkie - try to fix the breadcrumbs for gridScreens
+        screen = m.screens.peek()
+	breadcrumbs = invalid
+        if tostr(type(screen.screen)) = "roGridScreen" and screen.Loader <> invalid and type(screen.Loader.GetNames) = "roFunction" and screen.selectedrow <> invalid then
+           if item.ContentType = "section" then
+               breadcrumbs = [item.server.name, firstof(item.umTitle, item.Title)]
+           else
+               breadcrumbs = [screen.Loader.GetNames()[screen.selectedrow], firstof(item.umTitle, item.Title)]
+           end if
+        end if
+        return m.CreateScreenForItem(context, contextIndex, breadcrumbs)
     end if
 End Function
 

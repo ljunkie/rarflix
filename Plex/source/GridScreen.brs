@@ -146,9 +146,6 @@ Function gridHandleMessage(msg) As Boolean
             if item <> invalid then
                 if item.ContentType = "series" then
                     breadcrumbs = [item.Title]
-                ' ljunkie - removed for now - it's not used - override in videoGetMediaDetails() when dynamic breadcrumbs are enabled
-                ' else if item.ContentType = "episode" then
-                '     breadcrumbs = [item.ShowTitle, item.episodestr, ""]
                 else if item.ContentType = "section" then
                     breadcrumbs = [item.server.name, item.Title]
                 else
