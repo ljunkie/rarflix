@@ -67,7 +67,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
         status = CreateObject("roAssociativeArray")
         status.content = []
         status.loadStatus = 0 ' 0:Not loaded, 1:Partially loaded, 2:Fully loaded
-        status.key = keys[index]
+        status.key = keyFiler(keys[index],tostr(item.type)) ' ljunkie - allow us to use the new filters for the simple keys
         status.name = loader.names[index]
         status.pendingRequests = 0
         status.countLoaded = 0
@@ -321,3 +321,19 @@ Function loaderGetPendingRequestCount() As Integer
 
     return pendingRequests
 End Function
+
+
+function keyFiler(key as string, itype = "invalid" as string) as string
+    ' this will allow us to use the New Filers in the Plex api instead of useing the simple hierarchy api calls
+    newkey = key
+
+    ' only show genres for Artists - default API call wills how artist/album genres, where album genres never have children
+    if key = "genre" and itype = "artist" then 
+        newkey = key + "?type=8"
+    end if
+ 
+    if newkey <> key then
+        Debug("---- keyOverride for key:" + key + " type:" + itype + " to " + newkey)
+    end if
+    return newkey
+end function
