@@ -3,7 +3,7 @@ Function createFULLGridScreen(item, viewController, style = "flat-movie") As Obj
 
     obj = createGridScreen(viewController, style)
     obj.Item = item
-
+    obj.isFullGrid = true
     ' depending on the row we have, we might alrady have filters in place. Lets remove the bad ones (X-Plex-Container-Start and X-Plex-Container-Size)
     re=CreateObject("roRegex", "[&\?]X-Plex-Container-Start=\d+|[&\?]X-Plex-Container-Size=\d+|now_playing", "i")
     if item.key = invalid then return invalid
@@ -18,6 +18,8 @@ Function createFULLGridScreen(item, viewController, style = "flat-movie") As Obj
         grid_size = 5
     end if    
     container.SeparateSearchItems = true   
+
+
     obj.Loader = createFULLgridPaginatedLoader(container, grid_size, grid_size, item)
     obj.Loader.Listener = obj
     ' Don't play theme music on top of grid screens on the older Roku models.
@@ -32,6 +34,7 @@ End Function
 
 
 Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, item = invalid as dynamic)
+
     loader = CreateObject("roAssociativeArray")
     initDataLoader(loader)
 
@@ -47,6 +50,17 @@ Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, ite
     keys = []
     loader.names = []
     increment=pagesize
+
+    ' should we keep adding the sub sections? I think not - btw this code was only to test
+    '    pscreen = m.viewcontroller.screens.peek().parentscreen
+    '    if pscreen <> invalid then 
+    '         subsections = pscreen.loader.contentarray
+    '         subsec_sourceurl = pscreen.loader.sourceurl
+    '         keys.Push(subsec_sourceurl)
+    '         loader.names.Push("Sub Sections")
+    '    end if
+    ' end testing
+
     for index = 0 to size.toInt() - 1 step increment
         num_to = index+increment
         if num_to > (container.xml@size).toInt() then num_to = (container.xml@size).toInt()

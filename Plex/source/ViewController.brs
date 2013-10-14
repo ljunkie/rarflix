@@ -152,6 +152,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         if RegRead("use_grid_for_series", "preferences", "") <> "" then
             screen = createGridScreenForItem(item, m, "flat-16X9")
             screenName = "Series Grid"
+            if screen.loader.focusrow <> invalid then screen.loader.focusrow = 1 ' override this so we can hide the sub sections ( flat-16x9 is 5x3 )
         else
             screen = createPosterScreen(item, m)
             screenName = "Series Poster"
@@ -187,16 +188,19 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             screen = createGridScreenForItem(item, m, "flat-square")
             screen.screen.SetDisplayMode("Photo-Fit")
             screen.screen.SetListPosterStyles("landscape")
+            if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' override this so we can hide the sub sections ( flat-square is 7x3 )
         else if tostr(item.type) = "photo" then 
             Debug("---- override photo-fit/flat-16x9 for section with content of " + tostr(item.type))
             screen = createGridScreenForItem(item, m, "flat-16X9")
             screen.screen.SetDisplayMode("Photo-Fit")
+            if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' override this so we can hide the sub sections ( flat-16x9 is 5x3 )
         else 
             screen = createGridScreenForItem(item, m, "flat-movie") ' some might fair better with flat-square? (TODO)
         end if
     else if contentType = "playlists" then
         screen = createGridScreenForItem(item, m, "flat-16X9")
         screenName = "Playlist Grid"
+        if screen.loader.focusrow <> invalid then screen.loader.focusrow = 1 ' override this so we can hide the sub sections ( flat-16x9 is 5x3 )
     else if contentType = "photo" then
         if right(item.key, 8) = "children" then
             if poster_grid = "grid" then 
@@ -218,6 +222,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if item.key = "/system/appstore" then
         screen = createGridScreenForItem(item, m, "flat-square")
         screenName = "Channel Directory"
+        screen.loader.focusrow = 1 ' lets fill the screen ( 5x3 )
     else if viewGroup = "Store:Info" then
         dialog = createPopupMenu(item)
         dialog.Show()
@@ -255,10 +260,8 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else
         ' Where do we capture channel directory?
         Debug("---- Creating a default " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
-        if poster_grid = "grid" then 
+        if poster_grid = "grid" and (tostr(viewGroup) <> "season" ) then 
             screen = createFULLGridScreen(item, m, "Invalid")
-            print  item
-            print tostr(item.type)
         else 
             screen = createPosterScreen(item, m)
         end if
@@ -275,6 +278,11 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     m.PushScreen(screen)
 
     if show then screen.Show()
+ 
+    ' set the inital focus row if we have set it ( normally due to the sub section row being added - look at the createpaginateddataloader )
+    if screen.loader <> invalid and screen.loader.focusrow <> invalid then 
+        screen.screen.SetFocusedListItem(screen.loader.focusrow,3)
+    end if
 
     return screen
 End Function
@@ -455,8 +463,14 @@ End Function
 Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
     item = context[contextIndex]
 
-    if item.ContentType = "photo" then
+    if item.ContentType = "photo" and (item.nodename = invalid or item.nodename <> "Directory") then 
+        ' ^ we cannot play a photo directory directly ^
         return m.CreatePhotoPlayer(context, contextIndex)
+    else if item.ContentType = "photo" and (item.nodename <> invalid or item.nodename = "Directory") then 
+
+         container = createPlexContainerForUrl(item.server, item.server.serverurl, item.key)
+         context = container.getmetadata()
+         return m.CreatePhotoPlayer(context, 0)
     else if item.ContentType = "audio" then
         m.AudioPlayer.Stop()
         return m.CreateScreenForItem(context, contextIndex, invalid)
@@ -464,7 +478,7 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
         directplay = RegRead("directplay", "preferences", "0").toint()
         return m.CreateVideoPlayer(item, seekValue, directplay)
     else
-        Debug("Not sure how to play item of type " + tostr(item.ContentType))
+        Debug("Not sure how to play item of type " + tostr(item.ContentType) + " " + tostr(item.type) + " " + tostr(item.nodename))
  	' ljunkie - try to fix the breadcrumbs for gridScreens
         screen = m.screens.peek()
 	breadcrumbs = invalid
@@ -622,11 +636,11 @@ Sub vcPopScreen(screen)
             newScreen = m.screens.Peek()
         else if type(newScreen.Screen) = "roMessageDialog" then 
             ' bug in the notifications dialog - when multiple come in, they are not tracked? these is just some hacky GC
-            Debug("---- Top screen is a Dialog -- that can't happen!")
+            Debug("---- Top screen is a Dialog -- that can't happen! clearing it")
             m.popscreen(newScreen)
             newScreen = m.screens.Peek()
-            print newScreen
-            print type(newScreen.Screen)
+            'print newScreen
+            'print type(newScreen.Screen)
         end if
 
         screenName = firstOf(newScreen.ScreenName, type(newScreen.Screen))

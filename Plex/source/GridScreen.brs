@@ -212,8 +212,17 @@ Function gridHandleMessage(msg) As Boolean
         else if msg.isRemoteKeyPressed() then
             if msg.GetIndex() = 13 then
                 Debug("Playing item directly from grid")
-                context = m.contentArray[m.selectedRow]
-                m.ViewController.CreatePlayerForItem(context, m.focusedIndex)
+
+                ' Playing Photos from a git - we need all items
+                if m.item <> invalid and m.item.type = "photo" and m.item.contenttype <> "section"then 
+                    obj = getAllRowsContext(m, context, m.focusedIndex) ' might extend this to others (play all)
+                else 
+                    obj = CreateObject("roAssociativeArray")
+                    obj.context = m.contentArray[m.selectedRow]
+                    obj.curindex = m.focusedIndex
+                end if
+
+                m.ViewController.CreatePlayerForItem(obj.context, obj.curindex)
             end if
         else if msg.isScreenClosed() then
             if m.recreating then

@@ -692,9 +692,11 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     dialog = createBaseDialog()
 
     ' TODO full grid screen yo
-    fromName = "invalid"
-    if type(obj.loader.getnames) = "roFunction" and obj.selectedrow <> invalid then fromName = obj.loader.getnames()[obj.selectedrow]
-    dialog.SetButton("fullGridScreen", "Grid View: " + fromName + ":AddButtonSeparator")
+    if obj.isfullgrid = invalid then 
+        fromName = "invalid"
+        if type(obj.loader.getnames) = "roFunction" and obj.selectedrow <> invalid then fromName = obj.loader.getnames()[obj.selectedrow]
+        dialog.SetButton("fullGridScreen", "Grid View: " + fromName + ":AddButtonSeparator")
+    end if
 
 
     if (obj.metadata.type = "season") then 
@@ -880,15 +882,40 @@ end sub
 
 
 sub rfDialogGridScreen(obj as Object) as Dynamic
-    dialog = createBaseDialog()
-    fromName = "invalid"
-    if type(obj.loader.getnames) = "roFunction" and obj.selectedrow <> invalid then fromName = obj.loader.getnames()[obj.selectedrow]
-    dialog.SetButton("fullGridScreen", "Grid View: " + fromName + ":AddButtonSeparator")
-    dialog.Text = ""
-    dialog.Title = "Options"
-
-    dialog.SetButton("close", "Back")
-    dialog.HandleButton = videoDialogHandleButton
-    dialog.ParentScreen = obj
-    dialog.Show()
+    if obj.isfullgrid = invalid then 
+        dialog = createBaseDialog()
+        fromName = "invalid"
+        if type(obj.loader.getnames) = "roFunction" and obj.selectedrow <> invalid then fromName = obj.loader.getnames()[obj.selectedrow]
+        dialog.SetButton("fullGridScreen", "Grid View: " + fromName + ":AddButtonSeparator")
+        dialog.Text = ""
+        dialog.Title = "Options"
+    
+        dialog.SetButton("close", "Back")
+        dialog.HandleButton = videoDialogHandleButton
+        dialog.ParentScreen = obj
+        dialog.Show()
+     else 
+         return invalid
+     end if
 end sub
+
+function getAllRowsContext(screen,context,index) as object
+    obj = CreateObject("roAssociativeArray")
+    obj.curindex = index
+
+    if type(screen.screen) = "roGridScreen" then
+        srow = screen.selectedrow
+        sitem = screen.focusedindex+1
+        rsize = screen.contentarray[0].count()
+        obj.curindex = (srow*rsize)+sitem-1 ' index is zero based (minus 1)
+        context = []
+        for each c in screen.contentarray
+            for each i in c
+                context.push(i)
+            end for
+        end for
+    end if
+    obj.context = context
+
+    return obj
+end function

@@ -86,7 +86,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
             status.name = "Search"
             status.pendingRequests = 0
             status.countLoaded = 0
-    
+
             loader.contentArray.Push(status)
         end if
     end if
@@ -94,11 +94,35 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
     ' Reorder container sections so that frequently accessed sections
     ' are displayed first. Make sure to revert the search row's dummy key
     ' to invalid so we don't try to load it.
+
     ReorderItemsByKeyPriority(loader.contentArray, RegRead("section_row_order", "preferences", ""))
+
+
+   ' LJUNKIE - Special Header Row - will show the sub sections for a section ( used for the full grid view )
+   ' TOD: toggle this? I don't think it's needed now as this row (0) is "hidden" - we focus to row (1)
+    if loader.sourceurl <> invalid and item.contenttype <> invalid and item.contenttype = "section" then 
+        Debug("---- Adding sub sections row for contenttype:" + tostr(item.contenttype))
+        subsecItems = container.GetMetadata()
+        extra = CreateObject("roAssociativeArray")
+        extra.content = subsecItems
+        extra.loadStatus = 0 ' 0:Not loaded, 1:Partially loaded, 2:Fully loaded
+        extra.key = "_subsec_"
+        extra.name = "Sub Sections"
+        extra.pendingRequests = 0
+        extra.countLoaded = 0
+        loader.contentArray.Unshift(extra)
+        keys.Unshift(extra.key)
+        loader.names.Unshift(extra.name)
+        loader.focusrow = 1 ' we want to hide this row by default
+    else 
+        Debug("---- NOT Adding sub sections row for contenttype:" + tostr(item.contenttype))
+    end if
+    ' end testing
+
     for index = 0 to loader.contentArray.Count() - 1
         status = loader.contentArray[index]
         loader.names[index] = status.name
-         if status.key = "_search_" then
+        if status.key = "_search_"  or status.key = "_subsec_" then
             status.key = invalid
         end if
     next
