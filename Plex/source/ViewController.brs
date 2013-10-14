@@ -463,34 +463,45 @@ End Function
 Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
     item = context[contextIndex]
 
-    if item.ContentType = "photo" and (item.nodename = invalid or item.nodename <> "Directory") then 
-        ' ^ we cannot play a photo directory directly ^
+    ' ljunkie - check if we are viewing a directory. We can direct play certain items ( play all sort of thing )
+    ' currently works for photos/albums. Not sure how it woud work for others yet
+    ' I.E. if video(movie/clip/episode) then we need to add more logic how to play the next item.. 
+    if item.nodename <> invalid and item.nodename = "Directory" then
+        if item.ContentType = "photo"
+            container = createPlexContainerForUrl(item.server, item.server.serverurl, item.key)
+            context = container.getmetadata()
+            return m.CreatePhotoPlayer(context, 0)
+        else if item.ContentType = "album" then
+            container = createPlexContainerForUrl(item.server, item.server.serverurl, item.key)
+            context = container.getmetadata()
+            m.AudioPlayer.Stop()
+            return m.CreateScreenForItem(context, 0, invalid)
+         end if
+    else if item.ContentType = "photo" then '  and (item.nodename = invalid or item.nodename <> "Directory") then 
         return m.CreatePhotoPlayer(context, contextIndex)
-    else if item.ContentType = "photo" and (item.nodename <> invalid or item.nodename = "Directory") then 
-
-         container = createPlexContainerForUrl(item.server, item.server.serverurl, item.key)
-         context = container.getmetadata()
-         return m.CreatePhotoPlayer(context, 0)
     else if item.ContentType = "audio" then
         m.AudioPlayer.Stop()
         return m.CreateScreenForItem(context, contextIndex, invalid)
     else if item.ContentType = "movie" OR item.ContentType = "episode" OR item.ContentType = "clip" then
         directplay = RegRead("directplay", "preferences", "0").toint()
         return m.CreateVideoPlayer(item, seekValue, directplay)
-    else
-        Debug("Not sure how to play item of type " + tostr(item.ContentType) + " " + tostr(item.type) + " " + tostr(item.nodename))
- 	' ljunkie - try to fix the breadcrumbs for gridScreens
-        screen = m.screens.peek()
-	breadcrumbs = invalid
-        if tostr(type(screen.screen)) = "roGridScreen" and screen.Loader <> invalid and type(screen.Loader.GetNames) = "roFunction" and screen.selectedrow <> invalid then
-           if item.ContentType = "section" then
-               breadcrumbs = [item.server.name, firstof(item.umTitle, item.Title)]
-           else
-               breadcrumbs = [screen.Loader.GetNames()[screen.selectedrow], firstof(item.umTitle, item.Title)]
-           end if
-        end if
-        return m.CreateScreenForItem(context, contextIndex, breadcrumbs)
     end if
+
+    ' if we can't play - then create an screen item for the context
+    Debug("Not sure how to play item of type " + tostr(item.ContentType) + " " + tostr(item.type) + " " + tostr(item.nodename))
+
+    ' ljunkie - try to fix the breadcrumbs for gridScreens
+    screen = m.screens.peek()
+    breadcrumbs = invalid
+    if tostr(type(screen.screen)) = "roGridScreen" and screen.Loader <> invalid and type(screen.Loader.GetNames) = "roFunction" and screen.selectedrow <> invalid then
+       if item.ContentType = "section" then
+           breadcrumbs = [item.server.name, firstof(item.umTitle, item.Title)]
+       else
+           breadcrumbs = [screen.Loader.GetNames()[screen.selectedrow], firstof(item.umTitle, item.Title)]
+       end if
+    end if
+
+    return m.CreateScreenForItem(context, contextIndex, breadcrumbs)
 End Function
 
 Function vcIsVideoPlaying() As Boolean
