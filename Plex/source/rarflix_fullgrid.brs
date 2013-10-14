@@ -1,4 +1,6 @@
-Function createFULLGridScreen(item, viewController, style) As Object
+Function createFULLGridScreen(item, viewController, style = "flat-movie") As Object
+    if style = "Invalid" then style = RegRead("rf_grid_style", "preferences", "flat-movie")
+
     obj = createGridScreen(viewController, style)
     obj.Item = item
 
@@ -9,6 +11,7 @@ Function createFULLGridScreen(item, viewController, style) As Object
     item.key = re.ReplaceAll(item.key, "")    
 
     container = createPlexContainerForUrl(item.server, item.sourceUrl, item.key)
+
     if style = "flat-square" then 
         grid_size = 7
     else 

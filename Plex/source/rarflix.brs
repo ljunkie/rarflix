@@ -25,7 +25,8 @@ Sub InitRARFlix()
 
      GetGlobalAA()
     'RegDelete("rf_unwatched_limit", "preferences")
-    'RegDelete("rf_user_rating_only", "preferences")
+    RegDelete("rf_grid_style", "preferences")
+    RegDelete("rf_poster_grid_style", "preferences")
 
     Debug("=======================RARFLIX SETTINGS ====================================")
 
@@ -83,6 +84,7 @@ Sub InitRARFlix()
     end if
  
     RegRead("rf_poster_grid", "preferences","grid")
+    RegRead("rf_grid_style", "preferences","flat-movie")
     RegRead("rf_music_artist", "preferences","track")
     RegRead("rf_bcdynamic", "preferences","enabled")
     RegRead("rf_rottentomatoes", "preferences","enabled")
@@ -103,6 +105,7 @@ Sub InitRARFlix()
 
 
     Debug("rf_poster_grid: " + tostr(RegRead("rf_poster_grid", "preferences")))
+    Debug("rf_grid_style: " + tostr(RegRead("rf_grid_style", "preferences")))
     Debug("rf_bcdynamic: " + tostr(RegRead("rf_bcdynamic", "preferences")))
     Debug("rf_hs_clock: " + tostr(RegRead("rf_hs_clock", "preferences")))
     Debug("rf_rottentomatoes: " + tostr(RegRead("rf_rottentomatoes", "preferences")))
@@ -308,19 +311,6 @@ Function createRARFlixPrefsScreen(viewController) As Object
     }
 
 
-    ' Prefer Grid or Poster view?
-    bc_poster_grid = [
-        { title: "Grid", EnumValue: "grid", ShortDescriptionLine2: "Prefer FULL grid when viewing items"  },
-        { title: "Poster", EnumValue: "poster", ShortDescriptionLine2: "Prefer Poster (one row) when viewing items"  },
-
-
-    ]
-    obj.Prefs["rf_poster_grid"] = {
-        values: bc_poster_grid,
-        heading: "Posters of Grid when viewing Sections",
-        default: "grid"
-    }
-
     ' TV Watched status next to ShowTITLE
     tv_watch_prefs = [
         { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Dexter (watched)" + chr(10) + "Dexter (1 of 12 watched)" },
@@ -434,7 +424,6 @@ Function createRARFlixPrefsScreen(viewController) As Object
     if isRFdev() then 
        obj.AddItem({title: "Theme"}, "rf_theme", obj.GetEnumValue("rf_theme"))
     end if
-    obj.AddItem({title: "Grids/Posters",ShortDescriptionLine2: "Posters or Grids"}, "rf_poster_grid", obj.GetEnumValue("rf_poster_grid"))
     obj.AddItem({title: "Hide Rows",ShortDescriptionLine2: "Sorry for the confusion..."}, "hide_rows_prefs")
     obj.AddItem({title: "Section Display", ShortDescriptionLine2: "a plex original, for easy access"}, "sections")
 
@@ -705,7 +694,7 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     ' TODO full grid screen yo
     fromName = "invalid"
     if type(obj.loader.getnames) = "roFunction" and obj.selectedrow <> invalid then fromName = obj.loader.getnames()[obj.selectedrow]
-    dialog.SetButton("fullGridScreen", "View All " + fromName + ":AddButtonSeparator")
+    dialog.SetButton("fullGridScreen", "Grid View: " + fromName + ":AddButtonSeparator")
 
 
     if (obj.metadata.type = "season") then 
@@ -894,7 +883,7 @@ sub rfDialogGridScreen(obj as Object) as Dynamic
     dialog = createBaseDialog()
     fromName = "invalid"
     if type(obj.loader.getnames) = "roFunction" and obj.selectedrow <> invalid then fromName = obj.loader.getnames()[obj.selectedrow]
-    dialog.SetButton("fullGridScreen", "View All " + fromName + ":AddButtonSeparator")
+    dialog.SetButton("fullGridScreen", "Grid View: " + fromName + ":AddButtonSeparator")
     dialog.Text = ""
     dialog.Title = "Options"
 

@@ -1415,6 +1415,33 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
         default: ""
     }
 
+
+    ' Prefer Grid or Poster view for most?
+    rf_poster_grid = [
+        { title: "Grid", EnumValue: "grid", ShortDescriptionLine2: "Prefer FULL grid when viewing items"  },
+        { title: "Poster", EnumValue: "poster", ShortDescriptionLine2: "Prefer Poster (one row) when viewing items"  },
+
+
+    ]
+    obj.Prefs["rf_poster_grid"] = {
+        values: rf_poster_grid,
+        heading: "Which screen type should be used for Movies & Other content?",
+        default: "grid"
+    }
+
+    ' Prefer Grid or Poster view for most?
+    rf_grid_style = [
+        { title: "Normal", EnumValue: "flat-movie", ShortDescriptionLine2: "5x2"  },
+        { title: "Small", EnumValue: "flat-square", ShortDescriptionLine2: "7x3" },
+
+    ]
+    obj.Prefs["rf_grid_style"] = {
+        values: rf_grid_style,
+        heading: "Size of the Grid",
+        default: "flat-movie"
+    }
+
+
     ' Grid rows that can be reordered
     values = [
         { title: "All Items", key: "all" },
@@ -1452,6 +1479,8 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
     obj.Screen.SetHeader("Change the appearance of your sections")
 
     obj.AddItem({title: "TV Series"}, "use_grid_for_series", obj.GetEnumValue("use_grid_for_series"))
+    obj.AddItem({title: "Movie & Others", ShortDescriptionLine2: "Posters or Grid"}, "rf_poster_grid", obj.GetEnumValue("rf_poster_grid"))
+    obj.AddItem({title: "Grid Size", ShortDescriptionLine2: "Size of Grid"}, "rf_grid_style", obj.GetEnumValue("rf_grid_style"))
     obj.AddItem({title: "Reorder Rows"}, "section_row_order")
     obj.AddItem({title: "Close"}, "close")
 
@@ -1468,7 +1497,7 @@ Function prefsSectionDisplayHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "use_grid_for_series" then
+            if command = "use_grid_for_series" or command = "rf_poster_grid" or command = "rf_grid_style" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "section_row_order" then
                 m.HandleReorderPreference(command, msg.GetIndex())

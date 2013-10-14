@@ -238,13 +238,18 @@ Sub loaderOnUrlEvent(msg, requestContext)
     ' ljunkie - hack to limit the unwatched rows ( we can remove this if Plex ever gives us Unwatched Recently Added/Released Directories )
     ' INFO: Normally Plex will continue to load data when the "loaded content size" < "XML MediaContainer totalSize" ( status.countLoaded < totalSize )
     ' Since we are specifying the Container-Size - we will never be able to load the totalSize; reset the totalSize to "MediaContainer Size"
-    '    r = CreateObject("roRegex", "all\?.*X-Plex-Container-Size\=", "i")
-    ' changed to allow us to use X-Plex-Container-Size= for any key.. not just all (2013-10-13) -- fullGridScreen!
-    isLimited = CreateObject("roRegex", "X-Plex-Container-Size\=", "i")
-    if isLimited.IsMatch(container.sourceurl) then
+    '  old:  r = CreateObject("roRegex", "all\?.*X-Plex-Container-Size\=", "i")
+    ' changed to allow us to use X-Plex-Container-Size= for any query - we can thing stop when request size is loaded (2013-10-13) -- fullGridScreen!
+    reSize = CreateObject("roRegex", "X-Plex-Container-Size\=", "i")
+    reStart = CreateObject("roRegex", "X-Plex-Container-Start\=", "i")
+    isLimited = false
+    isReqSize = false
+    if reSize.IsMatch(container.sourceurl) then isReqSize = true
+    if reSize.IsMatch(container.sourceurl) then
+        isLimited = true
         totalSize = container.Count()
         Debug("----------- " + container.sourceurl)
-        Debug("----------- RF force container (stop loading) after X-Plex-Container-Size=" + tostr(totalSize))
+        Debug("----------- RF isLimited (stop loading) after X-Plex-Container-Size=" + tostr(totalSize))
     end if
     ' end hack
 
@@ -254,9 +259,9 @@ Sub loaderOnUrlEvent(msg, requestContext)
         countLoaded = status.content.Count()
         status.countLoaded = countLoaded
     else
-        if isLimited.IsMatch(container.sourceurl) then
-            startItem=0 ' if we specified the container size as a GET, then we want to always start at zero. ' hack for FULL grid screen
-            Debug("----------- RF force container size -- start at ITEM 0")
+        if isReqSize then
+            startItem=0 ' we have specified the container start, so the first item must be zero
+            Debug("----------- RF isReqSize, set startItem=0")
         else 
             startItem = firstOf(response.xml@offset, msg.GetResponseHeaders()["X-Plex-Container-Start"], "0").toInt()
         end if

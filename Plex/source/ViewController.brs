@@ -144,7 +144,6 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
 
     screenName = invalid
     poster_grid = RegRead("rf_poster_grid", "preferences", "grid")
-    poster_grid_style = RegRead("rf_poster_grid_style", "preferences", "flat-movie")
 
     if contentType = "movie" OR contentType = "episode" OR contentType = "clip" then
         screen = createVideoSpringboardScreen(context, contextIndex, m)
@@ -159,20 +158,15 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         end if
     else if contentType = "artist" then
         if poster_grid = "grid" then 
-            screen = createFULLGridScreen(item, m, poster_grid_style) 
+            screen = createFULLGridScreen(item, m, "Invalid")
         else 
             screen = createPosterScreen(item, m)
         end if
         screenName = "Artist Poster"
     else if contentType = "album" then
-        ' grid looks horrible in this view.
-        'if poster_grid = "grid" then 
-        '    screen = createFULLGridScreen(item, m, poster_grid_style) 
-        'else 
-            screen = createPosterScreen(item, m)
-            ' TODO: What style looks best here, episodic?
-            screen.SetListStyle("flat-episodic", "zoom-to-fill")
-        'end if
+        ' grid looks horrible in this view. - do not enable FULL grid
+        screen = createPosterScreen(item, m)
+        screen.SetListStyle("flat-episodic", "zoom-to-fill")
         screenName = "Album Poster"
     else if item.key = "nowplaying" then
         m.AudioPlayer.ContextScreenID = m.nextScreenId
@@ -206,7 +200,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if contentType = "photo" then
         if right(item.key, 8) = "children" then
             if poster_grid = "grid" then 
-                screen = createFULLGridScreen(item, m, poster_grid_style) 
+                screen = createFULLGridScreen(item, m, "Invalid")
             else 
                 screen = createPosterScreen(item, m)
             end if
@@ -230,7 +224,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         return invalid
     else if viewGroup = "secondary" then
         if poster_grid = "grid" then 
-            screen = createFULLGridScreen(item, m, poster_grid_style) 
+            screen = createFULLGridScreen(item, m, "Invalid")
         else 
             screen = createPosterScreen(item, m)
         end if
@@ -262,7 +256,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         ' Where do we capture channel directory?
         Debug("---- Creating a default " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
         if poster_grid = "grid" then 
-            screen = createFULLGridScreen(item, m, poster_grid_style) 
+            screen = createFULLGridScreen(item, m, "Invalid")
             print  item
             print tostr(item.type)
         else 
