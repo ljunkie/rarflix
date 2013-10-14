@@ -685,7 +685,9 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     dialog = createBaseDialog()
 
     ' TODO full grid screen yo
-    dialog.SetButton("fullGridScreen", "Grid Screen:AddButtonSeparator")
+    fromName = "invalid"
+    if type(obj.loader.getnames) = "roFunction" and obj.selectedrow <> invalid then fromName = obj.loader.getnames()[obj.selectedrow]
+    dialog.SetButton("fullGridScreen", "View All " + fromName + ":AddButtonSeparator")
 
 
     if (obj.metadata.type = "season") then 
@@ -871,7 +873,9 @@ end sub
 
 sub rfDialogGridScreen(obj as Object) as Dynamic
     dialog = createBaseDialog()
-    dialog.SetButton("fullGridScreen", "Grid Screen:AddButtonSeparator")
+    fromName = "invalid"
+    if type(obj.loader.getnames) = "roFunction" and obj.selectedrow <> invalid then fromName = obj.loader.getnames()[obj.selectedrow]
+    dialog.SetButton("fullGridScreen", "View All " + fromName + ":AddButtonSeparator")
     dialog.Text = ""
     dialog.Title = "Options"
 

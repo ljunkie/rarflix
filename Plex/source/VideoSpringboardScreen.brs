@@ -346,18 +346,32 @@ Function videoDialogHandleButton(command, data) As Boolean
 
 	    fscreen = m.viewcontroller.screens[0]
             itype = "Full Grid"
+	    ' Get the Section we are in for the breadcrums - probably an easier way than this?
 	    if type(fscreen) = "roAssociativeArray" and type(fscreen.contentarray) = "roArray" and fscreen.selectedrow <> invalid and fscreen.focusedindex <> invalid then 
                 itype = fscreen.contentarray[fscreen.selectedrow][fscreen.focusedindex].title 
             end if           
 
-            breadcrumbs = [itype,screen.loader.Getnames()[screen.selectedrow]]
-
             dummyItem = CreateObject("roAssociativeArray")
-            dummyItem.server = screen.loader.server
-            dummyItem.sourceurl = screen.loader.sourceurl
-            dummyItem.key = screen.loader.contentarray[screen.selectedrow].key
+            
+            ' home screen is special...
+            if m.parentscreen.screenid < 0 then 
+                for each r in screen.loader.rowindexes
+                    if screen.loader.rowindexes[r] = screen.selectedrow then
+                        dummyItem  = m.parentscreen.contentarray[m.parentscreen.selectedrow][m.parentscreen.focusedindex]                        
+                        dummyItem.key = r
+                        itype = "All Sections" 
+                        exit for
+                    end if
+                end for  
+            else
+                dummyItem.server = screen.loader.server
+                dummyItem.sourceurl = screen.loader.sourceurl
+                dummyItem.key = screen.loader.contentarray[screen.selectedrow].key
+            end if
 
             screenName = "Section: Full Grid"
+            breadcrumbs = [itype,screen.loader.Getnames()[screen.selectedrow]]
+
             screen = createFULLGridScreen(dummyItem, m.viewcontroller, "flat-movie") ' some might fair better with flat-square? (TODO)
 	    if screen <> invalid then 
                 screen.ScreenName = screenName
