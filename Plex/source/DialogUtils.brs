@@ -68,6 +68,7 @@ Sub dialogRefresh()
         m.Buttons.Push({ok: "Ok"})
     end if
 
+
     buttonCount = 0
     m.ButtonCommands = []
     for each button in m.Buttons

@@ -605,7 +605,8 @@ End Function
 sub rfVideoMoreButton(obj as Object) as Dynamic
     dialog = createBaseDialog()
     dialog.Title = firstof(obj.metadata.showtitle, obj.metadata.umtitle, obj.metadata.title)
-    dialog.Text = truncateString(obj.metadata.shortdescriptionline2,200)
+    'dialog.Text = truncateString(obj.metadata.shortdescriptionline2,80)
+    dialog.Text = "" ' too many buttons for text now
     dialog.Item = obj.metadata
 
     'if obj.metadata.grandparentKey = invalid then
@@ -720,7 +721,8 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
         dialog.Text = obj.metadata.shortdescriptionline2
      end if
 
-    dialog.Text = truncateString(dialog.Text,200)
+    'dialog.Text = truncateString(dialog.Text,80)
+    dialog.Text = "" ' too many buttons for text now
 
     dialog.Item = obj.metadata
 
