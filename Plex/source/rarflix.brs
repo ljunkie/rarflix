@@ -82,6 +82,7 @@ Sub InitRARFlix()
         RegWrite("rf_temp_thememusic", prev_setting, "preferences")
     end if
  
+    RegRead("rf_poster_grid", "preferences","grid")
     RegRead("rf_music_artist", "preferences","track")
     RegRead("rf_bcdynamic", "preferences","enabled")
     RegRead("rf_rottentomatoes", "preferences","enabled")
@@ -101,6 +102,7 @@ Sub InitRARFlix()
     m.youtube = InitYouTube()
 
 
+    Debug("rf_poster_grid: " + tostr(RegRead("rf_poster_grid", "preferences")))
     Debug("rf_bcdynamic: " + tostr(RegRead("rf_bcdynamic", "preferences")))
     Debug("rf_hs_clock: " + tostr(RegRead("rf_hs_clock", "preferences")))
     Debug("rf_rottentomatoes: " + tostr(RegRead("rf_rottentomatoes", "preferences")))
@@ -305,6 +307,20 @@ Function createRARFlixPrefsScreen(viewController) As Object
         default: "enabled"
     }
 
+
+    ' Prefer Grid or Poster view?
+    bc_poster_grid = [
+        { title: "Grid", EnumValue: "grid", ShortDescriptionLine2: "Prefer FULL grid when viewing items"  },
+        { title: "Poster", EnumValue: "poster", ShortDescriptionLine2: "Prefer Poster (one row) when viewing items"  },
+
+
+    ]
+    obj.Prefs["rf_poster_grid"] = {
+        values: bc_poster_grid,
+        heading: "Posters of Grid when viewing Sections",
+        default: "grid"
+    }
+
     ' TV Watched status next to ShowTITLE
     tv_watch_prefs = [
         { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Dexter (watched)" + chr(10) + "Dexter (1 of 12 watched)" },
@@ -418,6 +434,7 @@ Function createRARFlixPrefsScreen(viewController) As Object
     if isRFdev() then 
        obj.AddItem({title: "Theme"}, "rf_theme", obj.GetEnumValue("rf_theme"))
     end if
+    obj.AddItem({title: "Grids/Posters",ShortDescriptionLine2: "Posters or Grids"}, "rf_poster_grid", obj.GetEnumValue("rf_poster_grid"))
     obj.AddItem({title: "Hide Rows",ShortDescriptionLine2: "Sorry for the confusion..."}, "hide_rows_prefs")
     obj.AddItem({title: "Section Display", ShortDescriptionLine2: "a plex original, for easy access"}, "sections")
 

@@ -4,17 +4,18 @@ Function createFULLGridScreen(item, viewController, style) As Object
 
     ' depending on the row we have, we might alrady have filters in place. Lets remove the bad ones (X-Plex-Container-Start and X-Plex-Container-Size)
     re=CreateObject("roRegex", "[&\?]X-Plex-Container-Start=\d+|[&\?]X-Plex-Container-Size=\d+|now_playing", "i")
-    if item.key = invalid then
-     stop 
-    return invalid
-  
-    end if
+    if item.key = invalid then return invalid
+
     item.key = re.ReplaceAll(item.key, "")    
 
     container = createPlexContainerForUrl(item.server, item.sourceUrl, item.key)
-    
+    if style = "flat-square" then 
+        grid_size = 7
+    else 
+        grid_size = 5
+    end if    
     container.SeparateSearchItems = true   
-    obj.Loader = createFULLgridPaginatedLoader(container, 5, 5, item)
+    obj.Loader = createFULLgridPaginatedLoader(container, grid_size, grid_size, item)
     obj.Loader.Listener = obj
     ' Don't play theme music on top of grid screens on the older Roku models.
     ' It's not worth the DestroyAndRecreate headache.
@@ -42,9 +43,11 @@ Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, ite
     size = container.xml@size
     keys = []
     loader.names = []
-    increment=5
+    increment=pagesize
     for index = 0 to size.toInt() - 1 step increment
-        name = tostr(index+1) + "-" + tostr(index+1+increment) + " of " + container.xml@size
+        num_to = index+1+increment
+        if num_to > (container.xml@size).toInt() then num_to = (container.xml@size).toInt()
+        name = tostr(index+1) + "-" + tostr(num_to) + " of " + container.xml@size
         f = "?"
 	if instr(1, loader.sourceurl, "?") > 0 then f = "&"
         keys.Push(loader.sourceurl + f + "X-Plex-Container-Start="+tostr(index)+"&X-Plex-Container-Size="+tostr(increment))

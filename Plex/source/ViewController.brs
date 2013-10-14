@@ -143,6 +143,8 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     ' be forced by setting screen.FilterMode = true.
 
     screenName = invalid
+    poster_grid = RegRead("rf_poster_grid", "preferences", "grid")
+    poster_grid_style = RegRead("rf_poster_grid_style", "preferences", "flat-movie")
 
     if contentType = "movie" OR contentType = "episode" OR contentType = "clip" then
         screen = createVideoSpringboardScreen(context, contextIndex, m)
@@ -156,13 +158,21 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             screenName = "Series Poster"
         end if
     else if contentType = "artist" then
-        ' TODO: Poster, poster with filters, or grid?
-        screen = createPosterScreen(item, m)
+        if poster_grid = "grid" then 
+            screen = createFULLGridScreen(item, m, poster_grid_style) 
+        else 
+            screen = createPosterScreen(item, m)
+        end if
         screenName = "Artist Poster"
     else if contentType = "album" then
-        screen = createPosterScreen(item, m)
-        ' TODO: What style looks best here, episodic?
-        screen.SetListStyle("flat-episodic", "zoom-to-fill")
+        ' grid looks horrible in this view.
+        'if poster_grid = "grid" then 
+        '    screen = createFULLGridScreen(item, m, poster_grid_style) 
+        'else 
+            screen = createPosterScreen(item, m)
+            ' TODO: What style looks best here, episodic?
+            screen.SetListStyle("flat-episodic", "zoom-to-fill")
+        'end if
         screenName = "Album Poster"
     else if item.key = "nowplaying" then
         m.AudioPlayer.ContextScreenID = m.nextScreenId
@@ -195,7 +205,11 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screenName = "Playlist Grid"
     else if contentType = "photo" then
         if right(item.key, 8) = "children" then
-            screen = createPosterScreen(item, m)
+            if poster_grid = "grid" then 
+                screen = createFULLGridScreen(item, m, poster_grid_style) 
+            else 
+                screen = createPosterScreen(item, m)
+            end if
             screenName = "Photo Poster"
         else
             screen = createPhotoSpringboardScreen(context, contextIndex, m)
@@ -215,7 +229,11 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         dialog.Show()
         return invalid
     else if viewGroup = "secondary" then
-        screen = createPosterScreen(item, m)
+        if poster_grid = "grid" then 
+            screen = createFULLGridScreen(item, m, poster_grid_style) 
+        else 
+            screen = createPosterScreen(item, m)
+        end if
     else if item.key = "globalprefs" then
         screen = createPreferencesScreen(m)
         screenName = "Preferences Main"
@@ -240,7 +258,11 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else
         ' Where do we capture channel directory?
         Debug("Creating a default view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
-        screen = createPosterScreen(item, m)
+        if poster_grid = "grid" then 
+            screen = createFULLGridScreen(item, m, poster_grid_style) 
+        else 
+            screen = createPosterScreen(item, m)
+        end if
     end if
 
     if screenName = invalid then
