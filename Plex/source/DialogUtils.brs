@@ -79,7 +79,12 @@ Sub dialogRefresh()
             if m.Item.origStarRating = invalid then m.Item.origStarRating = 0
             m.Screen.AddRatingButton(buttonCount, m.Item.UserRating, m.Item.origStarRating, "")
         else
+            addSep = false
+            re = CreateObject("roRegex", ":AddButtonSeparator", "i") ' if button text has :AddButtonSeparator - add a seperator 
+            if re.IsMatch(button[cmd]) then addSep = true
+            button[cmd] = re.ReplaceAll(button[cmd], "")    
             m.Screen.AddButton(buttonCount, button[cmd])
+            if addSep then m.Screen.AddButtonSeparator()                
         end if
         buttonCount = buttonCount + 1
     next

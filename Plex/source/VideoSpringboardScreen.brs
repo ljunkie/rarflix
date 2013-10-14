@@ -340,6 +340,34 @@ Function videoDialogHandleButton(command, data) As Boolean
         obj.metadata.server.delete(obj.metadata.key)
         obj.closeOnActivate = true
         closeDialog = true
+    else if command = "fullGridScreen" then
+        screen = m.viewcontroller.screens.peek().parentscreen
+        if screen <> invalid then
+
+	    fscreen = m.viewcontroller.screens[0]
+            itype = "Full Grid"
+	    if type(fscreen) = "roAssociativeArray" and type(fscreen.contentarray) = "roArray" and fscreen.selectedrow <> invalid and fscreen.focusedindex <> invalid then 
+                itype = fscreen.contentarray[fscreen.selectedrow][fscreen.focusedindex].title 
+            end if           
+
+            breadcrumbs = [itype,screen.loader.Getnames()[screen.selectedrow]]
+
+            dummyItem = CreateObject("roAssociativeArray")
+            dummyItem.server = screen.loader.server
+            dummyItem.sourceurl = screen.loader.sourceurl
+            dummyItem.key = screen.loader.contentarray[screen.selectedrow].key
+
+            screenName = "Section: Full Grid"
+            screen = createFULLGridScreen(dummyItem, m.viewcontroller, "flat-movie") ' some might fair better with flat-square? (TODO)
+	    if screen <> invalid then 
+                screen.ScreenName = screenName
+                m.viewcontroller.AddBreadcrumbs(screen, breadcrumbs)
+                m.viewcontroller.UpdateScreenProperties(screen)
+                m.viewcontroller.PushScreen(screen)
+                screen.Show()
+            end if
+            closeDialog = true
+        end if
     else if command = "showFromEpisode" then
         breadcrumbs = ["All Seasons",obj.metadata.showtitle]
         dummyItem = CreateObject("roAssociativeArray")

@@ -188,6 +188,7 @@ Function gridHandleMessage(msg) As Boolean
                 itype = context[m.focusedIndex].contenttype
                 if itype = invalid then itype = context[m.focusedIndex].type
                 ctype_o = context[m.focusedIndex].contenttype
+                vtype_o = context[m.focusedIndex].viewtype
                 itype_o = context[m.focusedIndex].type
 
                 audioplayer = GetViewController().AudioPlayer
@@ -198,6 +199,10 @@ Function gridHandleMessage(msg) As Boolean
                     obj.metadata = context[m.focusedIndex]
                     obj.Item = context[m.focusedIndex]
                     rfVideoMoreButtonFromGrid(obj)
+                else if tostr(ctype_o) <> "invalid" and m.screenid > 0 then
+                    ' show the option to see the FULL grid screen. We might want this just to do directly to it, but what if we add more options later.
+                    ' might as well get people used to this.
+                    rfDialogGridScreen(m)
                 else if audioplayer.ContextScreenID = invalid then  ' only create this extra screen if audioPlayer doesn't have context
                     Debug("Info Button (*) not handled for content type: " +  tostr(itype_o) + ":" + tostr(ctype_o))
                     rfDefRemoteOptionButton(m)

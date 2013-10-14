@@ -591,7 +591,6 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
     dialog.Text = truncateString(obj.metadata.shortdescriptionline2,200)
     dialog.Item = obj.metadata
 
-
     'if obj.metadata.grandparentKey = invalid then
     if obj.metadata.ContentType = "movie"  then
         dialog.SetButton("options", "Playback options")
@@ -679,8 +678,16 @@ end sub
 
 ' this should be merged with rfVideoMoreButton ( just need to add in the caveats)
 sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
+
+
+
     ' this should probably just be combined into rfVideoMoreButton  ( there are some caveats though and maybe more to come.. so until this has been finalized )
     dialog = createBaseDialog()
+
+    ' TODO full grid screen yo
+    dialog.SetButton("fullGridScreen", "Grid Screen:AddButtonSeparator")
+
+
     if (obj.metadata.type = "season") then 
         dialog.Title = firstof(obj.metadata.title, obj.metadata.umtitle, obj.metadata.title)
         dialog.Text = ""
@@ -847,6 +854,7 @@ end sub
 
 sub rfDefRemoteOptionButton(m) 
     'for now we will show the preferences screen :)
+
     new = CreateObject("roAssociativeArray")
     new.sourceUrl = ""
     'new.ContentType = "prefs"
@@ -858,4 +866,17 @@ sub rfDefRemoteOptionButton(m)
     breadcrumbs = ["Miscellaneous","Search"]
     m.ViewController.CreateScreenForItem(new, invalid, breadcrumbs)
     Debug("Showing default serach screen - remote option button pressed ")
+end sub
+
+
+sub rfDialogGridScreen(obj as Object) as Dynamic
+    dialog = createBaseDialog()
+    dialog.SetButton("fullGridScreen", "Grid Screen:AddButtonSeparator")
+    dialog.Text = ""
+    dialog.Title = "Options"
+
+    dialog.SetButton("close", "Back")
+    dialog.HandleButton = videoDialogHandleButton
+    dialog.ParentScreen = obj
+    dialog.Show()
 end sub
