@@ -45,7 +45,7 @@ Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, ite
     loader.names = []
     increment=pagesize
     for index = 0 to size.toInt() - 1 step increment
-        num_to = index+1+increment
+        num_to = index+increment
         if num_to > (container.xml@size).toInt() then num_to = (container.xml@size).toInt()
         name = tostr(index+1) + "-" + tostr(num_to) + " of " + container.xml@size
         f = "?"

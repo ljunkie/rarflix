@@ -255,11 +255,16 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if item.settings = "1"
         screen = createSettingsScreen(item, m)
         screenName = "Settings"
+    else if tostr(item.type) = "season" or tostr(item.type) = "channel" then 
+        ' others we want to fost into a poster screen
+        screen = createPosterScreen(item, m)
     else
         ' Where do we capture channel directory?
-        Debug("Creating a default view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
+        Debug("---- Creating a default " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
         if poster_grid = "grid" then 
             screen = createFULLGridScreen(item, m, poster_grid_style) 
+            print  item
+            print tostr(item.type)
         else 
             screen = createPosterScreen(item, m)
         end if
