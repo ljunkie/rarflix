@@ -373,8 +373,7 @@ Function videoDialogHandleButton(command, data) As Boolean
             breadcrumbs = [itype,screen.loader.Getnames()[screen.selectedrow]]
 
             screen = createFULLGridScreen(dummyItem, m.viewcontroller, "Invalid") ' some might fair better with flat-square? (TODO)
-
-	    if screen <> invalid then 
+            if screen <> invalid then 
                 screen.ScreenName = screenName
                 m.viewcontroller.AddBreadcrumbs(screen, breadcrumbs)
                 m.viewcontroller.UpdateScreenProperties(screen)
