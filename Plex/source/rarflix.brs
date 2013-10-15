@@ -692,7 +692,7 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     dialog = createBaseDialog()
 
     ' TODO full grid screen yo
-    if obj.isfullgrid = invalid then 
+    if obj.isfullgrid = invalid and type(obj.screen) = "roGridScreen" then 
         fromName = "invalid"
         if type(obj.loader.getnames) = "roFunction" and obj.selectedrow <> invalid then fromName = obj.loader.getnames()[obj.selectedrow]
         dialog.SetButton("fullGridScreen", "Grid View: " + fromName + ":AddButtonSeparator")
@@ -885,11 +885,12 @@ sub rfDialogGridScreen(obj as Object) as Dynamic
 
     if tostr(obj.item.contenttype) = "section" 
         rfDefRemoteOptionButton(obj) 
-    else if obj.isfullgrid = invalid then 
+    ' for now the only option is grid view so we will verify we are in a roGridScreen. It we add more buttons, the type check below is for fullGridScreen
+    else if obj.isfullgrid = invalid and type(obj.screen) = "roGridScreen" then 
         dialog = createBaseDialog()
         fromName = "invalid"
         if type(obj.loader.getnames) = "roFunction" and obj.selectedrow <> invalid then fromName = obj.loader.getnames()[obj.selectedrow]
-        dialog.SetButton("fullGridScreen", "Grid View: " + fromName + ":AddButtonSeparator")
+        dialog.SetButton("fullGridScreen", "Grid View: " + fromName + ":AddButtonSeparator") 'and type(obj.screen) = "roGridScreen" 
         dialog.Text = ""
         dialog.Title = "Options"
     

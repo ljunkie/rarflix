@@ -108,15 +108,17 @@ End Function
 
 
 function fromFullGrid(vc) as boolean
-    Debug("---- checking if we cam from a full grid view")
+    Debug("---- checking if we came from a full grid view")
     if type(vc.screens) = "roArray" then
         screens = vc.screens
+        minus = 1
     else if type(vc.viewcontroller) = "roAssociativeArray" then
         screens = vc.viewcontroller.screens
+        minus = 2
     end if
 
     if type(screens) = "roArray" and screens.count() > 0 then
-        prev_screen = screens[screens.count()-2]
+        prev_screen = screens[screens.count()-minus]
         if prev_screen.isfullgrid <> invalid then
             Debug("---- previous screen was a FULL grid")
             return true
