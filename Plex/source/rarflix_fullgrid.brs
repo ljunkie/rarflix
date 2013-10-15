@@ -105,3 +105,23 @@ Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, ite
 
     return loader
 End Function
+
+
+function fromFullGrid(vc) as boolean
+    Debug("---- checking if we cam from a full grid view")
+    if type(vc.screens) = "roArray" then
+        screens = vc.screens
+    else if type(vc.viewcontroller) = "roAssociativeArray" then
+        screens = vc.viewcontroller.screens
+    end if
+
+    if type(screens) = "roArray" and screens.count() > 0 then
+        prev_screen = screens[screens.count()-2]
+        if prev_screen.isfullgrid <> invalid then
+            Debug("---- previous screen was a FULL grid")
+            return true
+        end if
+    end if
+
+    return false
+end function

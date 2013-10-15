@@ -124,7 +124,6 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             breadcrumbs[1] = UcaseFirst(firstof(item.umtitle,item.contenttype,item.type,item.viewgroup))
         end if
 
-        prev_screen = m.screens[m.screens.count()-2]
         re = CreateObject("roRegex", "/library/sections/\d+/([^?\/]+)", "")
         if (re.isMatch(item.sourceurl)) then
             fkey = re.Match(item.sourceurl)[1]
@@ -134,7 +133,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
                     exit for
                 end if
             end for
-            if prev_screen.isfullgrid = invalid then
+            if fromFullGrid(m) then
                  print item
                  breadcrumbs[1] = UcaseFirst(firstof(item.umtitle,item.contenttype,item.type,item.viewgroup))
                  breadcrumbs[0] = UcaseFirst(fkey)
@@ -177,6 +176,8 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     screenName = invalid
     poster_grid = RegRead("rf_poster_grid", "preferences", "grid")
 
+    print item
+
     if contentType = "movie" OR contentType = "episode" OR contentType = "clip" then
         screen = createVideoSpringboardScreen(context, contextIndex, m)
         screenName = "Preplay " + contentType
@@ -188,6 +189,10 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         else
             screen = createPosterScreen(item, m)
             screenName = "Series Poster"
+            if fromFullGrid(m) and (item.umtitle <> invalid or item.title <> invalid) then 
+                breadcrumbs[0] = "All Seasons"
+                breadcrumbs[1] = firstof(item.umtitle,item.title)
+            end if
         end if
     else if contentType = "artist" then
         if poster_grid = "grid" then 
