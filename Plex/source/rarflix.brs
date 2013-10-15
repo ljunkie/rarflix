@@ -924,3 +924,29 @@ function getAllRowsContext(screen,context,index) as object
 
     return obj
 end function
+
+Function ShallowCopy(array As Dynamic, depth = 0 As Integer) As Dynamic
+    If Type(array) = "roArray" Then
+        copy = []
+        For Each item In array
+            childCopy = ShallowCopy(item, depth)
+            If childCopy <> invalid Then
+                copy.Push(childCopy)
+            End If
+        Next
+        Return copy
+    Else If Type(array) = "roAssociativeArray" Then
+        copy = {}
+        For Each key In array
+            If depth > 0 Then
+                copy[key] = ShallowCopy(array[key], depth - 1)
+            Else
+                copy[key] = array[key]
+            End If
+        Next
+        Return copy
+    Else
+        Return array
+    End If
+    Return invalid
+End Function

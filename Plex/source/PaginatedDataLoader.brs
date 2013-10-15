@@ -17,6 +17,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
 
     keys = container.GetKeys()
 
+    subsecItems = container.GetMetadata() ' grab subsections for FULL grid. We might want to hide some (same index as container.GetKeys())
     ' Hide Rows - ljunkie ( remove key and loader.names )
     if type(item) = "roAssociativeArray" and item.contenttype = "section" then 
         itype = item.type
@@ -34,6 +35,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
                     Debug("---- ROW HIDDEN: " + keys[index] + " - hide specified via reg " + rf_hide_key )
                     keys.Delete(index)
                     loader.names.Delete(index)
+                    subsecItems.Delete(index)
                     index = index - 1
                 end if
             end if
@@ -44,13 +46,16 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
     ' ljunkie - CUSTOM new rows (movies only for now) -- allow new rows based on allows PLEX filters
     if type(item) = "roAssociativeArray" and item.contenttype = "section" and item.type = "movie" then 
         size_limit = RegRead("rf_rowfilter_limit", "preferences","200") 'gobal size limit Toggle for filter rows
+        subsec_extras = []
 
         ' unwatched recently released
         new_key = "all?type=1&unwatched=1&sort=originallyAvailableAt:desc"
         if RegRead("rf_hide_"+new_key, "preferences", "show") = "show" then 
             new_key = new_key + "&X-Plex-Container-Start=0&X-Plex-Container-Size=" + size_limit
             keys.Push(new_key)
-            loader.names.Push("Recently Released (unwatched)")
+            new_name = "Recently Released (unwatched)"
+            loader.names.Push(new_name)
+            subsec_extras.Push({ key: new_key, name: new_name, key_copy: "all" })
         end if
 
         ' unwatched recently Added
@@ -58,8 +63,30 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
         if RegRead("rf_hide_"+new_key, "preferences", "show") = "show" then 
             new_key = new_key + "&X-Plex-Container-Start=0&X-Plex-Container-Size=" + size_limit
             keys.Push(new_key)
-            loader.names.Push("Recently Added (unwatched)")
+            new_name = "Recently Added (unwatched)"
+            loader.names.Push(new_name)
+            subsec_extras.Push({ key: new_key, name: new_name, key_copy: "all" })
         end if
+
+        ' we will have to add the custom rows to the subsections too ( quick filter row (0) for the full grid )
+        if subsec_extras.count() > 0 and type(subsecItems) = "roArray" and subsecItems.count() > 0 then
+            for each sec in subsec_extras
+                for index = 0 to subsecItems.Count() - 1
+                    if subsecItems[index].key = sec.key_copy  then 
+                        template = subsecItems[index]
+                        exit for
+                    end if
+                end for
+                copy = ShallowCopy(template,2) ' really? brs doesn't have a clone/copy
+                ' now set the uniq characters
+                copy.key = sec.key
+                copy.name = sec.name
+                copy.umtitle = sec.name
+                copy.title = sec.name
+                subsecItems.Push(copy)
+            end for
+        end if
+
     end if
     ' END custom rows
 
@@ -94,7 +121,6 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
     ' Reorder container sections so that frequently accessed sections
     ' are displayed first. Make sure to revert the search row's dummy key
     ' to invalid so we don't try to load it.
-
     ReorderItemsByKeyPriority(loader.contentArray, RegRead("section_row_order", "preferences", ""))
 
 
@@ -102,17 +128,18 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
    ' TOD: toggle this? I don't think it's needed now as this row (0) is "hidden" - we focus to row (1)
     if loader.sourceurl <> invalid and item.contenttype <> invalid and item.contenttype = "section" then 
         Debug("---- Adding sub sections row for contenttype:" + tostr(item.contenttype))
-        subsecItems = container.GetMetadata()
-        extra = CreateObject("roAssociativeArray")
-        extra.content = subsecItems
-        extra.loadStatus = 0 ' 0:Not loaded, 1:Partially loaded, 2:Fully loaded
-        extra.key = "_subsec_"
-        extra.name = firstof(item.title,"Sub Sections")
-        extra.pendingRequests = 0
-        extra.countLoaded = 0
-        loader.contentArray.Unshift(extra)
-        keys.Unshift(extra.key)
-        loader.names.Unshift(extra.name)
+        ReorderItemsByKeyPriority(subsecItems, RegRead("section_row_order", "preferences", ""))
+        header_row = CreateObject("roAssociativeArray")
+        header_row.content = subsecItems
+        header_row.loadStatus = 0 ' 0:Not loaded, 1:Partially loaded, 2:Fully loaded
+        header_row.key = "_subsec_"
+        header_row.name = firstof(item.title,"Sub Sections")
+        header_row.pendingRequests = 0
+        header_row.countLoaded = 0
+
+        loader.contentArray.Unshift(header_row)
+        keys.Unshift(header_row.key)
+        loader.names.Unshift(header_row.name)
         loader.focusrow = 1 ' we want to hide this row by default
     else 
         Debug("---- NOT Adding sub sections row for contenttype:" + tostr(item.contenttype))
