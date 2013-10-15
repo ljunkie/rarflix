@@ -952,3 +952,17 @@ Function ShallowCopy(array As Dynamic, depth = 0 As Integer) As Dynamic
     End If
     Return invalid
 End Function
+
+sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
+    sizes = ImageSizes(metadata.ViewGroup, nodeType)
+    ' mod_rewrite/apache do not allow & or %26
+    ' replace with :::: - the cdn will replace with &
+    reand = CreateObject("roRegex", "&", "") 
+    reslash = CreateObject("roRegex", "/", "")  ' seo urls, so replace these
+    thumb_text = reand.ReplaceAll(thumb_text, "::::") 
+    thumb_text = reslash.ReplaceAll(thumb_text, "::") 
+    NewThumb = "http://cdn.rarflix.com/images/key/" + URLEncode(thumb_text) ' this will be a autogenerate poster (transparent)
+    metadata.SDPosterURL = metadata.server.TranscodedImage(metadata.server.serverurl, NewThumb, sizes.sdWidth, sizes.sdHeight)
+    metadata.HDPosterURL = metadata.server.TranscodedImage(metadata.server.serverurl, NewThumb, sizes.hdWidth, sizes.hdHeight)
+end sub
+

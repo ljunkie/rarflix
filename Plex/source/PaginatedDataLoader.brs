@@ -83,6 +83,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
                 copy.name = sec.name
                 copy.umtitle = sec.name
                 copy.title = sec.name
+                rfCDNthumb(copy,sec.name,invalid)
                 subsecItems.Push(copy)
             end for
         end if
