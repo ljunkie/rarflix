@@ -107,7 +107,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
         extra.content = subsecItems
         extra.loadStatus = 0 ' 0:Not loaded, 1:Partially loaded, 2:Fully loaded
         extra.key = "_subsec_"
-        extra.name = "Sub Sections"
+        extra.name = firstof(item.title,"Sub Sections")
         extra.pendingRequests = 0
         extra.countLoaded = 0
         loader.contentArray.Unshift(extra)

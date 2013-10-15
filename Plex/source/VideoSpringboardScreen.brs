@@ -191,11 +191,6 @@ Sub videoGetMediaDetails(content)
            m.Screen.SetBreadcrumbEnabled(true)
            m.Screen.SetBreadcrumbText(where, UcaseFirst(m.metadata.nowplaying_user,true))
            rf_updateNowPlayingSB(m)
-'           if m.metadata.episodestr <> invalid then 
-'               m.metadata.titleseason = m.metadata.cleantitle + " - " + m.metadata.episodestr
-'           else
-'               m.metadata.title = m.metadata.cleantitle
-'           end if
            Debug("Dynamically set Episode breadcrumbs; " + where + ": " + UcaseFirst(m.metadata.nowplaying_user,true))
         else if m.metadata.ContentType = "episode" and tostr(m.metadata.ShowTitle) <> "invalid" and where <> "invalid" then 
            m.Screen.SetBreadcrumbEnabled(true)

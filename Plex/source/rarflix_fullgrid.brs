@@ -71,9 +71,6 @@ Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, ite
         loader.names.Push(name)
     next
 
-    print keys[0]
-    print keys[0]
-
     for index = 0 to keys.Count() - 1
         status = CreateObject("roAssociativeArray")
         status.content = []

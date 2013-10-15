@@ -113,6 +113,38 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         item = context
     end if
 
+    ' ljunkie - sorry for the madness
+    ' breadcrumbs for Full Grid.. when we have "1-4 of 565" as a row name --- that is ugly and this is ghetto 
+    re = CreateObject("roRegex", "\d+\s+of\s+\d+", "")
+    if type(breadcrumbs) = "roArray" and breadcrumbs.count() > 1 and (re.Ismatch(breadcrumbs[0]) or re.IsMatch(breadcrumbs[1])) then 
+        keynames = m.screens[1].loader.contentarray
+        if item.contenttype = "appClip" then
+            breadcrumbs[0] = ""
+        else 
+            breadcrumbs[1] = UcaseFirst(firstof(item.umtitle,item.contenttype,item.type,item.viewgroup))
+        end if
+
+        prev_screen = m.screens[m.screens.count()-2]
+        re = CreateObject("roRegex", "/library/sections/\d+/([^?\/]+)", "")
+        if (re.isMatch(item.sourceurl)) then
+            fkey = re.Match(item.sourceurl)[1]
+            for each k in keynames
+                if k.key = fkey then
+                    fkey = k.name
+                    exit for
+                end if
+            end for
+            if prev_screen.isfullgrid = invalid then
+                 print item
+                 breadcrumbs[1] = UcaseFirst(firstof(item.umtitle,item.contenttype,item.type,item.viewgroup))
+                 breadcrumbs[0] = UcaseFirst(fkey)
+            else 
+                breadcrumbs[0] = UcaseFirst(fkey)
+            end if
+        end if
+    end if
+    ' end this madness
+
     ' ljunkie - reset breadcrumb for TV show if tv watched status enabled and title <> umtitle (post and grid view supported)
     if RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" and (item.type = "show" or item.viewgroup = "season" or item.viewgroup = "show" or item.viewgroup = "episode") then
         if item.umtitle <> invalid and ( type(breadcrumbs) = "roArray" and breadcrumbs[0] <> invalid and breadcrumbs[0] = item.title) or (breadcrumbs = invalid) then 
@@ -786,7 +818,9 @@ Sub vcAddBreadcrumbs(screen, breadcrumbs)
         breadcrumbs.Pop()
     end if
 
-    if breadcrumbs.Count() = 0 AND m.breadcrumbs.Count() > 0 then
+    print breadcrumbs
+
+    if (breadcrumbs.Count() = 0 AND m.breadcrumbs.Count() > 0) or (m.screens.peek().isfullgrid <> invalid and breadcrumbs.Count() < 2 AND m.breadcrumbs.Count() > 0) then
         count = m.breadcrumbs.Count()
         if count >= 2 then
             breadcrumbs = [m.breadcrumbs[count-2], m.breadcrumbs[count-1]]
