@@ -164,6 +164,20 @@ Function gridHandleMessage(msg) As Boolean
             m.selectedRow = msg.GetIndex()
             m.focusedIndex = msg.GetData()
 
+            if m.screenid <> invalid and m.screenid < 0 and m.contentArray <> invalid and type(m.contentArray[m.selectedRow]) = "roArray" then 
+                item = m.contentArray[m.selectedRow][m.focusedIndex]
+                if type(item) = "roAssociativeArray" and item.contenttype <> invalid and item.contenttype = "section" then 
+                    RegWrite("lastMachineID", item.server.machineID)
+                    RegWrite("lastSectionKey", item.key)
+                    'print "--------------- remember last focus ------------------------"
+                    'print "last section used " + item.key
+                    'print "server " + item.server.machineID
+                    'print "---------------------------------------"
+                end if 
+            end if
+
+
+
             if m.ignoreNextFocus then
                 m.ignoreNextFocus = false
             else

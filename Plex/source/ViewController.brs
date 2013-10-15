@@ -179,8 +179,9 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         if screen = invalid then return invalid
         screenName = "Audio Springboard"
     else if contentType = "section" then
-        RegWrite("lastMachineID", item.server.machineID)
-        RegWrite("lastSectionKey", item.key)
+        ' Now done in gridscreen.bres -- when someone focus the row instead
+        'RegWrite("lastMachineID", item.server.machineID)
+        'RegWrite("lastSectionKey", item.key)
 
         screenName = "Section: " + tostr(item.type)
         if tostr(item.type) = "artist" then 

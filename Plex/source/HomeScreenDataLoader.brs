@@ -602,15 +602,36 @@ Sub homeOnUrlEvent(msg, requestContext)
             m.Listener.OnDataLoaded(requestContext.row, status.content, startItem, countLoaded, true)
         end if
 
-        if m.Listener.hasBeenFocused = false AND requestContext.row = m.RowIndexes["sections"] AND type(m.Listener.Screen) = "roGridScreen" AND server.machineID = m.lastMachineID then
-            Debug("Trying to focus last used section")
-            for i = 0 to status.content.Count() - 1
-                if status.content[i].key = m.lastSectionKey then
-                    m.Listener.Screen.SetFocusedListItem(requestContext.row, i)
-                    exit for
+        ' ljunkie - had some regression here -- not sure of the logic with m.Listener.hasBeenFocused vs firstLoad, etc.. but easy enough to fix this with a globalAA record
+        ' lets try and focus the ROW only if this is a URLevent for the key '/library/sections' (shared and local sections still call the same url)
+        if GetGlobalAA().Lookup("first_focus_done") = invalid and requestContext.key = "/library/sections" then
+            Debug("---------Trying to focus last used section")
+            if server.machineID = m.lastMachineID  and (requestContext.row = m.RowIndexes["sections"] or requestContext.row = m.RowIndexes["shared_sections"]) then
+                rowIndex = 0
+                for i = 0 to status.content.Count() - 1
+                    if status.content[i].key = m.lastSectionKey then
+                        GetGlobalAA().AddReplace("first_focus_done", true) ' set focus to true
+                        rowIndex=i
+                        exit for
+                    end if
+                next
+
+                ' if we fail to set the focus - we should just try and set sections and call it good
+                if GetGlobalAA().Lookup("first_focus_done") = invalid then 
+		    print "failed to find focused item - will focus at first item"
+                    GetGlobalAA().AddReplace("first_focus_done", true) ' set focus to true - we need to stop trying!
                 end if
-            next
+
+		Debug("--- focusing at row:" + tostr(requestContext.row) + " index:" + tostr(rowIndex))
+                if type(m.Listener.Screen) = "roGridScreen" then
+                    m.Listener.Screen.SetFocusedListItem(requestContext.row, rowIndex)
+                else
+                    m.Listener.Screen.SetFocusedListItem(requestContext.row)
+                end if
+
+            end if
         end if
+
     else if requestContext.requestType = "media" then
         countLoaded = 0
         content = firstOf(status.refreshContent, status.content)
