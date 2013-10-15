@@ -83,6 +83,7 @@ Sub InitRARFlix()
         RegWrite("rf_temp_thememusic", prev_setting, "preferences")
     end if
  
+    RegRead("rf_channel_text", "preferences","disabled")
     RegRead("rf_poster_grid", "preferences","grid")
     RegRead("rf_grid_style", "preferences","flat-movie")
     RegRead("rf_music_artist", "preferences","track")
@@ -104,6 +105,7 @@ Sub InitRARFlix()
     m.youtube = InitYouTube()
 
 
+    Debug("rf_channel_text: " + tostr(RegRead("rf_channel_text", "preferences")))
     Debug("rf_poster_grid: " + tostr(RegRead("rf_poster_grid", "preferences")))
     Debug("rf_grid_style: " + tostr(RegRead("rf_grid_style", "preferences")))
     Debug("rf_bcdynamic: " + tostr(RegRead("rf_bcdynamic", "preferences")))

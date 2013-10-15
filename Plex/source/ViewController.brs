@@ -134,7 +134,6 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
                 end if
             end for
             if fromFullGrid(m) then
-                 print item
                  breadcrumbs[1] = UcaseFirst(firstof(item.umtitle,item.contenttype,item.type,item.viewgroup))
                  breadcrumbs[0] = UcaseFirst(fkey)
             else 
@@ -175,8 +174,6 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
 
     screenName = invalid
     poster_grid = RegRead("rf_poster_grid", "preferences", "grid")
-
-    print item
 
     if contentType = "movie" OR contentType = "episode" OR contentType = "clip" then
         screen = createVideoSpringboardScreen(context, contextIndex, m)

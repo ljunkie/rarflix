@@ -127,6 +127,51 @@ Sub containerParseXml()
             metadata = newDirectoryMetadata(m, n)
         end if
 
+        ' ljunkie - custom posters/thumbs for items the PMS does not give a thumb for
+        ' I had some crazy logic if the thumb existing thumb was local or a /libary/metadata/etc.. 
+        ' it seems though it's safe to assume if the PMS doesn't give a thumb then we can replace it
+        ' if the PMS starts giving out generic thumbs, I'll have to repace with the crazy logic/regex
+        rfHasThumb = firstof(n@thumb, n@grandparentThumb, n@parentThumb)
+        re = CreateObject("roRegex", "/:/resources/actor-icon", "") ' TODO: any other than actor_con? these are default template.. ignore them
+
+        ' this has mixed results - really the channel provider should be adding custom thumbs for every directory instead of the base channel thumb
+        ' I.E. youtube, cbs.. ( for now it's disabled - Toggle is ready, but I am not ready for the outcome -- I.E. use it for "this" channel, and not "that" channel, etc..) 
+        isLocal = CreateObject("roRegex", "127.0.0.1", "") ' TODO: any other than actor_con? these are default template.. ignore them
+        if RegRead("rf_channel_text", "preferences","disabled") <> "disabled" and nodetype = invalid then
+            rfHasThumb = invalid
+        end if
+
+        if rfHasThumb = invalid or re.isMatch(rfHasThumb) then 
+            thumb_text = firstof(metadata.umtitle, metadata.title)
+            ' mod_rewrite doesn't like & or %26
+            ' replace with :::: - the cdn will replace with &
+            reand = CreateObject("roRegex", "&", "") 
+            reslash = CreateObject("roRegex", "/", "") 
+            thumb_text = reand.ReplaceAll(thumb_text, "::::") 
+            thumb_text = reslash.ReplaceAll(thumb_text, "::") 
+            NewThumb = "http://cdn.rarflix.com/images/key/" + URLEncode(thumb_text) ' this will be a autogenerate poster (transparent)
+
+            if NewThumb <> invalid AND metadata.server <> invalid then
+                sizes = ImageSizes(metadata.ViewGroup, nodeType)
+
+                Debug( "-------------------------------------------")
+                Debug("---- using custom thumb from cdn.rarflix.com with title:" + firstof(metadata.umtitle, metadata.title))
+                Debug("---- viewGroup:" + tostr(metadata.ViewGroup) + " nodeType:" + tostr(nodeType))
+                Debug("---- Original:" + tostr(metadata.HDPosterURL))
+                metadata.SDPosterURL = metadata.server.TranscodedImage(metadata.server.serverurl, NewThumb, sizes.sdWidth, sizes.sdHeight)
+                metadata.HDPosterURL = metadata.server.TranscodedImage(metadata.server.serverurl, NewThumb, sizes.hdWidth, sizes.hdHeight)
+                Debug("----      new:" + tostr(metadata.HDPosterURL))
+                Debug( "-------------------------------------------")
+            else 
+                Debug( "-------------------------------------------")
+                Debug("---- NOT using custom thumb?")
+                Debug("---- viewGroup:" + tostr(metadata.ViewGroup) + " nodeType:" + tostr(nodeType))
+                Debug("---- Original:" + tostr(metadata.HDPosterURL))
+                Debug( "-------------------------------------------")
+            end if
+        end if
+        ' END custom poster/thumbs
+
         if metadata.search = true AND m.SeparateSearchItems then
             m.search.Push(metadata)
         else if metadata.setting = true then
