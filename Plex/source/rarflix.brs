@@ -883,7 +883,7 @@ end sub
 
 sub rfDialogGridScreen(obj as Object) as Dynamic
 
-    if tostr(obj.item.contenttype) = "section" 
+    if tostr(obj.item.contenttype) = "section" or obj.selectedrow = 0 then ' row 0 is reserved for the fullGrid shortcuts
         rfDefRemoteOptionButton(obj) 
     ' for now the only option is grid view so we will verify we are in a roGridScreen. It we add more buttons, the type check below is for fullGridScreen
     else if obj.isfullgrid = invalid and type(obj.screen) = "roGridScreen" then 
