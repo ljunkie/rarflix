@@ -882,7 +882,10 @@ end sub
 
 
 sub rfDialogGridScreen(obj as Object) as Dynamic
-    if obj.isfullgrid = invalid then 
+
+    if tostr(obj.item.contenttype) = "section" 
+        rfDefRemoteOptionButton(obj) 
+    else if obj.isfullgrid = invalid then 
         dialog = createBaseDialog()
         fromName = "invalid"
         if type(obj.loader.getnames) = "roFunction" and obj.selectedrow <> invalid then fromName = obj.loader.getnames()[obj.selectedrow]
@@ -897,6 +900,7 @@ sub rfDialogGridScreen(obj as Object) as Dynamic
      else 
          return invalid
      end if
+
 end sub
 
 function getAllRowsContext(screen,context,index) as object
