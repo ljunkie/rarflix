@@ -300,7 +300,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else
         ' Where do we capture channel directory?
         Debug("---- Creating a default " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
-        if poster_grid = "grid" and (tostr(viewGroup) <> "season" and tostr(contentType) <> "appClip" ) then 
+        if poster_grid = "grid" and ( (tostr(viewGroup) <> "season") or (tostr(contentType) <> "appClip" and viewGroup = invalid) ) then 
             screen = createFULLGridScreen(item, m, "Invalid", "scale-to-fill")
         else 
             Debug("---- forcing to Poser view")
