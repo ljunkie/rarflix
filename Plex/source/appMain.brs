@@ -52,7 +52,7 @@ Sub Main(args)
 
     initGlobals()
 
-    ' youtube = LoadYouTube() not needed
+    'load rarflix prefs
     rarflix = InitRARFlix() 
 
     'prepare the screen for display and get ready to begin
@@ -182,7 +182,7 @@ Sub initTheme()
     app = CreateObject("roAppManager")
     theme = CreateObject("roAssociativeArray")
 
-    rfTheme = RegRead("rf_theme", "preferences", "original")
+    rfTheme = RegRead("rf_theme", "preferences", "black")
     if rfTheme = "black" then 
         GetGlobalAA().AddReplace("rf_theme_dir", "file://pkg:/images/black/")
         GetGlobalAA().AddReplace("rfBGcolor", "000000")

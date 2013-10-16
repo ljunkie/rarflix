@@ -23,10 +23,11 @@ end function
 
 Sub InitRARFlix() 
 
-     GetGlobalAA()
+    GetGlobalAA()
     'RegDelete("rf_unwatched_limit", "preferences")
-    RegDelete("rf_grid_style", "preferences")
-    RegDelete("rf_poster_grid_style", "preferences")
+    'RegDelete("rf_grid_style", "preferences")
+    'RegDelete("rf_poster_grid_style", "preferences")
+    'RegDelete("rf_theme", "preferences")
 
     Debug("=======================RARFLIX SETTINGS ====================================")
 
@@ -83,6 +84,7 @@ Sub InitRARFlix()
         RegWrite("rf_temp_thememusic", prev_setting, "preferences")
     end if
  
+    'RegRead("rf_theme", "preferences","black") done in appMain initTheme()
     RegRead("rf_img_overlay", "preferences","999999") ' white
     RegRead("rf_channel_text", "preferences","disabled") ' enabled channel icons to show text ( after the main row )
     RegRead("rf_poster_grid", "preferences","grid")
@@ -106,6 +108,7 @@ Sub InitRARFlix()
     m.youtube = InitYouTube()
 
 
+    Debug("rf_theme: " + tostr(RegRead("rf_theme", "preferences")))
     Debug("rf_img_overlay: " + tostr(RegRead("rf_img_overlay", "preferences")))
     Debug("rf_channel_text: " + tostr(RegRead("rf_channel_text", "preferences")))
     Debug("rf_poster_grid: " + tostr(RegRead("rf_poster_grid", "preferences")))
@@ -252,7 +255,7 @@ Function createRARFlixPrefsScreen(viewController) As Object
     obj.Prefs["rf_theme"] = {
         values: rf_theme,
         heading: "Theme for Channel (restart required)",
-        default: "original"
+        default: "black"
     }
 
     ' Rotten Tomatoes
@@ -442,10 +445,8 @@ Function createRARFlixPrefsScreen(viewController) As Object
 
 
     obj.Screen.SetHeader("RARFlix Preferences")
-    if isRFdev() then 
-       obj.AddItem({title: "Theme"}, "rf_theme", obj.GetEnumValue("rf_theme"))
-       obj.AddItem({title: "Overlay", ShortDescriptionLine2: "Color to text overlay in sub sections"}, "rf_img_overlay", obj.GetEnumValue("rf_img_overlay"))
-    end if
+    obj.AddItem({title: "Theme"}, "rf_theme", obj.GetEnumValue("rf_theme"))
+    obj.AddItem({title: "Overlay", ShortDescriptionLine2: "Color to text overlay in sub sections"}, "rf_img_overlay", obj.GetEnumValue("rf_img_overlay"))
     obj.AddItem({title: "Hide Rows",ShortDescriptionLine2: "Sorry for the confusion..."}, "hide_rows_prefs")
     obj.AddItem({title: "Section Display", ShortDescriptionLine2: "a plex original, for easy access"}, "sections")
 
