@@ -998,3 +998,27 @@ sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
     Debug("----      new:" + tostr(metadata.HDPosterURL))
 end sub
 
+' ljunkie - crazy sauce right? this is a way to figure out what section we are in 
+function getSectionType(vc) as object
+    Debug("---- checking if we can figure out the section we are in")
+    metadata = CreateObject("roAssociativeArray")
+    if type(vc.screens) = "roArray" then
+        screens = vc.screens
+    else if type(vc.viewcontroller) = "roAssociativeArray" then
+        screens = vc.viewcontroller.screens
+    end if
+
+    if type(screens) = "roArray" and screens.count() >= 0 then
+       screen = screens[0]
+       if type(screen) = "roAssociativeArray" and screen.loader <> invalid and type(screen.loader.contentarray) = "roArray" then
+           row = screen.selectedrow
+           index = screen.focusedindex
+           if row <> invalid and index <> invalid then
+               if type(screen.loader.contentarray[row].content) = "roArray" then 
+                   metadata = screen.loader.contentarray[row].content[index]
+               end if
+           end if
+        end if
+    end if
+    return metadata ' return empty assoc
+end function

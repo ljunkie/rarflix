@@ -164,7 +164,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
 
     contentType = item.ContentType
     viewGroup = item.viewGroup
-    if viewGroup = invalid then viewGroup = ""
+    if viewGroup = invalid then viewGroup = "Invalid"
 
     screen = CreateObject("roAssociativeArray")
 
@@ -241,7 +241,8 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if contentType = "photo" then
         if right(item.key, 8) = "children" then
             if poster_grid = "grid" then 
-                screen = createFULLGridScreen(item, m, "Invalid", "photo-fit")
+                screen = createFULLGridScreen(item, m, "flat-16x9", "photo-fit")
+                screen.loader.focusrow = 2 ' lets fill the screen ( 5x3 )
             else 
                 screen = createPosterScreen(item, m)
             end if
@@ -265,10 +266,22 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         dialog.Show()
         return invalid
     else if viewGroup = "secondary" then
+        ' these are subsections of a main section ( secondary )
         Debug("---- Creating secondary grid " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
+        ' ljunkie TODO review this code
         if poster_grid = "grid" then 
-            ' these are subsections of a main section ( secondary )
-            screen = createFULLGridScreen(item, m, "Invalid", "scale-to-fill")
+            sec_metadata = getSectionType(m)
+            DisplayMode = "scale-to-fill"
+            style = "flat-movie"
+            focusrow = 0
+            if tostr(sec_metadata.type) = "photo" then 
+                style="flat-16x9"
+                DisplayMode = "photo-fit"
+                Debug("---- forcing to photo-fit")
+                focusrow = 1 ' lets fill the screen ( 5x3 )
+            end if
+            screen = createFULLGridScreen(item, m, style, DisplayMode)
+	    screen.loader.focusrow = focusrow ' lets fill the screen ( 5x3 )
         else 
             screen = createPosterScreen(item, m)
         end if
@@ -300,10 +313,13 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else
         ' Where do we capture channel directory?
         Debug("---- Creating a default " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
-        if poster_grid = "grid" and ( (tostr(viewGroup) <> "season") or (tostr(contentType) <> "appClip" and viewGroup = invalid) ) then 
+        if tostr(contentType) = "appClip" and tostr(viewGroup) = "Invalid" then 
+            Debug("---- forcing to Poster view")
+            screen = createPosterScreen(item, m)
+        else if poster_grid = "grid" and tostr(viewGroup) <> "season" then 
             screen = createFULLGridScreen(item, m, "Invalid", "scale-to-fill")
         else 
-            Debug("---- forcing to Poser view")
+            Debug("---- forcing to Poster view")
             screen = createPosterScreen(item, m)
         end if
     end if
