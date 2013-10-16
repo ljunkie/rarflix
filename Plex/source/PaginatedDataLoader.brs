@@ -53,7 +53,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
         if RegRead("rf_hide_"+new_key, "preferences", "show") = "show" then 
             new_key = new_key + "&X-Plex-Container-Start=0&X-Plex-Container-Size=" + size_limit
             keys.Push(new_key)
-            new_name = "Recently Released (unwatched)"
+            new_name = "Unwatched Recently Released"
             loader.names.Push(new_name)
             subsec_extras.Push({ key: new_key, name: new_name, key_copy: "all" })
         end if
@@ -63,7 +63,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
         if RegRead("rf_hide_"+new_key, "preferences", "show") = "show" then 
             new_key = new_key + "&X-Plex-Container-Start=0&X-Plex-Container-Size=" + size_limit
             keys.Push(new_key)
-            new_name = "Recently Added (unwatched)"
+            new_name = "Unwatched Recently Added"
             loader.names.Push(new_name)
             subsec_extras.Push({ key: new_key, name: new_name, key_copy: "all" })
         end if

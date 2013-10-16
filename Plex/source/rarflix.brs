@@ -959,10 +959,18 @@ sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
     ' replace with :::: - the cdn will replace with &
     reand = CreateObject("roRegex", "&", "") 
     reslash = CreateObject("roRegex", "/", "")  ' seo urls, so replace these
+    redots = CreateObject("roRegex", "\.", "")  ' freaks out the photo transcoder
     thumb_text = reand.ReplaceAll(thumb_text, "::::") 
     thumb_text = reslash.ReplaceAll(thumb_text, "::") 
+    thumb_text = redots.ReplaceAll(thumb_text, " ") 
     NewThumb = "http://cdn.rarflix.com/images/key/" + URLEncode(thumb_text) ' this will be a autogenerate poster (transparent)
-    metadata.SDPosterURL = metadata.server.TranscodedImage(metadata.server.serverurl, NewThumb, sizes.sdWidth, sizes.sdHeight)
+    sdWidth = "223"
+    sdHeight = "200"
+    hdWidth = "300"
+    hdHeight = "300"
+    NewThumb = NewThumb + "/size/" + tostr(hdWidth) + "x" + tostr(hdHeight) ' things seem to play nice this way with the my image processor
+    ' we still want to transcode the size to the specific roku standard
+    metadata.SDPosterURL = metadata.server.TranscodedImage(metadata.server.serverurl, NewThumb, sizes.sdWidth, sizes.sdHeight) 
     metadata.HDPosterURL = metadata.server.TranscodedImage(metadata.server.serverurl, NewThumb, sizes.hdWidth, sizes.hdHeight)
 end sub
 

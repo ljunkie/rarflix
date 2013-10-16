@@ -143,7 +143,6 @@ Sub containerParseXml()
 
         if rfHasThumb = invalid or re.isMatch(rfHasThumb) then 
             thumb_text = firstof(metadata.umtitle, metadata.title)
-
             if thumb_text <> invalid AND metadata.server <> invalid then
                 Debug( "-------------------------------------------")
                 Debug("---- using custom thumb from cdn.rarflix.com with title:" + firstof(metadata.umtitle, metadata.title))
