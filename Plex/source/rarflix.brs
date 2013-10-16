@@ -220,15 +220,15 @@ Function RRbreadcrumbDate(myscreen) As Object
     if RegRead("rf_hs_clock", "preferences", "enabled") = "enabled" then
         screenName = firstOf(myScreen.ScreenName, type(myScreen.Screen))
         if screenName <> invalid and screenName = "Home" then 
-            Debug("update " + screenName + " screen time")
+            'Debug("update " + screenName + " screen time") 'stop printing this.. it's been tested enough
             date = CreateObject("roDateTime")
             date.ToLocalTime() ' localizetime
             timeString = RRmktime(date.AsSeconds(),0)
             dateString = date.AsDateString("short-month-short-weekday")
             myscreen.Screen.SetBreadcrumbEnabled(true)
             myscreen.Screen.SetBreadcrumbText(dateString, timeString)
-        else 
-            Debug("will NOT update " + screenName + " screen time. " + screenName +"=Home")
+        'else 
+        '    Debug("will NOT update " + screenName + " screen time. " + screenName +"=Home")
         end if
     end if
 End function
