@@ -983,11 +983,12 @@ sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
     thumb_text = reand.ReplaceAll(thumb_text, "::::") 
     thumb_text = reslash.ReplaceAll(thumb_text, "::") 
     thumb_text = redots.ReplaceAll(thumb_text, " ") 
-    NewThumb = "http://cdn.rarflix.com/images/key/" + URLEncode(thumb_text) ' this will be a autogenerate poster (transparent)
-    sdWidth = "223"
+    sdWidth  = "223"
     sdHeight = "200"
-    hdWidth = "300"
+    hdWidth  = "300"
     hdHeight = "300"
+    rarflix_cdn = "http://d1gah69i16tuow.cloudfront.net"
+    NewThumb = rarflix_cdn + "/images/key/" + URLEncode(thumb_text) ' this will be a autogenerate poster (transparent)
     NewThumb = NewThumb + "/size/" + tostr(hdWidth) + "x" + tostr(hdHeight) ' things seem to play nice this way with the my image processor
     NewThumb = NewThumb + "/fg/" + RegRead("rf_img_overlay", "preferences","999999")
     Debug("----   newraw:" + tostr(NewThumb))
