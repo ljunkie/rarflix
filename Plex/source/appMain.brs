@@ -215,10 +215,11 @@ Sub initTheme()
     theme.GridScreenOverhangHeightSD = "66"
 
     background = "#" + GetGlobalAA().Lookup("rfBGcolor")
-    titleText = "#BFBFBF"
-    normalText = "#999999"
+    titleText = "#BFBFBF" ' text in search screen. not sure where else yet
+    normalText = "#999999" ' shared with dialog and summary text in video screen ( if we can make the dialog black, then we can lighten this up)
     detailText = "#74777A"
     subtleText = "#525252"
+
 
     theme.BackgroundColor = background
 
@@ -235,17 +236,23 @@ Sub initTheme()
     theme.GridScreenBorderOffsetSD = "(-9,-9)"
 
     theme.ListScreenHeaderText = titleText
-    theme.ListItemText = normalText
+    theme.ListItemText = "#999999" 'normalText
     theme.ListItemHighlightText = titleText
     theme.ListScreenDescriptionText = normalText
 
     theme.ParagraphHeaderText = titleText
     theme.ParagraphBodyText = normalText
 
-    theme.ButtonNormalColor = normalText
+    ' ljunkei this theme actually looks better even with the original.. no need to toggle
+    theme.ThemeType = "generic-dark"
+    theme.DialogTitleText="#000000"
+    theme.DialogBodyText="#c0c0c0"
+
+    theme.ButtonNormalColor = "#333333" 'normalText
+    theme.ButtonHighlightColor = "#FFA500" ' plex orange
     ' Default for ButtonHighlightColor seems OK...
 
-    theme.RegistrationCodeColor = "#FFA500"
+    theme.RegistrationCodeColor = "#FFA500" ' plex orange
     theme.RegistrationFocalColor = normalText
 
     theme.SearchHeaderText = titleText

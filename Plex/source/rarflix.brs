@@ -83,7 +83,8 @@ Sub InitRARFlix()
         RegWrite("rf_temp_thememusic", prev_setting, "preferences")
     end if
  
-    RegRead("rf_channel_text", "preferences","disabled")
+    RegRead("rf_img_overlay", "preferences","999999") ' white
+    RegRead("rf_channel_text", "preferences","disabled") ' enabled channel icons to show text ( after the main row )
     RegRead("rf_poster_grid", "preferences","grid")
     RegRead("rf_grid_style", "preferences","flat-movie")
     RegRead("rf_music_artist", "preferences","track")
@@ -105,6 +106,7 @@ Sub InitRARFlix()
     m.youtube = InitYouTube()
 
 
+    Debug("rf_img_overlay: " + tostr(RegRead("rf_img_overlay", "preferences")))
     Debug("rf_channel_text: " + tostr(RegRead("rf_channel_text", "preferences")))
     Debug("rf_poster_grid: " + tostr(RegRead("rf_poster_grid", "preferences")))
     Debug("rf_grid_style: " + tostr(RegRead("rf_grid_style", "preferences")))
@@ -249,7 +251,7 @@ Function createRARFlixPrefsScreen(viewController) As Object
     ]
     obj.Prefs["rf_theme"] = {
         values: rf_theme,
-        heading: "Theme for Channel",
+        heading: "Theme for Channel (restart required)",
         default: "original"
     }
 
@@ -374,6 +376,23 @@ Function createRARFlixPrefsScreen(viewController) As Object
         default: "exit"
     }
 
+    ' text overlay color (customer posters)
+    rf_overlay = [
+        { title: "White", EnumValue: "999999",}
+        { title: "Orange (Plex)", EnumValue: "FFA500", }
+        { title: "Dark Gray", EnumValue: "202020",}
+        { title: "Light Gray", EnumValue: "A0A0A0",}
+        { title: "Gray", EnumValue: "606060",}
+        { title: "Tan", EnumValue: "bf8e60",}
+        { title: "Green", EnumValue: "778554",}
+        { title: "Sky", EnumValue: "bfcada",}
+    ]
+    obj.Prefs["rf_img_overlay"] = {
+        values: rf_overlay,
+        heading: "Text Color for Images in Sub Sections",
+        default: "999999"
+    }
+
    ' enable notifications?  (if we add more events (currently now playing) we can add more toggles )
     notifications = [
         { title: "Enabled", EnumValue: "enabled",}
@@ -425,6 +444,7 @@ Function createRARFlixPrefsScreen(viewController) As Object
     obj.Screen.SetHeader("RARFlix Preferences")
     if isRFdev() then 
        obj.AddItem({title: "Theme"}, "rf_theme", obj.GetEnumValue("rf_theme"))
+       obj.AddItem({title: "Overlay", ShortDescriptionLine2: "Color to text overlay in sub sections"}, "rf_img_overlay", obj.GetEnumValue("rf_img_overlay"))
     end if
     obj.AddItem({title: "Hide Rows",ShortDescriptionLine2: "Sorry for the confusion..."}, "hide_rows_prefs")
     obj.AddItem({title: "Section Display", ShortDescriptionLine2: "a plex original, for easy access"}, "sections")
@@ -969,8 +989,12 @@ sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
     hdWidth = "300"
     hdHeight = "300"
     NewThumb = NewThumb + "/size/" + tostr(hdWidth) + "x" + tostr(hdHeight) ' things seem to play nice this way with the my image processor
+    NewThumb = NewThumb + "/fg/" + RegRead("rf_img_overlay", "preferences","999999")
+    Debug("----   newraw:" + tostr(NewThumb))
     ' we still want to transcode the size to the specific roku standard
+
     metadata.SDPosterURL = metadata.server.TranscodedImage(metadata.server.serverurl, NewThumb, sizes.sdWidth, sizes.sdHeight) 
     metadata.HDPosterURL = metadata.server.TranscodedImage(metadata.server.serverurl, NewThumb, sizes.hdWidth, sizes.hdHeight)
+    Debug("----      new:" + tostr(metadata.HDPosterURL))
 end sub
 
