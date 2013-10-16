@@ -1,5 +1,64 @@
+# 2.6.19-dev (2013-10-09 - 2013-10-15)
+
+Date:   Tue Oct 15 17:21:06 2013 -0700
+    * CUSTOM thumbs displayed for items that normally use a generic one ( sub sections )
+    * Add custom rows (movie unwatched) into the header row [full grid options]. 
+    * Re-order header row to user prefs
+    * Hide items in header row based on prefs
+
+Date:   Mon Oct 14 23:53:44 2013 -0700
+
+    * Added sub section row [renamed to header row internally] to the TOP of the grid screen :: focus on row 2 to hide it
+    * Toggle to change of full grid. ( default is 5x2 )
+    * Breadcrumb magic for Full Grid View
+    * Direct play from section directories: Photos and Music Albums
+    * Ability to play slideshow when in current screen is in FULL grid mode ( have to grab the context from every row )
+    * Disabled options key to view full grid from "section" items
+    * Do not show 'Full Grid' button in option dialog when one is already in full grid
+    * Fix: Regression with last focused section on entering channel ( should be fixed for good )
+
+Date:   Sun Oct 13 23:10:11 2013 -0700
+    * Initial Release of 'FULL' Grid
+    * Text summary removed info dialog (to many buttons)
+    * Disable full grid for: Channels (apps). PMS does not support limited results
+    * Disable full grid for: season view (episodes) -- required episodic display
+    * Disable full grid for: music tracks. Above applies
+    * Toggle for perferring "poster" or a "full" grid view when applicable.
+    * Allow the Full grid from the home screen ( option key )
+    * Music: Genres wrong. Use new filtering calls for music genres ( only include Artist Genres )
+
+Date:   Fri Oct 11 17:00:04 2013 -0700
+
+    * initial black theme added
+    * toogle for theme added
+    * Update breadcrumbs when play button is click for non playable item
+    * fix crash when play button is click on "tv season" poster
+    * Music: do not append watched status for music (albums)
+    * Music: Displayed Music Artist - Toggle for display: Track / Album / Track when Various
+    * Music: Allow left/right buttons in Song Details without playing the song if it's NOT the current song playing
+    * Music: fwd/rwd buttons will not seek 10 seconds fwd/rwd in the Now Playing screen
+    * Music: option key brings up the Loop/Shuffle dialog in Now Playing screen
+    * Music: option key gives button link to 'now playing' when the view song is NOT the one playing
+    * Music: fix/cleanup logic when to display the Audio Dialog
+
+
+## end
+
+
+
+# 2.6.18-dev -- many updates... will list in 2.6.19
+
+# 2.6.17-test (2013-10-09)
+   - Disable THEME music for now due to bug ( you can re-enable if you'd like )  bugtrack: Roku Forums :: Plex Forums
+   - Update Poster item when marking a movie/episode as watched ( you can now mark content as watched/unwatched from poster screens)
+   - Multiple Now Playing notifications (back to back) would cause navigation issues/weirdness 
+   - Now Playing Poster was changing to "Show" poster during progress updates - instead of the "Original Episode" (on details screen)
+   - Include percentage watched for Now Playing items
+
 ### v2.6.15 (2013-10-05) Final Release (merge of RARflixTest)
    - [merge of RARflixTest v2.6.16-1 without Now Playing Notifications]
+   - Disable THEME music for now due to bug ( you can re-enable if you'd like )  bugtrack: Roku Forums :: Plex Forums
+   - Update Poster item when marking a movie/episode as watched ( you can now mark content as watched/unwatched from poster screens)
 
 ### v2.6.16-test-2 (2013-10-05) (silent update)
 * isRFtest() added - allow RARflix/RARflixTest to stay more in sync
