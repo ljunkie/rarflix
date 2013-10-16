@@ -117,27 +117,29 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     ' breadcrumbs for Full Grid.. when we have "1-4 of 565" as a row name --- that is ugly and this is ghetto 
     re = CreateObject("roRegex", "\d+\s+of\s+\d+", "")
     if type(breadcrumbs) = "roArray" and breadcrumbs.count() > 1 and (re.Ismatch(breadcrumbs[0]) or re.IsMatch(breadcrumbs[1])) then 
-        keynames = m.screens[1].loader.contentarray
-        if item.contenttype = "appClip" then
-            breadcrumbs[0] = ""
-        else 
-            breadcrumbs[1] = UcaseFirst(firstof(item.umtitle,item.contenttype,item.type,item.viewgroup))
-        end if
-
-        re = CreateObject("roRegex", "/library/sections/\d+/([^?\/]+)", "")
-        if (re.isMatch(item.sourceurl)) then
-            fkey = re.Match(item.sourceurl)[1]
-            for each k in keynames
-                if k.key = fkey then
-                    fkey = k.name
-                    exit for
-                end if
-            end for
-            if fromFullGrid(m) then
-                 breadcrumbs[1] = UcaseFirst(firstof(item.umtitle,item.contenttype,item.type,item.viewgroup))
-                 breadcrumbs[0] = UcaseFirst(fkey)
+        if type(m.screens) = "roArray" and m.screens.count() > 1 then 
+            keynames = m.screens[1].loader.contentarray
+            if item.contenttype = "appClip" then
+                breadcrumbs[0] = ""
             else 
-                breadcrumbs[0] = UcaseFirst(fkey)
+                breadcrumbs[1] = UcaseFirst(firstof(item.umtitle,item.contenttype,item.type,item.viewgroup))
+            end if
+    
+            re = CreateObject("roRegex", "/library/sections/\d+/([^?\/]+)", "")
+            if (re.isMatch(item.sourceurl)) then
+                fkey = re.Match(item.sourceurl)[1]
+                for each k in keynames
+                    if k.key = fkey then
+                        fkey = k.name
+                        exit for
+                    end if
+                end for
+                if fromFullGrid(m) then
+                     breadcrumbs[1] = UcaseFirst(firstof(item.umtitle,item.contenttype,item.type,item.viewgroup))
+                     breadcrumbs[0] = UcaseFirst(fkey)
+                else 
+                    breadcrumbs[0] = UcaseFirst(fkey)
+                end if
             end if
         end if
     end if
