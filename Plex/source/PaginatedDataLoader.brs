@@ -17,29 +17,33 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
 
     keys = container.GetKeys()
 
-    subsecItems = container.GetMetadata() ' grab subsections for FULL grid. We might want to hide some (same index as container.GetKeys())
-    ' Hide Rows - ljunkie ( remove key and loader.names )
-    if type(item) = "roAssociativeArray" and item.contenttype = "section" then 
-        itype = item.type
-        for index = 0 to keys.Count() - 1
-            if keys[index] <> invalid then  ' delete from underneath does this
-                hide = false
-                rf_hide_key = "rf_hide_" + keys[index]
 
-                ' recentlyAdded and newest(recently Release/Aired) are special/hidden per type
-                if keys[index] = "recentlyAdded" or keys[index] = "newest" and (itype = "movie" or itype = "show" or itype = "artist") then 
-                    rf_hide_key = rf_hide_key + "_" + itype 'print "Checking " + keys[index] + " for specific type of hide: " + itype
+    subsecItems = []
+    if type(container.GetMetadata) = "roFunction" then 
+        subsecItems = container.GetMetadata() ' grab subsections for FULL grid. We might want to hide some (same index as container.GetKeys())
+        ' Hide Rows - ljunkie ( remove key and loader.names )
+        if type(item) = "roAssociativeArray" and item.contenttype = "section" then 
+            itype = item.type
+            for index = 0 to keys.Count() - 1
+                if keys[index] <> invalid then  ' delete from underneath does this
+                    hide = false
+                    rf_hide_key = "rf_hide_" + keys[index]
+    
+                    ' recentlyAdded and newest(recently Release/Aired) are special/hidden per type
+                    if keys[index] = "recentlyAdded" or keys[index] = "newest" and (itype = "movie" or itype = "show" or itype = "artist") then 
+                        rf_hide_key = rf_hide_key + "_" + itype 'print "Checking " + keys[index] + " for specific type of hide: " + itype
+                    end if
+    
+                    if RegRead(rf_hide_key, "preferences", "show") <> "show"  then 
+                        Debug("---- ROW HIDDEN: " + keys[index] + " - hide specified via reg " + rf_hide_key )
+                        keys.Delete(index)
+                        loader.names.Delete(index)
+                        subsecItems.Delete(index)
+                        index = index - 1
+                    end if
                 end if
-
-                if RegRead(rf_hide_key, "preferences", "show") <> "show"  then 
-                    Debug("---- ROW HIDDEN: " + keys[index] + " - hide specified via reg " + rf_hide_key )
-                    keys.Delete(index)
-                    loader.names.Delete(index)
-                    subsecItems.Delete(index)
-                    index = index - 1
-                end if
-            end if
-        end for
+            end for
+        end if
     end if
     ' End Hide Rows
 
@@ -95,7 +99,9 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
         status = CreateObject("roAssociativeArray")
         status.content = []
         status.loadStatus = 0 ' 0:Not loaded, 1:Partially loaded, 2:Fully loaded
-        status.key = keyFiler(keys[index],tostr(item.type)) ' ljunkie - allow us to use the new filters for the simple keys
+        itype = invalid
+        if type(item) = "roAssociativeArray" then itype = item.type
+        status.key = keyFiler(keys[index],tostr(itype)) ' ljunkie - allow us to use the new filters for the simple keys
         status.name = loader.names[index]
         status.pendingRequests = 0
         status.countLoaded = 0
@@ -124,26 +130,27 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
     ' to invalid so we don't try to load it.
     ReorderItemsByKeyPriority(loader.contentArray, RegRead("section_row_order", "preferences", ""))
 
-
-   ' LJUNKIE - Special Header Row - will show the sub sections for a section ( used for the full grid view )
-   ' TOD: toggle this? I don't think it's needed now as this row (0) is "hidden" - we focus to row (1)
-    if loader.sourceurl <> invalid and item.contenttype <> invalid and item.contenttype = "section" then 
-        Debug("---- Adding sub sections row for contenttype:" + tostr(item.contenttype))
-        ReorderItemsByKeyPriority(subsecItems, RegRead("section_row_order", "preferences", ""))
-        header_row = CreateObject("roAssociativeArray")
-        header_row.content = subsecItems
-        header_row.loadStatus = 0 ' 0:Not loaded, 1:Partially loaded, 2:Fully loaded
-        header_row.key = "_subsec_"
-        header_row.name = firstof(item.title,"Sub Sections")
-        header_row.pendingRequests = 0
-        header_row.countLoaded = 0
-
-        loader.contentArray.Unshift(header_row)
-        keys.Unshift(header_row.key)
-        loader.names.Unshift(header_row.name)
-        loader.focusrow = 1 ' we want to hide this row by default
-    else 
-        Debug("---- NOT Adding sub sections row for contenttype:" + tostr(item.contenttype))
+    ' LJUNKIE - Special Header Row - will show the sub sections for a section ( used for the full grid view )
+    ' TOD: toggle this? I don't think it's needed now as this row (0) is "hidden" - we focus to row (1)
+    if item <> invalid then 
+        if loader.sourceurl <> invalid and item <> invalid and item.contenttype <> invalid and item.contenttype = "section" then 
+            Debug("---- Adding sub sections row for contenttype:" + tostr(item.contenttype))
+            ReorderItemsByKeyPriority(subsecItems, RegRead("section_row_order", "preferences", ""))
+            header_row = CreateObject("roAssociativeArray")
+            header_row.content = subsecItems
+            header_row.loadStatus = 0 ' 0:Not loaded, 1:Partially loaded, 2:Fully loaded
+            header_row.key = "_subsec_"
+            header_row.name = firstof(item.title,"Sub Sections")
+            header_row.pendingRequests = 0
+            header_row.countLoaded = 0
+    
+            loader.contentArray.Unshift(header_row)
+            keys.Unshift(header_row.key)
+            loader.names.Unshift(header_row.name)
+            loader.focusrow = 1 ' we want to hide this row by default
+        else 
+            Debug("---- NOT Adding sub sections row for contenttype:" + tostr(item.contenttype))
+        end if
     end if
     ' end testing
 
@@ -171,6 +178,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
     }
 
     return loader
+
 End Function
 
 '*
