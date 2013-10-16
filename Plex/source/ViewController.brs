@@ -115,9 +115,9 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
 
     ' ljunkie - sorry for the madness
     ' breadcrumbs for Full Grid.. when we have "1-4 of 565" as a row name --- that is ugly and this is ghetto 
-    re = CreateObject("roRegex", "\d+\s+of\s+\d+", "")
+    re = CreateObject("roRegex", "\d+\s*-\s*\d+\s+of\s+\d+", "")
     if type(breadcrumbs) = "roArray" and breadcrumbs.count() > 1 and (re.Ismatch(breadcrumbs[0]) or re.IsMatch(breadcrumbs[1])) then 
-        if type(m.screens) = "roArray" and m.screens.count() > 1 then 
+        if type(m.screens) = "roArray" and m.screens.count() > 1 then  ' nested because I'm lame
             keynames = m.screens[1].loader.contentarray
             if item.contenttype = "appClip" then
                 breadcrumbs[0] = ""
@@ -195,7 +195,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         end if
     else if contentType = "artist" then
         if poster_grid = "grid" then 
-            screen = createFULLGridScreen(item, m, "Invalid")
+            screen = createFULLGridScreen(item, m, "Invalid", "scale-to-fill")
         else 
             screen = createPosterScreen(item, m)
         end if
@@ -228,11 +228,11 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' override this so we can hide the sub sections ( flat-square is 7x3 )
         else if tostr(item.type) = "photo" then 
             Debug("---- override photo-fit/flat-16x9 for section with content of " + tostr(item.type))
-            screen = createGridScreenForItem(item, m, "flat-16X9")
-            screen.screen.SetDisplayMode("Photo-Fit")
+            screen = createGridScreenForItem(item, m, "flat-16X9","photo-fit")
+	    '            screen.screen.SetDisplayMode("Photo-Fit") ' this has to be called before
             if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' override this so we can hide the sub sections ( flat-16x9 is 5x3 )
         else 
-            screen = createGridScreenForItem(item, m, "flat-movie") ' some might fair better with flat-square? (TODO)
+            screen = createGridScreenForItem(item, m, "flat-movie", "scale-to-fill")
         end if
     else if contentType = "playlists" then
         screen = createGridScreenForItem(item, m, "flat-16X9")
@@ -241,7 +241,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if contentType = "photo" then
         if right(item.key, 8) = "children" then
             if poster_grid = "grid" then 
-                screen = createFULLGridScreen(item, m, "Invalid")
+                screen = createFULLGridScreen(item, m, "Invalid", "photo-fit")
             else 
                 screen = createPosterScreen(item, m)
             end if
@@ -257,7 +257,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen = createSearchScreen(item, m)
         screenName = "Search"
     else if item.key = "/system/appstore" then
-        screen = createGridScreenForItem(item, m, "flat-square")
+        screen = createGridScreenForItem(item, m, "flat-square","photo-fit")
         screenName = "Channel Directory"
         screen.loader.focusrow = 1 ' lets fill the screen ( 5x3 )
     else if viewGroup = "Store:Info" then
@@ -265,8 +265,10 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         dialog.Show()
         return invalid
     else if viewGroup = "secondary" then
+        Debug("---- Creating secondary grid " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
         if poster_grid = "grid" then 
-            screen = createFULLGridScreen(item, m, "Invalid")
+            ' these are subsections of a main section ( secondary )
+            screen = createFULLGridScreen(item, m, "Invalid", "scale-to-fill")
         else 
             screen = createPosterScreen(item, m)
         end if
@@ -297,9 +299,10 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else
         ' Where do we capture channel directory?
         Debug("---- Creating a default " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
-        if poster_grid = "grid" and (tostr(viewGroup) <> "season" ) then 
-            screen = createFULLGridScreen(item, m, "Invalid")
+        if poster_grid = "grid" and (tostr(viewGroup) <> "season" and tostr(contentType) <> "appClip" ) then 
+            screen = createFULLGridScreen(item, m, "Invalid", "scale-to-fill")
         else 
+            Debug("---- forcing to Poser view")
             screen = createPosterScreen(item, m)
         end if
     end if

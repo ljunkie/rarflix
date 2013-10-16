@@ -140,6 +140,9 @@ Sub containerParseXml()
         if RegRead("rf_channel_text", "preferences","disabled") <> "disabled" and nodetype = invalid then
             rfHasThumb = invalid
         end if
+      
+        ' for now, I am not going to override these
+        if tostr(nodeType) =  "track" or tostr(nodeType) = "album" then rfHasThumb = "skip"
 
         if rfHasThumb = invalid or re.isMatch(rfHasThumb) then 
             thumb_text = firstof(metadata.umtitle, metadata.title)

@@ -2,7 +2,7 @@
 '* A grid screen backed by XML from a PMS.
 '*
 
-Function createGridScreen(viewController, style="flat-movie", upBehavior="exit") As Object
+Function createGridScreen(viewController, style="flat-movie", upBehavior="exit", SetDisplayMode = "scale-to-fit") As Object
     Debug("######## Creating Grid Screen ########")
 
     if upBehavior <> "stop" then ' allow us to force a stop
@@ -21,7 +21,8 @@ Function createGridScreen(viewController, style="flat-movie", upBehavior="exit")
     ' If we don't know exactly what we're displaying, scale-to-fit looks the
     ' best. Anything else makes something look horrible when the grid has
     ' some combination of posters and video frames. 
-    grid.SetDisplayMode("scale-to-fit")
+    ' ljunkie: we will now allow this to be passed to change it
+    grid.SetDisplayMode(SetDisplayMode)
     grid.SetGridStyle(style)
     grid.SetUpBehaviorAtTopRow(upBehavior)
 
@@ -51,8 +52,8 @@ Function createGridScreen(viewController, style="flat-movie", upBehavior="exit")
 End Function
 
 '* Convenience method to create a grid screen with a loader for the specified item
-Function createGridScreenForItem(item, viewController, style) As Object
-    obj = createGridScreen(viewController, style)
+Function createGridScreenForItem(item, viewController, style, SetDisplayMode = "scale-to-fit") As Object
+    obj = createGridScreen(viewController, style, RegRead("rf_up_behavior", "preferences", "exit"), SetDisplayMode)
 
     obj.Item = item
 
