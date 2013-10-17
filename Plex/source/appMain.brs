@@ -219,6 +219,7 @@ Sub initTheme()
     normalText = "#999999" ' shared with dialog and summary text in video screen ( if we can make the dialog black, then we can lighten this up)
     detailText = "#74777A"
     subtleText = "#525252"
+    plexOrange = "#FFA500"
 
 
     theme.BackgroundColor = background
@@ -244,19 +245,24 @@ Sub initTheme()
     theme.ParagraphBodyText = normalText
 
     ' ljunkei this theme actually looks better even with the original.. no need to toggle
-    theme.ThemeType = "generic-dark"
-    theme.DialogTitleText="#000000"
-    theme.DialogBodyText="#c0c0c0"
-
+    if rfTheme = "black" then 
+        theme.ThemeType = "generic-dark"
+        theme.DialogTitleText="#000000" ' header should be bold and black
+        theme.DialogBodyText="#222222"  ' test should now be too light or to dark
+    else
+        theme.DialogTitleText="#BFBFBF"
+        theme.DialogBodyText="#BFBFBF"
+    end if
     theme.ButtonNormalColor = "#333333" 'normalText
-    theme.ButtonHighlightColor = "#FFA500" ' plex orange
+    theme.ButtonHighlightColor = plexOrange
     ' Default for ButtonHighlightColor seems OK...
 
-    theme.RegistrationCodeColor = "#FFA500" ' plex orange
+    theme.RegistrationCodeColor = plexOrange
     theme.RegistrationFocalColor = normalText
 
     theme.SearchHeaderText = titleText
-    theme.ButtonMenuHighlightText = titleText
+    theme.ButtonMenuHighlightText = plexOrange 'titleText
+'    theme.ButtonMenuHighlightColor = "#FFA500" ' plex orange
     theme.ButtonMenuNormalText = titleText
 
     theme.PosterScreenLine1Text = titleText
