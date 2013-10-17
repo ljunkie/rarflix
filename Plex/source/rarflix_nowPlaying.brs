@@ -142,12 +142,8 @@ function getNowPlayingNotifications() as object
     if type(seen) = "roArray" and seen.count() > 0 then
         for each maid in seen
             print "----- checking if " + maid + " is playing"
-            inarray = false
-            for each f_maid in found 
-                if f_maid = maid then inarray = true
-            next    
 
-            if NOT inarray then
+            if NOT inArray(seen,found) then
                 ' notification for stopped content - we will need to grab the itemKey if we want to link the video
 		n = CreateObject("roAssociativeArray")
                 n.type = "stop" 
@@ -219,6 +215,7 @@ Sub ShowNotifyDialog(obj As dynamic, notifyIndex = 0, isNowPlaying = false)
     end if
     dialog.text = dialog.text + chr(10) ' for overlay 
     dialog.text = truncateString(dialog.text,200) ' for overlay 
+    dialog.sepBefore.Push("show")
     dialog.SetButton("show", "Show Now Playing")
     dialog.SetButton("close", "Close")
     dialog.Show()
