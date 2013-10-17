@@ -754,12 +754,14 @@ Sub homeOnUrlEvent(msg, requestContext)
                     channelDir.sourceUrl = ""
                     channelDir.key = "/system/appstore"
                     channelDir.Title = "Channel Directory"
-                    if AreMultipleValidatedServers() then
-                        channelDir.ShortDescriptionLine2 = "Browse channels to install on " + server.name
-                    else
-                        channelDir.ShortDescriptionLine2 = "Browse channels to install"
-                    end if
-                    channelDir.Description = channelDir.ShortDescriptionLine2
+                    'if AreMultipleValidatedServers() then
+                    '    channelDir.ShortDescriptionLine2 = "Browse channels to install on " + server.name
+                    'else
+                    '    channelDir.ShortDescriptionLine2 = "Browse channels to install on " + server.name 
+                    'end if
+                    ' ljunkie - this is never reloaded, so we might as well show the sever.name
+                    channelDir.Description = "Browse channels to install on " + server.name
+                    'channelDir.Description = channelDir.ShortDescriptionLine2
                     channelDir.SDPosterURL = imageDir + "more.png"
                     channelDir.HDPosterURL = imageDir + "more.png"
                     status.content.Push(channelDir)
