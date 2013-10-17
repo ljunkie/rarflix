@@ -28,7 +28,8 @@ Function createAudioPlayer(viewController)
     obj.audioPlayer.SetMessagePort(obj.Port)
 
     obj.Context = invalid
-    obj.CurIndex = invalid
+    obj.CurIndex = invalid ' this now what is currenlty displayed on the screen
+    obj.PlayIndex = invalid ' this is whats playing
     obj.ContextScreenID = invalid
     obj.SetContext = audioPlayerSetContext
 
@@ -36,6 +37,7 @@ Function createAudioPlayer(viewController)
 
     obj.PlayThemeMusic = audioPlayerPlayThemeMusic
 
+    obj.ShufflePlay = false
     obj.IsPlaying = false
     obj.IsPaused = false
 
@@ -51,13 +53,15 @@ Function audioPlayerHandleMessage(msg) As Boolean
 
     if type(msg) = "roAudioPlayerEvent" then
         handled = true
-        item = m.Context[m.CurIndex]
+        ' item = m.Context[m.CurIndex] -- ljunkie
+        item = m.Context[m.PlayIndex] ' curIndex is used for switching screens ( not always the music in the backgroud)
 
         if msg.isRequestSucceeded() then
             Debug("Playback of single song completed")
 
             if item.ratingKey <> invalid then
                 Debug("Scrobbling audio track -> " + tostr(item.ratingKey))
+                Debug("Scrobbling audio track -> " + tostr(item.artist) + " - " + tostr(item.album) + " - " + tostr(item.title))
                 item.Server.Scrobble(item.ratingKey, item.mediaContainerIdentifier)
             end if
 
@@ -69,15 +73,19 @@ Function audioPlayerHandleMessage(msg) As Boolean
             end if
 
             maxIndex = m.Context.Count() - 1
-            newIndex = m.CurIndex + 1
+            'newIndex = m.CurIndex + 1
+            newIndex = m.PlayIndex + 1
             if newIndex > maxIndex then newIndex = 0
-            m.CurIndex = newIndex
+            'm.CurIndex = newIndex 
+            m.PlayIndex = newIndex
         else if msg.isRequestFailed() then
             Debug("Audio playback failed")
             maxIndex = m.Context.Count() - 1
-            newIndex = m.CurIndex + 1
+            ' newIndex = m.CurIndex + 1
+            newIndex = m.PlayIndex + 1
             if newIndex > maxIndex then newIndex = 0
-            m.CurIndex = newIndex
+            ' m.CurIndex = newIndex
+            m.PlayIndex = newIndex
         else if msg.isListItemSelected() then
             Debug("Starting to play track: " + tostr(item.Url))
             m.IsPlaying = true
@@ -147,13 +155,15 @@ End Sub
 Sub audioPlayerStop()
     if m.Context <> invalid then
         m.audioPlayer.Stop()
-        m.audioPlayer.SetNext(m.CurIndex)
+'        m.audioPlayer.SetNext(m.CurIndex)
+        m.audioPlayer.SetNext(m.PlayIndex)
         m.IsPlaying = false
         m.IsPaused = false
     end if
 End Sub
 
 Sub audioPlayerNext(play=true)
+    ' this used to display and backgroup ( if play is true) set playIndex/curIndex
     if m.Context = invalid then return
 
     maxIndex = m.Context.Count() - 1
@@ -162,8 +172,8 @@ Sub audioPlayerNext(play=true)
     if newIndex > maxIndex then newIndex = 0
     ' Allow right/left in springboard when item selected is NOT the on playing
     m.CurIndex = newIndex
-
     if play then 
+        m.PlayIndex = newIndex ' only update if playing
         m.Stop()
         m.audioPlayer.SetNext(newIndex)
         m.Play()
@@ -171,6 +181,7 @@ Sub audioPlayerNext(play=true)
 End Sub
 
 Sub audioPlayerPrev(play=true)
+    ' this used to display and backgroup ( if play is true) set playIndex/curIndex
     if m.Context = invalid then return
 
     newIndex = m.CurIndex - 1
@@ -180,6 +191,7 @@ Sub audioPlayerPrev(play=true)
     m.CurIndex = newIndex
 
     if play then 
+        m.PlayIndex = newIndex ' only update if playing
         m.Stop()
         m.audioPlayer.SetNext(newIndex)
         m.Play()
@@ -193,7 +205,7 @@ Sub audioPlayerSetContext(context, contextIndex, screen, startPlayer)
 
     m.Context = context
     m.CurIndex = contextIndex
-
+    m.PlayIndex = contextIndex
     if screen <> invalid then
         m.ContextScreenID = screen.ScreenID
     else
@@ -231,12 +243,13 @@ Sub audioPlayerSetContext(context, contextIndex, screen, startPlayer)
 End Sub
 
 Sub audioPlayerShowContextMenu()
+    ' this is the dialog for Now Playing - use the playIndex
     dialog = createBaseDialog()
     dialog.Title = "Now Playing" 
 
-    dialog.Text =               "  Artist: " + firstOf(m.Context[m.CurIndex].Artist, "") + chr(10)
-    dialog.Text = dialog.Text + "Album: " + firstOf(m.Context[m.CurIndex].Album, "")
-    if m.Context[m.CurIndex].releasedate <> invalid then dialog.Text = dialog.Text + " (" + m.Context[m.CurIndex].releasedate + ")"
+    dialog.Text =               "  Artist: " + firstOf(m.Context[m.PlayIndex].Artist, "") + chr(10)
+    dialog.Text = dialog.Text + "Album: " + firstOf(m.Context[m.PlayIndex].Album, "")
+    if m.Context[m.PlayIndex].releasedate <> invalid then dialog.Text = dialog.Text + " (" + m.Context[m.PlayIndex].releasedate + ")"
 
     
 
@@ -248,15 +261,15 @@ Sub audioPlayerShowContextMenu()
     else 
         dialog.Title = "Now Stopped" 
     end if
-    dialog.Title = dialog.Title + " - " + firstOf(m.Context[m.CurIndex].Title, "")
+    dialog.Title = dialog.Title + " - " + firstOf(m.Context[m.PlayIndex].Title, "")
 
     ' ljunkie - slideshow fun
     count = m.viewcontroller.screens.count() - 1
     m.slideshow = invalid
     if count > 1 and type(m.viewcontroller.screens[count].screen)  = "roSlideShow" then 
       m.slideshow = m.viewcontroller.screens[count]
-      if type(m.slideshow.CurIndex) = "roInteger" and type(m.slideshow.items) = "roArray" then  ' ljunkie - show the photo title a slide show is in progress
-          dialog.Text = dialog.Text + chr(10) + " Photo: " + m.slideshow.items[m.slideshow.CurIndex].textoverlayul
+      if type(m.slideshow.PlayIndex) = "roInteger" and type(m.slideshow.items) = "roArray" then  ' ljunkie - show the photo title a slide show is in progress
+          dialog.Text = dialog.Text + chr(10) + " Photo: " + m.slideshow.items[m.slideshow.PlayIndex].textoverlayul
           if m.slideshow.isPaused = invalid then m.slideshow.isPaused = false
       end if 
     end if 

@@ -207,8 +207,11 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screenName = "Album Poster"
     else if item.key = "nowplaying" then
         m.AudioPlayer.ContextScreenID = m.nextScreenId
-        screen = createAudioSpringboardScreen(m.AudioPlayer.Context, m.AudioPlayer.CurIndex, m)
+        ' screen = createAudioSpringboardScreen(m.AudioPlayer.Context, m.AudioPlayer.CurIndex, m) (curindex can be different now)
+        screen = createAudioSpringboardScreen(m.AudioPlayer.Context, m.AudioPlayer.PlayIndex, m)
         screenName = "Now Playing"
+        breadcrumbs = [screenName," "," "] ' set breadcrumbs for this..
+        print m.AudioPlayer.Context[m.AudioPlayer.PlayIndex]
         if screen = invalid then return invalid
     else if contentType = "audio" then
         screen = createAudioSpringboardScreen(context, contextIndex, m)
