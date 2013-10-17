@@ -279,7 +279,7 @@ Sub initTheme()
     theme.SpringboardDirectorLabel = detailText
     theme.SpringboardGenreColor = normalText
     theme.SpringboardSynopsisColor = normalText
-
+    theme.SpringboardAllow6Buttons = "true"
     ' Not sure these are actually used, but they should probably be normal
     theme.SpringboardSynopsisText = normalText
     theme.EpisodeSynopsisText = normalText
