@@ -28,7 +28,7 @@ Sub InitRARFlix()
     'RegDelete("rf_grid_style", "preferences")
     'RegDelete("rf_poster_grid_style", "preferences")
     'RegDelete("rf_theme", "preferences")
-
+    RegDelete("rf_img_overlay", "preferences")
     Debug("=======================RARFLIX SETTINGS ====================================")
 
     ' purge specific sections - works for unclean exists ( add new sections to purge to "purge_sections")
@@ -85,7 +85,7 @@ Sub InitRARFlix()
     end if
  
     'RegRead("rf_theme", "preferences","black") done in appMain initTheme()
-    RegRead("rf_img_overlay", "preferences","999999") ' white
+    RegRead("rf_img_overlay", "preferences","BFBFBF") ' plex white
     RegRead("rf_channel_text", "preferences","disabled") ' enabled channel icons to show text ( after the main row )
     RegRead("rf_poster_grid", "preferences","grid")
     RegRead("rf_grid_style", "preferences","flat-movie")
@@ -381,9 +381,9 @@ Function createRARFlixPrefsScreen(viewController) As Object
 
     ' text overlay color (customer posters)
     rf_overlay = [
-        { title: "White", EnumValue: "999999",}
+        { title: "White  (Plex)", EnumValue: "BFBFBF", }
         { title: "Orange (Plex)", EnumValue: "FFA500", }
-        { title: "Dark Gray", EnumValue: "202020",}
+        { title: "White", EnumValue: "F5F5F5",}
         { title: "Light Gray", EnumValue: "A0A0A0",}
         { title: "Gray", EnumValue: "606060",}
         { title: "Tan", EnumValue: "bf8e60",}
@@ -393,7 +393,20 @@ Function createRARFlixPrefsScreen(viewController) As Object
     obj.Prefs["rf_img_overlay"] = {
         values: rf_overlay,
         heading: "Text Color for Images in Sub Sections",
-        default: "999999"
+        default: "BFBFBF"
+    }
+
+    ' Breadcrumb fixes
+    custom_thumbs = [
+        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Use Custom"  },
+        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Use Generic Icon"  },
+
+
+    ]
+    obj.Prefs["rf_custom_thumbs"] = {
+        values: custom_thumbs,
+        heading: "Replace Generic Icons with Text",
+        default: "enabled"
     }
 
    ' enable notifications?  (if we add more events (currently now playing) we can add more toggles )
@@ -446,17 +459,24 @@ Function createRARFlixPrefsScreen(viewController) As Object
 
     obj.Screen.SetHeader("RARFlix Preferences")
     obj.AddItem({title: "Theme"}, "rf_theme", obj.GetEnumValue("rf_theme"))
-    obj.AddItem({title: "Overlay", ShortDescriptionLine2: "Color to text overlay in sub sections"}, "rf_img_overlay", obj.GetEnumValue("rf_img_overlay"))
+    obj.AddItem({title: "Custom Icons", ShortDescriptionLine2: "Replace generic icons with Text"}, "rf_custom_thumbs", obj.GetEnumValue("rf_custom_thumbs"))
+    if RegRead("rf_custom_thumbs", "preferences","enabled") = "enabled" then
+        obj.AddItem({title: "Custom Icons Text", ShortDescriptionLine2: "Color of text to use"}, "rf_img_overlay", obj.GetEnumValue("rf_img_overlay"))
+    end if
     obj.AddItem({title: "Hide Rows",ShortDescriptionLine2: "Sorry for the confusion..."}, "hide_rows_prefs")
     obj.AddItem({title: "Section Display", ShortDescriptionLine2: "a plex original, for easy access"}, "sections")
 
     obj.AddItem({title: "Movie Trailers", ShortDescriptionLine2: "Got Trailers?"}, "rf_trailers", obj.GetEnumValue("rf_trailers"))
     obj.AddItem({title: "Rotten Tomatoes", ShortDescriptionLine2: "Movie Ratings from Rotten Tomatoes"}, "rf_rottentomatoes", obj.GetEnumValue("rf_rottentomatoes"))
-    obj.AddItem({title: "Rotten Tomatoes Score", ShortDescriptionLine2: "Who do you trust more..." + chr(10) + "A Critic or an Audience?"}, "rf_rottentomatoes_score", obj.GetEnumValue("rf_rottentomatoes_score"))
-    obj.AddItem({title: "Trailers/Tomatoes Search by", ShortDescriptionLine2: "You probably don't want to change this"}, "rf_searchtitle", obj.GetEnumValue("rf_searchtitle"))
+    if RegRead("rf_rottentomatoes", "preferences","enabled") = "enabled" then
+        obj.AddItem({title: "Rotten Tomatoes Score", ShortDescriptionLine2: "Who do you trust more..." + chr(10) + "A Critic or an Audience?"}, "rf_rottentomatoes_score", obj.GetEnumValue("rf_rottentomatoes_score"))
+    end if
+    if RegRead("rf_rottentomatoes", "preferences","enabled") = "enabled" or RegRead("rf_trailers", "preferences") <> "disabled" then
+        obj.AddItem({title: "Trailers/Tomatoes Search by", ShortDescriptionLine2: "You probably don't want to change this"}, "rf_searchtitle", obj.GetEnumValue("rf_searchtitle"))
+    end if
     obj.AddItem({title: "Dynamic Headers", ShortDescriptionLine2: "Info on the top Right of the Screen"}, "rf_bcdynamic", obj.GetEnumValue("rf_bcdynamic"))
     obj.AddItem({title: "TV Show (Watched Status)", ShortDescriptionLine2: "feels good enabled"}, "rf_tvwatch", obj.GetEnumValue("rf_tvwatch"))
-    obj.AddItem({title: "Focus on Unwatched", ShortDescriptionLine2: "Default to the first unwatched item"}, "rf_focus_unwatched", obj.GetEnumValue("rf_focus_unwatched"))
+    obj.AddItem({title: "Focus on Unwatched", ShortDescriptionLine2: "Default to the first unwatched " + chr(10) + "item (poster screen only)"}, "rf_focus_unwatched", obj.GetEnumValue("rf_focus_unwatched"))
     obj.AddItem({title: "Clock on Home Screen"}, "rf_hs_clock", obj.GetEnumValue("rf_hs_clock"))
     obj.AddItem({title: "Unwatched Added/Released", ShortDescriptionLine2: "Item limit for unwatched Recently Added &" + chr(10) +"Recently Released rows [movies]"}, "rf_rowfilter_limit", obj.GetEnumValue("rf_rowfilter_limit"))
     obj.AddItem({title: "Star Ratings Override", ShortDescriptionLine2: "Only show or Prefer"+chr(10)+"Star Ratings that you have set"}, "rf_user_rating_only", obj.GetEnumValue("rf_user_rating_only"))
@@ -465,7 +485,9 @@ Function createRARFlixPrefsScreen(viewController) As Object
 
     if isRFtest() then 
         obj.AddItem({title: "Now Playing Notifications", ShortDescriptionLine2: "Want to be notified on Now Playing?"}, "rf_notify", obj.GetEnumValue("rf_notify"))
-        obj.AddItem({title: "Now Playing Notify Types", ShortDescriptionLine2: "When do you want to be notified?" + chr(10) + " On Start/Stop or Both"}, "rf_notify_np_type", obj.GetEnumValue("rf_notify_np_type"))
+        if RegRead("rf_notify", "preferences","enabled") = "enabled" then 
+            obj.AddItem({title: "Now Playing Notify Types", ShortDescriptionLine2: "When do you want to be notified?" + chr(10) + " On Start/Stop or Both"}, "rf_notify_np_type", obj.GetEnumValue("rf_notify_np_type"))
+        end if
     end if
 
     obj.AddItem({title: "Close"}, "close")
@@ -975,29 +997,34 @@ Function ShallowCopy(array As Dynamic, depth = 0 As Integer) As Dynamic
 End Function
 
 sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
-    sizes = ImageSizes(metadata.ViewGroup, nodeType)
-    ' mod_rewrite/apache do not allow & or %26
-    ' replace with :::: - the cdn will replace with &
-    reand = CreateObject("roRegex", "&", "") 
-    reslash = CreateObject("roRegex", "/", "")  ' seo urls, so replace these
-    redots = CreateObject("roRegex", "\.", "")  ' freaks out the photo transcoder
-    thumb_text = reand.ReplaceAll(thumb_text, "::::") 
-    thumb_text = reslash.ReplaceAll(thumb_text, "::") 
-    thumb_text = redots.ReplaceAll(thumb_text, " ") 
-    sdWidth  = "223"
-    sdHeight = "200"
-    hdWidth  = "300"
-    hdHeight = "300"
-    rarflix_cdn = "http://d1gah69i16tuow.cloudfront.net"
-    NewThumb = rarflix_cdn + "/images/key/" + URLEncode(thumb_text) ' this will be a autogenerate poster (transparent)
-    NewThumb = NewThumb + "/size/" + tostr(hdWidth) + "x" + tostr(hdHeight) ' things seem to play nice this way with the my image processor
-    NewThumb = NewThumb + "/fg/" + RegRead("rf_img_overlay", "preferences","999999")
-    Debug("----   newraw:" + tostr(NewThumb))
-    ' we still want to transcode the size to the specific roku standard
-
-    metadata.SDPosterURL = metadata.server.TranscodedImage(metadata.server.serverurl, NewThumb, sizes.sdWidth, sizes.sdHeight) 
-    metadata.HDPosterURL = metadata.server.TranscodedImage(metadata.server.serverurl, NewThumb, sizes.hdWidth, sizes.hdHeight)
-    Debug("----      new:" + tostr(metadata.HDPosterURL))
+    if RegRead("rf_custom_thumbs", "preferences","enabled") = "enabled" then
+        sizes = ImageSizes(metadata.ViewGroup, nodeType)
+        ' mod_rewrite/apache do not allow & or %26
+        ' replace with :::: - the cdn will replace with &
+        reand = CreateObject("roRegex", "&", "") 
+        reslash = CreateObject("roRegex", "/", "")  ' seo urls, so replace these
+        redots = CreateObject("roRegex", "\.", "")  ' freaks out the photo transcoder
+        thumb_text = reand.ReplaceAll(thumb_text, "::::") 
+        thumb_text = reslash.ReplaceAll(thumb_text, "::") 
+        thumb_text = redots.ReplaceAll(thumb_text, " ") 
+        sdWidth  = "223"
+        sdHeight = "200"
+        hdWidth  = "300"
+        hdHeight = "300"
+        if isRFdev() then 
+            rarflix_cdn = "http://ec2.rarflix.com" ' use non-cached server for testing (same destination as cloudfrount)
+        else
+            rarflix_cdn = "http://d1gah69i16tuow.cloudfront.net"
+        end if 
+        NewThumb = rarflix_cdn + "/images/key/" + URLEncode(thumb_text) ' this will be a autogenerate poster (transparent)
+        NewThumb = NewThumb + "/size/" + tostr(hdWidth) + "x" + tostr(hdHeight) ' things seem to play nice this way with the my image processor
+        NewThumb = NewThumb + "/fg/" + RegRead("rf_img_overlay", "preferences","999999")
+        Debug("----   newraw:" + tostr(NewThumb))
+        ' we still want to transcode the size to the specific roku standard
+        metadata.SDPosterURL = metadata.server.TranscodedImage(metadata.server.serverurl, NewThumb, sizes.sdWidth, sizes.sdHeight) 
+        metadata.HDPosterURL = metadata.server.TranscodedImage(metadata.server.serverurl, NewThumb, sizes.hdWidth, sizes.hdHeight)
+        Debug("----      new:" + tostr(metadata.HDPosterURL))
+    end if
 end sub
 
 ' ljunkie - crazy sauce right? this is a way to figure out what section we are in 
