@@ -659,20 +659,6 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
        dialog.SetButton("seasonFromEpisode", "View Season " + obj.metadata.parentIndex)
     end if
 
-    if obj.metadata.type = "season" or obj.metadata.ContentType = "movie"  or obj.metadata.ContentType = "show"  or obj.metadata.ContentType = "episode"  or obj.metadata.ContentType = "series" then
-    'if obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "series" then ' TODO - try and make this work with TV shows ( seems it only works for episodes -- but not well ) 
-        dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
-    else 
-       Debug("---- Cast and Crew are not available for " + tostr(obj.metadata.ContentType))
-       print obj.metadata
-    end if
-
-    ' Trailers link - RR (last now that we include it on the main screen .. well before delete - people my be used to delete being second to last)
-    'if obj.metadata.grandparentKey = invalid then
-    if obj.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
-        dialog.SetButton("getTrailers", "Trailer")
-    end if
-
     supportedIdentifier = (obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
     if supportedIdentifier then
         if obj.metadata.viewOffset <> invalid AND val(obj.metadata.viewOffset) > 0 then ' partially watched
@@ -693,6 +679,21 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
         if obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "episode" or obj.metadata.ContentType = "show"  then
             dialog.SetButton("rate", "_rate_")
         end if
+    end if
+
+    ' thes are on the main details screen -- show them last ( maybe not at all )
+    if obj.metadata.type = "season" or obj.metadata.ContentType = "movie"  or obj.metadata.ContentType = "show"  or obj.metadata.ContentType = "episode"  or obj.metadata.ContentType = "series" then
+    'if obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "series" then ' TODO - try and make this work with TV shows ( seems it only works for episodes -- but not well ) 
+        dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
+    else 
+       Debug("---- Cast and Crew are not available for " + tostr(obj.metadata.ContentType))
+       print obj.metadata
+    end if
+
+    ' Trailers link - RR (last now that we include it on the main screen .. well before delete - people my be used to delete being second to last)
+    'if obj.metadata.grandparentKey = invalid then
+    if obj.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
+        dialog.SetButton("getTrailers", "Trailer")
     end if
 
     dialog.SetButton("close", "Back")
@@ -728,10 +729,8 @@ sub fakeRefresh(force=false)
     'fake it for now
 end sub 
 
-' this should be merged with rfVideoMoreButton ( just need to add in the caveats)
+' This is the context Dialog from the GRID - I should rename this TODO
 sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
-
-
 
     ' this should probably just be combined into rfVideoMoreButton  ( there are some caveats though and maybe more to come.. so until this has been finalized )
     dialog = createBaseDialog()

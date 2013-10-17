@@ -51,8 +51,11 @@ Sub videoSetupButtons()
          m.AddButton("Trailer", "getTrailers")
     end if
 
+
     supportedIdentifier = (m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
     if supportedIdentifier then
+        ' we have 6 buttons now - we can show this! -- we might want to add a toggle for 5 or 6 buttons.. someone is going to whine :)
+        m.AddButton("Cast & Crew","RFCastAndCrewList")
 
         ' Partial Watch ( can be watched/unwatched - but in progess) allow scrobbleMore dialog - to show both options mark as watched or unwatched
         if m.metadata.viewOffset <> invalid AND val(m.metadata.viewOffset) > 0 then
@@ -65,6 +68,21 @@ Sub videoSetupButtons()
             m.AddButton("Mark as watched", "scrobble")
         end if
 
+    end if
+
+    ' we have ONE more button to work with -- if tv, lets add the seasons option
+    ' display View All Seasons if we have grandparentKey -- entered from a episode
+    ' we might want to add some more checks in here to limit the display.
+    ' Does someone really need to 'View Season 1' when they are already in Season 1
+    ' Does someone really need to 'View Season All season'  when previous screen might already be that?
+    if m.metadata.grandparentKey <> invalid then ' global on deck does not work with this
+    'if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
+         m.AddButton( "View All Seasons of " + m.metadata.ShowTitle , "showFromEpisode")
+    end if
+    ' display View specific season if we have parentKey/parentIndex -- entered from a episode
+    if m.metadata.parentKey <> invalid AND m.metadata.parentIndex <> invalid then  ' global on deck does not work with this
+    'if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
+        m.AddButton( "View Season " + m.metadata.parentIndex, "seasonFromEpisode")
     end if
     
     ' Delete button for myplex vidoes (queue/recommended)
@@ -140,11 +158,15 @@ Sub videoSetupButtons()
 
     end if
 
-	' more buttong if TV SHOW ( only if grandparent key is available,stops loops) OR if this is Movie
-	  if m.metadata.grandparentKey <> invalid  then
+         ' ljunkie - TV now supports cast and cres
+	 ' more buttong if TV SHOW ( only if grandparent key is available,stops loops) OR if this is Movie
+	 ' if m.metadata.grandparentKey <> invalid  then
+         '     m.AddButton("More...", "more")
+	 ' else if m.metadata.ContentType = "movie" then
+	  if m.metadata.ContentType = "movie" or  m.metadata.ContentType = "show" then
+              m.AddButton("Playback Options & More...", "more")
+          else 
               m.AddButton("More...", "more")
-	  else if m.metadata.ContentType = "movie" then
-              m.AddButton("Cast, Rate & More...", "more")
 	  end if
 
 
@@ -218,6 +240,7 @@ Sub videoGetMediaDetails(content)
 End Sub
 
 Function videoHandleMessage(msg) As Boolean
+    ' this is in the context of a the videos detail screen
     handled = false
 
     if type(msg) = "roSpringboardScreenEvent" then
@@ -315,6 +338,30 @@ Function videoHandleMessage(msg) As Boolean
                 dialog.HandleButton = videoDialogHandleButton
                 dialog.ParentScreen = m
                 dialog.Show()
+            ' rob to fix
+            else if buttonCommand = "RFCastAndCrewList" then
+                'm.ViewController.PopScreen(m) ' close dialog before we show the Cast&Crew screen
+                ' for now lets not use the show with episode
+                dialog = ShowPleaseWait("Please wait","Gathering the Cast and Crew for '" + firstof(m.metadata.showtitle,m.metadata.cleantitle,m.metadata.umtitle,m.metadata.title) + "'")
+                screen = RFcreateCastAndCrewScreen(m)
+                if screen <> invalid then  screen.Show()
+                dialog.Close()
+            else if buttonCommand = "showFromEpisode" then
+                breadcrumbs = ["All Seasons",m.metadata.showtitle]
+                dummyItem = CreateObject("roAssociativeArray")
+                dummyItem.ContentType = "series"
+                dummyItem.key = m.metadata.grandparentKey + "/children"
+                dummyItem.server = m.metadata.server
+                m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
+                closeDialog = true
+            else if buttonCommand = "seasonFromEpisode" then
+                breadcrumbs = [m.metadata.showtitle, "Season " + m.metadata.parentindex]
+                dummyItem = CreateObject("roAssociativeArray")
+                dummyItem.ContentType = "series"
+                dummyItem.key = m.metadata.parentKey + "/children"
+                dummyItem.server = m.metadata.server
+                m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
+                closeDialog = true
             else
                 handled = false
             end if
