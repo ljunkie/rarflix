@@ -912,17 +912,23 @@ end sub
 sub rfDefRemoteOptionButton(m) 
     'for now we will show the preferences screen :)
 
-    new = CreateObject("roAssociativeArray")
-    new.sourceUrl = ""
-    'new.ContentType = "prefs"
-    'new.Key = "globalprefs"
-    'new.Title = "Preferences"
-    new.Key = "globalsearch"
-    new.Title = "Search"
-    new.ContentType = "search"
-    breadcrumbs = ["Miscellaneous","Search"]
-    m.ViewController.CreateScreenForItem(new, invalid, breadcrumbs)
-    Debug("Showing default serach screen - remote option button pressed ")
+    sec_metadata = getSectionType(m)
+    notAllowed = CreateObject("roRegex", "artist|music|album", "") 
+    if  NOT notAllowed.isMatch(tostr(sec_metadata.type)) then 
+        new = CreateObject("roAssociativeArray")
+        new.sourceUrl = ""
+        'new.ContentType = "prefs"
+        'new.Key = "globalprefs"
+        'new.Title = "Preferences"
+        new.Key = "globalsearch"
+        new.Title = "Search"
+        new.ContentType = "search"
+        breadcrumbs = ["Miscellaneous","Search"]
+        m.ViewController.CreateScreenForItem(new, invalid, breadcrumbs)
+        Debug("Showing default serach screen - remote option button pressed ")
+     else
+        Debug("Default dialog not allowed in this section")
+     end if 
 end sub
 
 
