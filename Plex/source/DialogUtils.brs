@@ -82,7 +82,6 @@ Sub dialogRefresh()
             if m.Item.origStarRating = invalid then m.Item.origStarRating = 0
             m.Screen.AddRatingButton(buttonCount, m.Item.UserRating, m.Item.origStarRating, "")
         else
-            button[cmd] = re.ReplaceAll(button[cmd], "")    
 	    if inArray(m.sepBefore,cmd) then m.Screen.AddButtonSeparator()
             m.Screen.AddButton(buttonCount, button[cmd])
 	    if inArray(m.sepAfter,cmd) then m.Screen.AddButtonSeparator()

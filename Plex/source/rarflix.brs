@@ -740,7 +740,8 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     if obj.isfullgrid = invalid and type(obj.screen) = "roGridScreen" then 
         fromName = "invalid"
         if type(obj.loader.getnames) = "roFunction" and obj.selectedrow <> invalid then fromName = obj.loader.getnames()[obj.selectedrow]
-        dialog.SetButton("fullGridScreen", "Grid View: " + fromName + ":AddButtonSeparator")
+        dialog.sepAfter.Push("fullGridScreen")
+        dialog.SetButton("fullGridScreen", "Grid View: " + fromName)
     end if
 
 
@@ -935,7 +936,8 @@ sub rfDialogGridScreen(obj as Object) as Dynamic
         dialog = createBaseDialog()
         fromName = "invalid"
         if type(obj.loader.getnames) = "roFunction" and obj.selectedrow <> invalid then fromName = obj.loader.getnames()[obj.selectedrow]
-        dialog.SetButton("fullGridScreen", "Grid View: " + fromName + ":AddButtonSeparator") 'and type(obj.screen) = "roGridScreen" 
+        dialog.sepAfter.Push("fullGridScreen")
+        dialog.SetButton("fullGridScreen", "Grid View: " + fromName) 'and type(obj.screen) = "roGridScreen" 
         dialog.Text = ""
         dialog.Title = "Options"
     
@@ -1051,3 +1053,4 @@ function getSectionType(vc) as object
     end if
     return metadata ' return empty assoc
 end function
+
