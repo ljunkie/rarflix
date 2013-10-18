@@ -134,16 +134,21 @@ Sub containerParseXml()
 
         if RegRead("rf_custom_thumbs", "preferences","enabled") = "enabled" then
             rfHasThumb = firstof(n@thumb, n@grandparentThumb, n@parentThumb)
-            re = CreateObject("roRegex", "/:/resources/actor-icon|resources/Book1.png", "") ' TODO: any other than actor_con? these are default template.. ignore them
-    
+           ' any other resources we want to override below
+            re = CreateObject("roRegex", "/:/resources/actor-icon|resources/Book1.png", "") 
             ' this has mixed results - really the channel provider should be adding custom thumbs for every directory instead of the base channel thumb
             ' I.E. youtube, cbs.. ( for now it's disabled - Toggle is ready, but I am not ready for the outcome -- I.E. use it for "this" channel, and not "that" channel, etc..) 
             if RegRead("rf_channel_text", "preferences","disabled") <> "disabled" and nodetype = invalid then
                 rfHasThumb = invalid
             end if
-          
+
             ' for now, I am not going to override these
-            if tostr(nodeType) =  "track" or tostr(nodeType) = "album" then rfHasThumb = "skip"
+            remusic = CreateObject("roRegex", "resources%2Fartist.png", "") 
+            if tostr(nodeType) =  "track" or tostr(nodeType) = "album" then
+              rfHasThumb = "skip"
+              if remusic.isMatch(tostr(metadata.HDPosterURL)) then rfHasThumb = invalid
+            end if
+                  
     
             if rfHasThumb = invalid or re.isMatch(rfHasThumb) then 
                 thumb_text = firstof(metadata.umtitle, metadata.title)
