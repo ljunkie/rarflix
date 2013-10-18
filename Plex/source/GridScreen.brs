@@ -74,9 +74,10 @@ Function createGridScreenForItem(item, viewController, style, SetDisplayMode = "
 End Function
 
 Function showGridScreen() As Integer
-    facade = CreateObject("roGridScreen")
-    facade.Show()
-
+    'facade = CreateObject("roGridScreen")
+    'facade.Show()
+    ' ljunkie - not sure why an facade GridScreen is created. Maybe was neede in earlier firmware? Including it causes flashes between screens
+    facade = invalid
     totalTimer = createTimer()
 
     names = m.Loader.GetNames()
@@ -108,7 +109,7 @@ Function showGridScreen() As Integer
     end for
 
     m.Screen.Show()
-    facade.Close()
+    if facade <> invalid then facade.Close()
 
     ' Only two rows and five items per row are visible on the screen, so
     ' don't load much more than we need to before initially showing the
@@ -168,8 +169,9 @@ Function gridHandleMessage(msg) As Boolean
                     breadcrumbs = [m.Loader.GetNames()[msg.GetIndex()], item.Title]
                 end if
 
-                m.Facade = CreateObject("roGridScreen")
-                m.Facade.Show()
+                'ljunkie - not sure why an facade GridScreen is created. Maybe was neede in earlier firmware? Including it causes flashes between screens
+                'm.Facade = CreateObject("roGridScreen")
+                'm.Facade.Show()
 
                 m.ViewController.CreateScreenForItem(context, index, breadcrumbs)
             end if
@@ -491,8 +493,7 @@ Sub gridActivate(priorScreen)
     m.HasData = false
     m.Refreshing = true
     m.Loader.RefreshData()
-
-    if m.Facade <> invalid then m.Facade.Close()
+    if m.Facade <> invalid then  m.Facade.Close()
 End Sub
 
 Sub gridOnTimerExpired(timer)
