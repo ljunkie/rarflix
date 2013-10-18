@@ -77,7 +77,7 @@ Sub videoSetupButtons()
     ' Does someone really need to 'View Season All season'  when previous screen might already be that?
     if m.metadata.grandparentKey <> invalid then ' global on deck does not work with this
     'if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
-         m.AddButton( "View All Seasons of " + m.metadata.ShowTitle , "showFromEpisode")
+         m.AddButton( "View All Seasons", "showFromEpisode")
     end if
     ' display View specific season if we have parentKey/parentIndex -- entered from a episode
     if m.metadata.parentKey <> invalid AND m.metadata.parentIndex <> invalid then  ' global on deck does not work with this
