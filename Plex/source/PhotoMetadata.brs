@@ -57,6 +57,7 @@ Function newPhotoMetadata(container, item, detailed=true) As Object
         size = GetGlobal("DisplaySize")
 
         ' JPEG and PNG are documented, GIF appears to work fine
+        ' ljunkie - TODO - but it's also document the roku will cover the image back to a JPG ( is it faster to complete on the server )
         if format <> "JPEG" AND format <> "JPG" AND format <> "PNG" AND format <> "GIF" then
             Debug("Transcoding photo to JPEG from " + format)
             transcode = true

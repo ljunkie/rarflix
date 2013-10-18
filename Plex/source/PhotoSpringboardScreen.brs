@@ -64,7 +64,7 @@ Function photoHandleMessage(msg) As Boolean
                 m.ViewController.CreatePhotoPlayer(m.Item)
             else if buttonCommand = "slideshow" then
                 Debug("photoHandleMessage:: Start slideshow")
-                pscreen = m.viewcontroller.screens[m.viewcontroller.screens.count()-2]
+                pscreen = m.viewcontroller.screens[m.viewcontroller.screens.count()-2] ' we have to look 1 screen back ( zero index so -2 )
                 obj = getAllRowsContext(pscreen, m.context, m.CurIndex) ' if a GridScreen - we will grab all rows context
                 m.ViewController.CreatePhotoPlayer(obj.context, obj.curindex)
             else if buttonCommand = "next" then

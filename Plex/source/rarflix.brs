@@ -972,6 +972,7 @@ function getAllRowsContext(screen,context,index) as object
             end for
         end for
     end if
+
     obj.context = context
 
     return obj
