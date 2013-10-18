@@ -228,24 +228,24 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             screen = createGridScreenForItem(item, m, "flat-square")
             screen.screen.SetDisplayMode("Photo-Fit")
             screen.screen.SetListPosterStyles("landscape")
-            if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' override this so we can hide the sub sections ( flat-square is 7x3 )
+            if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 7x3 )
         else if tostr(item.type) = "photo" then 
             Debug("---- override photo-fit/flat-16x9 for section with content of " + tostr(item.type))
             screen = createGridScreenForItem(item, m, "flat-16X9","photo-fit")
 	    '            screen.screen.SetDisplayMode("Photo-Fit") ' this has to be called before
-            if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' override this so we can hide the sub sections ( flat-16x9 is 5x3 )
+            if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 7x3 )
         else 
             screen = createGridScreenForItem(item, m, "flat-movie", "scale-to-fill")
         end if
     else if contentType = "playlists" then
         screen = createGridScreenForItem(item, m, "flat-16X9")
         screenName = "Playlist Grid"
-        if screen.loader.focusrow <> invalid then screen.loader.focusrow = 1 ' override this so we can hide the sub sections ( flat-16x9 is 5x3 )
+        if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( flat-16x9 is 5x3 )
     else if contentType = "photo" then
         if right(item.key, 8) = "children" then
             if poster_grid = "grid" then 
                 screen = createFULLGridScreen(item, m, "flat-16x9", "photo-fit")
-                screen.loader.focusrow = 2 ' lets fill the screen ( 5x3 )
+                screen.loader.focusrow = 1 ' lets fill the screen ( 5x3 ) - no header row ( might be annoying page up for first section.. TODO)
             else 
                 screen = createPosterScreen(item, m)
             end if
