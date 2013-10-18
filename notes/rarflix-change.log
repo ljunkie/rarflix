@@ -1,3 +1,83 @@
+# 2.6.19-test (2013-10-18)
+   ### Major changes
+    * full grid
+    * black theme
+    * custom thumbs
+    * 6 buttons
+    * music changes
+    
+   ### Detailed Changes
+
+   # full grid 
+    * initial release of 'full' grid
+    * toggle for preferring "poster" or a "full" grid when applicable ( this is how you turn off the full grid )
+    * sub section row [header row] added to top the grid screen. click up to see it
+    * custom rows (unwatched recently released/added rows) are now in the header section
+    * toggle: size of perferred grid size ( 5x2 [default] or 7x3 )
+    * dynamically update breadcrumbs for full grid ( what a headache )
+    * play slideshow from the full grid ( by default slideshow would only include content one row - 5 items - now all )
+    * allow the full grid from the home screen ( option key )
+    * hide items in header row based 'hide rows' set in prefs
+    * re-order header row based on 'row order' set in prefs
+    * pagination updates: load all rows/items in full grid while viewing photo section: required for slideshow
+    * for all other full grid sections - load 20 rows at a time instead of the default 2. *should* give a better ux when scrolling down and in general
+
+   # misc changes (you can see)
+    * 5x2 screen posters are now scaled to fill
+    * search screen default is now 5x2 and scale-to-fill
+    * fix flashing between screens (remove facade screen on gridscreen creation)
+
+   # full grid caveats
+    * disable full grid for: channels (apps) pms does not support paginated requests
+    * disable full grid for: app directory   pms does not support paginated requests
+    * disable full grid for: season view (episodes) -- requires episodic display
+    * disable full grid for: music tracks  -- requires episodic display
+
+   # custom thumbs (text description)
+    * use cutsom thumbs for items that normally use a generic one ( sub sections )
+    * dynamically created on the fly for any title
+    * server generated thumbs is located @ amazon using the cloudfront cdn ( fast and resilient )
+    * your local pms will cache the generated thumb on the first download
+    * toggle: enable/disable custom images
+    * toggle: change colors of overlay (text)
+
+   # themes
+    * initial black theme created [ default ]
+    * new images created for black theme ( some required just a background color update )
+    * toggle for theme ( original / black)
+    * button highlight text: plex orange ( for all screens )
+    * dialog title/text: fixed to fit the dark theme and normal theme
+
+   # tv & movies screen
+    * we can now show 6 buttons!
+    * add buttons (cast & crew, season, all seasons) to tv and movies when applicaable
+
+   # music
+    * direct play from music album ( with play button on remote )
+    * denres wrong. use new filtering calls for music genres ( only include artist genres )
+    * do not append watched status for music (albums)
+    * displayed music artist - toggle for display: track / album / track when various
+    * allow left/right buttons in song details without playing the song if it's not the current song playing
+    * fwd/rwd buttons will not seek 10 seconds fwd/rwd in the now playing screen
+    * option key brings up the loop/shuffle dialog in now playing screen
+    * option key gives button link to 'now playing' when the view song is not the one playing
+    * fix/cleanup logic when to display the audio dialog
+    * do not show default search dialog with remote option key when in a 'music' section or subsection
+    * update breadcrumbs "correctly" now playing screen
+    * buttons for loop and shuffle on the details screen (where you see play/pause/etc) -- 6 buttons allowed now
+    * buttons will update when play state changes ( more of a fix for the additional buttons )
+    * remote arrow buttons will not play the next or previous song automatically ( you can choose when to play now )
+    * fwd/rwd remote buttons will fwd/rwd 10 seconds ( beta and can cause a crash as the audioplayer still has bugs -- roku issue)
+
+   # other misc fixes and changes
+    * update breadcrumbs when play button is click for non playable item
+    * direct play from section directories: photos and music albums
+    * had regression with some update: last focused section on entering channel ( should be fixed for good )
+    * text summary removed info dialog (to many buttons to display text)
+    * do not log/pring any messages internally unless logging has been enabled (save some cpu cycles)
+    * dependent toggles will now be hidden ( if parent is disable) in rarflix prefs. 
+    * add server name to the channel directory description
+
 # 2.6.19-dev (2013-10-09 - 2013-10-15)
 
 Date:   Tue Oct 15 17:21:06 2013 -0700
