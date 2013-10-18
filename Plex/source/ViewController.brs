@@ -573,16 +573,18 @@ Sub vcShowReleaseNotes()
     title = GetGlobal("appName") + " updated to " + GetGlobal("appVersionStr")
     paragraphs = []
     if isRFtest() then 
-        paragraphs.Push("New: Now Playing Notifications!")
-        paragraphs.Push("New: Now Playing on the Home Screen (with periodic updates)")
+        spacer = chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)
+        paragraphs.Push("---------- New ----------")
+        paragraphs.Push(spacer + "* full grid")
+        paragraphs.Push(spacer + "* black theme")
+        paragraphs.Push(spacer + "* custom thumbs")
+        paragraphs.Push(spacer + "* 6 buttons")
+        paragraphs.Push(spacer + "* music changes")
     end if
-    paragraphs.Push("New: Cast & Crew works for more content")
-    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+ "+ Show All content [movie/tv/other] for selected Cast Member")
-    paragraphs.Push(" ( * ) Remote Button works is most areas - try it!")
-    paragraphs.Push(" Hide some rows per section type [movie,tv,music]")
-    paragraphs.Push(" RARFflix preferences - toggles for mods")
-    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+" Hide Rows, Clock, Dynamic Headers, Search Title, etc.. ")
-    paragraphs.Push("+ Movie Trailers, Rotten Tomatoes Ratings, HUD mods, other misc updates")
+
+    paragraphs.Push(" ")
+    paragraphs.Push("( * ) remote button works is most areas - try it!")
+    paragraphs.Push("+ Movie Trailers, Rotten Tomatoes Ratings, HUD mods, Now Playing, Cast & Crew, and many more - go to Preferences / RARflix")
     if NOT isRFtest() then paragraphs.Push(" ")
     paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+" ** Donate @ www.rarflix.com **")
 
