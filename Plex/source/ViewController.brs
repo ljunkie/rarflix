@@ -115,6 +115,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
 
     ' ljunkie - sorry for the madness
     ' breadcrumbs for Full Grid.. when we have "1-4 of 565" as a row name --- that is ugly and this is ghetto 
+
     re = CreateObject("roRegex", "\d+\s*-\s*\d+\s+of\s+\d+", "")
     if type(breadcrumbs) = "roArray" and breadcrumbs.count() > 1 and (re.Ismatch(breadcrumbs[0]) or re.IsMatch(breadcrumbs[1])) then 
         if type(m.screens) = "roArray" and m.screens.count() > 1 then  ' nested because I'm lame
@@ -126,8 +127,15 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             end if
     
             re = CreateObject("roRegex", "/library/sections/\d+/([^?\/]+)", "")
-            if (re.isMatch(item.sourceurl)) then
+            reMeta = CreateObject("roRegex", "/library/metadata/\d+/([^?\/]+)", "")
+
+            if (reMeta.isMatch(item.sourceurl)) then
+                    breadcrumbs[0] = tostr(item.title)
+            else if (re.isMatch(item.sourceurl)) then
+                
+                
                 fkey = re.Match(item.sourceurl)[1]
+                key = re.Match(item.sourceurl)[1]
                 for each k in keynames
                     if k.key = fkey then
                         fkey = k.name
@@ -135,8 +143,15 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
                     end if
                 end for
                 if fromFullGrid(m) then
-                     breadcrumbs[1] = UcaseFirst(firstof(item.umtitle,item.contenttype,item.type,item.viewgroup))
-                     breadcrumbs[0] = UcaseFirst(fkey)
+                     ' special for music - mayb more later
+                     if tostr(key) = "albums" and item.album <> invalid then 
+                         breadcrumbs[0] = UcaseFirst(item.artist)                     
+                         breadcrumbs[1] = UcaseFirst(item.album)                     
+                     else 
+                         ' else use the Section Name (fkey) and title, etc
+                         breadcrumbs[0] = UcaseFirst(fkey)    
+                         breadcrumbs[1] = UcaseFirst(firstof(item.umtitle,item.contenttype,item.type,item.viewgroup))
+                     end if
                 else 
                     breadcrumbs[0] = UcaseFirst(fkey)
                 end if
@@ -144,6 +159,9 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         end if
     end if
     ' end this madness
+
+    Debug("----- BC end result -----")
+    Debug(tostr(breadcrumbs[0]) + ", " + tostr(breadcrumbs[1]))
 
     ' ljunkie - reset breadcrumb for TV show if tv watched status enabled and title <> umtitle (post and grid view supported)
     if RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" and (item.type = "show" or item.viewgroup = "season" or item.viewgroup = "show" or item.viewgroup = "episode") then
