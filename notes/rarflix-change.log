@@ -1,14 +1,32 @@
-# 2.6.19-test (2013-10-18)
+#2.7.5 (2013-10-19)
+    * screensaver background is now black
+
+#2.7.4 (2013-10-19)
+    * breadrumbs fix for music full grid
+    * rogue music genres were once again making their way on the roku in the full grid
+    * please wait screen show when loading more than 300 items
+    * left/right button in springBoard loads all content "correctly" while in FULL Grid mode ( allows moving more than 5 items )
+    * slideshow - fix play all content when in subsections ( only loaded the default 5 )
+    * loading zero results in a grid screen could cause a crash later and anomalies
+
+#2.7.3 (2013-10-18)
+    * lazy load photo section in full grid
+    * load all context when playing from full grid
+    * load all context when clicking left/right in details screen ( you can now view more than the 5 item limit)
+    * some preferences being overwritten when starting the channel
+
+
+# 2.7.0-test (2013-10-18)
    ### Major changes
     * full grid
     * black theme
     * custom thumbs
     * 6 buttons
     * music changes
-    
+
    ### Detailed Changes
 
-   # full grid 
+   # full grid
     * initial release of 'full' grid
     * toggle for preferring "poster" or a "full" grid when applicable ( this is how you turn off the full grid )
     * sub section row [header row] added to top the grid screen. click up to see it
