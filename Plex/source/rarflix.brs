@@ -28,7 +28,7 @@ Sub InitRARFlix()
     'RegDelete("rf_grid_style", "preferences")
     'RegDelete("rf_poster_grid_style", "preferences")
     'RegDelete("rf_theme", "preferences")
-    RegDelete("rf_img_overlay", "preferences")
+    'RegDelete("rf_img_overlay", "preferences")
     Debug("=======================RARFLIX SETTINGS ====================================")
 
     ' purge specific sections - works for unclean exists ( add new sections to purge to "purge_sections")

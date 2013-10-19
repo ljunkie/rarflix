@@ -32,10 +32,10 @@ Sub Main(args)
     RegDelete("quality_override", "preferences")
 
     ' ljunkie - remove prefs on start - testing
-    RegDelete("rf_bcdynamic", "preferences")
-    RegDelete("rf_rottentomatoes", "preferences")
-    RegDelete("rf_trailers", "preferences")
-    RegDelete("rf_tvwatch", "preferences")
+    'RegDelete("rf_bcdynamic", "preferences")
+    'RegDelete("rf_rottentomatoes", "preferences")
+    'RegDelete("rf_trailers", "preferences")
+    'RegDelete("rf_tvwatch", "preferences")
 
 
     ' Convert the old theme music preference to the new one
