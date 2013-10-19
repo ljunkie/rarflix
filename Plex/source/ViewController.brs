@@ -338,6 +338,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     m.PushScreen(screen)
 
     if show then screen.Show()
+    if screen.hasWaitdialog <> invalid then screen.hasWaitdialog.close()
  
     ' set the inital focus row if we have set it ( normally due to the sub section row being added - look at the createpaginateddataloader )
     if screen.loader <> invalid and screen.loader.focusrow <> invalid then 

@@ -1,4 +1,5 @@
 Function createFULLGridScreen(item, viewController, style = "flat-movie", SetDisplayMode = "scale-to-fit") As Object
+    dialog=ShowPleaseWait("Please wait","")
     if style = "Invalid" then style = RegRead("rf_grid_style", "preferences", "flat-movie")
 
     Debug("---- Creating FULL grid with style" + tostr(style) + " SetDisplayMode:" + tostr(SetDisplayMode))
@@ -30,7 +31,7 @@ Function createFULLGridScreen(item, viewController, style = "flat-movie", SetDis
         obj.ViewController.AudioPlayer.PlayThemeMusic(item)
         obj.Cleanup = baseStopAudioPlayer
     end if
-
+    obj.hasWaitdialog = dialog
     return obj
 End Function
 
