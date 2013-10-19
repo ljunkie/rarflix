@@ -13,6 +13,10 @@ Function createFULLGridScreen(item, viewController, style = "flat-movie", SetDis
 
     item.key = re.ReplaceAll(item.key, "")    
 
+    ' yea, we still need to figure out what section type we are in
+    vc_metadata = getSectionType(viewController)
+    item.key = keyFiler(item.key,tostr(vc_metadata.type)) ' ljunkie - allow us to use the new filters for the simple keys
+
     container = createPlexContainerForUrl(item.server, item.sourceUrl, item.key)
 
     if style = "flat-square" then 
