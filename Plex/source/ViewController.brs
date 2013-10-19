@@ -581,9 +581,9 @@ Sub vcShowReleaseNotes()
         paragraphs.Push(spacer + "* 6 buttons")
         paragraphs.Push(spacer + "* music changes")
         paragraphs.Push(spacer + "* lazy load photo section")
+        paragraphs.Push(spacer + "* continuous play fix")
     end if
 
-    paragraphs.Push(" ")
     paragraphs.Push("( * ) remote button works is most areas - try it!")
     paragraphs.Push("+ Movie Trailers, Rotten Tomatoes Ratings, HUD mods, Now Playing, Cast & Crew, and many more - go to Preferences / RARflix")
     if NOT isRFtest() then paragraphs.Push(" ")
