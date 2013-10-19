@@ -123,13 +123,16 @@ Function showGridScreen() As Integer
     ' TODO verify how this looks on the ALL Movies screen - we might want to limit this since this really is only to fix
     ' playing a slideshow when in FULL grid mode
     if m.isFullGrid <> invalid and m.isFullGrid = true then 
-       sec_metadata = getSectionType(m)
-       if tostr(sec_metadata.type) = "photo" then 
-           Debug("---- Loading FULL grid - load ALL rows in PHOTO mode:" + tostr(maxRow) + " total")
-       else
-           maxRow = 20 ' in the FULL grid, loading 20 rows seems like an ok number. Might be able to raise this.
-           Debug("---- Loading FULL grid - load row 0 to row " + tostr(maxRow))
-       end if 
+       ' this sucks with couple hundred to thousands of phots.. we still need to lazy load
+       ' sec_metadata = getSectionType(m)
+       ' if tostr(sec_metadata.type) = "photo" then 
+       '     Debug("---- Loading FULL grid - load ALL rows in PHOTO mode:" + tostr(maxRow) + " total")
+       ' else
+       '    maxRow = 20 ' in the FULL grid, loading 20 rows seems like an ok number. Might be able to raise this.
+       '    Debug("---- Loading FULL grid - load row 0 to row " + tostr(maxRow))
+       'end if 
+       maxRow = 20 ' in the FULL grid, loading 20 rows seems like an ok number. Might be able to raise this.
+       Debug("---- Loading FULL grid - load row 0 to row " + tostr(maxRow))
     else if maxRow > 1 then 
         maxRow = 1
     end if
@@ -289,13 +292,29 @@ Function gridHandleMessage(msg) As Boolean
                 ' Playing Photos from a grid - we need all items
                 if m.item <> invalid and m.item.type = "photo" and m.item.contenttype <> "section" then 
                     Debug("Playing from GRID Screen - get context of ALL items in every row to play")
-                    obj = getAllRowsContext(m, context, m.focusedIndex) ' might extend this to others (play all)
+
+                    r  = CreateObject("roRegex", "[?&]X-Plex-Container-Start=\d+\&X-Plex-Container-Size\=.*", "")
+                    newurl = m.loader.sourceurl
+                    Debug("--------------------------- OLD " + tostr(newurl))
+                    if r.IsMatch(newurl) then  newurl = r.replace(newurl,"")
+                    Debug("--------------------------- NEW " + tostr(newurl))
+                    obj = createPlexContainerForUrl(m.loader.server, newurl, "")
+                    obj.getmetadata()
+                    Debug("photoHandleMessage:: Start slideshow with " + tostr(obj.metadata.count()) + " items")
+    
+                    ' this is ghetto we just need to get the right focustindex TOFIX
+                    tobj = getAllRowsContext(m, context, m.focusedIndex) ' might extend this to others (play all)
+                    obj.curindex = tobj.curindex
+                    obj.context = obj.metadata
+                    ' end ghetto
+    
+                    Debug("starting at index" + tostr(tobj.curindex))
+                    'm.ViewController.CreatePhotoPlayer(obj.metadata, obj.curindex) ' start the PhotoPlayer
                 else 
                     obj = CreateObject("roAssociativeArray")
                     obj.context = m.contentArray[m.selectedRow]
                     obj.curindex = m.focusedIndex
                 end if
-
                 m.ViewController.CreatePlayerForItem(obj.context, obj.curindex)
             end if
         else if msg.isScreenClosed() then
