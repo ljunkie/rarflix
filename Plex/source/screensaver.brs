@@ -21,7 +21,8 @@ Sub DisplayScreenSaver(mode)
     m.ss_timer = CreateObject("roTimespan")
     m.ss_last_url = invalid
 
-    canvas = CreateScreenSaverCanvas("#FF141414")
+    canvas = CreateScreensaverCanvas("#000000")
+    'canvas = CreateScreenSaverCanvas("#FF141414")
     canvas.SetImageFunc(GetScreenSaverImage)
     canvas.SetUpdatePeriodInMS(6000)
     canvas.SetUnderscan(.05)
