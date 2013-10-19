@@ -978,6 +978,28 @@ function getAllRowsContext(screen,context,index) as object
     return obj
 end function
 
+function getFullGridCurIndex(vc,index) as object
+    print " ------------------ full grid index = " + tostr(index)
+
+    if type(vc.screen) = "roAssociativeArray" then
+        screen = vc.screen
+    else if type(vc.screens) = "roArray" then
+        screen = vc.screens[vc.screens.count()-1]
+    else if type(vc.viewcontroller) = "roAssociativeArray" then
+        screen = vc.viewcontroller.screens[vc.viewcontroller.screens.count()-2]
+    end if
+
+    if type(screen.screen) = "roGridScreen" then
+        srow = screen.selectedrow
+        sitem = screen.focusedindex+1
+        rsize = screen.contentarray[0].count()
+        print "selected row:" + tostr(srow) + " focusedindex:" + tostr(sitem) + " rowsize:" + tostr(rsize)
+        index = (srow*rsize)+sitem-1 ' index is zero based (minus 1)
+    end if
+    print " ------------------  new grid index = " + tostr(index)
+    return index
+end function
+
 Function ShallowCopy(array As Dynamic, depth = 0 As Integer) As Dynamic
     If Type(array) = "roArray" Then
         copy = []

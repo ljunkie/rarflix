@@ -287,34 +287,25 @@ Function gridHandleMessage(msg) As Boolean
                 end if 
         else if msg.isRemoteKeyPressed() then
             if msg.GetIndex() = 13 then
-                Debug("Playing item directly from grid")
-
                 ' Playing Photos from a grid - we need all items
-                if m.item <> invalid and m.item.type = "photo" and m.item.contenttype <> "section" then 
+                ' sometimes we don't know the item is photo ( appClips )            
+                sec_metadata = getSectionType(m)
+                ' old way -- didnt' work for appClips/subsections of photos if m.item <> invalid and m.item.type = "photo" and m.item.contenttype <> "section" then 
+                if tostr(sec_metadata.type) = "photo" then 
                     Debug("Playing from GRID Screen - get context of ALL items in every row to play")
-
-                    r  = CreateObject("roRegex", "[?&]X-Plex-Container-Start=\d+\&X-Plex-Container-Size\=.*", "")
-                    newurl = m.loader.sourceurl
-                    Debug("--------------------------- OLD " + tostr(newurl))
-                    if r.IsMatch(newurl) then  newurl = r.replace(newurl,"")
-                    Debug("--------------------------- NEW " + tostr(newurl))
-                    obj = createPlexContainerForUrl(m.loader.server, newurl, "")
-                    obj.getmetadata()
-                    Debug("photoHandleMessage:: Start slideshow with " + tostr(obj.metadata.count()) + " items")
-    
-                    ' this is ghetto we just need to get the right focustindex TOFIX
-                    tobj = getAllRowsContext(m, context, m.focusedIndex) ' might extend this to others (play all)
-                    obj.curindex = tobj.curindex
-                    obj.context = obj.metadata
-                    ' end ghetto
-    
-                    Debug("starting at index" + tostr(tobj.curindex))
-                    'm.ViewController.CreatePhotoPlayer(obj.metadata, obj.curindex) ' start the PhotoPlayer
+                    obj = CreateObject("roAssociativeArray")
+                    obj.metadata = m.loader
+                    obj.screen = m
+                    GetContextFromFullGrid(obj,m.focusedIndex) 
+                    Debug("photoHandleMessage:: Start slideshow with " + tostr(obj.context.count()) + " items")
+                    Debug("starting at index: " + tostr(obj.curindex))
                 else 
                     obj = CreateObject("roAssociativeArray")
                     obj.context = m.contentArray[m.selectedRow]
                     obj.curindex = m.focusedIndex
                 end if
+                Debug("Playing item directly from grid: index" + tostr(obj.curindex))
+                Debug("total items: " + tostr(obj.context.count()))
                 m.ViewController.CreatePlayerForItem(obj.context, obj.curindex)
             end if
         else if msg.isScreenClosed() then

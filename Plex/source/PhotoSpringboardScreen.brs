@@ -63,24 +63,11 @@ Function photoHandleMessage(msg) As Boolean
                 Debug("photoHandleMessage:: Show photo fullscreen")
                 m.ViewController.CreatePhotoPlayer(m.Item)
             else if buttonCommand = "slideshow" then
-                screen = m.viewcontroller.screens.peek()
-                metadata = screen.metadata
-                r  = CreateObject("roRegex", "[?&]X-Plex-Container-Start=\d+\&X-Plex-Container-Size\=.*", "")
-                newurl = metadata.sourceurl           
-                Debug("--------------------------- OLD " + tostr(newurl))
-                if r.IsMatch(newurl) then  newurl = r.replace(newurl,"")
-                Debug("--------------------------- NEW " + tostr(newurl))
-                container = createPlexContainerForUrl(screen.metadata.server, newurl, "")
-                container.getmetadata()
-                Debug("photoHandleMessage:: Start slideshow with " + tostr(container.metadata.count()) + " items")
-
-                ' this is ghetto we just need to get the right focustindex TOFIX
-                pscreen = m.viewcontroller.screens[m.viewcontroller.screens.count()-2] ' we have to look 1 screen back ( zero index so -2 )
-                obj = getAllRowsContext(pscreen, m.context, m.CurIndex) ' if a GridScreen - we will grab all rows context
-                ' end ghetto
-
-                Debug("starting at index" + tostr(obj.curindex))
-                m.ViewController.CreatePhotoPlayer(container.metadata, obj.curindex)
+                ' Playing Photos from springBoard in a FULL grid context
+                GetContextFromFullGrid(m,m.focusedIndex) 
+                Debug("photoHandleMessage:: springboard Start slideshow with " + tostr(m.context.count()) + " items")
+                Debug("starting at index: " + tostr(m.curindex))
+                m.ViewController.CreatePhotoPlayer(m.context, m.curIndex)
             else if buttonCommand = "next" then
                 Debug("photoHandleMessage:: show next photo")
                  m.GotoNextItem()

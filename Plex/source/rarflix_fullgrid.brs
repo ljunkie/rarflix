@@ -130,3 +130,42 @@ function fromFullGrid(vc) as boolean
 
     return false
 end function
+
+
+sub GetContextFromFullGrid(this,curindex = invalid) 
+        if curindex = invalid then curindex = this.curindex
+        'dialog=ShowPleaseWait("Please wait","")
+        ' strip any limits - we need it all ( now start or container size)
+        r  = CreateObject("roRegex", "[?&]X-Plex-Container-Start=\d+\&X-Plex-Container-Size\=.*", "")
+        newurl = this.metadata.sourceurl
+        Debug("--------------------------- OLD " + tostr(newurl))
+        if r.IsMatch(newurl) then  newurl = r.replace(newurl,"")
+
+        ' man I really created a nightmare adding the new unwatched rows for movies.. 
+        ' the source URL may have ?type=etc.. to filter
+        ' the hack I have in PlexMediaServer.brs FullUrl() requires 'filter' to be prepended to the key
+        key = ""
+        rkey  = CreateObject("roRegex", "(.*)(\?.*)","")
+        new_key = rkey.match(newurl)
+        if new_key.count() > 2 and new_key[1] <> invalid and new_key[2] <> invalid then 
+          newurl = new_key[1]
+          key = "filter" + new_key[2]
+        end if
+        ' end Hack for special filtered calls
+
+        Debug("--------------------------- NEW " + tostr(newurl) + " key " + tostr(key))
+        obj = createPlexContainerForUrl(this.metadata.server, newurl, key)
+
+        dialog = invalid
+        ' only show wait dialog when the container size is a bit large (200 or more?)
+        if obj.xml <> invalid and (obj.xml@size).toInt() > 200 then 
+            dialog=ShowPleaseWait("Please wait","")
+        end if 
+
+        obj.getmetadata()
+        obj.context = obj.metadata
+        this.context = obj.context
+        this.CurIndex = getFullGridCurIndex(this,CurIndex) ' when we load the full context, we need to fix the curindex
+        this.FullContext = true
+        if dialog <> invalid then dialog.Close()
+end sub

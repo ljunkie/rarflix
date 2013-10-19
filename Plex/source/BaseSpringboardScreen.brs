@@ -212,32 +212,7 @@ Function sbGotoNextItem() As Boolean
 
     ' this is a new hack for fullgrid screen.. 
     if m.FullContext = invalid and fromFullGrid(m) then 
-        dialog=ShowPleaseWait("Please wait","")
-        ' strip any limits - we need it all ( now start or container size)
-        r  = CreateObject("roRegex", "[?&]X-Plex-Container-Start=\d+\&X-Plex-Container-Size\=.*", "")
-        newurl = m.metadata.sourceurl
-        Debug("--------------------------- OLD " + tostr(newurl))
-        if r.IsMatch(newurl) then  newurl = r.replace(newurl,"")
-
-        ' man I really created a nightmare adding the new unwatched rows for movies.. 
-        ' the source URL may have ?type=etc.. to filter
-        ' the hack I have in PlexMediaServer.brs FullUrl() requires 'filter' to be prepended to the key
-        key = ""
-        rkey  = CreateObject("roRegex", "(.*)(\?.*)","")
-        new_key = rkey.match(newurl)
-        if new_key.count() > 2 and new_key[1] <> invalid and new_key[2] <> invalid then 
-          newurl = new_key[1]
-          key = "filter" + new_key[2]
-        end if
-        ' end Hack for special filtered calls
-
-        Debug("--------------------------- NEW " + tostr(newurl) + " key " + tostr(key))
-        obj = createPlexContainerForUrl(m.metadata.server, newurl, key)
-        obj.getmetadata()
-        obj.context = obj.metadata
-        m.context = obj.context
-        m.FullContext = true
-        dialog.Close()
+        GetContextFromFullGrid(m)
     end if
 
     Debug("----- GoToNextItem: we have " + tostr(m.Context.Count()) + " items total")
@@ -264,6 +239,10 @@ End Function
 
 Function sbGotoPrevItem() As Boolean
     if NOT m.AllowLeftRight then return false
+
+    if m.FullContext = invalid and fromFullGrid(m) then 
+        GetContextFromFullGrid(m)
+    end if
 
     maxIndex = m.Context.Count() - 1
     index = m.CurIndex
