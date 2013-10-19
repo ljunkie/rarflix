@@ -157,9 +157,10 @@ sub GetContextFromFullGrid(this,curindex = invalid)
         obj = createPlexContainerForUrl(this.metadata.server, newurl, key)
 
         dialog = invalid
-        ' only show wait dialog when the container size is a bit large (200 or more?)
-        if obj.xml <> invalid and (obj.xml@size).toInt() > 200 then 
-            dialog=ShowPleaseWait("Please wait","")
+        ' only show wait dialog when the container size is a bit large (300 or more?)
+        size = obj.xml@size
+        if size <> invalid and size.toInt() > 300 then 
+            dialog=ShowPleaseWait("Loading " + tostr(size) + " items. Please wait...","")
         end if 
 
         obj.getmetadata()
