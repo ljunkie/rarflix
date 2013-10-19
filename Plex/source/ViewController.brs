@@ -574,12 +574,12 @@ Sub vcShowReleaseNotes()
     paragraphs = []
     if isRFtest() then 
         spacer = chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)
-        paragraphs.Push("---------- New ----------")
         paragraphs.Push(spacer + "* full grid")
         paragraphs.Push(spacer + "* black theme")
         paragraphs.Push(spacer + "* custom thumbs")
         paragraphs.Push(spacer + "* 6 buttons")
         paragraphs.Push(spacer + "* music changes")
+        paragraphs.Push(spacer + "* lazy load photo section")
     end if
 
     paragraphs.Push(" ")
