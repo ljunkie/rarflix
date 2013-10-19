@@ -57,12 +57,7 @@ Function createAudioSpringboardScreen(context, index, viewController) As Dynamic
 End Function
 
 Sub audioSetupButtons()
-    print "----- button setup "
     m.ClearButtons()
-
-    print m.Playstate
-    print m.Playstate
-    print m.Playstate
 
     audioPlayer = GetViewController().AudioPlayer
 
@@ -225,12 +220,10 @@ Function audioHandleMessage(msg) As Boolean
                  if m.GotoNextItem() then 
                      audioPlayer.Next(play)
                      if isItemPlaying(m) then 
-                         print "ITEM is a match"
                          m.Playstate = 2
                          m.callbackTimer.Active = true
                          m.Screen.SetProgressIndicatorEnabled(true)
                      else 
-                         print "ITEM NOT PLAYING"
                          m.Playstate = 0
                      end if
                  end if

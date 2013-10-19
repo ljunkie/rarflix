@@ -229,7 +229,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen = createAudioSpringboardScreen(m.AudioPlayer.Context, m.AudioPlayer.PlayIndex, m)
         screenName = "Now Playing"
         breadcrumbs = [screenName," "," "] ' set breadcrumbs for this..
-        print m.AudioPlayer.Context[m.AudioPlayer.PlayIndex]
+        'print m.AudioPlayer.Context[m.AudioPlayer.PlayIndex]
         if screen = invalid then return invalid
     else if contentType = "audio" then
         screen = createAudioSpringboardScreen(context, contextIndex, m)
@@ -698,7 +698,7 @@ Sub vcPopScreen(screen)
             m.breadcrumbs.Pop()
         next
         if closePrevious <> invalid then
-           print "-------------- popping next screen too -- we called for this!"
+           Debug("-------------- popping next screen too -- we called for this!")
            m.screens.Pop()
         end if
     end if
@@ -870,8 +870,6 @@ Sub vcAddBreadcrumbs(screen, breadcrumbs)
     if screenType = "roSpringboardScreen" AND breadcrumbs.Count() > 0 then
         breadcrumbs.Pop()
     end if
-
-    print breadcrumbs
 
     if (breadcrumbs.Count() = 0 AND m.breadcrumbs.Count() > 0) or (m.screens.peek().isfullgrid <> invalid and breadcrumbs.Count() < 2 AND m.breadcrumbs.Count() > 0) then
         count = m.breadcrumbs.Count()
