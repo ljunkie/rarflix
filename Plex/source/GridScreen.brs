@@ -85,6 +85,8 @@ Function showGridScreen() As Integer
     if names.Count() = 0 then
         Debug("Nothing to load for grid")
         dialog = createBaseDialog()
+        facade = CreateObject("roGridScreen")
+        facade.Show()
         dialog.Facade = facade
         dialog.Title = "Content Unavailable"
         dialog.Text = "An error occurred while trying to load this content, make sure the server is running (did you hide all the rows?)."
