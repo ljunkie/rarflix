@@ -674,10 +674,15 @@ Sub vcPopScreen(screen)
         callActivate = false
     else
         Debug("Popping screen " + screenID + " and cleaning up " + tostr(screen.NumBreadcrumbs) + " breadcrumbs")
+        closePrevious = screen.closeprevious
         m.screens.Pop()
         for i = 0 to screen.NumBreadcrumbs - 1
             m.breadcrumbs.Pop()
         next
+        if closePrevious <> invalid then
+           print "-------------- popping next screen too -- we called for this!"
+           m.screens.Pop()
+        end if
     end if
 
     ' Clean up any requests initiated by this screen

@@ -89,10 +89,13 @@ Function showGridScreen() As Integer
         facade.Show()
         dialog.Facade = facade
         dialog.Title = "Content Unavailable"
+        dialog.DisableBackButton = true
         dialog.Text = "An error occurred while trying to load this content, make sure the server is running (did you hide all the rows?)."
-        dialog.Show()
+'        dialog.closePrevious = true ' or check to see if there is a facade?
+        dialog.Show(true) ' blocking
 
         m.popOnActivate = true
+
         return -1
     end if
 
