@@ -68,33 +68,35 @@ Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, ite
     '    end if
     ' end testing
 
-    for index = 0 to size.toInt() - 1 step increment
-        num_to = index+increment
-        if num_to > (container.xml@size).toInt() then num_to = (container.xml@size).toInt()
-        name = tostr(index+1) + "-" + tostr(num_to) + " of " + container.xml@size
-        f = "?"
-	if instr(1, loader.sourceurl, "?") > 0 then f = "&"
-        keys.Push(loader.sourceurl + f + "X-Plex-Container-Start="+tostr(index)+"&X-Plex-Container-Size="+tostr(increment))
-        loader.names.Push(name)
-    next
+    if size <> invalid then 
+        for index = 0 to size.toInt() - 1 step increment
+            num_to = index+increment
+            if num_to > (container.xml@size).toInt() then num_to = (container.xml@size).toInt()
+            name = tostr(index+1) + "-" + tostr(num_to) + " of " + container.xml@size
+            f = "?"
+            if instr(1, loader.sourceurl, "?") > 0 then f = "&"
+            keys.Push(loader.sourceurl + f + "X-Plex-Container-Start="+tostr(index)+"&X-Plex-Container-Size="+tostr(increment))
+            loader.names.Push(name)
+        next
 
-    for index = 0 to keys.Count() - 1
-        status = CreateObject("roAssociativeArray")
-        status.content = []
-        status.loadStatus = 0 ' 0:Not loaded, 1:Partially loaded, 2:Fully loaded
-        status.key =  keys[index]
-        status.name = loader.names[index]
-        status.pendingRequests = 0
-        status.countLoaded = 0
+        for index = 0 to keys.Count() - 1
+            status = CreateObject("roAssociativeArray")
+            status.content = []
+            status.loadStatus = 0 ' 0:Not loaded, 1:Partially loaded, 2:Fully loaded
+            status.key =  keys[index]
+            status.name = loader.names[index]
+            status.pendingRequests = 0
+            status.countLoaded = 0
+    
+            loader.contentArray[index] = status
+        end for
 
-        loader.contentArray[index] = status
-    end for
+        for index = 0 to loader.contentArray.Count() - 1
+            status = loader.contentArray[index]
+            loader.names[index] = status.name
+        next
 
-    for index = 0 to loader.contentArray.Count() - 1
-        status = loader.contentArray[index]
-        loader.names[index] = status.name
-    next
-
+    end if
     loader.LoadMoreContent = loaderLoadMoreContent
     loader.GetLoadStatus = loaderGetLoadStatus
     loader.RefreshData = loaderRefreshData
