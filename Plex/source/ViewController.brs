@@ -160,8 +160,8 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     end if
     ' end this madness
 
-    Debug("----- BC end result -----")
-    Debug(tostr(breadcrumbs[0]) + ", " + tostr(breadcrumbs[1]))
+    'Debug("----- BC end result -----")
+    'Debug(tostr(breadcrumbs[0]) + ", " + tostr(breadcrumbs[1]))
 
     ' ljunkie - reset breadcrumb for TV show if tv watched status enabled and title <> umtitle (post and grid view supported)
     if RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" and (item.type = "show" or item.viewgroup = "season" or item.viewgroup = "show" or item.viewgroup = "episode") then
