@@ -36,28 +36,25 @@ End Function
 Sub videoSetupButtons()
     m.ClearButtons()
 
-   if m.metadata.starrating = invalid then 'ljunkie - don't show starts if invalid
-        m.Screen.SetStaticRatingEnabled(false)
-   end if
+    isMovieShowEpisode = (m.metadata.ContentType = "movie" or m.metadata.ContentType = "show" or m.metadata.ContentType = "episode")
 
+   'ljunkie - don't show stars if invalid
+    if m.metadata.starrating = invalid then m.Screen.SetStaticRatingEnabled(false)
 
     m.AddButton(m.PlayButtonStates[m.PlayButtonState].label, "play")
     Debug("Media = " + tostr(m.media))
     Debug("Can direct play = " + tostr(videoCanDirectPlay(m.media)))
 
-    ' Trailers! (TODO) enable this for TV shows ( youtube is still useful )
-    ' if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
+    ' Trailers! (TODO) enable this for TV shows ( youtube is still useful? )
     if m.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
          m.AddButton("Trailer", "getTrailers")
     end if
 
+    if isMovieShowEpisode then m.AddButton("Cast & Crew","RFCastAndCrewList")
 
     supportedIdentifier = (m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
     if supportedIdentifier then
-        ' we have 6 buttons now - we can show this! -- we might want to add a toggle for 5 or 6 buttons.. someone is going to whine :)
-        m.AddButton("Cast & Crew","RFCastAndCrewList")
-
-        ' Partial Watch ( can be watched/unwatched - but in progess) allow scrobbleMore dialog - to show both options mark as watched or unwatched
+         ' Partial Watch ( can be watched/unwatched - but in progess) allow scrobbleMore dialog - to show both options mark as watched or unwatched
         if m.metadata.viewOffset <> invalid AND val(m.metadata.viewOffset) > 0 then
             m.AddButton("Mark as watched/unwatched", "scrobbleMore")
         ' content is watched - show unscrobble button
@@ -76,100 +73,81 @@ Sub videoSetupButtons()
     ' Does someone really need to 'View Season 1' when they are already in Season 1
     ' Does someone really need to 'View Season All season'  when previous screen might already be that?
     if m.metadata.grandparentKey <> invalid then ' global on deck does not work with this
-    'if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
          m.AddButton( "View All Seasons", "showFromEpisode")
     end if
     ' display View specific season if we have parentKey/parentIndex -- entered from a episode
-    if m.metadata.parentKey <> invalid AND m.metadata.parentIndex <> invalid then  ' global on deck does not work with this
-    'if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
+    if m.metadata.parentKey <> invalid AND m.metadata.parentIndex <> invalid then
         m.AddButton( "View Season " + m.metadata.parentIndex, "seasonFromEpisode")
     end if
     
-    ' Delete button for myplex vidoes (queue/recommended)
+    ' Delete button for myplex vidoes (queue/recommended) - we should have room for this
     if m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex" AND m.metadata.id <> invalid then
         m.AddButton("Delete from queue", "delete")
     end if
 
+    ' Rotten Tomatoes ratings, if enabled
+    if m.metadata.ContentType = "movie" AND RegRead("rf_rottentomatoes", "preferences", "enabled") = "enabled" then 
+        tomatoData = m.metadata.tomatoData
+        rating_string = "Not Found"
+        append_string = "on Rotten Tomatoes"
+        if tomatoData <> invalid AND tomatoData.ratings <> invalid AND tomatoData.ratings.critics_score <> invalid then
+            if RegRead("rf_rottentomatoes_score", "preferences", "audience") = "critic" then 
+                rating = tomatoData.ratings.critics_score
+            else 
+                rating = tomatoData.ratings.audience_score
+            end if
 
-    ' Playback options only if a tvshow or episode -- movies use a line for trailers (moved this to more...)
-    if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
-      m.AddButton("Playback options", "options")
-    end if
-
-
-        ' Rotten Tomatoes ratings, if enabled
-        if m.metadata.ContentType = "movie" AND RegRead("rf_rottentomatoes", "preferences", "enabled") = "enabled" then 
-            tomatoData = m.metadata.tomatoData
-            rating_string = "Not Found"
-            append_string = "on Rotten Tomatoes"
-            if tomatoData <> invalid AND tomatoData.ratings <> invalid AND tomatoData.ratings.critics_score <> invalid then
-                if RegRead("rf_rottentomatoes_score", "preferences", "audience") = "critic" then 
-                    rating = tomatoData.ratings.critics_score
-                else 
+            if rating = invalid or rating < 0 then 
+                Debug("RT rating is invalid/-1 -- trying to find a valid rating")
+                if tomatoData.ratings.audience_score > 0
                     rating = tomatoData.ratings.audience_score
-                end if
-
-                if rating = invalid or rating < 0 then 
-                    Debug("RT rating is invalid/-1 -- trying to find a valid rating")
-                    if tomatoData.ratings.audience_score > 0
-                        rating = tomatoData.ratings.audience_score
-                        append_string = append_string + " *"
-                    else if NOT tomatoData.ratings.critics_score = -1 then
-                        rating = tomatoData.ratings.critics_score
-                        append_string = append_string + " *"
-                    else 
-                        rating = -1
-                    end if
-                end if
-
-                if rating = -1 then
-                    rating_string = "Not Found"
+                    append_string = append_string + " *"
+                else if NOT tomatoData.ratings.critics_score = -1 then
+                    rating = tomatoData.ratings.critics_score
+                    append_string = append_string + " *"
                 else 
-                    rating_string = tostr(rating) + "%"
+                    rating = -1
                 end if
             end if
-            m.AddButton(rating_string + " " + append_string, "tomatoes")
+
+            if rating = -1 then
+                rating_string = "Not Found"
+            else 
+                rating_string = tostr(rating) + "%"
+            end if
         end if
+        m.AddButton(rating_string + " " + append_string, "tomatoes")
+    end if
 
+    if supportedIdentifier then
+        ' not enough room for this.. only in the more dialog
+        'if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
+        '    if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
+        '        m.AddButton("Delete permanently","delete")
+        '    end if
+        'end if
 
-
-
-    if supportedIdentifier then ' this is for delete and rating button 
-        if m.metadata.UserRating = invalid then
-            m.metadata.UserRating = 0
-        endif
-        if m.metadata.StarRating = invalid then
-            m.metadata.StarRating = 0
-        endif
-        if m.metadata.origStarRating = invalid then
-            m.metadata.origStarRating = 0
-        endif
-
-          if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
-              if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
-                  m.AddButton("Delete permanently","delete")
-              end if
-          end if
-
-        ' Show rating bar if the content is a show or an episode - we might want this to be the delete button. We will see
-          if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode" or RegRead("rf_rottentomatoes", "preferences", "enabled") = "disabled" then
-               m.AddRatingButton(m.metadata.UserRating, m.metadata.origStarRating, "rateVideo")
-	  end if
+        ' only show rating bar for movies if rotten tomoatoes is disabled. (this option is available in the more dialog)
+        if RegRead("rf_rottentomatoes", "preferences", "enabled") = "disabled" then
+            if m.metadata.UserRating = invalid then
+                m.metadata.UserRating = 0
+            end if
+            if m.metadata.StarRating = invalid then
+                m.metadata.StarRating = 0
+            end if
+            if m.metadata.origStarRating = invalid then
+                m.metadata.origStarRating = 0
+            end if
+            m.AddRatingButton(m.metadata.UserRating, m.metadata.origStarRating, "rateVideo")
+        end if
 
     end if
 
-         ' ljunkie - TV now supports cast and cres
-	 ' more buttong if TV SHOW ( only if grandparent key is available,stops loops) OR if this is Movie
-	 ' if m.metadata.grandparentKey <> invalid  then
-         '     m.AddButton("More...", "more")
-	 ' else if m.metadata.ContentType = "movie" then
-	  if m.metadata.ContentType = "movie" or  m.metadata.ContentType = "show" then
-              m.AddButton("Playback Options & More...", "more")
-          else 
-              m.AddButton("More...", "more")
-	  end if
-
-
+    if isMovieShowEpisode then
+        m.AddButton("Playback Options & More...", "more")
+    else 
+        m.AddButton("More...", "more")
+    end if
 
 End Sub
 

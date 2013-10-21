@@ -643,23 +643,23 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
     dialog.Text = "" ' too many buttons for text now
     dialog.Item = obj.metadata
 
-    'if obj.metadata.grandparentKey = invalid then
-    if obj.metadata.ContentType = "movie"  then
+    supportedIdentifier = (obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
+    isMovieShowEpisode = (obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode")
+
+    if isMovieShowEpisode then 
         dialog.SetButton("options", "Playback options")
     end if
 
     ' display View All Seasons if we have grandparentKey -- entered from a episode
-    if obj.metadata.grandparentKey <> invalid then ' global on deck does not work with this
-    'if obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode"  then
-        dialog.SetButton("showFromEpisode", "View All Seasons of " + obj.metadata.ShowTitle )
+    if obj.metadata.grandparentKey <> invalid then
+         dialog.SetButton("showFromEpisode", "View All Seasons")
     end if
+
     ' display View specific season if we have parentKey/parentIndex -- entered from a episode
-    if obj.metadata.parentKey <> invalid AND obj.metadata.parentIndex <> invalid then  ' global on deck does not work with this
-    'if obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode"  then
+    if obj.metadata.parentKey <> invalid AND obj.metadata.parentIndex <> invalid then
        dialog.SetButton("seasonFromEpisode", "View Season " + obj.metadata.parentIndex)
     end if
 
-    supportedIdentifier = (obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
     if supportedIdentifier then
         if obj.metadata.viewOffset <> invalid AND val(obj.metadata.viewOffset) > 0 then ' partially watched
             dialog.SetButton("unscrobble", "Mark as unwatched")
@@ -675,25 +675,24 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
             dialog.SetButton("delete", "Delete permanently")
         end if
 
-        ' set this to last -- unless someone complains
-        if obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "episode" or obj.metadata.ContentType = "show"  then
-            dialog.SetButton("rate", "_rate_")
-        end if
     end if
 
-    ' thes are on the main details screen -- show them last ( maybe not at all )
-    if obj.metadata.type = "season" or obj.metadata.ContentType = "movie"  or obj.metadata.ContentType = "show"  or obj.metadata.ContentType = "episode"  or obj.metadata.ContentType = "series" then
-    'if obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "series" then ' TODO - try and make this work with TV shows ( seems it only works for episodes -- but not well ) 
+    ' these are on the main details screen -- show them last ( maybe not at all )
+    if isMovieShowEpisode or obj.metadata.type = "season" or obj.metadata.ContentType = "series" then
         dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
     else 
        Debug("---- Cast and Crew are not available for " + tostr(obj.metadata.ContentType))
-       print obj.metadata
     end if
 
-    ' Trailers link - RR (last now that we include it on the main screen .. well before delete - people my be used to delete being second to last)
-    'if obj.metadata.grandparentKey = invalid then
     if obj.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
         dialog.SetButton("getTrailers", "Trailer")
+    end if
+
+    ' set this to last -- unless someone complains
+    if supportedIdentifier then
+        if obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "episode" or obj.metadata.ContentType = "show"  then
+            dialog.SetButton("rate", "_rate_")
+        end if
     end if
 
     dialog.SetButton("close", "Back")
@@ -807,11 +806,10 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     end if
 
     ' cast and crew
-    if obj.metadata.type = "season" or obj.metadata.ContentType = "movie"  or obj.metadata.ContentType = "show"  or obj.metadata.ContentType = "episode"  or obj.metadata.ContentType = "series" then
+    if obj.metadata.type = "season" or obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode" or obj.metadata.ContentType = "series" then
         dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
     else
        Debug(" Cast and Crew are not available for " + tostr(obj.metadata.ContentType))
-       print obj.metadata
     end if
 
     supportedIdentifier = (obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
