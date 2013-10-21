@@ -59,7 +59,6 @@ Function createGridScreenForItem(item, viewController, style, SetDisplayMode = "
 
     container = createPlexContainerForUrl(item.server, item.sourceUrl, item.key)
     container.SeparateSearchItems = true
-    ' ljunkie -- pass item to paginated loader
     obj.Loader = createPaginatedLoader(container, 8, 75, item)
     obj.Loader.Listener = obj
 
@@ -86,7 +85,7 @@ Function showGridScreen() As Integer
         Debug("Nothing to load for grid")
         dialog = createBaseDialog()
         facade = CreateObject("roGridScreen")
-        facade.Show()
+        facade.Show() ' ljunkie - aha, we need facade screen for zero row grids
         dialog.Facade = facade
         dialog.Title = "Content Unavailable"
         dialog.DisableBackButton = true
@@ -123,27 +122,18 @@ Function showGridScreen() As Integer
     maxRow = names.Count() - 1
 
     ' ljunkie - Modify the default load count when one opens a grid screen (for FULL grid)
-    ' TODO - we need to load maxRow of 2 ( zero index = 3) if we are on a 7x3
-    ' ljunkie for FULL grid - we want to show all the rows, since we only have 5 items in each row - it plays nicely ( might need a top limit at some point )
-    ' TODO verify how this looks on the ALL Movies screen - we might want to limit this since this really is only to fix
-    ' playing a slideshow when in FULL grid mode
+    ' for now, we will load 20 rows in the full grid ( only 5 items in a row.. so it seems to play nicely )
     if m.isFullGrid <> invalid and m.isFullGrid = true then 
-       ' this sucks with couple hundred to thousands of phots.. we still need to lazy load
-       ' sec_metadata = getSectionType(m)
-       ' if tostr(sec_metadata.type) = "photo" then 
-       '     Debug("---- Loading FULL grid - load ALL rows in PHOTO mode:" + tostr(maxRow) + " total")
-       ' else
-       '    maxRow = 20 ' in the FULL grid, loading 20 rows seems like an ok number. Might be able to raise this.
-       '    Debug("---- Loading FULL grid - load row 0 to row " + tostr(maxRow))
-       'end if 
-       maxRow = 20 ' in the FULL grid, loading 20 rows seems like an ok number. Might be able to raise this.
-       Debug("---- Loading FULL grid - load row 0 to row " + tostr(maxRow))
+        ' even though we load 20 rows, if one open an item from a row we will load the rest
+        ' it will allow left/right buttons to work for all and gives the ability to play a slideshow from full grid
+        maxRow = 20 ' in the FULL grid, loading 20 rows seems like an ok number. Might be able to raise this.
+        Debug("---- Loading FULL grid - load row 0 to row " + tostr(maxRow))
     else if maxRow > 1 then 
         maxRow = 1
     end if
 
     for row = 0 to maxRow
-        Debug("------------ Loading beginning of row " + tostr(row) + ", " + tostr(names[row]))
+        Debug("----- Loading beginning of row " + tostr(row) + ", " + tostr(names[row]))
         m.Loader.LoadMoreContent(row, 0)
     end for
 
@@ -222,9 +212,10 @@ Function gridHandleMessage(msg) As Boolean
 
                 extraRows = 2 ' standard is to load 2 rows 
                 
-                ' If this is a FULL Grid, then we want to chane the default loading style ( we only have 5 items per row, so we can load many more)
-                rfLoadDone = false
+                ' If this is a FULL Grid, then we want to change the default loading style ( we only have 5 items per row, so we can load many more)
+                skipFullGrid = true
                 if m.isfullgrid <> invalid and m.isfullgrid = true then
+                    skipFullGrid = false
                     rfloaded = 0 ' container for total loadded rows
                     for each lrow in  m.loader.contentArray
                         if lrow.loadStatus = 2 then rfloaded = rfloaded+1
@@ -235,8 +226,8 @@ Function gridHandleMessage(msg) As Boolean
 
                     ' load the extra rows
                     if m.selectedRow > rfloaded-4 or forceLoad then 
-                        rfLoadDone = true
-                        Debug("------------ Row selected is greater than current load count OR current row is not loaded. Load 20 up and down")
+                        skipFullGrid = true
+                        Debug("----- Row selected is greater than current load count OR current row is not loaded. Load 20 up and down")
                         for index = 0 to 20 
                             row_up = m.selectedRow-index ' includes current row
                             row_down = index+m.selectedRow+1
@@ -246,25 +237,27 @@ Function gridHandleMessage(msg) As Boolean
                     end if
                 end if
 
-                ' LJUNKIE
+                ' ljunkie - only special for FULL grid view, since we only have 5 items in the row, it's safe to load more rows up/down
                 ' always verify we have the rows for 2 up and 2 down from selected ROW..
                 ' we want to load up and down. User might scroll down skipping loads, if they scroll up, they data will now be loaded. Better UX
                 ' only run the Default loader if rfLoadDone is not set (we manually loaded rows above)
-                if NOT rfLoadDone then 
-                    Debug("------------ Loading more content: from row " + tostr(m.selectedRow) + " PLUS  " + tostr(extraRows) + " more rows in both directions")
+                if NOT skipFullGrid then
+                    Debug("----- . Loading more content: from row " + tostr(m.selectedRow) + " PLUS  " + tostr(extraRows) + " more rows in both directions")
                     for index = 0 to extraRows-1
                         row_up = m.selectedRow-index ' includes current row
                         row_down = index+m.selectedRow+1
                         if row_up > 0 then m.Loader.LoadMoreContent(row_up, 0)
                         if row_down > 0 then m.Loader.LoadMoreContent(row_down, 0)
                     end for
+                else 
+                    ' ljunkie - this does't load the extra rows as I expected. It exists if a selected row ( or the first of the called extraRows are loaded )
+                    ' this only really matters for the FULL grid, so we will still use the existing logic for non FULL grid
+                     Debug("----- NOT a full grid, we can load normally: from row " + tostr(m.selectedRow) + " PLUS  " + tostr(extraRows) )
+                     m.Loader.LoadMoreContent(m.selectedRow, extraRows) 
                 end if
-                ' ljunkie - this does't load the extra rows as I expected. I exists if a selected row ( or the first Extra row is loaded )
-                ' I changed it above to actually load all the extraRows we have specified
-                'm.Loader.LoadMoreContent(m.selectedRow, extraRows) 
             end if
         else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then ' ljunkie - use * for more options on focused item
-                'print "* butting pressed"
+                print "----- * butting pressed"
                 context = m.contentArray[m.selectedRow]
                 itype = context[m.focusedIndex].contenttype
                 if itype = invalid then itype = context[m.focusedIndex].type
@@ -380,8 +373,7 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
         ' the initial rows are empty, we need to keep loading until we find a
         ' row with data.
         if row < m.contentArray.Count() - 1 then
-            test = row + 1
-            Debug("------------ Loading more content: from row " + tostr(test) + " with 0 more ")
+            Debug("----- ... Loading more content: from row " + tostr(row+1) + " with 0 more ")
             m.Loader.LoadMoreContent(row + 1, 0)
         end if
 
@@ -412,8 +404,11 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
 
     ' Continue loading this row
     extraRows = 2 - (m.selectedRow - row)
+    'print "loadrow:" + tostr(row)
+    'print " selrow:" + tostr(m.selectedRow)
+    'print " result:" + tostr(extraRows)
     if extraRows >= 0 AND extraRows <= 2 then
-        Debug("------------ Loading more content: from row " + tostr(row) + " to (extrarows) " + tostr(extraRows))
+        Debug("------------ .. Loading more content: from row " + tostr(row) + ", " + tostr(m.loader.names[row]) + ", to (extrarows) " + tostr(extraRows))
         m.Loader.LoadMoreContent(row, extraRows)
     end if
 End Sub
@@ -508,7 +503,7 @@ Sub gridActivate(priorScreen)
 
     m.HasData = false
     m.Refreshing = true
-    m.Loader.RefreshData()
+    m.Loader.RefreshData() ' ljunkie - this has been modified to be a little more lazy! 
     if m.Facade <> invalid then  m.Facade.Close()
 End Sub
 

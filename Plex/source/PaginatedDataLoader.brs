@@ -187,7 +187,7 @@ End Function
 '* rows are already loaded.
 '*
 Function loaderLoadMoreContent(focusedIndex, extraRows=0)
-
+    Debug("----- loaderMoreContent called: " + tostr(m.names[focusedIndex]))
     status = invalid
     extraRowsAlreadyLoaded = true
     for i = 0 to extraRows
@@ -225,6 +225,7 @@ Function loaderLoadMoreContent(focusedIndex, extraRows=0)
     end if
 
     status.loadStatus = 1
+    Debug("----- focusIndex = " + tostr(focusedIndex))
     Debug("----- starting request for row:" + tostr(loadingRow) + " start:" + tostr(startItem) + " stop:" + tostr(count))
     m.StartRequest(loadingRow, startItem, count)
 
@@ -232,10 +233,30 @@ Function loaderLoadMoreContent(focusedIndex, extraRows=0)
 End Function
 
 Sub loaderRefreshData()
-    for row = 0 to m.contentArray.Count() - 1
+   ' ljunkie - normally this would re-load all the rows if they have already been loaded. This will cause serious 
+   ' slow downs if one loads many rows, stacks a new screen on grid, then returns to said grid. We should only 
+   ' reload the focused row, and invalidate the load status of the existing. The invalidated rows on the screen
+   ' will reload when selected again. 
+
+   ' just debugging.. to remove
+   'print "---- loader RefreshData called"
+   'print "---- current focus is row:" + tostr(m.listener.selectedRow) + ", item:" + tostr(m.listener.focusedIndex)
+   'print "---- we should only be RE-loading row:" + tostr(m.listener.selectedRow)
+
+   for row = 0 to m.contentArray.Count() - 1
         status = m.contentArray[row]
-        if status.key <> invalid AND status.loadStatus <> 0 then
-            m.StartRequest(row, 0, m.pageSize)
+        doLoad = (m.listener.selectedRow = row) ' only reload the current row, invalidate the others (that are fully loaded)
+                                                ' we might want to reload m.listener.selectedRow+1 too.. we will see
+        'print "------------- checking row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus)
+        if status.key <> invalid AND status.loadStatus <> 0 then 
+            if doLoad then
+                Debug("----- loading row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
+                m.StartRequest(row, 0, m.pageSize)
+            else 
+                Debug("----- invalidate row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
+                status.loadStatus = 0 ' set to reload on focus
+                status.countloaded = 0 ' set to reload on focus
+            end if
         end if
     next
 End Sub
