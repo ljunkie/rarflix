@@ -115,6 +115,8 @@ Function newTrackMetadata(container, item, detailed=true) As Object
         track.ShortDescriptionLine1 = track.Title
     end if
 
+    track.Title = firstof(track.umtitle, track.title) ' ljunkie lame I know, but I am not sure where the album is being appended yet. seems to be inherited.
+
     media = item.Media[0]
 
     if media <> invalid
