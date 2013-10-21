@@ -882,7 +882,7 @@ Sub SendRemoteKey(key)
     if ipaddrs.eth0 <> invalid then ipaddr = ipaddrs.eth0
     if ipaddrs.eth1 <> invalid then ipaddr = ipaddrs.eth1
     'print "ipaddr: ";ipaddr
-    'sleep(1000)
+    sleep(200)
     url = "http://"+ipaddr+":8060/keypress/" + key
     Debug("sending key " + tostr(key) + " " + tostr(url))
     xfer = CreateObject("roUrlTransfer")
