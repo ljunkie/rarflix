@@ -392,7 +392,8 @@ Function videoDialogHandleButton(command, data) As Boolean
             screenName = "Section: Full Grid"
             breadcrumbs = [itype,screen.loader.Getnames()[screen.selectedrow]]
 
-            screen = createFULLGridScreen(dummyItem, m.viewcontroller, "Invalid", "scale-to-fill") 
+            displaymode_grid = RegRead("rf_grid_displaymode", "preferences", "scale-to-fit")
+            screen = createFULLGridScreen(dummyItem, m.viewcontroller, "Invalid", displaymode_grid) 
             if screen <> invalid then 
                 screen.ScreenName = screenName
                 m.viewcontroller.AddBreadcrumbs(screen, breadcrumbs)

@@ -194,6 +194,8 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
 
     screenName = invalid
     poster_grid = RegRead("rf_poster_grid", "preferences", "grid")
+    displaymode_poster = RegRead("rf_poster_displaymode", "preferences", "scale-to-fit")
+    displaymode_grid = RegRead("rf_grid_displaymode", "preferences", "scale-to-fit")
 
     if contentType = "movie" OR contentType = "episode" OR contentType = "clip" then
         screen = createVideoSpringboardScreen(context, contextIndex, m)
@@ -213,7 +215,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         end if
     else if contentType = "artist" then
         if poster_grid = "grid" then 
-            screen = createFULLGridScreen(item, m, "Invalid", "scale-to-fill")
+            screen = createFULLGridScreen(item, m, "Invalid", displaymode_grid)
         else 
             screen = createPosterScreen(item, m)
         end if
@@ -243,7 +245,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screenName = "Section: " + tostr(item.type)
         if tostr(item.type) = "artist" then 
             Debug("---- override photo-fit/flat-square for section with content of " + tostr(item.type))
-            screen = createGridScreenForItem(item, m, "flat-square")
+            screen = createGridScreenForItem(item, m, "flat-square","photo-fit")
             screen.screen.SetDisplayMode("Photo-Fit")
             screen.screen.SetListPosterStyles("landscape")
             if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 7x3 )
@@ -253,7 +255,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
 	    '            screen.screen.SetDisplayMode("Photo-Fit") ' this has to be called before
             if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 7x3 )
         else 
-            screen = createGridScreenForItem(item, m, "flat-movie", "scale-to-fill")
+            screen = createGridScreenForItem(item, m, "flat-movie", displaymode_grid)
         end if
     else if contentType = "playlists" then
         screen = createGridScreenForItem(item, m, "flat-16X9")
@@ -262,7 +264,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if contentType = "photo" then
         if right(item.key, 8) = "children" then
             if poster_grid = "grid" then 
-                screen = createFULLGridScreen(item, m, "flat-16x9", "photo-fit")
+                screen = createFULLGridScreen(item, m, "flat-16x9", "photo-fit") ' we override photos to use photo fit -- toggle added later TODO
                 screen.loader.focusrow = 1 ' lets fill the screen ( 5x3 ) - no header row ( might be annoying page up for first section.. TODO)
             else 
                 screen = createPosterScreen(item, m)
@@ -292,7 +294,8 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         ' ljunkie TODO review this code
         if poster_grid = "grid" then 
             sec_metadata = getSectionType(m)
-            DisplayMode = "scale-to-fill"
+            DisplayMode = displaymode_grid
+
             style = RegRead("rf_grid_style", "preferences","flat-movie")
             focusrow = 0
             if tostr(sec_metadata.type) = "photo" then 
@@ -321,7 +324,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screenName = "All Channels"
     else if item.searchTerm <> invalid AND item.server = invalid then
         'screen = createGridScreen(m, "flat-square")
-        screen = createGridScreen(m, "flat-movie", RegRead("rf_up_behavior", "preferences", "exit"), "scale-to-fill")
+        screen = createGridScreen(m, "flat-movie", RegRead("rf_up_behavior", "preferences", "exit"), displaymode_grid)
         screen.Loader = createSearchLoader(item.searchTerm)
         screen.Loader.Listener = screen
         screenName = "Search Results"
@@ -338,7 +341,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             Debug("---- forcing to Poster view")
             screen = createPosterScreen(item, m)
         else if poster_grid = "grid" and tostr(viewGroup) <> "season" then 
-            screen = createFULLGridScreen(item, m, "Invalid", "scale-to-fill")
+            screen = createFULLGridScreen(item, m, "Invalid", displaymode_grid)
         else 
             Debug("---- forcing to Poster view")
             screen = createPosterScreen(item, m)

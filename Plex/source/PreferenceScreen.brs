@@ -1361,8 +1361,21 @@ Function createHomeScreenPrefsScreen(viewController) As Object
         default: ""
     }
 
+    display_modes = [
+        { title: "Photo [default]", EnumValue: "photo-fit", ShortDescriptionLine2: "Default" },
+        { title: "Fit", EnumValue: "scale-to-fit", ShortDescriptionLine2: "scaled to fit"  },
+        { title: "Fill", EnumValue: "scale-to-fill", ShortDescriptionLine2: "stretch image to fill boundary" },
+        { title: "Zoom", EnumValue: "zoom-to-fill", ShortDescriptionLine2: "zoom image to fill boundary" },
+    ]
+    obj.Prefs["rf_home_displaymode"] = {
+        values: display_modes,
+        heading: "How should images be displayed on the home screen (channel restart required)",
+        default: "photo-fit"
+    }
+
     obj.Screen.SetHeader("Change the appearance of the home screen")
     obj.AddItem({title: "Reorder Home Rows", ShortDescriptionLine2: "A restart of the Channel is required"}, "home_row_order")
+    obj.AddItem({title: "Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_home_displaymode", obj.GetEnumValue("rf_home_displaymode"))
     obj.AddItem({title: "Queue"}, "playlist_view_queue", obj.GetEnumValue("playlist_view_queue"))
     obj.AddItem({title: "Recommendations"}, "playlist_view_recommendations", obj.GetEnumValue("playlist_view_recommendations"))
     obj.AddItem({title: "On Deck"}, "row_visibility_ondeck", obj.GetEnumValue("row_visibility_ondeck"))
@@ -1384,7 +1397,7 @@ Function prefsHomeHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "playlist_view_queue" OR command = "playlist_view_recommendations" OR command = "row_visibility_ondeck" OR command = "row_visibility_recentlyadded" OR command = "row_visibility_channels" or command = "row_visibility_now_playing" then
+            if command = "playlist_view_queue" OR command = "playlist_view_recommendations" OR command = "row_visibility_ondeck" OR command = "row_visibility_recentlyadded" OR command = "row_visibility_channels" or command = "row_visibility_now_playing" or command = "rf_home_displaymode" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "home_row_order" then
                 m.HandleReorderPreference(command, msg.GetIndex())
@@ -1441,6 +1454,24 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
         default: "flat-movie"
     }
 
+    ' Display Mode for Grid or Poster views
+    display_modes = [
+        { title: "Fit [default]", EnumValue: "scale-to-fit", ShortDescriptionLine2: "Default"  },
+        { title: "Fill", EnumValue: "scale-to-fill", ShortDescriptionLine2: "stretch image to fill boundary" },
+        { title: "Zoom", EnumValue: "zoom-to-fill", ShortDescriptionLine2: "zoom image to fill boundary" },
+        { title: "Photo", EnumValue: "photo-fit", ShortDescriptionLine2: "all the above to fit boundary" },
+
+    ]
+    obj.Prefs["rf_grid_displaymode"] = {
+        values: display_modes,
+        heading: "How should images be displayed on screen",
+        default: "scale-to-fit"
+    }
+    obj.Prefs["rf_poster_displaymode"] = {
+        values: display_modes,
+        heading: "How should images be displayed on screen",
+        default: "scale-to-fit"
+    }
 
     ' Grid rows that can be reordered
     values = [
@@ -1481,6 +1512,9 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
     obj.AddItem({title: "TV Series"}, "use_grid_for_series", obj.GetEnumValue("use_grid_for_series"))
     obj.AddItem({title: "Movie & Others", ShortDescriptionLine2: "Posters or Grid"}, "rf_poster_grid", obj.GetEnumValue("rf_poster_grid"))
     obj.AddItem({title: "Grid Size", ShortDescriptionLine2: "Size of Grid"}, "rf_grid_style", obj.GetEnumValue("rf_grid_style"))
+    obj.AddItem({title: "Grid Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_grid_displaymode", obj.GetEnumValue("rf_grid_displaymode"))
+    'we can add this.. but it doesn't do much yet.. let's not totally confuse people.. yet.
+    'obj.AddItem({title: "Poster Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_poster_displaymode", obj.GetEnumValue("rf_poster_displaymode"))
     obj.AddItem({title: "Reorder Rows"}, "section_row_order")
     obj.AddItem({title: "Close"}, "close")
 
@@ -1497,7 +1531,7 @@ Function prefsSectionDisplayHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "use_grid_for_series" or command = "rf_poster_grid" or command = "rf_grid_style" then
+            if command = "use_grid_for_series" or command = "rf_poster_grid" or command = "rf_grid_style" or command = "rf_grid_displaymode" or command = "rf_poster_displaymode" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "section_row_order" then
                 m.HandleReorderPreference(command, msg.GetIndex())

@@ -13,7 +13,10 @@ Function createHomeScreen(viewController) As Object
     ' If we don't know exactly what we're displaying, photo-fit looks the
     ' best. Anything else makes something look horrible when the grid has
     ' has posters or anything else that isn't a square
-    obj.Screen.SetDisplayMode("photo-fit")
+
+    displaymode_home = RegRead("rf_home_displaymode", "preferences", "photo-fit")
+    obj.Screen.SetDisplayMode(displaymode_home)
+
     obj.Loader = createHomeScreenDataLoader(obj)
 
     obj.Refresh = refreshHomeScreen
