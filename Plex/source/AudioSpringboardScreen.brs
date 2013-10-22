@@ -73,13 +73,13 @@ Sub audioSetupButtons()
         m.AddButton("start playing", "play")
     end if
 
-    if audioPlayer.ShufflePlay then
-        if m.Playstate = 2 then 'only show unshuffle if current item is playing
-            m.addButton( "un-shuffle", "shufflePlay")
-        end if
-    else
-         m.addButton( "shuffle", "shufflePlay")
-    end if
+'    if audioPlayer.ShufflePlay then
+'        if m.Playstate = 2 then 'only show unshuffle if current item is playing
+'            m.addButton( "un-shuffle", "shufflePlay")
+'        end if
+'    else
+'         m.addButton( "shuffle", "shufflePlay")
+'    end if
 
     if m.Context.Count() > 1 then
         m.AddButton("next song", "next")
@@ -90,11 +90,11 @@ Sub audioSetupButtons()
         m.metadata.UserRating = 0
     endif
 
-    if audioPlayer.Loop then
-        m.AddButton( "loop: on", "loop")
-    else
-        m.AddButton( "loop: off", "loop")
-    end if
+'    if audioPlayer.Loop then
+'        m.AddButton( "loop: on", "loop")
+'    else
+'        m.AddButton( "loop: off", "loop")
+'    end if
 
     if m.metadata.StarRating = invalid then
         m.metadata.StarRating = 0
