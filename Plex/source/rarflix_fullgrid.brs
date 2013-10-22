@@ -139,6 +139,8 @@ end function
 
 
 sub GetContextFromFullGrid(this,curindex = invalid) 
+        if this.metadata.sourceurl = invalid then return
+
         if curindex = invalid then curindex = this.curindex
         'dialog=ShowPleaseWait("Please wait","")
         ' strip any limits - we need it all ( now start or container size)
