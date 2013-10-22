@@ -96,6 +96,16 @@ Function ParsePhotoMedia(photoItem) As Object
         media.height = firstOf(MediaItem@height, "0").toint()
         media.aspectratio = MediaItem@aspectRatio
 
+        ' these will be invalid unless we directly query for the photo library key
+        ' so don't expect this to be available all the time
+        media.aperture = MediaItem@aperture
+        media.exposure = MediaItem@exposure
+        media.iso = MediaItem@iso
+        media.lens = MediaItem@lens
+        media.make = MediaItem@make
+        media.model = MediaItem@model
+        media.id = MediaItem@id
+
         media.parts = CreateObject("roArray", 2, true)
         for each MediaPart in MediaItem.Part
             part = CreateObject("roAssociativeArray")
