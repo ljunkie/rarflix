@@ -1361,11 +1361,11 @@ Function createHomeScreenPrefsScreen(viewController) As Object
         default: ""
     }
 
+    '{ title: "Zoom", EnumValue: "zoom-to-fill", ShortDescriptionLine2: "zoom image to fill boundary" }, NO ONE wants this
     display_modes = [
         { title: "Photo [default]", EnumValue: "photo-fit", ShortDescriptionLine2: "Default" },
         { title: "Fit", EnumValue: "scale-to-fit", ShortDescriptionLine2: "scaled to fit"  },
         { title: "Fill", EnumValue: "scale-to-fill", ShortDescriptionLine2: "stretch image to fill boundary" },
-        { title: "Zoom", EnumValue: "zoom-to-fill", ShortDescriptionLine2: "zoom image to fill boundary" },
     ]
     obj.Prefs["rf_home_displaymode"] = {
         values: display_modes,
@@ -1455,10 +1455,10 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
     }
 
     ' Display Mode for Grid or Poster views
+    ' { title: "Zoom", EnumValue: "zoom-to-fill", ShortDescriptionLine2: "zoom image to fill boundary" }, again, no one wants this
     display_modes = [
         { title: "Fit [default]", EnumValue: "scale-to-fit", ShortDescriptionLine2: "Default"  },
         { title: "Fill", EnumValue: "scale-to-fill", ShortDescriptionLine2: "stretch image to fill boundary" },
-        { title: "Zoom", EnumValue: "zoom-to-fill", ShortDescriptionLine2: "zoom image to fill boundary" },
         { title: "Photo", EnumValue: "photo-fit", ShortDescriptionLine2: "all the above to fit boundary" },
 
     ]
