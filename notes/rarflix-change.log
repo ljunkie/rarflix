@@ -1,3 +1,16 @@
+#2.7.7 (2013-10-20)
+    * pressing pause button while playing video will bring up HUD
+    * never prepend artist/album to track titles
+    * fix crash when PMS gives in invalid response/timeout to api call
+    * fix crash when playing item directly from grid ( photos )
+    * add delete button back to TV shows - and some other logic needed changing now that we show 6 buttons
+    * paginated data loader is a bit more optimized ( does not reload already loaded rows that are out of view )
+    * User Toggles to changes how images are displayed on the screen ( home screen and sections )
+    * Grid Border should now fit image on without distorting it
+    * music: new buttons for shuffle/loop have been removed until further testing
+
+#2.7.6 -- internal release
+	 
 #2.7.5 (2013-10-19)
     * screensaver background is now black
 
