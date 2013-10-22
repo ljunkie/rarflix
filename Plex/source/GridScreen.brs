@@ -290,7 +290,7 @@ Function gridHandleMessage(msg) As Boolean
                 sec_metadata = getSectionType(m)
                 ' old way -- didnt' work for appClips/subsections of photos if m.item <> invalid and m.item.type = "photo" and m.item.contenttype <> "section" then 
                 ' TODO fix playing from section -- TODO
-                if tostr(sec_metadata.type) = "photo" and m.item.contenttype <> "section" then
+                if tostr(sec_metadata.type) = "photo" and m.item <> invalid and m.item.contenttype <> "section" then
                     Debug("Playing from GRID Screen - get context of ALL items in every row to play")
                     obj = CreateObject("roAssociativeArray")
                     obj.metadata = m.loader
