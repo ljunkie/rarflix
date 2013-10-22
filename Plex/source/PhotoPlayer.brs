@@ -20,6 +20,7 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
     ' note: if we remove directories ( itms ) the contextIndex will be wrong - so fix it!
     if type(context) = "roArray" then
         key = context[contextIndex].key
+        print "---------------------wanted key" + key
         contextIndex = 0
         newcontext = []
         for each item in context
@@ -34,6 +35,8 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
         if context.count() <> newcontext.count() then 
             for index = 0 to newcontext.count() - 1 
                 if key = newcontext[index].key then 
+                    print "---------------------found key" + newcontext[index].key
+                    print index   
                     contextIndex = index
                     exit for
                 end if
@@ -52,6 +55,7 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
         AddAccountHeaders(screen, obj.Item.server.AccessToken)
         screen.SetContentList(context)
         screen.SetNext(contextIndex, true)
+        Debug("PhotoPlayer total items: " + tostr(context.count()))
     else
         obj.Item = context
         AddAccountHeaders(screen, obj.Item.server.AccessToken)
@@ -170,18 +174,17 @@ Sub photoPlayerShowContextMenu(obj,force_show = false)
             dialog = createBaseDialog()
             dialog.Title = "Image: " + obj.title
             dialog.text = ""
-        
-            if obj.mediainfo.make <> invalid then dialog.text = dialog.text + "Camera: " + tostr(obj.mediainfo.make) + chr(10)
-            if obj.mediainfo.model <> invalid then dialog.text = dialog.text + "model: " + tostr(obj.mediainfo.model) + chr(10)
-            if obj.mediainfo.lens <> invalid then dialog.text = dialog.text + "lens: " + tostr(obj.mediainfo.lens) + chr(10)
-            if obj.mediainfo.aperture <> invalid then dialog.text = dialog.text + "aperture: " + tostr(obj.mediainfo.aperture) + chr(10)
-            if obj.mediainfo.exposure <> invalid then dialog.text = dialog.text + "exposure: " + tostr(obj.mediainfo.exposure) + chr(10)
-            if obj.mediainfo.iso <> invalid then dialog.text = dialog.text + "iso: " + tostr(obj.mediainfo.iso) + chr(10)
-            if obj.mediainfo.width <> invalid then dialog.text = dialog.text + "width: " + tostr(obj.mediainfo.width) + chr(10)
-            if obj.mediainfo.height <> invalid then dialog.text = dialog.text + "height: " + tostr(obj.mediainfo.height) + chr(10)
-            if obj.mediainfo.aspectratio <> invalid then dialog.text = dialog.text + "aspect: " + tostr(obj.mediainfo.aspectratio) + chr(10)
-            if obj.mediainfo.container <> invalid then dialog.text = dialog.text + "container: " + tostr(obj.mediainfo.container) + chr(10)
-            if obj.mediainfo.originallyAvailableAt <> invalid then dialog.text = dialog.text + "date: " + tostr(obj.mediainfo.originallyAvailableAt) + chr(10)
+            ' NOTHING lines up in a dialog.. lovely        
+            if obj.mediainfo.make <> invalid then dialog.text = dialog.text                  + "    camera: " + tostr(obj.mediainfo.make) + chr(10)
+            if obj.mediainfo.model <> invalid then dialog.text = dialog.text                 + "      model: " + tostr(obj.mediainfo.model) + chr(10)
+            if obj.mediainfo.lens <> invalid then dialog.text = dialog.text                  + "          lens: " + tostr(obj.mediainfo.lens) + chr(10)
+            if obj.mediainfo.aperture <> invalid then dialog.text = dialog.text              + "  aperture: " + tostr(obj.mediainfo.aperture) + chr(10)
+            if obj.mediainfo.exposure <> invalid then dialog.text = dialog.text              + " exposure: " + tostr(obj.mediainfo.exposure) + chr(10)
+            if obj.mediainfo.iso <> invalid then dialog.text = dialog.text                   + "             iso: " + tostr(obj.mediainfo.iso) + chr(10)
+            if obj.mediainfo.width <> invalid and obj.mediainfo.height <> invalid then dialog.text = dialog.text + "           size: " + tostr(obj.mediainfo.width) + " x " + tostr(obj.mediainfo.height) + chr(10)
+            if obj.mediainfo.aspectratio <> invalid then dialog.text = dialog.text           + "      aspect: " + tostr(obj.mediainfo.aspectratio) + chr(10)
+            if obj.mediainfo.container <> invalid then dialog.text = dialog.text             + "          type: " + tostr(obj.mediainfo.container) + chr(10)
+            if obj.mediainfo.originallyAvailableAt <> invalid then dialog.text = dialog.text + "          date: "  + tostr(obj.mediainfo.originallyAvailableAt) + chr(10)
         
         
             dialog.SetButton("close", "Close")

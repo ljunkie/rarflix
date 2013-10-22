@@ -164,7 +164,8 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
          r1=CreateObject("roRegex", "Dir: ", "")
          if type(breadcrumbs) = "roArray" and breadcrumbs.count() > 1 then
             breadcrumbs[0] = r1.ReplaceAll(breadcrumbs[0], ""):breadcrumbs[1] = r1.ReplaceAll(breadcrumbs[1], "")
-            if ucase(breadcrumbs[0]) = ucase(breadcrumbs[1]) and item.description <> invalid then 
+            if ucase(breadcrumbs[0]) = ucase(breadcrumbs[1]) and item.description <> invalid and tostr(item.nodename) = "Directory" then 
+                print item
                 breadcrumbs[0] = right(item.description,38)
                 if len(item.description) > 38 then breadcrumbs[0] = "..." + breadcrumbs[0]
                 breadcrumbs[1] = ""
@@ -573,12 +574,21 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
     ' ljunkie - check if we are viewing a directory. We can direct play certain items ( play all sort of thing )
     ' currently works for photos/albums. Not sure how it woud work for others yet
     ' I.E. if video(movie/clip/episode) then we need to add more logic how to play the next item.. 
+    'sec_metadata = getSectionType(m) -- todo later - we can play appClips if they are in the photosection, but other adverse effects happen
     if item.nodename <> invalid and item.nodename = "Directory" then
-        if item.ContentType = "photo"
+        if item.ContentType = "photo" then 
             print "--- trying to play photos from a directory"
             container = createPlexContainerForUrl(item.server, item.server.serverurl, item.key)
             context = container.getmetadata()
             return m.CreatePhotoPlayer(context, 0)
+        'else if tostr(sec_metadata.type) = "photo" and item.ContentType ="appClip" then 
+        '    print "--- trying to play photos (appClip) from a directory"
+        '    container = createPlexContainerForUrl(item.server, item.sourceurl, item.key)
+        '    context = container.getmetadata()
+        '    ' we can have sub dirs.. we only direct play if we have a photo ( only checking the first item )
+        '    if type(context) = "roArray" and context.count() > 0 and context[0].nodename = "Photo" then 
+        '        return m.CreatePhotoPlayer(context, 0)
+        '    end if
         else if item.ContentType = "album" then
             print "--- trying to play an album from a directory"
             container = createPlexContainerForUrl(item.server, item.server.serverurl, item.key)

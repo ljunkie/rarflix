@@ -180,8 +180,21 @@ Function gridHandleMessage(msg) As Boolean
             m.selectedRow = msg.GetIndex()
             m.focusedIndex = msg.GetData()
 
-            if m.screenid <> invalid and m.screenid < 0 and m.contentArray <> invalid and type(m.contentArray[m.selectedRow]) = "roArray" then 
+            if m.screenid <> invalid and m.screenid > 0 and m.contentArray <> invalid and type(m.contentArray[m.selectedRow]) = "roArray" then 
                 item = m.contentArray[m.selectedRow][m.focusedIndex]
+       
+                if item <> invalid and tostr(item.type) = "photo" and tostr(item.nodename) <> "Directory" and item.ExifLoaded = invalid then 
+                    description = getExifData(item,true)
+                    if description <> invalid then
+                        item.description = description
+                        item.ExifLoaded = true
+                        m.Screen.SetContentListSubset(m.selectedRow, m.contentArray[m.selectedRow], m.focusedIndex, 1)
+                        print item
+                    end if
+                end if
+            end if
+ 
+            if m.screenid <> invalid and m.screenid < 0 and m.contentArray <> invalid and type(m.contentArray[m.selectedRow]) = "roArray" then 
                 if type(item) = "roAssociativeArray" and item.contenttype <> invalid and item.contenttype = "section" then 
                     RegWrite("lastMachineID", item.server.machineID)
                     RegWrite("lastSectionKey", item.key)
@@ -191,7 +204,6 @@ Function gridHandleMessage(msg) As Boolean
                     'print "---------------------------------------"
                 end if 
             end if
-
 
 
             if m.ignoreNextFocus then
@@ -293,7 +305,7 @@ Function gridHandleMessage(msg) As Boolean
                 sec_metadata = getSectionType(m)
                 ' old way -- didnt' work for appClips/subsections of photos if m.item <> invalid and m.item.type = "photo" and m.item.contenttype <> "section" then 
                 ' TODO fix playing from section -- TODO
-                if tostr(sec_metadata.type) = "photo" and tostr(sec_metadata.nodename) <> "Directory" and m.item <> invalid and m.item.contenttype <> "section" then
+                if tostr(sec_metadata.type) = "photo" and m.item <> invalid and m.item.contenttype <> "section" then
                     Debug("Playing from GRID Screen - get context of ALL items in every row to play")
                     obj = CreateObject("roAssociativeArray")
                     obj.metadata = m.loader

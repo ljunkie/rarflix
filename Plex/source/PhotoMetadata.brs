@@ -36,13 +36,6 @@ Function newPhotoMetadata(container, item, detailed=true) As Object
 
     if photo.media.Count() > 0 AND photo.media[0].preferredPart <> invalid then
         photo.Url = FullUrl(photo.server.serverUrl, photo.sourceUrl, photo.media[0].preferredPart.key)
-        'ljunkie - lets include some more details - maybe some point we can include the item key Media details that includes EXIF data
-        ' that would cause major issues though with LARGE directories ( you know who I'm talking about... )
-        photo.Description = ""
-        if photo.media[0].width <> invalid and photo.media[0].height <> invalid then 
-            photo.Description = photo.Description + tostr(photo.media[0].width) + " x " + tostr(photo.media[0].height) + chr(10)
-        end if
-        photo.Description = photo.Description + tostr(photo.media[0].container) + " aspect: " + tostr(photo.media[0].aspectratio)
     else
         photo.Url = FullUrl(photo.server.serverUrl, photo.sourceUrl, photo.key)
     end if
@@ -123,3 +116,44 @@ Function ParsePhotoMedia(photoItem) As Object
 
     return mediaArray
 End Function
+
+function getExifData(metadata,compact = false) as dynamic
+    container = createPlexContainerForUrl(metadata.server, metadata.server.serverUrl, metadata.key)
+    if container <> invalid then
+        container.getmetadata()
+        ' only create dialog if metadata is available
+        if type(container.metadata) = "roArray" and type(container.metadata[0].media) = "roArray" then 
+            MediaInfo = container.metadata[0].media[0]
+            desc = ""
+            if compact then 
+                if mediainfo.make <> invalid then desc = mediainfo.make + ": "
+                if mediainfo.model <> invalid then desc = desc + mediainfo.model + "   "
+                if mediainfo.lens <> invalid then desc = desc + "lens:" + mediainfo.lens + "   "
+                if mediainfo.aperture <> invalid then desc = desc + "aperture:" + mediainfo.aperture + "   "
+                if mediainfo.exposure <> invalid then desc = desc + "exposure:" + mediainfo.exposure + "   "
+                if mediainfo.aspectratio <> invalid then desc = desc + "aspect:" + mediainfo.aspectratio + "   "
+                if mediainfo.iso <> invalid then desc = desc + "iso:" + mediainfo.iso + "   "
+                if mediainfo.width <> invalid and mediainfo.height <> invalid then desc = desc + "size:" + tostr(mediainfo.width) + " x " + tostr(mediainfo.height) + "   "
+                'if mediainfo.container <> invalid then desc = desc + "format:" + mediainfo.container + "   "
+                if mediainfo.originallyAvailableAt <> invalid then desc = desc + "date:" + tostr(mediainfo.originallyAvailableAt)
+            else 
+                if mediainfo.make <> invalid then desc = mediainfo.make + ": "
+                if mediainfo.model <> invalid then desc = desc + mediainfo.model + "    "
+                if mediainfo.lens <> invalid then desc = desc + "lens: " + mediainfo.lens
+                if len(desc) < 50 then desc = desc + string(20," ") + "." ' hack to not make the line strech.. wtf roku
+                desc = desc + chr(10)
+                if mediainfo.aperture <> invalid then desc = desc + "aperture: " + mediainfo.aperture + "    "
+                if mediainfo.exposure <> invalid then desc = desc + "exposure: " + mediainfo.exposure + "    "
+                if mediainfo.aspectratio <> invalid then desc = desc + "aspect: " + mediainfo.aspectratio + "    "
+                if mediainfo.iso <> invalid then desc = desc + "iso: " + mediainfo.iso
+                desc = desc + chr(10)
+                if mediainfo.width <> invalid and mediainfo.height <> invalid then desc = desc + "size: " + tostr(mediainfo.width) + " x " + tostr(mediainfo.height) + "    "
+                if mediainfo.container <> invalid then desc = desc + "format: " + mediainfo.container + "    "
+                if mediainfo.originallyAvailableAt <> invalid then desc = desc + "date: " + tostr(mediainfo.originallyAvailableAt)
+            end if
+
+            if desc <> "" then return desc
+        end if
+    end if
+    return invalid
+end function

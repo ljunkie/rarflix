@@ -47,32 +47,16 @@ Sub photoSetupButtons()
 End Sub
 
 Sub photoGetMediaDetails(content)
-    m.metadata = content
-
-    container = createPlexContainerForUrl(m.metadata.server, m.metadata.server.serverUrl, m.metadata.key)
-    if container <> invalid then
-        container.getmetadata()
-        ' only create dialog if metadata is available
-        if type(container.metadata) = "roArray" and type(container.metadata[0].media) = "roArray" then 
-            MediaInfo = container.metadata[0].media[0]
-            desc = ""
-            if mediainfo.make <> invalid then desc = mediainfo.make + ": "
-            if mediainfo.model <> invalid then desc = desc + mediainfo.model + "    "
-            if mediainfo.lens <> invalid then desc = desc + "lens: " + mediainfo.lens
-            if len(desc) < 50 then desc = desc + string(20," ") + "." ' hack to not make the line strech.. wtf roku
-            desc = desc + chr(10)
-            if mediainfo.aperture <> invalid then desc = desc + "aperture: " + mediainfo.aperture + "    "
-            if mediainfo.exposure <> invalid then desc = desc + "exposure: " + mediainfo.exposure + "    "
-            if mediainfo.aspectratio <> invalid then desc = desc + "aspect: " + mediainfo.aspectratio + "    "
-            if mediainfo.iso <> invalid then desc = desc + "iso: " + mediainfo.iso
-            desc = desc + chr(10)
-            if mediainfo.width <> invalid and mediainfo.height <> invalid then desc = desc + "size: " + tostr(mediainfo.width) + " x " + tostr(mediainfo.height) + "    "
-            if mediainfo.container <> invalid then desc = desc + "format: " + mediainfo.container + "    "
-            if mediainfo.originallyAvailableAt <> invalid then desc = desc + "date: " + tostr(mediainfo.originallyAvailableAt)
-            if desc <> "" then m.metadata.description = desc
+    ' ljunkie - refresh exif for descriptions ( we lazy load this on the grid )
+    if content.ExifSBloaded = invalid then
+        description = getExifData(content,false)
+        if description <> invalid then
+            content.description = description
+            content.ExifSBloaded = true ' make sure we don't load it again
         end if
     end if
 
+    m.metadata = content
     m.media = invalid
 End Sub
 
