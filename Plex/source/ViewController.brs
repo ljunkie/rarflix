@@ -575,10 +575,12 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
     ' I.E. if video(movie/clip/episode) then we need to add more logic how to play the next item.. 
     if item.nodename <> invalid and item.nodename = "Directory" then
         if item.ContentType = "photo"
+            print "--- trying to play photos from a directory"
             container = createPlexContainerForUrl(item.server, item.server.serverurl, item.key)
             context = container.getmetadata()
             return m.CreatePhotoPlayer(context, 0)
         else if item.ContentType = "album" then
+            print "--- trying to play an album from a directory"
             container = createPlexContainerForUrl(item.server, item.server.serverurl, item.key)
             context = container.getmetadata()
             m.AudioPlayer.Stop()

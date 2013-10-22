@@ -16,6 +16,34 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
     screen.SetPeriod(RegRead("slideshow_period", "preferences", "6").toInt())
     screen.SetTextOverlayHoldTime(RegRead("slideshow_overlay", "preferences", "2500").toInt())
 
+    ' ljunkie - we need to iterate through the items and remove directories -- they don't play nice
+    ' note: if we remove directories ( itms ) the contextIndex will be wrong - so fix it!
+    if type(context) = "roArray" then
+        key = context[contextIndex].key
+        contextIndex = 0
+        newcontext = []
+        for each item in context
+            if tostr(item.nodename) = "Photo" then 
+                newcontext.Push(item)
+            else 
+                print "skipping item: " + tostr(item.nodename) + " " + tostr(item.title)
+            end if
+        next
+        
+        ' reset contextIndex if needed
+        if context.count() <> newcontext.count() then 
+            for index = 0 to newcontext.count() - 1 
+                if key = newcontext[index].key then 
+                    contextIndex = index
+                    exit for
+                end if
+            end for
+        end if
+
+        context = newcontext
+    end if
+    ' end cleaning
+
     ' Standard screen properties
     obj.Screen = screen
     if type(context) = "roArray" then
