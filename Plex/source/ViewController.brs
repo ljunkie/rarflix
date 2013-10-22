@@ -165,7 +165,8 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
          if type(breadcrumbs) = "roArray" and breadcrumbs.count() > 1 then
             breadcrumbs[0] = r1.ReplaceAll(breadcrumbs[0], ""):breadcrumbs[1] = r1.ReplaceAll(breadcrumbs[1], "")
             if ucase(breadcrumbs[0]) = ucase(breadcrumbs[1]) and item.description <> invalid then 
-                breadcrumbs[0] = item.description
+                breadcrumbs[0] = right(item.description,38)
+                if len(item.description) > 38 then breadcrumbs[0] = "..." + breadcrumbs[0]
                 breadcrumbs[1] = ""
             end if
          end if
