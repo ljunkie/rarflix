@@ -98,11 +98,15 @@ Function photoPlayerHandleMessage(msg) As Boolean
         else if msg.isRequestInterrupted() then
             Debug("preload interrupted: " + tostr(msg.GetIndex()))
         else if msg.isPaused() then
+            audioplayer = GetViewController().AudioPlayer
             Debug("paused")
             m.isPaused = true
+            if audioplayer.IsPlaying then audioplayer.Pause()
         else if msg.isResumed() then
+            audioplayer = GetViewController().AudioPlayer
             Debug("resumed")
             m.isPaused = false
+            if audioplayer.IsPaused then audioplayer.Resume()
         else if msg.isRemoteKeyPressed() then
             if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then ' ljunkie - use * for more options on focused item
                 obj = m.item     
