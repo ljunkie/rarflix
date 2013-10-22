@@ -36,6 +36,13 @@ Function newPhotoMetadata(container, item, detailed=true) As Object
 
     if photo.media.Count() > 0 AND photo.media[0].preferredPart <> invalid then
         photo.Url = FullUrl(photo.server.serverUrl, photo.sourceUrl, photo.media[0].preferredPart.key)
+        'ljunkie - lets include some more details - maybe some point we can include the item key Media details that includes EXIF data
+        ' that would cause major issues though with LARGE directories ( you know who I'm talking about... )
+        photo.Description = ""
+        if photo.media[0].width <> invalid and photo.media[0].height <> invalid then 
+            photo.Description = photo.Description + tostr(photo.media[0].width) + " x " + tostr(photo.media[0].height) + chr(10)
+        end if
+        photo.Description = photo.Description + tostr(photo.media[0].container) + " aspect: " + tostr(photo.media[0].aspectratio)
     else
         photo.Url = FullUrl(photo.server.serverUrl, photo.sourceUrl, photo.key)
     end if
@@ -62,7 +69,8 @@ Function newPhotoMetadata(container, item, detailed=true) As Object
             Debug("Transcoding photo to JPEG from " + format)
             transcode = true
         else if photo.media[0].width > size.w OR photo.media[0].height > size.h then
-            Debug("Transcoding photo because it's unnecessarily large: " + tostr(photo.media[0].width) + "x" + tostr(photo.media[0].height))
+            ' this will almost always happen.. i'm going to disable logging this. who is going to have images already in thumbnail format?
+            ' Debug("Transcoding photo because it's unnecessarily large: " + tostr(photo.media[0].width) + "x" + tostr(photo.media[0].height))
             transcode = true
         else if photo.media[0].width <= 0 then
             Debug("Transcoding photo for fear that it requires EXIF rotation")
