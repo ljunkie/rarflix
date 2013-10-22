@@ -426,12 +426,13 @@ Sub setGridTheme(style as String)
         app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-episode-hd.png")
         app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-episode-sd.png")
     else if style = "flat-movie" then
-        if RegRead("rf_grid_displaymode", "preferences", "scale-to-fit") = "scale-to-fit" then 
-            ' plex uses tall movie posters. So we will use a custom box to fit the poster
-            app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-movie-hd-skinny.png")
-        else 
-            app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-movie-hd.png")
-        end if
+        'if RegRead("rf_grid_displaymode", "preferences", "scale-to-fit") = "scale-to-fit" then 
+        '    ' plex uses tall movie posters. So we will use a custom box to fit the poster
+        '    app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-movie-hd-skinny.png")
+        'else 
+        '    app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-movie-hd.png")
+        'end if
+        app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-movie-hd.png")
         app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-movie-sd.png")
     end if
 End Sub
