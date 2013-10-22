@@ -915,6 +915,8 @@ end sub
 
 sub rfDefRemoteOptionButton(m) 
     'for now we will show the preferences screen :)
+    audioplayer = GetViewController().AudioPlayer
+    if audioplayer.IsPlaying or audioplayer.IsPaused then return
 
     sec_metadata = getSectionType(m)
     notAllowed = CreateObject("roRegex", "artist|music|album", "") 
