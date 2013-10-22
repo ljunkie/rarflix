@@ -113,9 +113,8 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         item = context
     end if
 
-    ' ljunkie - sorry for the madness
+    ' ljunkie - sorry for the madness ( breadcrumbs dynamic magic ) TODO - research a less hacky way
     ' breadcrumbs for Full Grid.. when we have "1-4 of 565" as a row name --- that is ugly and this is ghetto 
-
     re = CreateObject("roRegex", "\d+\s*-\s*\d+\s+of\s+\d+", "")
     if type(breadcrumbs) = "roArray" and breadcrumbs.count() > 1 and (re.Ismatch(breadcrumbs[0]) or re.IsMatch(breadcrumbs[1])) then 
         if type(m.screens) = "roArray" and m.screens.count() > 1 then  ' nested because I'm lame
@@ -160,9 +159,19 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     end if
     ' end this madness
 
-    'Debug("----- BC end result -----")
-    'Debug(tostr(breadcrumbs[0]) + ", " + tostr(breadcrumbs[1]))
+    ' madness still continues for other areas ( now PHOTOS )
+    if (item.type = "photo") then
+         r1=CreateObject("roRegex", "Dir: ", "")
+         if type(breadcrumbs) = "roArray" and breadcrumbs.count() > 1 then
+            breadcrumbs[0] = r1.ReplaceAll(breadcrumbs[0], ""):breadcrumbs[1] = r1.ReplaceAll(breadcrumbs[1], "")
+            if ucase(breadcrumbs[0]) = ucase(breadcrumbs[1]) and item.description <> invalid then 
+                breadcrumbs[0] = item.description
+                breadcrumbs[1] = ""
+            end if
+         end if
+    end if
 
+    ' madness still continues for other areas ( now TV )
     ' ljunkie - reset breadcrumb for TV show if tv watched status enabled and title <> umtitle (post and grid view supported)
     if RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" and (item.type = "show" or item.viewgroup = "season" or item.viewgroup = "show" or item.viewgroup = "episode") then
         if item.umtitle <> invalid and ( type(breadcrumbs) = "roArray" and breadcrumbs[0] <> invalid and breadcrumbs[0] = item.title) or (breadcrumbs = invalid) then 
@@ -175,11 +184,26 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
 	else 
             Debug("tv watched status enabled: DID not match criteria(1) -- NOT setting breadcrumb back to original title; change from " + breadcrumbs[0] + " -to- " + item.umtitle)
         end if
-    ' this causes a crash in playing Photos from Year with the play button -- not need for this anyways..
-    'else if RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" and item.umtitle <> invalid and breadcrumbs[0] <> invalid and breadcrumbs[0] = item.title then 
-    '	 Debug("tv watched status enabled: DID not match criteria(2) -- NOT setting breadcrumb back to original title; change from " + breadcrumbs[0] + " -to- " + item.umtitle)
     end if
 
+    ' madness still continues for other areas ( remove redundant breadcrumbs )
+    if type(breadcrumbs) = "roArray" and breadcrumbs.count() > 1 then
+        lastbc = breadcrumbs[0]
+        for index = 1 to breadcrumbs.count() - 1
+            if ucase(breadcrumbs[index]) = ucase(lastbc) then
+                lastbc = breadcrumbs[index]
+                breadcrumbs.Delete(index)
+            else 
+                lastbc = breadcrumbs[index]
+            end if
+        end for
+        ''this would force us to show only 1 bread crumb. instead we will use the previous
+        'if breadcrumbs.count() = 1 then 
+        'breadcrumbs.Push("")
+        'end if
+    end if
+    ' ljunkie - ok, madness complete
+ 
     contentType = item.ContentType
     viewGroup = item.viewGroup
     if viewGroup = invalid then viewGroup = "Invalid"
