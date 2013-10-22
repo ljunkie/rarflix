@@ -60,6 +60,7 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
     end if
 
     obj.IsPaused = false
+    obj.ForceResume = false
     m.ViewController.AudioPlayer.focusedbutton = 0
 
     obj.HandleMessage = photoPlayerHandleMessage
@@ -99,7 +100,14 @@ Function photoPlayerHandleMessage(msg) As Boolean
             Debug("resumed")
             m.isPaused = false
         else if msg.isRemoteKeyPressed() then
-            if msg.GetIndex() = 3 then
+            if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then ' ljunkie - use * for more options on focused item
+                obj = m.item     
+                if type(m.items) = "roArray" and m.CurIndex <> invalid then obj = m.items[m.CurIndex]
+                m.forceResume = NOT (m.isPaused)
+                m.screen.Pause()
+                m.isPaused = true
+                photoPlayerShowContextMenu(obj)
+            else if msg.GetIndex() = 3 then
                 ' this needs work -- but the options button (*) now works to show the title.. so maybe another day
                 ol = RegRead("slideshow_overlay_force", "preferences","0")
                 time = invalid            
@@ -135,3 +143,50 @@ Function photoPlayerHandleMessage(msg) As Boolean
 
     return handled
 End Function
+
+
+Sub photoPlayerShowContextMenu(obj,force_show = false)
+    audioplayer = GetViewController().AudioPlayer
+
+    ' show audio dialog if item is directory and audio is playing/paused
+    if tostr(obj.nodename) = "Directory" then
+        if audioplayer.IsPlaying or audioplayer.IsPaused or audioPlayer.ContextScreenID then AudioPlayer.ShowContextMenu()
+        return
+    end if
+   
+    ' do not display if audio is playing - sorry, audio dialog overrides this, maybe work more logic in later
+    ' I.E. show button for this dialog from audioplayer dialog
+    if NOT force_show
+        if audioplayer.IsPlaying or audioplayer.IsPaused or audioPlayer.ContextScreenID then AudioPlayer.ShowContextMenu()
+        return
+    end if
+
+    container = createPlexContainerForUrl(obj.server, obj.server.serverUrl, obj.key)
+    if container <> invalid then
+        container.getmetadata()
+        print container.metadata
+        print container.metadata[0].media[0]
+        obj.MediaInfo = container.metadata[0].media[0]
+    end if
+
+    dialog = createBaseDialog()
+    dialog.Title = "Image: " + obj.title
+    dialog.text = ""
+
+    dialog.text = dialog.text + "Camera: " + tostr(obj.mediainfo.make) + chr(10)
+    dialog.text = dialog.text + "model: " + tostr(obj.mediainfo.model) + chr(10)
+    dialog.text = dialog.text + "lens: " + tostr(obj.mediainfo.lens) + chr(10)
+    dialog.text = dialog.text + "aperture: " + tostr(obj.mediainfo.aperture) + chr(10)
+    dialog.text = dialog.text + "exposure: " + tostr(obj.mediainfo.exposure) + chr(10)
+    dialog.text = dialog.text + "iso: " + tostr(obj.mediainfo.iso) + chr(10)
+    dialog.text = dialog.text + "width: " + tostr(obj.mediainfo.width) + chr(10)
+    dialog.text = dialog.text + "height: " + tostr(obj.mediainfo.height) + chr(10)
+    dialog.text = dialog.text + "aspect: " + tostr(obj.mediainfo.aspectratio) + chr(10)
+    dialog.text = dialog.text + "container: " + tostr(obj.mediainfo.container) + chr(10)
+
+
+    dialog.SetButton("close", "Close")
+
+    dialog.ParentScreen = m
+    dialog.Show()
+End Sub

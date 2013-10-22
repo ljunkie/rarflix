@@ -259,29 +259,32 @@ Function gridHandleMessage(msg) As Boolean
         else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then ' ljunkie - use * for more options on focused item
                 print "----- * butting pressed"
                 context = m.contentArray[m.selectedRow]
-                itype = context[m.focusedIndex].contenttype
-                if itype = invalid then itype = context[m.focusedIndex].type
-                ctype_o = context[m.focusedIndex].contenttype
-                vtype_o = context[m.focusedIndex].viewtype
-                itype_o = context[m.focusedIndex].type
+                item = context[m.focusedIndex]
+                
+                itype = item.contenttype
+                if itype = invalid then itype = item.type
 
                 audioplayer = GetViewController().AudioPlayer
-
+                isMovieTV = (itype = "movie"  or itype = "show" or itype = "episode" or itype = "season" or itype = "series")
+ 
                 sn = m.screenname
-                if tostr(itype) <> "invalid" and (itype = "movie"  or itype = "show" or itype = "episode" or itype = "season" or itype = "series") then
+                if tostr(itype) <> "invalid" and isMovieTV then 
+                    ' need to full screen here
                     obj = m.viewcontroller.screens.peek()
-                    obj.metadata = context[m.focusedIndex]
-                    obj.Item = context[m.focusedIndex]
+                    obj.metadata = item
+                    obj.Item = item
                     rfVideoMoreButtonFromGrid(obj)
-                else if tostr(ctype_o) <> "invalid" and m.screenid > 0 then
+                else if item <> invalid and tostr(item.contenttype) = "photo" then 
+                    photoPlayerShowContextMenu(item,true)
+                else if tostr(item.contenttype) <> "invalid" and m.screenid > 0 then
                     ' show the option to see the FULL grid screen. We might want this just to do directly to it, but what if we add more options later.
                     ' might as well get people used to this.
                     rfDialogGridScreen(m)
                 else if audioplayer.ContextScreenID = invalid then  ' only create this extra screen if audioPlayer doesn't have context
-                    Debug("Info Button (*) not handled for content type: " +  tostr(itype_o) + ":" + tostr(ctype_o))
+                    Debug("Info Button (*) not handled for content type: " +  tostr(item.type) + ":" + tostr(item.contenttype))
                     rfDefRemoteOptionButton(m)
                 else
-                    Debug("--- Not showing prefs on ctype:" + tostr(ctype_o) + " itype:" + tostr(itype_o) )
+                    Debug("--- Not showing prefs on ctype:" + tostr(item.contenttype) + " itype:" + tostr(item.type) )
                 end if 
         else if msg.isRemoteKeyPressed() then
             if msg.GetIndex() = 13 then
@@ -290,7 +293,7 @@ Function gridHandleMessage(msg) As Boolean
                 sec_metadata = getSectionType(m)
                 ' old way -- didnt' work for appClips/subsections of photos if m.item <> invalid and m.item.type = "photo" and m.item.contenttype <> "section" then 
                 ' TODO fix playing from section -- TODO
-                if tostr(sec_metadata.type) = "photo" and m.item <> invalid and m.item.contenttype <> "section" then
+                if tostr(sec_metadata.type) = "photo" and tostr(sec_metadata.nodename) <> "Directory" and m.item <> invalid and m.item.contenttype <> "section" then
                     Debug("Playing from GRID Screen - get context of ALL items in every row to play")
                     obj = CreateObject("roAssociativeArray")
                     obj.metadata = m.loader

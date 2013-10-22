@@ -351,6 +351,7 @@ Function audioPlayerMenuHandleButton(command, data) As Boolean
         ' we only get here if we know we are playing a slideshow too
         obj.slideshow.screen.Pause()
         obj.slideshow.isPaused = true
+        obj.slideshow.forceResume = false
         obj.Pause()
     else if command = "resume" then
         obj.focusedbutton = 0 
@@ -360,6 +361,7 @@ Function audioPlayerMenuHandleButton(command, data) As Boolean
         ' we only get here if we know we are playing a slideshow too
         obj.slideshow.screen.Resume()
         obj.slideshow.isPaused = false
+        obj.slideshow.forceResume = false
         if obj.ispaused then 
             obj.Resume()
         else if NOT obj.isplaying then 
