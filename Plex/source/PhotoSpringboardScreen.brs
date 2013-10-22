@@ -48,6 +48,9 @@ End Sub
 
 Sub photoGetMediaDetails(content)
     m.metadata = content
+
+    print m.metadata   
+
     m.media = invalid
 End Sub
 

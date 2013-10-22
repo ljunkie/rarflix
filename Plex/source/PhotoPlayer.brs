@@ -150,43 +150,44 @@ Sub photoPlayerShowContextMenu(obj,force_show = false)
 
     ' show audio dialog if item is directory and audio is playing/paused
     if tostr(obj.nodename) = "Directory" then
-        if audioplayer.IsPlaying or audioplayer.IsPaused or audioPlayer.ContextScreenID then AudioPlayer.ShowContextMenu()
+        if audioplayer.IsPlaying or audioplayer.IsPaused or audioPlayer.ContextScreenID <> invalid then AudioPlayer.ShowContextMenu()
         return
     end if
    
     ' do not display if audio is playing - sorry, audio dialog overrides this, maybe work more logic in later
     ' I.E. show button for this dialog from audioplayer dialog
     if NOT force_show
-        if audioplayer.IsPlaying or audioplayer.IsPaused or audioPlayer.ContextScreenID then AudioPlayer.ShowContextMenu()
+        if audioplayer.IsPlaying or audioplayer.IsPaused or audioPlayer.ContextScreenID <> invalid then AudioPlayer.ShowContextMenu()
         return
     end if
 
     container = createPlexContainerForUrl(obj.server, obj.server.serverUrl, obj.key)
     if container <> invalid then
         container.getmetadata()
-        print container.metadata
-        print container.metadata[0].media[0]
-        obj.MediaInfo = container.metadata[0].media[0]
+        ' only create dialog if metadata is available
+        if type(container.metadata) = "roArray" and type(container.metadata[0].media) = "roArray" then 
+            obj.MediaInfo = container.metadata[0].media[0]
+            dialog = createBaseDialog()
+            dialog.Title = "Image: " + obj.title
+            dialog.text = ""
+        
+            dialog.text = dialog.text + "Camera: " + tostr(obj.mediainfo.make) + chr(10)
+            dialog.text = dialog.text + "model: " + tostr(obj.mediainfo.model) + chr(10)
+            dialog.text = dialog.text + "lens: " + tostr(obj.mediainfo.lens) + chr(10)
+            dialog.text = dialog.text + "aperture: " + tostr(obj.mediainfo.aperture) + chr(10)
+            dialog.text = dialog.text + "exposure: " + tostr(obj.mediainfo.exposure) + chr(10)
+            dialog.text = dialog.text + "iso: " + tostr(obj.mediainfo.iso) + chr(10)
+            dialog.text = dialog.text + "width: " + tostr(obj.mediainfo.width) + chr(10)
+            dialog.text = dialog.text + "height: " + tostr(obj.mediainfo.height) + chr(10)
+            dialog.text = dialog.text + "aspect: " + tostr(obj.mediainfo.aspectratio) + chr(10)
+            dialog.text = dialog.text + "container: " + tostr(obj.mediainfo.container) + chr(10)
+        
+        
+            dialog.SetButton("close", "Close")
+        
+            dialog.ParentScreen = m
+            dialog.Show()
+        end if
     end if
 
-    dialog = createBaseDialog()
-    dialog.Title = "Image: " + obj.title
-    dialog.text = ""
-
-    dialog.text = dialog.text + "Camera: " + tostr(obj.mediainfo.make) + chr(10)
-    dialog.text = dialog.text + "model: " + tostr(obj.mediainfo.model) + chr(10)
-    dialog.text = dialog.text + "lens: " + tostr(obj.mediainfo.lens) + chr(10)
-    dialog.text = dialog.text + "aperture: " + tostr(obj.mediainfo.aperture) + chr(10)
-    dialog.text = dialog.text + "exposure: " + tostr(obj.mediainfo.exposure) + chr(10)
-    dialog.text = dialog.text + "iso: " + tostr(obj.mediainfo.iso) + chr(10)
-    dialog.text = dialog.text + "width: " + tostr(obj.mediainfo.width) + chr(10)
-    dialog.text = dialog.text + "height: " + tostr(obj.mediainfo.height) + chr(10)
-    dialog.text = dialog.text + "aspect: " + tostr(obj.mediainfo.aspectratio) + chr(10)
-    dialog.text = dialog.text + "container: " + tostr(obj.mediainfo.container) + chr(10)
-
-
-    dialog.SetButton("close", "Close")
-
-    dialog.ParentScreen = m
-    dialog.Show()
 End Sub
