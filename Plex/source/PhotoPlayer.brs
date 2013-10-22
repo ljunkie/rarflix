@@ -156,8 +156,8 @@ Sub photoPlayerShowContextMenu(obj,force_show = false)
    
     ' do not display if audio is playing - sorry, audio dialog overrides this, maybe work more logic in later
     ' I.E. show button for this dialog from audioplayer dialog
-    if NOT force_show
-        if audioplayer.IsPlaying or audioplayer.IsPaused or audioPlayer.ContextScreenID <> invalid then AudioPlayer.ShowContextMenu()
+    if NOT force_show and  audioplayer.IsPlaying or audioplayer.IsPaused or audioPlayer.ContextScreenID <> invalid then 
+        AudioPlayer.ShowContextMenu()
         return
     end if
 
@@ -171,16 +171,17 @@ Sub photoPlayerShowContextMenu(obj,force_show = false)
             dialog.Title = "Image: " + obj.title
             dialog.text = ""
         
-            dialog.text = dialog.text + "Camera: " + tostr(obj.mediainfo.make) + chr(10)
-            dialog.text = dialog.text + "model: " + tostr(obj.mediainfo.model) + chr(10)
-            dialog.text = dialog.text + "lens: " + tostr(obj.mediainfo.lens) + chr(10)
-            dialog.text = dialog.text + "aperture: " + tostr(obj.mediainfo.aperture) + chr(10)
-            dialog.text = dialog.text + "exposure: " + tostr(obj.mediainfo.exposure) + chr(10)
-            dialog.text = dialog.text + "iso: " + tostr(obj.mediainfo.iso) + chr(10)
-            dialog.text = dialog.text + "width: " + tostr(obj.mediainfo.width) + chr(10)
-            dialog.text = dialog.text + "height: " + tostr(obj.mediainfo.height) + chr(10)
-            dialog.text = dialog.text + "aspect: " + tostr(obj.mediainfo.aspectratio) + chr(10)
-            dialog.text = dialog.text + "container: " + tostr(obj.mediainfo.container) + chr(10)
+            if obj.mediainfo.make <> invalid then dialog.text = dialog.text + "Camera: " + tostr(obj.mediainfo.make) + chr(10)
+            if obj.mediainfo.model <> invalid then dialog.text = dialog.text + "model: " + tostr(obj.mediainfo.model) + chr(10)
+            if obj.mediainfo.lens <> invalid then dialog.text = dialog.text + "lens: " + tostr(obj.mediainfo.lens) + chr(10)
+            if obj.mediainfo.aperture <> invalid then dialog.text = dialog.text + "aperture: " + tostr(obj.mediainfo.aperture) + chr(10)
+            if obj.mediainfo.exposure <> invalid then dialog.text = dialog.text + "exposure: " + tostr(obj.mediainfo.exposure) + chr(10)
+            if obj.mediainfo.iso <> invalid then dialog.text = dialog.text + "iso: " + tostr(obj.mediainfo.iso) + chr(10)
+            if obj.mediainfo.width <> invalid then dialog.text = dialog.text + "width: " + tostr(obj.mediainfo.width) + chr(10)
+            if obj.mediainfo.height <> invalid then dialog.text = dialog.text + "height: " + tostr(obj.mediainfo.height) + chr(10)
+            if obj.mediainfo.aspectratio <> invalid then dialog.text = dialog.text + "aspect: " + tostr(obj.mediainfo.aspectratio) + chr(10)
+            if obj.mediainfo.container <> invalid then dialog.text = dialog.text + "container: " + tostr(obj.mediainfo.container) + chr(10)
+            if obj.mediainfo.originallyAvailableAt <> invalid then dialog.text = dialog.text + "date: " + tostr(obj.mediainfo.originallyAvailableAt) + chr(10)
         
         
             dialog.SetButton("close", "Close")

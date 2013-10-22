@@ -98,6 +98,8 @@ Function ParsePhotoMedia(photoItem) As Object
 
         ' these will be invalid unless we directly query for the photo library key
         ' so don't expect this to be available all the time
+
+        media.originallyAvailableAt = photoitem@originallyAvailableAt
         media.aperture = MediaItem@aperture
         media.exposure = MediaItem@exposure
         media.iso = MediaItem@iso
