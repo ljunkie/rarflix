@@ -263,15 +263,14 @@ Sub audioPlayerShowContextMenu()
     end if
     dialog.Title = dialog.Title + " - " + firstOf(m.Context[m.PlayIndex].Title, "")
 
-    ' ljunkie - slideshow fun
-    count = m.viewcontroller.screens.count() - 1
-    m.slideshow = invalid
-    if count > 1 and type(m.viewcontroller.screens[count].screen)  = "roSlideShow" then 
-      m.slideshow = m.viewcontroller.screens[count]
-      if type(m.slideshow.PlayIndex) = "roInteger" and type(m.slideshow.items) = "roArray" then  ' ljunkie - show the photo title a slide show is in progress
-          dialog.Text = dialog.Text + chr(10) + " Photo: " + m.slideshow.items[m.slideshow.PlayIndex].textoverlayul
-          if m.slideshow.isPaused = invalid then m.slideshow.isPaused = false
-      end if 
+    ' ljunkie - slideshow fun - show current image if slideshow is the current screen
+    if type(m.viewcontroller.screens.peek().screen) = "roSlideShow" then 
+        m.slideshow = m.viewcontroller.screens.peek()
+        print m.slideshow
+        if type(m.slideshow.CurIndex) = "roInteger" and type(m.slideshow.items) = "roArray" then  ' ljunkie - show the photo title a slide show is in progress
+            dialog.Text = dialog.Text + chr(10) + " Photo: " + tostr(m.slideshow.items[m.slideshow.CurIndex].title)
+            if m.slideshow.isPaused = invalid then m.slideshow.isPaused = false
+        end if 
     end if 
 
     if m.focusedbutton = invalid then m.focusedbutton = 0 
