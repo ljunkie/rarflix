@@ -1,13 +1,23 @@
-#2.7.7 (2013-10-20)
-    * pressing pause button while playing video will bring up HUD
-    * never prepend artist/album to track titles
-    * fix crash when PMS gives in invalid response/timeout to api call
-    * fix crash when playing item directly from grid ( photos )
-    * add delete button back to TV shows - and some other logic needed changing now that we show 6 buttons
-    * paginated data loader is a bit more optimized ( does not reload already loaded rows that are out of view )
-    * User Toggles to changes how images are displayed on the screen ( home screen and sections )
-    * Grid Border should now fit image on without distorting it
-    * music: new buttons for shuffle/loop have been removed until further testing
+#2.7.7 (2013-10-22)
+    * new: show HUD when the pause button is clicked (video)
+    * new: paginated data loader (how the rows are loaded) is a bit more optimized
+	   You may have noticed major delay with clicking buttons ( should be fixed) 
+	    -- now it does not reload already loaded rows that are out of view
+    * Prefs: User Toggles to changes how images are displayed on the screen ( home screen and sections )
+    * Music: clean music title: never prepend artist/album to track titles
+    * Music: remove "new" buttons for shuffle/loop from springboard until further testing
+    * Photos: * remote key now shows photo information for the selected photo ( in grid -or- slideshow when audio is not playing )
+    * Photos: added EXIF data ( whatever PMS allowed for ) to the photo description popout, springboard and Photo Dialog (* key)
+    * Photos: there can be a mix of photos and sub directories. When a slideshow was played with a mix of both, there were anomalies. 
+	      Sub directories are now skipped with slideshow start. If you want to play a slideshow of the subdirectory, then enter it and start a slideshow.
+    * Photos: the popout will show the item is a directory or include the exif info of a photo ( easier to decipher what you are focused on )
+    * Photos: breadcrumbs should look a little better when browsing deep in the grid of photos
+    * Music+Photos: pause button on remote will pause/play both music/slideshow
+    * Fix: delete button  back to TV shows
+    * Fix: playback options is back for Videos ( missing on various screens )
+    * Fix: audio dialog was missing the photo title when slideshow was playing
+    * fix: crash when PMS gives in invalid response/timeout to api call
+    * fix: crash when playing item directly from grid ( photos )
 
 #2.7.6 -- internal release
 	 

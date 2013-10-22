@@ -728,10 +728,7 @@ sub fakeRefresh(force=false)
             end if
         end if
     end if
-'    stop
-'    m.Screen.Show()
-'    stop
-    'fake it for now
+
 end sub 
 
 ' This is the context Dialog from the GRID - I should rename this TODO
@@ -748,6 +745,11 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
         dialog.SetButton("fullGridScreen", "Grid View: " + fromName)
     end if
 
+    isMovieShowEpisode = (obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode")
+
+    if isMovieShowEpisode then 
+        dialog.SetButton("options", "Playback options")
+    end if
 
     if (obj.metadata.type = "season") then 
         dialog.Title = firstof(obj.metadata.title, obj.metadata.umtitle, obj.metadata.title)

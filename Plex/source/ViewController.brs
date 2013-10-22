@@ -175,7 +175,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
 
     ' madness still continues for other areas ( now TV )
     ' ljunkie - reset breadcrumb for TV show if tv watched status enabled and title <> umtitle (post and grid view supported)
-    if RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" and (item.type = "show" or item.viewgroup = "season" or item.viewgroup = "show" or item.viewgroup = "episode") then
+    if breadcrumbs <> invalid and RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" and (item.type = "show" or item.viewgroup = "season" or item.viewgroup = "show" or item.viewgroup = "episode") then
         if item.umtitle <> invalid and ( type(breadcrumbs) = "roArray" and breadcrumbs[0] <> invalid and breadcrumbs[0] = item.title) or (breadcrumbs = invalid) then 
 	    Debug("tv watched status enabled: setting breadcrumb back to original title; change from " + breadcrumbs[0] + " -to- " + item.umtitle)
             breadcrumbs[0] = item.umtitle
@@ -184,7 +184,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             breadcrumbs[0] = "Season " + tostr(item.parentindex)
             breadcrumbs[1] = ""
 	else 
-            Debug("tv watched status enabled: DID not match criteria(1) -- NOT setting breadcrumb back to original title; change from " + breadcrumbs[0] + " -to- " + item.umtitle)
+            Debug("tv watched status enabled: DID not match criteria(1) -- NOT setting breadcrumb back to original title")
         end if
     end if
 
