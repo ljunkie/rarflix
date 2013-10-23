@@ -13,6 +13,7 @@
     * Photos: the popout will show the item is a directory or include the exif info of a photo ( easier to decipher what you are focused on )
     * Photos: breadcrumbs should look a little better when browsing deep in the grid of photos
     * Music+Photos: pause button on remote will pause/play both music/slideshow
+    * Video: episodes list will be updated with progress/watched status
     * Fix: delete button  back to TV shows
     * Fix: playback options is back for Videos ( missing on various screens )
     * Fix: audio dialog was missing the photo title when slideshow was playing
