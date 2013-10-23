@@ -708,11 +708,11 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
 end sub
 
 
-sub fakeRefresh(force=false) 
-    Debug("refresh? it we have a valid item")
+sub posterRefresh(force=false) 
+    Debug("poster fresh called! do we have a valid item")
     if m.item <> invalid and type(m.item.refresh) = "roFunction" then 
         m.item.refresh()
-        Debug("refresh item")
+        Debug("item refreshed!")
     end if
 
     if type(m.screen) = "roPosterScreen" then 
@@ -722,6 +722,9 @@ sub fakeRefresh(force=false)
             if focusedIndex <> invalid and type(content) = "roArray" and type(content[focusedIndex]) = "roAssociativeArray" then 
                 if type(content[focusedIndex].refresh) = "roFunction" then  
                     content[focusedIndex].refresh()
+                    print content[focusedIndex]
+                    ' special for tv shows
+                    if content[focusedIndex].titleseason <> invalid then content[focusedIndex].shortdescriptionline1 = content[focusedIndex].titleseason
                     m.screen.SetContentList(content)
 		    Debug("refresh content list!")
                 end if
@@ -769,8 +772,10 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
 
     dialog.Item = obj.metadata
 
-    if type(obj.Refresh) <> "Function" then 
-      obj.Refresh = fakeRefresh ' sbRefresh is called normally - in a poster screen this doesn't happen?
+    if type(obj.Refresh) <> "roFunction" then 
+        obj.Refresh = posterRefresh ' sbRefresh is called normally - in a poster screen this doesn't happen?
+    else
+       print "not calling posterRefresh since 'obj.Refresh' exists"
     end if
 
     ' hack for global recently added ( tv shows are displayed as seasons )

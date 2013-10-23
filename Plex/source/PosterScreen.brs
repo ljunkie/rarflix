@@ -10,7 +10,7 @@ Function createPosterScreen(item, viewController) As Object
     ' Standard properties for all our screen types
     obj.Item = item
     obj.Screen = screen
-
+    obj.Activate = posterRefresh
     obj.Show = showPosterScreen
     obj.ShowList = posterShowContentList
     obj.HandleMessage = posterHandleMessage
@@ -193,6 +193,7 @@ Function posterHandleMessage(msg) As Boolean
                 Debug("Playing item directly from poster screen")
                 status = m.contentArray[m.focusedList]
                 m.ViewController.CreatePlayerForItem(status.content, status.focusedIndex)
+                m.refreshOnActivate = true
             end if
         end if
     end If
