@@ -1,4 +1,4 @@
-#2.7.7 (2013-10-22)
+#2.7.8 (2013-10-22)
     * new: show HUD when the pause button is clicked (video)
     * new: paginated data loader (how the rows are loaded) is a bit more optimized
 	   You may have noticed major delay with clicking buttons ( should be fixed) 
@@ -20,6 +20,7 @@
     * fix: crash when PMS gives in invalid response/timeout to api call
     * fix: crash when playing item directly from grid ( photos )
 
+#2.7.7 -- internal release
 #2.7.6 -- internal release
 	 
 #2.7.5 (2013-10-19)
