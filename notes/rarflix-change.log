@@ -19,10 +19,12 @@
     * Fix: audio dialog was missing the photo title when slideshow was playing
     * fix: crash when PMS gives in invalid response/timeout to api call
     * fix: crash when playing item directly from grid ( photos )
+    * fix: during a notification while paused, it should not longer start the paused video
+           note: when a video is paused with the OK button, the notification will not work (fix coming)
 
 #2.7.7 -- internal release
 #2.7.6 -- internal release
-	 
+
 #2.7.5 (2013-10-19)
     * screensaver background is now black
 
