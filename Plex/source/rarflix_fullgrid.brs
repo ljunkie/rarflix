@@ -174,7 +174,7 @@ sub GetContextFromFullGrid(this,curindex = invalid)
         obj.getmetadata()
         obj.context = obj.metadata
         this.context = obj.context
-        this.CurIndex = getFullGridCurIndex(this,CurIndex) ' when we load the full context, we need to fix the curindex
+        this.CurIndex = getFullGridCurIndex(this,CurIndex,1) ' when we load the full context, we need to fix the curindex
         this.FullContext = true
         if dialog <> invalid then dialog.Close()
 end sub

@@ -991,7 +991,7 @@ function getAllRowsContext(screen,context,index) as object
     return obj
 end function
 
-function getFullGridCurIndex(vc,index) as object
+function getFullGridCurIndex(vc,index,default = 2) as object
     print " ------------------ full grid index = " + tostr(index)
 
     if type(vc.screen) = "roAssociativeArray" then
@@ -999,7 +999,7 @@ function getFullGridCurIndex(vc,index) as object
     else if type(vc.screens) = "roArray" then
         screen = vc.screens[vc.screens.count()-1]
     else if type(vc.viewcontroller) = "roAssociativeArray" then
-        screen = vc.viewcontroller.screens[vc.viewcontroller.screens.count()-2]
+        screen = vc.viewcontroller.screens[vc.viewcontroller.screens.count()-default]
     end if
 
     if type(screen.screen) = "roGridScreen" then
