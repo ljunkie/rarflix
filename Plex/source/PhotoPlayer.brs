@@ -21,7 +21,6 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
     if type(context) = "roArray" then
         key = context[contextIndex].key
         print "---------------------wanted key" + key
-        contextIndex = 0
         newcontext = []
         for each item in context
             if tostr(item.nodename) = "Photo" then 
@@ -33,10 +32,10 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
         
         ' reset contextIndex if needed
         if context.count() <> newcontext.count() then 
+            contextIndex = 0 ' reset context to zero, unless we find a match
             for index = 0 to newcontext.count() - 1 
                 if key = newcontext[index].key then 
                     print "---------------------found key" + newcontext[index].key
-                    print index   
                     contextIndex = index
                     exit for
                 end if
