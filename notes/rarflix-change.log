@@ -1,3 +1,8 @@
+#2.7.9 (2013-10-23)
+    * fix crash from posterRefresh ( cast & crew ) 
+    * disable Ful Grid option from * option key for search screens ( they are invalid )
+    * fullgrid context - clicking left and right in springboard started back on first item
+
 #2.7.8 (2013-10-22)
     * new: show HUD when the pause button is clicked (video)
     * new: paginated data loader (how the rows are loaded) is a bit more optimized
