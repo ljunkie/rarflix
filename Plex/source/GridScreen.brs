@@ -262,7 +262,7 @@ Function gridHandleMessage(msg) As Boolean
                 ' we want to load up and down. User might scroll down skipping loads, if they scroll up, they data will now be loaded. Better UX
                 ' only run the Default loader if rfLoadDone is not set (we manually loaded rows above)
                 if NOT skipFullGrid then
-                    Debug("----- . Loading more content: from row " + tostr(m.selectedRow) + " PLUS  " + tostr(extraRows) + " more rows in both directions")
+                    ' Debug("----- . Loading more content: from row " + tostr(m.selectedRow) + " PLUS  " + tostr(extraRows) + " more rows in both directions")
                     for index = 0 to extraRows-1
                         row_up = m.selectedRow-index ' includes current row
                         row_down = index+m.selectedRow+1
@@ -272,9 +272,9 @@ Function gridHandleMessage(msg) As Boolean
                 else 
                     ' ljunkie - this does't load the extra rows as I expected. It exists if a selected row ( or the first of the called extraRows are loaded )
                     ' this only really matters for the FULL grid, so we will still use the existing logic for non FULL grid
-                     Debug("----- NOT a full grid, we can load normally: from row " + tostr(m.selectedRow) + " PLUS  " + tostr(extraRows) )
+                     'Debug("----- NOT a full grid, we can load normally: from row " + tostr(m.selectedRow) + " PLUS  " + tostr(extraRows) )
                      m.Loader.LoadMoreContent(m.selectedRow, extraRows) 
-                     Debug("----- NOT a full grid, we can load normally: from row " + tostr(m.selectedRow+1) + " PLUS  " + tostr(0) )
+                     'Debug("----- NOT a full grid, we can load normally: from row " + tostr(m.selectedRow+1) + " PLUS  " + tostr(0) )
                      m.Loader.LoadMoreContent(m.selectedRow+2, 0) ' we normally load the two focused rows, but lets load the next on out of screen ( testing )
                 end if
             end if
@@ -398,7 +398,7 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
         ' the initial rows are empty, we need to keep loading until we find a
         ' row with data.
         if row < m.contentArray.Count() - 1 then
-            Debug("----- ... Loading more content: from row " + tostr(row+1) + " with 0 more ")
+            'Debug("----- ... Loading more content: from row " + tostr(row+1) + " with 0 more ")
             m.Loader.LoadMoreContent(row + 1, 0)
         end if
 
@@ -433,7 +433,7 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
     'print " selrow:" + tostr(m.selectedRow)
     'print " result:" + tostr(extraRows)
     if extraRows >= 0 AND extraRows <= 2 then
-        Debug("------------ .. Loading more content: from row " + tostr(row) + ", " + tostr(m.loader.names[row]) + ", to (extrarows) " + tostr(extraRows))
+        'Debug("------------ .. Loading more content: from row " + tostr(row) + ", " + tostr(m.loader.names[row]) + ", to (extrarows) " + tostr(extraRows))
         m.Loader.LoadMoreContent(row, extraRows)
     end if
 End Sub

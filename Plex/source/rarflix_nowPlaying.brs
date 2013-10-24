@@ -8,7 +8,7 @@ Sub rf_homeNowPlayingChange()
 
     for each server in GetOwnedPlexMediaServers()
         if server.isavailable then ' only query server if available
-            Debug("---- refreshing Now Playing LOADER")
+            'Debug("---- refreshing Now Playing LOADER") too chatty
             m.CreateServerRequests(server, true, true, invalid, rowkey) ' only request the nowPlaying;/status/sessions
         end if
     next
