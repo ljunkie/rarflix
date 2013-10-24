@@ -716,7 +716,7 @@ sub posterRefresh(force=false)
     end if
 
     if type(m.screen) = "roPosterScreen" then 
-        if type(m.contentarray) = "roArray" then 
+        if type(m.contentarray) = "roArray" and m.contentarray.count() > 0 and type(m.contentarray[0]) = "roAssociativeArray" then 
             focusedIndex = m.contentarray[0].focusedindex
             content = m.contentarray[0].content
             if focusedIndex <> invalid and type(content) = "roArray" and type(content[focusedIndex]) = "roAssociativeArray" then 
@@ -741,7 +741,7 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     dialog = createBaseDialog()
 
     ' TODO full grid screen yo
-    if obj.isfullgrid = invalid and type(obj.screen) = "roGridScreen" then 
+    if obj.isfullgrid = invalid and obj.disablefullgrid = invalid and type(obj.screen) = "roGridScreen" then 
         fromName = "invalid"
         if type(obj.loader.getnames) = "roFunction" and obj.selectedrow <> invalid then fromName = obj.loader.getnames()[obj.selectedrow]
         dialog.sepAfter.Push("fullGridScreen")
@@ -950,7 +950,7 @@ sub rfDialogGridScreen(obj as Object) as Dynamic
     if tostr(obj.item.contenttype) = "section" or obj.selectedrow = 0 then ' row 0 is reserved for the fullGrid shortcuts
         rfDefRemoteOptionButton(obj) 
     ' for now the only option is grid view so we will verify we are in a roGridScreen. It we add more buttons, the type check below is for fullGridScreen
-    else if obj.isfullgrid = invalid and type(obj.screen) = "roGridScreen" then 
+    else if obj.isfullgrid = invalid and obj.disablefullgrid = invalid and type(obj.screen) = "roGridScreen" then 
         dialog = createBaseDialog()
         fromName = "invalid"
         if type(obj.loader.getnames) = "roFunction" and obj.selectedrow <> invalid then fromName = obj.loader.getnames()[obj.selectedrow]
