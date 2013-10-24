@@ -994,15 +994,30 @@ end function
 function getFullGridCurIndex(vc,index,default = 2) as object
     print " ------------------ full grid index = " + tostr(index)
 
-    if type(vc.screen) = "roAssociativeArray" then
-        screen = vc.screen
+    screens = []
+    screen = invalid
+
+    if type(vc.screen) = "roAssociativeArray" and tostr(vc.screen.isfullgrid) <> invalid and vc.screen.isfullgrid then
+        screen = vc.screen ' we are in the context of a full grid already
     else if type(vc.screens) = "roArray" then
-        screen = vc.screens[vc.screens.count()-1]
+        screens = vc.screens 
     else if type(vc.viewcontroller) = "roAssociativeArray" then
-        screen = vc.viewcontroller.screens[vc.viewcontroller.screens.count()-default]
+        screens = vc.viewcontroller.screens
     end if
 
-    if type(screen.screen) = "roGridScreen" then
+    ' find the full grid screen - backtrack
+    if type(screens) = "roArray" and screens.count() > 1 then 
+        for index = screens.count()-1 to 1 step -1
+            print "checking if screen #" + tostr(index) + "is the fullGrid"
+            if type(screens[index].screen) = "roGridScreen" and tostr(screens[index].isfullgrid) <> invalid and screens[index].isfullgrid then
+                print "screen #" + tostr(index) + "is the fullGrid"
+                screen = screens[index]
+                exit for 
+            end if
+        next
+    end if
+
+    if screen <> invalid and type(screen.screen) = "roGridScreen" then
         srow = screen.selectedrow
         sitem = screen.focusedindex+1
         rsize = screen.contentarray[0].count()
