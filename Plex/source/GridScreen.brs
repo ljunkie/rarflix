@@ -18,6 +18,14 @@ Function createGridScreen(viewController, style="flat-movie", upBehavior="exit",
     grid = CreateObject("roGridScreen")
     grid.SetMessagePort(screen.Port)
 
+    di=createobject("rodeviceinfo")
+    if mid(di.getversion(),3,1).toint() > 3 then
+        imageDir = GetGlobalAA().Lookup("rf_theme_dir")
+        SDPosterURL = imageDir + "LoadingPoster.png"
+        HDPosterURL = imageDir + "LoadingPoster.png"
+        grid.setloadingposter(SDPosterURL,HDPosterURL)
+    end if
+
     ' If we don't know exactly what we're displaying, scale-to-fit looks the
     ' best. Anything else makes something look horrible when the grid has
     ' some combination of posters and video frames. 
@@ -266,6 +274,8 @@ Function gridHandleMessage(msg) As Boolean
                     ' this only really matters for the FULL grid, so we will still use the existing logic for non FULL grid
                      Debug("----- NOT a full grid, we can load normally: from row " + tostr(m.selectedRow) + " PLUS  " + tostr(extraRows) )
                      m.Loader.LoadMoreContent(m.selectedRow, extraRows) 
+                     Debug("----- NOT a full grid, we can load normally: from row " + tostr(m.selectedRow+1) + " PLUS  " + tostr(0) )
+                     m.Loader.LoadMoreContent(m.selectedRow+2, 0) ' we normally load the two focused rows, but lets load the next on out of screen ( testing )
                 end if
             end if
         else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then ' ljunkie - use * for more options on focused item
