@@ -103,6 +103,13 @@ Function vcCreateHomeScreen()
     m.InitializeOtherScreen(screen, invalid)
     screen.Show()
     RRbreadcrumbDate(screen) 'ljunkie - homescreen data/time
+    
+    'Pop-up security PIN code over homescreen.  this allows the release notes to show up
+    if RegRead("rf_pincode","preferences",invalid) <> invalid  then
+        pinScreen = VerifySecurityPin(m, RegRead("rf_pincode","preferences",invalid))
+        pinScreen.Show()
+    end if  
+    
     return screen
 End Function
 
@@ -974,6 +981,8 @@ Sub vcUpdateScreenProperties(screen)
         if enableBreadcrumbs then
             screen.Screen.SetTitle(bread2)
         end if
+    else if screenType = "roImageCanvas" then
+        'screen.Screen.SetBreadcrumbEnabled(false)   'roImageCanvas doesn't currently support breadcrumbs
     else
         Debug("Not sure what to do with breadcrumbs on screen type: " + tostr(screenType))
     end if
