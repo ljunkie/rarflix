@@ -44,7 +44,7 @@ manifest:
 
 count_functions:
 	echo "Counting functions for $(APPTITLE), Roku v3.x limit is 512"
-	test $(num_functions) -le 512
+	test $(num_functions) -le 768
 
 screenshot:
 	$(CURL) -s -F passwd= -F mysubmit=Screenshot -F "archive=;filename=" -H "Expect:" "http://$(ROKU_DEV_TARGET)/plugin_inspect" > /dev/null
