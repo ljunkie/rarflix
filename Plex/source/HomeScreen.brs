@@ -25,7 +25,6 @@ Function createHomeScreen(viewController) As Object
 End Function
 
 Sub refreshHomeScreen(changes)
-    PrintAA(changes)
 
     ' If myPlex state changed, we need to update the queue, shared sections,
     ' and any owned servers that were discovered through myPlex.
