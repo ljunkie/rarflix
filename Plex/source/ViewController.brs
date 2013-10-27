@@ -546,6 +546,9 @@ Sub vcShow()
             'if GetInterface(msg, "ifUrlEvent") = invalid AND GetInterface(msg, "ifSocketEvent") = invalid then
                 'Debug("Processing " + type(msg) + " (top of stack " + type(m.screens.Peek().Screen) + "): " + tostr(msg.GetType()) + ", " + tostr(msg.GetIndex()) + ", " + tostr(msg.GetMessage()))
             'end if
+            'if type(msg) <> "roUrlEvent" AND type(msg) <> "roSocketEvent" then
+            '    Debug("Processing " + type(msg) + " (top of stack " + type(m.screens.Peek().Screen) + "): ")
+            'end if
 
             for i = m.screens.Count() - 1 to 0 step -1
                 if m.screens[i].HandleMessage(msg) then exit for
