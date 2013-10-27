@@ -184,17 +184,15 @@ sub VerifySecurityPinActivate(priorScreen)
     if priorScreen.pinCode = m.pinToValidate then
         m.pinOK = true
         if m.ViewController.EnterSecurityCode <> invalid then m.ViewController.EnterSecurityCode = false
-        'not sure which one needs to happen here but if I don't call popscreen never seems to get called
+        m.screen.Close()    'Closing from within Activate never calls the message loop to pop the screen
         m.ViewController.PopScreen(m)   'close this screen
-        'm.screen.Close()    'close this screen
     else 'if type(screen.Screen) = "roImageCanvas"  'ensure that there wasn't some type of pop-up 'update:removed as I can't see how this can occur
         if m.numRetries <= 0 then
             if m.exitAppOnFailure = true then  'Close the home screen which causes an exit
                 m.ViewController.PopScreen(m.ViewController.home)
             else
-                'not sure which one needs to happen here but if I don't call popscreen never seems to get called
-                m.ViewController.PopScreen(m)   'close this screen without setting m.pinOK
-                'm.screen.Close()    'close this screen without setting m.pinOK
+                m.screen.Close()    'Closing from within Activate never calls the message loop to pop the screen
+                m.ViewController.PopScreen(m)   'close this screen
             end if
         else
             m.numRetries = m.numRetries - 1
@@ -285,9 +283,9 @@ sub securityPinShow(newDialogText=invalid as object, newDialogText2=invalid as o
     m.screen.SetRequireAllImagesToDraw(true)
     m.screen.Show()
     'Create first PIN verification screen
-    screen = createSecurityPINEntryScreen(m.ViewController)
-    m.ViewController.InitializeOtherScreen(screen, invalid)
-    screen.Show(newDialogText, newDialogText2, false, m.pinToValidate)
+    m.pinScreen = createSecurityPINEntryScreen(m.ViewController)
+    m.ViewController.InitializeOtherScreen(m.pinScreen, invalid)
+    m.pinScreen.Show(newDialogText, newDialogText2, false, m.pinToValidate)
 End sub
 
 
