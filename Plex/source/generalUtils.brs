@@ -9,17 +9,15 @@
 '******************************************************
 sub RegSetUserPrefsToCurrentUser()
     for each key in m.userRegPrefs
-        m.userRegPrefs[key] = AnyToString(key) + "_u" + AnyToString(m.userNum)
+        if m.userNum = -1 then
+            m.userRegPrefs[key] = AnyToString(key)
+        else
+            m.userRegPrefs[key] = AnyToString(key) + "_u" + numtostr(m.userNum)
+        end if
     next  
 end sub
-'Function RegGetSectionName(section=invalid) as string
-'    if section = invalid then section = "Default"
-'    if section="myplex" or section="preferences" or section="servers" or section="userinfo" then
-'        section = section + m.userRegAppend
-'    end if
-'    return section     
-'end function
 
+'much faster to use the AA then to generate the name each time we need to convert the section
 Function RegGetSectionName(section=invalid) as string
     if section = invalid then 
         return "Default"
@@ -28,6 +26,33 @@ Function RegGetSectionName(section=invalid) as string
     end if     
     return section
 end function
+
+function RegGetSectionByUserNumber(userNumber as integer, section = invalid) as string
+    'this is slow but rarely gets called
+    if section = invalid then return "Default"
+    for each key in m.userRegPrefs
+        if key = section then
+            if userNumber = -1 then
+                return AnyToString(key)
+            else
+                return AnyToString(key) + "_u" + numtostr(userNumber)
+            end if
+        end if
+    next  
+    return section
+end function
+
+
+'Much slower
+'Function RegGetSectionName2(section=invalid) as string
+'    if section = invalid then section = "Default"
+'    if m.userNum = -1 then return section
+'    if section="myplex" or section="preferences" or section="servers" or section="userinfo" then
+'        'return AnyToString(section) + "_u" + AnyToString(m.userNum)
+'        return section + "_u" + numtostr(m.userNum)
+'    end if
+'    return section     
+'end function
 
 'Copies the the old pref sections to the new sections and remove the old.  Will copy to whatever the current user is
 sub RegConvertRegistryToMultiUser()
@@ -53,7 +78,7 @@ end sub
 sub RegEraseUser(userNumber as integer)
     Debug("Erasing user " + AnyToString(userNumber))
     for each section in m.userRegPrefs
-        old = CreateObject("roRegistrySection", AnyToString(section) + "_u" + AnyToString(userNumber))
+        old = CreateObject("roRegistrySection", RegGetSectionByUserNumber(section, userNumber))
         print section; " "; m.userRegPrefs[section]
         keyList = old.GetKeyList()
         for each key in keyList
@@ -70,6 +95,24 @@ end sub
 '******************************************************
 'Registry Helper Functions
 '******************************************************
+Function RegReadByUser(userNumber as integer, key, section=invalid, default=invalid)
+    ' Reading from the registry is somewhat expensive, especially for keys that
+    ' may be read repeatedly in a loop. We don't have that many keys anyway, keep
+    ' a cache of our keys in memory.
+    section = RegGetSectionByUserNumber(userNumber, section)
+    cacheKey = key + section
+    if m.RegistryCache.DoesExist(cacheKey) then return m.RegistryCache[cacheKey]
+
+    value = default
+    sec = CreateObject("roRegistrySection", section)
+    if sec.Exists(key) then value = sec.Read(key)
+
+    if value <> invalid then
+        m.RegistryCache[cacheKey] = value
+    end if
+
+    return value
+End Function
 
 Function RegRead(key, section=invalid, default=invalid)
     ' Reading from the registry is somewhat expensive, especially for keys that
@@ -475,4 +518,41 @@ Function CurrentTimeAsString(localized=true As Boolean) As String
         timeStr = timeStr + "0"
     end if
     return timeStr + tostr(minutes) + suffix
+End Function
+
+'******************************************************
+'Scale down a rectangle from HD to SD
+' Works on any object that has any of x,y,w,h 
+'******************************************************
+Sub HDRectToSDRect(rect As Object)
+   wMultiplier = 720 / 1280
+   hMultiplier = 480 / 720
+   
+   If rect.x <> invalid Then
+      rect.x = Int(rect.x * wMultiplier + .5)
+      rect.x = IIf(rect.x < 1, 1, rect.x)
+   End If
+   If rect.y <> invalid Then
+      rect.y = Int(rect.y * hMultiplier + .5)
+      rect.y = IIf(rect.y < 1, 1, rect.y)
+   End If
+   If rect.w <> invalid Then
+      rect.w = Int(rect.w * wMultiplier + .5)
+      rect.w = IIf(rect.w < 1, 1, rect.w)
+   End If
+   If rect.h <> invalid Then
+      rect.h = Int(rect.h * hMultiplier + .5)
+      rect.h = IIf(rect.h < 1, 1, rect.h)
+   End If
+End Sub
+
+'******************************************************
+'Helper for cleaner code 
+'******************************************************
+Function IIf(Condition, Result1, Result2) As Dynamic
+   If Condition Then
+      Return Result1
+   Else
+      Return Result2
+   End If
 End Function

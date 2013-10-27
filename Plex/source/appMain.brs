@@ -2,14 +2,40 @@
 ' **  Entry point for the Plex client. Configurable themes etc. haven't been yet.
 ' **
 ' ********************************************************************
+Sub mytimerPrintElapsedTime(timer as object, msg As String, mark=True As Boolean)
+    elapsed = timer.TotalMilliseconds()
+    print msg + " took: " + tostr(elapsed) + "ms"
+    if mark then timer.Mark()
+End Sub
 
 Sub Main(args)
     m.RegistryCache = CreateObject("roAssociativeArray")
     'EraseRegistry()    'works
-    m.userNum = 0    'First use of the userNumber!
+    m.userNum = 0    'First use of the userNumber. -1 means that user profiles are not enabled
     'm.userRegAppend = "_u0"     'text to append to the end of the registry names we care about
     m.userRegPrefs = { myplex:"",preferences:"",servers:"",userinfo:""} 'list of prefs that are customized for each user
-    'RegSetUserPrefsToCurrentUser()     'works
+    RegSetUserPrefsToCurrentUser()     
+    
+    timer = createTimer()
+    timer.timer.Mark()
+    for i = 0 to 10000 step 1
+        RegGetSectionName("default")
+        RegGetSectionName("preferences")
+    end for
+    mytimerPrintElapsedTime(timer.timer, "regtest1")    
+    timer.timer.Mark()
+    for i = 0 to 10000 step 1
+        RegGetSectionName2("default")
+        RegGetSectionName2("preferences")
+    end for
+    mytimerPrintElapsedTime(timer.timer, "regtest2")    
+    timer.timer.Mark()
+    for i = 0 to 10000 step 1
+        RegGetSectionName("default")
+        RegGetSectionName("preferences")
+    end for
+    mytimerPrintElapsedTime(timer.timer, "regtest1")    
+    
     'RegConvertRegistryToMultiUser()    'works
     'RegEraseUser(0)                    'works
 

@@ -9,8 +9,6 @@
 '-1 : Home screen
 '-2 : Analytics screen (In order to use the view controller for requests.)
 '-3 : Plex Media Server screen (For using the view controller for HTTP requests)
-'
-
 
 Function createViewController() As Object
     controller = CreateObject("roAssociativeArray")
@@ -91,6 +89,12 @@ Function createViewController() As Object
     controller.AudioPlayer = createAudioPlayer(controller)
     controller.Analytics = createAnalyticsTracker()
 
+    if RegRead("securityPincode","preferences",invalid) <> invalid  then
+        controller.EnterSecurityCode = true
+    else
+        controller.EnterSecurityCode = false
+    end if
+
     return controller
 End Function
 
@@ -110,13 +114,6 @@ Function vcCreateHomeScreen()
     screen.Screen.SetBreadcrumbEnabled(true)
     screen.Screen.SetBreadcrumbText("", CurrentTimeAsString())
     screen.Show()
-
-	'Pop-up security PIN code over homescreen.  this allows the release notes to show up
-	if RegRead("securityPincode","preferences",invalid) <> invalid  then
-		pinScreen = VerifySecurityPin(m, RegRead("securityPincode","preferences",invalid))
-		pinScreen.Show()
-	end if
-
     return screen
 End Function
 
@@ -490,7 +487,13 @@ Sub vcPopScreen(screen)
     ' no screens on the stack, but we didn't just close the home screen, then
     ' we haven't shown the home screen yet. Show it now.
     if m.screens.Count() = 0 then
-        m.Home = m.CreateHomeScreen()
+        if m.EnterSecurityCode = true then
+            'Pop-up security PIN code before homescreen.  
+            pinScreen = VerifySecurityPin(m, RegRead("securityPincode","preferences",invalid))
+            pinScreen.Show()
+        else
+            m.Home = m.CreateHomeScreen()
+        end if
     else if callActivate then
         newScreen = m.screens.Peek()
         screenName = firstOf(newScreen.ScreenName, type(newScreen.Screen))
@@ -521,7 +524,13 @@ Sub vcShow()
         m.ShowReleaseNotes()
         RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")
     else
-        m.Home = m.CreateHomeScreen()
+        if m.EnterSecurityCode = true then
+            'Pop-up security PIN code before homescreen.  
+            pinScreen = VerifySecurityPin(m, RegRead("securityPincode","preferences",invalid))
+            pinScreen.Show()
+        else
+            m.Home = m.CreateHomeScreen()
+        end if
     end if
 
     Debug("Starting global message loop")
