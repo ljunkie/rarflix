@@ -475,7 +475,7 @@ End Function
 sub prefsSecurityPinRefresh(screen)
     screen.contentArray.Clear() 
     screen.Screen.ClearContent()
-    if RegRead("rf_pincode","preferences",invalid) = invalid  then
+    if RegRead("securityPincode","preferences",invalid) = invalid  then
         screen.AddItem({title: "Set Security PIN"}, "set")
         screen.EnteredPin = true    'don't ask for PIN from now on
     else
@@ -500,14 +500,14 @@ Function prefsSecurityPinHandleMessage(msg) As Boolean
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
             if command = "clear" then
-                RegDelete("rf_pincode", "preferences")
+                RegDelete("securityPincode", "preferences")
                 prefsSecurityPinRefresh(m)
             else if command = "set" then 'create screen to enter PIN
                 pinScreen = SetSecurityPin(m.ViewController)
                 m.Activate = prefsSecurityPinHandleSetPin
                 pinScreen.Show("The PIN code is any sequence of the direction arrows on your remote control.  Press up to 20 arrows to set the PIN.", "Press Back to cancel setting the PIN.  When complete press the OK button on your remote control.")
             else if command = "unlock" then 'create unlock screen
-                pinScreen = VerifySecurityPin(m.ViewController, RegRead("rf_pincode","preferences",invalid), false, 0)
+                pinScreen = VerifySecurityPin(m.ViewController, RegRead("securityPincode","preferences",invalid), false, 0)
                 m.Activate = prefsSecurityPinHandleUnlock
                 pinScreen.Show()
             else if command = "close" then
@@ -541,7 +541,7 @@ sub prefsSecurityPinHandleSetPin(priorScreen)
     else
         m.EnteredPin = true    
         'Debug("Set new pincode:" + AnyToString(priorScreen.newPinCode ))
-        RegWrite("rf_pincode", priorScreen.newPinCode, "preferences")
+        RegWrite("securityPincode", priorScreen.newPinCode, "preferences")
         prefsSecurityPinRefresh(m)
     endif
 End sub
