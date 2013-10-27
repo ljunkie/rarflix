@@ -106,7 +106,7 @@ Sub InitRARFlix()
     RegRead("rf_up_behavior", "preferences", "exit") ' default is exit screen ( except for home )
     RegRead("rf_notify", "preferences", "enabled") ' enabled:all, video:video only, nonvideo:non video, disabled:disabled (when to notify)
     RegRead("rf_notify_np_type", "preferences", "all") ' now playing notify types
-    RegRead("rf_pincode", "preferences", invalid)  'PIN code required for startu
+    RegRead("securityPincode", "preferences", invalid)  'PIN code required for startup
 
     ' ljunkie Youtube Trailers (extended to TMDB)
     m.youtube = InitYouTube()
@@ -135,7 +135,7 @@ Sub InitRARFlix()
     Debug("rf_notify_np_type: " + tostr(RegRead("rf_notify_np_type", "preferences")))
     Debug("rf_temp_thememusic: " + tostr(RegRead("rf_temp_thememusic", "preferences")))
     Debug("rf_music_artist: " + tostr(RegRead("rf_music_artist", "preferences")))
-    Debug("rf_pincode: " + tostr(RegRead("rf_pincode", "preferences")))
+    Debug("securityPincode: " + tostr(RegRead("securityPincode", "preferences")))
     Debug("============================================================================")
 
 end sub
