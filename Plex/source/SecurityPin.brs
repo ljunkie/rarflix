@@ -94,7 +94,7 @@ Sub securityPINEntryShow(newDialogText=invalid as object, newDialogText2=invalid
             TargetRect:dlgRect2
         },
     ] 
-    m.screen.SetLayer(0, {Color:"#363636", CompositionMode:"Source"})   'Set opaque background as transparent doesn't draw correctly when content is updated  
+    m.screen.SetLayer(0, {Color:"#008800", CompositionMode:"Source"})   'Set opaque background as transparent doesn't draw correctly when content is updated  '#363636
     m.screen.SetRequireAllImagesToDraw(true)
     m.screen.SetLayer(1, m.canvasItems)
     if showOKButton = true then
@@ -279,7 +279,7 @@ End Function
 sub securityPinShow(newDialogText=invalid as object, newDialogText2=invalid as object)
     'Debug("securityPinShow")
     'create the actual screen that blocks the background
-    m.screen.SetLayer(0, {Color:"#363636", CompositionMode:"Source"})   'Set opaque background to keep from flashing    
+    m.screen.SetLayer(0, {Color:"#000088", CompositionMode:"Source"})   'Set opaque background to keep from flashing    '#363636
     m.screen.SetRequireAllImagesToDraw(true)
     m.screen.Show()
     'Create first PIN verification screen

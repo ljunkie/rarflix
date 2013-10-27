@@ -77,6 +77,8 @@ Function createViewController() As Object
     controller.SystemLog = CreateObject("roSystemLog")
     controller.SystemLog.SetMessagePort(controller.GlobalMessagePort)
     controller.SystemLog.EnableType("bandwidth.minute")
+    
+    controller.CreateUserSelectionScreen = vcCreateUserSelectionScreen
 
 
     ' Stuff the controller into the global object
@@ -116,6 +118,15 @@ Function vcCreateHomeScreen()
     screen.Show()
     return screen
 End Function
+
+
+Function vcCreateUserSelectionScreen() 
+    screen = createUserSelectionScreen(m)
+    m.InitializeOtherScreen(screen, invalid)
+    screen.Show()
+    return screen
+End Function
+
 
 Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As Dynamic
     if type(context) = "roArray" then
@@ -489,8 +500,9 @@ Sub vcPopScreen(screen)
     if m.screens.Count() = 0 then
         if m.EnterSecurityCode = true then
             'Pop-up security PIN code before homescreen.  
-            pinScreen = VerifySecurityPin(m, RegRead("securityPincode","preferences",invalid))
-            pinScreen.Show()
+            'pinScreen = VerifySecurityPin(m, RegRead("securityPincode","preferences",invalid))
+            'pinScreen.Show()
+            m.CreateUserSelectionScreen()
         else
             m.Home = m.CreateHomeScreen()
         end if
@@ -526,8 +538,9 @@ Sub vcShow()
     else
         if m.EnterSecurityCode = true then
             'Pop-up security PIN code before homescreen.  
-            pinScreen = VerifySecurityPin(m, RegRead("securityPincode","preferences",invalid))
-            pinScreen.Show()
+            'pinScreen = VerifySecurityPin(m, RegRead("securityPincode","preferences",invalid))
+            'pinScreen.Show()
+            m.CreateUserSelectionScreen()
         else
             m.Home = m.CreateHomeScreen()
         end if

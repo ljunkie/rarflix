@@ -3,11 +3,10 @@
 ' **
 ' ********************************************************************
 Sub Main(args)
+    m.userRegPrefs = { myplex:"",preferences:"",servers:"",userinfo:""} 'list of prefs that are customized for each user
     m.RegistryCache = CreateObject("roAssociativeArray")
     'EraseRegistry()    'works
     m.userNum = 0    'First use of the userNumber. -1 means that user profiles are not enabled
-    'm.userRegAppend = "_u0"     'text to append to the end of the registry names we care about
-    m.userRegPrefs = { myplex:"",preferences:"",servers:"",userinfo:""} 'list of prefs that are customized for each user
     RegSetUserPrefsToCurrentUser()     
     'RegConvertRegistryToMultiUser()    'works
     'RegEraseUser(0)                    'works
