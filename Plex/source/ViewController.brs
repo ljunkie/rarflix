@@ -85,6 +85,12 @@ Function createViewController() As Object
     controller.AudioPlayer = createAudioPlayer(controller)
     controller.Analytics = createAnalyticsTracker()
 
+    if RegRead("securityPincode","preferences",invalid) <> invalid  then
+        controller.EnterSecurityCode = true
+    else
+        controller.EnterSecurityCode = false
+    end if
+
     return controller
 End Function
 
@@ -103,13 +109,6 @@ Function vcCreateHomeScreen()
     m.InitializeOtherScreen(screen, invalid)
     screen.Show()
     RRbreadcrumbDate(screen) 'ljunkie - homescreen data/time
-    
-    'Pop-up security PIN code over homescreen.  this allows the release notes to show up
-    if RegRead("rf_pincode","preferences",invalid) <> invalid  then
-        pinScreen = VerifySecurityPin(m, RegRead("rf_pincode","preferences",invalid))
-        pinScreen.Show()
-    end if  
-    
     return screen
 End Function
 
@@ -769,7 +768,13 @@ Sub vcPopScreen(screen)
     ' no screens on the stack, but we didn't just close the home screen, then
     ' we haven't shown the home screen yet. Show it now.
     if m.screens.Count() = 0 then
-        m.Home = m.CreateHomeScreen()
+        if m.EnterSecurityCode = true then
+            'Pop-up security PIN code before homescreen.  
+            pinScreen = VerifySecurityPin(m, RegRead("securityPincode","preferences",invalid))
+            pinScreen.Show()
+        else
+            m.Home = m.CreateHomeScreen()
+        end if
     else if callActivate then
         newScreen = m.screens.Peek()
         ' ljunkie - extra hack to cleanup the screen we are entering when invalid or if trying to re-enter a dialog
@@ -816,7 +821,13 @@ Sub vcShow()
         m.ShowReleaseNotes()
         RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")
     else
-        m.Home = m.CreateHomeScreen()
+        if m.EnterSecurityCode = true then
+            'Pop-up security PIN code before homescreen.  
+            pinScreen = VerifySecurityPin(m, RegRead("securityPincode","preferences",invalid))
+            pinScreen.Show()
+        else
+            m.Home = m.CreateHomeScreen()
+        end if
     end if
 
     Debug("Starting global message loop")

@@ -183,6 +183,7 @@ sub VerifySecurityPinActivate(priorScreen)
     'Debug("VerifySecurityPinActivate")
     if priorScreen.pinCode = m.pinToValidate then
         m.pinOK = true
+        if m.ViewController.EnterSecurityCode <> invalid then m.ViewController.EnterSecurityCode = false
         'not sure which one needs to happen here but if I don't call popscreen never seems to get called
         m.ViewController.PopScreen(m)   'close this screen
         'm.screen.Close()    'close this screen
