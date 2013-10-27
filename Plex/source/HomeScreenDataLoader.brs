@@ -97,8 +97,8 @@ Function createHomeScreenDataLoader(listener)
     nowPlaying.CurIndex = invalid
     loader.nowPlayingItem = nowPlaying
 
-    loader.lastMachineID = RegRead("lastMachineID")
-    loader.lastSectionKey = RegRead("lastSectionKey")
+    loader.lastMachineID = RegRead("lastMachineID", "userinfo")
+    loader.lastSectionKey = RegRead("lastSectionKey", "userinfo")
 
     loader.OnTimerExpired = homeOnTimerExpired
 

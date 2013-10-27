@@ -5,6 +5,14 @@
 
 Sub Main(args)
     m.RegistryCache = CreateObject("roAssociativeArray")
+    'EraseRegistry()    'works
+    m.userNum = 0    'First use of the userNumber!
+    'm.userRegAppend = "_u0"     'text to append to the end of the registry names we care about
+    m.userRegPrefs = { myplex:"",preferences:"",servers:"",userinfo:""} 'list of prefs that are customized for each user
+    'RegSetUserPrefsToCurrentUser()     'works
+    'RegConvertRegistryToMultiUser()    'works
+    'RegEraseUser(0)                    'works
+
 
     ' Process any launch args (set registry values)
     for each arg in args
@@ -44,6 +52,7 @@ Sub Main(args)
     initTheme()
 
     initGlobals()
+ 
 
     'prepare the screen for display and get ready to begin
     controller = createViewController()

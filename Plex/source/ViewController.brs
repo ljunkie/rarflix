@@ -5,6 +5,12 @@
 '* can take an item and figure out which type of screen should be shown
 '* so that logic doesn't have to be in each individual screen type.
 '*
+'Some screens are hardcoded to a specific ScreenID
+'-1 : Home screen
+'-2 : Analytics screen (In order to use the view controller for requests.)
+'-3 : Plex Media Server screen (For using the view controller for HTTP requests)
+'
+
 
 Function createViewController() As Object
     controller = CreateObject("roAssociativeArray")
@@ -106,8 +112,8 @@ Function vcCreateHomeScreen()
     screen.Show()
 
 	'Pop-up security PIN code over homescreen.  this allows the release notes to show up
-	if RegRead("rf_pincode","preferences",invalid) <> invalid  then
-		pinScreen = VerifySecurityPin(m, RegRead("rf_pincode","preferences",invalid))
+	if RegRead("securityPincode","preferences",invalid) <> invalid  then
+		pinScreen = VerifySecurityPin(m, RegRead("securityPincode","preferences",invalid))
 		pinScreen.Show()
 	end if
 
@@ -165,8 +171,8 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         if screen = invalid then return invalid
         screenName = "Audio Springboard"
     else if contentType = "section" then
-        RegWrite("lastMachineID", item.server.machineID)
-        RegWrite("lastSectionKey", item.key)
+        RegWrite("lastMachineID", item.server.machineID, "userinfo")
+        RegWrite("lastSectionKey", item.key, "userinfo")
         screen = createGridScreenForItem(item, m, "flat-movie")
         screenName = "Section: " + tostr(item.type)
     else if contentType = "playlists" then

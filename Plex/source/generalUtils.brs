@@ -5,14 +5,78 @@
 '**********************************************************
 
 '******************************************************
+' MULTI USER HELPERS
+'******************************************************
+sub RegSetUserPrefsToCurrentUser()
+    for each key in m.userRegPrefs
+        m.userRegPrefs[key] = AnyToString(key) + "_u" + AnyToString(m.userNum)
+    next  
+end sub
+'Function RegGetSectionName(section=invalid) as string
+'    if section = invalid then section = "Default"
+'    if section="myplex" or section="preferences" or section="servers" or section="userinfo" then
+'        section = section + m.userRegAppend
+'    end if
+'    return section     
+'end function
+
+Function RegGetSectionName(section=invalid) as string
+    if section = invalid then 
+        return "Default"
+    else if m.userRegPrefs[section] <> invalid then
+        return m.userRegPrefs[section]
+    end if     
+    return section
+end function
+
+'Copies the the old pref sections to the new sections and remove the old.  Will copy to whatever the current user is
+sub RegConvertRegistryToMultiUser()
+    Debug("Converting Registry to Multiuser")
+    for each section in m.userRegPrefs
+        old = CreateObject("roRegistrySection", section)
+        new = CreateObject("roRegistrySection", m.userRegPrefs[section])
+        'print section; " "; m.userRegPrefs[section]
+        keyList = old.GetKeyList()
+        for each key in keyList
+            value = old.Read(key)
+            new.Write(key,value)
+            old.Delete(key)            
+            'print key; ":"; value
+        next
+    next
+    reg = CreateObject("roRegistry")
+    reg.Flush() 'write out changes
+    m.RegistryCache.Clear()
+end sub
+
+'Erases all the prefs for a usernumber
+sub RegEraseUser(userNumber as integer)
+    Debug("Erasing user " + AnyToString(userNumber))
+    for each section in m.userRegPrefs
+        old = CreateObject("roRegistrySection", AnyToString(section) + "_u" + AnyToString(userNumber))
+        print section; " "; m.userRegPrefs[section]
+        keyList = old.GetKeyList()
+        for each key in keyList
+            old.Delete(key)            
+            print key
+        next
+    next
+    reg = CreateObject("roRegistry")
+    reg.Flush() 'write out changes
+    m.RegistryCache.Clear()
+end sub
+
+
+'******************************************************
 'Registry Helper Functions
 '******************************************************
+
 Function RegRead(key, section=invalid, default=invalid)
     ' Reading from the registry is somewhat expensive, especially for keys that
     ' may be read repeatedly in a loop. We don't have that many keys anyway, keep
     ' a cache of our keys in memory.
-
-    if section = invalid then section = "Default"
+    section = RegGetSectionName(section)
+    print "RegRead:"+AnyToString(section)+":"+AnyToString(key)+":"+AnyToString(default)
     cacheKey = key + section
     if m.RegistryCache.DoesExist(cacheKey) then return m.RegistryCache[cacheKey]
 
@@ -28,7 +92,7 @@ Function RegRead(key, section=invalid, default=invalid)
 End Function
 
 Function RegWrite(key, val, section=invalid)
-    if section = invalid then section = "Default"
+    section = RegGetSectionName(section)
     sec = CreateObject("roRegistrySection", section)
     sec.Write(key, val)
     m.RegistryCache[key + section] = val
@@ -36,13 +100,43 @@ Function RegWrite(key, val, section=invalid)
 End Function
 
 Function RegDelete(key, section=invalid)
-    if section = invalid then section = "Default"
+    section = RegGetSectionName(section)
     sec = CreateObject("roRegistrySection", section)
     sec.Delete(key)
     m.RegistryCache.Delete(key + section)
     sec.Flush()
 End Function
 
+sub PrintRegistry()
+    Debug("------- REGISTRY --------")
+    reg = CreateObject("roRegistry")
+    regList = reg.GetSectionList()
+    for each e in regList
+        Debug("Section->" + AnyToString(e))
+        sec = CreateObject("roRegistrySection", e)
+        keyList = sec.GetKeyList()
+        for each key in keyList
+            value = sec.Read(key)
+            Debug(AnyToString(key) + " : " + AnyToString(value))
+        next
+    next
+    Debug("--- END OF REGISTRY -----")
+end sub
+
+'Erases everything in the Registry for Plex
+sub EraseRegistry() 
+    Debug("Erasing Registry")
+    reg = CreateObject("roRegistry")
+    regList = reg.GetSectionList()
+    for each e in regList
+        sec = CreateObject("roRegistrySection", e)
+        keyList = sec.GetKeyList()
+        for each key in keyList
+            sec.Delete(key)
+        next
+    next
+    m.RegistryCache.Clear()
+end sub
 
 '******************************************************
 'Convert anything to a string
