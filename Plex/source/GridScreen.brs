@@ -429,6 +429,14 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
         m.lastUpdatedSize[row] = data.Count()
     end if
 
+    ' ljunkie - the fact we lazy load rows, we cannot just set the focus item after we show a screen
+    ' this will allow us to set the initial focus item on the first row of a full grid
+    ' this might need to change if we every decide to focus on a sub row
+    if row = 0 and m.firstfocusitem = invalid and m.isfullgrid <> invalid and m.isfullgrid then
+        m.firstfocusitem = true
+        m.screen.SetFocusedListItem(0,0)
+    end if
+
     ' Continue loading this row
     extraRows = 2 - (m.selectedRow - row)
     'print "loadrow:" + tostr(row)
