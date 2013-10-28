@@ -3,21 +3,22 @@
 'Not separate out:
 'Default, analytics, misc, 
 '
-' m.userNum = -1 for no user profiles, 0-3 for the 4 valid users.  note that 4 is an arbitrary number and
-'can be increased without limit
+' m.userNum = 0-3 for the 4 valid users.  note that 4 is an arbitrary number and
+'can be increased without limit.  0 is the same as a single user.
+
 'TODO: elminate m.userNum = -1 as interesting???  Why both?
 'TODO: (DONE) Check about the screens that are created before homescreen is (-2,-3, etc)
-'TODO: Update SecurityPin with better graphics
+'TODO: (Done) Update SecurityPin with better graphics
 'TODO: How about using a userNum of -1 and catching that on the Registry stuff for errors!
 
 '*************************************************************************************
 '
-' Routines for drawing the actual PIN entry screen
+' Routines for drawing the user selection screen
 '
 '*************************************************************************************
 'Creates screen for user Selection
 Function createUserSelectionScreen(viewController) as object
-    TraceFunction("createUserSelectionScreen", viewController)
+    'TraceFunction("createUserSelectionScreen", viewController)
     obj = CreateObject("roAssociativeArray")
     initBaseScreen(obj, viewController)
 

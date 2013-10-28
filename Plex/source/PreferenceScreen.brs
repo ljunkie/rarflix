@@ -286,7 +286,6 @@ Sub showPreferencesScreen()
     m.Screen.SetTitle("Preferences v" + GetGlobalAA().Lookup("appVersionStr"))
     m.Screen.SetHeader("Set Plex Channel Preferences")
 
-    m.AddItem({title: "User Profiles"}, "userprofiles")
     m.AddItem({title: "Plex Media Servers"}, "servers")
     m.AddItem({title: getCurrentMyPlexLabel()}, "myplex")
     m.AddItem({title: "Quality"}, "quality", m.GetEnumValue("quality"))
@@ -298,6 +297,7 @@ Sub showPreferencesScreen()
     m.AddItem({title: "Subtitles"}, "subtitles")
     m.AddItem({title: "Security PIN"}, "securitypin")
     m.AddItem({title: "Slideshow"}, "slideshow")
+    m.AddItem({title: "User Profiles"}, "userprofiles")
     m.AddItem({title: "Audio Preferences"}, "audio_prefs")
     m.AddItem({title: "Screensaver"}, "screensaver", m.GetEnumValue("screensaver"))
     m.AddItem({title: "Logging"}, "debug")
@@ -585,7 +585,7 @@ End sub
 
 '*** User Profile Preferences ***
 Function createUserProfilesPrefsScreen(viewController) As Object
-    TraceFunction("createUserProfilesPrefsScreen", viewController)
+    'TraceFunction("createUserProfilesPrefsScreen", viewController)
     obj = createBasePrefsScreen(viewController)
     obj.HandleMessage = prefsUserProfilesHandleMessage
     obj.Screen.SetHeader("User profile preferences")
@@ -624,7 +624,7 @@ End Function
 
 '*** User Profile Edit ***
 Function createUserEditPrefsScreen(viewController, currentUser as integer) As Object
-    TraceFunction("createUserEditPrefsScreen", viewController, currentUser)
+    'TraceFunction("createUserEditPrefsScreen", viewController, currentUser)
     obj = createBasePrefsScreen(viewController)
     obj.currentUser = currentUser
 
