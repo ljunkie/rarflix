@@ -118,8 +118,13 @@ Sub prefsHandleEnumPreference(regKey, index)
     m.currentRegKey = regKey
     label = m.contentArray[index].OrigTitle
     pref = m.Prefs[regKey]
-    m.Changes.AddReplace("_previous_"+regKey, RegRead(regKey, "preferences", pref.default)) ' ljunkie - set _previous_ value to key off of later
-    screen = m.ViewController.CreateEnumInputScreen(pref.values, RegRead(regKey, "preferences", pref.default), pref.heading, [label], false)
+    if m.currentUser = invalid then 'Handle reading/writing to other user profiles
+        screen = m.ViewController.CreateEnumInputScreen(pref.values, RegRead(regKey, "preferences", pref.default), pref.heading, [label], false)
+        m.Changes.AddReplace("_previous_"+regKey, RegRead(regKey, "preferences", pref.default)) ' ljunkie - set _previous_ value to key off of later
+    else
+        screen = m.ViewController.CreateEnumInputScreen(pref.values, RegReadByUser(m.currentUser, regKey, "preferences", pref.default), pref.heading, [label], false)
+        m.Changes.AddReplace("_previous_"+regKey, RegReadByUser(m.currentUser, regKey, "preferences", pref.default)) ' ljunkie - set _previous_ value to key off of later
+    end if 
     screen.Listener = m
     screen.Show()
 End Sub
@@ -130,7 +135,11 @@ Sub prefsHandleTextPreference(regKey, index)
     label = m.contentArray[index].OrigTitle
     pref = m.Prefs[regKey]
     screen = m.ViewController.CreateTextInputScreen(pref.heading, [label], false)
-    screen.Text = RegRead(regKey, "preferences", pref.default)
+    if m.currentUser = invalid then 'Handle reading/writing to other user profiles
+        screen.Text = RegRead(regKey, "preferences", pref.default)
+    else
+        screen.Text = RegReadByUser(m.currentUser, regKey, "preferences", pref.default)
+    end if    
     screen.Screen.SetMaxLength(80)
     screen.Listener = m
     screen.Show()
@@ -143,24 +152,40 @@ Sub prefsHandleReorderPreference(regKey, index)
     pref = m.Prefs[regKey]
 
     screen = m.ViewController.CreateReorderScreen(pref.values, [label], false)
-    screen.InitializeOrder(RegRead(regKey, "preferences", pref.default))
+    if m.currentUser = invalid then 'Handle reading/writing to other user profiles
+        screen.InitializeOrder(RegRead(regKey, "preferences", pref.default))
+    else
+        screen.InitializeOrder(RegReadByUser(m.currentUser, regKey, "preferences", pref.default))
+    end if
     screen.Listener = m
     screen.Show()
 End Sub
 
 Sub prefsOnUserInput(value, screen)
     if type(screen.Screen) = "roKeyboardScreen" then
-        RegWrite(m.currentRegKey, value, "preferences")
+        if m.currentUser = invalid then 'Handle reading/writing to other user profiles
+            RegWrite(m.currentRegKey, value, "preferences")
+        else
+            RegWriteByUser(m.currentUser, m.currentRegKey, value, "preferences")
+        end if
         m.Changes.AddReplace(m.currentRegKey, value)
         m.AppendValue(m.currentIndex, value)
     else if type(screen.Screen) = "roListScreen" AND screen.ListScreenType = "reorder" then
-        RegWrite(m.currentRegKey, value, "preferences")
+        if m.currentUser = invalid then 'Handle reading/writing to other user profiles
+            RegWrite(m.currentRegKey, value, "preferences")
+        else 
+            RegWriteByUser(m.currentUser, m.currentRegKey, value, "preferences")
+        end if 
         m.Changes.AddReplace(m.currentRegKey, value)
     else
         label = m.contentArray[m.currentIndex].OrigTitle
         if screen.SelectedIndex <> invalid then
             Debug("Set " + label + " to " + screen.SelectedValue)
-            RegWrite(m.currentRegKey, screen.SelectedValue, "preferences")
+            if m.currentUser = invalid then 'Handle reading/writing to other user profiles
+                RegWrite(m.currentRegKey, screen.SelectedValue, "preferences")
+            else
+                RegWriteByUser(m.currentUser, m.currentRegKey, screen.SelectedValue, "preferences")
+            end if 
             m.Changes.AddReplace(m.currentRegKey, screen.SelectedValue)
             m.AppendValue(m.currentIndex, screen.SelectedLabel)
         end if
@@ -169,7 +194,11 @@ End Sub
 
 Function prefsGetEnumValue(regKey)
     pref = m.Prefs[regKey]
-    value = RegRead(regKey, "preferences", pref.default)
+    if m.currentUser = invalid then 'Handle reading/writing to other user profiles
+        value = RegRead(regKey, "preferences", pref.default)
+    else
+        value = RegReadByUser(m.currentUser, regKey, "preferences", pref.default)
+    end if
     m.Changes.AddReplace(regKey, value) ' ljunkie add changes, we can key of changes: 'm.Changes["_prev_{regKey}"] will have the previously selection
     for each item in pref.values
         if value = item.EnumValue then
@@ -182,9 +211,13 @@ End Function
 
 Function prefsGetPrefValue(regKey)
     pref = m.Prefs[regKey]
-    return RegRead(regKey, "preferences", pref.default)
+    if m.currentUser = invalid then 'Handle reading/writing to other user profiles
+        value = RegRead(regKey, "preferences", pref.default)
+    else
+        value = RegReadByUser(m.currentUser, regKey, "preferences", pref.default)
+    end if
+    return value
 End Function
-
 '*** Main Preferences ***
 
 Function createPreferencesScreen(viewController) As Object
@@ -270,6 +303,7 @@ Sub showPreferencesScreen()
     m.AddItem({title: "Subtitles"}, "subtitles")
     m.AddItem({title: "Security PIN"}, "securitypin")
     m.AddItem({title: "Slideshow"}, "slideshow")
+    m.AddItem({title: "User Profiles"}, "userprofiles")
     m.AddItem({title: "Screensaver"}, "screensaver", m.GetEnumValue("screensaver"))
     m.AddItem({title: "Logging"}, "debug")
     m.AddItem({title: "Advanced Preferences"}, "advanced")
@@ -352,6 +386,10 @@ Function prefsMainHandleMessage(msg) As Boolean
             else if command = "securitypin" then
                 screen = createSecurityPinPrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["Security PIN"])
+                screen.Show()            
+            else if command = "userprofiles" then
+                screen = createUserProfilesPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["User Profiles"])
                 screen.Show()            
             else if command = "subtitles" then
                 screen = createSubtitlePrefsScreen(m.ViewController)
@@ -502,7 +540,6 @@ Function prefsSecurityPinHandleMessage(msg) As Boolean
     if type(msg) = "roListScreenEvent" then
         handled = true
         if msg.isScreenClosed() then
-            'Debug("prefsSecurityPinHandleMessage Closing")
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
@@ -512,9 +549,13 @@ Function prefsSecurityPinHandleMessage(msg) As Boolean
             else if command = "set" then 'create screen to enter PIN
                 pinScreen = SetSecurityPin(m.ViewController)
                 m.Activate = prefsSecurityPinHandleSetPin
-                pinScreen.Show("The PIN code is any sequence of the direction arrows on your remote control.  Press up to 20 arrows to set the PIN.", "Press Back to cancel setting the PIN.  When complete press the OK button on your remote control.")
+                m.ViewController.InitializeOtherScreen(pinScreen, ["Set New PIN"])
+                pinScreen.txtTop = "The PIN code is any sequence of the direction arrows on your remote control.  Press up to 20 arrows to set the PIN."
+                pinScreen.txtBottom = "Press Back to cancel setting the PIN.  When complete press the OK button on your remote control."  
+                pinScreen.Show(true)
             else if command = "unlock" then 'create unlock screen
                 pinScreen = VerifySecurityPin(m.ViewController, RegRead("securityPincode","preferences",invalid), false, 0)
+                m.ViewController.InitializeOtherScreen(pinScreen, ["Unlock PIN Changes"])
                 m.Activate = prefsSecurityPinHandleUnlock
                 pinScreen.Show()
             else if command = "close" then
@@ -528,7 +569,6 @@ End Function
 'Called when list screen pops to top after the PIN verification completes
 sub prefsSecurityPinHandleUnlock(priorScreen)
     m.Activate = invalid    'dont call this routine again
-    'Debug("prefsSecurityPinHandleUnlock")
     if (priorScreen.pinOK = invalid) or (priorScreen.pinOK <> true) then    'either no code was entered, was cancelled or wrong code
     else
         m.EnteredPin = true    
@@ -538,20 +578,150 @@ End sub
 
 'Called when list screen pops to top after setting a new PIN
 sub prefsSecurityPinHandleSetPin(priorScreen)
-    'Debug("prefsSecurityPinHandleSetPin")
     m.Activate = invalid    'dont call this routine again
     if (priorScreen.newPinCode = invalid) or (priorScreen.newPinCode = "") then    'either no code was entered, was cancelled or wrong code
-        'dialog = createBaseDialog()    'BUG: couldn't get this to work.  screen does not display.  For now, just return to menu when it's entered wrong
+        'dialog = createBaseDialog()    'BUG: couldn't get this to work.  screen does not display.  Just return to menu when it's entered wrong
         'dialog.Title = "PIN Mismatch"
         'dialog.Text = "Security PIN's didn't match.  PIN not changed."
         'dialog.Show()
     else
         m.EnteredPin = true    
-        'Debug("Set new pincode:" + AnyToString(priorScreen.newPinCode ))
+        'Debug("Set new pincode:" + tostr(priorScreen.newPinCode ))
         RegWrite("securityPincode", priorScreen.newPinCode, "preferences")
         prefsSecurityPinRefresh(m)
     endif
 End sub
+
+
+'*** User Profile Preferences ***
+Function createUserProfilesPrefsScreen(viewController) As Object
+    'TraceFunction("createUserProfilesPrefsScreen", viewController)
+    obj = createBasePrefsScreen(viewController)
+    obj.HandleMessage = prefsUserProfilesHandleMessage
+    obj.Screen.SetHeader("User profile preferences")
+    'These must be the first 4 entries for easy parsing for the createUserEditPrefsScreen()
+    obj.AddItem({title: "Default User Profile "}, "userActive0")
+    obj.AddItem({title: "User Profile 1 "}, "userActive1")
+    obj.AddItem({title: "User Profile 2 "}, "userActive2")
+    obj.AddItem({title: "User Profile 3 "}, "userActive3")
+    obj.AddItem({title: "Close"}, "close")
+    return obj
+End Function
+
+Function prefsUserProfilesHandleMessage(msg) As Boolean
+    handled = false
+
+    if type(msg) = "roListScreenEvent" then
+        handled = true
+        if msg.isScreenClosed() then
+            Debug("User Profiles closed event")
+            m.ViewController.GdmAdvertiser.Refresh()
+            m.ViewController.PopScreen(m)
+        else if msg.isListItemSelected() then
+            command = m.GetSelectedCommand(msg.GetIndex())
+            if command = "close" then
+                m.Screen.Close()
+            else    'must be a user edit
+                m.editScreen = createUserEditPrefsScreen(m.ViewController,msg.GetIndex()) 'msg.GetIndex() be 0-3 because that's the order of the text entries
+                if msg.GetIndex() = 0 then
+                    name = "Default User"
+                else 
+                    name = "User Profile " + tostr(msg.GetIndex())
+                end if
+                if RegReadByUser(msg.GetIndex(), "friendlyName", "preferences", invalid) <> invalid then
+                    name = RegReadByUser(msg.GetIndex(), "friendlyName", "preferences", invalid)
+                end if 
+                m.ViewController.InitializeOtherScreen(m.editScreen, [name])
+                m.editScreen.Show()            
+            end if
+        end if
+    end if
+
+    return handled
+End Function
+
+'*** User Profile Edit ***
+Function createUserEditPrefsScreen(viewController, currentUser as integer) As Object
+    'TraceFunction("createUserEditPrefsScreen", viewController, currentUser)
+    obj = createBasePrefsScreen(viewController)
+    obj.currentUser = currentUser
+
+    obj.HandleMessage = prefsUserEditHandleMessage
+
+    ' Enabled
+    options = [
+        { title: "Enabled", EnumValue: "1" },
+        { title: "Disabled", EnumValue: "0" }
+    ]
+    obj.Prefs["userActive"] = {
+        values: options,
+        heading: "Show this user profile on startup",
+        default: "0"
+    }
+    obj.Prefs["friendlyName"] = {
+        heading: "Name to show on the startup screen",
+        default: ""
+    }
+    if currentUser = 0 then
+        obj.Screen.SetHeader("Default User profile preferences")
+    else
+        obj.Screen.SetHeader("User " + numtostr(currentUser) + " profile preferences")
+        obj.AddItem({title: "Show on startup "}, "userActive", obj.GetEnumValue("userActive"))
+    end if
+    obj.AddItem({title: "Profile Name "}, "friendlyName", obj.GetPrefValue("friendlyName"))
+    if currentUser <> GetGlobalAA().userNum then   'can't erase preferences for the current user
+        obj.AddItem({title: "Erase all preferences for this user"}, "erase")
+    end if
+    obj.AddItem({title: "Close"}, "close")
+    return obj
+End Function
+
+
+Function prefsUserEditHandleMessage(msg) As Boolean
+    handled = false
+
+    if type(msg) = "roListScreenEvent" then
+        handled = true
+        if msg.isScreenClosed() then
+            Debug("User Edit closed event")
+            m.ViewController.GdmAdvertiser.Refresh()
+            m.ViewController.PopScreen(m)
+        else if msg.isListItemSelected() then
+            command = m.GetSelectedCommand(msg.GetIndex())
+            if command = "friendlyName" then
+                m.HandleTextPreference(command, msg.GetIndex())
+            else if command = "userActive" then
+                m.HandleEnumPreference(command, msg.GetIndex())
+            else if command = "erase" then
+                'm.HandleEnumPreference(command, msg.GetIndex())
+                dialog = createBaseDialog()    
+                dialog.Title = "Confirm Erase"
+                dialog.Text = "Are you sure you want to erase all the preferences for this user profile?  This will forever delete all the configuration for this user profile.  Other profiles will not changed."
+                dialog.SetButton("erase", "Erase All Preferences")
+                dialog.SetButton("close", "Cancel")
+                dialog.HandleButton = prefsUserEditHandleDialogButton    
+                dialog.ParentScreen = m
+                dialog.Show()   
+            else if command = "close" then
+                m.Screen.Close()
+            end if
+        end if
+    end if
+
+    return handled
+End Function
+
+'Handles the confirmation dialog button when erasing the preferences. If erasing, it sets the parent preference screen to close
+Function prefsUserEditHandleDialogButton(command, data) As Boolean
+    obj = m.ParentScreen    ' We're evaluated in the context of the dialog, but we want to pull from the parent.
+    if command = "erase" then
+        RegEraseUser(obj.currentUser)
+        obj.closeOnActivate = true  'queue up the parent prefs screen to close
+    end if
+    'm.screen.Close() 'close the dialog now
+    return true 'returning true will close the dialog
+End Function
+
 
 '*** Subtitle Preferences ***
 

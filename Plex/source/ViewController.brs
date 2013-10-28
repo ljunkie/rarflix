@@ -5,6 +5,10 @@
 '* can take an item and figure out which type of screen should be shown
 '* so that logic doesn't have to be in each individual screen type.
 '*
+'Some screens are hardcoded to a specific ScreenID
+'-1 : Home screen
+'-2 : Analytics screen (In order to use the view controller for requests.)
+'-3 : Plex Media Server screen (For using the view controller for HTTP requests)
 
 Function createViewController() As Object
     controller = CreateObject("roAssociativeArray")
@@ -73,24 +77,33 @@ Function createViewController() As Object
     controller.SystemLog = CreateObject("roSystemLog")
     controller.SystemLog.SetMessagePort(controller.GlobalMessagePort)
     controller.SystemLog.EnableType("bandwidth.minute")
+    
+    controller.CreateUserSelectionScreen = vcCreateUserSelectionScreen
 
+    ' Figure if we need to show the securityscreen
+    'First check if there are multiple users
+    controller.ShowSecurityScreen = false
+    for i = 1 to 3 step 1   'Check for other users enabled
+        if RegReadByUser(i, "userActive", "preferences", "0") = "1" then 
+            controller.ShowSecurityScreen = true
+            exit for
+        end if
+    end for
+    ' Finally, check if the default user has a pin 
+    if controller.ShowSecurityScreen = false then
+        if RegRead("securityPincode","preferences",invalid) <> invalid then controller.ShowSecurityScreen = true
+    end if
 
     ' Stuff the controller into the global object
     m.ViewController = controller
     controller.myplex = createMyPlexManager(controller)
 
-    ' Initialize things that run in the background
+    ' Initialize things that run in the background and are okay to start before a user is selected. 
     InitWebServer(controller)
     controller.GdmAdvertiser = createGDMAdvertiser(controller)
     controller.AudioPlayer = createAudioPlayer(controller)
     controller.Analytics = createAnalyticsTracker()
-
-    if RegRead("securityPincode","preferences",invalid) <> invalid  then
-        controller.EnterSecurityCode = true
-    else
-        controller.EnterSecurityCode = false
-    end if
-
+    
     return controller
 End Function
 
@@ -111,6 +124,15 @@ Function vcCreateHomeScreen()
     RRbreadcrumbDate(screen) 'ljunkie - homescreen data/time
     return screen
 End Function
+
+
+Function vcCreateUserSelectionScreen() 
+    screen = createUserSelectionScreen(m)
+    m.InitializeOtherScreen(screen, invalid)
+    screen.Show()
+    return screen
+End Function
+
 
 Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As Dynamic
     if type(context) = "roArray" then
@@ -271,8 +293,8 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screenName = "Audio Springboard"
     else if contentType = "section" then
         ' Now done in gridscreen.bres -- when someone focus the row instead
-        'RegWrite("lastMachineID", item.server.machineID)
-        'RegWrite("lastSectionKey", item.key)
+        RegWrite("lastMachineID", item.server.machineID, "userinfo")
+        RegWrite("lastSectionKey", item.key, "userinfo")
 
         screenName = "Section: " + tostr(item.type)
         if tostr(item.type) = "artist" then 
@@ -768,10 +790,8 @@ Sub vcPopScreen(screen)
     ' no screens on the stack, but we didn't just close the home screen, then
     ' we haven't shown the home screen yet. Show it now.
     if m.screens.Count() = 0 then
-        if m.EnterSecurityCode = true then
-            'Pop-up security PIN code before homescreen.  
-            pinScreen = VerifySecurityPin(m, RegRead("securityPincode","preferences",invalid))
-            pinScreen.Show()
+        if m.ShowSecurityScreen = true then
+            m.CreateUserSelectionScreen()
         else
             m.Home = m.CreateHomeScreen()
         end if
@@ -821,10 +841,8 @@ Sub vcShow()
         m.ShowReleaseNotes()
         RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")
     else
-        if m.EnterSecurityCode = true then
-            'Pop-up security PIN code before homescreen.  
-            pinScreen = VerifySecurityPin(m, RegRead("securityPincode","preferences",invalid))
-            pinScreen.Show()
+        if m.ShowSecurityScreen = true then
+            m.CreateUserSelectionScreen()
         else
             m.Home = m.CreateHomeScreen()
         end if
@@ -995,7 +1013,10 @@ Sub vcUpdateScreenProperties(screen)
             screen.Screen.SetTitle(bread2)
         end if
     else if screenType = "roImageCanvas" then
-        'screen.Screen.SetBreadcrumbEnabled(false)   'roImageCanvas doesn't currently support breadcrumbs
+        'roImageCanvas does not currently support breadcrumbs but allow custom function to draw them
+        if enableBreadcrumbs then
+            if screen.SetBreadcrumbText <> invalid then screen.SetBreadcrumbText(bread2) 
+        end if
     else
         Debug("Not sure what to do with breadcrumbs on screen type: " + tostr(screenType))
     end if
