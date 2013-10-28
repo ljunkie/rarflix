@@ -85,6 +85,12 @@ Function createViewController() As Object
     controller.AudioPlayer = createAudioPlayer(controller)
     controller.Analytics = createAnalyticsTracker()
 
+    if RegRead("securityPincode","preferences",invalid) <> invalid  then
+        controller.EnterSecurityCode = true
+    else
+        controller.EnterSecurityCode = false
+    end if
+
     return controller
 End Function
 
@@ -762,7 +768,13 @@ Sub vcPopScreen(screen)
     ' no screens on the stack, but we didn't just close the home screen, then
     ' we haven't shown the home screen yet. Show it now.
     if m.screens.Count() = 0 then
-        m.Home = m.CreateHomeScreen()
+        if m.EnterSecurityCode = true then
+            'Pop-up security PIN code before homescreen.  
+            pinScreen = VerifySecurityPin(m, RegRead("securityPincode","preferences",invalid))
+            pinScreen.Show()
+        else
+            m.Home = m.CreateHomeScreen()
+        end if
     else if callActivate then
         newScreen = m.screens.Peek()
         ' ljunkie - extra hack to cleanup the screen we are entering when invalid or if trying to re-enter a dialog
@@ -809,7 +821,13 @@ Sub vcShow()
         m.ShowReleaseNotes()
         RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")
     else
-        m.Home = m.CreateHomeScreen()
+        if m.EnterSecurityCode = true then
+            'Pop-up security PIN code before homescreen.  
+            pinScreen = VerifySecurityPin(m, RegRead("securityPincode","preferences",invalid))
+            pinScreen.Show()
+        else
+            m.Home = m.CreateHomeScreen()
+        end if
     end if
 
     Debug("Starting global message loop")
@@ -827,7 +845,9 @@ Sub vcShow()
             'if GetInterface(msg, "ifUrlEvent") = invalid AND GetInterface(msg, "ifSocketEvent") = invalid then
                 'Debug("Processing " + type(msg) + " (top of stack " + type(m.screens.Peek().Screen) + "): " + tostr(msg.GetType()) + ", " + tostr(msg.GetIndex()) + ", " + tostr(msg.GetMessage()))
             'end if
-
+            'if type(msg) <> "roUrlEvent" AND type(msg) <> "roSocketEvent" then
+            '    Debug("Processing " + type(msg) + " (top of stack " + type(m.screens.Peek().Screen) + "): ")
+            'end if
             for i = m.screens.Count() - 1 to 0 step -1
                 if m.screens[i].HandleMessage(msg) then exit for
             end for
@@ -974,6 +994,8 @@ Sub vcUpdateScreenProperties(screen)
         if enableBreadcrumbs then
             screen.Screen.SetTitle(bread2)
         end if
+    else if screenType = "roImageCanvas" then
+        'screen.Screen.SetBreadcrumbEnabled(false)   'roImageCanvas doesn't currently support breadcrumbs
     else
         Debug("Not sure what to do with breadcrumbs on screen type: " + tostr(screenType))
     end if

@@ -268,6 +268,7 @@ Sub showPreferencesScreen()
     m.AddItem({title: "Section Display"}, "sections")
     m.AddItem({title: "Remote Control/Name"}, "remotecontrol")
     m.AddItem({title: "Subtitles"}, "subtitles")
+    m.AddItem({title: "Security PIN"}, "securitypin")
     m.AddItem({title: "Slideshow"}, "slideshow")
     m.AddItem({title: "Screensaver"}, "screensaver", m.GetEnumValue("screensaver"))
     m.AddItem({title: "Logging"}, "debug")
@@ -348,6 +349,10 @@ Function prefsMainHandleMessage(msg) As Boolean
                 screen = createSlideshowPrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["Slideshow Preferences"])
                 screen.Show()
+            else if command = "securitypin" then
+                screen = createSecurityPinPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["Security PIN"])
+                screen.Show()            
             else if command = "subtitles" then
                 screen = createSubtitlePrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["Subtitle Preferences"])
@@ -460,6 +465,93 @@ Function prefsSlideshowHandleMessage(msg) As Boolean
 
     return handled
 End Function
+
+'*** SecurityPin Preferences ***
+'Create initiation screen and setup
+Function createSecurityPinPrefsScreen(viewController) As Object
+    'Debug("createSecurityPinPrefsScreen")
+    obj = createBasePrefsScreen(viewController)
+    prefsSecurityPinRefresh(obj)
+    obj.Screen.SetHeader("Security PIN preferences")
+    obj.HandleMessage = prefsSecurityPinHandleMessage
+    obj.EnteredPin = false  'true when user has already entered PIN so we don't ask for it again
+    return obj
+End Function
+
+'Determine if we're setting a new PIN or need to change/clear an existing PIN
+sub prefsSecurityPinRefresh(screen)
+    screen.contentArray.Clear() 
+    screen.Screen.ClearContent()
+    if RegRead("securityPincode","preferences",invalid) = invalid  then
+        screen.AddItem({title: "Set Security PIN"}, "set")
+        screen.EnteredPin = true    'don't ask for PIN from now on
+    else
+        if screen.EnteredPin = true then
+            screen.AddItem({title: "Change Security PIN"}, "set")
+            screen.AddItem({title: "Clear Security PIN"}, "clear")
+        else
+            screen.AddItem({title: "Enter current PIN to make changes"}, "unlock")
+        end if
+    end if
+    screen.AddItem({title: "Close"}, "close")
+end sub 
+
+
+Function prefsSecurityPinHandleMessage(msg) As Boolean
+    handled = false
+    if type(msg) = "roListScreenEvent" then
+        handled = true
+        if msg.isScreenClosed() then
+            'Debug("prefsSecurityPinHandleMessage Closing")
+            m.ViewController.PopScreen(m)
+        else if msg.isListItemSelected() then
+            command = m.GetSelectedCommand(msg.GetIndex())
+            if command = "clear" then
+                RegDelete("securityPincode", "preferences")
+                prefsSecurityPinRefresh(m)
+            else if command = "set" then 'create screen to enter PIN
+                pinScreen = SetSecurityPin(m.ViewController)
+                m.Activate = prefsSecurityPinHandleSetPin
+                pinScreen.Show("The PIN code is any sequence of the direction arrows on your remote control.  Press up to 20 arrows to set the PIN.", "Press Back to cancel setting the PIN.  When complete press the OK button on your remote control.")
+            else if command = "unlock" then 'create unlock screen
+                pinScreen = VerifySecurityPin(m.ViewController, RegRead("securityPincode","preferences",invalid), false, 0)
+                m.Activate = prefsSecurityPinHandleUnlock
+                pinScreen.Show()
+            else if command = "close" then
+                m.Screen.Close()
+            end if
+        end if
+    end if
+    return handled
+End Function
+
+'Called when list screen pops to top after the PIN verification completes
+sub prefsSecurityPinHandleUnlock(priorScreen)
+    m.Activate = invalid    'dont call this routine again
+    'Debug("prefsSecurityPinHandleUnlock")
+    if (priorScreen.pinOK = invalid) or (priorScreen.pinOK <> true) then    'either no code was entered, was cancelled or wrong code
+    else
+        m.EnteredPin = true    
+    endif
+    prefsSecurityPinRefresh(m)
+End sub
+
+'Called when list screen pops to top after setting a new PIN
+sub prefsSecurityPinHandleSetPin(priorScreen)
+    'Debug("prefsSecurityPinHandleSetPin")
+    m.Activate = invalid    'dont call this routine again
+    if (priorScreen.newPinCode = invalid) or (priorScreen.newPinCode = "") then    'either no code was entered, was cancelled or wrong code
+        'dialog = createBaseDialog()    'BUG: couldn't get this to work.  screen does not display.  For now, just return to menu when it's entered wrong
+        'dialog.Title = "PIN Mismatch"
+        'dialog.Text = "Security PIN's didn't match.  PIN not changed."
+        'dialog.Show()
+    else
+        m.EnteredPin = true    
+        'Debug("Set new pincode:" + AnyToString(priorScreen.newPinCode ))
+        RegWrite("securityPincode", priorScreen.newPinCode, "preferences")
+        prefsSecurityPinRefresh(m)
+    endif
+End sub
 
 '*** Subtitle Preferences ***
 
