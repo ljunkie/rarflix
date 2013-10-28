@@ -100,13 +100,13 @@ Sub userSelectionShow()
     m.Screen.SetMessagePort(m.Port)
     m.Screen.Show()
     'special case when there is only 1 user (which means there must be a pin).  Jump straight to PIN entry
-    if m.users.Count() = 1 then
-        m.userSelected = 0
-        pinScreen = VerifySecurityPin(m.ViewController, RegReadByUser(0,"securityPincode","preferences",invalid), false, 0)
-        m.ViewController.InitializeOtherScreen(pinScreen, ["Access to RarFlix"])
-        m.Activate = userSelectionActivate
-        pinScreen.Show()
-    end if
+    'if m.users.Count() = 1 then
+    '    m.userSelected = 0
+    '    pinScreen = VerifySecurityPin(m.ViewController, RegReadByUser(0,"securityPincode","preferences",invalid), false, 0)
+    '    m.ViewController.InitializeOtherScreen(pinScreen, ["Access to RarFlix"])
+    '    m.Activate = userSelectionActivate
+    '    pinScreen.Show()
+    'end if
 End Sub
 
 Function userSelectionHandleMessage(msg) As Boolean
