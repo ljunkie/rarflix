@@ -49,8 +49,8 @@ End Function
 'if blocking=true then uses own messagePort and blocks global message loop
 Sub securityPINEntryShow(newDialogText=invalid as object, newDialogText2=invalid as object, showOKButton=true as boolean, pinToVerify="" as string, blocking=false as boolean)
     canvasRect = m.screen.GetCanvasRect()   'get screen size
-    dialogText = "Enter Security PIN for Plex." 'default text
-    dialogText2 = "Enter PIN Code using direction arrows on your remote control."   'default text
+    dialogText = "Enter Security PIN for RARflix" 'default text
+    dialogText2 = "Enter PIN Code using direction " + chr(10) + "arrows on your remote control"   'default text
     if newDialogText <> invalid then dialogText = newDialogText
     if newDialogText2 <> invalid then dialogText2 = newDialogText2
     pinRect = {}
