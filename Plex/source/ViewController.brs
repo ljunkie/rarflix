@@ -80,23 +80,30 @@ Function createViewController() As Object
     
     controller.CreateUserSelectionScreen = vcCreateUserSelectionScreen
 
+    ' Figure if we need to show the securityscreen
+    'First check if there are multiple users
+    controller.ShowSecurityScreen = false
+    for i = 1 to 3 step 1   'Check for other users enabled
+        if RegReadByUser(i, "userActive", "preferences", "0") = "1" then 
+            controller.ShowSecurityScreen = true
+            exit for
+        end if
+    end for
+    ' Finally, check if the default user has a pin 
+    if controller.ShowSecurityScreen = false then
+        if RegRead("securityPincode","preferences",invalid) <> invalid then controller.ShowSecurityScreen = true
+    end if
 
     ' Stuff the controller into the global object
     m.ViewController = controller
     controller.myplex = createMyPlexManager(controller)
 
-    ' Initialize things that run in the background
+    ' Initialize things that run in the background and are okay to start before a user is selected. 
     InitWebServer(controller)
     controller.GdmAdvertiser = createGDMAdvertiser(controller)
     controller.AudioPlayer = createAudioPlayer(controller)
     controller.Analytics = createAnalyticsTracker()
-
-    if RegRead("securityPincode","preferences",invalid) <> invalid  then
-        controller.EnterSecurityCode = true
-    else
-        controller.EnterSecurityCode = false
-    end if
-
+    
     return controller
 End Function
 
@@ -498,10 +505,7 @@ Sub vcPopScreen(screen)
     ' no screens on the stack, but we didn't just close the home screen, then
     ' we haven't shown the home screen yet. Show it now.
     if m.screens.Count() = 0 then
-        if m.EnterSecurityCode = true then
-            'Pop-up security PIN code before homescreen.  
-            'pinScreen = VerifySecurityPin(m, RegRead("securityPincode","preferences",invalid))
-            'pinScreen.Show()
+        if m.ShowSecurityScreen = true then
             m.CreateUserSelectionScreen()
         else
             m.Home = m.CreateHomeScreen()
@@ -536,10 +540,7 @@ Sub vcShow()
         m.ShowReleaseNotes()
         RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")
     else
-        if m.EnterSecurityCode = true then
-            'Pop-up security PIN code before homescreen.  
-            'pinScreen = VerifySecurityPin(m, RegRead("securityPincode","preferences",invalid))
-            'pinScreen.Show()
+        if m.ShowSecurityScreen = true then
             m.CreateUserSelectionScreen()
         else
             m.Home = m.CreateHomeScreen()

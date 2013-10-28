@@ -159,6 +159,25 @@ Function GetGlobal(var, default=invalid)
     return firstOf(GetGlobalAA().Lookup(var), default)
 End Function
 
+'Returns array that contains information for duplicating the background on an roImageCanvas screen
+function getBackgrounds() 
+    if GetGlobal("IsHD") = true then
+        obj = {
+            'overhangRect : { x:125,y:10 }
+            background : [{Color:"#363636", CompositionMode:"Source"}]    'Set opaque background to keep from flashing    '#363636
+            backgroundItems : [ {url:"pkg:/images/Background_HD.jpg"}]
+            logoItems : [ {url:"pkg:/images/logo_final_HD.png", TargetRect:{ x:125,y:10 }} ]
+        }
+    else
+        obj = {
+            'overhangRect : { x:72,y:10 }
+            background : [{Color:"#363636", CompositionMode:"Source"}]    'Set opaque background to keep from flashing    '#363636
+            backgroundItems : [ {url:"pkg:/images/Background_SD.jpg"}]
+            logoItems : [ {url:"pkg:/images/logo_final_SD.png", TargetRect:{ x:72,y:10 }} ]
+        }
+    endif
+    return obj
+end function
 
 '*************************************************************
 '** Set the configurable theme attributes for the application
@@ -173,12 +192,12 @@ Sub initTheme()
     app = CreateObject("roAppManager")
     theme = CreateObject("roAssociativeArray")
 
-    theme.OverhangOffsetSD_X = "72"
+    theme.OverhangOffsetSD_X = "72"     'these settings are duplicated in getBackgrounds() so keep them in sync with this
     theme.OverhangOffsetSD_Y = "10"
     theme.OverhangSliceSD = "pkg:/images/Background_SD.jpg"
     theme.OverhangLogoSD  = "pkg:/images/logo_final_SD.png"
 
-    theme.OverhangOffsetHD_X = "125"
+    theme.OverhangOffsetHD_X = "125"    'these settings are duplicated in getBackgrounds() so keep them in sync with this
     theme.OverhangOffsetHD_Y = "10"
     theme.OverhangSliceHD = "pkg:/images/Background_HD.jpg"
     theme.OverhangLogoHD  = "pkg:/images/logo_final_HD.png"

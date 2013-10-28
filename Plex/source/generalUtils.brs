@@ -44,6 +44,7 @@ Function RegGetSectionName(section=invalid) as string
     return section
 end function
 
+'use this to get section names by usernumber different from the current user
 function RegGetSectionByUserNumber(userNumber as integer, section = invalid) as string
     'this is slow but rarely gets called
     if section = invalid then return "Default"
@@ -84,8 +85,8 @@ end function
 sub RegEraseUser(userNumber as integer)
     Debug("Erasing user " + numtostr(userNumber))
     for each section in m.userRegPrefs
-        old = CreateObject("roRegistrySection", RegGetSectionByUserNumber(section, userNumber))
-        print section; " "; m.userRegPrefs[section]
+        print "section="; section
+        old = CreateObject("roRegistrySection", RegGetSectionByUserNumber(userNumber, section))
         keyList = old.GetKeyList()
         for each key in keyList
             old.Delete(key)            
@@ -94,7 +95,7 @@ sub RegEraseUser(userNumber as integer)
     next
     reg = CreateObject("roRegistry")
     reg.Flush() 'write out changes
-    m.RegistryCache.Clear()
+    m.RegistryCache.Clear() 'just clear everything
 end sub
 
 '******************************************************
@@ -105,7 +106,7 @@ Function RegReadByUser(userNumber as integer, key, section=invalid, default=inva
     ' may be read repeatedly in a loop. We don't have that many keys anyway, keep
     ' a cache of our keys in memory.
     section = RegGetSectionByUserNumber(userNumber, section)
-    print "RegReadByUser:"+tostr(userNumber)+"-"+tostr(section)+":"+tostr(key)+":"+tostr(default)
+    'print "RegReadByUser:"+tostr(userNumber)+"-"+tostr(section)+":"+tostr(key)+":"+tostr(default)
     cacheKey = key + section
     if m.RegistryCache.DoesExist(cacheKey) then return m.RegistryCache[cacheKey]
 
@@ -124,7 +125,7 @@ Function RegRead(key, section=invalid, default=invalid)
     ' may be read repeatedly in a loop. We don't have that many keys anyway, keep
     ' a cache of our keys in memory.
     section = RegGetSectionName(section)
-    print "RegRead:"+tostr(section)+":"+tostr(key)+":"+tostr(default)
+    'print "RegRead:"+tostr(section)+":"+tostr(key)+":"+tostr(default)
     cacheKey = key + section
     if m.RegistryCache.DoesExist(cacheKey) then return m.RegistryCache[cacheKey]
 
@@ -140,7 +141,7 @@ End Function
 
 Sub RegWriteByUser(userNumber as integer, key, val, section=invalid)
     section = RegGetSectionByUserNumber(userNumber, section)
-    print "RegWriteByUser:"+tostr(userNumber)+"-"+tostr(section)+":"+tostr(key)+":"+tostr(val)
+    'print "RegWriteByUser:"+tostr(userNumber)+"-"+tostr(section)+":"+tostr(key)+":"+tostr(val)
     sec = CreateObject("roRegistrySection", section)
     sec.Write(key, val)
     m.RegistryCache[key + section] = val
@@ -149,7 +150,7 @@ End Sub
 
 Sub RegWrite(key, val, section=invalid)
     section = RegGetSectionName(section)
-    print "RegWrite:"+tostr(section)+":"+tostr(key)+":"+tostr(val)
+    'print "RegWrite:"+tostr(section)+":"+tostr(key)+":"+tostr(val)
     sec = CreateObject("roRegistrySection", section)
     sec.Write(key, val)
     m.RegistryCache[key + section] = val
@@ -542,8 +543,8 @@ End Function
 '******************************************************
 sub TraceFunction(fcnName as string, arg0=invalid as dynamic, arg1=invalid as dynamic,arg2=invalid as dynamic,arg3=invalid as dynamic,arg4=invalid as dynamic,arg5=invalid as dynamic,arg6=invalid as dynamic)
     args = [ arg0,arg1,arg2,arg3,arg4,arg5,arg6 ] 
+    'print type(arg0); type(arg1); type(arg2); type(arg3)
     'find last arg
-    print type(arg0); type(arg1); type(arg2); type(arg3)
     for i = args.Count() - 1 to 0 step -1
         if args[i] <> invalid then exit for
         args.Delete(i)

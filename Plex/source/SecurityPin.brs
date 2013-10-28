@@ -42,17 +42,17 @@ Function createSecurityPINEntryScreen(viewController) as object
     obj.Screen = CreateObject("roImageCanvas")
     obj.Show = securityPINEntryShow
     obj.HandleMessage = securityPINEntryHandleMessage
+    obj.txtTop = "Enter Security PIN for Plex." 'default text
+    obj.txtBottom = "Enter PIN Code using direction arrows on your remote control.  When you have entered the correct code you will automatically continue.  Press OK when done."   'default text
     return obj
 End Function
 
 'Shows PIN entry screen.  OK Button is nice to have on for setting a new PIN.  if pinToVerify is set, then window will be closed once the PIN is entered
 'if blocking=true then uses own messagePort and blocks global message loop
-Sub securityPINEntryShow(newDialogText=invalid as object, newDialogText2=invalid as object, showOKButton=true as boolean, pinToVerify="" as string, blocking=false as boolean)
+Sub securityPINEntryShow(showOKButton=true as boolean, pinToVerify="" as string, blocking=false as boolean)
     canvasRect = m.screen.GetCanvasRect()   'get screen size
-    dialogText = "Enter Security PIN for Plex." 'default text
-    dialogText2 = "Enter PIN Code using direction arrows on your remote control."   'default text
-    if newDialogText <> invalid then dialogText = newDialogText
-    if newDialogText2 <> invalid then dialogText2 = newDialogText2
+    'HDRectToSDRect(canvasRect)  'JUST FOR TESTING SD!
+    m.backgrounds = getBackgrounds()
     pinRect = {}
     dlgRect = {} 
     dlgRect2 = {}
@@ -84,19 +84,21 @@ Sub securityPINEntryShow(newDialogText=invalid as object, newDialogText2=invalid
             TargetRect:pinRect
         },
         { 
-            Text:dialogText
+            Text:m.txtTop
             TextAttrs:{Color:"#999999", Font:"Large",HAlign:"Center", VAlign:"Bottom", Direction:"LeftToRight"}
             TargetRect:dlgRect
         },
         { 
-            Text:dialogText2
+            Text:m.txtBottom
             TextAttrs:{Color:"#999999", Font:"Large",HAlign:"Center", VAlign:"Top", Direction:"LeftToRight"}
             TargetRect:dlgRect2
         },
     ] 
-    m.screen.SetLayer(0, {Color:"#008800", CompositionMode:"Source"})   'Set opaque background as transparent doesn't draw correctly when content is updated  '#363636
+    m.screen.SetLayer(0, m.backgrounds["background"])
     m.screen.SetRequireAllImagesToDraw(true)
-    m.screen.SetLayer(1, m.canvasItems)
+    m.screen.SetLayer(1, m.backgrounds["backgroundItems"])
+    m.screen.SetLayer(2, m.backgrounds["logoItems"])
+    m.screen.SetLayer(3, m.canvasItems)
     if showOKButton = true then
         m.screen.AddButton(0, "OK")
     end if
@@ -126,29 +128,29 @@ Function securityPINEntryHandleMessage(msg) As Boolean
             end if
             m.ViewController.PopScreen(m)
         else if (msg.isRemoteKeyPressed()) then
-            codes = bslUniversalControlEventCodes() 'print codes
+            'codes = bslUniversalControlEventCodes() 'print codes
             i = msg.GetIndex()
-            If i=codes.button_up_pressed Then
+            If i=2 Then         'codes.button_up_pressed 
                 m.pinCode = m.pinCode + "U"
-            Else If i=codes.button_down_pressed Then
+            Else If i=3 Then    'codes.button_down_pressed 
                 m.pinCode = m.pinCode + "D"
-            Else If i=codes.button_right_pressed Then
-                m.pinCode = m.pinCode + "R"
-            Else If i=codes.button_left_pressed Then
+            Else If i=4 Then    'codes.button_left_pressed 
                 m.pinCode = m.pinCode + "L"
+            Else If i=5 Then    'codes.button_right_pressed
+                m.pinCode = m.pinCode + "R"
             end if
             if (m.pinToVerify <> invalid) and (m.pinToVerify = m.pinCode) then  'Immediately exit once correct PIN is entered
                 m.Screen.Close()
-            else If i=codes.button_back_pressed Then   ' Back - Close the screen and exit without the pinCode
+            else If i=0 Then   ' Back - Close the screen and exit without the pinCode    'codes.button_back_pressed
                 m.pinCode = ""
                 m.Screen.Close()
-            Else If i=codes.button_select_pressed Then  'this only shows up when there is no OK button
+            Else If i=6 Then  'this only shows up when there is no OK button             'codes.button_select_pressed 
                 m.Screen.Close()
             else 
                 'Debug("Key Pressed:" + tostr(msg.GetIndex()) + ", pinCode:" + tostr(m.pinCode))
                 m.pinCode = left(m.pinCode, m.maxPinLength)   'limit to maxPinLength characters
                 m.canvasItems[0].Text = left(m.txtMasked, m.pinCode.Len())  'm.canvasItems[0].Text = m.pinCode to display code
-                m.Screen.SetLayer(1, m.canvasItems)
+                m.Screen.SetLayer(3, m.canvasItems)
             end if
        else if (msg.isButtonPressed()) then 'OK Button was pressed
            m.Screen.Close()
@@ -183,7 +185,7 @@ sub VerifySecurityPinActivate(priorScreen)
     'Debug("VerifySecurityPinActivate")
     if priorScreen.pinCode = m.pinToValidate then
         m.pinOK = true
-        if m.ViewController.EnterSecurityCode <> invalid then m.ViewController.EnterSecurityCode = false
+        if m.ViewController.ShowSecurityScreen <> invalid then m.ViewController.ShowSecurityScreen = false
         m.screen.Close()    'Closing from within Activate never calls the message loop to pop the screen
         m.ViewController.PopScreen(m)   'close this screen
     else 'if type(screen.Screen) = "roImageCanvas"  'ensure that there wasn't some type of pop-up 'update:removed as I can't see how this can occur
@@ -198,7 +200,8 @@ sub VerifySecurityPinActivate(priorScreen)
             m.numRetries = m.numRetries - 1
             screen = createSecurityPINEntryScreen(m.ViewController)
             m.ViewController.InitializeOtherScreen(screen, invalid)
-            screen.Show("Incorrect Code. Re-enter Security PIN.", invalid, false, m.pinToValidate)
+            screen.txtTop = "Incorrect Security PIN. Re-enter Security PIN." 
+            screen.Show(false)
         end if
     end if
 End sub
@@ -229,10 +232,13 @@ sub SetSecurityPinActivate(priorScreen)
         m.newPinCode = ""  'report back that no pin was created
         m.ViewController.PopScreen(m)   'close this screen
     else if m.newPinCode = "" then  'just entered the first pinCode.  re-enter to validate
+        'Create second PIN verification screen
         m.newPinCode = priorScreen.pinCode
-        screen = createSecurityPINEntryScreen(m.ViewController)
-        m.ViewController.InitializeOtherScreen(screen, invalid)
-        screen.Show("Re-enter the PIN code to verify.", invalid, false, m.newPincode)
+        m.pinScreen = createSecurityPINEntryScreen(m.ViewController)
+        m.ViewController.InitializeOtherScreen(m.pinScreen, invalid)
+        m.pinScreen.txtTop = "Re-enter the PIN code to verify."                 'change the new text
+        m.pinScreen.txtBottom = "Enter PIN Code using direction arrows on your remote control.  When you have entered the correct code you will automatically continue.  Press OK to try again."
+        m.pinScreen.Show(false, m.newPinCode)
     else 'verify 2nd pinCode
         if m.newPinCode <> priorScreen.pinCode then  'pinCodes don't match
             m.newPinCode = ""  'report back that no pin was created
@@ -244,7 +250,7 @@ End sub
 
 '*************************************************************************************
 '
-' Shared routines for creating and managing PIN entry screens
+' Shared routines for creating and managing PIN entry screens 
 '
 '*************************************************************************************
 'Common function to create screen.  Used both when verifying and setting PIN
@@ -276,16 +282,22 @@ Function securityPinHandleMessage(msg) As Boolean
     return handled
 End Function
 
-sub securityPinShow(newDialogText=invalid as object, newDialogText2=invalid as object)
+sub securityPinShow(showOKButton=false as boolean)
     'Debug("securityPinShow")
-    'create the actual screen that blocks the background
-    m.screen.SetLayer(0, {Color:"#000088", CompositionMode:"Source"})   'Set opaque background to keep from flashing    '#363636
+    'show the actual facade screen that blocks the background
+    m.backgrounds = getBackgrounds()
+    m.screen.SetLayer(0, m.backgrounds["background"])
     m.screen.SetRequireAllImagesToDraw(true)
+    m.screen.SetLayer(1, m.backgrounds["backgroundItems"])
+    m.screen.SetLayer(2, m.backgrounds["logoItems"])
     m.screen.Show()
+    
     'Create first PIN verification screen
     m.pinScreen = createSecurityPINEntryScreen(m.ViewController)
     m.ViewController.InitializeOtherScreen(m.pinScreen, invalid)
-    m.pinScreen.Show(newDialogText, newDialogText2, false, m.pinToValidate)
+    if m.txtTop <> invalid then m.pinScreen.txtTop = m.txtTop    'copy text to actual pinScreen
+    if m.txtBottom <> invalid then m.pinScreen.txtBottom = m.txtBottom   'copy text to actual pinScreen
+    m.pinScreen.Show(showOKButton, m.pinToValidate)
 End sub
 
 
