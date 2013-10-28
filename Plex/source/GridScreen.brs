@@ -135,6 +135,7 @@ Function showGridScreen() As Integer
         ' even though we load 20 rows, if one open an item from a row we will load the rest
         ' it will allow left/right buttons to work for all and gives the ability to play a slideshow from full grid
         maxRow = 20 ' in the FULL grid, loading 20 rows seems like an ok number. Might be able to raise this.
+        if maxRow > names.Count() then maxRow=names.Count()
         Debug("---- Loading FULL grid - load row 0 to row " + tostr(maxRow))
     else if maxRow > 1 then 
         maxRow = 1
@@ -203,13 +204,14 @@ Function gridHandleMessage(msg) As Boolean
             end if
  
             if m.screenid <> invalid and m.screenid < 0 and m.contentArray <> invalid and type(m.contentArray[m.selectedRow]) = "roArray" then 
+                item = m.contentArray[m.selectedRow][m.focusedIndex]
                 if type(item) = "roAssociativeArray" and item.contenttype <> invalid and item.contenttype = "section" then 
                     RegWrite("lastMachineID", item.server.machineID)
                     RegWrite("lastSectionKey", item.key)
-                    'print "--------------- remember last focus ------------------------"
-                    'print "last section used " + item.key
-                    'print "server " + item.server.machineID
-                    'print "---------------------------------------"
+                    Debug("--------------- remember last focus ------------------------")
+                    Debug("last section used " + item.key)
+                    Debug("server " + item.server.machineID)
+                    Debug("---------------------------------------")
                 end if 
             end if
 
@@ -425,6 +427,14 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
     else if startItem = 0 OR (m.selectedRow = row AND m.focusedIndex + 10 > lastUpdatedSize) then
         if m.Screen <> invalid then m.Screen.SetContentListSubset(row, data, lastUpdatedSize, data.Count() - lastUpdatedSize)
         m.lastUpdatedSize[row] = data.Count()
+    end if
+
+    ' ljunkie - the fact we lazy load rows, we cannot just set the focus item after we show a screen
+    ' this will allow us to set the initial focus item on the first row of a full grid
+    ' this might need to change if we every decide to focus on a sub row
+    if row = 0 and m.firstfocusitem = invalid and m.isfullgrid <> invalid and m.isfullgrid then
+        m.firstfocusitem = true
+        m.screen.SetFocusedListItem(0,0)
     end if
 
     ' Continue loading this row
