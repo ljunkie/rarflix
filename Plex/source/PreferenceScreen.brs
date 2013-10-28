@@ -631,7 +631,7 @@ Function prefsUserProfilesHandleMessage(msg) As Boolean
                 if RegReadByUser(msg.GetIndex(), "friendlyName", "preferences", invalid) <> invalid then
                     name = RegReadByUser(msg.GetIndex(), "friendlyName", "preferences", invalid)
                 end if 
-                m.ViewController.InitializeOtherScreen(m.editScreen, name)
+                m.ViewController.InitializeOtherScreen(m.editScreen, [name])
                 m.editScreen.Show()            
             end if
         end if
