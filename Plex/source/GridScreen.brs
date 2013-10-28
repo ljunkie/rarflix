@@ -135,6 +135,7 @@ Function showGridScreen() As Integer
         ' even though we load 20 rows, if one open an item from a row we will load the rest
         ' it will allow left/right buttons to work for all and gives the ability to play a slideshow from full grid
         maxRow = 20 ' in the FULL grid, loading 20 rows seems like an ok number. Might be able to raise this.
+        if maxRow > names.Count() then maxRow=names.Count()
         Debug("---- Loading FULL grid - load row 0 to row " + tostr(maxRow))
     else if maxRow > 1 then 
         maxRow = 1
