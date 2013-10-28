@@ -108,7 +108,7 @@ Sub analyticsSendTrackingRequest(vars)
         data = data + "&" + name + "=" + request.Escape(vars[name])
     next
 
-    'Debug("Final analytics data: " + data)
+    Debug("Final analytics data: " + data)
 
     GetViewController().StartRequest(request, m, context, data)
 End Sub

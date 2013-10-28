@@ -708,7 +708,10 @@ Sub vcUpdateScreenProperties(screen)
             screen.Screen.SetTitle(bread2)
         end if
     else if screenType = "roImageCanvas" then
-        'screen.Screen.SetBreadcrumbEnabled(false)   'roImageCanvas doesn't currently support breadcrumbs
+        'roImageCanvas does not currently support breadcrumbs but allow custom function to draw them
+        if enableBreadcrumbs then
+            if screen.SetBreadcrumbText <> invalid then screen.SetBreadcrumbText(bread2) 
+        end if
     else
         Debug("Not sure what to do with breadcrumbs on screen type: " + tostr(screenType))
     end if

@@ -20,11 +20,16 @@
 'previous example for user0 RegGetSectionName("preferences")
 'will return just "preferences"
 '
+'Note that only "myplex", "preferences", "servers" and "userinfo"
+'are converted for multiuser support.  If you use additional
+'preferences then you must add them to the list in RegSetUserPrefsToCurrentUser()
+'
+'
 '******************************************************
 
-'Create AA keyed off of section 
+'Create AA keyed off of section for quick lookup 
 sub RegSetUserPrefsToCurrentUser()
-    m.userRegPrefs = { myplex:"",preferences:"",servers:"",userinfo:""} 'list of prefs that are customized for each user
+    m.userRegPrefs = { myplex:"",preferences:"",servers:"",userinfo:""} 'list of prefs that are customized for each user.  
     for each key in m.userRegPrefs
         if m.userNum <= 0 then  'for user of 0 or -1, just use the standard name
             m.userRegPrefs[key] = tostr(key)
@@ -34,7 +39,7 @@ sub RegSetUserPrefsToCurrentUser()
     next  
 end sub
 
-'much faster to use the AA then to generate the name each time we need to convert the section
+'Return the section name, converting the required ones to the right format
 Function RegGetSectionName(section=invalid) as string
     if section = invalid then 
         return "Default"
@@ -44,7 +49,7 @@ Function RegGetSectionName(section=invalid) as string
     return section
 end function
 
-'use this to get section names by usernumber different from the current user
+'use this to get section names for a usernumber different from the current user
 function RegGetSectionByUserNumber(userNumber as integer, section = invalid) as string
     'this is slow but rarely gets called
     if section = invalid then return "Default"
@@ -60,27 +65,6 @@ function RegGetSectionByUserNumber(userNumber as integer, section = invalid) as 
     return section
 end function
 
-'Copies the the old pref sections to the new sections and remove the old.  Will copy to whatever the current user is
-'No longer necessary as User0 no longer has _uN appended to section name
-'sub RegConvertRegistryToMultiUser()
-'    Debug("Converting Registry to Multiuser")
-'    for each section in m.userRegPrefs
-'        old = CreateObject("roRegistrySection", section)
-'        new = CreateObject("roRegistrySection", m.userRegPrefs[section])
-'        'print section; " "; m.userRegPrefs[section]
-'        keyList = old.GetKeyList()
-'        for each key in keyList
-'            value = old.Read(key)
-'            new.Write(key,value)
-'            old.Delete(key)            
-'            'print key; ":"; value
-'        next
-'    next
-'    reg = CreateObject("roRegistry")
-'    reg.Flush() 'write out changes
-'    m.RegistryCache.Clear()
-'end sub
-
 'Erases all the prefs for a usernumber
 sub RegEraseUser(userNumber as integer)
     Debug("Erasing user " + numtostr(userNumber))
@@ -95,7 +79,7 @@ sub RegEraseUser(userNumber as integer)
     next
     reg = CreateObject("roRegistry")
     reg.Flush() 'write out changes
-    m.RegistryCache.Clear() 'just clear everything
+    m.RegistryCache.Clear() 'just clear the entire cache
 end sub
 
 '******************************************************
@@ -165,36 +149,37 @@ Sub RegDelete(key, section=invalid)
     sec.Flush()
 End Sub
 
-sub PrintRegistry()
-    Debug("------- REGISTRY --------")
-    reg = CreateObject("roRegistry")
-    regList = reg.GetSectionList()
-    for each e in regList
-        Debug("Section->" + tostr(e))
-        sec = CreateObject("roRegistrySection", e)
-        keyList = sec.GetKeyList()
-        for each key in keyList
-            value = sec.Read(key)
-            Debug(tostr(key) + " : " + tostr(value))
-        next
-    next
-    Debug("--- END OF REGISTRY -----")
-end sub
+'Outputs the entire registry for Plex
+'sub PrintRegistry()
+'    Debug("------- REGISTRY --------")
+'    reg = CreateObject("roRegistry")
+'    regList = reg.GetSectionList()
+'    for each e in regList
+'        Debug("Section->" + tostr(e))
+'        sec = CreateObject("roRegistrySection", e)
+'        keyList = sec.GetKeyList()
+'        for each key in keyList
+'            value = sec.Read(key)
+'            Debug(tostr(key) + " : " + tostr(value))
+'        next
+'    next
+'    Debug("--- END OF REGISTRY -----")
+'end sub
 
 'Erases everything in the Registry for Plex
-sub EraseRegistry() 
-    Debug("Erasing Registry")
-    reg = CreateObject("roRegistry")
-    regList = reg.GetSectionList()
-    for each e in regList
-        sec = CreateObject("roRegistrySection", e)
-        keyList = sec.GetKeyList()
-        for each key in keyList
-            sec.Delete(key)
-        next
-    next
-    m.RegistryCache.Clear()
-end sub
+'sub EraseRegistry() 
+'    Debug("Erasing Registry")
+'    reg = CreateObject("roRegistry")
+'    regList = reg.GetSectionList()
+'    for each e in regList
+'        sec = CreateObject("roRegistrySection", e)
+'        keyList = sec.GetKeyList()
+'        for each key in keyList
+'            sec.Delete(key)
+'        next
+'    next
+'    m.RegistryCache.Clear()
+'end sub
 
 '******************************************************
 'Convert anything to a string

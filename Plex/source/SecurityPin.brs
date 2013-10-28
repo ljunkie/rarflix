@@ -42,63 +42,72 @@ Function createSecurityPINEntryScreen(viewController) as object
     obj.Screen = CreateObject("roImageCanvas")
     obj.Show = securityPINEntryShow
     obj.HandleMessage = securityPINEntryHandleMessage
+    obj.SetBreadcrumbText = securityPINEntrySetBreadcrumbText
     obj.txtTop = "Enter Security PIN for Plex." 'default text
     obj.txtBottom = "Enter PIN Code using direction arrows on your remote control.  When you have entered the correct code you will automatically continue.  Press OK when done."   'default text
+    obj.theme = getImageCanvasTheme()
     return obj
 End Function
+
+Sub securityPINEntrySetBreadcrumbText(bread2)
+    if m.theme = invalid then return    'just in case
+    if bread2 = invalid then bread2 = ""
+    m.theme["breadCrumbs"][0]["text"] = bread2
+end sub
 
 'Shows PIN entry screen.  OK Button is nice to have on for setting a new PIN.  if pinToVerify is set, then window will be closed once the PIN is entered
 'if blocking=true then uses own messagePort and blocks global message loop
 Sub securityPINEntryShow(showOKButton=true as boolean, pinToVerify="" as string, blocking=false as boolean)
     canvasRect = m.screen.GetCanvasRect()   'get screen size
     'HDRectToSDRect(canvasRect)  'JUST FOR TESTING SD!
-    m.backgrounds = getBackgrounds()
-    pinRect = {}
-    dlgRect = {} 
-    dlgRect2 = {}
+    pinRect = {x:0,y:360,w:1280,h:0}        'set .h and .y programmatically
+    topRect = {x:200,y:100,w:880,h:0}       'set .h programmatically
+    bottomRect = {x:200,y:360,w:880,h:360}  'set .h and .y programmatically
+    if GetGlobal("IsHD") <> true then
+        'scale down for SD.  Not perfect but good enough on an SD screen. 
+        HDRectToSDRect(picSize) 
+        HDRectToSDRect(topRect) 
+        HDRectToSDRect(bottomRect) 
+    end if
     fontRegistry = CreateObject("roFontRegistry")
     fontCurrent = fontRegistry.GetDefaultFont()
-
-    pinRectHeight = int(fontCurrent.GetOneLineHeight() * 3)  'arbitrary number to create space for the large font with border area
     'use the middle of the screen for the PIN code 
-    pinRect.w = canvasRect.w    
-    pinRect.h = fontCurrent.GetOneLineHeight() 'actual size to use
-    pinRect.x = 0 'int((canvasRect.w - pinRect.w) / 2)
+    pinRect.h = int(fontCurrent.GetOneLineHeight() * 3)  'arbitrary multiplier to create space for the large font with border area.  
     pinRect.y = int((canvasRect.h - pinRect.h) / 2)
-    'use 1/4 vertical screen size above and below the pinRect
-    dlgRect.w = int((canvasRect.w * 2) / 3) 'horizontally use 2/3 of screen 
-    dlgRect.h = int((canvasRect.h * 1) / 4) 'use 1/4 of the vertical screen size  
-    dlgRect.x = int((canvasRect.w - dlgRect.w) / 2)
-    dlgRect.y = int(((canvasRect.h - pinRectHeight) / 2) - dlgRect.h)
-    dlgRect2.w = dlgRect.w
-    dlgRect2.h = dlgRect.h
-    dlgRect2.x = dlgRect.x
-    dlgRect2.y = int(((canvasRect.h + pinRectHeight) / 2))
-    if (pinToVerify <> invalid) and (pinToVerify.Len() > 0) then
+    'resize rects
+    topRect.h = pinRect.y-topRect.y
+    bottomRect.y = pinRect.y + pinRect.h
+    bottomRect.h = canvasRect.h - bottomRect.y
+    
+    PrintAA(pinRect)
+    PrintAA(topRect)
+    PrintAA(bottomRect)
+    if (pinToVerify <> invalid) and (pinToVerify <> "") then
         m.pinToVerify = pinToVerify
     end if
     m.canvasItems = [
         { 
             Text:"[press arrows]"
-            TextAttrs:{Color:"#AAAAAA", Font:"Huge",HAlign:"Center", VAlign:"Top",Direction:"LeftToRight"}
+            TextAttrs:{Color:m.theme.colors.detailText, Font:"Huge",HAlign:"Center", VAlign:"Center",Direction:"LeftToRight"}
             TargetRect:pinRect
         },
         { 
             Text:m.txtTop
-            TextAttrs:{Color:"#999999", Font:"Large",HAlign:"Center", VAlign:"Bottom", Direction:"LeftToRight"}
-            TargetRect:dlgRect
+            TextAttrs:{Color:m.theme.colors.normalText, Font:"Large",HAlign:"Center", VAlign:"Bottom", Direction:"LeftToRight"}
+            TargetRect:topRect
         },
         { 
             Text:m.txtBottom
-            TextAttrs:{Color:"#999999", Font:"Large",HAlign:"Center", VAlign:"Top", Direction:"LeftToRight"}
-            TargetRect:dlgRect2
+            TextAttrs:{Color:m.theme.colors.normalText, Font:"Large",HAlign:"Center", VAlign:"Top", Direction:"LeftToRight"}
+            TargetRect:bottomRect
         },
     ] 
-    m.screen.SetLayer(0, m.backgrounds["background"])
+    m.screen.SetLayer(0, m.theme["background"])
     m.screen.SetRequireAllImagesToDraw(true)
-    m.screen.SetLayer(1, m.backgrounds["backgroundItems"])
-    m.screen.SetLayer(2, m.backgrounds["logoItems"])
-    m.screen.SetLayer(3, m.canvasItems)
+    m.screen.SetLayer(1, m.theme["backgroundItems"])
+    m.screen.SetLayer(2, m.theme["logoItems"])
+    m.screen.SetLayer(3, m.theme["breadCrumbs"])
+    m.screen.SetLayer(4, m.canvasItems)
     if showOKButton = true then
         m.screen.AddButton(0, "OK")
     end if
@@ -150,7 +159,7 @@ Function securityPINEntryHandleMessage(msg) As Boolean
                 'Debug("Key Pressed:" + tostr(msg.GetIndex()) + ", pinCode:" + tostr(m.pinCode))
                 m.pinCode = left(m.pinCode, m.maxPinLength)   'limit to maxPinLength characters
                 m.canvasItems[0].Text = left(m.txtMasked, m.pinCode.Len())  'm.canvasItems[0].Text = m.pinCode to display code
-                m.Screen.SetLayer(3, m.canvasItems)
+                m.Screen.SetLayer(4, m.canvasItems)
             end if
        else if (msg.isButtonPressed()) then 'OK Button was pressed
            m.Screen.Close()
@@ -167,16 +176,12 @@ End Function
 'Enter PIN code.  if exitAppOnFailure then this returns what happened by setting screen.pinOK=true (invalid if not).  Use the "Activated" function to catch this returning
 'Returns the screen object to the facade screen
 function VerifySecurityPin(viewController, pinToValidate as String, exitAppOnFailure=false as Boolean, numRetries=5 as Integer) as object
-    'Debug("VerifySecurityPin")
     'create master screen for verifying PIN
     screen = createSecurityPinScreen(viewController, pinToValidate)
-
     'members for verifying code
     screen.numRetries = numRetries
     screen.exitAppOnFailure = exitAppOnFailure
     screen.Activate = VerifySecurityPinActivate
-
-    ViewController.InitializeOtherScreen(screen, invalid)
     return screen
 End function
 
@@ -198,10 +203,10 @@ sub VerifySecurityPinActivate(priorScreen)
             end if
         else
             m.numRetries = m.numRetries - 1
-            screen = createSecurityPINEntryScreen(m.ViewController)
-            m.ViewController.InitializeOtherScreen(screen, invalid)
-            screen.txtTop = "Incorrect Security PIN. Re-enter Security PIN." 
-            screen.Show(false)
+            m.pinScreen = createSecurityPINEntryScreen(m.ViewController)
+            m.ViewController.InitializeOtherScreen(m.pinScreen, [m.breadCrumb])
+            m.pinScreen.txtTop = "Incorrect Security PIN. Re-enter Security PIN." 
+            m.pinScreen.Show(false)
         end if
     end if
 End sub
@@ -216,12 +221,9 @@ function SetSecurityPin(viewController) as object
     'Debug("SetSecurityPin")
     'create master screen for verifying PIN
     screen = createSecurityPinScreen(viewController, "")
-
     'members for verifying code
     screen.newPinCode = ""
     screen.Activate = SetSecurityPinActivate
-
-    ViewController.InitializeOtherScreen(screen, invalid)
     return screen
 End function
 
@@ -235,7 +237,7 @@ sub SetSecurityPinActivate(priorScreen)
         'Create second PIN verification screen
         m.newPinCode = priorScreen.pinCode
         m.pinScreen = createSecurityPINEntryScreen(m.ViewController)
-        m.ViewController.InitializeOtherScreen(m.pinScreen, invalid)
+        m.ViewController.InitializeOtherScreen(m.pinScreen, [m.breadCrumb])
         m.pinScreen.txtTop = "Re-enter the PIN code to verify."                 'change the new text
         m.pinScreen.txtBottom = "Enter PIN Code using direction arrows on your remote control.  When you have entered the correct code you will automatically continue.  Press OK to try again."
         m.pinScreen.Show(false, m.newPinCode)
@@ -255,7 +257,6 @@ End sub
 '*************************************************************************************
 'Common function to create screen.  Used both when verifying and setting PIN
 function createSecurityPinScreen(viewController, pinToValidate = "" as string) as object
-    'Debug("createSecurityPinScreen")
     'create master screen for verifying PIN
     screen = CreateObject("roAssociativeArray")
     initBaseScreen(screen, viewController)
@@ -265,6 +266,8 @@ function createSecurityPinScreen(viewController, pinToValidate = "" as string) a
     screen.Show = securityPinShow
     screen.pinToValidate = pinToValidate
     screen.HandleMessage = securityPinHandleMessage
+    screen.SetBreadcrumbText = securityPinSetBreadcrumbText
+    screen.theme = getImageCanvasTheme()
     return screen
 End function
 
@@ -285,21 +288,32 @@ End Function
 sub securityPinShow(showOKButton=false as boolean)
     'Debug("securityPinShow")
     'show the actual facade screen that blocks the background
-    m.backgrounds = getBackgrounds()
-    m.screen.SetLayer(0, m.backgrounds["background"])
+    m.screen.SetLayer(0, m.theme["background"])
     m.screen.SetRequireAllImagesToDraw(true)
-    m.screen.SetLayer(1, m.backgrounds["backgroundItems"])
-    m.screen.SetLayer(2, m.backgrounds["logoItems"])
+    m.screen.SetLayer(1, m.theme["backgroundItems"])
+    m.screen.SetLayer(2, m.theme["logoItems"])
+    m.screen.SetLayer(3, m.theme["breadCrumbs"])
     m.screen.Show()
     
     'Create first PIN verification screen
     m.pinScreen = createSecurityPINEntryScreen(m.ViewController)
-    m.ViewController.InitializeOtherScreen(m.pinScreen, invalid)
+    m.ViewController.InitializeOtherScreen(m.pinScreen, [m.breadCrumb])
     if m.txtTop <> invalid then m.pinScreen.txtTop = m.txtTop    'copy text to actual pinScreen
     if m.txtBottom <> invalid then m.pinScreen.txtBottom = m.txtBottom   'copy text to actual pinScreen
     m.pinScreen.Show(showOKButton, m.pinToValidate)
 End sub
 
+Sub securityPinSetBreadcrumbText(bread2)
+    'TraceFunction("securityPinSetBreadcrumbText", bread2)
+    if m.theme = invalid then return    'just in case
+    if bread2 = invalid then bread2 = ""
+    m.breadCrumb = bread2
+    m.theme["breadCrumbs"][0]["text"] = m.breadCrumb
+    'send breadcrumb to pinScreen if it exists
+    if (m.pinScreen <> invalid) and (m.pinScreen.SetBreadcrumbText <> invalid) then
+        m.pinScreen.SetBreadcrumbText(m.breadCrumb)
+    end if
+end sub
 
 
 

@@ -541,11 +541,13 @@ Function prefsSecurityPinHandleMessage(msg) As Boolean
             else if command = "set" then 'create screen to enter PIN
                 pinScreen = SetSecurityPin(m.ViewController)
                 m.Activate = prefsSecurityPinHandleSetPin
+                m.ViewController.InitializeOtherScreen(pinScreen, ["Set New PIN"])
                 pinScreen.txtTop = "The PIN code is any sequence of the direction arrows on your remote control.  Press up to 20 arrows to set the PIN."
                 pinScreen.txtBottom = "Press Back to cancel setting the PIN.  When complete press the OK button on your remote control."  
-                pinScreen.Show()
+                pinScreen.Show(true)
             else if command = "unlock" then 'create unlock screen
                 pinScreen = VerifySecurityPin(m.ViewController, RegRead("securityPincode","preferences",invalid), false, 0)
+                m.ViewController.InitializeOtherScreen(pinScreen, ["Unlock PIN Changes"])
                 m.Activate = prefsSecurityPinHandleUnlock
                 pinScreen.Show()
             else if command = "close" then
@@ -570,7 +572,7 @@ End sub
 sub prefsSecurityPinHandleSetPin(priorScreen)
     m.Activate = invalid    'dont call this routine again
     if (priorScreen.newPinCode = invalid) or (priorScreen.newPinCode = "") then    'either no code was entered, was cancelled or wrong code
-        'dialog = createBaseDialog()    'BUG: couldn't get this to work.  screen does not display.  For now, just return to menu when it's entered wrong
+        'dialog = createBaseDialog()    'BUG: couldn't get this to work.  screen does not display.  Just return to menu when it's entered wrong
         'dialog.Title = "PIN Mismatch"
         'dialog.Text = "Security PIN's didn't match.  PIN not changed."
         'dialog.Show()
@@ -613,7 +615,15 @@ Function prefsUserProfilesHandleMessage(msg) As Boolean
                 m.Screen.Close()
             else    'must be a user edit
                 m.editScreen = createUserEditPrefsScreen(m.ViewController,msg.GetIndex()) 'msg.GetIndex() be 0-3 because that's the order of the text entries
-                m.ViewController.InitializeOtherScreen(m.editScreen, ["Edit User Profile"])
+                if msg.GetIndex() = 0 then
+                    name = "Default User"
+                else 
+                    name = "User Profile " + tostr(msg.GetIndex())
+                end if
+                if RegReadByUser(msg.GetIndex(), "friendlyName", "preferences", invalid) <> invalid then
+                    name = RegReadByUser(msg.GetIndex(), "friendlyName", "preferences", invalid)
+                end if 
+                m.ViewController.InitializeOtherScreen(m.editScreen, name)
                 m.editScreen.Show()            
             end if
         end if
