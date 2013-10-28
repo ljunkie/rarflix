@@ -103,7 +103,7 @@ Sub userSelectionShow()
     'if m.users.Count() = 1 then
     '    m.userSelected = 0
     '    pinScreen = VerifySecurityPin(m.ViewController, RegReadByUser(0,"securityPincode","preferences",invalid), false, 0)
-    '    m.ViewController.InitializeOtherScreen(pinScreen, ["Access to RarFlix"])
+    '    m.ViewController.InitializeOtherScreen(pinScreen, ["Access to RARFlix"])
     '    m.Activate = userSelectionActivate
     '    pinScreen.Show()
     'end if
@@ -141,7 +141,7 @@ Function userSelectionHandleMessage(msg) As Boolean
                     m.userSelected = -1 'disable selection
                 else if RegReadByUser(m.userSelected,"securityPincode","preferences",invalid) <> invalid then    'pop up PIN screen when user has a password
                     pinScreen = VerifySecurityPin(m.ViewController, RegReadByUser(m.userSelected,"securityPincode","preferences",invalid), false, 0)
-                    m.ViewController.InitializeOtherScreen(pinScreen, ["Access to RarFlix"])
+                    m.ViewController.InitializeOtherScreen(pinScreen, ["Access to RARFlix"])
                     m.Activate = userSelectionActivate
                     pinScreen.Show()
                 else
@@ -172,5 +172,6 @@ sub userSelectUser(userNumber as integer)
     Debug("UserNumber changed to " + tostr(userNumber))
     GetGlobalAA().userNum = userNumber  
     RegSetUserPrefsToCurrentUser()
+    initTheme() 're-read rarflix theme
     GetGlobalAA().ViewController.ShowSecurityScreen = false  
 end sub
