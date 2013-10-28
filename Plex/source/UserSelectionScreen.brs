@@ -5,14 +5,11 @@
 '
 ' m.userNum = -1 for no user profiles, 0-3 for the 4 valid users.  note that 4 is an arbitrary number and
 'can be increased without limit
-'
-'todo
-'setup conversion (with flag) to convert from single user to multi-user
-'
-'LEFTOFF: Registry done.  Start designing user screen 
-'
-'remove: EnterSecurityCode I think
-
+'TODO: elminate m.userNum = -1 as interesting???  Why both?
+'TODO: Check about the screens that are created before homescreen is (-2,-3, etc)
+'TODO: remove: EnterSecurityCode I think
+'TODO: Update SecurityPin with better graphics
+'TODO: How about using a userNum of -1 and catching that on the Registry stuff for errors!
 
 '*************************************************************************************
 '
@@ -21,6 +18,7 @@
 '*************************************************************************************
 'Creates screen for user Selection
 Function createUserSelectionScreen(viewController) as object
+    TraceFunction("createUserSelectionScreen", viewController)
     obj = CreateObject("roAssociativeArray")
     initBaseScreen(obj, viewController)
 
@@ -34,57 +32,63 @@ End Function
 
 Sub userSelectionShow()
     canvasRect = m.screen.GetCanvasRect()   'get screen size
-    'overhangRect = { x:0,y:125 }
     overhangRect = { x:125,y:10 }
     picSize = { w:100, h:100 }  'final size of arrow picture
-    bufSize = { w:20, h:20 }  'size of empty buffer between centerpoint and edge of arrows
-    textSize = { w:150, h:150 }  'where the name goes
+    bufSize = { w:80, h:80 }  'size of empty space between centerpoint and centerpoint of arrows
+    textSize = { w:250, h:150 }  'where the name goes
+    textBufSize = { w:20, h:5 }  'size of empty space between centerpoint and centerpoint of text
     if GetGlobal("IsHD") <> true then
         'scale down for SD.  Not perfect but good enough on an SD screen. 
+        HDRectToSDRect(overhangRect) 
         HDRectToSDRect(picSize) 
         HDRectToSDRect(bufSize) 
-        HDRectToSDRect(overhangRect) 
+        HDRectToSDRect(textSize) 
+        HDRectToSDRect(textBufSize) 
+        'HDRectToSDRect(canvasRect)  'JUST FOR TESTING SD!
     end if
-    centerPt = { x:int(canvasRect.w/2),y:int(canvasRect.h/2) }
+    'centerPt of screen
+    x=int(canvasRect.w/2)
+    y=int(canvasRect.h/2)
     
     buttons = [ 'These can be hardcoded later so long as adjusted for HD->SD 
-            {url:"pkg:/images/arrow-left.png", TargetRect:{x:int(centerPt.x-picSize.w-bufSize.w),y:int(centerPt.y-(picSize.h/2)),w:picSize.w,h:picSize.h}},
-            {url:"pkg:/images/arrow-up.png",   TargetRect:{x:int(centerPt.x-(picSize.w/2)),y:int(centerPt.y-bufSize.h-picSize.h),w:picSize.w,h:picSize.h}},
-            {url:"pkg:/images/arrow-right.png", TargetRect:{x:int(centerPt.x+bufSize.w),y:int(centerPt.y-(picSize.h/2)),w:picSize.w,h:picSize.h}},
-            {url:"pkg:/images/arrow-down.png", TargetRect:{x:int(centerPt.x-(picSize.w/2)),y:int(centerPt.y+bufSize.h),w:picSize.w,h:picSize.h}}
+            'The "-picSize.w/2" means rotate around the middle
+            {url:"pkg:/images/arrow-up.png",TargetRect:{x:Int(-picSize.w/2), y:Int(-picSize.h/2), w:picSize.w, h:picSize.h},TargetRotation:270.0,TargetTranslation:{x:x-bufSize.w,y:y}}
+            {url:"pkg:/images/arrow-up.png",TargetRect:{x:Int(-picSize.w/2), y:Int(-picSize.h/2), w:picSize.w, h:picSize.h},TargetRotation:0.0,TargetTranslation:{x:x,y:y-bufSize.h}}
+            {url:"pkg:/images/arrow-up.png",TargetRect:{x:Int(-picSize.w/2), y:Int(-picSize.h/2), w:picSize.w, h:picSize.h},TargetRotation:90.0,TargetTranslation:{x:x+bufSize.w,y:y}}
+            {url:"pkg:/images/arrow-up.png",TargetRect:{x:Int(-picSize.w/2), y:Int(-picSize.h/2), w:picSize.w, h:picSize.h},TargetRotation:180.0,TargetTranslation:{x:x,y:y+bufSize.h}}
               ]
-    PrintAA(buttons[0])
-    PrintAA(buttons[1])
-    PrintAA(buttons[2])
-    PrintAA(buttons[3])
-
-    m.backgroundItems = [
-        {url:"pkg:/images/Background_HD.jpg"}
-    ]
-    m.logoItems = [
-        {url:"pkg:/images/logo_final_HD.png", TargetRect:overhangRect}
-    ]
+    textArea = [ 'These can be hardcoded later so long as adjusted for HD->SD 
+            'The "-picSize.w/2" centers it
+            {text:"User 0",TextAttrs:{Color:"#999999", Font:"Huge",HAlign:"Right", VAlign:"Center", Direction:"LeftToRight"},TargetRect:{x:Int(-picSize.w/2), y:Int(-textSize.h/2), w:textSize.w, h:textSize.h},TargetTranslation:{x:buttons[0]["TargetTranslation"].x-textBufSize.w-textSize.w,y:y}}
+            {text:"User 1",TextAttrs:{Color:"#999999", Font:"Huge",HAlign:"Center", VAlign:"Bottom", Direction:"LeftToRight"},TargetRect:{x:Int(-textSize.w/2), y:Int(-picSize.h/2), w:textSize.w, h:textSize.h},TargetTranslation:{x:x,y:buttons[1]["TargetTranslation"].y-textBufSize.h-textSize.h}}
+            {text:"User 2",TextAttrs:{Color:"#999999", Font:"Huge",HAlign:"Left", VAlign:"Center", Direction:"LeftToRight"},TargetRect:{x:Int(picSize.w/2), y:Int(-textSize.h/2), w:textSize.w, h:textSize.h},TargetTranslation:{x:buttons[2]["TargetTranslation"].x+textBufSize.w,y:y}}
+            {text:"User 3",TextAttrs:{Color:"#999999", Font:"Huge",HAlign:"Center", VAlign:"Top", Direction:"LeftToRight"},TargetRect:{x:Int(-textSize.w/2), y:Int(picSize.h/2), w:textSize.w, h:textSize.h},TargetTranslation:{x:x,y:buttons[3]["TargetTranslation"].y+textBufSize.h}}
+              ]
+    m.backgroundItems = [ {url:"pkg:/images/Background_HD.jpg"}]
     m.canvasItems = [
+        {url:"pkg:/images/logo_final_HD.png", TargetRect:overhangRect},
         { 
-            Text:"[press arrows]"
-            TextAttrs:{Color:"#AAAAAA", Font:"Huge",HAlign:"Center", VAlign:"Top",Direction:"LeftToRight"}
-            TargetRect:{x:640,y:360,w:500,h:100}
-        },
+            Text:"Press direction arrow on remote to select User"
+            TextAttrs:{Color:"#AAAAAA", Font:"Large",HAlign:"Center", VAlign:"Top",Direction:"LeftToRight"}
+            TargetRect:{x:0,y:int(canvasrect.h*.85),w:canvasrect.w,h:0}
+        }
     ]
     m.users = []
-    'for i = 0 to 3 step 1
-    '    if RegReadByUser(i, "userActive", "userinfo", true) = true then 'RICK - change to first true to false
-    '        obj = CreateObject("roAssociativeArray")
-    '        o.Add(
-    '    end if
-    'end for 
-    m.users = buttons
+    for i = 0 to 3 step 1   'user 0 is always enabled
+        if (i=0) or (RegReadByUser(i, "userActive", "preferences", "0") = "1") then 
+            if RegReadByUser(i, "friendlyName", "preferences", invalid) <> invalid then
+                textArea[i]["text"] = RegReadByUser(i, "friendlyName", "preferences", invalid)
+            end if 
+            m.users.Push(buttons[i])
+            m.users.Push(textArea[i])
+        end if
+    end for 
+    'PrintAA(m.users)
     m.screen.SetLayer(0, {Color:"#880000", CompositionMode:"Source"})   'Set opaque background as transparent doesn't draw correctly when content is updated  '#363636
     m.screen.SetRequireAllImagesToDraw(true)
     m.screen.SetLayer(1, m.backgroundItems)
-    m.screen.SetLayer(2, m.logoItems)
-    m.screen.SetLayer(3, m.canvasItems)
-    m.screen.SetLayer(4, m.users)
+    m.screen.SetLayer(2, m.canvasItems)
+    m.screen.SetLayer(3, m.users)
     m.Screen.SetMessagePort(m.Port)
     m.Screen.Show()
 End Sub
@@ -97,9 +101,6 @@ Function userSelectionHandleMessage(msg) As Boolean
         handled = true
         if msg.isScreenClosed() then
             Debug("Exiting user selection  screen")
-            'if m.ViewController.afterCloseCallback <> invalid
-            '    m.ViewController.afterCloseCallback.pinCode = m.pinCode 'store pinCode in callback obj
-            'end if
             m.ViewController.PopScreen(m)
         else if (msg.isRemoteKeyPressed()) then
             codes = bslUniversalControlEventCodes() 'print codes
@@ -115,24 +116,22 @@ Function userSelectionHandleMessage(msg) As Boolean
             else If i=codes.button_back_pressed Then   ' Back - Close the screen and exit
                 m.userSelected = -1
                 m.Screen.Close()
-            else 
-                Debug("Key Pressed:" + AnyToString(msg.GetIndex()) + ", pinCode:" + AnyToString(m.pinCode))
-                'm.pinCode = left(m.pinCode, m.maxPinLength)   'limit to maxPinLength characters
-                'm.canvasItems[0].Text = left(m.txtMasked, m.pinCode.Len())  'm.canvasItems[0].Text = m.pinCode to display code
-                'm.Screen.SetLayer(1, m.canvasItems)
+            'else 
+            '    Debug("Key Pressed:" + tostr(msg.GetIndex()) + ", pinCode:" + tostr(m.pinCode))
             end if
-            'todo: validate user is real, otherwise set m.userSelect = -1
             if m.userSelected <> -1 then
-                if RegReadByUser(m.userSelected,"securityPincode","preferences",invalid) <> invalid then    'pop up PIN screen when user has a password
+                'make sure an unavailable user was not selected.  user0 is always active
+                if (m.userSelected > 0) and (RegReadByUser(m.userSelected, "userActive", "preferences", "0") <> "1") then 
+                    m.userSelected = -1 'disable selection
+                else if RegReadByUser(m.userSelected,"securityPincode","preferences",invalid) <> invalid then    'pop up PIN screen when user has a password
                     pinScreen = VerifySecurityPin(m.ViewController, RegReadByUser(m.userSelected,"securityPincode","preferences",invalid), false, 0)
                     m.Activate = userSelectionActivate
                     pinScreen.Show()
                 else
                     userSelectUser(m.UserSelected)
+                    m.screen.Close()    'for some reason when you use activate and close() within it, the handle loop doesn't seem to get the close message so pop the screen here
                 end if
             end if
-       'else if (msg.isButtonPressed()) then 'OK Button was pressed
-       '    m.Screen.Close()
        end if
     end if    
     return handled
@@ -146,7 +145,6 @@ sub userSelectionActivate(priorScreen)
         'nothing to do, just wait for the next selection
     else
         'pin is OK, select the user
-        'm.EnteredPin = true
         userSelectUser(m.UserSelected)
         m.screen.Close()    'for some reason when you use activate and close() within it, the handle loop doesn't seem to get the close message so pop the screen here
         m.ViewController.PopScreen(m)    
@@ -154,7 +152,8 @@ sub userSelectionActivate(priorScreen)
 End sub
 
 sub userSelectUser(userNumber as integer)
-    Debug("UserNumber changed to " + AnyToString(userNumber))
-    'GetGlobalAA().userNum = userNumber  
-    'RegSetUserPrefsToCurrentUser()
+    Debug("UserNumber changed to " + tostr(userNumber))
+    GetGlobalAA().userNum = userNumber  
+    RegSetUserPrefsToCurrentUser()
+    GetGlobalAA().ViewController.EnterSecurityCode = false  'TODO: Rename EnterSecurityCode
 end sub

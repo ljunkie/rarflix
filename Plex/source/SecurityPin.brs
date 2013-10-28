@@ -145,7 +145,7 @@ Function securityPINEntryHandleMessage(msg) As Boolean
             Else If i=codes.button_select_pressed Then  'this only shows up when there is no OK button
                 m.Screen.Close()
             else 
-                'Debug("Key Pressed:" + AnyToString(msg.GetIndex()) + ", pinCode:" + AnyToString(m.pinCode))
+                'Debug("Key Pressed:" + tostr(msg.GetIndex()) + ", pinCode:" + tostr(m.pinCode))
                 m.pinCode = left(m.pinCode, m.maxPinLength)   'limit to maxPinLength characters
                 m.canvasItems[0].Text = left(m.txtMasked, m.pinCode.Len())  'm.canvasItems[0].Text = m.pinCode to display code
                 m.Screen.SetLayer(1, m.canvasItems)

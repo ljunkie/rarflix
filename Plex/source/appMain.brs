@@ -3,13 +3,9 @@
 ' **
 ' ********************************************************************
 Sub Main(args)
-    m.userRegPrefs = { myplex:"",preferences:"",servers:"",userinfo:""} 'list of prefs that are customized for each user
     m.RegistryCache = CreateObject("roAssociativeArray")
-    'EraseRegistry()    'works
-    m.userNum = 0    'First use of the userNumber. -1 means that user profiles are not enabled
+    m.userNum = 0    'First use of the userNumber. 
     RegSetUserPrefsToCurrentUser()     
-    'RegConvertRegistryToMultiUser()    'works
-    'RegEraseUser(0)                    'works
 
     ' Process any launch args (set registry values)
     for each arg in args

@@ -6,13 +6,30 @@
 
 '******************************************************
 ' MULTI USER HELPERS
+'
+'For multiple users the registry settings are unique
+'for each user.  When accessing user-specific registry
+'settings the RegGetSectionName() function will return
+'the user-specific registry.  The user-specific registry
+'section is the same as the regular section, except that
+'"_uN" is appended to it.  
+'For example, calling  RegGetSectionName("preferences")
+'when m.userNum = 3 will return "preferencese_u3" 
+'
+'Note that user 0 does not have anything appended so in the
+'previous example for user0 RegGetSectionName("preferences")
+'will return just "preferences"
+'
 '******************************************************
+
+'Create AA keyed off of section 
 sub RegSetUserPrefsToCurrentUser()
+    m.userRegPrefs = { myplex:"",preferences:"",servers:"",userinfo:""} 'list of prefs that are customized for each user
     for each key in m.userRegPrefs
-        if m.userNum = -1 then
-            m.userRegPrefs[key] = AnyToString(key)
+        if m.userNum <= 0 then  'for user of 0 or -1, just use the standard name
+            m.userRegPrefs[key] = tostr(key)
         else
-            m.userRegPrefs[key] = AnyToString(key) + "_u" + numtostr(m.userNum)
+            m.userRegPrefs[key] = tostr(key) + "_u" + numtostr(m.userNum)
         end if
     next  
 end sub
@@ -32,51 +49,40 @@ function RegGetSectionByUserNumber(userNumber as integer, section = invalid) as 
     if section = invalid then return "Default"
     for each key in m.userRegPrefs
         if key = section then
-            if userNumber = -1 then
-                return AnyToString(key)
+            if userNumber <= 0 then 'for user of 0 or -1, just use the standard name
+                return tostr(key)
             else
-                return AnyToString(key) + "_u" + numtostr(userNumber)
+                return tostr(key) + "_u" + numtostr(userNumber)
             end if
         end if
     next  
     return section
 end function
 
-
-'Much slower
-'Function RegGetSectionName2(section=invalid) as string
-'    if section = invalid then section = "Default"
-'    if m.userNum = -1 then return section
-'    if section="myplex" or section="preferences" or section="servers" or section="userinfo" then
-'        'return AnyToString(section) + "_u" + AnyToString(m.userNum)
-'        return section + "_u" + numtostr(m.userNum)
-'    end if
-'    return section     
-'end function
-
 'Copies the the old pref sections to the new sections and remove the old.  Will copy to whatever the current user is
-sub RegConvertRegistryToMultiUser()
-    Debug("Converting Registry to Multiuser")
-    for each section in m.userRegPrefs
-        old = CreateObject("roRegistrySection", section)
-        new = CreateObject("roRegistrySection", m.userRegPrefs[section])
-        'print section; " "; m.userRegPrefs[section]
-        keyList = old.GetKeyList()
-        for each key in keyList
-            value = old.Read(key)
-            new.Write(key,value)
-            old.Delete(key)            
-            'print key; ":"; value
-        next
-    next
-    reg = CreateObject("roRegistry")
-    reg.Flush() 'write out changes
-    m.RegistryCache.Clear()
-end sub
+'No longer necessary as User0 no longer has _uN appended to section name
+'sub RegConvertRegistryToMultiUser()
+'    Debug("Converting Registry to Multiuser")
+'    for each section in m.userRegPrefs
+'        old = CreateObject("roRegistrySection", section)
+'        new = CreateObject("roRegistrySection", m.userRegPrefs[section])
+'        'print section; " "; m.userRegPrefs[section]
+'        keyList = old.GetKeyList()
+'        for each key in keyList
+'            value = old.Read(key)
+'            new.Write(key,value)
+'            old.Delete(key)            
+'            'print key; ":"; value
+'        next
+'    next
+'    reg = CreateObject("roRegistry")
+'    reg.Flush() 'write out changes
+'    m.RegistryCache.Clear()
+'end sub
 
 'Erases all the prefs for a usernumber
 sub RegEraseUser(userNumber as integer)
-    Debug("Erasing user " + AnyToString(userNumber))
+    Debug("Erasing user " + numtostr(userNumber))
     for each section in m.userRegPrefs
         old = CreateObject("roRegistrySection", RegGetSectionByUserNumber(section, userNumber))
         print section; " "; m.userRegPrefs[section]
@@ -91,7 +97,6 @@ sub RegEraseUser(userNumber as integer)
     m.RegistryCache.Clear()
 end sub
 
-
 '******************************************************
 'Registry Helper Functions
 '******************************************************
@@ -100,6 +105,7 @@ Function RegReadByUser(userNumber as integer, key, section=invalid, default=inva
     ' may be read repeatedly in a loop. We don't have that many keys anyway, keep
     ' a cache of our keys in memory.
     section = RegGetSectionByUserNumber(userNumber, section)
+    print "RegReadByUser:"+tostr(userNumber)+"-"+tostr(section)+":"+tostr(key)+":"+tostr(default)
     cacheKey = key + section
     if m.RegistryCache.DoesExist(cacheKey) then return m.RegistryCache[cacheKey]
 
@@ -110,7 +116,6 @@ Function RegReadByUser(userNumber as integer, key, section=invalid, default=inva
     if value <> invalid then
         m.RegistryCache[cacheKey] = value
     end if
-
     return value
 End Function
 
@@ -119,7 +124,7 @@ Function RegRead(key, section=invalid, default=invalid)
     ' may be read repeatedly in a loop. We don't have that many keys anyway, keep
     ' a cache of our keys in memory.
     section = RegGetSectionName(section)
-    print "RegRead:"+AnyToString(section)+":"+AnyToString(key)+":"+AnyToString(default)
+    print "RegRead:"+tostr(section)+":"+tostr(key)+":"+tostr(default)
     cacheKey = key + section
     if m.RegistryCache.DoesExist(cacheKey) then return m.RegistryCache[cacheKey]
 
@@ -130,37 +135,46 @@ Function RegRead(key, section=invalid, default=invalid)
     if value <> invalid then
         m.RegistryCache[cacheKey] = value
     end if
-
     return value
 End Function
 
-Function RegWrite(key, val, section=invalid)
-    section = RegGetSectionName(section)
+Sub RegWriteByUser(userNumber as integer, key, val, section=invalid)
+    section = RegGetSectionByUserNumber(userNumber, section)
+    print "RegWriteByUser:"+tostr(userNumber)+"-"+tostr(section)+":"+tostr(key)+":"+tostr(val)
     sec = CreateObject("roRegistrySection", section)
     sec.Write(key, val)
     m.RegistryCache[key + section] = val
     sec.Flush() 'commit it
-End Function
+End Sub
 
-Function RegDelete(key, section=invalid)
+Sub RegWrite(key, val, section=invalid)
+    section = RegGetSectionName(section)
+    print "RegWrite:"+tostr(section)+":"+tostr(key)+":"+tostr(val)
+    sec = CreateObject("roRegistrySection", section)
+    sec.Write(key, val)
+    m.RegistryCache[key + section] = val
+    sec.Flush() 'commit it
+End Sub
+
+Sub RegDelete(key, section=invalid)
     section = RegGetSectionName(section)
     sec = CreateObject("roRegistrySection", section)
     sec.Delete(key)
     m.RegistryCache.Delete(key + section)
     sec.Flush()
-End Function
+End Sub
 
 sub PrintRegistry()
     Debug("------- REGISTRY --------")
     reg = CreateObject("roRegistry")
     regList = reg.GetSectionList()
     for each e in regList
-        Debug("Section->" + AnyToString(e))
+        Debug("Section->" + tostr(e))
         sec = CreateObject("roRegistrySection", e)
         keyList = sec.GetKeyList()
         for each key in keyList
             value = sec.Read(key)
-            Debug(AnyToString(key) + " : " + AnyToString(value))
+            Debug(tostr(key) + " : " + tostr(value))
         next
     next
     Debug("--- END OF REGISTRY -----")
@@ -201,11 +215,13 @@ End Function
 '******************************************************
 Function isint(obj as dynamic) As Boolean
     if obj = invalid return false
+    if type(obj, 3) = "" return false   'this can happen with uninitialized variables
     if GetInterface(obj, "ifInt") = invalid return false
     return true
 End Function
 
 Function validint(obj As Dynamic) As Integer
+    if type(obj, 3) = "" return false   'this can happen with uninitialized variables
     if obj <> invalid and GetInterface(obj, "ifInt") <> invalid then
         return obj
     else
@@ -232,6 +248,7 @@ End Function
 '******************************************************
 Function isstr(obj as dynamic) As Boolean
     if obj = invalid return false
+    if type(obj, 3) = "" return false   'this can happen with uninitialized variables
     if GetInterface(obj, "ifString") = invalid return false
     return true
 End Function
@@ -423,6 +440,7 @@ End Sub
 '******************************************************
 Function AnyToString(any As Dynamic) As dynamic
     if any = invalid return "invalid"
+    if type(any, 3) = "" return "empty"   'this can happen with uninitialized variables
     if isstr(any) return any
     if isint(any) return numtostr(any)
     if GetInterface(any, "ifBoolean") <> invalid
@@ -433,7 +451,6 @@ Function AnyToString(any As Dynamic) As dynamic
     if type(any) = "roTimespan" return numtostr(any.TotalMilliseconds()) + "ms"
     return invalid
 End Function
-
 
 '******************************************************
 'Truncate long strings
@@ -519,6 +536,25 @@ Function CurrentTimeAsString(localized=true As Boolean) As String
     end if
     return timeStr + tostr(minutes) + suffix
 End Function
+
+'******************************************************
+' Helper to trace functions 
+'******************************************************
+sub TraceFunction(fcnName as string, arg0=invalid as dynamic, arg1=invalid as dynamic,arg2=invalid as dynamic,arg3=invalid as dynamic,arg4=invalid as dynamic,arg5=invalid as dynamic,arg6=invalid as dynamic)
+    args = [ arg0,arg1,arg2,arg3,arg4,arg5,arg6 ] 
+    'find last arg
+    print type(arg0); type(arg1); type(arg2); type(arg3)
+    for i = args.Count() - 1 to 0 step -1
+        if args[i] <> invalid then exit for
+        args.Delete(i)
+    end for
+    s = "TRACE:" + tostr(fcnName) + tostr(" - ")
+    for i = 0 to args.Count() - 1 step 1
+        if i <> 0 then s = s + " , "
+        s = tostr(s) + tostr(args[i])
+    end for
+    Debug(s)
+end sub 
 
 '******************************************************
 'Scale down a rectangle from HD to SD
