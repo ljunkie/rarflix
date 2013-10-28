@@ -2,9 +2,10 @@
 ' **  Entry point for the Plex client. Configurable themes etc. haven't been yet.
 ' **
 ' ********************************************************************
-
 Sub Main(args)
     m.RegistryCache = CreateObject("roAssociativeArray")
+    m.userNum = 0    'First use of the userNumber. 
+    RegSetUserPrefsToCurrentUser()     
 
     ' Process any launch args (set registry values)
     for each arg in args
@@ -51,7 +52,7 @@ Sub Main(args)
     initTheme()
 
     initGlobals()
-
+ 
     'load rarflix prefs
     rarflix = InitRARFlix() 
 
@@ -168,6 +169,37 @@ Function GetGlobal(var, default=invalid)
     return firstOf(GetGlobalAA().Lookup(var), default)
 End Function
 
+'Returns array that contains information for duplicating the background on an roImageCanvas screen
+function getImageCanvasTheme() 
+    'break these up into a bunch of layers to ensure proper layering on screen
+    colors = { colors : {  
+                background : "#363636"
+                titleText : "#BFBFBF"
+                normalText : "#999999"
+                detailText : "#74777A"
+                subtleText : "#525252"
+                }}
+    if GetGlobal("IsHD") = true then
+        obj = {
+            background : [{Color:"#363636", CompositionMode:"Source"}]    'Set opaque background to keep from flashing    '#363636
+            backgroundItems : [ {url:"pkg:/images/Background_HD.jpg"}]
+            logoItems : [ {url:"pkg:/images/logo_final_HD.png", TargetRect:{ x:125,y:10 }} ]
+            breadCrumbs : [ {  Text:"", TargetRect:{x:640,y:10,w:520,h:89}  '16 pixel border on bottom of breadcrumb
+                               TextAttrs:{Color:colors.colors.titleText, Font:"Medium",HAlign:"Right", VAlign:"Center",Direction:"LeftToRight"} } ]
+        }
+    else
+        obj = {
+            background : [{Color:"#363636", CompositionMode:"Source"}]    'Set opaque background to keep from flashing    '#363636
+            backgroundItems : [ {url:"pkg:/images/Background_SD.jpg"}]
+            logoItems : [ {url:"pkg:/images/logo_final_SD.png", TargetRect:{ x:72,y:10 }} ]
+            breadCrumbs : [ {  Text:"", TargetRect:{x:360,y:10,w:260,h:56}  '16 pixel border on bottom of breadcrumb
+                              TextAttrs:{Color:colors.colors.titleText, Font:"Medium",HAlign:"Right", VAlign:"Center",Direction:"LeftToRight"} } ]
+        }
+    endif
+    obj["background"][0]["Color"] = colors.colors.background    'set background color 
+    obj.Append(colors)
+    return obj
+end function
 
 '*************************************************************
 '** Set the configurable theme attributes for the application
@@ -197,7 +229,7 @@ Sub initTheme()
     theme.OverhangSliceSD = imageDir + "Background_SD.jpg"
     theme.OverhangLogoSD  = "pkg:/images/logo_final_SD.png" ' logo is transparent
 
-    theme.OverhangOffsetHD_X = "125"
+    theme.OverhangOffsetHD_X = "125"    'these settings are duplicated in getImageCanvasTheme() so keep them in sync with this
     theme.OverhangOffsetHD_Y = "10"
     theme.OverhangSliceHD = imageDir + "Background_HD.jpg"
     theme.OverhangLogoHD  = "pkg:/images/logo_final_HD.png" ' logo is transparent
@@ -214,6 +246,7 @@ Sub initTheme()
     theme.GridScreenLogoSD  = "pkg:/images/logo_final_SD.png" ' logo is transparent
     theme.GridScreenOverhangHeightSD = "66"
 
+    'these settings are duplicated in getImageCanvasTheme() so keep them in sync with this
     background = "#" + GetGlobalAA().Lookup("rfBGcolor")
     titleText = "#BFBFBF" ' text in search screen. not sure where else yet
     normalText = "#999999" ' shared with dialog and summary text in video screen ( if we can make the dialog black, then we can lighten this up)
@@ -237,7 +270,7 @@ Sub initTheme()
     theme.GridScreenBorderOffsetSD = "(-9,-9)"
 
     theme.ListScreenHeaderText = titleText
-    theme.ListItemText = "#999999" 'normalText
+    theme.ListItemText = normalText
     theme.ListItemHighlightText = titleText
     theme.ListScreenDescriptionText = normalText
 

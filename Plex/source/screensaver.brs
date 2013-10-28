@@ -5,40 +5,34 @@ Sub RunScreenSaver()
 
     if mode <> "disabled" then
         initGlobals()
-        DisplayScreenSaver(mode)
+        if GetGlobal("IsHD") then
+            m.default_screensaver = {url:"pkg:/images/screensaver-hd.png", SourceRect:{w:336,h:210}, TargetRect:{x:0,y:0}}
+        else
+            m.default_screensaver = {url:"pkg:/images/screensaver-sd.png", SourceRect:{w:248,h:140}, TargetRect:{x:0,y:0}}
+        end if
+    
+        m.ss_timer = CreateObject("roTimespan")
+        m.ss_last_url = invalid
+    
+        canvas = CreateScreenSaverCanvas("#FF141414")
+        canvas.SetImageFunc(GetScreenSaverImage)
+        canvas.SetUpdatePeriodInMS(6000)
+        canvas.SetUnderscan(.05)
+    
+        if mode = "animated" then
+            canvas.SetLocFunc(screensaverLib_SmoothAnimation)
+            canvas.SetLocUpdatePeriodInMS(40)
+        else if mode = "random" then
+            canvas.SetLocFunc(screensaverLib_RandomLocation)
+            canvas.SetLocUpdatePeriodInMS(0)
+        else
+            Debug("Unrecognized screensaver preference: " + tostr(mode))
+            return
+        end if
+        canvas.Go()
     else
         Debug("Deferring to system screensaver")
     end if
-End Sub
-
-Sub DisplayScreenSaver(mode)
-    if GetGlobal("IsHD") then
-        m.default_screensaver = {url:"pkg:/images/screensaver-hd.png", SourceRect:{w:336,h:210}, TargetRect:{x:0,y:0}} ' logo is transparent
-    else
-        m.default_screensaver = {url:"pkg:/images/screensaver-sd.png", SourceRect:{w:248,h:140}, TargetRect:{x:0,y:0}} ' logo is transparent
-    end if
-
-    m.ss_timer = CreateObject("roTimespan")
-    m.ss_last_url = invalid
-
-    canvas = CreateScreensaverCanvas("#000000")
-    'canvas = CreateScreenSaverCanvas("#FF141414")
-    canvas.SetImageFunc(GetScreenSaverImage)
-    canvas.SetUpdatePeriodInMS(6000)
-    canvas.SetUnderscan(.05)
-
-    if mode = "animated" then
-        canvas.SetLocFunc(screensaverLib_SmoothAnimation)
-        canvas.SetLocUpdatePeriodInMS(40)
-    else if mode = "random" then
-        canvas.SetLocFunc(screensaverLib_RandomLocation)
-        canvas.SetLocUpdatePeriodInMS(0)
-    else
-        Debug("Unrecognized screensaver preference: " + tostr(mode))
-        return
-    end if
-
-    canvas.Go()
 End Sub
 
 Function GetScreenSaverImage()
