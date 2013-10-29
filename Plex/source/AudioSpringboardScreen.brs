@@ -81,7 +81,8 @@ Sub audioSetupButtons()
 '         m.addButton( "shuffle", "shufflePlay")
 '    end if
 
-    if m.Context.Count() > 1 then
+'    if m.Context.Count() > 1 then
+    if m.Playstate = 2 and m.Context.Count() > 1 then
         m.AddButton("next song", "next")
         m.AddButton("previous song", "prev")
     end if
