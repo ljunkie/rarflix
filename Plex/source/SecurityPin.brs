@@ -104,7 +104,7 @@ Sub securityPINEntryShow(showOKButton=true as boolean, pinToVerify="" as string,
     ] 
     m.screen.SetLayer(0, m.theme["background"])
     m.screen.SetRequireAllImagesToDraw(true)
-    m.screen.SetLayer(1, m.theme["backgroundItems"])
+    'm.screen.SetLayer(1, m.theme["backgroundItems"]) ' logs an error - removed for now
     m.screen.SetLayer(2, m.theme["logoItems"])
     m.screen.SetLayer(3, m.theme["breadCrumbs"])
     m.screen.SetLayer(4, m.canvasItems)
@@ -195,8 +195,9 @@ sub VerifySecurityPinActivate(priorScreen)
         m.ViewController.PopScreen(m)   'close this screen
     else 'if type(screen.Screen) = "roImageCanvas"  'ensure that there wasn't some type of pop-up 'update:removed as I can't see how this can occur
         if m.numRetries <= 0 then
-            if m.exitAppOnFailure = true then  'Close the home screen which causes an exit
-                m.ViewController.PopScreen(m.ViewController.home)
+            if m.exitAppOnFailure = true then
+                print "ABORT! PIN Failed too many times"
+                end
             else
                 m.screen.Close()    'Closing from within Activate never calls the message loop to pop the screen
                 m.ViewController.PopScreen(m)   'close this screen
@@ -205,7 +206,8 @@ sub VerifySecurityPinActivate(priorScreen)
             m.numRetries = m.numRetries - 1
             m.pinScreen = createSecurityPINEntryScreen(m.ViewController)
             m.ViewController.InitializeOtherScreen(m.pinScreen, [m.breadCrumb])
-            m.pinScreen.txtTop = "Incorrect Security PIN. Re-enter Security PIN." 
+            m.pinScreen.txtTop = "Incorrect Security PIN. Re-enter Security PIN." + m.pinToValidate
+            m.pinscreen.pinToVerify = m.pinToValidate
             m.pinScreen.Show(false)
         end if
     end if
@@ -290,7 +292,7 @@ sub securityPinShow(showOKButton=false as boolean)
     'show the actual facade screen that blocks the background
     m.screen.SetLayer(0, m.theme["background"])
     m.screen.SetRequireAllImagesToDraw(true)
-    m.screen.SetLayer(1, m.theme["backgroundItems"])
+    'm.screen.SetLayer(1, m.theme["backgroundItems"]) ' logs an error - removed for now
     m.screen.SetLayer(2, m.theme["logoItems"])
     m.screen.SetLayer(3, m.theme["breadCrumbs"])
     m.screen.Show()

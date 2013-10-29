@@ -45,7 +45,7 @@ Sub userSelectionShow()
     'Check for other users enabled -- otherwise, bypass
     if GetGlobalAA().ViewController.SkipUserSelection then 
         if m.userSelected = invalid then m.userSelected = 0
-        pinScreen = VerifySecurityPin(m.ViewController, RegReadByUser(m.userSelected,"securityPincode","preferences",invalid), false, 0)
+        pinScreen = VerifySecurityPin(m.ViewController, RegReadByUser(m.userSelected,"securityPincode","preferences",invalid), false, 2)
         m.ViewController.InitializeOtherScreen(pinScreen, ["Access to RARflix"])
         m.Activate = userSelectionActivate
         pinScreen.Show()
@@ -102,12 +102,14 @@ Sub userSelectionShow()
         end if
     end for 
     'PrintAA(m.users)
+    m.theme["breadCrumbs"][0]["text"] = "User Profile Selection"
     m.screen.SetLayer(0, m.theme["background"])
     m.screen.SetRequireAllImagesToDraw(true)
-    m.screen.SetLayer(1, m.theme["backgroundItems"])
+'    m.screen.SetLayer(1, m.theme["backgroundItems"])
     m.screen.SetLayer(2, m.theme["logoItems"])
     m.screen.SetLayer(3, m.canvasItems)
     m.screen.SetLayer(4, m.users)
+    m.screen.SetLayer(5, m.theme["breadCrumbs"])
     m.Screen.SetMessagePort(m.Port)
     m.Screen.Show()
     'special case when there is only 1 user (which means there must be a pin).  Jump straight to PIN entry
@@ -152,7 +154,7 @@ Function userSelectionHandleMessage(msg) As Boolean
                 if (m.userSelected > 0) and (RegReadByUser(m.userSelected, "userActive", "preferences", "0") <> "1") then 
                     m.userSelected = -1 'disable selection
                 else if RegReadByUser(m.userSelected,"securityPincode","preferences",invalid) <> invalid then    'pop up PIN screen when user has a password
-                    pinScreen = VerifySecurityPin(m.ViewController, RegReadByUser(m.userSelected,"securityPincode","preferences",invalid), false, 0)
+                    pinScreen = VerifySecurityPin(m.ViewController, RegReadByUser(m.userSelected,"securityPincode","preferences",invalid), false, 2)
                     m.ViewController.InitializeOtherScreen(pinScreen, ["Access to RARFlix"])
                     m.Activate = userSelectionActivate
                     pinScreen.Show()
