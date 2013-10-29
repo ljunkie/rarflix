@@ -920,6 +920,7 @@ Sub vcShow()
     end while
 
     ' Clean up some references on the way out
+    restoreAudio = m.AudioPlayer
     m.Home = invalid
     m.myplex = invalid
     m.GdmAdvertiser = invalid
@@ -931,6 +932,54 @@ Sub vcShow()
     m.PendingRequests.Clear()
     m.SocketListeners.Clear()
 
+    
+'    GetGlobalAA().Delete("myplex")
+'    GetGlobalAA().Delete("globals")
+'    GetGlobalAA().Delete("primaryserver")
+'    GetGlobalAA().Delete("validated_servers")
+'    GetGlobalAA().Delete("registrycache")
+'    GetGlobalAA().Delete("first_focus_done")
+'
+'    ' Exit Confirmation - If we are showing the security screen/user selection screen, we don't need exit confirmation
+'    restoreAudio = m.AudioPlayer
+'    if m.ShowSecurityScreen then 
+'        m = invalid
+'        GetGlobalAA().AddReplace("restoreAudio", restoreAudio)
+'        Main(invalid)
+'    else 
+'        controller = invalid
+'        port = CreateObject("roMessagePort")
+'        dialog = CreateObject("roMessageDialog")
+'        dialog.SetMessagePort(port)
+'    
+'        dialog.SetTitle("Exit RARflix?")
+'        dialog.SetText("")
+'        dialog.AddButton(0, "No")
+'        dialog.AddButton(1, "Yes")
+'        dialog.Show()
+'    
+'        while true
+'            dlgMsg = wait(0, dialog.GetMessagePort())
+'            if type(dlgMsg) = "roMessageDialogEvent"
+'                if dlgMsg.isScreenClosed()
+'                    end ' exit channel
+'                    return
+'                else if dlgMsg.isButtonPressed()
+'                    if dlgMsg.GetIndex() = 1 then end 
+'                    if dlgMsg.GetIndex() = 0 then 
+'                        m = invalid
+'                        dialog.close()
+'                        GetGlobalAA().AddReplace("restoreAudio", restoreAudio)
+'                        GetGlobalAA().AddReplace("restoreAudio", restoreAudio)
+'                        Main(invalid)
+'                    end if
+'                    return
+'                end if
+'            end if
+'        end while
+'    end if
+'
+'    return
     Debug("Finished global message loop")
 End Sub
 

@@ -44,8 +44,8 @@ End Function
 Sub userSelectionShow()
     'Check for other users enabled -- otherwise, bypass
     if GetGlobalAA().ViewController.SkipUserSelection then 
-        m.userSelected = 0
-        pinScreen = VerifySecurityPin(m.ViewController, RegReadByUser(0,"securityPincode","preferences",invalid), false, 0)
+        if m.userSelected = invalid then m.userSelected = 0
+        pinScreen = VerifySecurityPin(m.ViewController, RegReadByUser(m.userSelected,"securityPincode","preferences",invalid), false, 0)
         m.ViewController.InitializeOtherScreen(pinScreen, ["Access to RARflix"])
         m.Activate = userSelectionActivate
         pinScreen.Show()
@@ -142,6 +142,7 @@ Function userSelectionHandleMessage(msg) As Boolean
                 m.userSelected = 2
             else If i=0 Then   ' Back - Close the screen and exit 'codes.button_back_pressed
                 m.userSelected = -1
+                end ' we will exit the screen on back button
                 m.Screen.Close()
             'else 
             '    Debug("Key Pressed:" + tostr(msg.GetIndex()) + ", pinCode:" + tostr(m.pinCode))
