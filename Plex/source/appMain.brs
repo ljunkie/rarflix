@@ -60,6 +60,7 @@ Sub Main(args)
     controller = createViewController()
 
     ' restore the Audio if we set the global - and delete it. This is probably due to the exit confirmation
+    ' this may need some more work. TODO once we have channel exit confirmation
     if GetGlobalAA().Lookup("restoreAudio") <> invalid then 
         resetPort = controller.audioPlayer.port
         resetVC = controller.audioPlayer.viewcontroller

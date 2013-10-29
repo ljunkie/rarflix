@@ -84,9 +84,11 @@ Function createViewController() As Object
     'First check if there are multiple users
     controller.ShowSecurityScreen = false
     controller.SkipUserSelection = false
+    controller.RFisMultiUser = false
     for i = 1 to 3 step 1   'Check for other users enabled
         if RegReadByUser(i, "userActive", "preferences", "0") = "1" then 
             controller.ShowSecurityScreen = true
+            controller.RFisMultiUser = true
             exit for
         end if
     end for
@@ -920,7 +922,9 @@ Sub vcShow()
     end while
 
     ' Clean up some references on the way out
-    restoreAudio = m.AudioPlayer
+    restoreAudio = m.AudioPlayer ' save for later (maybe)
+    m.AudioPlayer.Stop()         ' stop any audio for now. This might change with exit confirmation
+
     m.Home = invalid
     m.myplex = invalid
     m.GdmAdvertiser = invalid
@@ -932,21 +936,24 @@ Sub vcShow()
     m.PendingRequests.Clear()
     m.SocketListeners.Clear()
 
-    
-'    GetGlobalAA().Delete("myplex")
-'    GetGlobalAA().Delete("globals")
-'    GetGlobalAA().Delete("primaryserver")
-'    GetGlobalAA().Delete("validated_servers")
-'    GetGlobalAA().Delete("registrycache")
-'    GetGlobalAA().Delete("first_focus_done")
-'
-'    ' Exit Confirmation - If we are showing the security screen/user selection screen, we don't need exit confirmation
-'    restoreAudio = m.AudioPlayer
-'    if m.ShowSecurityScreen then 
-'        m = invalid
-'        GetGlobalAA().AddReplace("restoreAudio", restoreAudio)
-'        Main(invalid)
-'    else 
+    ' ljunkie - extra cleanup for the user switching    
+    GetGlobalAA().Delete("myplex")
+    GetGlobalAA().Delete("globals")
+    GetGlobalAA().Delete("primaryserver")
+    GetGlobalAA().Delete("validated_servers")
+    GetGlobalAA().Delete("registrycache")
+    GetGlobalAA().Delete("first_focus_done")
+
+     'Exit Confirmation TODO - for not we will show the user selection screen if enabled
+    if m.RFisMultiUser then 
+        Debug("Exit channel - show user selection")
+        m = invalid
+        'GetGlobalAA().AddReplace("restoreAudio", restoreAudio)
+        Main(invalid)
+        return
+    else
+        Debug("Finished global message loop")
+        end
 '        controller = invalid
 '        port = CreateObject("roMessagePort")
 '        dialog = CreateObject("roMessageDialog")
@@ -977,10 +984,9 @@ Sub vcShow()
 '                end if
 '            end if
 '        end while
-'    end if
+    end if
 '
-'    return
-    Debug("Finished global message loop")
+    return
 End Sub
 
 Sub vcAddBreadcrumbs(screen, breadcrumbs)
