@@ -19,7 +19,8 @@ Function createGridScreen(viewController, style="flat-movie", upBehavior="exit",
     grid.SetMessagePort(screen.Port)
 
     di=createobject("rodeviceinfo")
-    if mid(di.getversion(),3,1).toint() > 3 then
+    ' only use custom loading image on the black theme - conserve space
+    if mid(di.getversion(),3,1).toint() > 3 and RegRead("rf_theme", "preferences", "black") = "black" then
         imageDir = GetGlobalAA().Lookup("rf_theme_dir")
         SDPosterURL = imageDir + "LoadingPoster.png"
         HDPosterURL = imageDir + "LoadingPoster.png"
