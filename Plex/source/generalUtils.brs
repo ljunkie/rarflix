@@ -5,14 +5,92 @@
 '**********************************************************
 
 '******************************************************
+' MULTI USER HELPERS
+'
+'For multiple users the registry settings are unique
+'for each user.  When accessing user-specific registry
+'settings the RegGetSectionName() function will return
+'the user-specific registry.  The user-specific registry
+'section is the same as the regular section, except that
+'"_uN" is appended to it.  
+'For example, calling  RegGetSectionName("preferences")
+'when m.userNum = 3 will return "preferencese_u3" 
+'
+'Note that user 0 does not have anything appended so in the
+'previous example for user0 RegGetSectionName("preferences")
+'will return just "preferences"
+'
+'Note that only "myplex", "preferences", "servers" and "userinfo"
+'are converted for multiuser support.  If you use additional
+'preferences then you must add them to the list in RegSetUserPrefsToCurrentUser()
+'
+'
+'******************************************************
+
+'Create AA keyed off of section for quick lookup 
+sub RegSetUserPrefsToCurrentUser()
+    m.userRegPrefs = { myplex:"",preferences:"",servers:"",userinfo:""} 'list of prefs that are customized for each user.  
+    for each key in m.userRegPrefs
+        if m.userNum <= 0 then  'for user of 0 or -1, just use the standard name
+            m.userRegPrefs[key] = tostr(key)
+        else
+            m.userRegPrefs[key] = tostr(key) + "_u" + numtostr(m.userNum)
+        end if
+    next  
+end sub
+
+'Return the section name, converting the required ones to the right format
+Function RegGetSectionName(section=invalid) as string
+    if section = invalid then 
+        return "Default"
+    else if m.userRegPrefs[section] <> invalid then
+        return m.userRegPrefs[section]
+    end if     
+    return section
+end function
+
+'use this to get section names for a usernumber different from the current user
+function RegGetSectionByUserNumber(userNumber as integer, section = invalid) as string
+    'this is slow but rarely gets called
+    if section = invalid then return "Default"
+    for each key in m.userRegPrefs
+        if key = section then
+            if userNumber <= 0 then 'for user of 0 or -1, just use the standard name
+                return tostr(key)
+            else
+                return tostr(key) + "_u" + numtostr(userNumber)
+            end if
+        end if
+    next  
+    return section
+end function
+
+'Erases all the prefs for a usernumber
+sub RegEraseUser(userNumber as integer)
+    Debug("Erasing user " + numtostr(userNumber))
+    for each section in m.userRegPrefs
+        print "section="; section
+        old = CreateObject("roRegistrySection", RegGetSectionByUserNumber(userNumber, section))
+        keyList = old.GetKeyList()
+        for each key in keyList
+            old.Delete(key)            
+            print key
+        next
+    next
+    reg = CreateObject("roRegistry")
+    reg.Flush() 'write out changes
+    m.RegistryCache.Clear() 'just clear the entire cache
+end sub
+
+'******************************************************
 'Registry Helper Functions
 '******************************************************
-Function RegRead(key, section=invalid, default=invalid)
+Function RegReadByUser(userNumber as integer, key, section=invalid, default=invalid)
     ' Reading from the registry is somewhat expensive, especially for keys that
     ' may be read repeatedly in a loop. We don't have that many keys anyway, keep
     ' a cache of our keys in memory.
-
-    if section = invalid then section = "Default"
+    section = RegGetSectionByUserNumber(userNumber, section)
+    'print "RegReadByUser:"+tostr(userNumber)+"-"+tostr(section)+":"+tostr(key)+":"+tostr(default)
     cacheKey = key + section
     if m.RegistryCache.DoesExist(cacheKey) then return m.RegistryCache[cacheKey]
 
@@ -23,26 +101,85 @@ Function RegRead(key, section=invalid, default=invalid)
     if value <> invalid then
         m.RegistryCache[cacheKey] = value
     end if
-
     return value
 End Function
 
-Function RegWrite(key, val, section=invalid)
-    if section = invalid then section = "Default"
+Function RegRead(key, section=invalid, default=invalid)
+    ' Reading from the registry is somewhat expensive, especially for keys that
+    ' may be read repeatedly in a loop. We don't have that many keys anyway, keep
+    ' a cache of our keys in memory.
+    section = RegGetSectionName(section)
+    'print "RegRead:"+tostr(section)+":"+tostr(key)+":"+tostr(default)
+    cacheKey = key + section
+    if m.RegistryCache.DoesExist(cacheKey) then return m.RegistryCache[cacheKey]
+
+    value = default
+    sec = CreateObject("roRegistrySection", section)
+    if sec.Exists(key) then value = sec.Read(key)
+
+    if value <> invalid then
+        m.RegistryCache[cacheKey] = value
+    end if
+    return value
+End Function
+
+Sub RegWriteByUser(userNumber as integer, key, val, section=invalid)
+    section = RegGetSectionByUserNumber(userNumber, section)
+    'print "RegWriteByUser:"+tostr(userNumber)+"-"+tostr(section)+":"+tostr(key)+":"+tostr(val)
     sec = CreateObject("roRegistrySection", section)
     sec.Write(key, val)
     m.RegistryCache[key + section] = val
     sec.Flush() 'commit it
-End Function
+End Sub
 
-Function RegDelete(key, section=invalid)
-    if section = invalid then section = "Default"
+Sub RegWrite(key, val, section=invalid)
+    section = RegGetSectionName(section)
+    'print "RegWrite:"+tostr(section)+":"+tostr(key)+":"+tostr(val)
+    sec = CreateObject("roRegistrySection", section)
+    sec.Write(key, val)
+    m.RegistryCache[key + section] = val
+    sec.Flush() 'commit it
+End Sub
+
+Sub RegDelete(key, section=invalid)
+    section = RegGetSectionName(section)
     sec = CreateObject("roRegistrySection", section)
     sec.Delete(key)
     m.RegistryCache.Delete(key + section)
     sec.Flush()
-End Function
+End Sub
 
+'Outputs the entire registry for Plex
+'sub PrintRegistry()
+'    Debug("------- REGISTRY --------")
+'    reg = CreateObject("roRegistry")
+'    regList = reg.GetSectionList()
+'    for each e in regList
+'        Debug("Section->" + tostr(e))
+'        sec = CreateObject("roRegistrySection", e)
+'        keyList = sec.GetKeyList()
+'        for each key in keyList
+'            value = sec.Read(key)
+'            Debug(tostr(key) + " : " + tostr(value))
+'        next
+'    next
+'    Debug("--- END OF REGISTRY -----")
+'end sub
+
+'Erases everything in the Registry for Plex
+'sub EraseRegistry() 
+'    Debug("Erasing Registry")
+'    reg = CreateObject("roRegistry")
+'    regList = reg.GetSectionList()
+'    for each e in regList
+'        sec = CreateObject("roRegistrySection", e)
+'        keyList = sec.GetKeyList()
+'        for each key in keyList
+'            sec.Delete(key)
+'        next
+'    next
+'    m.RegistryCache.Clear()
+'end sub
 
 '******************************************************
 'Convert anything to a string
@@ -64,11 +201,13 @@ End Function
 '******************************************************
 Function isint(obj as dynamic) As Boolean
     if obj = invalid return false
+    if type(obj, 3) = "" return false   'this can happen with uninitialized variables
     if GetInterface(obj, "ifInt") = invalid return false
     return true
 End Function
 
 Function validint(obj As Dynamic) As Integer
+    if type(obj, 3) = "" return false   'this can happen with uninitialized variables
     if obj <> invalid and GetInterface(obj, "ifInt") <> invalid then
         return obj
     else
@@ -95,6 +234,7 @@ End Function
 '******************************************************
 Function isstr(obj as dynamic) As Boolean
     if obj = invalid return false
+    if type(obj, 3) = "" return false   'this can happen with uninitialized variables
     if GetInterface(obj, "ifString") = invalid return false
     return true
 End Function
@@ -286,6 +426,7 @@ End Sub
 '******************************************************
 Function AnyToString(any As Dynamic) As dynamic
     if any = invalid return "invalid"
+    if type(any, 3) = "" return "empty"   'this can happen with uninitialized variables
     if isstr(any) return any
     if isint(any) return numtostr(any)
     if GetInterface(any, "ifBoolean") <> invalid
@@ -386,4 +527,60 @@ Function CurrentTimeAsString(localized=true As Boolean) As String
         timeStr = timeStr + "0"
     end if
     return timeStr + tostr(minutes) + suffix
+End Function
+
+'******************************************************
+' Helper to trace functions 
+'******************************************************
+sub TraceFunction(fcnName as string, arg0=invalid as dynamic, arg1=invalid as dynamic,arg2=invalid as dynamic,arg3=invalid as dynamic,arg4=invalid as dynamic,arg5=invalid as dynamic,arg6=invalid as dynamic)
+    args = [ arg0,arg1,arg2,arg3,arg4,arg5,arg6 ] 
+    'print type(arg0); type(arg1); type(arg2); type(arg3)
+    'find last arg
+    for i = args.Count() - 1 to 0 step -1
+        if args[i] <> invalid then exit for
+        args.Delete(i)
+    end for
+    s = "TRACE:" + tostr(fcnName) + tostr(" - ")
+    for i = 0 to args.Count() - 1 step 1
+        if i <> 0 then s = s + " , "
+        s = tostr(s) + tostr(args[i])
+    end for
+    Debug(s)
+end sub 
+
+'******************************************************
+'Scale down a rectangle from HD to SD
+' Works on any object that has any of x,y,w,h 
+'******************************************************
+Sub HDRectToSDRect(rect As Object)
+   wMultiplier = 720 / 1280
+   hMultiplier = 480 / 720
+   
+   If rect.x <> invalid Then
+      rect.x = Int(rect.x * wMultiplier + .5)
+      rect.x = IIf(rect.x < 1, 1, rect.x)
+   End If
+   If rect.y <> invalid Then
+      rect.y = Int(rect.y * hMultiplier + .5)
+      rect.y = IIf(rect.y < 1, 1, rect.y)
+   End If
+   If rect.w <> invalid Then
+      rect.w = Int(rect.w * wMultiplier + .5)
+      rect.w = IIf(rect.w < 1, 1, rect.w)
+   End If
+   If rect.h <> invalid Then
+      rect.h = Int(rect.h * hMultiplier + .5)
+      rect.h = IIf(rect.h < 1, 1, rect.h)
+   End If
+End Sub
+
+'******************************************************
+'Helper for cleaner code 
+'******************************************************
+Function IIf(Condition, Result1, Result2) As Dynamic
+   If Condition Then
+      Return Result1
+   Else
+      Return Result2
+   End If
 End Function

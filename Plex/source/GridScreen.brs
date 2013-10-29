@@ -206,8 +206,10 @@ Function gridHandleMessage(msg) As Boolean
             if m.screenid <> invalid and m.screenid < 0 and m.contentArray <> invalid and type(m.contentArray[m.selectedRow]) = "roArray" then 
                 item = m.contentArray[m.selectedRow][m.focusedIndex]
                 if type(item) = "roAssociativeArray" and item.contenttype <> invalid and item.contenttype = "section" then 
-                    RegWrite("lastMachineID", item.server.machineID)
-                    RegWrite("lastSectionKey", item.key)
+                    RegWrite("lastMachineID", item.server.machineID, "userinfo")
+                    RegWrite("lastSectionKey", item.key, "userinfo")
+                    'RegWrite("lastMachineID", item.server.machineID)
+                    'RegWrite("lastSectionKey", item.key)
                     Debug("--------------- remember last focus ------------------------")
                     Debug("last section used " + item.key)
                     Debug("server " + item.server.machineID)
