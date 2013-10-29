@@ -1,12 +1,21 @@
+#2.8.0 (2013-10-29)
+    * User Profiles: multi-user support ( fast user switching ). Many thanks @wagnerscastle
+    * Show user selection again before exiting the channel ( when multi-user is enabled )
+    * Security PIN on startup ( multi-user supported ). h/t @wagnerscastle
+    * use a black loader for grid screen ( fixes the grey poster flash you see when loading items). Thanks for updating the DOCS @Roku: http://sdkdocs.roku.com/display/sdkdoc/ifGridScreen#ifGridScreen-%C2%A0SetLoadingPostersdPosterUrlasStringhdPosterUrlasStringasVoid
+    * focus on the first item in a full grid ( requested for music -but- used on all sections )
+    * Fix: crash when seeking music ( only when music metadata doesn't include the duration )
+    * Fix: focus of the last section used was not working correctly ( also multi-user supported now )
+
 #2.7.9 (2013-10-23)
-    * fix crash from posterRefresh ( cast & crew ) 
+    * fix crash from posterRefresh ( cast & crew )
     * disable Ful Grid option from * option key for search screens ( they are invalid )
     * fullgrid context - clicking left and right in springboard started back on first item
 
 #2.7.8 (2013-10-22)
     * new: show HUD when the pause button is clicked (video)
     * new: paginated data loader (how the rows are loaded) is a bit more optimized
-	   You may have noticed major delay with clicking buttons ( should be fixed) 
+	   You may have noticed major delay with clicking buttons ( should be fixed)
 	    -- now it does not reload already loaded rows that are out of view
     * Prefs: User Toggles to changes how images are displayed on the screen ( home screen and sections )
     * Music: clean music title: never prepend artist/album to track titles
