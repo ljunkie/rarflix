@@ -79,9 +79,9 @@ Sub securityPINEntryShow(showOKButton=true as boolean, pinToVerify="" as string,
     bottomRect.y = pinRect.y + pinRect.h
     bottomRect.h = canvasRect.h - bottomRect.y
     
-    PrintAA(pinRect)
-    PrintAA(topRect)
-    PrintAA(bottomRect)
+    'PrintAA(pinRect)
+    'PrintAA(topRect)
+    'PrintAA(bottomRect)
     if (pinToVerify <> invalid) and (pinToVerify <> "") then
         m.pinToVerify = pinToVerify
     end if
@@ -104,7 +104,7 @@ Sub securityPINEntryShow(showOKButton=true as boolean, pinToVerify="" as string,
     ] 
     m.screen.SetLayer(0, m.theme["background"])
     m.screen.SetRequireAllImagesToDraw(true)
-    'm.screen.SetLayer(1, m.theme["backgroundItems"]) ' logs an error - removed for now
+    m.screen.SetLayer(1, m.theme["backgroundItems"]) 
     m.screen.SetLayer(2, m.theme["logoItems"])
     m.screen.SetLayer(3, m.theme["breadCrumbs"])
     m.screen.SetLayer(4, m.canvasItems)
@@ -151,7 +151,7 @@ Function securityPINEntryHandleMessage(msg) As Boolean
             if (m.pinToVerify <> invalid) and (m.pinToVerify = m.pinCode) then  'Immediately exit once correct PIN is entered
                 m.Screen.Close()
             else If i=0 Then   ' Back - Close the screen and exit without the pinCode    'codes.button_back_pressed
-                m.pinCode = ""
+                m.pinCode = "back"  
                 m.Screen.Close()
             Else If i=6 Then  'this only shows up when there is no OK button             'codes.button_select_pressed 
                 m.Screen.Close()
@@ -193,22 +193,26 @@ sub VerifySecurityPinActivate(priorScreen)
         if m.ViewController.ShowSecurityScreen <> invalid then m.ViewController.ShowSecurityScreen = false
         m.screen.Close()    'Closing from within Activate never calls the message loop to pop the screen
         m.ViewController.PopScreen(m)   'close this screen
-    else 'if type(screen.Screen) = "roImageCanvas"  'ensure that there wasn't some type of pop-up 'update:removed as I can't see how this can occur
-        if m.numRetries <= 0 then
+    else 
+        if (m.numRetries > 0) and (priorScreen.pinCode <> "back") then
+            m.numRetries = m.numRetries - 1
+            m.pinScreen = createSecurityPINEntryScreen(m.ViewController)
+            m.ViewController.InitializeOtherScreen(m.pinScreen, [m.breadCrumb])
+            m.pinScreen.txtTop = "Incorrect Security PIN. Re-enter Security PIN."   '+ m.pinToValidate 'for debugging
+            m.pinscreen.pinToVerify = m.pinToValidate
+            m.pinScreen.Show(false)
+        else 'either retries was exceeded or the back button was pressed
             if m.exitAppOnFailure = true then
-                print "ABORT! PIN Failed too many times"
+                if priorScreen.pinCode = "back" then
+                    print "ABORT! Back button pressed"
+                else
+                    print "ABORT! PIN Failed too many times"
+                end if
                 end
             else
                 m.screen.Close()    'Closing from within Activate never calls the message loop to pop the screen
                 m.ViewController.PopScreen(m)   'close this screen
             end if
-        else
-            m.numRetries = m.numRetries - 1
-            m.pinScreen = createSecurityPINEntryScreen(m.ViewController)
-            m.ViewController.InitializeOtherScreen(m.pinScreen, [m.breadCrumb])
-            m.pinScreen.txtTop = "Incorrect Security PIN. Re-enter Security PIN." + m.pinToValidate
-            m.pinscreen.pinToVerify = m.pinToValidate
-            m.pinScreen.Show(false)
         end if
     end if
 End sub
@@ -292,7 +296,7 @@ sub securityPinShow(showOKButton=false as boolean)
     'show the actual facade screen that blocks the background
     m.screen.SetLayer(0, m.theme["background"])
     m.screen.SetRequireAllImagesToDraw(true)
-    'm.screen.SetLayer(1, m.theme["backgroundItems"]) ' logs an error - removed for now
+    m.screen.SetLayer(1, m.theme["backgroundItems"])
     m.screen.SetLayer(2, m.theme["logoItems"])
     m.screen.SetLayer(3, m.theme["breadCrumbs"])
     m.screen.Show()

@@ -229,7 +229,7 @@ Function RRbreadcrumbDate(myscreen) As Object
     fn = invalid
     ' ONLY display the user if we have MULTI users
     if NOT GetGlobalAA().ViewController.SkipUserSelection then
-        fn = RegReadByUser(GetGlobalAA().usernum,"friendlyName", "preferences", invalid)
+        fn = RegRead("friendlyName", "preferences", invalid, GetGlobalAA().userNum)
         if fn <> invalid and fn = "" then fn = invalid
     end if 
     if screenName <> invalid and screenName = "Home" then 

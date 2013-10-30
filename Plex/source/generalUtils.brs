@@ -85,12 +85,16 @@ end sub
 '******************************************************
 'Registry Helper Functions
 '******************************************************
-Function RegReadByUser(userNumber as integer, key, section=invalid, default=invalid)
+Function RegRead(key, section=invalid, default=invalid, userNumber=invalid)
     ' Reading from the registry is somewhat expensive, especially for keys that
     ' may be read repeatedly in a loop. We don't have that many keys anyway, keep
     ' a cache of our keys in memory.
-    section = RegGetSectionByUserNumber(userNumber, section)
-    'print "RegReadByUser:"+tostr(userNumber)+"-"+tostr(section)+":"+tostr(key)+":"+tostr(default)
+    if (userNumber <> invalid) and isint(userNumber) then
+        section = RegGetSectionByUserNumber(userNumber, section)
+    else     
+        section = RegGetSectionName(section)
+    endif
+    'print "RegRead:"+tostr(section)+":"+tostr(key)+":"+tostr(default)+" user("+tostr(userNumber)+")"
     cacheKey = key + section
     if m.RegistryCache.DoesExist(cacheKey) then return m.RegistryCache[cacheKey]
 
@@ -104,37 +108,13 @@ Function RegReadByUser(userNumber as integer, key, section=invalid, default=inva
     return value
 End Function
 
-Function RegRead(key, section=invalid, default=invalid)
-    ' Reading from the registry is somewhat expensive, especially for keys that
-    ' may be read repeatedly in a loop. We don't have that many keys anyway, keep
-    ' a cache of our keys in memory.
-    section = RegGetSectionName(section)
-    'print "RegRead:"+tostr(section)+":"+tostr(key)+":"+tostr(default)
-    cacheKey = key + section
-    if m.RegistryCache.DoesExist(cacheKey) then return m.RegistryCache[cacheKey]
-
-    value = default
-    sec = CreateObject("roRegistrySection", section)
-    if sec.Exists(key) then value = sec.Read(key)
-
-    if value <> invalid then
-        m.RegistryCache[cacheKey] = value
-    end if
-    return value
-End Function
-
-Sub RegWriteByUser(userNumber as integer, key, val, section=invalid)
-    section = RegGetSectionByUserNumber(userNumber, section)
-    'print "RegWriteByUser:"+tostr(userNumber)+"-"+tostr(section)+":"+tostr(key)+":"+tostr(val)
-    sec = CreateObject("roRegistrySection", section)
-    sec.Write(key, val)
-    m.RegistryCache[key + section] = val
-    sec.Flush() 'commit it
-End Sub
-
-Sub RegWrite(key, val, section=invalid)
-    section = RegGetSectionName(section)
-    'print "RegWrite:"+tostr(section)+":"+tostr(key)+":"+tostr(val)
+Sub RegWrite(key, val, section=invalid, userNumber=invalid)
+    if (userNumber <> invalid) and isint(userNumber) then
+        section = RegGetSectionByUserNumber(userNumber, section)
+    else
+        section = RegGetSectionName(section)
+    endif
+    'print "RegWrite:"+tostr(section)+":"+tostr(key)+":"+tostr(val)+" user("+tostr(userNumber)+")"
     sec = CreateObject("roRegistrySection", section)
     sec.Write(key, val)
     m.RegistryCache[key + section] = val
