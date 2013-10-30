@@ -151,7 +151,7 @@ Function securityPINEntryHandleMessage(msg) As Boolean
             if (m.pinToVerify <> invalid) and (m.pinToVerify = m.pinCode) then  'Immediately exit once correct PIN is entered
                 m.Screen.Close()
             else If i=0 Then   ' Back - Close the screen and exit without the pinCode    'codes.button_back_pressed
-                m.pinCode = ""
+                m.pinCode = "back"  
                 m.Screen.Close()
             Else If i=6 Then  'this only shows up when there is no OK button             'codes.button_select_pressed 
                 m.Screen.Close()
@@ -193,22 +193,26 @@ sub VerifySecurityPinActivate(priorScreen)
         if m.ViewController.ShowSecurityScreen <> invalid then m.ViewController.ShowSecurityScreen = false
         m.screen.Close()    'Closing from within Activate never calls the message loop to pop the screen
         m.ViewController.PopScreen(m)   'close this screen
-    else 'if type(screen.Screen) = "roImageCanvas"  'ensure that there wasn't some type of pop-up 'update:removed as I can't see how this can occur
-        if m.numRetries <= 0 then
-            if m.exitAppOnFailure = true then
-                print "ABORT! PIN Failed too many times"
-                end
-            else
-                m.screen.Close()    'Closing from within Activate never calls the message loop to pop the screen
-                m.ViewController.PopScreen(m)   'close this screen
-            end if
-        else
+    else 
+        if (m.numRetries > 0) and (priorScreen.pinCode <> "back") then
             m.numRetries = m.numRetries - 1
             m.pinScreen = createSecurityPINEntryScreen(m.ViewController)
             m.ViewController.InitializeOtherScreen(m.pinScreen, [m.breadCrumb])
             m.pinScreen.txtTop = "Incorrect Security PIN. Re-enter Security PIN."   '+ m.pinToValidate 'for debugging
             m.pinscreen.pinToVerify = m.pinToValidate
             m.pinScreen.Show(false)
+        else 'either retries was exceeded or the back button was pressed
+            if m.exitAppOnFailure = true then
+                if priorScreen.pinCode = "back" then
+                    print "ABORT! Back button pressed"
+                else
+                    print "ABORT! PIN Failed too many times"
+                end if
+                end
+            else
+                m.screen.Close()    'Closing from within Activate never calls the message loop to pop the screen
+                m.ViewController.PopScreen(m)   'close this screen
+            end if
         end if
     end if
 End sub
