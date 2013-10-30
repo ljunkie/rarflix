@@ -79,9 +79,9 @@ Sub securityPINEntryShow(showOKButton=true as boolean, pinToVerify="" as string,
     bottomRect.y = pinRect.y + pinRect.h
     bottomRect.h = canvasRect.h - bottomRect.y
     
-    PrintAA(pinRect)
-    PrintAA(topRect)
-    PrintAA(bottomRect)
+    'PrintAA(pinRect)
+    'PrintAA(topRect)
+    'PrintAA(bottomRect)
     if (pinToVerify <> invalid) and (pinToVerify <> "") then
         m.pinToVerify = pinToVerify
     end if

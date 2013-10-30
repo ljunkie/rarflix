@@ -648,13 +648,13 @@ Function createUserEditPrefsScreen(viewController, currentUser as integer) As Ob
         heading: "Name to show on the User Profile selection screen",
         default: ""
     }
+    obj.AddItem({title: "User Profile Name "}, "friendlyName", obj.GetPrefValue("friendlyName"))
     if currentUser = 0 then
         obj.Screen.SetHeader("Default User profile preferences")
     else
         obj.Screen.SetHeader("User " + numtostr(currentUser) + " profile preferences")
         obj.AddItem({title: "Show User on selection screen "}, "userActive", obj.GetEnumValue("userActive"))
     end if
-    obj.AddItem({title: "Profile Name "}, "friendlyName", obj.GetPrefValue("friendlyName"))
     if currentUser <> GetGlobalAA().userNum then   'can't erase preferences for the current user
         obj.AddItem({title: "Erase all preferences for this user"}, "erase")
     end if

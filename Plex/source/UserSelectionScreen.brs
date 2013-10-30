@@ -101,7 +101,6 @@ Sub userSelectionShow()
             m.users.Push(textArea[i])
         end if
     end for 
-    'PrintAA(m.users)
     m.theme["breadCrumbs"][0]["text"] = "User Profile Selection"
     m.screen.SetLayer(0, m.theme["background"])
     m.screen.SetRequireAllImagesToDraw(true)
