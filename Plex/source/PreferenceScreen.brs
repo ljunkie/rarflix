@@ -118,13 +118,8 @@ Sub prefsHandleEnumPreference(regKey, index)
     m.currentRegKey = regKey
     label = m.contentArray[index].OrigTitle
     pref = m.Prefs[regKey]
-    if m.currentUser = invalid then 'Handle reading/writing to other user profiles
-        screen = m.ViewController.CreateEnumInputScreen(pref.values, RegRead(regKey, "preferences", pref.default), pref.heading, [label], false)
-        m.Changes.AddReplace("_previous_"+regKey, RegRead(regKey, "preferences", pref.default)) ' ljunkie - set _previous_ value to key off of later
-    else
-        screen = m.ViewController.CreateEnumInputScreen(pref.values, RegReadByUser(m.currentUser, regKey, "preferences", pref.default), pref.heading, [label], false)
-        m.Changes.AddReplace("_previous_"+regKey, RegReadByUser(m.currentUser, regKey, "preferences", pref.default)) ' ljunkie - set _previous_ value to key off of later
-    end if 
+    screen = m.ViewController.CreateEnumInputScreen(pref.values, RegRead(regKey, "preferences", pref.default, m.currentUser), pref.heading, [label], false)
+    m.Changes.AddReplace("_previous_"+regKey, RegRead(regKey, "preferences", pref.default, m.currentUser)) ' ljunkie - set _previous_ value to key off of later
     screen.Listener = m
     screen.Show()
 End Sub
@@ -135,11 +130,7 @@ Sub prefsHandleTextPreference(regKey, index)
     label = m.contentArray[index].OrigTitle
     pref = m.Prefs[regKey]
     screen = m.ViewController.CreateTextInputScreen(pref.heading, [label], false)
-    if m.currentUser = invalid then 'Handle reading/writing to other user profiles
-        screen.Text = RegRead(regKey, "preferences", pref.default)
-    else
-        screen.Text = RegReadByUser(m.currentUser, regKey, "preferences", pref.default)
-    end if    
+    screen.Text = RegRead(regKey, "preferences", pref.default, m.currentUser)  'm.currentUser may be "invalid" and RegRead will use global currentUser
     screen.Screen.SetMaxLength(80)
     screen.Listener = m
     screen.Show()
@@ -152,40 +143,24 @@ Sub prefsHandleReorderPreference(regKey, index)
     pref = m.Prefs[regKey]
 
     screen = m.ViewController.CreateReorderScreen(pref.values, [label], false)
-    if m.currentUser = invalid then 'Handle reading/writing to other user profiles
-        screen.InitializeOrder(RegRead(regKey, "preferences", pref.default))
-    else
-        screen.InitializeOrder(RegReadByUser(m.currentUser, regKey, "preferences", pref.default))
-    end if
+    screen.InitializeOrder(RegRead(regKey, "preferences", pref.default, m.currentUser))  'm.currentUser may be "invalid" and RegRead will use global currentUser
     screen.Listener = m
     screen.Show()
 End Sub
 
 Sub prefsOnUserInput(value, screen)
     if type(screen.Screen) = "roKeyboardScreen" then
-        if m.currentUser = invalid then 'Handle reading/writing to other user profiles
-            RegWrite(m.currentRegKey, value, "preferences")
-        else
-            RegWriteByUser(m.currentUser, m.currentRegKey, value, "preferences")
-        end if
+        RegWrite(m.currentRegKey, value, "preferences", m.currentUser)  'm.currentUser may be "invalid" and RegWrite will use the global currentUser
         m.Changes.AddReplace(m.currentRegKey, value)
         m.AppendValue(m.currentIndex, value)
     else if type(screen.Screen) = "roListScreen" AND screen.ListScreenType = "reorder" then
-        if m.currentUser = invalid then 'Handle reading/writing to other user profiles
-            RegWrite(m.currentRegKey, value, "preferences")
-        else 
-            RegWriteByUser(m.currentUser, m.currentRegKey, value, "preferences")
-        end if 
+        RegWrite(m.currentRegKey, value, "preferences", m.currentUser)  'm.currentUser may be "invalid" and RegWrite will use the global currentUser
         m.Changes.AddReplace(m.currentRegKey, value)
     else
         label = m.contentArray[m.currentIndex].OrigTitle
         if screen.SelectedIndex <> invalid then
             Debug("Set " + label + " to " + screen.SelectedValue)
-            if m.currentUser = invalid then 'Handle reading/writing to other user profiles
-                RegWrite(m.currentRegKey, screen.SelectedValue, "preferences")
-            else
-                RegWriteByUser(m.currentUser, m.currentRegKey, screen.SelectedValue, "preferences")
-            end if 
+            RegWrite(m.currentRegKey, screen.SelectedValue, "preferences", m.currentUser)  'm.currentUser may be "invalid" and RegWrite will use the global currentUser
             m.Changes.AddReplace(m.currentRegKey, screen.SelectedValue)
             m.AppendValue(m.currentIndex, screen.SelectedLabel)
         end if
@@ -195,11 +170,7 @@ End Sub
 Function prefsGetEnumValue(regKey, currentUser = invalid)
     pref = m.Prefs[regKey]
     if currentUser = invalid then currentUser = m.currentUser
-    if currentUser = invalid then 'Handle reading/writing to other user profiles
-        value = RegRead(regKey, "preferences", pref.default)
-    else
-        value = RegReadByUser(currentUser, regKey, "preferences", pref.default)
-    end if
+    value = RegRead(regKey, "preferences", pref.default, currentUser)  'currentUser may be "invalid" and RegRead will use global currentUser
     m.Changes.AddReplace(regKey, value) ' ljunkie add changes, we can key of changes: 'm.Changes["_prev_{regKey}"] will have the previously selection
     for each item in pref.values
         if value = item.EnumValue then
@@ -212,11 +183,7 @@ End Function
 
 Function prefsGetPrefValue(regKey)
     pref = m.Prefs[regKey]
-    if m.currentUser = invalid then 'Handle reading/writing to other user profiles
-        value = RegRead(regKey, "preferences", pref.default)
-    else
-        value = RegReadByUser(m.currentUser, regKey, "preferences", pref.default)
-    end if
+    value = RegRead(regKey, "preferences", pref.default, m.currentUser)  'm.currentUser may be "invalid" and RegRead will use global currentUser
     return value
 End Function
 '*** Main Preferences ***
@@ -612,13 +579,13 @@ Function createUserProfilesPrefsScreen(viewController) As Object
     obj.HandleMessage = prefsUserProfilesHandleMessage
     obj.Screen.SetHeader("User profile preferences")
     'These must be the first 4 entries for easy parsing for the createUserEditPrefsScreen()
-    fn = firstof(RegReadByUser(0, "friendlyName", "preferences", invalid),"")
+    fn = firstof(RegRead("friendlyName", "preferences", invalid, 0),"")
     if fn <> "" then fn = " [" + fn + "]"
     obj.AddItem({title: "Default User Profile " + fn}, "userActive0")
     for ucount = 1 to 3 
         enaText = "Disabled"
-        if RegReadByUser(ucount, "userActive", "preferences", "0") = "1" then enaText = "Enabled"
-        fn = firstof(RegReadByUser(ucount, "friendlyName", "preferences", invalid),"")
+        if RegRead("userActive", "preferences", "0", ucount) = "1" then enaText = "Enabled"
+        fn = firstof(RegRead("friendlyName", "preferences", invalid, ucount),"")
         if fn <> "" then enaText = enaText + " [" + fn + "]"
         obj.AddItem({title: "User Profile " + tostr(ucount)}, "userActive" + tostr(ucount), enaText)
     end for
@@ -647,8 +614,8 @@ Function prefsUserProfilesHandleMessage(msg) As Boolean
                 else 
                     name = "User Profile " + tostr(msg.GetIndex())
                 end if
-                if RegReadByUser(msg.GetIndex(), "friendlyName", "preferences", invalid) <> invalid then
-                    name = RegReadByUser(msg.GetIndex(), "friendlyName", "preferences", invalid)
+                if RegRead("friendlyName", "preferences", invalid, msg.GetIndex()) <> invalid then
+                    name = RegRead("friendlyName", "preferences", invalid, msg.GetIndex())
                 end if 
                 m.ViewController.InitializeOtherScreen(m.editScreen, [name])
                 m.editScreen.Show()            

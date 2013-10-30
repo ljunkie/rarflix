@@ -45,7 +45,7 @@ Sub userSelectionShow()
     'Check for other users enabled -- otherwise, bypass
     if GetGlobalAA().ViewController.SkipUserSelection then 
         if m.userSelected = invalid then m.userSelected = 0
-        pinScreen = VerifySecurityPin(m.ViewController, RegReadByUser(m.userSelected,"securityPincode","preferences",invalid), false, 2)
+        pinScreen = VerifySecurityPin(m.ViewController, RegRead("securityPincode","preferences",invalid,m.userSelected), false, 2)
         m.ViewController.InitializeOtherScreen(pinScreen, ["Access to RARflix"])
         m.Activate = userSelectionActivate
         pinScreen.Show()
@@ -92,10 +92,10 @@ Sub userSelectionShow()
     ]
     m.users = []   
     for i = 0 to 3 step 1   'user 0 is always enabled
-        if (i=0) or (RegReadByUser(i, "userActive", "preferences", "0") = "1") then 
-            friendlyName = RegReadByUser(i, "friendlyName", "preferences", invalid)
+        if (i=0) or (RegRead("userActive", "preferences", "0", i) = "1") then 
+            friendlyName = RegRead("friendlyName", "preferences", invalid, i)
             if friendlyName <> invalid and friendlyName <> "" then
-                textArea[i]["text"] = RegReadByUser(i, "friendlyName", "preferences", invalid)
+                textArea[i]["text"] = RegRead("friendlyName", "preferences", invalid, i)
             end if 
             m.users.Push(buttons[i])
             m.users.Push(textArea[i])
@@ -143,10 +143,10 @@ Function userSelectionHandleMessage(msg) As Boolean
             end if
             if m.userSelected <> -1 then
                 'make sure an unavailable user was not selected.  user0 is always active
-                if (m.userSelected > 0) and (RegReadByUser(m.userSelected, "userActive", "preferences", "0") <> "1") then 
+                if (m.userSelected > 0) and (RegRead("userActive", "preferences", "0",m.userSelected) <> "1") then 
                     m.userSelected = -1 'disable selection
-                else if RegReadByUser(m.userSelected,"securityPincode","preferences",invalid) <> invalid then    'pop up PIN screen when user has a password
-                    pinScreen = VerifySecurityPin(m.ViewController, RegReadByUser(m.userSelected,"securityPincode","preferences",invalid), false, 2)
+                else if RegRead("securityPincode","preferences",invalid,m.userSelected) <> invalid then    'pop up PIN screen when user has a password
+                    pinScreen = VerifySecurityPin(m.ViewController, RegRead("securityPincode","preferences",invalid,m.userSelected), false, 2)
                     m.ViewController.InitializeOtherScreen(pinScreen, ["Access to RARFlix"])
                     m.Activate = userSelectionActivate
                     pinScreen.Show()
