@@ -206,7 +206,7 @@ sub VerifySecurityPinActivate(priorScreen)
             m.numRetries = m.numRetries - 1
             m.pinScreen = createSecurityPINEntryScreen(m.ViewController)
             m.ViewController.InitializeOtherScreen(m.pinScreen, [m.breadCrumb])
-            m.pinScreen.txtTop = "Incorrect Security PIN. Re-enter Security PIN." + m.pinToValidate
+            m.pinScreen.txtTop = "Incorrect Security PIN. Re-enter Security PIN."   '+ m.pinToValidate 'for debugging
             m.pinscreen.pinToVerify = m.pinToValidate
             m.pinScreen.Show(false)
         end if
