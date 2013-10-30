@@ -105,21 +105,13 @@ Sub userSelectionShow()
     m.theme["breadCrumbs"][0]["text"] = "User Profile Selection"
     m.screen.SetLayer(0, m.theme["background"])
     m.screen.SetRequireAllImagesToDraw(true)
-'    m.screen.SetLayer(1, m.theme["backgroundItems"])
+    m.screen.SetLayer(1, m.theme["backgroundItems"])
     m.screen.SetLayer(2, m.theme["logoItems"])
     m.screen.SetLayer(3, m.canvasItems)
     m.screen.SetLayer(4, m.users)
     m.screen.SetLayer(5, m.theme["breadCrumbs"])
     m.Screen.SetMessagePort(m.Port)
     m.Screen.Show()
-    'special case when there is only 1 user (which means there must be a pin).  Jump straight to PIN entry
-    'if m.users.Count() = 1 then
-    '    m.userSelected = 0
-    '    pinScreen = VerifySecurityPin(m.ViewController, RegReadByUser(0,"securityPincode","preferences",invalid), false, 0)
-    '    m.ViewController.InitializeOtherScreen(pinScreen, ["Access to RARFlix"])
-    '    m.Activate = userSelectionActivate
-    '    pinScreen.Show()
-    'end if
 End Sub
 
 Function userSelectionHandleMessage(msg) As Boolean
