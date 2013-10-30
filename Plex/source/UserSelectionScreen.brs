@@ -38,10 +38,18 @@ Function createUserSelectionScreen(viewController) as object
     
     obj.userSelected = -1
     obj.theme = getImageCanvasTheme()
+    'count users
+    obj.userCount = 1
+    obj.currentUserPage = 0
+    for i = 1 to 7 step 1   'user 0 is always enabled
+        if RegRead("userActive", "preferences", "0", i) = "1" then
+            obj.userCount = obj.userCount + 1 
+        end if
+    end for 
     return obj
 End Function
 
-Sub userSelectionShow()
+Sub userSelectionShow(refresh=false as Boolean)
     'Check for other users enabled -- otherwise, bypass
     if GetGlobalAA().ViewController.SkipUserSelection then 
         if m.userSelected = invalid then m.userSelected = 0
@@ -58,16 +66,18 @@ Sub userSelectionShow()
     bufSize = { w:80, h:80 }  'size of empty space between centerpoint and centerpoint of arrows
     textSize = { w:250, h:150 }  'where the name goes
     textBufSize = { w:20, h:5 }  'size of empty space between centerpoint and centerpoint of text
+    offsetSize = { h:50 }       'amount to offset the center of the drawing objects from the center of the screen 
     if GetGlobal("IsHD") <> true then
         'scale down for SD.  Not perfect but good enough on an SD screen. 
         HDRectToSDRect(picSize) 
         HDRectToSDRect(bufSize) 
         HDRectToSDRect(textSize) 
         HDRectToSDRect(textBufSize) 
+        HDRectToSDRect(offsetSize) 
     end if
     'centerPt of screen
     x=int(canvasRect.w/2)
-    y=int(canvasRect.h/2)
+    y=int(canvasRect.h/2)-offsetSize.h
     
     buttons = [ 'These can be hardcoded later so long as adjusted for HD->SD 
             'The "-picSize.w/2" means rotate around the middle
@@ -87,20 +97,33 @@ Sub userSelectionShow()
         { 
             Text:"Press direction arrow on remote to select User"
             TextAttrs:{Color:m.theme.colors.normalText, Font:"Large",HAlign:"Center", VAlign:"Top",Direction:"LeftToRight"}
-            TargetRect:{x:0,y:int(canvasrect.h*.85),w:canvasrect.w,h:0}
+            TargetRect:{x:0,y:int(canvasrect.h*.75),w:canvasrect.w,h:0}
         }
     ]
-    m.users = []   
-    for i = 0 to 3 step 1   'user 0 is always enabled
-        if (i=0) or (RegRead("userActive", "preferences", "0", i) = "1") then 
+    m.users = []
+    start = 0  
+    if m.currentUserPage = 1 then
+        start = 4
+    end if
+    for i = start to (start+3) step 1   'user 0 is always enabled
+        if (i=0) or (RegRead("userActive", "preferences", "0", i) = "1") then
+            index = int(i AND 3)
             friendlyName = RegRead("friendlyName", "preferences", invalid, i)
             if friendlyName <> invalid and friendlyName <> "" then
-                textArea[i]["text"] = RegRead("friendlyName", "preferences", invalid, i)
-            end if 
-            m.users.Push(buttons[i])
-            m.users.Push(textArea[i])
+                textArea[index]["text"] = RegRead("friendlyName", "preferences", invalid, i)
+            else if i = 0 then
+                textArea[index]["text"] = "Default User"
+            else 
+                textArea[index]["text"] = "User " + tostr(i)
+            endif 
+            m.users.Push(buttons[index])
+            m.users.Push(textArea[index])
         end if
-    end for 
+    end for
+    m.screen.AllowUpdates(false)    'lock screen from drawing
+    if refresh = true then 
+        m.screen.ClearButtons()
+    end if
     m.theme["breadCrumbs"][0]["text"] = "User Profile Selection"
     m.screen.SetLayer(0, m.theme["background"])
     m.screen.SetRequireAllImagesToDraw(true)
@@ -109,6 +132,14 @@ Sub userSelectionShow()
     m.screen.SetLayer(3, m.canvasItems)
     m.screen.SetLayer(4, m.users)
     m.screen.SetLayer(5, m.theme["breadCrumbs"])
+    if m.userCount > 4 then
+        if m.currentUserPage = 0 then 
+            m.screen.AddButton(0, "Next User Profile page")
+        else
+            m.screen.AddButton(0, "Previous User Profile page")
+        end if 
+    end if
+    m.screen.AllowUpdates(true)    'Update it now
     m.Screen.SetMessagePort(m.Port)
     m.Screen.Show()
 End Sub
@@ -141,6 +172,9 @@ Function userSelectionHandleMessage(msg) As Boolean
             '    Debug("Key Pressed:" + tostr(msg.GetIndex()) + ", pinCode:" + tostr(m.pinCode))
             end if
             if m.userSelected <> -1 then
+                if m.currentUserPage <> 0 then
+                    m.userSelected = m.userSelected + 4
+                end if
                 'make sure an unavailable user was not selected.  user0 is always active
                 if (m.userSelected > 0) and (RegRead("userActive", "preferences", "0",m.userSelected) <> "1") then 
                     m.userSelected = -1 'disable selection
@@ -154,7 +188,14 @@ Function userSelectionHandleMessage(msg) As Boolean
                     m.screen.Close()    'for some reason when you use activate and close() within it, the handle loop doesn't seem to get the close message so pop the screen here
                 end if
             end if
-       end if
+        else if (msg.isButtonPressed()) then 'OK Button was pressed.  this can only happen when there are > 4 user profiles
+            if m.currentUserPage = 0 then
+                m.currentUserPage = 1
+            else 
+                m.currentUserPage = 0
+            end if
+            m.Show(true) 'redraw screen
+        end if
     end if    
     return handled
 End Function

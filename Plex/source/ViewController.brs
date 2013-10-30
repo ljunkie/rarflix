@@ -85,7 +85,7 @@ Function createViewController() As Object
     controller.ShowSecurityScreen = false
     controller.SkipUserSelection = false
     controller.RFisMultiUser = false
-    for i = 1 to 3 step 1   'Check for other users enabled
+    for i = 1 to 7 step 1   'Check for other users enabled
         if RegRead("userActive", "preferences", "0",i) = "1" then 
             controller.ShowSecurityScreen = true
             controller.RFisMultiUser = true

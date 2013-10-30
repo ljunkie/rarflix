@@ -560,6 +560,8 @@ sub prefsSecurityPinHandleSetPin(priorScreen)
     endif
 End sub
 
+'*** User Profile Preferences ***
+
 sub refreshUserProfilesPrefsScreen(p) 
  ' TODO: need to work on a better way to refresh the current roListScreens
  curscreen = m
@@ -570,7 +572,6 @@ sub refreshUserProfilesPrefsScreen(p)
  m.ViewController.popscreen(m)
 end sub
 
-'*** User Profile Preferences ***
 Function createUserProfilesPrefsScreen(viewController) As Object
     'TraceFunction("createUserProfilesPrefsScreen", viewController)
 
@@ -578,11 +579,11 @@ Function createUserProfilesPrefsScreen(viewController) As Object
     obj.Activate = refreshUserProfilesPrefsScreen
     obj.HandleMessage = prefsUserProfilesHandleMessage
     obj.Screen.SetHeader("User profile preferences")
-    'These must be the first 4 entries for easy parsing for the createUserEditPrefsScreen()
+    'These must be the first 8 entries for easy parsing for the createUserEditPrefsScreen()
     fn = firstof(RegRead("friendlyName", "preferences", invalid, 0),"")
     if fn <> "" then fn = " [" + fn + "]"
     obj.AddItem({title: "Default User Profile " + fn}, "userActive0")
-    for ucount = 1 to 3 
+    for ucount = 1 to 7
         enaText = "Disabled"
         if RegRead("userActive", "preferences", "0", ucount) = "1" then enaText = "Enabled"
         fn = firstof(RegRead("friendlyName", "preferences", invalid, ucount),"")
