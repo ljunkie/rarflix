@@ -94,7 +94,7 @@ Function RegRead(key, section=invalid, default=invalid, userNumber=invalid)
     else     
         section = RegGetSectionName(section)
     endif
-    'print "RegRead:"+tostr(section)+":"+tostr(key)+":"+tostr(default)
+    'print "RegRead:"+tostr(section)+":"+tostr(key)+":"+tostr(default)+" user("+tostr(userNumber)+")"
     cacheKey = key + section
     if m.RegistryCache.DoesExist(cacheKey) then return m.RegistryCache[cacheKey]
 
@@ -114,7 +114,7 @@ Sub RegWrite(key, val, section=invalid, userNumber=invalid)
     else
         section = RegGetSectionName(section)
     endif
-    'print "RegWrite:"+tostr(section)+":"+tostr(key)+":"+tostr(val)
+    'print "RegWrite:"+tostr(section)+":"+tostr(key)+":"+tostr(val)+" user("+tostr(userNumber)+")"
     sec = CreateObject("roRegistrySection", section)
     sec.Write(key, val)
     m.RegistryCache[key + section] = val
