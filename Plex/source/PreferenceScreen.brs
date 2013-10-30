@@ -192,12 +192,13 @@ Sub prefsOnUserInput(value, screen)
     end if
 End Sub
 
-Function prefsGetEnumValue(regKey)
+Function prefsGetEnumValue(regKey, currentUser = invalid)
     pref = m.Prefs[regKey]
-    if m.currentUser = invalid then 'Handle reading/writing to other user profiles
+    if currentUser = invalid then currentUser = m.currentUser
+    if currentUser = invalid then 'Handle reading/writing to other user profiles
         value = RegRead(regKey, "preferences", pref.default)
     else
-        value = RegReadByUser(m.currentUser, regKey, "preferences", pref.default)
+        value = RegReadByUser(currentUser, regKey, "preferences", pref.default)
     end if
     m.Changes.AddReplace(regKey, value) ' ljunkie add changes, we can key of changes: 'm.Changes["_prev_{regKey}"] will have the previously selection
     for each item in pref.values
@@ -290,9 +291,11 @@ Sub showPreferencesScreen()
     m.Screen.SetHeader("Set Plex Channel Preferences")
 
     ' re-ordered - RR
-    m.AddItem({title: "Plex Media Servers"}, "servers")
-    m.AddItem({title: getCurrentMyPlexLabel()}, "myplex")
     m.AddItem({title: "RARflix Preferences", ShortDescriptionLine2: "the goods"}, "rarflix_prefs")
+    m.AddItem({title: getCurrentMyPlexLabel()}, "myplex")
+    m.AddItem({title: "User Profiles", ShortDescriptionLine2: "Multi-User Support"}, "userprofiles")
+    m.AddItem({title: "Security PIN", ShortDescriptionLine2: "Require a PIN to access (multi-user supported)"}, "securitypin")
+    m.AddItem({title: "Plex Media Servers"}, "servers")
     m.AddItem({title: "Quality"}, "quality", m.GetEnumValue("quality"))
     m.AddItem({title: "Remote Quality"}, "quality_remote", m.GetEnumValue("quality_remote"))
     m.AddItem({title: "Direct Play"}, "directplay", m.GetEnumValue("directplay"))
@@ -301,9 +304,7 @@ Sub showPreferencesScreen()
     m.AddItem({title: "Section Display"}, "sections")
     m.AddItem({title: "Remote Control/Name"}, "remotecontrol")
     m.AddItem({title: "Subtitles"}, "subtitles")
-    m.AddItem({title: "Security PIN"}, "securitypin")
     m.AddItem({title: "Slideshow"}, "slideshow")
-    m.AddItem({title: "User Profiles"}, "userprofiles")
     m.AddItem({title: "Screensaver"}, "screensaver", m.GetEnumValue("screensaver"))
     m.AddItem({title: "Logging"}, "debug")
     m.AddItem({title: "Advanced Preferences"}, "advanced")
@@ -592,18 +593,35 @@ sub prefsSecurityPinHandleSetPin(priorScreen)
     endif
 End sub
 
+sub refreshUserProfilesPrefsScreen(p) 
+ ' TODO: need to work on a better way to refresh the current roListScreens
+ curscreen = m
+ screen = createUserProfilesPrefsScreen(m.ViewController)
+ m.ViewController.InitializeOtherScreen(screen, ["User Profiles"])
+ if m.focusedlistitem <> invalid then screen.screen.SetFocusedListItem(m.focusedlistitem)
+ screen.Show()            
+ m.ViewController.popscreen(m)
+end sub
 
 '*** User Profile Preferences ***
 Function createUserProfilesPrefsScreen(viewController) As Object
     'TraceFunction("createUserProfilesPrefsScreen", viewController)
+
     obj = createBasePrefsScreen(viewController)
+    obj.Activate = refreshUserProfilesPrefsScreen
     obj.HandleMessage = prefsUserProfilesHandleMessage
     obj.Screen.SetHeader("User profile preferences")
     'These must be the first 4 entries for easy parsing for the createUserEditPrefsScreen()
-    obj.AddItem({title: "Default User Profile "}, "userActive0")
-    obj.AddItem({title: "User Profile 1 "}, "userActive1")
-    obj.AddItem({title: "User Profile 2 "}, "userActive2")
-    obj.AddItem({title: "User Profile 3 "}, "userActive3")
+    fn = firstof(RegReadByUser(0, "friendlyName", "preferences", invalid),"")
+    if fn <> "" then fn = " [" + fn + "]"
+    obj.AddItem({title: "Default User Profile " + fn}, "userActive0")
+    for ucount = 1 to 3 
+        enaText = "Disabled"
+        if RegReadByUser(ucount, "userActive", "preferences", "0") = "1" then enaText = "Enabled"
+        fn = firstof(RegReadByUser(ucount, "friendlyName", "preferences", invalid),"")
+        if fn <> "" then enaText = enaText + " [" + fn + "]"
+        obj.AddItem({title: "User Profile " + tostr(ucount)}, "userActive" + tostr(ucount), enaText)
+    end for
     obj.AddItem({title: "Close"}, "close")
     return obj
 End Function
@@ -619,6 +637,7 @@ Function prefsUserProfilesHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
+            m.FocusedListItem = msg.GetIndex()
             if command = "close" then
                 m.Screen.Close()
             else    'must be a user edit

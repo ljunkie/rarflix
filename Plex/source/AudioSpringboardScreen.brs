@@ -81,7 +81,8 @@ Sub audioSetupButtons()
 '         m.addButton( "shuffle", "shufflePlay")
 '    end if
 
-    if m.Context.Count() > 1 then
+'    if m.Context.Count() > 1 then
+    if m.Playstate = 2 and m.Context.Count() > 1 then
         m.AddButton("next song", "next")
         m.AddButton("previous song", "prev")
     end if
@@ -202,12 +203,14 @@ Function audioHandleMessage(msg) As Boolean
             else if button = 9 and audioplayer.IsPlaying then ' forward
                  curOffset = audioplayer.GetPlaybackProgress()
                  newOffset = (curOffset*1000)+10000
-                 duration = audioplayer.context[audioplayer.curindex].duration*1000
-                 if newOffset < int(duration) then 
-                     Debug(tostr(newOffset))
-                     audioPlayer.audioPlayer.Seek(newOffset)
-                     audioPlayer.playbackOffset = newOffset/1000
-                     audioPlayer.playbackTimer.Mark()
+                 if audioplayer.context[audioplayer.curindex].duration <> invalid then 
+                     duration = audioplayer.context[audioplayer.curindex].duration*1000
+                     if newOffset < int(duration) then 
+                         Debug(tostr(newOffset))
+                         audioPlayer.audioPlayer.Seek(newOffset)
+                         audioPlayer.playbackOffset = newOffset/1000
+                         audioPlayer.playbackTimer.Mark()
+                     end if
                  end if
                  DisableUpdateButtons = true
             else if button = 5 then ' next             'if button = 5 or button = 9 ' next

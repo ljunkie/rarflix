@@ -83,15 +83,21 @@ Function createViewController() As Object
     ' Figure if we need to show the securityscreen
     'First check if there are multiple users
     controller.ShowSecurityScreen = false
+    controller.SkipUserSelection = false
+    controller.RFisMultiUser = false
     for i = 1 to 3 step 1   'Check for other users enabled
         if RegReadByUser(i, "userActive", "preferences", "0") = "1" then 
             controller.ShowSecurityScreen = true
+            controller.RFisMultiUser = true
             exit for
         end if
     end for
     ' Finally, check if the default user has a pin 
     if controller.ShowSecurityScreen = false then
-        if RegRead("securityPincode","preferences",invalid) <> invalid then controller.ShowSecurityScreen = true
+        controller.SkipUserSelection = true
+        if RegRead("securityPincode","preferences",invalid) <> invalid then 
+            controller.ShowSecurityScreen = true
+        end if
     end if
 
     ' Stuff the controller into the global object
@@ -292,9 +298,9 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         if screen = invalid then return invalid
         screenName = "Audio Springboard"
     else if contentType = "section" then
-        ' Now done in gridscreen.bres -- when someone focus the row instead
-        RegWrite("lastMachineID", item.server.machineID, "userinfo")
-        RegWrite("lastSectionKey", item.key, "userinfo")
+        ' Now done in gridscreen.brs -- when someone focus the row instead
+        'RegWrite("lastMachineID", item.server.machineID, "userinfo")
+        'RegWrite("lastSectionKey", item.key, "userinfo")
 
         screenName = "Section: " + tostr(item.type)
         if tostr(item.type) = "artist" then 
@@ -661,13 +667,11 @@ Sub vcShowReleaseNotes()
     paragraphs = []
     if isRFtest() then 
         spacer = chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)
+        paragraphs.Push(spacer + "* user profiles (fast user switching)")
+        paragraphs.Push(spacer + "* user profile pin code [optional]")
         paragraphs.Push(spacer + "* full grid")
         paragraphs.Push(spacer + "* black theme")
-        paragraphs.Push(spacer + "* custom thumbs")
-        paragraphs.Push(spacer + "* 6 buttons")
-        paragraphs.Push(spacer + "* music changes")
-        paragraphs.Push(spacer + "* lazy load photo section")
-        paragraphs.Push(spacer + "* continuous play fix")
+        paragraphs.Push(spacer + "* custom icons")
     end if
 
     paragraphs.Push("( * ) remote button works is most areas - try it!")
@@ -918,6 +922,9 @@ Sub vcShow()
     end while
 
     ' Clean up some references on the way out
+    restoreAudio = m.AudioPlayer ' save for later (maybe)
+    m.AudioPlayer.Stop()         ' stop any audio for now. This might change with exit confirmation
+
     m.Home = invalid
     m.myplex = invalid
     m.GdmAdvertiser = invalid
@@ -929,7 +936,57 @@ Sub vcShow()
     m.PendingRequests.Clear()
     m.SocketListeners.Clear()
 
-    Debug("Finished global message loop")
+    ' ljunkie - extra cleanup for the user switching    
+    GetGlobalAA().Delete("myplex")
+    GetGlobalAA().Delete("globals")
+    GetGlobalAA().Delete("primaryserver")
+    GetGlobalAA().Delete("validated_servers")
+    GetGlobalAA().Delete("registrycache")
+    GetGlobalAA().Delete("first_focus_done")
+
+     'Exit Confirmation TODO - for not we will show the user selection screen if enabled
+    if m.RFisMultiUser then 
+        Debug("Exit channel - show user selection")
+        m = invalid
+        'GetGlobalAA().AddReplace("restoreAudio", restoreAudio)
+        Main(invalid)
+        return
+    else
+        Debug("Finished global message loop")
+        end
+'        controller = invalid
+'        port = CreateObject("roMessagePort")
+'        dialog = CreateObject("roMessageDialog")
+'        dialog.SetMessagePort(port)
+'    
+'        dialog.SetTitle("Exit RARflix?")
+'        dialog.SetText("")
+'        dialog.AddButton(0, "No")
+'        dialog.AddButton(1, "Yes")
+'        dialog.Show()
+'    
+'        while true
+'            dlgMsg = wait(0, dialog.GetMessagePort())
+'            if type(dlgMsg) = "roMessageDialogEvent"
+'                if dlgMsg.isScreenClosed()
+'                    end ' exit channel
+'                    return
+'                else if dlgMsg.isButtonPressed()
+'                    if dlgMsg.GetIndex() = 1 then end 
+'                    if dlgMsg.GetIndex() = 0 then 
+'                        m = invalid
+'                        dialog.close()
+'                        GetGlobalAA().AddReplace("restoreAudio", restoreAudio)
+'                        GetGlobalAA().AddReplace("restoreAudio", restoreAudio)
+'                        Main(invalid)
+'                    end if
+'                    return
+'                end if
+'            end if
+'        end while
+    end if
+'
+    return
 End Sub
 
 Sub vcAddBreadcrumbs(screen, breadcrumbs)

@@ -225,18 +225,28 @@ Function RRbitrate( bitrate As Float) As String
 End Function
 
 Function RRbreadcrumbDate(myscreen) As Object
-    if RegRead("rf_hs_clock", "preferences", "enabled") = "enabled" then
-        screenName = firstOf(myScreen.ScreenName, type(myScreen.Screen))
-        if screenName <> invalid and screenName = "Home" then 
+    screenName = firstOf(myScreen.ScreenName, type(myScreen.Screen))
+    fn = invalid
+    ' ONLY display the user if we have MULTI users
+    if NOT GetGlobalAA().ViewController.SkipUserSelection then
+        fn = RegReadByUser(GetGlobalAA().usernum,"friendlyName", "preferences", invalid)
+        if fn <> invalid and fn = "" then fn = invalid
+    end if 
+    if screenName <> invalid and screenName = "Home" then 
+        myscreen.Screen.SetBreadcrumbEnabled(true)
+        if RegRead("rf_hs_clock", "preferences", "enabled") = "enabled" then
             'Debug("update " + screenName + " screen time") 'stop printing this.. it's been tested enough
             date = CreateObject("roDateTime")
             date.ToLocalTime() ' localizetime
             timeString = RRmktime(date.AsSeconds(),0)
             dateString = date.AsDateString("short-month-short-weekday")
-            myscreen.Screen.SetBreadcrumbEnabled(true)
-            myscreen.Screen.SetBreadcrumbText(dateString, timeString)
-        'else 
-        '    Debug("will NOT update " + screenName + " screen time. " + screenName +"=Home")
+            if fn <> invalid then 
+                myscreen.Screen.SetBreadcrumbText(dateString + " " + timeString,fn)
+            else 
+                myscreen.Screen.SetBreadcrumbText(dateString, timeString)
+            end if
+        else if fn <> invalid then 
+            myscreen.Screen.SetBreadcrumbText(fn,"")
         end if
     end if
 End function

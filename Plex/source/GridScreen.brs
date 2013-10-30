@@ -19,7 +19,8 @@ Function createGridScreen(viewController, style="flat-movie", upBehavior="exit",
     grid.SetMessagePort(screen.Port)
 
     di=createobject("rodeviceinfo")
-    if mid(di.getversion(),3,1).toint() > 3 then
+    ' only use custom loading image on the black theme - conserve space
+    if mid(di.getversion(),3,1).toint() > 3 and RegRead("rf_theme", "preferences", "black") = "black" then
         imageDir = GetGlobalAA().Lookup("rf_theme_dir")
         SDPosterURL = imageDir + "LoadingPoster.png"
         HDPosterURL = imageDir + "LoadingPoster.png"
@@ -206,8 +207,10 @@ Function gridHandleMessage(msg) As Boolean
             if m.screenid <> invalid and m.screenid < 0 and m.contentArray <> invalid and type(m.contentArray[m.selectedRow]) = "roArray" then 
                 item = m.contentArray[m.selectedRow][m.focusedIndex]
                 if type(item) = "roAssociativeArray" and item.contenttype <> invalid and item.contenttype = "section" then 
-                    RegWrite("lastMachineID", item.server.machineID)
-                    RegWrite("lastSectionKey", item.key)
+                    RegWrite("lastMachineID", item.server.machineID, "userinfo")
+                    RegWrite("lastSectionKey", item.key, "userinfo")
+                    'RegWrite("lastMachineID", item.server.machineID)
+                    'RegWrite("lastSectionKey", item.key)
                     Debug("--------------- remember last focus ------------------------")
                     Debug("last section used " + item.key)
                     Debug("server " + item.server.machineID)
