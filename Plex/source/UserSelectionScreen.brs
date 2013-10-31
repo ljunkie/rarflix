@@ -40,10 +40,13 @@ Function createUserSelectionScreen(viewController) as object
     obj.theme = getImageCanvasTheme()
     'count users
     obj.userCount = 1
+    obj.userPages = 1 ' possible we have enabled user 1,2 and 5 -- we will need to show next page button
     obj.currentUserPage = 0
     for i = 1 to 7 step 1   'user 0 is always enabled
         if RegRead("userActive", "preferences", "0", i) = "1" then
             obj.userCount = obj.userCount + 1 
+            if i > 4 then obj.userPages = 2
+            'if i > 8 then obj.userPages = 3 if for some reason this happens down the road?
         end if
     end for 
     return obj
@@ -132,7 +135,7 @@ Sub userSelectionShow(refresh=false as Boolean)
     m.screen.SetLayer(3, m.canvasItems)
     m.screen.SetLayer(4, m.users)
     m.screen.SetLayer(5, m.theme["breadCrumbs"])
-    if m.userCount > 4 then
+    if m.userPages > 1 then ' if m.userCount > 4 then
         if m.currentUserPage = 0 then 
             m.screen.AddButton(0, "Next User Profile page")
         else
