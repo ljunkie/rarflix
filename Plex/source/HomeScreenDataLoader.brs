@@ -196,57 +196,64 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
         end if
      end if
 
-    '  If server is owned...
+    '  If server is owned... 
+    ' ljunkie - we will be checking if this is a cloud sync server below. Maybe these will be accessible later?
     if server.owned then
 
-        ' Request recently used channels
-        row = "channels"
-        if rowkey = invalid or rowkey = row then
-            view = RegRead("row_visibility_channels", "preferences", "")
-            if view <> "hidden" then
-                channels = CreateObject("roAssociativeArray")
-                channels.server = server
-                channels.key = "/channels/recentlyViewed"
-                channels.connectionUrl = connectionUrl
-        
-                allChannels = CreateObject("roAssociativeArray")
-                allChannels.Title = "More Channels"
-                if AreMultipleValidatedServers() then
-                    allChannels.ShortDescriptionLine2 = "All channels on " + server.name
-                else
-                    allChannels.ShortDescriptionLine2 = "All channels"
-                end if
-                allChannels.Description = allChannels.ShortDescriptionLine2
-                allChannels.server = server
-                allChannels.sourceUrl = ""
-                allChannels.Key = "/channels/all"
-                allChannels.connectionUrl = connectionUrl
-                allChannels.SDPosterURL = imageDir + "more.png"
-                allChannels.HDPosterURL = imageDir + "more.png"
-                channels.item = allChannels
-                m.AddOrStartRequest(channels, m.RowIndexes[row], startRequests)
-            else
-                m.Listener.OnDataLoaded(m.RowIndexes[row], [], 0, 0, true)
-            end if
-        end if
+        ' ljunkie - my.plexapp.com is now a valid server ( cloud sync ) 
+        ' some things are not allowed - for one is the /status/sessions ( now playing )
+        re = CreateObject("roRegex", "my.plexapp.com", "i")        
+        if NOT re.IsMatch(server.serverurl) then 
 
-
-        ' Request Now Playing
-        if isRFtest() then
-            row = "now_playing"
+            ' Request recently used channels
+            row = "channels"
             if rowkey = invalid or rowkey = row then
-                view = RegRead("row_visibility_now_playing", "preferences", "")
+                view = RegRead("row_visibility_channels", "preferences", "")
                 if view <> "hidden" then
-                    nowPlaying = CreateObject("roAssociativeArray")
-                    nowPlaying.server = server
-                    nowPlaying.key = "/status/sessions"
-                    nowPlaying.connectionUrl = connectionUrl
-                    nowPlaying.requestType = "media"
-                    m.AddOrStartRequest(nowPlaying, m.RowIndexes[row], startRequests)
+                    channels = CreateObject("roAssociativeArray")
+                    channels.server = server
+                    channels.key = "/channels/recentlyViewed"
+                    channels.connectionUrl = connectionUrl
+            
+                    allChannels = CreateObject("roAssociativeArray")
+                    allChannels.Title = "More Channels"
+                    if AreMultipleValidatedServers() then
+                        allChannels.ShortDescriptionLine2 = "All channels on " + server.name
+                    else
+                        allChannels.ShortDescriptionLine2 = "All channels"
+                    end if
+                    allChannels.Description = allChannels.ShortDescriptionLine2
+                    allChannels.server = server
+                    allChannels.sourceUrl = ""
+                    allChannels.Key = "/channels/all"
+                    allChannels.connectionUrl = connectionUrl
+                    allChannels.SDPosterURL = imageDir + "more.png"
+                    allChannels.HDPosterURL = imageDir + "more.png"
+                    channels.item = allChannels
+                    m.AddOrStartRequest(channels, m.RowIndexes[row], startRequests)
                 else
                     m.Listener.OnDataLoaded(m.RowIndexes[row], [], 0, 0, true)
                 end if
+            end if
+
+            ' now playing row
+            if isRFtest() then
+                row = "now_playing"
+                if rowkey = invalid or rowkey = row then
+                    view = RegRead("row_visibility_now_playing", "preferences", "")
+                    if view <> "hidden" then
+                        nowPlaying = CreateObject("roAssociativeArray")
+                        nowPlaying.server = server
+                        nowPlaying.key = "/status/sessions"
+                        nowPlaying.connectionUrl = connectionUrl
+                        nowPlaying.requestType = "media"
+                        m.AddOrStartRequest(nowPlaying, m.RowIndexes[row], startRequests)
+                    else
+                        m.Listener.OnDataLoaded(m.RowIndexes[row], [], 0, 0, true)
+                    end if
+                end if 
             end if 
+
         end if 
 
     end if

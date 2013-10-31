@@ -6,9 +6,11 @@ Sub rf_homeNowPlayingChange()
     m.contentArray[m.RowIndexes[rowkey]].refreshContent = []
     m.contentArray[m.RowIndexes[rowkey]].loadedServers.Clear()
 
+    re = CreateObject("roRegex", "my.plexapp.com", "i")        
     for each server in GetOwnedPlexMediaServers()
-        if server.isavailable then ' only query server if available
-            'Debug("---- refreshing Now Playing LOADER") too chatty
+        if re.IsMatch(server.serverurl) then 
+            Debug("Skipping now playing session check on 'cloud sync' server: " + server.serverurl)
+        else if server.isavailable then ' only query server if available
             m.CreateServerRequests(server, true, true, invalid, rowkey) ' only request the nowPlaying;/status/sessions
         end if
     next
