@@ -149,7 +149,6 @@ Sub containerParseXml()
               if remusic.isMatch(tostr(metadata.HDPosterURL)) then rfHasThumb = invalid
             end if
                   
-    
             if rfHasThumb = invalid or re.isMatch(rfHasThumb) then 
                 thumb_text = firstof(metadata.umtitle, metadata.title)
                 if thumb_text <> invalid AND metadata.server <> invalid then
@@ -180,6 +179,19 @@ Sub containerParseXml()
             end if
         end if
         ' END custom poster/thumbs
+
+        ' ROKU is not working with SSL ( some cloud sync thumbs ) -- 
+        ' reset the thumb url from https://my.plexapp.com:443/sync/ to http://plex-cloudsync.s3.amazonaws.com/sync/
+        remyplex = CreateObject("roRegex", "my.plexapp.com", "i")        
+        if metadata.server.serverurl <> invalid and remyplex.IsMatch(metadata.server.serverurl) then 
+            re = CreateObject("roRegex", "https://my.plexapp.com:443/sync/", "")
+            if metadata.hdposterurl <> invalid then metadata.hdposterurl = re.replace(metadata.hdposterurl,"http://plex-cloudsync.s3.amazonaws.com/sync/")
+            if metadata.sdposterurl <> invalid then metadata.sdposterurl = re.replace(metadata.sdposterurl,"http://plex-cloudsync.s3.amazonaws.com/sync/")
+            if metadata.sdgridthumb <> invalid then metadata.sdgridthumb = re.replace(metadata.sdgridthumb,"http://plex-cloudsync.s3.amazonaws.com/sync/")
+            if metadata.hdgridthumb <> invalid then metadata.hdgridthumb = re.replace(metadata.hdgridthumb,"http://plex-cloudsync.s3.amazonaws.com/sync/")
+            if metadata.hddetailthumb <> invalid then metadata.hddetailthumb = re.replace(metadata.hddetailthumb,"http://plex-cloudsync.s3.amazonaws.com/sync/")
+            if metadata.sddetailthumb <> invalid then metadata.sddetailthumb = re.replace(metadata.sddetailthumb,"http://plex-cloudsync.s3.amazonaws.com/sync/")
+        end if
 
         if metadata.search = true AND m.SeparateSearchItems then
             m.search.Push(metadata)

@@ -1068,6 +1068,15 @@ End Function
 
 sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
     if RegRead("rf_custom_thumbs", "preferences","enabled") = "enabled" then
+        remyplex = CreateObject("roRegex", "my.plexapp.com", "i")        
+        remyplexMD = CreateObject("roRegex", "library/metadata/\d+", "i")        
+        if remyplex.IsMatch(metadata.server.serverurl) then 
+	    if metadata.HDPosterURL <> invalid and remyplexMD.isMatch(metadata.HDPosterURL) then 
+                print "Skipping custom thumb -- this is cloud sync"
+                return
+            end if
+            print "overriding cloudsync thumb" + metadata.HDPosterURL
+        end if
         sizes = ImageSizes(metadata.ViewGroup, nodeType)
         ' mod_rewrite/apache do not allow & or %26
         ' replace with :::: - the cdn will replace with &
@@ -1077,6 +1086,9 @@ sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
         thumb_text = reand.ReplaceAll(thumb_text, "::::") 
         thumb_text = reslash.ReplaceAll(thumb_text, "::") 
         thumb_text = redots.ReplaceAll(thumb_text, " ") 
+        ' append cloud to the text if not a secondary ( this should only be on library sections )
+        ' if there are complaints, we can skip these so people see their default TV icon in the section
+        if remyplex.IsMatch(metadata.server.serverurl) and tostr(nodeType) <> "secondary" and tostr(metadata.ViewGroup) <> "secondary" then thumb_text = thumb_text + " (cloud)"
         sdWidth  = "223"
         sdHeight = "200"
         hdWidth  = "300"
@@ -1091,8 +1103,14 @@ sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
         NewThumb = NewThumb + "/fg/" + RegRead("rf_img_overlay", "preferences","999999")
         Debug("----   newraw:" + tostr(NewThumb))
         ' we still want to transcode the size to the specific roku standard
-        metadata.SDPosterURL = metadata.server.TranscodedImage(metadata.server.serverurl, NewThumb, sizes.sdWidth, sizes.sdHeight) 
-        metadata.HDPosterURL = metadata.server.TranscodedImage(metadata.server.serverurl, NewThumb, sizes.hdWidth, sizes.hdHeight)
+        ' however I am not sure the my.plexapp.com server will transcode properly yet
+        if remyplex.IsMatch(metadata.server.serverurl) then 
+            metadata.SDPosterURL = NewThumb
+            metadata.HDPosterURL = NewThumb
+        else 
+            metadata.SDPosterURL = metadata.server.TranscodedImage(metadata.server.serverurl, NewThumb, sizes.sdWidth, sizes.sdHeight) 
+            metadata.HDPosterURL = metadata.server.TranscodedImage(metadata.server.serverurl, NewThumb, sizes.hdWidth, sizes.hdHeight)
+        end if
         Debug("----      new:" + tostr(metadata.HDPosterURL))
     end if
 end sub
