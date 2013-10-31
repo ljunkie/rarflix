@@ -1,3 +1,10 @@
+#2.8.1 (2013-10-29)
+    * multi-user increased from 4 users profiles to 8 user profiles. @wagnerscastle
+    * cloud sync is now an available 'owned' server. We need to skip checking 'now playing' and 'channels'. These endpoints do not exist at my.plexapp.com (yet?)
+    * fix: Can get stuck in retry loop.  Back button now closes the PIN entry screen and returns. @wagnerscastle
+    * fix: Roku does not handle HTTPS urls for images ( cloudsync )
+    * fix: custom icons when using cloud sync
+
 #2.8.0 (2013-10-29)
     * User Profiles: multi-user support ( fast user switching ). Many thanks @wagnerscastle
     * Show user selection again before exiting the channel ( when multi-user is enabled )
