@@ -665,19 +665,18 @@ Sub vcShowReleaseNotes()
     header = ""
     title = GetGlobal("appName") + " updated to " + GetGlobal("appVersionStr")
     paragraphs = []
-    if isRFtest() then 
-        spacer = chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)
-        paragraphs.Push(spacer + "* user profiles (fast user switching)")
-        paragraphs.Push(spacer + "* user profile pin code [optional]")
-        paragraphs.Push(spacer + "* full grid")
-        paragraphs.Push(spacer + "* black theme")
-        paragraphs.Push(spacer + "* custom icons")
-    end if
-
-    paragraphs.Push("( * ) remote button works is most areas - try it!")
-    paragraphs.Push("+ Movie Trailers, Rotten Tomatoes Ratings, HUD mods, Now Playing, Cast & Crew, and many more - go to Preferences / RARflix")
-    if NOT isRFtest() then paragraphs.Push(" ")
-    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+" ** Donate @ www.rarflix.com **")
+    'if isRFtest() then 
+    'end if
+    paragraphs.Push("Donate @ rarflix.com")
+    spacer = chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)
+    paragraphs.Push(spacer + "* user profiles (fast user switching)")
+    paragraphs.Push(spacer + "* user profile pin code [optional]")
+    paragraphs.Push(spacer + "* full grid")
+    paragraphs.Push(spacer + "* black theme")
+    paragraphs.Push(spacer + "* custom icons")
+    paragraphs.Push(spacer + "* now playing+notifications ( non shared accounts )")
+    paragraphs.Push(spacer + "* info button (asterisk) button on remote works is most areas - try it!")
+    paragraphs.Push("+ Movie Trailers, Rotten Tomatoes, HUD mods, Cast & Crew, and many more in Preferences/RARflix. Did I mention you can donate @ rarflix.com")
 
     screen = createParagraphScreen(header, paragraphs, m)
     screen.ScreenName = "Release Notes"
@@ -841,6 +840,8 @@ Sub vcCloseScreenWithCallback(callback)
 End Sub
 
 Sub vcShow()
+    ' debug - always show release notes for testing
+    m.ShowReleaseNotes()
     if RegRead("last_run_version", "misc", "") <> GetGlobal("appVersionStr") then
         m.ShowReleaseNotes()
         RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")

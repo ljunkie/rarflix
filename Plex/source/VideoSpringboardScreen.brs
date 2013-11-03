@@ -50,7 +50,7 @@ Sub videoSetupButtons()
          m.AddButton("Trailer", "getTrailers")
     end if
 
-    if isMovieShowEpisode then m.AddButton("Cast & Crew","RFCastAndCrewList")
+    if isMovieShowEpisode and m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then m.AddButton("Cast & Crew","RFCastAndCrewList")
 
     supportedIdentifier = (m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
     if supportedIdentifier then

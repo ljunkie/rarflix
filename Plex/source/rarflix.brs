@@ -501,13 +501,12 @@ Function createRARFlixPrefsScreen(viewController) As Object
     obj.AddItem({title: "Up Button (row screens)", ShortDescriptionLine2: "What to do when the UP button is " + chr(10) + "pressed on a screen with rows"}, "rf_up_behavior", obj.GetEnumValue("rf_up_behavior"))
     obj.AddItem({title: "Music Artists", ShortDescriptionLine2: "Artist to display for a track"}, "rf_music_artist", obj.GetEnumValue("rf_music_artist"))
 
-    if isRFtest() then 
-        obj.AddItem({title: "Now Playing Notifications", ShortDescriptionLine2: "Want to be notified on Now Playing?"}, "rf_notify", obj.GetEnumValue("rf_notify"))
-        if RegRead("rf_notify", "preferences","enabled") = "enabled" then 
-            obj.AddItem({title: "Now Playing Notify Types", ShortDescriptionLine2: "When do you want to be notified?" + chr(10) + " On Start/Stop or Both"}, "rf_notify_np_type", obj.GetEnumValue("rf_notify_np_type"))
-        end if
+    'if isRFtest() then 
+    obj.AddItem({title: "Now Playing Notifications", ShortDescriptionLine2: "Want to be notified on Now Playing?"}, "rf_notify", obj.GetEnumValue("rf_notify"))
+    if RegRead("rf_notify", "preferences","enabled") = "enabled" then 
+        obj.AddItem({title: "Now Playing Notify Types", ShortDescriptionLine2: "When do you want to be notified?" + chr(10) + " On Start/Stop or Both"}, "rf_notify_np_type", obj.GetEnumValue("rf_notify_np_type"))
     end if
-
+ 
     obj.AddItem({title: "Close"}, "close")
     return obj
 End Function
@@ -693,15 +692,15 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
             dialog.SetButton("delete", "Delete permanently")
         end if
 
+        ' cast & crew must be part of the supported identifier 
+        if isMovieShowEpisode or obj.metadata.type = "season" or obj.metadata.ContentType = "series" then
+            dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
+        else 
+           Debug("---- Cast and Crew are not available for " + tostr(obj.metadata.ContentType))
+        end if
     end if
 
     ' these are on the main details screen -- show them last ( maybe not at all )
-    if isMovieShowEpisode or obj.metadata.type = "season" or obj.metadata.ContentType = "series" then
-        dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
-    else 
-       Debug("---- Cast and Crew are not available for " + tostr(obj.metadata.ContentType))
-    end if
-
     if obj.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
         dialog.SetButton("getTrailers", "Trailer")
     end if
@@ -830,15 +829,16 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
         dialog.SetButton("getTrailers", "Trailer")
     end if
 
-    ' cast and crew
-    if obj.metadata.type = "season" or obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode" or obj.metadata.ContentType = "series" then
-        dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
-    else
-       Debug(" Cast and Crew are not available for " + tostr(obj.metadata.ContentType))
-    end if
-
     supportedIdentifier = (obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
     if supportedIdentifier then
+        ' cast & crew - must be part of the supported identifier 
+        isMovieShowEpisode = (obj.metadata.type = "season" or obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode" or obj.metadata.ContentType = "series")
+        if isMovieShowEpisode then 
+            dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
+        else
+           Debug(" Cast and Crew are not available for " + tostr(obj.metadata.ContentType))
+        end if
+
         if obj.metadata.viewOffset <> invalid AND val(obj.metadata.viewOffset) > 0 then ' partially watched
             dialog.SetButton("unscrobble", "Mark as unwatched")
             dialog.SetButton("scrobble", "Mark as watched")

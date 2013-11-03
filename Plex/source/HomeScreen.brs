@@ -30,12 +30,13 @@ Function createHomeScreen(viewController) As Object
     obj.clockTimer.SetDuration(20000, true) ' A little lag is fine here
     viewController.AddTimer(obj.clockTimer, obj) 
 
-    if isRFtest() then 
-        obj.npTimer = createTimer()
-        obj.npTimer.Name = "nowplaying"
-        obj.npTimer.SetDuration(10000, true) ' 10 seconds? too much?
-        viewController.AddTimer(obj.npTimer, obj) 
-    end if
+    'if isRFtest() then 
+    ' enabled on main channel for v2.8.2
+    obj.npTimer = createTimer()
+    obj.npTimer.Name = "nowplaying"
+    obj.npTimer.SetDuration(10000, true) ' 10 seconds? too much?
+    viewController.AddTimer(obj.npTimer, obj) 
+    'end if
 
     return obj
 End Function
@@ -117,7 +118,7 @@ Sub homeScreenOnTimerExpired(timer)
     end if
 
     ' Now Playing and Notify Section (RARflixTest only)
-    if timer.Name = "nowplaying" and isRFtest() then
+    if timer.Name = "nowplaying" then     ' and isRFtest() then ( enabled on main channel in v2.8.2 )
 
         setnowplayingGlobals() ' set the now playing globals - mainly for notification logic, but we might use for now playing row
         notify = getNowPlayingNotifications()
@@ -153,7 +154,9 @@ End Sub
 
 Sub homeScreenActivate(priorScreen)
     ' on activation - we should run a fiew things
-    if isRFtest() then setnowplayingGlobals() ' set the now playing globals - mainly for notification logic, but we might use for now playing row
+    ' set the now playing globals - mainly for notification logic, but we might use for now playing row
+    ' if isRFtest() then setnowplayingGlobals() 
+    setnowplayingGlobals() ' enabled in v2.8.2
     RRbreadcrumbDate(m.viewcontroller.screens[0])
     'm.Screen.SetBreadcrumbText("", CurrentTimeAsString())
     m.SuperActivate(priorScreen)
