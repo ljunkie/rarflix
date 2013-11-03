@@ -365,7 +365,7 @@ Function videoPlayerHandleMessage(msg) As Boolean
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isPaused: position -> " + tostr(m.lastPosition))
             m.playState = "paused"
             m.SendTimeline()
-            SendRemoteKey("Down")
+            'SendRemoteKey("Down")
         else if msg.isResumed() then
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isResumed")
             m.playState = "playing"

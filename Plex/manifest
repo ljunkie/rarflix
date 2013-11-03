@@ -1,14 +1,14 @@
-title=RARflixTest
+title=RARflixDev
 version=2.8.1
 major_version=2
 minor_version=8
 build_version=1
 subtitle=The best personal and online content streaming app!
 description=Plex delivers the best video, music and photo streaming media experience that connects you to any online or personal content--including movies, TV shows, videos, music and photos.  Plex for Roku works with myPlex and the your personal Plex Media Server enabling Plex Channels, Social Sharing, and Queueing of content.
-mm_icon_focus_hd=pkg:/images/plex-logo-hd-rarflix.jpg
-mm_icon_side_hd=pkg:/images/plex-logo-sd-rarflix.jpg
-mm_icon_focus_sd=pkg:/images/plex-logo-hd-rarflix.jpg
-mm_icon_side_sd=pkg:/images/plex-logo-sd-rarflix.jpg
+mm_icon_focus_hd=pkg:/images/plex-logo-hd-rarflix-DEV.jpg
+mm_icon_side_hd=pkg:/images/plex-logo-sd-rarflix-DEV.jpg
+mm_icon_focus_sd=pkg:/images/plex-logo-hd-rarflix-DEV.jpg
+mm_icon_side_sd=pkg:/images/plex-logo-sd-rarflix-DEV.jpg
 splash_screen_hd=pkg:/images/Splash_HD-rarflix.jpg
 splash_screen_sd=pkg:/images/Splash_SD43-rarflix.jpg
 
