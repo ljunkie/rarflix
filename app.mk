@@ -35,33 +35,33 @@ FILE5 = RARflixBeta
 $(APPNAME): $(APPDEPS)
 	@echo "*** Creating $(APPNAME).zip ***"
 
-	@echo "  >> removing old application zip $(ZIPREL)/$(APPTITLE).zip"
-	@if [ -e "$(ZIPREL)/$(APPTITLE).zip" ]; \
+	@echo "  >> removing old install zip $(ZIPREL)/Plex.zip"
+	@if [ -e "$(ZIPREL)/Plex.zip" ]; \
 	then \
-		rm  $(ZIPREL)/$(APPTITLE).zip; \
+		rm  $(ZIPREL)/Plex.zip; \
 	fi
 
-	@echo "  >> removing old application zip $(SOURCEREL)/$(FILE1).zip"
+	@echo "  >> removing old release zip $(SOURCEREL)/$(FILE1).zip"
 	@if [ -e "$(SOURCEREL)/$(FILE1).zip" ]; \
 	then \
 		rm  $(SOURCEREL)/$(FILE1).zip; \
 	fi
-	@echo "  >> removing old application zip $(SOURCEREL)/$(FILE2).zip"
+	@echo "  >> removing old release zip $(SOURCEREL)/$(FILE2).zip"
 	@if [ -e "$(SOURCEREL)/$(FILE2).zip" ]; \
 	then \
 		rm  $(SOURCEREL)/$(FILE2).zip; \
 	fi
-	@echo "  >> removing old application zip $(SOURCEREL)/$(FILE3).zip"
+	@echo "  >> removing old release zip $(SOURCEREL)/$(FILE3).zip"
 	@if [ -e "$(SOURCEREL)/$(FILE3).zip" ]; \
 	then \
 		rm  $(SOURCEREL)/$(FILE3).zip; \
 	fi
-	@echo "  >> removing old application zip $(SOURCEREL)/$(FILE4).zip"
+	@echo "  >> removing old release zip $(SOURCEREL)/$(FILE4).zip"
 	@if [ -e "$(SOURCEREL)/$(FILE4).zip" ]; \
 	then \
 		rm  $(SOURCEREL)/$(FILE4).zip; \
 	fi
-	@echo "  >> removing old application zip $(SOURCEREL)/$(FILE5).zip"
+	@echo "  >> removing old release zip $(SOURCEREL)/$(FILE5).zip"
 	@if [ -e "$(SOURCEREL)/$(FILE5).zip" ]; \
 	then \
 		rm  $(SOURCEREL)/$(FILE5).zip; \
@@ -84,20 +84,20 @@ $(APPNAME): $(APPDEPS)
 	@echo "  >> creating application zip $(ZIPREL)/$(APPTITLE).zip"	
 	@if [ -d $(SOURCEREL)/$(APPNAME) ]; \
 	then \
-		(zip -0 -r "$(ZIPREL)/$(APPTITLE).zip" . -i \*.png $(ZIP_EXCLUDE)); \
-		(zip -9 -r "$(ZIPREL)/$(APPTITLE).zip" . -x \*~ -x \*.png -x Makefile $(ZIP_EXCLUDE)); \
+		(zip -0 -r "$(ZIPREL)/Plex.zip" . -i \*.png $(ZIP_EXCLUDE)); \
+		(zip -9 -r "$(ZIPREL)/Plex.zip" . -x \*~ -x \*.png -x Makefile $(ZIP_EXCLUDE)); \
 	else \
 		echo "Source for $(APPNAME) not found at $(SOURCEREL)/$(APPNAME)"; \
 	fi
 
 	@echo "*** developer zip  $(APPNAME) complete ***"
 
-	cp "$(ZIPREL)/$(APPTITLE).zip" "$(ZIPREL)/$(APPTITLE)-$(VERSION).zip"
-	cp "$(ZIPREL)/$(APPTITLE).zip" "$(SOURCEREL)/$(APPTITLE).zip"
+	cp "$(ZIPREL)/Plex.zip" "$(ZIPREL)/$(APPTITLE)-$(VERSION).zip"
+	cp "$(ZIPREL)/Plex.zip" "$(SOURCEREL)/$(APPTITLE).zip"
 
 install: $(APPNAME)
 	@echo "Installing $(APPNAME) to host $(ROKU_DEV_TARGET)"
-	@curl -s -S -F "mysubmit=Install" -F "archive=@$(ZIPREL)/$(APPTITLE).zip" -F "passwd=" http://$(ROKU_DEV_TARGET)/plugin_install | grep "<font color" | sed "s/<font color=\"red\">//"
+	@curl -s -S -F "mysubmit=Install" -F "archive=@$(ZIPREL)/Plex.zip" -F "passwd=" http://$(ROKU_DEV_TARGET)/plugin_install | grep "<font color" | sed "s/<font color=\"red\">//"
 
 pkg: install
 	@echo "*** Creating Package ***"
