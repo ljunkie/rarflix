@@ -718,9 +718,9 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
     dialog.Show()
 end sub
 
-
 sub posterRefresh(force=false) 
     Debug("poster fresh called! do we have a valid item")
+    if m.noRefresh <> invalid then return
     if m.item <> invalid and type(m.item.refresh) = "roFunction" then 
         m.item.refresh()
         Debug("item refreshed!")
