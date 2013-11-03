@@ -15,13 +15,14 @@
 #    address of your Roku box. (e.g. export ROKU_DEV_TARGET=192.168.1.1.
 #    Set in your this variable in your shell startup (e.g. .bashrc)
 ##########################################################################  
-APPNAME = Plex
+APPNAME = RARflix
 APPDEPS = manifest count_functions
 ZIP_EXCLUDE = -x .git\* -x manifest.template -x \*.swp -x \*.DS_Store -x \*.py -x roku_screenshot.jpg
 include ../app.mk
 
 APPTITLE = PlexDev
 APPTEMPLATE = manifest.rarflix.template
+VERSION=$(shell grep '^version' $(APPTEMPLATE) | sed s/version=//)
 
 num_functions := $(shell grep -ri --include=*.brs 'end \(function\|sub\)' . | wc -l | tr -d ' ')
 
@@ -30,13 +31,16 @@ num_functions := $(shell grep -ri --include=*.brs 'end \(function\|sub\)' . | wc
 
 beta: APPTITLE = RARflixBeta
 beta: $(APPNAME)
+beta: VERSION=$(shell grep '^version' $(APPTEMPLATE) | sed s/version=//)
 
 test: APPTITLE = RARflixTest
 test: $(APPNAME)
+test: VERSION=$(shell grep '^version' $(APPTEMPLATE) | sed s/version=//)
 
 dev: APPTITLE = RARflixDev
 dev: APPTEMPLATE = manifest.rarflixDEV.template
 dev: $(APPNAME)
+dev: VERSION=$(shell grep '^version' $(APPTEMPLATE) | sed s/version=//)
 
 rel: APPTITLE = RARflix
 rel: $(APPNAME)
@@ -48,6 +52,10 @@ rarflix: $(APPNAME)
 manifest:
 	echo "Creating manifest for $(APPTITLE)"
 	sed s/APPTITLE/$(APPTITLE)/ < $(APPTEMPLATE) > manifest
+	echo sed s/APPTITLE/$(APPTITLE)/ < $(APPTEMPLATE)
+
+	echo $(VERSION)
+
 
 count_functions:
 	echo "Counting functions for $(APPTITLE), Roku v5.x limit is 65536"

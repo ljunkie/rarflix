@@ -24,17 +24,47 @@
 PKGREL = ../packages
 ZIPREL = ../zips
 SOURCEREL = ..
-
+FILE1 = PlexDev
+FILE2 = RARflix
+FILE3 = RARflixTest
+FILE4 = RARflixDev
+FILE5 = RARflixBeta
 
 .PHONY: all $(APPNAME)
 
 $(APPNAME): $(APPDEPS)
 	@echo "*** Creating $(APPNAME).zip ***"
 
-	@echo "  >> removing old application zip $(ZIPREL)/$(APPNAME).zip"
-	@if [ -e "$(ZIPREL)/$(APPNAME).zip" ]; \
+	@echo "  >> removing old application zip $(ZIPREL)/$(APPTITLE).zip"
+	@if [ -e "$(ZIPREL)/$(APPTITLE).zip" ]; \
 	then \
-		rm  $(ZIPREL)/$(APPNAME).zip; \
+		rm  $(ZIPREL)/$(APPTITLE).zip; \
+	fi
+
+	@echo "  >> removing old application zip $(SOURCEREL)/$(APPNAME)/$(FILE1).zip"
+	@if [ -e "$(SOURCEREL)/$(APPNAME)/$(FILE1).zip" ]; \
+	then \
+		rm  $(SOURCEREL)/$(APPNAME)/$(FILE1).zip; \
+	fi
+	@echo "  >> removing old application zip $(SOURCEREL)/$(APPNAME)/$(FILE2).zip"
+	@if [ -e "$(SOURCEREL)/$(APPNAME)/$(FILE2).zip" ]; \
+	then \
+		rm  $(SOURCEREL)/$(APPNAME)/$(FILE2).zip; \
+	fi
+	@echo "  >> removing old application zip $(SOURCEREL)/$(APPNAME)/$(FILE3).zip"
+	@if [ -e "$(SOURCEREL)/$(APPNAME)/$(FILE3).zip" ]; \
+	then \
+		rm  $(SOURCEREL)/$(APPNAME)/$(FILE3).zip; \
+	fi
+	@echo "  >> removing old application zip $(SOURCEREL)/$(APPNAME)/$(FILE4).zip"
+	@if [ -e "$(SOURCEREL)/$(APPNAME)/$(FILE4).zip" ]; \
+	then \
+		rm  $(SOURCEREL)/$(APPNAME)/$(FILE4).zip; \
+	fi
+	@echo "  >> removing old application zip $(SOURCEREL)/$(APPNAME)/$(FILE5).zip"
+	@if [ -e "$(SOURCEREL)/$(APPNAME)/$(FILE5).zip" ]; \
+	then \
+		rm  $(SOURCEREL)/$(APPNAME)/$(FILE5).zip; \
 	fi
 
 	@echo "  >> creating destination directory $(ZIPREL)"	
@@ -51,20 +81,23 @@ $(APPNAME): $(APPDEPS)
 
 # zip .png files without compression
 # do not zip up Makefiles, or any files ending with '~'
-	@echo "  >> creating application zip $(ZIPREL)/$(APPNAME).zip"	
+	@echo "  >> creating application zip $(ZIPREL)/$(APPTITLE).zip"	
 	@if [ -d $(SOURCEREL)/$(APPNAME) ]; \
 	then \
-		(zip -0 -r "$(ZIPREL)/$(APPNAME).zip" . -i \*.png $(ZIP_EXCLUDE)); \
-		(zip -9 -r "$(ZIPREL)/$(APPNAME).zip" . -x \*~ -x \*.png -x Makefile $(ZIP_EXCLUDE)); \
+		(zip -0 -r "$(ZIPREL)/$(APPTITLE).zip" . -i \*.png $(ZIP_EXCLUDE)); \
+		(zip -9 -r "$(ZIPREL)/$(APPTITLE).zip" . -x \*~ -x \*.png -x Makefile $(ZIP_EXCLUDE)); \
 	else \
 		echo "Source for $(APPNAME) not found at $(SOURCEREL)/$(APPNAME)"; \
 	fi
 
 	@echo "*** developer zip  $(APPNAME) complete ***"
 
+	cp "$(ZIPREL)/$(APPTITLE).zip" "$(ZIPREL)/$(APPTITLE)-$(VERSION).zip"
+	cp "$(ZIPREL)/$(APPTITLE).zip" "../$(APPNAME)/$(APPTITLE).zip"
+
 install: $(APPNAME)
 	@echo "Installing $(APPNAME) to host $(ROKU_DEV_TARGET)"
-	@curl -s -S -F "mysubmit=Install" -F "archive=@$(ZIPREL)/$(APPNAME).zip" -F "passwd=" http://$(ROKU_DEV_TARGET)/plugin_install | grep "<font color" | sed "s/<font color=\"red\">//"
+	@curl -s -S -F "mysubmit=Install" -F "archive=@$(ZIPREL)/$(APPTITLE).zip" -F "passwd=" http://$(ROKU_DEV_TARGET)/plugin_install | grep "<font color" | sed "s/<font color=\"red\">//"
 
 pkg: install
 	@echo "*** Creating Package ***"
