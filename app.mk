@@ -41,30 +41,30 @@ $(APPNAME): $(APPDEPS)
 		rm  $(ZIPREL)/$(APPTITLE).zip; \
 	fi
 
-	@echo "  >> removing old application zip $(SOURCEREL)/$(APPNAME)/$(FILE1).zip"
-	@if [ -e "$(SOURCEREL)/$(APPNAME)/$(FILE1).zip" ]; \
+	@echo "  >> removing old application zip $(SOURCEREL)/$(FILE1).zip"
+	@if [ -e "$(SOURCEREL)/$(FILE1).zip" ]; \
 	then \
-		rm  $(SOURCEREL)/$(APPNAME)/$(FILE1).zip; \
+		rm  $(SOURCEREL)/$(FILE1).zip; \
 	fi
-	@echo "  >> removing old application zip $(SOURCEREL)/$(APPNAME)/$(FILE2).zip"
-	@if [ -e "$(SOURCEREL)/$(APPNAME)/$(FILE2).zip" ]; \
+	@echo "  >> removing old application zip $(SOURCEREL)/$(FILE2).zip"
+	@if [ -e "$(SOURCEREL)/$(FILE2).zip" ]; \
 	then \
-		rm  $(SOURCEREL)/$(APPNAME)/$(FILE2).zip; \
+		rm  $(SOURCEREL)/$(FILE2).zip; \
 	fi
-	@echo "  >> removing old application zip $(SOURCEREL)/$(APPNAME)/$(FILE3).zip"
-	@if [ -e "$(SOURCEREL)/$(APPNAME)/$(FILE3).zip" ]; \
+	@echo "  >> removing old application zip $(SOURCEREL)/$(FILE3).zip"
+	@if [ -e "$(SOURCEREL)/$(FILE3).zip" ]; \
 	then \
-		rm  $(SOURCEREL)/$(APPNAME)/$(FILE3).zip; \
+		rm  $(SOURCEREL)/$(FILE3).zip; \
 	fi
-	@echo "  >> removing old application zip $(SOURCEREL)/$(APPNAME)/$(FILE4).zip"
-	@if [ -e "$(SOURCEREL)/$(APPNAME)/$(FILE4).zip" ]; \
+	@echo "  >> removing old application zip $(SOURCEREL)/$(FILE4).zip"
+	@if [ -e "$(SOURCEREL)/$(FILE4).zip" ]; \
 	then \
-		rm  $(SOURCEREL)/$(APPNAME)/$(FILE4).zip; \
+		rm  $(SOURCEREL)/$(FILE4).zip; \
 	fi
-	@echo "  >> removing old application zip $(SOURCEREL)/$(APPNAME)/$(FILE5).zip"
-	@if [ -e "$(SOURCEREL)/$(APPNAME)/$(FILE5).zip" ]; \
+	@echo "  >> removing old application zip $(SOURCEREL)/$(FILE5).zip"
+	@if [ -e "$(SOURCEREL)/$(FILE5).zip" ]; \
 	then \
-		rm  $(SOURCEREL)/$(APPNAME)/$(FILE5).zip; \
+		rm  $(SOURCEREL)/$(FILE5).zip; \
 	fi
 
 	@echo "  >> creating destination directory $(ZIPREL)"	
@@ -93,7 +93,7 @@ $(APPNAME): $(APPDEPS)
 	@echo "*** developer zip  $(APPNAME) complete ***"
 
 	cp "$(ZIPREL)/$(APPTITLE).zip" "$(ZIPREL)/$(APPTITLE)-$(VERSION).zip"
-	cp "$(ZIPREL)/$(APPTITLE).zip" "../$(APPNAME)/$(APPTITLE).zip"
+	cp "$(ZIPREL)/$(APPTITLE).zip" "$(SOURCEREL)/$(APPTITLE).zip"
 
 install: $(APPNAME)
 	@echo "Installing $(APPNAME) to host $(ROKU_DEV_TARGET)"
