@@ -183,7 +183,7 @@ Function posterHandleMessage(msg) As Boolean
                 rfVideoMoreButtonFromGrid(m)
                 m.refreshOnActivate = true
             else if audioplayer.ContextScreenID = invalid then
-                Debug("Info Button (*) not handled for content type: " +  tostr(itype_o) + ":" + tostr(ctype))
+                Debug("Info Button (*) not handled for content type: " +  tostr(itype) + ":" + tostr(ctype))
                 rfDefRemoteOptionButton(m)
             else
                 Debug("--- Not showing prefs on ctype:" + tostr(ctype) + " itype:" + tostr(itype) )
