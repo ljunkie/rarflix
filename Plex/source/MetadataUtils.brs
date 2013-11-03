@@ -37,6 +37,7 @@ End Function
 
 Function createBaseMetadata(container, item, thumb=invalid) As Object
     metadata = CreateObject("roAssociativeArray")
+    imageDir = GetGlobalAA().Lookup("rf_theme_dir")
 
     server = container.server
     if item@machineIdentifier <> invalid then
@@ -60,7 +61,7 @@ Function createBaseMetadata(container, item, thumb=invalid) As Object
     metadata.sourceTitle = item@sourceTitle
 
     ' START: ljunkie - leafCount viewedLeafCount ( how many items, how many items watched)
-    if RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" then 
+    if (tostr(metadata.viewgroup) <> "album" and tostr(metadata.type) <> "album") and  RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" then 
         if item@leafCount <> invalid  then
            metadata.leafCount = item@leafCount
         end if
@@ -107,8 +108,8 @@ Function createBaseMetadata(container, item, thumb=invalid) As Object
         metadata.SDPosterURL = server.TranscodedImage(container.sourceUrl, thumb, sizes.sdWidth, sizes.sdHeight)
         metadata.HDPosterURL = server.TranscodedImage(container.sourceUrl, thumb, sizes.hdWidth, sizes.hdHeight)
     else
-        metadata.SDPosterURL = "file://pkg:/images/BlankPoster.png"
-        metadata.HDPosterURL = "file://pkg:/images/BlankPoster.png"
+        metadata.SDPosterURL = imageDir + "BlankPoster.png"
+        metadata.HDPosterURL = imageDir + "BlankPoster.png"
     end if
 
     metadata.sourceUrl = container.sourceUrl
@@ -131,6 +132,7 @@ End Sub
 
 Function newSearchMetadata(container, item) As Object
     metadata = createBaseMetadata(container, item)
+    imageDir = GetGlobalAA().Lookup("rf_theme_dir")
 
     metadata.type = "search"
     metadata.ContentType = "search"
@@ -138,8 +140,8 @@ Function newSearchMetadata(container, item) As Object
     metadata.prompt = item@prompt
 
     if metadata.SDPosterURL = invalid OR Left(metadata.SDPosterURL, 4) = "file" then
-        metadata.SDPosterURL = "file://pkg:/images/search.png"
-        metadata.HDPosterURL = "file://pkg:/images/search.png"
+        metadata.SDPosterURL = imageDir + "search.png"
+        metadata.HDPosterURL = imageDir + "search.png"
     end if
 
     ' Special handling for search items inside channels, which may actually be

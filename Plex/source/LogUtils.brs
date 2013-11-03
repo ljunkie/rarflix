@@ -1,16 +1,18 @@
 
 Sub Debug(msg as String, server=invalid)
-    print msg
 
-    if server <> invalid then
-        server.Log(msg)
+    if m.Logger = invalid then m.Logger = createLogger()
+
+    ' override logging setting if this is the DEV channel
+    ' otherwise one will have to enable logging to see the logs
+    if type(isRFdev) = "roFunction" and NOT isRFdev() then m.Logger.isDev = false
+
+    ' hopefully save some CPU cycles
+    if m.logger.isDev or m.logger.Enabled then 
+        print msg ' console
+        if server <> invalid then server.Log(msg) 'remote logging
+        m.Logger.Log(msg) ' log file for download
     end if
-
-    if m.Logger = invalid then
-        m.Logger = createLogger()
-    end if
-
-    m.Logger.Log(msg)
 End Sub
 
 Function createLogger() As Object
@@ -24,6 +26,7 @@ Function createLogger() As Object
     logger.Enable = loggerEnable
     logger.Disable = loggerDisable
     logger.Flush = loggerFlush
+    logger.isDev = true ' start a true. We will always log startup.
 
     logger.EnablePapertrail = loggerEnablePapertrail
     logger.LogToPapertrail = loggerLogToPapertrail
@@ -163,8 +166,6 @@ Sub loggerEnablePapertrail(minutes=20, pms=invalid)
     udp.setMessagePort(port)
 
     addr.setHostname("logs.papertrailapp.com")
-'    addr.setHostname("rarflix.rarforge.com")
-'    addr.setPort(60969)
     addr.setPort(26634)
     udp.setSendToAddress(addr)
 

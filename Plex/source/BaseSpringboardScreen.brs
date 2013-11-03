@@ -210,6 +210,13 @@ End Function
 Function sbGotoNextItem() As Boolean
     if NOT m.AllowLeftRight then return false
 
+    ' this is a new hack for fullgrid screen.. 
+    if m.FullContext = invalid and fromFullGrid(m) then 
+        GetContextFromFullGrid(m)
+    end if
+
+    Debug("----- GoToNextItem: we have " + tostr(m.Context.Count()) + " items total")
+
     maxIndex = m.Context.Count() - 1
     index = m.CurIndex
     newIndex = index
@@ -232,6 +239,10 @@ End Function
 
 Function sbGotoPrevItem() As Boolean
     if NOT m.AllowLeftRight then return false
+
+    if m.FullContext = invalid and fromFullGrid(m) then 
+        GetContextFromFullGrid(m)
+    end if
 
     maxIndex = m.Context.Count() - 1
     index = m.CurIndex

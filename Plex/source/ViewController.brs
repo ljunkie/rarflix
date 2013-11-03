@@ -5,6 +5,10 @@
 '* can take an item and figure out which type of screen should be shown
 '* so that logic doesn't have to be in each individual screen type.
 '*
+'Some screens are hardcoded to a specific ScreenID
+'-1 : Home screen
+'-2 : Analytics screen (In order to use the view controller for requests.)
+'-3 : Plex Media Server screen (For using the view controller for HTTP requests)
 
 Function createViewController() As Object
     controller = CreateObject("roAssociativeArray")
@@ -73,18 +77,39 @@ Function createViewController() As Object
     controller.SystemLog = CreateObject("roSystemLog")
     controller.SystemLog.SetMessagePort(controller.GlobalMessagePort)
     controller.SystemLog.EnableType("bandwidth.minute")
+    
+    controller.CreateUserSelectionScreen = vcCreateUserSelectionScreen
 
+    ' Figure if we need to show the securityscreen
+    'First check if there are multiple users
+    controller.ShowSecurityScreen = false
+    controller.SkipUserSelection = false
+    controller.RFisMultiUser = false
+    for i = 1 to 7 step 1   'Check for other users enabled
+        if RegRead("userActive", "preferences", "0",i) = "1" then 
+            controller.ShowSecurityScreen = true
+            controller.RFisMultiUser = true
+            exit for
+        end if
+    end for
+    ' Finally, check if the default user has a pin 
+    if controller.ShowSecurityScreen = false then
+        controller.SkipUserSelection = true
+        if RegRead("securityPincode","preferences",invalid) <> invalid then 
+            controller.ShowSecurityScreen = true
+        end if
+    end if
 
     ' Stuff the controller into the global object
     m.ViewController = controller
     controller.myplex = createMyPlexManager(controller)
 
-    ' Initialize things that run in the background
+    ' Initialize things that run in the background and are okay to start before a user is selected. 
     InitWebServer(controller)
     controller.GdmAdvertiser = createGDMAdvertiser(controller)
     controller.AudioPlayer = createAudioPlayer(controller)
     controller.Analytics = createAnalyticsTracker()
-
+    
     return controller
 End Function
 
@@ -106,6 +131,15 @@ Function vcCreateHomeScreen()
     return screen
 End Function
 
+
+Function vcCreateUserSelectionScreen() 
+    screen = createUserSelectionScreen(m)
+    m.InitializeOtherScreen(screen, invalid)
+    screen.Show()
+    return screen
+End Function
+
+
 Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As Dynamic
     if type(context) = "roArray" then
         item = context[contextIndex]
@@ -113,9 +147,70 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         item = context
     end if
 
+    ' ljunkie - sorry for the madness ( breadcrumbs dynamic magic ) TODO - research a less hacky way
+    ' breadcrumbs for Full Grid.. when we have "1-4 of 565" as a row name --- that is ugly and this is ghetto 
+    re = CreateObject("roRegex", "\d+\s*-\s*\d+\s+of\s+\d+", "")
+    if type(breadcrumbs) = "roArray" and breadcrumbs.count() > 1 and (re.Ismatch(breadcrumbs[0]) or re.IsMatch(breadcrumbs[1])) then 
+        if type(m.screens) = "roArray" and m.screens.count() > 1 then  ' nested because I'm lame
+            keynames = m.screens[1].loader.contentarray
+            if item.contenttype = "appClip" then
+                breadcrumbs[0] = ""
+            else 
+                breadcrumbs[1] = UcaseFirst(firstof(item.umtitle,item.contenttype,item.type,item.viewgroup))
+            end if
+    
+            re = CreateObject("roRegex", "/library/sections/\d+/([^?\/]+)", "")
+            reMeta = CreateObject("roRegex", "/library/metadata/\d+/([^?\/]+)", "")
+
+            if (reMeta.isMatch(item.sourceurl)) then
+                    breadcrumbs[0] = tostr(item.title)
+            else if (re.isMatch(item.sourceurl)) then
+                
+                
+                fkey = re.Match(item.sourceurl)[1]
+                key = re.Match(item.sourceurl)[1]
+                for each k in keynames
+                    if k.key = fkey then
+                        fkey = k.name
+                        exit for
+                    end if
+                end for
+                if fromFullGrid(m) then
+                     ' special for music - mayb more later
+                     if tostr(key) = "albums" and item.album <> invalid then 
+                         breadcrumbs[0] = UcaseFirst(item.artist)                     
+                         breadcrumbs[1] = UcaseFirst(item.album)                     
+                     else 
+                         ' else use the Section Name (fkey) and title, etc
+                         breadcrumbs[0] = UcaseFirst(fkey)    
+                         breadcrumbs[1] = UcaseFirst(firstof(item.umtitle,item.contenttype,item.type,item.viewgroup))
+                     end if
+                else 
+                    breadcrumbs[0] = UcaseFirst(fkey)
+                end if
+            end if
+        end if
+    end if
+    ' end this madness
+
+    ' madness still continues for other areas ( now PHOTOS )
+    if (item.type = "photo") then
+         r1=CreateObject("roRegex", "Dir: ", "")
+         if type(breadcrumbs) = "roArray" and breadcrumbs.count() > 1 then
+            breadcrumbs[0] = r1.ReplaceAll(breadcrumbs[0], ""):breadcrumbs[1] = r1.ReplaceAll(breadcrumbs[1], "")
+            if ucase(breadcrumbs[0]) = ucase(breadcrumbs[1]) and item.description <> invalid and tostr(item.nodename) = "Directory" then 
+                print item
+                breadcrumbs[0] = right(item.description,38)
+                if len(item.description) > 38 then breadcrumbs[0] = "..." + breadcrumbs[0]
+                breadcrumbs[1] = ""
+            end if
+         end if
+    end if
+
+    ' madness still continues for other areas ( now TV )
     ' ljunkie - reset breadcrumb for TV show if tv watched status enabled and title <> umtitle (post and grid view supported)
-    if RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" and (item.type = "show" or item.viewgroup = "season" or item.viewgroup = "show" or item.viewgroup = "episode") then
-        if item.umtitle <> invalid and breadcrumbs[0] <> invalid and breadcrumbs[0] = item.title then 
+    if breadcrumbs <> invalid and RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" and (item.type = "show" or item.viewgroup = "season" or item.viewgroup = "show" or item.viewgroup = "episode") then
+        if item.umtitle <> invalid and ( type(breadcrumbs) = "roArray" and breadcrumbs[0] <> invalid and breadcrumbs[0] = item.title) or (breadcrumbs = invalid) then 
 	    Debug("tv watched status enabled: setting breadcrumb back to original title; change from " + breadcrumbs[0] + " -to- " + item.umtitle)
             breadcrumbs[0] = item.umtitle
         else if item.parentindex <> invalid and item.viewgroup = "episode" then 
@@ -123,16 +218,31 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             breadcrumbs[0] = "Season " + tostr(item.parentindex)
             breadcrumbs[1] = ""
 	else 
-            Debug("tv watched status enabled: DID not match criteria(1) -- NOT setting breadcrumb back to original title; change from " + breadcrumbs[0] + " -to- " + item.umtitle)
+            Debug("tv watched status enabled: DID not match criteria(1) -- NOT setting breadcrumb back to original title")
         end if
-    ' this causes a crash in playing Photos from Year with the play button -- not need for this anyways..
-    'else if RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" and item.umtitle <> invalid and breadcrumbs[0] <> invalid and breadcrumbs[0] = item.title then 
-    '	 Debug("tv watched status enabled: DID not match criteria(2) -- NOT setting breadcrumb back to original title; change from " + breadcrumbs[0] + " -to- " + item.umtitle)
     end if
 
+    ' madness still continues for other areas ( remove redundant breadcrumbs )
+    if type(breadcrumbs) = "roArray" and breadcrumbs.count() > 1 then
+        lastbc = breadcrumbs[0]
+        for index = 1 to breadcrumbs.count() - 1
+            if ucase(breadcrumbs[index]) = ucase(lastbc) then
+                lastbc = breadcrumbs[index]
+                breadcrumbs.Delete(index)
+            else 
+                lastbc = breadcrumbs[index]
+            end if
+        end for
+        ''this would force us to show only 1 bread crumb. instead we will use the previous
+        'if breadcrumbs.count() = 1 then 
+        'breadcrumbs.Push("")
+        'end if
+    end if
+    ' ljunkie - ok, madness complete
+ 
     contentType = item.ContentType
     viewGroup = item.viewGroup
-    if viewGroup = invalid then viewGroup = ""
+    if viewGroup = invalid then viewGroup = "Invalid"
 
     screen = CreateObject("roAssociativeArray")
 
@@ -143,6 +253,9 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     ' be forced by setting screen.FilterMode = true.
 
     screenName = invalid
+    poster_grid = RegRead("rf_poster_grid", "preferences", "grid")
+    displaymode_poster = RegRead("rf_poster_displaymode", "preferences", "scale-to-fit")
+    displaymode_grid = RegRead("rf_grid_displaymode", "preferences", "scale-to-fit")
 
     if contentType = "movie" OR contentType = "episode" OR contentType = "clip" then
         screen = createVideoSpringboardScreen(context, contextIndex, m)
@@ -151,51 +264,71 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         if RegRead("use_grid_for_series", "preferences", "") <> "" then
             screen = createGridScreenForItem(item, m, "flat-16X9")
             screenName = "Series Grid"
+            if screen.loader.focusrow <> invalid then screen.loader.focusrow = 1 ' override this so we can hide the sub sections ( flat-16x9 is 5x3 )
         else
             screen = createPosterScreen(item, m)
             screenName = "Series Poster"
+            if fromFullGrid(m) and (item.umtitle <> invalid or item.title <> invalid) then 
+                breadcrumbs[0] = "All Seasons"
+                breadcrumbs[1] = firstof(item.umtitle,item.title)
+            end if
         end if
     else if contentType = "artist" then
-        ' TODO: Poster, poster with filters, or grid?
-        screen = createPosterScreen(item, m)
+        if poster_grid = "grid" then 
+            screen = createFULLGridScreen(item, m, "Invalid", displaymode_grid)
+        else 
+            screen = createPosterScreen(item, m)
+        end if
         screenName = "Artist Poster"
     else if contentType = "album" then
+        ' grid looks horrible in this view. - do not enable FULL grid
         screen = createPosterScreen(item, m)
-        ' TODO: What style looks best here, episodic?
         screen.SetListStyle("flat-episodic", "zoom-to-fill")
         screenName = "Album Poster"
     else if item.key = "nowplaying" then
         m.AudioPlayer.ContextScreenID = m.nextScreenId
-        screen = createAudioSpringboardScreen(m.AudioPlayer.Context, m.AudioPlayer.CurIndex, m)
+        ' screen = createAudioSpringboardScreen(m.AudioPlayer.Context, m.AudioPlayer.CurIndex, m) (curindex can be different now)
+        screen = createAudioSpringboardScreen(m.AudioPlayer.Context, m.AudioPlayer.PlayIndex, m)
         screenName = "Now Playing"
+        breadcrumbs = [screenName," "," "] ' set breadcrumbs for this..
+        'print m.AudioPlayer.Context[m.AudioPlayer.PlayIndex]
         if screen = invalid then return invalid
     else if contentType = "audio" then
         screen = createAudioSpringboardScreen(context, contextIndex, m)
         if screen = invalid then return invalid
         screenName = "Audio Springboard"
     else if contentType = "section" then
-        RegWrite("lastMachineID", item.server.machineID)
-        RegWrite("lastSectionKey", item.key)
+        ' Now done in gridscreen.brs -- when someone focus the row instead
+        'RegWrite("lastMachineID", item.server.machineID, "userinfo")
+        'RegWrite("lastSectionKey", item.key, "userinfo")
 
         screenName = "Section: " + tostr(item.type)
         if tostr(item.type) = "artist" then 
             Debug("---- override photo-fit/flat-square for section with content of " + tostr(item.type))
-            screen = createGridScreenForItem(item, m, "flat-square")
+            screen = createGridScreenForItem(item, m, "flat-square","photo-fit")
             screen.screen.SetDisplayMode("Photo-Fit")
             screen.screen.SetListPosterStyles("landscape")
+            if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 7x3 )
         else if tostr(item.type) = "photo" then 
             Debug("---- override photo-fit/flat-16x9 for section with content of " + tostr(item.type))
-            screen = createGridScreenForItem(item, m, "flat-16X9")
-            screen.screen.SetDisplayMode("Photo-Fit")
+            screen = createGridScreenForItem(item, m, "flat-16X9","photo-fit")
+	    '            screen.screen.SetDisplayMode("Photo-Fit") ' this has to be called before
+            if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 7x3 )
         else 
-            screen = createGridScreenForItem(item, m, "flat-movie") ' some might fair better with flat-square? (TODO)
+            screen = createGridScreenForItem(item, m, "flat-movie", displaymode_grid)
         end if
     else if contentType = "playlists" then
         screen = createGridScreenForItem(item, m, "flat-16X9")
         screenName = "Playlist Grid"
+        if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( flat-16x9 is 5x3 )
     else if contentType = "photo" then
         if right(item.key, 8) = "children" then
-            screen = createPosterScreen(item, m)
+            if poster_grid = "grid" then 
+                screen = createFULLGridScreen(item, m, "flat-16x9", "photo-fit") ' we override photos to use photo fit -- toggle added later TODO
+                screen.loader.focusrow = 1 ' lets fill the screen ( 5x3 ) - no header row ( might be annoying page up for first section.. TODO)
+            else 
+                screen = createPosterScreen(item, m)
+            end if
             screenName = "Photo Poster"
         else
             screen = createPhotoSpringboardScreen(context, contextIndex, m)
@@ -208,14 +341,34 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen = createSearchScreen(item, m)
         screenName = "Search"
     else if item.key = "/system/appstore" then
-        screen = createGridScreenForItem(item, m, "flat-square")
+        screen = createGridScreenForItem(item, m, "flat-square","photo-fit")
         screenName = "Channel Directory"
+        screen.loader.focusrow = 1 ' lets fill the screen ( 5x3 )
     else if viewGroup = "Store:Info" then
         dialog = createPopupMenu(item)
         dialog.Show()
         return invalid
     else if viewGroup = "secondary" then
-        screen = createPosterScreen(item, m)
+        ' these are subsections of a main section ( secondary )
+        Debug("---- Creating secondary grid " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
+        ' ljunkie TODO review this code
+        if poster_grid = "grid" then 
+            sec_metadata = getSectionType(m)
+            DisplayMode = displaymode_grid
+
+            style = RegRead("rf_grid_style", "preferences","flat-movie")
+            focusrow = 0
+            if tostr(sec_metadata.type) = "photo" then 
+                style="flat-16x9"
+                DisplayMode = "photo-fit"
+                Debug("---- forcing to photo-fit")
+                focusrow = 1 ' lets fill the screen ( 5x3 )
+            end if
+            screen = createFULLGridScreen(item, m, style, DisplayMode)
+	    screen.loader.focusrow = focusrow ' lets fill the screen ( 5x3 )
+        else 
+            screen = createPosterScreen(item, m)
+        end if
     else if item.key = "globalprefs" then
         screen = createPreferencesScreen(m)
         screenName = "Preferences Main"
@@ -230,17 +383,29 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen.Loader.Port = screen.Port
         screenName = "All Channels"
     else if item.searchTerm <> invalid AND item.server = invalid then
-        screen = createGridScreen(m, "flat-square")
+        'screen = createGridScreen(m, "flat-square")
+        screen = createGridScreen(m, "flat-movie", RegRead("rf_up_behavior", "preferences", "exit"), displaymode_grid)
         screen.Loader = createSearchLoader(item.searchTerm)
         screen.Loader.Listener = screen
         screenName = "Search Results"
     else if item.settings = "1"
         screen = createSettingsScreen(item, m)
         screenName = "Settings"
+    else if tostr(item.type) = "season" or tostr(item.type) = "channel" then 
+        ' others we want to fost into a poster screen
+        screen = createPosterScreen(item, m)
     else
         ' Where do we capture channel directory?
-        Debug("Creating a default view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
-        screen = createPosterScreen(item, m)
+        Debug("---- Creating a default " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
+        if tostr(contentType) = "appClip" and tostr(viewGroup) = "Invalid" then 
+            Debug("---- forcing to Poster view")
+            screen = createPosterScreen(item, m)
+        else if poster_grid = "grid" and tostr(viewGroup) <> "season" then 
+            screen = createFULLGridScreen(item, m, "Invalid", displaymode_grid)
+        else 
+            Debug("---- forcing to Poster view")
+            screen = createPosterScreen(item, m)
+        end if
     end if
 
     if screenName = invalid then
@@ -254,6 +419,12 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     m.PushScreen(screen)
 
     if show then screen.Show()
+    if screen.hasWaitdialog <> invalid then screen.hasWaitdialog.close()
+ 
+    ' set the inital focus row if we have set it ( normally due to the sub section row being added - look at the createpaginateddataloader )
+    if screen.loader <> invalid and screen.loader.focusrow <> invalid then 
+        screen.screen.SetFocusedListItem(screen.loader.focusrow,3)
+    end if
 
     return screen
 End Function
@@ -308,40 +479,41 @@ End Function
 Function vcCreateContextMenu()
     ' Our context menu is only relevant if the audio player has content.
     ' ljunkie -- we need some more checks here -- if audio is not playing/etc and we want to use the asterisk button for other things.. how do we work this?
-    ' TODO
     if m.AudioPlayer.ContextScreenID = invalid then return invalid
 
-    ' ljunkie - I know.. more crazy logic -- TODO cleanup
-    if NOT m.audioplayer.ispaused and NOT m.audioplayer.isplaying then ' always show music options when music is paused or playing
-       Debug( "-------------------------------------------------------------")
-       Debug( "------------------show audio dialog -------------------------")
-       screen = m.screens.peek()
-       if type(screen.screen) = "roMessageDialog" then  ' if we already have a new dialog - lets not replace it
+    screen = m.screens.peek()
+    showDialog = false
+
+    if type(screen.screen) = "roMessageDialog" then  ' if we already have a new dialog - lets not replace it
            Debug( "---disabling audio dialog for a new DIALOG" + screen.screenname + " type:" + type(screen.screen))
-           return invalid        
-       else if screen.screenname = "Home" or screen.screenname = "Section: movie" or screen.screenname = "Preferences Main" or screen.screenname = "Section: show" then ' this might need some cleanup ( we only care to disable if home, movie, shows )
-           if screen.selectedrow <> invalid and screen.focusedindex <> invalid and type(screen.contentarray[screen.selectedrow][screen.focusedindex]) = "roAssociativeArray" then
-               itype = screen.contentarray[screen.selectedrow][screen.focusedindex].type ' movie, show, photo, episode, etc..
-               ctype = screen.contentarray[screen.selectedrow][screen.focusedindex].contenttype ' section
-               ' allow audio dialog for content that doesn't have special dialogs ( wonder if there is a list of contenttypes somewhere?)
-               if (itype = invalid and ctype <> "prefs")
-                   Debug( "---Allowing audio dialog for ctype:" + tostr(ctype) + " itype:" + tostr(itype) + " " + tostr(screen.screenname) + " type:" +  type(screen.screen))
-               else if ctype <> "section" and ctype <> "album" and ctype <> "channel" then
-                   Debug( "---disabling audio dialog for ctype:" + tostr(ctype) + " itype:" + tostr(itype) + " " + tostr(screen.screenname) + " type:" +  type(screen.screen))
-                   return invalid
-               end if
-               Debug( "--- showing audio dialog for itype " + tostr(itype) + " " + tostr(screen.screenname) + " type:" + type(screen.screen))
-           else 
-               Debug( "---disabling audio dialog for " + tostr(screen.screenname) + " type:" + type(screen.screen))
-               return invalid        
-           end if
-       else 
-           Debug( "---- showing audio dialog -- AUDIO is not paused and not playing -- should we show the screen here?" + screen.screenname + " type:" +  type(screen.screen))
-       end if 
-       Debug( "-------------------------------------------------------------")
+           return invalid
     end if
 
-    ' if we haven't returned invalid from the crazy logic above.. then I guess we are showing the audio dialog
+    itype = "invalid"
+    ctype = "invalid"
+    vtype = "invalid"
+    if screen.selectedrow <> invalid and screen.focusedindex <> invalid and type(screen.contentarray[screen.selectedrow][screen.focusedindex]) = "roAssociativeArray" then
+        itype = tostr(screen.contentarray[screen.selectedrow][screen.focusedindex].type) ' movie, show, photo, episode, etc..
+        ctype = tostr(screen.contentarray[screen.selectedrow][screen.focusedindex].contenttype) ' section
+        vtype = tostr(screen.contentarray[screen.selectedrow][screen.focusedindex].viewgroup)
+    end if
+
+    ' Audios is playing - we should show it if the selected type is a "section" -- maybe we should look at secondary? -- also allow invalids
+    if m.audioplayer.ispaused or m.audioplayer.isplaying then 
+        r = CreateObject("roRegex", "section|secondary", "i") ' section too - those are not special
+        'showDialog = (   (r.IsMatch(itype) or r.IsMatch(ctype) or r.IsMatch(vtype)) or (itype = "invalid" and ctype = "invalid" and vtype = "invalid") )
+        showDialog = ( (r.IsMatch(itype) or r.IsMatch(ctype) or r.IsMatch(vtype)) or (itype = "invalid"))
+    end if
+
+    ' always show dialog if audio/artist/album/track
+    ' we will also show if channel, preferences, search, playlists, clip as they have not special actions
+    if NOT showDialog then 
+        r = CreateObject("roRegex", "audio|artist|album|track|channel|pref|search|playlists|clip", "i") 
+        showDialog = (r.IsMatch(itype) or r.IsMatch(ctype) or r.IsMatch(vtype) or r.IsMatch(tostr(screen.screenname)))
+    end if
+
+    Debug("show audio dialog:" + tostr(showDialog) + "; itype:" +  tostr(itype) + "; ctype:" +  tostr(ctype) + "; vtype:" +  tostr(vtype) + "; screenname:" +  tostr(screen.screenname))
+    if NOT showDialog then return invalid
     return m.AudioPlayer.ShowContextMenu()
 End Function
 
@@ -433,7 +605,32 @@ End Function
 Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
     item = context[contextIndex]
 
-    if item.ContentType = "photo" then
+    ' ljunkie - check if we are viewing a directory. We can direct play certain items ( play all sort of thing )
+    ' currently works for photos/albums. Not sure how it woud work for others yet
+    ' I.E. if video(movie/clip/episode) then we need to add more logic how to play the next item.. 
+    'sec_metadata = getSectionType(m) -- todo later - we can play appClips if they are in the photosection, but other adverse effects happen
+    if item.nodename <> invalid and item.nodename = "Directory" then
+        if item.ContentType = "photo" then 
+            print "--- trying to play photos from a directory"
+            container = createPlexContainerForUrl(item.server, item.server.serverurl, item.key)
+            context = container.getmetadata()
+            return m.CreatePhotoPlayer(context, 0)
+        'else if tostr(sec_metadata.type) = "photo" and item.ContentType ="appClip" then 
+        '    print "--- trying to play photos (appClip) from a directory"
+        '    container = createPlexContainerForUrl(item.server, item.sourceurl, item.key)
+        '    context = container.getmetadata()
+        '    ' we can have sub dirs.. we only direct play if we have a photo ( only checking the first item )
+        '    if type(context) = "roArray" and context.count() > 0 and context[0].nodename = "Photo" then 
+        '        return m.CreatePhotoPlayer(context, 0)
+        '    end if
+        else if item.ContentType = "album" then
+            print "--- trying to play an album from a directory"
+            container = createPlexContainerForUrl(item.server, item.server.serverurl, item.key)
+            context = container.getmetadata()
+            m.AudioPlayer.Stop()
+            return m.CreateScreenForItem(context, 0, invalid)
+         end if
+    else if item.ContentType = "photo" then '  and (item.nodename = invalid or item.nodename <> "Directory") then 
         return m.CreatePhotoPlayer(context, contextIndex)
     else if item.ContentType = "audio" then
         m.AudioPlayer.Stop()
@@ -441,10 +638,23 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
     else if item.ContentType = "movie" OR item.ContentType = "episode" OR item.ContentType = "clip" then
         directplay = RegRead("directplay", "preferences", "0").toint()
         return m.CreateVideoPlayer(item, seekValue, directplay)
-    else
-        Debug("Not sure how to play item of type " + tostr(item.ContentType))
-        return m.CreateScreenForItem(context, contextIndex, invalid)
     end if
+
+    ' if we can't play - then create an screen item for the context
+    Debug("Not sure how to play item of type " + tostr(item.ContentType) + " " + tostr(item.type) + " " + tostr(item.nodename))
+
+    ' ljunkie - try to fix the breadcrumbs for gridScreens
+    screen = m.screens.peek()
+    breadcrumbs = invalid
+    if tostr(type(screen.screen)) = "roGridScreen" and screen.Loader <> invalid and type(screen.Loader.GetNames) = "roFunction" and screen.selectedrow <> invalid then
+       if item.ContentType = "section" then
+           breadcrumbs = [item.server.name, firstof(item.umTitle, item.Title)]
+       else
+           breadcrumbs = [screen.Loader.GetNames()[screen.selectedrow], firstof(item.umTitle, item.Title)]
+       end if
+    end if
+
+    return m.CreateScreenForItem(context, contextIndex, breadcrumbs)
 End Function
 
 Function vcIsVideoPlaying() As Boolean
@@ -456,16 +666,16 @@ Sub vcShowReleaseNotes()
     title = GetGlobal("appName") + " updated to " + GetGlobal("appVersionStr")
     paragraphs = []
     if isRFtest() then 
-        paragraphs.Push("New: Now Playing Notifications!")
-        paragraphs.Push("New: Now Playing on the Home Screen (with periodic updates)")
+        spacer = chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)
+        paragraphs.Push(spacer + "* user profiles (fast user switching)")
+        paragraphs.Push(spacer + "* user profile pin code [optional]")
+        paragraphs.Push(spacer + "* full grid")
+        paragraphs.Push(spacer + "* black theme")
+        paragraphs.Push(spacer + "* custom icons")
     end if
-    paragraphs.Push("New: Cast & Crew works for more content")
-    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+ "+ Show All content [movie/tv/other] for selected Cast Member")
-    paragraphs.Push(" ( * ) Remote Button works is most areas - try it!")
-    paragraphs.Push(" Hide some rows per section type [movie,tv,music]")
-    paragraphs.Push(" RARFflix preferences - toggles for mods")
-    paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+" Hide Rows, Clock, Dynamic Headers, Search Title, etc.. ")
-    paragraphs.Push("+ Movie Trailers, Rotten Tomatoes Ratings, HUD mods, other misc updates")
+
+    paragraphs.Push("( * ) remote button works is most areas - try it!")
+    paragraphs.Push("+ Movie Trailers, Rotten Tomatoes Ratings, HUD mods, Now Playing, Cast & Crew, and many more - go to Preferences / RARflix")
     if NOT isRFtest() then paragraphs.Push(" ")
     paragraphs.Push(chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+" ** Donate @ www.rarflix.com **")
 
@@ -554,10 +764,15 @@ Sub vcPopScreen(screen)
         callActivate = false
     else
         Debug("Popping screen " + screenID + " and cleaning up " + tostr(screen.NumBreadcrumbs) + " breadcrumbs")
+        closePrevious = screen.closeprevious
         m.screens.Pop()
         for i = 0 to screen.NumBreadcrumbs - 1
             m.breadcrumbs.Pop()
         next
+        if closePrevious <> invalid then
+           Debug("-------------- popping next screen too -- we called for this!")
+           m.screens.Pop()
+        end if
     end if
 
     ' Clean up any requests initiated by this screen
@@ -579,7 +794,11 @@ Sub vcPopScreen(screen)
     ' no screens on the stack, but we didn't just close the home screen, then
     ' we haven't shown the home screen yet. Show it now.
     if m.screens.Count() = 0 then
-        m.Home = m.CreateHomeScreen()
+        if m.ShowSecurityScreen = true then
+            m.CreateUserSelectionScreen()
+        else
+            m.Home = m.CreateHomeScreen()
+        end if
     else if callActivate then
         newScreen = m.screens.Peek()
         ' ljunkie - extra hack to cleanup the screen we are entering when invalid or if trying to re-enter a dialog
@@ -590,11 +809,11 @@ Sub vcPopScreen(screen)
             newScreen = m.screens.Peek()
         else if type(newScreen.Screen) = "roMessageDialog" then 
             ' bug in the notifications dialog - when multiple come in, they are not tracked? these is just some hacky GC
-            Debug("---- Top screen is a Dialog -- that can't happen!")
+            Debug("---- Top screen is a Dialog -- that can't happen! clearing it")
             m.popscreen(newScreen)
             newScreen = m.screens.Peek()
-            print newScreen
-            print type(newScreen.Screen)
+            'print newScreen
+            'print type(newScreen.Screen)
         end if
 
         screenName = firstOf(newScreen.ScreenName, type(newScreen.Screen))
@@ -626,7 +845,11 @@ Sub vcShow()
         m.ShowReleaseNotes()
         RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")
     else
-        m.Home = m.CreateHomeScreen()
+        if m.ShowSecurityScreen = true then
+            m.CreateUserSelectionScreen()
+        else
+            m.Home = m.CreateHomeScreen()
+        end if
     end if
 
     Debug("Starting global message loop")
@@ -644,7 +867,9 @@ Sub vcShow()
             'if GetInterface(msg, "ifUrlEvent") = invalid AND GetInterface(msg, "ifSocketEvent") = invalid then
                 'Debug("Processing " + type(msg) + " (top of stack " + type(m.screens.Peek().Screen) + "): " + tostr(msg.GetType()) + ", " + tostr(msg.GetIndex()) + ", " + tostr(msg.GetMessage()))
             'end if
-
+            'if type(msg) <> "roUrlEvent" AND type(msg) <> "roSocketEvent" then
+            '    Debug("Processing " + type(msg) + " (top of stack " + type(m.screens.Peek().Screen) + "): ")
+            'end if
             for i = m.screens.Count() - 1 to 0 step -1
                 if m.screens[i].HandleMessage(msg) then exit for
             end for
@@ -697,6 +922,9 @@ Sub vcShow()
     end while
 
     ' Clean up some references on the way out
+    restoreAudio = m.AudioPlayer ' save for later (maybe)
+    m.AudioPlayer.Stop()         ' stop any audio for now. This might change with exit confirmation
+
     m.Home = invalid
     m.myplex = invalid
     m.GdmAdvertiser = invalid
@@ -708,7 +936,57 @@ Sub vcShow()
     m.PendingRequests.Clear()
     m.SocketListeners.Clear()
 
-    Debug("Finished global message loop")
+    ' ljunkie - extra cleanup for the user switching    
+    GetGlobalAA().Delete("myplex")
+    GetGlobalAA().Delete("globals")
+    GetGlobalAA().Delete("primaryserver")
+    GetGlobalAA().Delete("validated_servers")
+    GetGlobalAA().Delete("registrycache")
+    GetGlobalAA().Delete("first_focus_done")
+
+     'Exit Confirmation TODO - for not we will show the user selection screen if enabled
+    if m.RFisMultiUser then 
+        Debug("Exit channel - show user selection")
+        m = invalid
+        'GetGlobalAA().AddReplace("restoreAudio", restoreAudio)
+        Main(invalid)
+        return
+    else
+        Debug("Finished global message loop")
+        end
+'        controller = invalid
+'        port = CreateObject("roMessagePort")
+'        dialog = CreateObject("roMessageDialog")
+'        dialog.SetMessagePort(port)
+'    
+'        dialog.SetTitle("Exit RARflix?")
+'        dialog.SetText("")
+'        dialog.AddButton(0, "No")
+'        dialog.AddButton(1, "Yes")
+'        dialog.Show()
+'    
+'        while true
+'            dlgMsg = wait(0, dialog.GetMessagePort())
+'            if type(dlgMsg) = "roMessageDialogEvent"
+'                if dlgMsg.isScreenClosed()
+'                    end ' exit channel
+'                    return
+'                else if dlgMsg.isButtonPressed()
+'                    if dlgMsg.GetIndex() = 1 then end 
+'                    if dlgMsg.GetIndex() = 0 then 
+'                        m = invalid
+'                        dialog.close()
+'                        GetGlobalAA().AddReplace("restoreAudio", restoreAudio)
+'                        GetGlobalAA().AddReplace("restoreAudio", restoreAudio)
+'                        Main(invalid)
+'                    end if
+'                    return
+'                end if
+'            end if
+'        end while
+    end if
+'
+    return
 End Sub
 
 Sub vcAddBreadcrumbs(screen, breadcrumbs)
@@ -728,7 +1006,7 @@ Sub vcAddBreadcrumbs(screen, breadcrumbs)
         breadcrumbs.Pop()
     end if
 
-    if breadcrumbs.Count() = 0 AND m.breadcrumbs.Count() > 0 then
+    if (breadcrumbs.Count() = 0 AND m.breadcrumbs.Count() > 0) or (m.screens.peek().isfullgrid <> invalid and breadcrumbs.Count() < 2 AND m.breadcrumbs.Count() > 0) then
         count = m.breadcrumbs.Count()
         if count >= 2 then
             breadcrumbs = [m.breadcrumbs[count-2], m.breadcrumbs[count-1]]
@@ -790,6 +1068,11 @@ Sub vcUpdateScreenProperties(screen)
     else if screenType = "roListScreen" OR screenType = "roKeyboardScreen" OR screenType = "roParagraphScreen" then
         if enableBreadcrumbs then
             screen.Screen.SetTitle(bread2)
+        end if
+    else if screenType = "roImageCanvas" then
+        'roImageCanvas does not currently support breadcrumbs but allow custom function to draw them
+        if enableBreadcrumbs then
+            if screen.SetBreadcrumbText <> invalid then screen.SetBreadcrumbText(bread2) 
         end if
     else
         Debug("Not sure what to do with breadcrumbs on screen type: " + tostr(screenType))

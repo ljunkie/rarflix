@@ -6,9 +6,11 @@ Sub rf_homeNowPlayingChange()
     m.contentArray[m.RowIndexes[rowkey]].refreshContent = []
     m.contentArray[m.RowIndexes[rowkey]].loadedServers.Clear()
 
+    re = CreateObject("roRegex", "my.plexapp.com", "i")        
     for each server in GetOwnedPlexMediaServers()
-        if server.isavailable then ' only query server if available
-            Debug("---- refreshing Now Playing LOADER")
+        if re.IsMatch(server.serverurl) then 
+            Debug("Skipping now playing session check on 'cloud sync' server: " + server.serverurl)
+        else if server.isavailable then ' only query server if available
             m.CreateServerRequests(server, true, true, invalid, rowkey) ' only request the nowPlaying;/status/sessions
         end if
     next
@@ -142,12 +144,12 @@ function getNowPlayingNotifications() as object
     if type(seen) = "roArray" and seen.count() > 0 then
         for each maid in seen
             print "----- checking if " + maid + " is playing"
-            inarray = false
+            RFinarray = false
             for each f_maid in found 
-                if f_maid = maid then inarray = true
+                if f_maid = maid then RFinarray = true
             next    
 
-            if NOT inarray then
+            if NOT RFinarray then ' if NOT inArray(seen,found) then -- very bad TOFI
                 ' notification for stopped content - we will need to grab the itemKey if we want to link the video
 		n = CreateObject("roAssociativeArray")
                 n.type = "stop" 
@@ -185,9 +187,12 @@ end function
 
 function percentComplete(viewOffset as dynamic, Length as dynamic, round=false as boolean) as String
    'TODO - check if string or integer just to be safe
-   percent = int(((viewOffset.toInt()/1000)/length )*100)
-   if round and percent > 90 then return "100"
-   return tostr(percent)
+   if viewOffset <> invalid then 
+       percent = int(((viewOffset.toInt()/1000)/length )*100)
+       if round and percent > 90 then return "100"
+       return tostr(percent)
+   end if
+   return "0"
 end function
 
 ' This needs some work - rough draft - should add link to view videoDetial screen from here
@@ -219,6 +224,7 @@ Sub ShowNotifyDialog(obj As dynamic, notifyIndex = 0, isNowPlaying = false)
     end if
     dialog.text = dialog.text + chr(10) ' for overlay 
     dialog.text = truncateString(dialog.text,200) ' for overlay 
+    'dialog.sepBefore.Push("show")
     dialog.SetButton("show", "Show Now Playing")
     dialog.SetButton("close", "Close")
     dialog.Show()

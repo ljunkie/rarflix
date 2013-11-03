@@ -118,8 +118,8 @@ Sub prefsHandleEnumPreference(regKey, index)
     m.currentRegKey = regKey
     label = m.contentArray[index].OrigTitle
     pref = m.Prefs[regKey]
-    m.Changes.AddReplace("_previous_"+regKey, RegRead(regKey, "preferences", pref.default)) ' ljunkie - set _previous_ value to key off of later
-    screen = m.ViewController.CreateEnumInputScreen(pref.values, RegRead(regKey, "preferences", pref.default), pref.heading, [label], false)
+    screen = m.ViewController.CreateEnumInputScreen(pref.values, RegRead(regKey, "preferences", pref.default, m.currentUser), pref.heading, [label], false)
+    m.Changes.AddReplace("_previous_"+regKey, RegRead(regKey, "preferences", pref.default, m.currentUser)) ' ljunkie - set _previous_ value to key off of later
     screen.Listener = m
     screen.Show()
 End Sub
@@ -130,7 +130,7 @@ Sub prefsHandleTextPreference(regKey, index)
     label = m.contentArray[index].OrigTitle
     pref = m.Prefs[regKey]
     screen = m.ViewController.CreateTextInputScreen(pref.heading, [label], false)
-    screen.Text = RegRead(regKey, "preferences", pref.default)
+    screen.Text = RegRead(regKey, "preferences", pref.default, m.currentUser)  'm.currentUser may be "invalid" and RegRead will use global currentUser
     screen.Screen.SetMaxLength(80)
     screen.Listener = m
     screen.Show()
@@ -143,33 +143,34 @@ Sub prefsHandleReorderPreference(regKey, index)
     pref = m.Prefs[regKey]
 
     screen = m.ViewController.CreateReorderScreen(pref.values, [label], false)
-    screen.InitializeOrder(RegRead(regKey, "preferences", pref.default))
+    screen.InitializeOrder(RegRead(regKey, "preferences", pref.default, m.currentUser))  'm.currentUser may be "invalid" and RegRead will use global currentUser
     screen.Listener = m
     screen.Show()
 End Sub
 
 Sub prefsOnUserInput(value, screen)
     if type(screen.Screen) = "roKeyboardScreen" then
-        RegWrite(m.currentRegKey, value, "preferences")
+        RegWrite(m.currentRegKey, value, "preferences", m.currentUser)  'm.currentUser may be "invalid" and RegWrite will use the global currentUser
         m.Changes.AddReplace(m.currentRegKey, value)
         m.AppendValue(m.currentIndex, value)
     else if type(screen.Screen) = "roListScreen" AND screen.ListScreenType = "reorder" then
-        RegWrite(m.currentRegKey, value, "preferences")
+        RegWrite(m.currentRegKey, value, "preferences", m.currentUser)  'm.currentUser may be "invalid" and RegWrite will use the global currentUser
         m.Changes.AddReplace(m.currentRegKey, value)
     else
         label = m.contentArray[m.currentIndex].OrigTitle
         if screen.SelectedIndex <> invalid then
             Debug("Set " + label + " to " + screen.SelectedValue)
-            RegWrite(m.currentRegKey, screen.SelectedValue, "preferences")
+            RegWrite(m.currentRegKey, screen.SelectedValue, "preferences", m.currentUser)  'm.currentUser may be "invalid" and RegWrite will use the global currentUser
             m.Changes.AddReplace(m.currentRegKey, screen.SelectedValue)
             m.AppendValue(m.currentIndex, screen.SelectedLabel)
         end if
     end if
 End Sub
 
-Function prefsGetEnumValue(regKey)
+Function prefsGetEnumValue(regKey, currentUser = invalid)
     pref = m.Prefs[regKey]
-    value = RegRead(regKey, "preferences", pref.default)
+    if currentUser = invalid then currentUser = m.currentUser
+    value = RegRead(regKey, "preferences", pref.default, currentUser)  'currentUser may be "invalid" and RegRead will use global currentUser
     m.Changes.AddReplace(regKey, value) ' ljunkie add changes, we can key of changes: 'm.Changes["_prev_{regKey}"] will have the previously selection
     for each item in pref.values
         if value = item.EnumValue then
@@ -182,9 +183,9 @@ End Function
 
 Function prefsGetPrefValue(regKey)
     pref = m.Prefs[regKey]
-    return RegRead(regKey, "preferences", pref.default)
+    value = RegRead(regKey, "preferences", pref.default, m.currentUser)  'm.currentUser may be "invalid" and RegRead will use global currentUser
+    return value
 End Function
-
 '*** Main Preferences ***
 
 Function createPreferencesScreen(viewController) As Object
@@ -257,9 +258,11 @@ Sub showPreferencesScreen()
     m.Screen.SetHeader("Set Plex Channel Preferences")
 
     ' re-ordered - RR
-    m.AddItem({title: "Plex Media Servers"}, "servers")
-    m.AddItem({title: getCurrentMyPlexLabel()}, "myplex")
     m.AddItem({title: "RARflix Preferences", ShortDescriptionLine2: "the goods"}, "rarflix_prefs")
+    m.AddItem({title: getCurrentMyPlexLabel()}, "myplex")
+    m.AddItem({title: "User Profiles", ShortDescriptionLine2: "Multi-User Support"}, "userprofiles")
+    m.AddItem({title: "Security PIN", ShortDescriptionLine2: "Require a PIN to access (multi-user supported)"}, "securitypin")
+    m.AddItem({title: "Plex Media Servers"}, "servers")
     m.AddItem({title: "Quality"}, "quality", m.GetEnumValue("quality"))
     m.AddItem({title: "Remote Quality"}, "quality_remote", m.GetEnumValue("quality_remote"))
     m.AddItem({title: "Direct Play"}, "directplay", m.GetEnumValue("directplay"))
@@ -348,6 +351,14 @@ Function prefsMainHandleMessage(msg) As Boolean
                 screen = createSlideshowPrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["Slideshow Preferences"])
                 screen.Show()
+            else if command = "securitypin" then
+                screen = createSecurityPinPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["Security PIN"])
+                screen.Show()            
+            else if command = "userprofiles" then
+                screen = createUserProfilesPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["User Profiles"])
+                screen.Show()            
             else if command = "subtitles" then
                 screen = createSubtitlePrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["Subtitle Preferences"])
@@ -460,6 +471,244 @@ Function prefsSlideshowHandleMessage(msg) As Boolean
 
     return handled
 End Function
+
+'*** SecurityPin Preferences ***
+'Create initiation screen and setup
+Function createSecurityPinPrefsScreen(viewController) As Object
+    'Debug("createSecurityPinPrefsScreen")
+    obj = createBasePrefsScreen(viewController)
+    prefsSecurityPinRefresh(obj)
+    obj.Screen.SetHeader("Security PIN preferences")
+    obj.HandleMessage = prefsSecurityPinHandleMessage
+    obj.EnteredPin = false  'true when user has already entered PIN so we don't ask for it again
+    return obj
+End Function
+
+'Determine if we're setting a new PIN or need to change/clear an existing PIN
+sub prefsSecurityPinRefresh(screen)
+    screen.contentArray.Clear() 
+    screen.Screen.ClearContent()
+    if RegRead("securityPincode","preferences",invalid) = invalid  then
+        screen.AddItem({title: "Set Security PIN"}, "set")
+        screen.EnteredPin = true    'don't ask for PIN from now on
+    else
+        if screen.EnteredPin = true then
+            screen.AddItem({title: "Change Security PIN"}, "set")
+            screen.AddItem({title: "Clear Security PIN"}, "clear")
+        else
+            screen.AddItem({title: "Enter current PIN to make changes"}, "unlock")
+        end if
+    end if
+    screen.AddItem({title: "Close"}, "close")
+end sub 
+
+
+Function prefsSecurityPinHandleMessage(msg) As Boolean
+    handled = false
+    if type(msg) = "roListScreenEvent" then
+        handled = true
+        if msg.isScreenClosed() then
+            m.ViewController.PopScreen(m)
+        else if msg.isListItemSelected() then
+            command = m.GetSelectedCommand(msg.GetIndex())
+            if command = "clear" then
+                RegDelete("securityPincode", "preferences")
+                prefsSecurityPinRefresh(m)
+            else if command = "set" then 'create screen to enter PIN
+                pinScreen = SetSecurityPin(m.ViewController)
+                m.Activate = prefsSecurityPinHandleSetPin
+                m.ViewController.InitializeOtherScreen(pinScreen, ["Set New PIN"])
+                pinScreen.txtTop = "The PIN code is any sequence of the direction arrows on your remote control.  Press up to 20 arrows to set the PIN."
+                pinScreen.txtBottom = "Press Back to cancel setting the PIN.  When complete press the OK button on your remote control."  
+                pinScreen.Show(true)
+            else if command = "unlock" then 'create unlock screen
+                pinScreen = VerifySecurityPin(m.ViewController, RegRead("securityPincode","preferences",invalid), false, 0)
+                m.ViewController.InitializeOtherScreen(pinScreen, ["Unlock PIN Changes"])
+                m.Activate = prefsSecurityPinHandleUnlock
+                pinScreen.Show()
+            else if command = "close" then
+                m.Screen.Close()
+            end if
+        end if
+    end if
+    return handled
+End Function
+
+'Called when list screen pops to top after the PIN verification completes
+sub prefsSecurityPinHandleUnlock(priorScreen)
+    m.Activate = invalid    'dont call this routine again
+    if (priorScreen.pinOK = invalid) or (priorScreen.pinOK <> true) then    'either no code was entered, was cancelled or wrong code
+    else
+        m.EnteredPin = true    
+    endif
+    prefsSecurityPinRefresh(m)
+End sub
+
+'Called when list screen pops to top after setting a new PIN
+sub prefsSecurityPinHandleSetPin(priorScreen)
+    m.Activate = invalid    'dont call this routine again
+    if (priorScreen.newPinCode = invalid) or (priorScreen.newPinCode = "") then    'either no code was entered, was cancelled or wrong code
+        'dialog = createBaseDialog()    'BUG: couldn't get this to work.  screen does not display.  Just return to menu when it's entered wrong
+        'dialog.Title = "PIN Mismatch"
+        'dialog.Text = "Security PIN's didn't match.  PIN not changed."
+        'dialog.Show()
+    else
+        m.EnteredPin = true    
+        'Debug("Set new pincode:" + tostr(priorScreen.newPinCode ))
+        RegWrite("securityPincode", priorScreen.newPinCode, "preferences")
+        prefsSecurityPinRefresh(m)
+    endif
+End sub
+
+'*** User Profile Preferences ***
+
+sub refreshUserProfilesPrefsScreen(p) 
+ ' TODO: need to work on a better way to refresh the current roListScreens
+ curscreen = m
+ screen = createUserProfilesPrefsScreen(m.ViewController)
+ m.ViewController.InitializeOtherScreen(screen, ["User Profiles"])
+ if m.focusedlistitem <> invalid then screen.screen.SetFocusedListItem(m.focusedlistitem)
+ screen.Show()            
+ m.ViewController.popscreen(m)
+end sub
+
+Function createUserProfilesPrefsScreen(viewController) As Object
+    'TraceFunction("createUserProfilesPrefsScreen", viewController)
+
+    obj = createBasePrefsScreen(viewController)
+    obj.Activate = refreshUserProfilesPrefsScreen
+    obj.HandleMessage = prefsUserProfilesHandleMessage
+    obj.Screen.SetHeader("User profile preferences")
+    'These must be the first 8 entries for easy parsing for the createUserEditPrefsScreen()
+    fn = firstof(RegRead("friendlyName", "preferences", invalid, 0),"")
+    if fn <> "" then fn = " [" + fn + "]"
+    obj.AddItem({title: "Default User Profile " + fn}, "userActive0")
+    for ucount = 1 to 7
+        enaText = "Disabled"
+        if RegRead("userActive", "preferences", "0", ucount) = "1" then enaText = "Enabled"
+        fn = firstof(RegRead("friendlyName", "preferences", invalid, ucount),"")
+        if fn <> "" then enaText = enaText + " [" + fn + "]"
+        obj.AddItem({title: "User Profile " + tostr(ucount)}, "userActive" + tostr(ucount), enaText)
+    end for
+    obj.AddItem({title: "Close"}, "close")
+    return obj
+End Function
+
+Function prefsUserProfilesHandleMessage(msg) As Boolean
+    handled = false
+
+    if type(msg) = "roListScreenEvent" then
+        handled = true
+        if msg.isScreenClosed() then
+            Debug("User Profiles closed event")
+            m.ViewController.GdmAdvertiser.Refresh()
+            m.ViewController.PopScreen(m)
+        else if msg.isListItemSelected() then
+            command = m.GetSelectedCommand(msg.GetIndex())
+            m.FocusedListItem = msg.GetIndex()
+            if command = "close" then
+                m.Screen.Close()
+            else    'must be a user edit
+                m.editScreen = createUserEditPrefsScreen(m.ViewController,msg.GetIndex()) 'msg.GetIndex() be 0-3 because that's the order of the text entries
+                if msg.GetIndex() = 0 then
+                    name = "Default User"
+                else 
+                    name = "User Profile " + tostr(msg.GetIndex())
+                end if
+                if RegRead("friendlyName", "preferences", invalid, msg.GetIndex()) <> invalid then
+                    name = RegRead("friendlyName", "preferences", invalid, msg.GetIndex())
+                end if 
+                m.ViewController.InitializeOtherScreen(m.editScreen, [name])
+                m.editScreen.Show()            
+            end if
+        end if
+    end if
+
+    return handled
+End Function
+
+'*** User Profile Edit ***
+Function createUserEditPrefsScreen(viewController, currentUser as integer) As Object
+    'TraceFunction("createUserEditPrefsScreen", viewController, currentUser)
+    obj = createBasePrefsScreen(viewController)
+    obj.currentUser = currentUser
+
+    obj.HandleMessage = prefsUserEditHandleMessage
+
+    ' Enabled
+    options = [
+        { title: "Enabled", EnumValue: "1" },
+        { title: "Disabled", EnumValue: "0" }
+    ]
+    obj.Prefs["userActive"] = {
+        values: options,
+        heading: "Show this User Profile on selection screen",
+        default: "0"
+    }
+    obj.Prefs["friendlyName"] = {
+        heading: "Name to show on the User Profile selection screen",
+        default: ""
+    }
+    obj.AddItem({title: "User Profile Name "}, "friendlyName", obj.GetPrefValue("friendlyName"))
+    if currentUser = 0 then
+        obj.Screen.SetHeader("Default User profile preferences")
+    else
+        obj.Screen.SetHeader("User " + numtostr(currentUser) + " profile preferences")
+        obj.AddItem({title: "Show User on selection screen "}, "userActive", obj.GetEnumValue("userActive"))
+    end if
+    if currentUser <> GetGlobalAA().userNum then   'can't erase preferences for the current user
+        obj.AddItem({title: "Erase all preferences for this user"}, "erase")
+    end if
+    obj.AddItem({title: "Close"}, "close")
+    return obj
+End Function
+
+
+Function prefsUserEditHandleMessage(msg) As Boolean
+    handled = false
+
+    if type(msg) = "roListScreenEvent" then
+        handled = true
+        if msg.isScreenClosed() then
+            Debug("User Edit closed event")
+            m.ViewController.GdmAdvertiser.Refresh()
+            m.ViewController.PopScreen(m)
+        else if msg.isListItemSelected() then
+            command = m.GetSelectedCommand(msg.GetIndex())
+            if command = "friendlyName" then
+                m.HandleTextPreference(command, msg.GetIndex())
+            else if command = "userActive" then
+                m.HandleEnumPreference(command, msg.GetIndex())
+            else if command = "erase" then
+                'm.HandleEnumPreference(command, msg.GetIndex())
+                dialog = createBaseDialog()    
+                dialog.Title = "Confirm Erase"
+                dialog.Text = "Are you sure you want to erase all the preferences for this user profile?  This will forever delete all the configuration for this user profile.  Other profiles will not changed."
+                dialog.SetButton("erase", "Erase All Preferences")
+                dialog.SetButton("close", "Cancel")
+                dialog.HandleButton = prefsUserEditHandleDialogButton    
+                dialog.ParentScreen = m
+                dialog.Show()   
+            else if command = "close" then
+                m.Screen.Close()
+            end if
+        end if
+    end if
+
+    return handled
+End Function
+
+'Handles the confirmation dialog button when erasing the preferences. If erasing, it sets the parent preference screen to close
+Function prefsUserEditHandleDialogButton(command, data) As Boolean
+    obj = m.ParentScreen    ' We're evaluated in the context of the dialog, but we want to pull from the parent.
+    if command = "erase" then
+        RegEraseUser(obj.currentUser)
+        obj.closeOnActivate = true  'queue up the parent prefs screen to close
+    end if
+    'm.screen.Close() 'close the dialog now
+    return true 'returning true will close the dialog
+End Function
+
 
 '*** Subtitle Preferences ***
 
@@ -1361,8 +1610,21 @@ Function createHomeScreenPrefsScreen(viewController) As Object
         default: ""
     }
 
+    '{ title: "Zoom", EnumValue: "zoom-to-fill", ShortDescriptionLine2: "zoom image to fill boundary" }, NO ONE wants this
+    display_modes = [
+        { title: "Photo [default]", EnumValue: "photo-fit", ShortDescriptionLine2: "Default" },
+        { title: "Fit", EnumValue: "scale-to-fit", ShortDescriptionLine2: "scaled to fit"  },
+        { title: "Fill", EnumValue: "scale-to-fill", ShortDescriptionLine2: "stretch image to fill boundary" },
+    ]
+    obj.Prefs["rf_home_displaymode"] = {
+        values: display_modes,
+        heading: "How should images be displayed on the home screen (channel restart required)",
+        default: "photo-fit"
+    }
+
     obj.Screen.SetHeader("Change the appearance of the home screen")
     obj.AddItem({title: "Reorder Home Rows", ShortDescriptionLine2: "A restart of the Channel is required"}, "home_row_order")
+    obj.AddItem({title: "Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_home_displaymode", obj.GetEnumValue("rf_home_displaymode"))
     obj.AddItem({title: "Queue"}, "playlist_view_queue", obj.GetEnumValue("playlist_view_queue"))
     obj.AddItem({title: "Recommendations"}, "playlist_view_recommendations", obj.GetEnumValue("playlist_view_recommendations"))
     obj.AddItem({title: "On Deck"}, "row_visibility_ondeck", obj.GetEnumValue("row_visibility_ondeck"))
@@ -1384,7 +1646,7 @@ Function prefsHomeHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "playlist_view_queue" OR command = "playlist_view_recommendations" OR command = "row_visibility_ondeck" OR command = "row_visibility_recentlyadded" OR command = "row_visibility_channels" or command = "row_visibility_now_playing" then
+            if command = "playlist_view_queue" OR command = "playlist_view_recommendations" OR command = "row_visibility_ondeck" OR command = "row_visibility_recentlyadded" OR command = "row_visibility_channels" or command = "row_visibility_now_playing" or command = "rf_home_displaymode" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "home_row_order" then
                 m.HandleReorderPreference(command, msg.GetIndex())
@@ -1413,6 +1675,51 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
         values: values,
         heading: "Which screen type should be used for TV series?",
         default: ""
+    }
+
+
+    ' Prefer Grid or Poster view for most?
+    rf_poster_grid = [
+        { title: "Grid", EnumValue: "grid", ShortDescriptionLine2: "Prefer FULL grid when viewing items"  },
+        { title: "Poster", EnumValue: "poster", ShortDescriptionLine2: "Prefer Poster (one row) when viewing items"  },
+
+
+    ]
+    obj.Prefs["rf_poster_grid"] = {
+        values: rf_poster_grid,
+        heading: "Which screen type should be used for Movies & Other content?",
+        default: "grid"
+    }
+
+    ' Prefer Grid or Poster view for most?
+    rf_grid_style = [
+        { title: "Normal", EnumValue: "flat-movie", ShortDescriptionLine2: "5x2"  },
+        { title: "Small", EnumValue: "flat-square", ShortDescriptionLine2: "7x3" },
+
+    ]
+    obj.Prefs["rf_grid_style"] = {
+        values: rf_grid_style,
+        heading: "Size of the Grid",
+        default: "flat-movie"
+    }
+
+    ' Display Mode for Grid or Poster views
+    ' { title: "Zoom", EnumValue: "zoom-to-fill", ShortDescriptionLine2: "zoom image to fill boundary" }, again, no one wants this
+    display_modes = [
+        { title: "Fit [default]", EnumValue: "scale-to-fit", ShortDescriptionLine2: "Default"  },
+        { title: "Fill", EnumValue: "scale-to-fill", ShortDescriptionLine2: "stretch image to fill boundary" },
+        { title: "Photo", EnumValue: "photo-fit", ShortDescriptionLine2: "all the above to fit boundary" },
+
+    ]
+    obj.Prefs["rf_grid_displaymode"] = {
+        values: display_modes,
+        heading: "How should images be displayed on screen",
+        default: "scale-to-fit"
+    }
+    obj.Prefs["rf_poster_displaymode"] = {
+        values: display_modes,
+        heading: "How should images be displayed on screen",
+        default: "scale-to-fit"
     }
 
     ' Grid rows that can be reordered
@@ -1452,6 +1759,11 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
     obj.Screen.SetHeader("Change the appearance of your sections")
 
     obj.AddItem({title: "TV Series"}, "use_grid_for_series", obj.GetEnumValue("use_grid_for_series"))
+    obj.AddItem({title: "Movie & Others", ShortDescriptionLine2: "Posters or Grid"}, "rf_poster_grid", obj.GetEnumValue("rf_poster_grid"))
+    obj.AddItem({title: "Grid Size", ShortDescriptionLine2: "Size of Grid"}, "rf_grid_style", obj.GetEnumValue("rf_grid_style"))
+    obj.AddItem({title: "Grid Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_grid_displaymode", obj.GetEnumValue("rf_grid_displaymode"))
+    'we can add this.. but it doesn't do much yet.. let's not totally confuse people.. yet.
+    'obj.AddItem({title: "Poster Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_poster_displaymode", obj.GetEnumValue("rf_poster_displaymode"))
     obj.AddItem({title: "Reorder Rows"}, "section_row_order")
     obj.AddItem({title: "Close"}, "close")
 
@@ -1468,7 +1780,7 @@ Function prefsSectionDisplayHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "use_grid_for_series" then
+            if command = "use_grid_for_series" or command = "rf_poster_grid" or command = "rf_grid_style" or command = "rf_grid_displaymode" or command = "rf_poster_displaymode" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "section_row_order" then
                 m.HandleReorderPreference(command, msg.GetIndex())

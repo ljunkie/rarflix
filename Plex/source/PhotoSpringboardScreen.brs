@@ -47,6 +47,15 @@ Sub photoSetupButtons()
 End Sub
 
 Sub photoGetMediaDetails(content)
+    ' ljunkie - refresh exif for descriptions ( we lazy load this on the grid )
+    if content.ExifSBloaded = invalid then
+        description = getExifData(content,false)
+        if description <> invalid then
+            content.description = description
+            content.ExifSBloaded = true ' make sure we don't load it again
+        end if
+    end if
+
     m.metadata = content
     m.media = invalid
 End Sub
@@ -63,8 +72,11 @@ Function photoHandleMessage(msg) As Boolean
                 Debug("photoHandleMessage:: Show photo fullscreen")
                 m.ViewController.CreatePhotoPlayer(m.Item)
             else if buttonCommand = "slideshow" then
-                Debug("photoHandleMessage:: Start slideshow")
-                m.ViewController.CreatePhotoPlayer(m.Context, m.CurIndex)
+                ' Playing Photos from springBoard in a FULL grid context
+                GetContextFromFullGrid(m,m.focusedIndex) 
+                Debug("photoHandleMessage:: springboard Start slideshow with " + tostr(m.context.count()) + " items")
+                Debug("starting at index: " + tostr(m.curindex))
+                m.ViewController.CreatePhotoPlayer(m.context, m.curIndex)
             else if buttonCommand = "next" then
                 Debug("photoHandleMessage:: show next photo")
                  m.GotoNextItem()

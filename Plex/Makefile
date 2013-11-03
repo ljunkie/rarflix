@@ -21,10 +21,12 @@ ZIP_EXCLUDE = -x .git\* -x manifest.template -x \*.swp -x \*.DS_Store -x \*.py -
 include ../app.mk
 
 APPTITLE = PlexDev
+APPTEMPLATE = manifest.rarflix.template
 
 num_functions := $(shell grep -ri --include=*.brs 'end \(function\|sub\)' . | wc -l | tr -d ' ')
 
 .PHONY: manifest count_functions beta dev rel test rarflix
+
 
 beta: APPTITLE = RARflixBeta
 beta: $(APPNAME)
@@ -33,6 +35,7 @@ test: APPTITLE = RARflixTest
 test: $(APPNAME)
 
 dev: APPTITLE = RARflixDev
+dev: APPTEMPLATE = manifest.rarflixDEV.template
 dev: $(APPNAME)
 
 rel: APPTITLE = RARflix
@@ -44,8 +47,7 @@ rarflix: $(APPNAME)
 
 manifest:
 	echo "Creating manifest for $(APPTITLE)"
-#	sed s/APPTITLE/$(APPTITLE)/ < manifest.template > manifest
-	sed s/APPTITLE/$(APPTITLE)/ < manifest.rarflix.template > manifest
+	sed s/APPTITLE/$(APPTITLE)/ < $(APPTEMPLATE) > manifest
 
 count_functions:
 	echo "Counting functions for $(APPTITLE), Roku v5.x limit is 65536"

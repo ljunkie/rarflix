@@ -2,7 +2,7 @@
 '* A grid screen backed by XML from a PMS.
 '*
 
-Function createGridScreen(viewController, style="flat-movie", upBehavior="exit") As Object
+Function createGridScreen(viewController, style="flat-movie", upBehavior="exit", SetDisplayMode = "scale-to-fit") As Object
     Debug("######## Creating Grid Screen ########")
 
     if upBehavior <> "stop" then ' allow us to force a stop
@@ -18,10 +18,20 @@ Function createGridScreen(viewController, style="flat-movie", upBehavior="exit")
     grid = CreateObject("roGridScreen")
     grid.SetMessagePort(screen.Port)
 
+    di=createobject("rodeviceinfo")
+    ' only use custom loading image on the black theme - conserve space
+    if mid(di.getversion(),3,1).toint() > 3 and RegRead("rf_theme", "preferences", "black") = "black" then
+        imageDir = GetGlobalAA().Lookup("rf_theme_dir")
+        SDPosterURL = imageDir + "LoadingPoster.png"
+        HDPosterURL = imageDir + "LoadingPoster.png"
+        grid.setloadingposter(SDPosterURL,HDPosterURL)
+    end if
+
     ' If we don't know exactly what we're displaying, scale-to-fit looks the
     ' best. Anything else makes something look horrible when the grid has
     ' some combination of posters and video frames. 
-    grid.SetDisplayMode("scale-to-fit")
+    ' ljunkie: we will now allow this to be passed to change it
+    grid.SetDisplayMode(SetDisplayMode)
     grid.SetGridStyle(style)
     grid.SetUpBehaviorAtTopRow(upBehavior)
 
@@ -51,14 +61,13 @@ Function createGridScreen(viewController, style="flat-movie", upBehavior="exit")
 End Function
 
 '* Convenience method to create a grid screen with a loader for the specified item
-Function createGridScreenForItem(item, viewController, style) As Object
-    obj = createGridScreen(viewController, style)
+Function createGridScreenForItem(item, viewController, style, SetDisplayMode = "scale-to-fit") As Object
+    obj = createGridScreen(viewController, style, RegRead("rf_up_behavior", "preferences", "exit"), SetDisplayMode)
 
     obj.Item = item
 
     container = createPlexContainerForUrl(item.server, item.sourceUrl, item.key)
     container.SeparateSearchItems = true
-    ' ljunkie -- pass item to paginated loader
     obj.Loader = createPaginatedLoader(container, 8, 75, item)
     obj.Loader.Listener = obj
 
@@ -73,9 +82,10 @@ Function createGridScreenForItem(item, viewController, style) As Object
 End Function
 
 Function showGridScreen() As Integer
-    facade = CreateObject("roGridScreen")
-    facade.Show()
-
+    'facade = CreateObject("roGridScreen")
+    'facade.Show()
+    ' ljunkie - not sure why an facade GridScreen is created. Maybe was neede in earlier firmware? Including it causes flashes between screens
+    facade = invalid
     totalTimer = createTimer()
 
     names = m.Loader.GetNames()
@@ -83,12 +93,17 @@ Function showGridScreen() As Integer
     if names.Count() = 0 then
         Debug("Nothing to load for grid")
         dialog = createBaseDialog()
+        facade = CreateObject("roGridScreen")
+        facade.Show() ' ljunkie - aha, we need facade screen for zero row grids
         dialog.Facade = facade
         dialog.Title = "Content Unavailable"
-        dialog.Text = "An error occurred while trying to load this content, make sure the server is running (did you hide all the rows?)."
-        dialog.Show()
+        dialog.DisableBackButton = true
+        dialog.Text = "An error occurred while trying to load this content, we received zero results."
+        dialog.closePrevious = true ' or check to see if there is a facade?
+        dialog.Show(true) ' blocking
 
         m.popOnActivate = true
+
         return -1
     end if
 
@@ -107,18 +122,28 @@ Function showGridScreen() As Integer
     end for
 
     m.Screen.Show()
-    facade.Close()
+    if facade <> invalid then facade.Close()
 
     ' Only two rows and five items per row are visible on the screen, so
     ' don't load much more than we need to before initially showing the
     ' grid. Once we start the event loop we can load the rest of the
     ' content.
-
     maxRow = names.Count() - 1
-    if maxRow > 1 then maxRow = 1
+
+    ' ljunkie - Modify the default load count when one opens a grid screen (for FULL grid)
+    ' for now, we will load 20 rows in the full grid ( only 5 items in a row.. so it seems to play nicely )
+    if m.isFullGrid <> invalid and m.isFullGrid = true then 
+        ' even though we load 20 rows, if one open an item from a row we will load the rest
+        ' it will allow left/right buttons to work for all and gives the ability to play a slideshow from full grid
+        maxRow = 20 ' in the FULL grid, loading 20 rows seems like an ok number. Might be able to raise this.
+        if maxRow > names.Count() then maxRow=names.Count()
+        Debug("---- Loading FULL grid - load row 0 to row " + tostr(maxRow))
+    else if maxRow > 1 then 
+        maxRow = 1
+    end if
 
     for row = 0 to maxRow
-        Debug("Loading beginning of row " + tostr(row) + ", " + tostr(names[row]))
+        Debug("----- Loading beginning of row " + tostr(row) + ", " + tostr(names[row]))
         m.Loader.LoadMoreContent(row, 0)
     end for
 
@@ -146,17 +171,15 @@ Function gridHandleMessage(msg) As Boolean
             if item <> invalid then
                 if item.ContentType = "series" then
                     breadcrumbs = [item.Title]
-                ' ljunkie - removed for now - it's not used - override in videoGetMediaDetails() when dynamic breadcrumbs are enabled
-                ' else if item.ContentType = "episode" then
-                '     breadcrumbs = [item.ShowTitle, item.episodestr, ""]
                 else if item.ContentType = "section" then
                     breadcrumbs = [item.server.name, item.Title]
                 else
                     breadcrumbs = [m.Loader.GetNames()[msg.GetIndex()], item.Title]
                 end if
 
-                m.Facade = CreateObject("roGridScreen")
-                m.Facade.Show()
+                'ljunkie - not sure why an facade GridScreen is created. Maybe was neede in earlier firmware? Including it causes flashes between screens
+                'm.Facade = CreateObject("roGridScreen")
+                'm.Facade.Show()
 
                 m.ViewController.CreateScreenForItem(context, index, breadcrumbs)
             end if
@@ -166,6 +189,35 @@ Function gridHandleMessage(msg) As Boolean
 
             m.selectedRow = msg.GetIndex()
             m.focusedIndex = msg.GetData()
+
+            if m.screenid <> invalid and m.screenid > 0 and m.contentArray <> invalid and type(m.contentArray[m.selectedRow]) = "roArray" then 
+                item = m.contentArray[m.selectedRow][m.focusedIndex]
+       
+                if item <> invalid and tostr(item.type) = "photo" and tostr(item.nodename) <> "Directory" and item.ExifLoaded = invalid then 
+                    description = getExifData(item,true)
+                    if description <> invalid then
+                        item.description = description
+                        item.ExifLoaded = true
+                        m.Screen.SetContentListSubset(m.selectedRow, m.contentArray[m.selectedRow], m.focusedIndex, 1)
+                        print item
+                    end if
+                end if
+            end if
+ 
+            if m.screenid <> invalid and m.screenid < 0 and m.contentArray <> invalid and type(m.contentArray[m.selectedRow]) = "roArray" then 
+                item = m.contentArray[m.selectedRow][m.focusedIndex]
+                if type(item) = "roAssociativeArray" and item.contenttype <> invalid and item.contenttype = "section" then 
+                    RegWrite("lastMachineID", item.server.machineID, "userinfo")
+                    RegWrite("lastSectionKey", item.key, "userinfo")
+                    'RegWrite("lastMachineID", item.server.machineID)
+                    'RegWrite("lastSectionKey", item.key)
+                    Debug("--------------- remember last focus ------------------------")
+                    Debug("last section used " + item.key)
+                    Debug("server " + item.server.machineID)
+                    Debug("---------------------------------------")
+                end if 
+            end if
+
 
             if m.ignoreNextFocus then
                 m.ignoreNextFocus = false
@@ -183,55 +235,107 @@ Function gridHandleMessage(msg) As Boolean
                     m.lastUpdatedSize[m.selectedRow] = data.Count()
                 end if
 
-                m.Loader.LoadMoreContent(m.selectedRow, 2)
+                extraRows = 2 ' standard is to load 2 rows 
+                
+                ' If this is a FULL Grid, then we want to change the default loading style ( we only have 5 items per row, so we can load many more)
+                skipFullGrid = true
+                if m.isfullgrid <> invalid and m.isfullgrid = true then
+                    skipFullGrid = false
+                    rfloaded = 0 ' container for total loadded rows
+                    for each lrow in  m.loader.contentArray
+                        if lrow.loadStatus = 2 then rfloaded = rfloaded+1
+                    next
+
+                    ' if the current row is not loaded.. maybe user held down the the button. We should force a load
+                    forceLoad = (m.loader.contentArray[m.selectedRow].loadStatus <> 2) 
+
+                    ' load the extra rows
+                    if m.selectedRow > rfloaded-4 or forceLoad then 
+                        skipFullGrid = true
+                        Debug("----- Row selected is greater than current load count OR current row is not loaded. Load 20 up and down")
+                        for index = 0 to 20 
+                            row_up = m.selectedRow-index ' includes current row
+                            row_down = index+m.selectedRow+1
+                            if row_up > 0 then m.Loader.LoadMoreContent(row_up, 0)
+                            if row_down > 0 then m.Loader.LoadMoreContent(row_down, 0)
+                        next
+                    end if
+                end if
+
+                ' ljunkie - only special for FULL grid view, since we only have 5 items in the row, it's safe to load more rows up/down
+                ' always verify we have the rows for 2 up and 2 down from selected ROW..
+                ' we want to load up and down. User might scroll down skipping loads, if they scroll up, they data will now be loaded. Better UX
+                ' only run the Default loader if rfLoadDone is not set (we manually loaded rows above)
+                if NOT skipFullGrid then
+                    ' Debug("----- . Loading more content: from row " + tostr(m.selectedRow) + " PLUS  " + tostr(extraRows) + " more rows in both directions")
+                    for index = 0 to extraRows-1
+                        row_up = m.selectedRow-index ' includes current row
+                        row_down = index+m.selectedRow+1
+                        if row_up > 0 then m.Loader.LoadMoreContent(row_up, 0)
+                        if row_down > 0 then m.Loader.LoadMoreContent(row_down, 0)
+                    end for
+                else 
+                    ' ljunkie - this does't load the extra rows as I expected. It exists if a selected row ( or the first of the called extraRows are loaded )
+                    ' this only really matters for the FULL grid, so we will still use the existing logic for non FULL grid
+                     'Debug("----- NOT a full grid, we can load normally: from row " + tostr(m.selectedRow) + " PLUS  " + tostr(extraRows) )
+                     m.Loader.LoadMoreContent(m.selectedRow, extraRows) 
+                     'Debug("----- NOT a full grid, we can load normally: from row " + tostr(m.selectedRow+1) + " PLUS  " + tostr(0) )
+                     m.Loader.LoadMoreContent(m.selectedRow+2, 0) ' we normally load the two focused rows, but lets load the next on out of screen ( testing )
+                end if
             end if
         else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then ' ljunkie - use * for more options on focused item
-                'print "* butting pressed"
+                print "----- * butting pressed"
                 context = m.contentArray[m.selectedRow]
-                itype = context[m.focusedIndex].contenttype
-                if itype = invalid then itype = context[m.focusedIndex].type
-                ctype_o = context[m.focusedIndex].contenttype
-                itype_o = context[m.focusedIndex].type
+                item = context[m.focusedIndex]
+                
+                itype = item.contenttype
+                if itype = invalid then itype = item.type
 
                 audioplayer = GetViewController().AudioPlayer
-
-
-                ' some crazy logic here.. to clean up
-                ' if audio is playing or paused -- DO not show the dialog or new screen - audio dialog will come up
-                ' if audio is NOT playing or paused -- ONLY show the dialog or new screen if the section is HOME, movie or show as that's all we handle for now
-                ' also verify audioplayer.context -- this means there is actually context to play - otherwise it might just be theme music
+                isMovieTV = (itype = "movie"  or itype = "show" or itype = "episode" or itype = "season" or itype = "series")
+ 
                 sn = m.screenname
-                if  audioplayer.ispaused or audioplayer.isplaying and audioplayer.context <> invalid
-                    print audioplayer
-                    'print audioplayer.context[0]
-                    debug("---- skipping Remote Info Key -- audio is playing/paused")
-                else if  audioplayer.ContextScreenID <> invalid and sn <> "Home" and sn <> "Section: movie" and sn <> "Section: show" then 
-                    print audioplayer
-                    'print audioplayer.context[0]
-                    debug("---- skipping Remote Info Key -- audio has context and screen is not HOME, Movie or Show")
+                if tostr(itype) <> "invalid" and isMovieTV then 
+                    ' need to full screen here
+                    obj = m.viewcontroller.screens.peek()
+                    obj.metadata = item
+                    obj.Item = item
+                    rfVideoMoreButtonFromGrid(obj)
+                else if item <> invalid and tostr(item.contenttype) = "photo" then 
+                    photoPlayerShowContextMenu(item,true)
+                else if tostr(item.contenttype) <> "invalid" and m.screenid > 0 then
+                    ' show the option to see the FULL grid screen. We might want this just to do directly to it, but what if we add more options later.
+                    ' might as well get people used to this.
+                    rfDialogGridScreen(m)
+                else if audioplayer.ContextScreenID = invalid then  ' only create this extra screen if audioPlayer doesn't have context
+                    Debug("Info Button (*) not handled for content type: " +  tostr(item.type) + ":" + tostr(item.contenttype))
+                    rfDefRemoteOptionButton(m)
                 else
-                    if type(audioplayer.context) = "roArray"  then 
-                        debug("---- Audio Player has context - but it's ok to show the Dialog")
-                        print audioplayer
-                        'print audioplayer.context[0]
-                    end if 
-                    if tostr(itype) <> "invalid" and (itype = "movie"  or itype = "show" or itype = "episode" or itype = "season" or itype = "series") then
-                        obj = m.viewcontroller.screens.peek()
-                        obj.metadata = context[m.focusedIndex]
-                        obj.Item = context[m.focusedIndex]
-                        rfVideoMoreButtonFromGrid(obj)
-                    else if audioplayer.ContextScreenID = invalid or ctype_o = "prefs" ' only create this extra screen if audioPlayer doesn't have context
-                        Debug("Info Button (*) not handled for content type: " +  tostr(itype_o) + ":" + tostr(ctype_o))
-                        rfDefRemoteOptionButton(m)
-                    else
-                        Debug("--- Not showing prefs on ctype:" + tostr(ctype_o) + " itype:" + tostr(itype_o) )
-                    end if 
-                end if
+                    Debug("--- Not showing prefs on ctype:" + tostr(item.contenttype) + " itype:" + tostr(item.type) )
+                end if 
         else if msg.isRemoteKeyPressed() then
             if msg.GetIndex() = 13 then
-                Debug("Playing item directly from grid")
-                context = m.contentArray[m.selectedRow]
-                m.ViewController.CreatePlayerForItem(context, m.focusedIndex)
+                ' Playing Photos from a grid - we need all items
+                ' sometimes we don't know the item is photo ( appClips )            
+                sec_metadata = getSectionType(m)
+                ' old way -- didnt' work for appClips/subsections of photos if m.item <> invalid and m.item.type = "photo" and m.item.contenttype <> "section" then 
+                ' TODO fix playing from section -- TODO
+                if tostr(sec_metadata.type) = "photo" and m.item <> invalid and m.item.contenttype <> "section" then
+                    Debug("Playing from GRID Screen - get context of ALL items in every row to play")
+                    obj = CreateObject("roAssociativeArray")
+                    obj.metadata = m.loader
+                    obj.screen = m
+                    GetContextFromFullGrid(obj,m.focusedIndex) 
+                    Debug("photoHandleMessage:: Start slideshow with " + tostr(obj.context.count()) + " items")
+                    Debug("starting at index: " + tostr(obj.curindex))
+                else 
+                    obj = CreateObject("roAssociativeArray")
+                    obj.context = m.contentArray[m.selectedRow]
+                    obj.curindex = m.focusedIndex
+                end if
+                Debug("Playing item directly from grid: index" + tostr(obj.curindex))
+                Debug("total items: " + tostr(obj.context.count()))
+                m.ViewController.CreatePlayerForItem(obj.context, obj.curindex)
             end if
         else if msg.isScreenClosed() then
             if m.recreating then
@@ -299,6 +403,7 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
         ' the initial rows are empty, we need to keep loading until we find a
         ' row with data.
         if row < m.contentArray.Count() - 1 then
+            'Debug("----- ... Loading more content: from row " + tostr(row+1) + " with 0 more ")
             m.Loader.LoadMoreContent(row + 1, 0)
         end if
 
@@ -327,27 +432,46 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
         m.lastUpdatedSize[row] = data.Count()
     end if
 
+    ' ljunkie - the fact we lazy load rows, we cannot just set the focus item after we show a screen
+    ' this will allow us to set the initial focus item on the first row of a full grid
+    ' this might need to change if we every decide to focus on a sub row
+    if row = 0 and m.firstfocusitem = invalid and m.isfullgrid <> invalid and m.isfullgrid then
+        m.firstfocusitem = true
+        m.screen.SetFocusedListItem(0,0)
+    end if
+
     ' Continue loading this row
     extraRows = 2 - (m.selectedRow - row)
+    'print "loadrow:" + tostr(row)
+    'print " selrow:" + tostr(m.selectedRow)
+    'print " result:" + tostr(extraRows)
     if extraRows >= 0 AND extraRows <= 2 then
+        'Debug("------------ .. Loading more content: from row " + tostr(row) + ", " + tostr(m.loader.names[row]) + ", to (extrarows) " + tostr(extraRows))
         m.Loader.LoadMoreContent(row, extraRows)
     end if
 End Sub
 
 Sub setGridTheme(style as String)
+    imageDir = GetGlobalAA().Lookup("rf_theme_dir")
     ' This has to be done before the CreateObject call. Once the grid has
     ' been created you can change its style, but you can't change its theme.
 
     app = CreateObject("roAppManager")
     if style = "flat-square" then
-        app.SetThemeAttribute("GridScreenFocusBorderHD", "pkg:/images/border-square-hd.png")
-        app.SetThemeAttribute("GridScreenFocusBorderSD", "pkg:/images/border-square-sd.png")
+        app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-square-hd.png")
+        app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-square-sd.png")
     else if style = "flat-16X9" then
-        app.SetThemeAttribute("GridScreenFocusBorderHD", "pkg:/images/border-episode-hd.png")
-        app.SetThemeAttribute("GridScreenFocusBorderSD", "pkg:/images/border-episode-sd.png")
+        app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-episode-hd.png")
+        app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-episode-sd.png")
     else if style = "flat-movie" then
-        app.SetThemeAttribute("GridScreenFocusBorderHD", "pkg:/images/border-movie-hd.png")
-        app.SetThemeAttribute("GridScreenFocusBorderSD", "pkg:/images/border-movie-sd.png")
+        'if RegRead("rf_grid_displaymode", "preferences", "scale-to-fit") = "scale-to-fit" then 
+        '    ' plex uses tall movie posters. So we will use a custom box to fit the poster
+        '    app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-movie-hd-skinny.png")
+        'else 
+        '    app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-movie-hd.png")
+        'end if
+        app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-movie-hd.png")
+        app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-movie-sd.png")
     end if
 End Sub
 
@@ -423,9 +547,8 @@ Sub gridActivate(priorScreen)
 
     m.HasData = false
     m.Refreshing = true
-    m.Loader.RefreshData()
-
-    if m.Facade <> invalid then m.Facade.Close()
+    m.Loader.RefreshData() ' ljunkie - this has been modified to be a little more lazy! 
+    if m.Facade <> invalid then  m.Facade.Close()
 End Sub
 
 Sub gridOnTimerExpired(timer)

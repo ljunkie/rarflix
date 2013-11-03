@@ -36,25 +36,25 @@ End Function
 Sub videoSetupButtons()
     m.ClearButtons()
 
-   if m.metadata.starrating = invalid then 'ljunkie - don't show starts if invalid
-        m.Screen.SetStaticRatingEnabled(false)
-   end if
+    isMovieShowEpisode = (m.metadata.ContentType = "movie" or m.metadata.ContentType = "show" or m.metadata.ContentType = "episode")
 
+   'ljunkie - don't show stars if invalid
+    if m.metadata.starrating = invalid then m.Screen.SetStaticRatingEnabled(false)
 
     m.AddButton(m.PlayButtonStates[m.PlayButtonState].label, "play")
     Debug("Media = " + tostr(m.media))
     Debug("Can direct play = " + tostr(videoCanDirectPlay(m.media)))
 
-    ' Trailers! (TODO) enable this for TV shows ( youtube is still useful )
-    ' if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
+    ' Trailers! (TODO) enable this for TV shows ( youtube is still useful? )
     if m.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
          m.AddButton("Trailer", "getTrailers")
     end if
 
+    if isMovieShowEpisode then m.AddButton("Cast & Crew","RFCastAndCrewList")
+
     supportedIdentifier = (m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
     if supportedIdentifier then
-
-        ' Partial Watch ( can be watched/unwatched - but in progess) allow scrobbleMore dialog - to show both options mark as watched or unwatched
+         ' Partial Watch ( can be watched/unwatched - but in progess) allow scrobbleMore dialog - to show both options mark as watched or unwatched
         if m.metadata.viewOffset <> invalid AND val(m.metadata.viewOffset) > 0 then
             m.AddButton("Mark as watched/unwatched", "scrobbleMore")
         ' content is watched - show unscrobble button
@@ -66,88 +66,88 @@ Sub videoSetupButtons()
         end if
 
     end if
+
+    ' we have ONE more button to work with -- if tv, lets add the seasons option
+    ' display View All Seasons if we have grandparentKey -- entered from a episode
+    ' we might want to add some more checks in here to limit the display.
+    ' Does someone really need to 'View Season 1' when they are already in Season 1
+    ' Does someone really need to 'View Season All season'  when previous screen might already be that?
+    if m.metadata.grandparentKey <> invalid then ' global on deck does not work with this
+         m.AddButton( "View All Seasons", "showFromEpisode")
+    end if
+    ' display View specific season if we have parentKey/parentIndex -- entered from a episode
+    if m.metadata.parentKey <> invalid AND m.metadata.parentIndex <> invalid then
+        m.AddButton( "View Season " + m.metadata.parentIndex, "seasonFromEpisode")
+    end if
     
-    ' Delete button for myplex vidoes (queue/recommended)
+    ' Delete button for myplex vidoes (queue/recommended) - we should have room for this
     if m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex" AND m.metadata.id <> invalid then
         m.AddButton("Delete from queue", "delete")
     end if
 
+    ' Rotten Tomatoes ratings, if enabled
+    if m.metadata.ContentType = "movie" AND RegRead("rf_rottentomatoes", "preferences", "enabled") = "enabled" then 
+        tomatoData = m.metadata.tomatoData
+        rating_string = "Not Found"
+        append_string = "on Rotten Tomatoes"
+        if tomatoData <> invalid AND tomatoData.ratings <> invalid AND tomatoData.ratings.critics_score <> invalid then
+            if RegRead("rf_rottentomatoes_score", "preferences", "audience") = "critic" then 
+                rating = tomatoData.ratings.critics_score
+            else 
+                rating = tomatoData.ratings.audience_score
+            end if
 
-    ' Playback options only if a tvshow or episode -- movies use a line for trailers (moved this to more...)
-    if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
-      m.AddButton("Playback options", "options")
-    end if
-
-
-        ' Rotten Tomatoes ratings, if enabled
-        if m.metadata.ContentType = "movie" AND RegRead("rf_rottentomatoes", "preferences", "enabled") = "enabled" then 
-            tomatoData = m.metadata.tomatoData
-            rating_string = "Not Found"
-            append_string = "on Rotten Tomatoes"
-            if tomatoData <> invalid AND tomatoData.ratings <> invalid AND tomatoData.ratings.critics_score <> invalid then
-                if RegRead("rf_rottentomatoes_score", "preferences", "audience") = "critic" then 
-                    rating = tomatoData.ratings.critics_score
-                else 
+            if rating = invalid or rating < 0 then 
+                Debug("RT rating is invalid/-1 -- trying to find a valid rating")
+                if tomatoData.ratings.audience_score > 0
                     rating = tomatoData.ratings.audience_score
-                end if
-
-                if rating = invalid or rating < 0 then 
-                    Debug("RT rating is invalid/-1 -- trying to find a valid rating")
-                    if tomatoData.ratings.audience_score > 0
-                        rating = tomatoData.ratings.audience_score
-                        append_string = append_string + " *"
-                    else if NOT tomatoData.ratings.critics_score = -1 then
-                        rating = tomatoData.ratings.critics_score
-                        append_string = append_string + " *"
-                    else 
-                        rating = -1
-                    end if
-                end if
-
-                if rating = -1 then
-                    rating_string = "Not Found"
+                    append_string = append_string + " *"
+                else if NOT tomatoData.ratings.critics_score = -1 then
+                    rating = tomatoData.ratings.critics_score
+                    append_string = append_string + " *"
                 else 
-                    rating_string = tostr(rating) + "%"
+                    rating = -1
                 end if
             end if
-            m.AddButton(rating_string + " " + append_string, "tomatoes")
+
+            if rating = -1 then
+                rating_string = "Not Found"
+            else 
+                rating_string = tostr(rating) + "%"
+            end if
         end if
+        m.AddButton(rating_string + " " + append_string, "tomatoes")
+    end if
 
+    if supportedIdentifier then
+        ' not enough room for this.. only in the more dialog
+        'if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
+        '    if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
+        '        m.AddButton("Delete permanently","delete")
+        '    end if
+        'end if
 
-
-
-    if supportedIdentifier then ' this is for delete and rating button 
-        if m.metadata.UserRating = invalid then
-            m.metadata.UserRating = 0
-        endif
-        if m.metadata.StarRating = invalid then
-            m.metadata.StarRating = 0
-        endif
-        if m.metadata.origStarRating = invalid then
-            m.metadata.origStarRating = 0
-        endif
-
-          if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
-              if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode"  then
-                  m.AddButton("Delete permanently","delete")
-              end if
-          end if
-
-        ' Show rating bar if the content is a show or an episode - we might want this to be the delete button. We will see
-          if m.metadata.ContentType = "show" or m.metadata.ContentType = "episode" or RegRead("rf_rottentomatoes", "preferences", "enabled") = "disabled" then
-               m.AddRatingButton(m.metadata.UserRating, m.metadata.origStarRating, "rateVideo")
-	  end if
+        ' only show rating bar for movies if rotten tomoatoes is disabled. (this option is available in the more dialog)
+        if RegRead("rf_rottentomatoes", "preferences", "enabled") = "disabled" then
+            if m.metadata.UserRating = invalid then
+                m.metadata.UserRating = 0
+            end if
+            if m.metadata.StarRating = invalid then
+                m.metadata.StarRating = 0
+            end if
+            if m.metadata.origStarRating = invalid then
+                m.metadata.origStarRating = 0
+            end if
+            m.AddRatingButton(m.metadata.UserRating, m.metadata.origStarRating, "rateVideo")
+        end if
 
     end if
 
-	' more buttong if TV SHOW ( only if grandparent key is available,stops loops) OR if this is Movie
-	  if m.metadata.grandparentKey <> invalid  then
-              m.AddButton("More...", "more")
-	  else if m.metadata.ContentType = "movie" then
-              m.AddButton("Cast, Rate & More...", "more")
-	  end if
-
-
+    if isMovieShowEpisode then
+        m.AddButton("Playback Options & More...", "more")
+    else 
+        m.AddButton("More...", "more")
+    end if
 
 End Sub
 
@@ -191,11 +191,6 @@ Sub videoGetMediaDetails(content)
            m.Screen.SetBreadcrumbEnabled(true)
            m.Screen.SetBreadcrumbText(where, UcaseFirst(m.metadata.nowplaying_user,true))
            rf_updateNowPlayingSB(m)
-'           if m.metadata.episodestr <> invalid then 
-'               m.metadata.titleseason = m.metadata.cleantitle + " - " + m.metadata.episodestr
-'           else
-'               m.metadata.title = m.metadata.cleantitle
-'           end if
            Debug("Dynamically set Episode breadcrumbs; " + where + ": " + UcaseFirst(m.metadata.nowplaying_user,true))
         else if m.metadata.ContentType = "episode" and tostr(m.metadata.ShowTitle) <> "invalid" and where <> "invalid" then 
            m.Screen.SetBreadcrumbEnabled(true)
@@ -223,6 +218,7 @@ Sub videoGetMediaDetails(content)
 End Sub
 
 Function videoHandleMessage(msg) As Boolean
+    ' this is in the context of a the videos detail screen
     handled = false
 
     if type(msg) = "roSpringboardScreenEvent" then
@@ -320,6 +316,30 @@ Function videoHandleMessage(msg) As Boolean
                 dialog.HandleButton = videoDialogHandleButton
                 dialog.ParentScreen = m
                 dialog.Show()
+            ' rob to fix
+            else if buttonCommand = "RFCastAndCrewList" then
+                'm.ViewController.PopScreen(m) ' close dialog before we show the Cast&Crew screen
+                ' for now lets not use the show with episode
+                dialog = ShowPleaseWait("Please wait","Gathering the Cast and Crew for '" + firstof(m.metadata.showtitle,m.metadata.cleantitle,m.metadata.umtitle,m.metadata.title) + "'")
+                screen = RFcreateCastAndCrewScreen(m)
+                if screen <> invalid then  screen.Show()
+                dialog.Close()
+            else if buttonCommand = "showFromEpisode" then
+                breadcrumbs = ["All Seasons",m.metadata.showtitle]
+                dummyItem = CreateObject("roAssociativeArray")
+                dummyItem.ContentType = "series"
+                dummyItem.key = m.metadata.grandparentKey + "/children"
+                dummyItem.server = m.metadata.server
+                m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
+                closeDialog = true
+            else if buttonCommand = "seasonFromEpisode" then
+                breadcrumbs = [m.metadata.showtitle, "Season " + m.metadata.parentindex]
+                dummyItem = CreateObject("roAssociativeArray")
+                dummyItem.ContentType = "series"
+                dummyItem.key = m.metadata.parentKey + "/children"
+                dummyItem.server = m.metadata.server
+                m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
+                closeDialog = true
             else
                 handled = false
             end if
@@ -340,6 +360,49 @@ Function videoDialogHandleButton(command, data) As Boolean
         obj.metadata.server.delete(obj.metadata.key)
         obj.closeOnActivate = true
         closeDialog = true
+    else if command = "fullGridScreen" then
+        screen = m.viewcontroller.screens.peek().parentscreen
+        if screen <> invalid then
+
+	    fscreen = m.viewcontroller.screens[0]
+            itype = "Full Grid"
+	    ' Get the Section we are in for the breadcrums - probably an easier way than this?
+	    if type(fscreen) = "roAssociativeArray" and type(fscreen.contentarray) = "roArray" and fscreen.selectedrow <> invalid and fscreen.focusedindex <> invalid then 
+                itype = fscreen.contentarray[fscreen.selectedrow][fscreen.focusedindex].title 
+            end if           
+
+            dummyItem = CreateObject("roAssociativeArray")
+            
+            ' home screen is special...
+            if m.parentscreen.screenid < 0 then 
+                for each r in screen.loader.rowindexes
+                    if screen.loader.rowindexes[r] = screen.selectedrow then
+                        dummyItem  = m.parentscreen.contentarray[m.parentscreen.selectedrow][m.parentscreen.focusedindex]                        
+                        dummyItem.key = r
+                        itype = "All Sections" 
+                        exit for
+                    end if
+                end for  
+            else
+                dummyItem.server = screen.loader.server
+                dummyItem.sourceurl = screen.loader.sourceurl
+                dummyItem.key = screen.loader.contentarray[screen.selectedrow].key
+            end if
+
+            screenName = "Section: Full Grid"
+            breadcrumbs = [itype,screen.loader.Getnames()[screen.selectedrow]]
+
+            displaymode_grid = RegRead("rf_grid_displaymode", "preferences", "scale-to-fit")
+            screen = createFULLGridScreen(dummyItem, m.viewcontroller, "Invalid", displaymode_grid) 
+            if screen <> invalid then 
+                screen.ScreenName = screenName
+                m.viewcontroller.AddBreadcrumbs(screen, breadcrumbs)
+                m.viewcontroller.UpdateScreenProperties(screen)
+                m.viewcontroller.PushScreen(screen)
+                screen.Show()
+            end if
+            closeDialog = true
+        end if
     else if command = "showFromEpisode" then
         breadcrumbs = ["All Seasons",obj.metadata.showtitle]
         dummyItem = CreateObject("roAssociativeArray")

@@ -1,0 +1,7 @@
+NEW:
+  - Update supported H.264 level to 4.1.
+  - Add clock to home screen.
+
+FIXES:
+  - Fix a crash when adding servers manually.
+  - Fix episode title when watched status changes.

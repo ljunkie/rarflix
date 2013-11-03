@@ -14,6 +14,8 @@ Function createBaseDialog() As Object
     ' Properties that can be set by the caller/subclass
     obj.Facade = invalid
     obj.Buttons = []
+    obj.sepBefore = [] 'ljunkie - add button separator before "command"
+    obj.sepAfter = []  'ljunkie - add button separator after  "command"
     obj.HandleButton = invalid
     obj.SetFocusButton = invalid
     obj.Title = invalid
@@ -68,6 +70,7 @@ Sub dialogRefresh()
         m.Buttons.Push({ok: "Ok"})
     end if
 
+
     buttonCount = 0
     m.ButtonCommands = []
     for each button in m.Buttons
@@ -79,7 +82,9 @@ Sub dialogRefresh()
             if m.Item.origStarRating = invalid then m.Item.origStarRating = 0
             m.Screen.AddRatingButton(buttonCount, m.Item.UserRating, m.Item.origStarRating, "")
         else
+	    if inArray(m.sepBefore,cmd) then m.Screen.AddButtonSeparator()
             m.Screen.AddButton(buttonCount, button[cmd])
+	    if inArray(m.sepAfter,cmd) then m.Screen.AddButtonSeparator()
         end if
         buttonCount = buttonCount + 1
     next
@@ -131,10 +136,22 @@ Function dialogHandleMessage(msg) As Boolean
         if msg.isScreenClosed() then
             closeScreens = true
             m.ViewController.PopScreen(m)
+            ' if we show a dialog in the slideshow screen - we pause, so resume if closed
+            screen = m.ViewController.screens.peek()
+            if type(screen.screen) = "roSlideShow" and screen.isPaused and screen.ForceResume then 
+                screen.screen.Resume()
+                screen.isPaused = false
+            end if
         else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then
             'print "closeDialog"
             closeScreens = true
             m.ViewController.PopScreen(m)
+            screen = m.ViewController.screens.peek()
+            ' if we show a dialog in the slideshow screen - we pause, so resume if closed
+            if type(screen.screen) = "roSlideShow" and screen.isPaused and screen.ForceResume then 
+                screen.screen.Resume()
+                screen.isPaused = false
+            end if
         else if msg.isButtonPressed() then
             command = m.ButtonCommands[msg.getIndex()]
             Debug("Button pressed: " + tostr(command))

@@ -57,11 +57,13 @@ Function newPhotoMetadata(container, item, detailed=true) As Object
         size = GetGlobal("DisplaySize")
 
         ' JPEG and PNG are documented, GIF appears to work fine
+        ' ljunkie - TODO - but it's also document the roku will cover the image back to a JPG ( is it faster to complete on the server )
         if format <> "JPEG" AND format <> "JPG" AND format <> "PNG" AND format <> "GIF" then
             Debug("Transcoding photo to JPEG from " + format)
             transcode = true
         else if photo.media[0].width > size.w OR photo.media[0].height > size.h then
-            Debug("Transcoding photo because it's unnecessarily large: " + tostr(photo.media[0].width) + "x" + tostr(photo.media[0].height))
+            ' this will almost always happen.. i'm going to disable logging this. who is going to have images already in thumbnail format?
+            ' Debug("Transcoding photo because it's unnecessarily large: " + tostr(photo.media[0].width) + "x" + tostr(photo.media[0].height))
             transcode = true
         else if photo.media[0].width <= 0 then
             Debug("Transcoding photo for fear that it requires EXIF rotation")
@@ -87,6 +89,18 @@ Function ParsePhotoMedia(photoItem) As Object
         media.height = firstOf(MediaItem@height, "0").toint()
         media.aspectratio = MediaItem@aspectRatio
 
+        ' these will be invalid unless we directly query for the photo library key
+        ' so don't expect this to be available all the time
+
+        media.originallyAvailableAt = photoitem@originallyAvailableAt
+        media.aperture = MediaItem@aperture
+        media.exposure = MediaItem@exposure
+        media.iso = MediaItem@iso
+        media.lens = MediaItem@lens
+        media.make = MediaItem@make
+        media.model = MediaItem@model
+        media.id = MediaItem@id
+
         media.parts = CreateObject("roArray", 2, true)
         for each MediaPart in MediaItem.Part
             part = CreateObject("roAssociativeArray")
@@ -102,3 +116,44 @@ Function ParsePhotoMedia(photoItem) As Object
 
     return mediaArray
 End Function
+
+function getExifData(metadata,compact = false) as dynamic
+    container = createPlexContainerForUrl(metadata.server, metadata.server.serverUrl, metadata.key)
+    if container <> invalid then
+        container.getmetadata()
+        ' only create dialog if metadata is available
+        if type(container.metadata) = "roArray" and type(container.metadata[0].media) = "roArray" then 
+            MediaInfo = container.metadata[0].media[0]
+            desc = ""
+            if compact then 
+                if mediainfo.make <> invalid then desc = mediainfo.make + ": "
+                if mediainfo.model <> invalid then desc = desc + mediainfo.model + "   "
+                if mediainfo.lens <> invalid then desc = desc + "lens:" + mediainfo.lens + "   "
+                if mediainfo.aperture <> invalid then desc = desc + "aperture:" + mediainfo.aperture + "   "
+                if mediainfo.exposure <> invalid then desc = desc + "exposure:" + mediainfo.exposure + "   "
+                if mediainfo.aspectratio <> invalid then desc = desc + "aspect:" + mediainfo.aspectratio + "   "
+                if mediainfo.iso <> invalid then desc = desc + "iso:" + mediainfo.iso + "   "
+                if mediainfo.width <> invalid and mediainfo.height <> invalid then desc = desc + "size:" + tostr(mediainfo.width) + " x " + tostr(mediainfo.height) + "   "
+                'if mediainfo.container <> invalid then desc = desc + "format:" + mediainfo.container + "   "
+                if mediainfo.originallyAvailableAt <> invalid then desc = desc + "date:" + tostr(mediainfo.originallyAvailableAt)
+            else 
+                if mediainfo.make <> invalid then desc = mediainfo.make + ": "
+                if mediainfo.model <> invalid then desc = desc + mediainfo.model + "    "
+                if mediainfo.lens <> invalid then desc = desc + "lens: " + mediainfo.lens
+                if len(desc) < 50 then desc = desc + string(20," ") + "." ' hack to not make the line strech.. wtf roku
+                desc = desc + chr(10)
+                if mediainfo.aperture <> invalid then desc = desc + "aperture: " + mediainfo.aperture + "    "
+                if mediainfo.exposure <> invalid then desc = desc + "exposure: " + mediainfo.exposure + "    "
+                if mediainfo.aspectratio <> invalid then desc = desc + "aspect: " + mediainfo.aspectratio + "    "
+                if mediainfo.iso <> invalid then desc = desc + "iso: " + mediainfo.iso
+                desc = desc + chr(10)
+                if mediainfo.width <> invalid and mediainfo.height <> invalid then desc = desc + "size: " + tostr(mediainfo.width) + " x " + tostr(mediainfo.height) + "    "
+                if mediainfo.container <> invalid then desc = desc + "format: " + mediainfo.container + "    "
+                if mediainfo.originallyAvailableAt <> invalid then desc = desc + "date: " + tostr(mediainfo.originallyAvailableAt)
+            end if
+
+            if desc <> "" then return desc
+        end if
+    end if
+    return invalid
+end function

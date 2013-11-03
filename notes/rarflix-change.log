@@ -1,5 +1,210 @@
+#2.8.1 (2013-10-29)
+    * multi-user increased from 4 users profiles to 8 user profiles. @wagnerscastle
+    * cloud sync is now an available 'owned' server. We need to skip checking 'now playing' and 'channels'. These endpoints do not exist at my.plexapp.com (yet?)
+    * fix: Can get stuck in retry loop.  Back button now closes the PIN entry screen and returns. @wagnerscastle
+    * fix: Roku does not handle HTTPS urls for images ( cloudsync )
+    * fix: custom icons when using cloud sync
+
+#2.8.0 (2013-10-29)
+    * User Profiles: multi-user support ( fast user switching ). Many thanks @wagnerscastle
+    * Show user selection again before exiting the channel ( when multi-user is enabled )
+    * Security PIN on startup ( multi-user supported ). h/t @wagnerscastle
+    * use a black loader for grid screen ( fixes the grey poster flash you see when loading items). Thanks for updating the DOCS @Roku: http://sdkdocs.roku.com/display/sdkdoc/ifGridScreen#ifGridScreen-%C2%A0SetLoadingPostersdPosterUrlasStringhdPosterUrlasStringasVoid
+    * focus on the first item in a full grid ( requested for music -but- used on all sections )
+    * Fix: crash when seeking music ( only when music metadata doesn't include the duration - normally when music scanner hasn't completed )
+    * Fix: focus of the last section used was not working correctly ( also multi-user supported now )
+
+#2.7.9 (2013-10-23)
+    * fix crash from posterRefresh ( cast & crew )
+    * disable Ful Grid option from * option key for search screens ( they are invalid )
+    * fullgrid context - clicking left and right in springboard started back on first item
+
+#2.7.8 (2013-10-22)
+    * new: show HUD when the pause button is clicked (video)
+    * new: paginated data loader (how the rows are loaded) is a bit more optimized
+	   You may have noticed major delay with clicking buttons ( should be fixed)
+	    -- now it does not reload already loaded rows that are out of view
+    * Prefs: User Toggles to changes how images are displayed on the screen ( home screen and sections )
+    * Music: clean music title: never prepend artist/album to track titles
+    * Music: remove "new" buttons for shuffle/loop from springboard until further testing
+    * Photos: * remote key now shows photo information for the selected photo ( in grid -or- slideshow when audio is not playing )
+    * Photos: added EXIF data ( whatever PMS allowed for ) to the photo description popout, springboard and Photo Dialog (* key)
+    * Photos: there can be a mix of photos and sub directories. When a slideshow was played with a mix of both, there were anomalies. 
+	      Sub directories are now skipped with slideshow start. If you want to play a slideshow of the subdirectory, then enter it and start a slideshow.
+    * Photos: the popout will show the item is a directory or include the exif info of a photo ( easier to decipher what you are focused on )
+    * Photos: breadcrumbs should look a little better when browsing deep in the grid of photos
+    * Music+Photos: pause button on remote will pause/play both music/slideshow
+    * Video: episodes list will be updated with progress/watched status
+    * Fix: delete button  back to TV shows
+    * Fix: playback options is back for Videos ( missing on various screens )
+    * Fix: audio dialog was missing the photo title when slideshow was playing
+    * fix: crash when PMS gives in invalid response/timeout to api call
+    * fix: crash when playing item directly from grid ( photos )
+    * fix: during a notification while paused, it should not longer start the paused video
+           note: when a video is paused with the OK button, the notification will not work (fix coming)
+
+#2.7.7 -- internal release
+#2.7.6 -- internal release
+
+#2.7.5 (2013-10-19)
+    * screensaver background is now black
+
+#2.7.4 (2013-10-19)
+    * breadrumbs fix for music full grid
+    * rogue music genres were once again making their way on the roku in the full grid
+    * please wait screen show when loading more than 300 items
+    * left/right button in springBoard loads all content "correctly" while in FULL Grid mode ( allows moving more than 5 items )
+    * slideshow - fix play all content when in subsections ( only loaded the default 5 )
+    * loading zero results in a grid screen could cause a crash later and anomalies
+
+#2.7.3 (2013-10-18)
+    * lazy load photo section in full grid
+    * load all context when playing from full grid
+    * load all context when clicking left/right in details screen ( you can now view more than the 5 item limit)
+    * some preferences being overwritten when starting the channel
+
+
+# 2.7.0-test (2013-10-18)
+   ### Major changes
+    * full grid
+    * black theme
+    * custom thumbs
+    * 6 buttons
+    * music changes
+
+   ### Detailed Changes
+
+   # full grid
+    * initial release of 'full' grid
+    * toggle for preferring "poster" or a "full" grid when applicable ( this is how you turn off the full grid )
+    * sub section row [header row] added to top the grid screen. click up to see it
+    * custom rows (unwatched recently released/added rows) are now in the header section
+    * toggle: size of perferred grid size ( 5x2 [default] or 7x3 )
+    * dynamically update breadcrumbs for full grid ( what a headache )
+    * play slideshow from the full grid ( by default slideshow would only include content one row - 5 items - now all )
+    * allow the full grid from the home screen ( option key )
+    * hide items in header row based 'hide rows' set in prefs
+    * re-order header row based on 'row order' set in prefs
+    * pagination updates: load all rows/items in full grid while viewing photo section: required for slideshow
+    * for all other full grid sections - load 20 rows at a time instead of the default 2. *should* give a better ux when scrolling down and in general
+
+   # misc changes (you can see)
+    * 5x2 screen posters are now scaled to fill
+    * search screen default is now 5x2 and scale-to-fill
+    * fix flashing between screens (remove facade screen on gridscreen creation)
+
+   # full grid caveats
+    * disable full grid for: channels (apps) pms does not support paginated requests
+    * disable full grid for: app directory   pms does not support paginated requests
+    * disable full grid for: season view (episodes) -- requires episodic display
+    * disable full grid for: music tracks  -- requires episodic display
+
+   # custom thumbs (text description)
+    * use cutsom thumbs for items that normally use a generic one ( sub sections )
+    * dynamically created on the fly for any title
+    * server generated thumbs is located @ amazon using the cloudfront cdn ( fast and resilient )
+    * your local pms will cache the generated thumb on the first download
+    * toggle: enable/disable custom images
+    * toggle: change colors of overlay (text)
+
+   # themes
+    * initial black theme created [ default ]
+    * new images created for black theme ( some required just a background color update )
+    * toggle for theme ( original / black)
+    * button highlight text: plex orange ( for all screens )
+    * dialog title/text: fixed to fit the dark theme and normal theme
+
+   # tv & movies screen
+    * we can now show 6 buttons!
+    * add buttons (cast & crew, season, all seasons) to tv and movies when applicaable
+
+   # music
+    * direct play from music album ( with play button on remote )
+    * denres wrong. use new filtering calls for music genres ( only include artist genres )
+    * do not append watched status for music (albums)
+    * displayed music artist - toggle for display: track / album / track when various
+    * allow left/right buttons in song details without playing the song if it's not the current song playing
+    * fwd/rwd buttons will not seek 10 seconds fwd/rwd in the now playing screen
+    * option key brings up the loop/shuffle dialog in now playing screen
+    * option key gives button link to 'now playing' when the view song is not the one playing
+    * fix/cleanup logic when to display the audio dialog
+    * do not show default search dialog with remote option key when in a 'music' section or subsection
+    * update breadcrumbs "correctly" now playing screen
+    * buttons for loop and shuffle on the details screen (where you see play/pause/etc) -- 6 buttons allowed now
+    * buttons will update when play state changes ( more of a fix for the additional buttons )
+    * remote arrow buttons will not play the next or previous song automatically ( you can choose when to play now )
+    * fwd/rwd remote buttons will fwd/rwd 10 seconds ( beta and can cause a crash as the audioplayer still has bugs -- roku issue)
+
+   # other misc fixes and changes
+    * update breadcrumbs when play button is click for non playable item
+    * direct play from section directories: photos and music albums
+    * had regression with some update: last focused section on entering channel ( should be fixed for good )
+    * text summary removed info dialog (to many buttons to display text)
+    * do not log/pring any messages internally unless logging has been enabled (save some cpu cycles)
+    * dependent toggles will now be hidden ( if parent is disable) in rarflix prefs. 
+    * add server name to the channel directory description
+
+# 2.6.19-dev (2013-10-09 - 2013-10-15)
+
+Date:   Tue Oct 15 17:21:06 2013 -0700
+    * CUSTOM thumbs displayed for items that normally use a generic one ( sub sections )
+    * Add custom rows (movie unwatched) into the header row [full grid options]. 
+    * Re-order header row to user prefs
+    * Hide items in header row based on prefs
+
+Date:   Mon Oct 14 23:53:44 2013 -0700
+
+    * Added sub section row [renamed to header row internally] to the TOP of the grid screen :: focus on row 2 to hide it
+    * Toggle to change of full grid. ( default is 5x2 )
+    * Breadcrumb magic for Full Grid View
+    * Direct play from section directories: Photos and Music Albums
+    * Ability to play slideshow when in current screen is in FULL grid mode ( have to grab the context from every row )
+    * Disabled options key to view full grid from "section" items
+    * Do not show 'Full Grid' button in option dialog when one is already in full grid
+    * Fix: Regression with last focused section on entering channel ( should be fixed for good )
+
+Date:   Sun Oct 13 23:10:11 2013 -0700
+    * Initial Release of 'FULL' Grid
+    * Text summary removed info dialog (to many buttons)
+    * Disable full grid for: Channels (apps). PMS does not support limited results
+    * Disable full grid for: season view (episodes) -- required episodic display
+    * Disable full grid for: music tracks. Above applies
+    * Toggle for perferring "poster" or a "full" grid view when applicable.
+    * Allow the Full grid from the home screen ( option key )
+    * Music: Genres wrong. Use new filtering calls for music genres ( only include Artist Genres )
+
+Date:   Fri Oct 11 17:00:04 2013 -0700
+
+    * initial black theme added
+    * toogle for theme added
+    * Update breadcrumbs when play button is click for non playable item
+    * fix crash when play button is click on "tv season" poster
+    * Music: do not append watched status for music (albums)
+    * Music: Displayed Music Artist - Toggle for display: Track / Album / Track when Various
+    * Music: Allow left/right buttons in Song Details without playing the song if it's NOT the current song playing
+    * Music: fwd/rwd buttons will not seek 10 seconds fwd/rwd in the Now Playing screen
+    * Music: option key brings up the Loop/Shuffle dialog in Now Playing screen
+    * Music: option key gives button link to 'now playing' when the view song is NOT the one playing
+    * Music: fix/cleanup logic when to display the Audio Dialog
+
+
+## end
+
+
+
+# 2.6.18-dev -- many updates... will list in 2.6.19
+
+# 2.6.17-test (2013-10-09)
+   - Disable THEME music for now due to bug ( you can re-enable if you'd like )  bugtrack: Roku Forums :: Plex Forums
+   - Update Poster item when marking a movie/episode as watched ( you can now mark content as watched/unwatched from poster screens)
+   - Multiple Now Playing notifications (back to back) would cause navigation issues/weirdness 
+   - Now Playing Poster was changing to "Show" poster during progress updates - instead of the "Original Episode" (on details screen)
+   - Include percentage watched for Now Playing items
+
 ### v2.6.15 (2013-10-05) Final Release (merge of RARflixTest)
    - [merge of RARflixTest v2.6.16-1 without Now Playing Notifications]
+   - Disable THEME music for now due to bug ( you can re-enable if you'd like )  bugtrack: Roku Forums :: Plex Forums
+   - Update Poster item when marking a movie/episode as watched ( you can now mark content as watched/unwatched from poster screens)
 
 ### v2.6.16-test-2 (2013-10-05) (silent update)
 * isRFtest() added - allow RARflix/RARflixTest to stay more in sync

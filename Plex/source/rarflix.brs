@@ -5,22 +5,30 @@
 
 ' other functions required for my mods
 
+function isRFdev() as boolean
+    ' dev only
+    if GetGlobalAA().appName = "RARflixDev" then 
+        return true
+    end if
+    return false
+end function
+
 function isRFtest() as boolean
+    ' test and dev 
     if GetGlobalAA().appName = "RARflix" then 
-        Debug("---- is Test Channel: false")
         return false
     end if
-
-    Debug("---- is Test Channel: true")
     return true
 end function
 
 Sub InitRARFlix() 
 
-     GetGlobalAA()
+    GetGlobalAA()
     'RegDelete("rf_unwatched_limit", "preferences")
-    'RegDelete("rf_user_rating_only", "preferences")
-
+    'RegDelete("rf_grid_style", "preferences")
+    'RegDelete("rf_poster_grid_style", "preferences")
+    'RegDelete("rf_theme", "preferences")
+    'RegDelete("rf_img_overlay", "preferences")
     Debug("=======================RARFLIX SETTINGS ====================================")
 
     ' purge specific sections - works for unclean exists ( add new sections to purge to "purge_sections")
@@ -76,6 +84,15 @@ Sub InitRARFlix()
         RegWrite("rf_temp_thememusic", prev_setting, "preferences")
     end if
  
+    'RegRead("rf_theme", "preferences","black") done in appMain initTheme()
+    RegRead("rf_img_overlay", "preferences","BFBFBF") ' plex white
+    RegRead("rf_channel_text", "preferences","disabled") ' enabled channel icons to show text ( after the main row )
+    RegRead("rf_poster_grid", "preferences","grid")
+    RegRead("rf_grid_style", "preferences","flat-movie")
+    RegRead("rf_home_displaymode", "preferences","photo-fit")
+    RegRead("rf_grid_displaymode", "preferences","scale-to-fit")
+    RegRead("rf_poster_displaymode", "preferences","scale-to-fit")
+    RegRead("rf_music_artist", "preferences","track")
     RegRead("rf_bcdynamic", "preferences","enabled")
     RegRead("rf_rottentomatoes", "preferences","enabled")
     RegRead("rf_rottentomatoes_score", "preferences","audience")
@@ -89,11 +106,20 @@ Sub InitRARFlix()
     RegRead("rf_up_behavior", "preferences", "exit") ' default is exit screen ( except for home )
     RegRead("rf_notify", "preferences", "enabled") ' enabled:all, video:video only, nonvideo:non video, disabled:disabled (when to notify)
     RegRead("rf_notify_np_type", "preferences", "all") ' now playing notify types
+    RegRead("securityPincode", "preferences", invalid)  'PIN code required for startup
 
     ' ljunkie Youtube Trailers (extended to TMDB)
     m.youtube = InitYouTube()
 
 
+    Debug("rf_theme: " + tostr(RegRead("rf_theme", "preferences")))
+    Debug("rf_img_overlay: " + tostr(RegRead("rf_img_overlay", "preferences")))
+    Debug("rf_channel_text: " + tostr(RegRead("rf_channel_text", "preferences")))
+    Debug("rf_poster_grid: " + tostr(RegRead("rf_poster_grid", "preferences")))
+    Debug("rf_grid_style: " + tostr(RegRead("rf_grid_style", "preferences")))
+    Debug("rf_home_displaymode: " + tostr(RegRead("rf_home_displaymode", "preferences")))
+    Debug("rf_grid_displaymode: " + tostr(RegRead("rf_grid_displaymode", "preferences")))
+    Debug("rf_poster_displaymode: " + tostr(RegRead("rf_poster_displaymode", "preferences")))
     Debug("rf_bcdynamic: " + tostr(RegRead("rf_bcdynamic", "preferences")))
     Debug("rf_hs_clock: " + tostr(RegRead("rf_hs_clock", "preferences")))
     Debug("rf_rottentomatoes: " + tostr(RegRead("rf_rottentomatoes", "preferences")))
@@ -108,6 +134,8 @@ Sub InitRARFlix()
     Debug("rf_notify: " + tostr(RegRead("rf_notify", "preferences")))
     Debug("rf_notify_np_type: " + tostr(RegRead("rf_notify_np_type", "preferences")))
     Debug("rf_temp_thememusic: " + tostr(RegRead("rf_temp_thememusic", "preferences")))
+    Debug("rf_music_artist: " + tostr(RegRead("rf_music_artist", "preferences")))
+    Debug("securityPincode: " + tostr(RegRead("securityPincode", "preferences")))
     Debug("============================================================================")
 
 end sub
@@ -197,18 +225,28 @@ Function RRbitrate( bitrate As Float) As String
 End Function
 
 Function RRbreadcrumbDate(myscreen) As Object
-    if RegRead("rf_hs_clock", "preferences", "enabled") = "enabled" then
-        screenName = firstOf(myScreen.ScreenName, type(myScreen.Screen))
-        if screenName <> invalid and screenName = "Home" then 
-            Debug("update " + screenName + " screen time")
+    screenName = firstOf(myScreen.ScreenName, type(myScreen.Screen))
+    fn = invalid
+    ' ONLY display the user if we have MULTI users
+    if NOT GetGlobalAA().ViewController.SkipUserSelection then
+        fn = RegRead("friendlyName", "preferences", invalid, GetGlobalAA().userNum)
+        if fn <> invalid and fn = "" then fn = invalid
+    end if 
+    if screenName <> invalid and screenName = "Home" then 
+        myscreen.Screen.SetBreadcrumbEnabled(true)
+        if RegRead("rf_hs_clock", "preferences", "enabled") = "enabled" then
+            'Debug("update " + screenName + " screen time") 'stop printing this.. it's been tested enough
             date = CreateObject("roDateTime")
             date.ToLocalTime() ' localizetime
             timeString = RRmktime(date.AsSeconds(),0)
             dateString = date.AsDateString("short-month-short-weekday")
-            myscreen.Screen.SetBreadcrumbEnabled(true)
-            myscreen.Screen.SetBreadcrumbText(dateString, timeString)
-        else 
-            Debug("will NOT update " + screenName + " screen time. " + screenName +"=Home")
+            if fn <> invalid then 
+                myscreen.Screen.SetBreadcrumbText(dateString + " " + timeString,fn)
+            else 
+                myscreen.Screen.SetBreadcrumbText(dateString, timeString)
+            end if
+        else if fn <> invalid then 
+            myscreen.Screen.SetBreadcrumbText(fn,"")
         end if
     end if
 End function
@@ -226,6 +264,16 @@ Function createRARFlixPrefsScreen(viewController) As Object
         values: rf_hs_clock_prefs,
         heading: "Date and Time",
         default: "enabled"
+    }
+
+    rf_theme = [
+        { title: "Original", EnumValue: "original", },
+        { title: "Black", EnumValue: "black", },
+    ]
+    obj.Prefs["rf_theme"] = {
+        values: rf_theme,
+        heading: "Theme for Channel (restart required)",
+        default: "black"
     }
 
     ' Rotten Tomatoes
@@ -287,6 +335,7 @@ Function createRARFlixPrefsScreen(viewController) As Object
         default: "enabled"
     }
 
+
     ' TV Watched status next to ShowTITLE
     tv_watch_prefs = [
         { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Dexter (watched)" + chr(10) + "Dexter (1 of 12 watched)" },
@@ -311,6 +360,17 @@ Function createRARFlixPrefsScreen(viewController) As Object
         default: "enabled"
     }
 
+    ' focus to the unwatched item in a postescreen -  maybe others later
+    music_artist = [
+        { title: "Track", EnumValue: "track", ShortDescriptionLine2: "Track Artist",}
+        { title: "Album", EnumValue: "album", ShortDescriptionLine2: "Album Artist",}
+        { title: "Various", EnumValue: "various", ShortDescriptionLine2: "Track Artist when Various Artists",}
+    ]
+    obj.Prefs["rf_music_artist"] = {
+        values: music_artist,
+        heading: "Display Artist when Playing a Track"
+        default: "enabled"
+    }
 
     ' user ratings only
     user_ratings = [
@@ -335,6 +395,36 @@ Function createRARFlixPrefsScreen(viewController) As Object
         values: up_behavior,
         heading: "Up Key action when Top Row is Selected",
         default: "exit"
+    }
+
+    ' text overlay color (customer posters)
+    rf_overlay = [
+        { title: "White  (Plex)", EnumValue: "BFBFBF", }
+        { title: "Orange (Plex)", EnumValue: "FFA500", }
+        { title: "White", EnumValue: "F5F5F5",}
+        { title: "Light Gray", EnumValue: "A0A0A0",}
+        { title: "Gray", EnumValue: "606060",}
+        { title: "Tan", EnumValue: "bf8e60",}
+        { title: "Green", EnumValue: "778554",}
+        { title: "Sky", EnumValue: "bfcada",}
+    ]
+    obj.Prefs["rf_img_overlay"] = {
+        values: rf_overlay,
+        heading: "Text Color for Images in Sub Sections",
+        default: "BFBFBF"
+    }
+
+    ' Breadcrumb fixes
+    custom_thumbs = [
+        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Use Custom"  },
+        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Use Generic Icon"  },
+
+
+    ]
+    obj.Prefs["rf_custom_thumbs"] = {
+        values: custom_thumbs,
+        heading: "Replace Generic Icons with Text",
+        default: "enabled"
     }
 
    ' enable notifications?  (if we add more events (currently now playing) we can add more toggles )
@@ -386,24 +476,36 @@ Function createRARFlixPrefsScreen(viewController) As Object
 
 
     obj.Screen.SetHeader("RARFlix Preferences")
-
+    obj.AddItem({title: "Theme"}, "rf_theme", obj.GetEnumValue("rf_theme"))
+    obj.AddItem({title: "Custom Icons", ShortDescriptionLine2: "Replace generic icons with Text"}, "rf_custom_thumbs", obj.GetEnumValue("rf_custom_thumbs"))
+    if RegRead("rf_custom_thumbs", "preferences","enabled") = "enabled" then
+        obj.AddItem({title: "Custom Icons Text", ShortDescriptionLine2: "Color of text to use"}, "rf_img_overlay", obj.GetEnumValue("rf_img_overlay"))
+    end if
     obj.AddItem({title: "Hide Rows",ShortDescriptionLine2: "Sorry for the confusion..."}, "hide_rows_prefs")
     obj.AddItem({title: "Section Display", ShortDescriptionLine2: "a plex original, for easy access"}, "sections")
 
     obj.AddItem({title: "Movie Trailers", ShortDescriptionLine2: "Got Trailers?"}, "rf_trailers", obj.GetEnumValue("rf_trailers"))
     obj.AddItem({title: "Rotten Tomatoes", ShortDescriptionLine2: "Movie Ratings from Rotten Tomatoes"}, "rf_rottentomatoes", obj.GetEnumValue("rf_rottentomatoes"))
-    obj.AddItem({title: "Rotten Tomatoes Score", ShortDescriptionLine2: "Who do you trust more..." + chr(10) + "A Critic or an Audience?"}, "rf_rottentomatoes_score", obj.GetEnumValue("rf_rottentomatoes_score"))
-    obj.AddItem({title: "Trailers/Tomatoes Search by", ShortDescriptionLine2: "You probably don't want to change this"}, "rf_searchtitle", obj.GetEnumValue("rf_searchtitle"))
+    if RegRead("rf_rottentomatoes", "preferences","enabled") = "enabled" then
+        obj.AddItem({title: "Rotten Tomatoes Score", ShortDescriptionLine2: "Who do you trust more..." + chr(10) + "A Critic or an Audience?"}, "rf_rottentomatoes_score", obj.GetEnumValue("rf_rottentomatoes_score"))
+    end if
+    if RegRead("rf_rottentomatoes", "preferences","enabled") = "enabled" or RegRead("rf_trailers", "preferences") <> "disabled" then
+        obj.AddItem({title: "Trailers/Tomatoes Search by", ShortDescriptionLine2: "You probably don't want to change this"}, "rf_searchtitle", obj.GetEnumValue("rf_searchtitle"))
+    end if
     obj.AddItem({title: "Dynamic Headers", ShortDescriptionLine2: "Info on the top Right of the Screen"}, "rf_bcdynamic", obj.GetEnumValue("rf_bcdynamic"))
     obj.AddItem({title: "TV Show (Watched Status)", ShortDescriptionLine2: "feels good enabled"}, "rf_tvwatch", obj.GetEnumValue("rf_tvwatch"))
-    obj.AddItem({title: "Focus on Unwatched", ShortDescriptionLine2: "Default to the first unwatched item"}, "rf_focus_unwatched", obj.GetEnumValue("rf_focus_unwatched"))
+    obj.AddItem({title: "Focus on Unwatched", ShortDescriptionLine2: "Default to the first unwatched " + chr(10) + "item (poster screen only)"}, "rf_focus_unwatched", obj.GetEnumValue("rf_focus_unwatched"))
     obj.AddItem({title: "Clock on Home Screen"}, "rf_hs_clock", obj.GetEnumValue("rf_hs_clock"))
     obj.AddItem({title: "Unwatched Added/Released", ShortDescriptionLine2: "Item limit for unwatched Recently Added &" + chr(10) +"Recently Released rows [movies]"}, "rf_rowfilter_limit", obj.GetEnumValue("rf_rowfilter_limit"))
     obj.AddItem({title: "Star Ratings Override", ShortDescriptionLine2: "Only show or Prefer"+chr(10)+"Star Ratings that you have set"}, "rf_user_rating_only", obj.GetEnumValue("rf_user_rating_only"))
     obj.AddItem({title: "Up Button (row screens)", ShortDescriptionLine2: "What to do when the UP button is " + chr(10) + "pressed on a screen with rows"}, "rf_up_behavior", obj.GetEnumValue("rf_up_behavior"))
+    obj.AddItem({title: "Music Artists", ShortDescriptionLine2: "Artist to display for a track"}, "rf_music_artist", obj.GetEnumValue("rf_music_artist"))
+
     if isRFtest() then 
         obj.AddItem({title: "Now Playing Notifications", ShortDescriptionLine2: "Want to be notified on Now Playing?"}, "rf_notify", obj.GetEnumValue("rf_notify"))
-        obj.AddItem({title: "Now Playing Notify Types", ShortDescriptionLine2: "When do you want to be notified?" + chr(10) + " On Start/Stop or Both"}, "rf_notify_np_type", obj.GetEnumValue("rf_notify_np_type"))
+        if RegRead("rf_notify", "preferences","enabled") = "enabled" then 
+            obj.AddItem({title: "Now Playing Notify Types", ShortDescriptionLine2: "When do you want to be notified?" + chr(10) + " On Start/Stop or Both"}, "rf_notify_np_type", obj.GetEnumValue("rf_notify_np_type"))
+        end if
     end if
 
     obj.AddItem({title: "Close"}, "close")
@@ -555,41 +657,27 @@ End Function
 sub rfVideoMoreButton(obj as Object) as Dynamic
     dialog = createBaseDialog()
     dialog.Title = firstof(obj.metadata.showtitle, obj.metadata.umtitle, obj.metadata.title)
-    dialog.Text = truncateString(obj.metadata.shortdescriptionline2,200)
+    'dialog.Text = truncateString(obj.metadata.shortdescriptionline2,80)
+    dialog.Text = "" ' too many buttons for text now
     dialog.Item = obj.metadata
 
+    supportedIdentifier = (obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
+    isMovieShowEpisode = (obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode")
 
-    'if obj.metadata.grandparentKey = invalid then
-    if obj.metadata.ContentType = "movie"  then
+    if isMovieShowEpisode then 
         dialog.SetButton("options", "Playback options")
     end if
 
     ' display View All Seasons if we have grandparentKey -- entered from a episode
-    if obj.metadata.grandparentKey <> invalid then ' global on deck does not work with this
-    'if obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode"  then
-        dialog.SetButton("showFromEpisode", "View All Seasons of " + obj.metadata.ShowTitle )
+    if obj.metadata.grandparentKey <> invalid then
+         dialog.SetButton("showFromEpisode", "View All Seasons")
     end if
+
     ' display View specific season if we have parentKey/parentIndex -- entered from a episode
-    if obj.metadata.parentKey <> invalid AND obj.metadata.parentIndex <> invalid then  ' global on deck does not work with this
-    'if obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode"  then
+    if obj.metadata.parentKey <> invalid AND obj.metadata.parentIndex <> invalid then
        dialog.SetButton("seasonFromEpisode", "View Season " + obj.metadata.parentIndex)
     end if
 
-    if obj.metadata.type = "season" or obj.metadata.ContentType = "movie"  or obj.metadata.ContentType = "show"  or obj.metadata.ContentType = "episode"  or obj.metadata.ContentType = "series" then
-    'if obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "series" then ' TODO - try and make this work with TV shows ( seems it only works for episodes -- but not well ) 
-        dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
-    else 
-       Debug("---- Cast and Crew are not available for " + tostr(obj.metadata.ContentType))
-       print obj.metadata
-    end if
-
-    ' Trailers link - RR (last now that we include it on the main screen .. well before delete - people my be used to delete being second to last)
-    'if obj.metadata.grandparentKey = invalid then
-    if obj.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
-        dialog.SetButton("getTrailers", "Trailer")
-    end if
-
-    supportedIdentifier = (obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
     if supportedIdentifier then
         if obj.metadata.viewOffset <> invalid AND val(obj.metadata.viewOffset) > 0 then ' partially watched
             dialog.SetButton("unscrobble", "Mark as unwatched")
@@ -605,7 +693,21 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
             dialog.SetButton("delete", "Delete permanently")
         end if
 
-        ' set this to last -- unless someone complains
+    end if
+
+    ' these are on the main details screen -- show them last ( maybe not at all )
+    if isMovieShowEpisode or obj.metadata.type = "season" or obj.metadata.ContentType = "series" then
+        dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
+    else 
+       Debug("---- Cast and Crew are not available for " + tostr(obj.metadata.ContentType))
+    end if
+
+    if obj.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
+        dialog.SetButton("getTrailers", "Trailer")
+    end if
+
+    ' set this to last -- unless someone complains
+    if supportedIdentifier then
         if obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "episode" or obj.metadata.ContentType = "show"  then
             dialog.SetButton("rate", "_rate_")
         end if
@@ -618,36 +720,52 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
 end sub
 
 
-sub fakeRefresh(force=false) 
-    Debug("refresh? it we have a valid item")
+sub posterRefresh(force=false) 
+    Debug("poster fresh called! do we have a valid item")
     if m.item <> invalid and type(m.item.refresh) = "roFunction" then 
         m.item.refresh()
-        Debug("refresh item")
+        Debug("item refreshed!")
     end if
 
     if type(m.screen) = "roPosterScreen" then 
-        if type(m.contentarray) = "roArray" then 
+        if type(m.contentarray) = "roArray" and m.contentarray.count() > 0 and type(m.contentarray[0]) = "roAssociativeArray" then 
             focusedIndex = m.contentarray[0].focusedindex
             content = m.contentarray[0].content
             if focusedIndex <> invalid and type(content) = "roArray" and type(content[focusedIndex]) = "roAssociativeArray" then 
                 if type(content[focusedIndex].refresh) = "roFunction" then  
                     content[focusedIndex].refresh()
+                    print content[focusedIndex]
+                    ' special for tv shows
+                    if content[focusedIndex].titleseason <> invalid then content[focusedIndex].shortdescriptionline1 = content[focusedIndex].titleseason
                     m.screen.SetContentList(content)
 		    Debug("refresh content list!")
                 end if
             end if
         end if
     end if
-'    stop
-'    m.Screen.Show()
-'    stop
-    'fake it for now
+
 end sub 
 
-' this should be merged with rfVideoMoreButton ( just need to add in the caveats)
+' This is the context Dialog from the GRID - I should rename this TODO
 sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
+
     ' this should probably just be combined into rfVideoMoreButton  ( there are some caveats though and maybe more to come.. so until this has been finalized )
     dialog = createBaseDialog()
+
+    ' TODO full grid screen yo
+    if obj.isfullgrid = invalid and obj.disablefullgrid = invalid and type(obj.screen) = "roGridScreen" then 
+        fromName = "invalid"
+        if type(obj.loader.getnames) = "roFunction" and obj.selectedrow <> invalid then fromName = obj.loader.getnames()[obj.selectedrow]
+        dialog.sepAfter.Push("fullGridScreen")
+        dialog.SetButton("fullGridScreen", "Grid View: " + fromName)
+    end if
+
+    isMovieShowEpisode = (obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode")
+
+    if isMovieShowEpisode then 
+        dialog.SetButton("options", "Playback options")
+    end if
+
     if (obj.metadata.type = "season") then 
         dialog.Title = firstof(obj.metadata.title, obj.metadata.umtitle, obj.metadata.title)
         dialog.Text = ""
@@ -661,12 +779,15 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
         dialog.Text = obj.metadata.shortdescriptionline2
      end if
 
-    dialog.Text = truncateString(dialog.Text,200)
+    'dialog.Text = truncateString(dialog.Text,80)
+    dialog.Text = "" ' too many buttons for text now
 
     dialog.Item = obj.metadata
 
-    if type(obj.Refresh) <> "Function" then 
-      obj.Refresh = fakeRefresh ' sbRefresh is called normally - in a poster screen this doesn't happen?
+    if type(obj.Refresh) <> "roFunction" then 
+        obj.Refresh = posterRefresh ' sbRefresh is called normally - in a poster screen this doesn't happen?
+    else
+       print "not calling posterRefresh since 'obj.Refresh' exists"
     end if
 
     ' hack for global recently added ( tv shows are displayed as seasons )
@@ -710,11 +831,10 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     end if
 
     ' cast and crew
-    if obj.metadata.type = "season" or obj.metadata.ContentType = "movie"  or obj.metadata.ContentType = "show"  or obj.metadata.ContentType = "episode"  or obj.metadata.ContentType = "series" then
+    if obj.metadata.type = "season" or obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode" or obj.metadata.ContentType = "series" then
         dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
     else
        Debug(" Cast and Crew are not available for " + tostr(obj.metadata.ContentType))
-       print obj.metadata
     end if
 
     supportedIdentifier = (obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
@@ -785,7 +905,7 @@ Sub SendRemoteKey(key)
     if ipaddrs.eth0 <> invalid then ipaddr = ipaddrs.eth0
     if ipaddrs.eth1 <> invalid then ipaddr = ipaddrs.eth1
     'print "ipaddr: ";ipaddr
-    'sleep(1000)
+    sleep(200)
     url = "http://"+ipaddr+":8060/keypress/" + key
     Debug("sending key " + tostr(key) + " " + tostr(url))
     xfer = CreateObject("roUrlTransfer")
@@ -814,15 +934,209 @@ end sub
 
 sub rfDefRemoteOptionButton(m) 
     'for now we will show the preferences screen :)
-    new = CreateObject("roAssociativeArray")
-    new.sourceUrl = ""
-    'new.ContentType = "prefs"
-    'new.Key = "globalprefs"
-    'new.Title = "Preferences"
-    new.Key = "globalsearch"
-    new.Title = "Search"
-    new.ContentType = "search"
-    breadcrumbs = ["Miscellaneous","Search"]
-    m.ViewController.CreateScreenForItem(new, invalid, breadcrumbs)
-    Debug("Showing remote option button screen ")
+    audioplayer = GetViewController().AudioPlayer
+    if audioplayer.IsPlaying or audioplayer.IsPaused then return
+
+    sec_metadata = getSectionType(m)
+    notAllowed = CreateObject("roRegex", "artist|music|album", "") 
+    if  NOT notAllowed.isMatch(tostr(sec_metadata.type)) then 
+        new = CreateObject("roAssociativeArray")
+        new.sourceUrl = ""
+        'new.ContentType = "prefs"
+        'new.Key = "globalprefs"
+        'new.Title = "Preferences"
+        new.Key = "globalsearch"
+        new.Title = "Search"
+        new.ContentType = "search"
+        breadcrumbs = ["Miscellaneous","Search"]
+        m.ViewController.CreateScreenForItem(new, invalid, breadcrumbs)
+        Debug("Showing default serach screen - remote option button pressed ")
+     else
+        Debug("Default dialog not allowed in this section")
+     end if 
 end sub
+
+
+sub rfDialogGridScreen(obj as Object) as Dynamic
+
+    if tostr(obj.item.contenttype) = "section" or obj.selectedrow = 0 then ' row 0 is reserved for the fullGrid shortcuts
+        rfDefRemoteOptionButton(obj) 
+    ' for now the only option is grid view so we will verify we are in a roGridScreen. It we add more buttons, the type check below is for fullGridScreen
+    else if obj.isfullgrid = invalid and obj.disablefullgrid = invalid and type(obj.screen) = "roGridScreen" then 
+        dialog = createBaseDialog()
+        fromName = "invalid"
+        if type(obj.loader.getnames) = "roFunction" and obj.selectedrow <> invalid then fromName = obj.loader.getnames()[obj.selectedrow]
+        dialog.sepAfter.Push("fullGridScreen")
+        dialog.SetButton("fullGridScreen", "Grid View: " + fromName) 'and type(obj.screen) = "roGridScreen" 
+        dialog.Text = ""
+        dialog.Title = "Options"
+    
+        dialog.SetButton("close", "Back")
+        dialog.HandleButton = videoDialogHandleButton
+        dialog.ParentScreen = obj
+        dialog.Show()
+     else 
+         return invalid
+     end if
+
+end sub
+
+function getAllRowsContext(screen,context,index) as object
+    obj = CreateObject("roAssociativeArray")
+    obj.curindex = index
+
+    if type(screen.screen) = "roGridScreen" then
+        srow = screen.selectedrow
+        sitem = screen.focusedindex+1
+        rsize = screen.contentarray[0].count()
+        obj.curindex = (srow*rsize)+sitem-1 ' index is zero based (minus 1)
+        context = []
+        for each c in screen.contentarray
+            for each i in c
+                context.push(i)
+            end for
+        end for
+    end if
+
+    obj.context = context
+
+    return obj
+end function
+
+function getFullGridCurIndex(vc,index,default = 2) as object
+    print " ------------------ full grid index = " + tostr(index)
+
+    screens = []
+    screen = invalid
+
+    if type(vc.screen) = "roAssociativeArray" and vc.screen.isfullgrid <> invalid and vc.screen.isfullgrid then
+        screen = vc.screen ' we are in the context of a full grid already
+    else if type(vc.screens) = "roArray" then
+        screens = vc.screens 
+    else if type(vc.viewcontroller) = "roAssociativeArray" then
+        screens = vc.viewcontroller.screens
+    end if
+
+    ' find the full grid screen - backtrack
+    if type(screens) = "roArray" and screens.count() > 1 then 
+        for index = screens.count()-1 to 1 step -1
+            print "checking if screen #" + tostr(index) + "is the fullGrid"
+            if type(screens[index].screen) = "roGridScreen" and screens[index].isfullgrid <> invalid and screens[index].isfullgrid then
+                print "screen #" + tostr(index) + "is the fullGrid"
+                screen = screens[index]
+                exit for 
+            end if
+        next
+    end if
+
+    if screen <> invalid and type(screen.screen) = "roGridScreen" then
+        srow = screen.selectedrow
+        sitem = screen.focusedindex+1
+        rsize = screen.contentarray[0].count()
+        print "selected row:" + tostr(srow) + " focusedindex:" + tostr(sitem) + " rowsize:" + tostr(rsize)
+        index = (srow*rsize)+sitem-1 ' index is zero based (minus 1)
+    end if
+    print " ------------------  new grid index = " + tostr(index)
+    return index
+end function
+
+Function ShallowCopy(array As Dynamic, depth = 0 As Integer) As Dynamic
+    If Type(array) = "roArray" Then
+        copy = []
+        For Each item In array
+            childCopy = ShallowCopy(item, depth)
+            If childCopy <> invalid Then
+                copy.Push(childCopy)
+            End If
+        Next
+        Return copy
+    Else If Type(array) = "roAssociativeArray" Then
+        copy = {}
+        For Each key In array
+            If depth > 0 Then
+                copy[key] = ShallowCopy(array[key], depth - 1)
+            Else
+                copy[key] = array[key]
+            End If
+        Next
+        Return copy
+    Else
+        Return array
+    End If
+    Return invalid
+End Function
+
+sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
+    if RegRead("rf_custom_thumbs", "preferences","enabled") = "enabled" then
+        remyplex = CreateObject("roRegex", "my.plexapp.com", "i")        
+        remyplexMD = CreateObject("roRegex", "library/metadata/\d+", "i")        
+        if remyplex.IsMatch(metadata.server.serverurl) then 
+	    if metadata.HDPosterURL <> invalid and remyplexMD.isMatch(metadata.HDPosterURL) then 
+                print "Skipping custom thumb -- this is cloud sync"
+                return
+            end if
+            print "overriding cloudsync thumb" + metadata.HDPosterURL
+        end if
+        sizes = ImageSizes(metadata.ViewGroup, nodeType)
+        ' mod_rewrite/apache do not allow & or %26
+        ' replace with :::: - the cdn will replace with &
+        reand = CreateObject("roRegex", "&", "") 
+        reslash = CreateObject("roRegex", "/", "")  ' seo urls, so replace these
+        redots = CreateObject("roRegex", "\.", "")  ' freaks out the photo transcoder
+        thumb_text = reand.ReplaceAll(thumb_text, "::::") 
+        thumb_text = reslash.ReplaceAll(thumb_text, "::") 
+        thumb_text = redots.ReplaceAll(thumb_text, " ") 
+        ' append cloud to the text if not a secondary ( this should only be on library sections )
+        ' if there are complaints, we can skip these so people see their default TV icon in the section
+        if remyplex.IsMatch(metadata.server.serverurl) and tostr(nodeType) <> "secondary" and tostr(metadata.ViewGroup) <> "secondary" then thumb_text = thumb_text + " (cloud)"
+        sdWidth  = "223"
+        sdHeight = "200"
+        hdWidth  = "300"
+        hdHeight = "300"
+        if isRFdev() then 
+            rarflix_cdn = "http://ec2.rarflix.com" ' use non-cached server for testing (same destination as cloudfrount)
+        else
+            rarflix_cdn = "http://d1gah69i16tuow.cloudfront.net"
+        end if 
+        NewThumb = rarflix_cdn + "/images/key/" + URLEncode(thumb_text) ' this will be a autogenerate poster (transparent)
+        NewThumb = NewThumb + "/size/" + tostr(hdWidth) + "x" + tostr(hdHeight) ' things seem to play nice this way with the my image processor
+        NewThumb = NewThumb + "/fg/" + RegRead("rf_img_overlay", "preferences","999999")
+        Debug("----   newraw:" + tostr(NewThumb))
+        ' we still want to transcode the size to the specific roku standard
+        ' however I am not sure the my.plexapp.com server will transcode properly yet
+        if remyplex.IsMatch(metadata.server.serverurl) then 
+            metadata.SDPosterURL = NewThumb
+            metadata.HDPosterURL = NewThumb
+        else 
+            metadata.SDPosterURL = metadata.server.TranscodedImage(metadata.server.serverurl, NewThumb, sizes.sdWidth, sizes.sdHeight) 
+            metadata.HDPosterURL = metadata.server.TranscodedImage(metadata.server.serverurl, NewThumb, sizes.hdWidth, sizes.hdHeight)
+        end if
+        Debug("----      new:" + tostr(metadata.HDPosterURL))
+    end if
+end sub
+
+' ljunkie - crazy sauce right? this is a way to figure out what section we are in 
+function getSectionType(vc) as object
+    Debug("---- checking if we can figure out the section we are in")
+    metadata = CreateObject("roAssociativeArray")
+    if type(vc.screens) = "roArray" then
+        screens = vc.screens
+    else if type(vc.viewcontroller) = "roAssociativeArray" then
+        screens = vc.viewcontroller.screens
+    end if
+
+    if type(screens) = "roArray" and screens.count() >= 0 then
+       screen = screens[0]
+       if type(screen) = "roAssociativeArray" and screen.loader <> invalid and type(screen.loader.contentarray) = "roArray" then
+           row = screen.selectedrow
+           index = screen.focusedindex
+           if row <> invalid and index <> invalid then
+               if type(screen.loader.contentarray[row].content) = "roArray" then 
+                   metadata = screen.loader.contentarray[row].content[index]
+               end if
+           end if
+        end if
+    end if
+    return metadata ' return empty assoc
+end function
+

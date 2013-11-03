@@ -14,9 +14,10 @@ Sub lsInitBaseListScreen(obj)
 End Sub
 
 Sub lsAddItem(item, command=invalid, value=invalid)
+    imageDir = GetGlobalAA().Lookup("rf_theme_dir")
     if item.SDPosterURL = invalid then
-        item.SDPosterURL = "file://pkg:/images/gear.png"
-        item.HDPosterURL = "file://pkg:/images/gear.png"
+        item.SDPosterURL = imageDir + "gear.png"
+        item.HDPosterURL = imageDir + "gear.png"
     end if
 
     item.OrigTitle = item.Title

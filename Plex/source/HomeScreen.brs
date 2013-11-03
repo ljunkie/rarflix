@@ -8,7 +8,15 @@ Function createHomeScreen(viewController) As Object
     ' So create a regular grid screen and override/extend as necessary.
     obj = createGridScreen(viewController, "flat-square", "stop")
 
-    obj.Screen.SetDisplayMode("photo-fit")
+    ' ljunkie - adding this comment for others if they think it's a good idea 
+    ' to change the DisplayMode sway from "photo-fit" on 7x3 rows
+    ' If we don't know exactly what we're displaying, photo-fit looks the
+    ' best. Anything else makes something look horrible when the grid has
+    ' has posters or anything else that isn't a square
+
+    displaymode_home = RegRead("rf_home_displaymode", "preferences", "photo-fit")
+    obj.Screen.SetDisplayMode(displaymode_home)
+
     obj.Loader = createHomeScreenDataLoader(obj)
 
     obj.Refresh = refreshHomeScreen

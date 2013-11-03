@@ -62,6 +62,7 @@ End Function
 
 Sub containerParseXml()
     if m.Parsed then return
+    imageDir = GetGlobalAA().Lookup("rf_theme_dir")
 
     ' If this container has an error message, show it now
     if isnonemptystr(m.xml@header) AND isnonemptystr(m.xml@message) then
@@ -82,13 +83,13 @@ Sub containerParseXml()
             metadata.contentType = "section"
             if n@thumb = invalid then
                 if metadata.Type = "movie" then
-                    thumb = "file://pkg:/images/section-movie.png"
+                    thumb = imageDir + "section-movie.png"
                 else if metadata.Type = "show" then
-                    thumb = "file://pkg:/images/section-tv.png"
+                    thumb = imageDir + "section-tv.png"
                 else if metadata.Type = "artist" then
-                    thumb = "file://pkg:/images/section-music.png"
+                    thumb = imageDir + "section-music.png"
                 else if metadata.Type = "photo" then
-                    thumb = "file://pkg:/images/section-photo.png"
+                    thumb = imageDir + "section-photo.png"
                 else
                     thumb = invalid
                 end if
@@ -124,6 +125,72 @@ Sub containerParseXml()
             metadata = newSettingMetadata(m, n)
         else
             metadata = newDirectoryMetadata(m, n)
+        end if
+
+        ' ljunkie - custom posters/thumbs for items the PMS does not give a thumb for
+        ' I had some crazy logic if the thumb existing thumb was local or a /libary/metadata/etc.. 
+        ' it seems though it's safe to assume if the PMS doesn't give a thumb then we can replace it
+        ' if the PMS starts giving out generic thumbs, I'll have to repace with the crazy logic/regex
+
+        if RegRead("rf_custom_thumbs", "preferences","enabled") = "enabled" then
+            rfHasThumb = firstof(n@thumb, n@grandparentThumb, n@parentThumb)
+           ' any other resources we want to override below
+            re = CreateObject("roRegex", "/:/resources/actor-icon|resources/Book1.png", "") 
+            ' this has mixed results - really the channel provider should be adding custom thumbs for every directory instead of the base channel thumb
+            ' I.E. youtube, cbs.. ( for now it's disabled - Toggle is ready, but I am not ready for the outcome -- I.E. use it for "this" channel, and not "that" channel, etc..) 
+            if RegRead("rf_channel_text", "preferences","disabled") <> "disabled" and nodetype = invalid then
+                rfHasThumb = invalid
+            end if
+
+            ' for now, I am not going to override these
+            remusic = CreateObject("roRegex", "resources%2Fartist.png", "") 
+            if tostr(nodeType) =  "track" or tostr(nodeType) = "album" then
+              rfHasThumb = "skip"
+              if remusic.isMatch(tostr(metadata.HDPosterURL)) then rfHasThumb = invalid
+            end if
+                  
+            if rfHasThumb = invalid or re.isMatch(rfHasThumb) then 
+                thumb_text = firstof(metadata.umtitle, metadata.title)
+                if thumb_text <> invalid AND metadata.server <> invalid then
+                    Debug( "-------------------------------------------")
+                    Debug("---- using custom thumb from rarflix cloudfrount service with title:" + firstof(metadata.umtitle, metadata.title))
+                    Debug("---- viewGroup:" + tostr(metadata.ViewGroup) + " nodeType:" + tostr(nodeType))
+                    Debug("---- Original:" + tostr(metadata.HDPosterURL))
+                    rfCDNthumb(metadata,thumb_text,nodetype)
+                    Debug( "-------------------------------------------")
+                else 
+                    Debug( "-------------------------------------------")
+                    Debug("---- NOT using custom thumb due to the below? we have skipped it due to the data below")
+                    Debug("---- viewGroup:" + tostr(metadata.ViewGroup) + " nodeType:" + tostr(nodeType))
+                    Debug("---- Original:" + tostr(metadata.HDPosterURL))
+                    Debug( "-------------------------------------------")
+                end if
+            ' for debugging
+            'else 
+            '    isLocal = CreateObject("roRegex", "127.0.0.1", "") ' TODO: any other than actor_con? these are default template.. ignore them
+            '    if NOT isLocal.isMatch(rfHasThumb) then 
+            '        Debug( "-------------------------------------------")
+            '        Debug("---- NOT using custom thumb for valid image")
+            '        Debug("---- viewGroup:" + tostr(metadata.ViewGroup) + " nodeType:" + tostr(nodeType))
+            '        Debug("---- Original:" + tostr(metadata.HDPosterURL))
+            '        Debug( "-------------------------------------------")
+            '    end if
+            'end if
+            end if
+        end if
+        ' END custom poster/thumbs
+
+        ' ROKU is not working with SSL ( some cloud sync thumbs ) -- 
+        ' reset the thumb url from https://my.plexapp.com:443/sync/ to http://plex-cloudsync.s3.amazonaws.com/sync/
+        remyplex = CreateObject("roRegex", "my.plexapp.com", "i")        
+        if metadata.server.serverurl <> invalid and remyplex.IsMatch(metadata.server.serverurl) then 
+            re = CreateObject("roRegex", "https://my.plexapp.com:443/sync/", "")
+            if metadata.hdposterurl <> invalid then metadata.hdposterurl = re.replace(metadata.hdposterurl,"http://plex-cloudsync.s3.amazonaws.com/sync/")
+            if metadata.sdposterurl <> invalid then metadata.sdposterurl = re.replace(metadata.sdposterurl,"http://plex-cloudsync.s3.amazonaws.com/sync/")
+            if metadata.sdgridthumb <> invalid then metadata.sdgridthumb = re.replace(metadata.sdgridthumb,"http://plex-cloudsync.s3.amazonaws.com/sync/")
+            if metadata.hdgridthumb <> invalid then metadata.hdgridthumb = re.replace(metadata.hdgridthumb,"http://plex-cloudsync.s3.amazonaws.com/sync/")
+            if metadata.hddetailthumb <> invalid then metadata.hddetailthumb = re.replace(metadata.hddetailthumb,"http://plex-cloudsync.s3.amazonaws.com/sync/")
+            if metadata.sddetailthumb <> invalid then metadata.sddetailthumb = re.replace(metadata.sddetailthumb,"http://plex-cloudsync.s3.amazonaws.com/sync/")
         end if
 
         if metadata.search = true AND m.SeparateSearchItems then

@@ -2,9 +2,10 @@
 ' **  Entry point for the Plex client. Configurable themes etc. haven't been yet.
 ' **
 ' ********************************************************************
-
 Sub Main(args)
     m.RegistryCache = CreateObject("roAssociativeArray")
+    m.userNum = 0    'First use of the userNumber. 
+    RegSetUserPrefsToCurrentUser()     
 
     ' Process any launch args (set registry values)
     for each arg in args
@@ -32,10 +33,10 @@ Sub Main(args)
     RegDelete("quality_override", "preferences")
 
     ' ljunkie - remove prefs on start - testing
-    RegDelete("rf_bcdynamic", "preferences")
-    RegDelete("rf_rottentomatoes", "preferences")
-    RegDelete("rf_trailers", "preferences")
-    RegDelete("rf_tvwatch", "preferences")
+    'RegDelete("rf_bcdynamic", "preferences")
+    'RegDelete("rf_rottentomatoes", "preferences")
+    'RegDelete("rf_trailers", "preferences")
+    'RegDelete("rf_tvwatch", "preferences")
 
 
     ' Convert the old theme music preference to the new one
@@ -51,12 +52,25 @@ Sub Main(args)
     initTheme()
 
     initGlobals()
-
-    ' youtube = LoadYouTube() not needed
+ 
+    'load rarflix prefs
     rarflix = InitRARFlix() 
 
     'prepare the screen for display and get ready to begin
     controller = createViewController()
+
+    ' restore the Audio if we set the global - and delete it. This is probably due to the exit confirmation
+    ' this may need some more work. TODO once we have channel exit confirmation
+    if GetGlobalAA().Lookup("restoreAudio") <> invalid then 
+        resetPort = controller.audioPlayer.port
+        resetVC = controller.audioPlayer.viewcontroller
+        controller.audioPlayer = invalid
+        controller.audioPlayer = GetGlobalAA().Lookup("restoreAudio")
+        controller.audioPlayer.viewcontroller = resetVC
+        controller.audioPlayer.port =  resetPort
+        GetGlobalAA().Delete("restoreAudio")
+    end if
+
     controller.Show()
 End Sub
 
@@ -168,6 +182,37 @@ Function GetGlobal(var, default=invalid)
     return firstOf(GetGlobalAA().Lookup(var), default)
 End Function
 
+'Returns array that contains information for duplicating the background on an roImageCanvas screen
+function getImageCanvasTheme() 
+    'break these up into a bunch of layers to ensure proper layering on screen
+    colors = { colors : {  
+                background : "#" + GetGlobalAA().Lookup("rfBGcolor")
+                titleText : "#BFBFBF"
+                normalText : "#999999"
+                detailText : "#74777A"
+                subtleText : "#525252"
+                }}
+    if GetGlobal("IsHD") = true then
+        obj = {
+            background : [{Color:"#363636", CompositionMode:"Source"}]    'Set opaque background to keep from flashing    '#363636
+            backgroundItems : [ {url:GetGlobalAA().Lookup("rf_theme_dir")+ "Background_HD.jpg"}]
+            logoItems : [ {url:"pkg:/images/logo_final_HD.png", TargetRect:{ x:125,y:10 }} ]
+            breadCrumbs : [ {  Text:"", TargetRect:{x:640,y:10,w:520,h:89}  '16 pixel border on bottom of breadcrumb
+                               TextAttrs:{Color:colors.colors.titleText, Font:"Medium",HAlign:"Right", VAlign:"Center",Direction:"LeftToRight"} } ]
+        }
+    else
+        obj = {
+            background : [{Color:"#363636", CompositionMode:"Source"}]    'Set opaque background to keep from flashing    '#363636
+            backgroundItems : [ {url:GetGlobalAA().Lookup("rf_theme_dir")+ "Background_SD.jpg"}]
+            logoItems : [ {url:"pkg:/images/logo_final_SD.png", TargetRect:{ x:72,y:10 }} ]
+            breadCrumbs : [ {  Text:"", TargetRect:{x:360,y:10,w:260,h:56}  '16 pixel border on bottom of breadcrumb
+                              TextAttrs:{Color:colors.colors.titleText, Font:"Medium",HAlign:"Right", VAlign:"Center",Direction:"LeftToRight"} } ]
+        }
+    endif
+    obj["background"][0]["Color"] = colors.colors.background    'set background color 
+    obj.Append(colors)
+    return obj
+end function
 
 '*************************************************************
 '** Set the configurable theme attributes for the application
@@ -182,38 +227,46 @@ Sub initTheme()
     app = CreateObject("roAppManager")
     theme = CreateObject("roAssociativeArray")
 
+    rfTheme = RegRead("rf_theme", "preferences", "black")
+    if rfTheme = "black" then 
+        GetGlobalAA().AddReplace("rf_theme_dir", "file://pkg:/images/black/")
+        GetGlobalAA().AddReplace("rfBGcolor", "000000")
+    else 
+        GetGlobalAA().AddReplace("rf_theme_dir", "file://pkg:/images/")
+        GetGlobalAA().AddReplace("rfBGcolor", "363636")
+    end if
+    imageDir = GetGlobalAA().Lookup("rf_theme_dir")
+
     theme.OverhangOffsetSD_X = "72"
     theme.OverhangOffsetSD_Y = "10"
-    theme.OverhangSliceSD = "pkg:/images/Background_SD.jpg"
-    theme.OverhangLogoSD  = "pkg:/images/logo_final_SD.png"
+    theme.OverhangSliceSD = imageDir + "Background_SD.jpg"
+    theme.OverhangLogoSD  = "pkg:/images/logo_final_SD.png" ' logo is transparent
 
-    theme.OverhangOffsetHD_X = "125"
+    theme.OverhangOffsetHD_X = "125"    'these settings are duplicated in getImageCanvasTheme() so keep them in sync with this
     theme.OverhangOffsetHD_Y = "10"
-    theme.OverhangSliceHD = "pkg:/images/Background_HD.jpg"
-    theme.OverhangLogoHD  = "pkg:/images/logo_final_HD.png"
+    theme.OverhangSliceHD = imageDir + "Background_HD.jpg"
+    theme.OverhangLogoHD  = "pkg:/images/logo_final_HD.png" ' logo is transparent
 
     theme.GridScreenLogoOffsetHD_X = "125"
     theme.GridScreenLogoOffsetHD_Y = "10"
-    theme.GridScreenOverhangSliceHD = "pkg:/images/Background_HD.jpg"
-    theme.GridScreenLogoHD  = "pkg:/images/logo_final_HD.png"
+    theme.GridScreenOverhangSliceHD = imageDir + "Background_HD.jpg"
+    theme.GridScreenLogoHD  = "pkg:/images/logo_final_HD.png" ' logo is transparent
     theme.GridScreenOverhangHeightHD = "99"
 
     theme.GridScreenLogoOffsetSD_X = "72"
     theme.GridScreenLogoOffsetSD_Y = "10"
-    theme.GridScreenOverhangSliceSD = "pkg:/images/Background_SD.jpg"
-    theme.GridScreenLogoSD  = "pkg:/images/logo_final_SD.png"
+    theme.GridScreenOverhangSliceSD = imageDir + "Background_SD.jpg"
+    theme.GridScreenLogoSD  = "pkg:/images/logo_final_SD.png" ' logo is transparent
     theme.GridScreenOverhangHeightSD = "66"
 
-    ' We want to use a dark background throughout, just like the default
-    ' grid. Unfortunately that means we need to change all sorts of stuff.
-    ' The general idea is that we have a small number of colors for text
-    ' and try to set them appropriately for each screen type.
-
-    background = "#363636"
-    titleText = "#BFBFBF"
-    normalText = "#999999"
+    'these settings are duplicated in getImageCanvasTheme() so keep them in sync with this
+    background = "#" + GetGlobalAA().Lookup("rfBGcolor")
+    titleText = "#BFBFBF" ' text in search screen. not sure where else yet
+    normalText = "#999999" ' shared with dialog and summary text in video screen ( if we can make the dialog black, then we can lighten this up)
     detailText = "#74777A"
     subtleText = "#525252"
+    plexOrange = "#FFA500"
+
 
     theme.BackgroundColor = background
 
@@ -237,14 +290,25 @@ Sub initTheme()
     theme.ParagraphHeaderText = titleText
     theme.ParagraphBodyText = normalText
 
-    theme.ButtonNormalColor = normalText
+    ' ljunkei this theme actually looks better even with the original.. no need to toggle
+    if rfTheme = "black" then 
+        theme.ThemeType = "generic-dark"
+        theme.DialogTitleText="#000000" ' header should be bold and black
+        theme.DialogBodyText="#222222"  ' test should now be too light or to dark
+    else
+        theme.DialogTitleText="#BFBFBF"
+        theme.DialogBodyText="#BFBFBF"
+    end if
+    theme.ButtonNormalColor = "#333333" 'normalText
+    theme.ButtonHighlightColor = plexOrange
     ' Default for ButtonHighlightColor seems OK...
 
-    theme.RegistrationCodeColor = "#FFA500"
+    theme.RegistrationCodeColor = plexOrange
     theme.RegistrationFocalColor = normalText
 
     theme.SearchHeaderText = titleText
-    theme.ButtonMenuHighlightText = titleText
+    theme.ButtonMenuHighlightText = plexOrange 'titleText
+'    theme.ButtonMenuHighlightColor = "#FFA500" ' plex orange
     theme.ButtonMenuNormalText = titleText
 
     theme.PosterScreenLine1Text = titleText
@@ -261,7 +325,7 @@ Sub initTheme()
     theme.SpringboardDirectorLabel = detailText
     theme.SpringboardGenreColor = normalText
     theme.SpringboardSynopsisColor = normalText
-
+    theme.SpringboardAllow6Buttons = "true"
     ' Not sure these are actually used, but they should probably be normal
     theme.SpringboardSynopsisText = normalText
     theme.EpisodeSynopsisText = normalText

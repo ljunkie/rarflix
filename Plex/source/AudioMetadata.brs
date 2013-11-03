@@ -95,6 +95,16 @@ Function newTrackMetadata(container, item, detailed=true) As Object
         track.AlbumYear = container.xml@parentYear
     end if
 
+    displayArtist = RegRead("rf_music_artist", "preferences", "track")
+    if displayArtist = "track" then     
+        track.Artist = firstOf(item@originalTitle, container.xml@title1)
+    else if displayArtist = "various" then     
+        r = CreateObject("roRegex", "various|invalid", "i") ' section too - those are not special
+        if r.IsMatch(tostr(track.Artist)) then 
+            track.Artist = firstOf(item@originalTitle, container.xml@title1)
+        end if
+    end if
+
     track.EpisodeNumber = item@index
     duration = firstOf(item@duration, item@totalTime)
     if duration <> invalid then track.Duration = int(val(duration)/1000)
@@ -104,6 +114,8 @@ Function newTrackMetadata(container, item, detailed=true) As Object
         track.Title = item@track
         track.ShortDescriptionLine1 = track.Title
     end if
+
+    track.Title = firstof(track.umtitle, track.title) ' ljunkie lame I know, but I am not sure where the album is being appended yet. seems to be inherited.
 
     media = item.Media[0]
 
