@@ -284,7 +284,7 @@ Function gridHandleMessage(msg) As Boolean
                 end if
             end if
         else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then ' ljunkie - use * for more options on focused item
-                print "----- * butting pressed"
+                print "----- * button pressed"
                 context = m.contentArray[m.selectedRow]
                 item = context[m.focusedIndex]
                 
@@ -293,7 +293,6 @@ Function gridHandleMessage(msg) As Boolean
 
                 audioplayer = GetViewController().AudioPlayer
                 isMovieTV = (itype = "movie"  or itype = "show" or itype = "episode" or itype = "season" or itype = "series")
- 
                 sn = m.screenname
                 if tostr(itype) <> "invalid" and isMovieTV then 
                     ' need to full screen here

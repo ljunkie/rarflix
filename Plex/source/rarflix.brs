@@ -829,16 +829,17 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
         dialog.SetButton("getTrailers", "Trailer")
     end if
 
-    supportedIdentifier = (obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
-    if supportedIdentifier then
-        ' cast & crew - must be part of the supported identifier 
-        isMovieShowEpisode = (obj.metadata.type = "season" or obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode" or obj.metadata.ContentType = "series")
-        if isMovieShowEpisode then 
-            dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
-        else
-           Debug(" Cast and Crew are not available for " + tostr(obj.metadata.ContentType))
-        end if
+    ' cast & crew - must be part of the supported identifier  ( v2.8.2 - changed: a season from global recently added on the homescreen is not a "supported identifier" but is still valid )
+    isMovieShowEpisode = (obj.metadata.type = "season" or obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode" or obj.metadata.ContentType = "series")
+    if isMovieShowEpisode then 
+        dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
+    else
+        Debug(" Cast and Crew are not available for " + tostr(obj.metadata.ContentType))
+    end if
 
+    supportedIdentifier = (obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
+
+    if supportedIdentifier then
         if obj.metadata.viewOffset <> invalid AND val(obj.metadata.viewOffset) > 0 then ' partially watched
             dialog.SetButton("unscrobble", "Mark as unwatched")
             dialog.SetButton("scrobble", "Mark as watched")
