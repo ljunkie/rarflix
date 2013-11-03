@@ -424,6 +424,11 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
     if finished then
         if m.Screen <> invalid then m.Screen.SetContentList(row, data)
         m.lastUpdatedSize[row] = data.Count()
+        ' ljunkie - focus row when we are finished loading if we have specified a show before show()
+        if  m.focusrow <> invalid then 
+            m.screen.SetFocusedListItem(m.focusrow,0) ' we will also focus the first item, this might need to be changed
+            m.focusrow = invalid
+        end if
     else if startItem < lastUpdatedSize then
         if m.Screen <> invalid then m.Screen.SetContentListSubset(row, data, startItem, count)
         m.lastUpdatedSize[row] = data.Count()

@@ -59,6 +59,7 @@ Function RFCastAndCrewHandleMessage(msg) As Boolean
                 screen.Loader.Listener = screen
                 breadcrumbs = [cast.itemtype,cast.name]
                 screen.ScreenName = "Cast and Crew"
+                screen.FocusRow = 0
                 screen.disableFullGrid = true
                 m.viewcontroller.AddBreadcrumbs(screen, breadcrumbs)
                 m.viewcontroller.UpdateScreenProperties(screen)
