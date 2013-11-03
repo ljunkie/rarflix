@@ -841,7 +841,7 @@ End Sub
 
 Sub vcShow()
     ' debug - always show release notes for testing
-    m.ShowReleaseNotes()
+    'm.ShowReleaseNotes()
     if RegRead("last_run_version", "misc", "") <> GetGlobal("appVersionStr") then
         m.ShowReleaseNotes()
         RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")
