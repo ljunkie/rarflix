@@ -20,7 +20,7 @@ APPDEPS = manifest count_functions
 ZIP_EXCLUDE = -x .git\* -x manifest.template -x \*.swp -x \*.DS_Store -x \*.py -x roku_screenshot.jpg
 include ../app.mk
 
-APPTITLE = PlexDev
+APPTITLE = RARflix
 APPTEMPLATE = manifest.rarflix.template
 VERSION=$(shell grep '^version' $(APPTEMPLATE) | sed s/version=//)
 
@@ -53,9 +53,6 @@ manifest:
 	echo "Creating manifest for $(APPTITLE)"
 	sed s/APPTITLE/$(APPTITLE)/ < $(APPTEMPLATE) > manifest
 	echo sed s/APPTITLE/$(APPTITLE)/ < $(APPTEMPLATE)
-
-	echo $(VERSION)
-
 
 count_functions:
 	echo "Counting functions for $(APPTITLE), Roku v5.x limit is 65536"
