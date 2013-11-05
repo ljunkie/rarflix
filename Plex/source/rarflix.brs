@@ -1146,3 +1146,32 @@ function getSectionType(vc) as object
     return metadata ' return empty assoc
 end function
 
+function getLogDate() as string
+        datetime = CreateObject( "roDateTime" )
+        datetime.ToLocalTime()
+        date = datetime.AsDateString("short-date")
+
+        hours = datetime.GetHours()
+	if hours < 10 then 
+            hours = "0" + tostr(hours)
+        else 
+            hours = tostr(hours)
+        end if
+
+        minutes = datetime.GetMinutes()
+        if minutes < 10 then 
+            minutes = "0" + tostr(minutes)
+        else 
+            minutes = tostr(minutes)
+        end if
+
+        seconds = datetime.GetSeconds()
+        if seconds < 10 then 
+            seconds = "0" + tostr(seconds)
+        else 
+            seconds = tostr(seconds)
+        end if
+
+	return date + " " + hours + ":" + minutes + ":" + seconds
+end function
+
