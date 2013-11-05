@@ -345,6 +345,7 @@ Function videoPlayerHandleMessage(msg) As Boolean
 	    'printAA(msg.GetInfo())
 	    m.VideoItem.rokuStreamBitrate = msg.GetInfo().StreamBitrate
             m.StartTranscodeSessionRequest()
+            if m.lastPosition >= 0 then updateVideoHUD(m,m.lastPosition)
             if msg.GetInfo().IsUnderrun = true then
                 m.underrunCount = m.underrunCount + 1
                 if m.underrunCount = 4 and not GetGlobalAA().DoesExist("underrun_warning_shown") then
@@ -443,8 +444,7 @@ Sub videoPlayerSendTimeline(force=false)
         return
     end if
 
-    Debug("---- timeline sent :: HUD updated")
-    if m.lastPosition > 0 then updateVideoHUD(m,m.lastPosition)
+    if m.lastPosition >= 0 then updateVideoHUD(m,m.lastPosition)
 
     ' Avoid duplicates
     if m.playState = m.lastTimelineState AND NOT force then return

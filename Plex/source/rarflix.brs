@@ -555,7 +555,7 @@ Function createHideRowsPrefsScreen(viewController) As Object
         { title: "[movie] Recently Added (uw)", key: "all?type=1&unwatched=1&sort=addedAt:desc" }, 'movie/film for now
         { title: "[movie] Recently Released (uw)", key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc" }, 'movie/film for now
         { title: "[movie] Recently Released (uw)", key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc" }, 
-        { title: "[tv] Recently Added Season", key: "recenltyAdded?stack=1" }, 
+        { title: "[tv] Recently Added Season", key: "recentlyAdded?stack=1" }, 
         { title: "[tv] Recently Aired (uw)", key: "all?timelineState=1&type=4&unwatched=1&sort=originallyAvailableAt:desc" }, 
         { title: "[tv] Recently Added (uw)", key: "all?timelineState=1&type=4&unwatched=1&sort=addedAt:desc" }, 
         { title: "Recently Viewed", key: "recentlyViewed" },
@@ -1176,6 +1176,8 @@ function getLogDate() as string
 end function
 
 sub updateVideoHUD(m,curProgress)
+    Debug("---- timeline sent :: HUD updated " + tostr(curProgress))
+
     endString = invalid
     watchedString = invalid
 
@@ -1183,10 +1185,10 @@ sub updateVideoHUD(m,curProgress)
     if m.VideoItem.Duration > 0 then
         duration = int(m.VideoItem.Duration/1000)
         timeLeft = int(Duration - curProgress)
-        endString = "End Time: " + RRmktime(date.AsSeconds()+timeLeft) + "  (" + GetDurationString(timeLeft,0,1,1) + ")" + "  Watched: " + GetDurationString(int(curProgress))
+        endString = "End Time: " + RRmktime(date.AsSeconds()+timeLeft) + "  (" + GetDurationString(timeLeft,0,1,1) + ")" + "  Watched: " + GetDurationString(int(curProgress),0,0,1)
     else
          ' include current time and watched time when video duration is unavailable (HLS & web videos)
-         watchedString = "Time: " + RRmktime(date.AsSeconds()) + "     Watched: " + GetDurationString(int(curProgress))
+         watchedString = "Time: " + RRmktime(date.AsSeconds()) + "     Watched: " + GetDurationString(int(curProgress),0,0,1)
     end if
     ' set the HUD
     content = CreateObject("roAssociativeArray")
