@@ -30,7 +30,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
                     rf_hide_key = "rf_hide_" + keys[index]
     
                     ' recentlyAdded and newest(recently Release/Aired) are special/hidden per type
-                    if keys[index] = "recentlyAdded" or keys[index] = "newest" and (itype = "movie" or itype = "show" or itype = "artist") then 
+                    if keys[index] = "recentlyAdded" or keys[index] = "newest" and (itype = "movie" or itype = "show" or itype = "artist" or itype = "show") then 
                         rf_hide_key = rf_hide_key + "_" + itype 'print "Checking " + keys[index] + " for specific type of hide: " + itype
                     end if
     
@@ -48,9 +48,44 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
     ' End Hide Rows
 
     ' ljunkie - CUSTOM new rows (movies only for now) -- allow new rows based on allows PLEX filters
+    subsec_extras = []
+
+    if type(item) = "roAssociativeArray" and item.contenttype = "section" and item.type = "show" then 
+        size_limit = RegRead("rf_rowfilter_limit", "preferences","200") 'gobal size limit Toggle for filter rows
+       
+        ' unwatched recently Added season
+        new_key = "recentlyAdded?stack=1"
+        if RegRead("rf_hide_"+new_key, "preferences", "show") = "show" then 
+            keys.Push(new_key)
+            new_name = "Recently Added Seasons"
+            loader.names.Push(new_name)
+            subsec_extras.Push({ key: new_key, name: new_name, key_copy: "all" })
+        end if
+
+        ' unwatched recently Aired EPISODES
+        new_key = "all?timelineState=1&type=4&unwatched=1&sort=originallyAvailableAt:desc"
+        if RegRead("rf_hide_"+new_key, "preferences", "show") = "show" then 
+            new_key = new_key + "&X-Plex-Container-Start=0&X-Plex-Container-Size=" + size_limit
+            keys.Push(new_key)
+            new_name = "Unwatched Recently Aired"
+            loader.names.Push(new_name)
+            subsec_extras.Push({ key: new_key, name: new_name, key_copy: "all" })
+        end if
+
+        ' unwatched recently Aired EPISODES
+        new_key = "all?timelineState=1&type=4&unwatched=1&sort=addedAt:desc"
+        if RegRead("rf_hide_"+new_key, "preferences", "show") = "show" then 
+            new_key = new_key + "&X-Plex-Container-Start=0&X-Plex-Container-Size=" + size_limit
+            keys.Push(new_key)
+            new_name = "Unwatched Recently Added"
+            loader.names.Push(new_name)
+            subsec_extras.Push({ key: new_key, name: new_name, key_copy: "all" })
+        end if
+
+    end if
+
     if type(item) = "roAssociativeArray" and item.contenttype = "section" and item.type = "movie" then 
         size_limit = RegRead("rf_rowfilter_limit", "preferences","200") 'gobal size limit Toggle for filter rows
-        subsec_extras = []
 
         ' unwatched recently released
         new_key = "all?type=1&unwatched=1&sort=originallyAvailableAt:desc"
@@ -72,26 +107,26 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
             subsec_extras.Push({ key: new_key, name: new_name, key_copy: "all" })
         end if
 
-        ' we will have to add the custom rows to the subsections too ( quick filter row (0) for the full grid )
-        if subsec_extras.count() > 0 and type(subsecItems) = "roArray" and subsecItems.count() > 0 then
-            for each sec in subsec_extras
-                for index = 0 to subsecItems.Count() - 1
-                    if subsecItems[index].key = sec.key_copy  then 
-                        template = subsecItems[index]
-                        exit for
-                    end if
-                end for
-                copy = ShallowCopy(template,2) ' really? brs doesn't have a clone/copy
-                ' now set the uniq characters
-                copy.key = sec.key
-                copy.name = sec.name
-                copy.umtitle = sec.name
-                copy.title = sec.name
-                rfCDNthumb(copy,sec.name,invalid)
-                subsecItems.Push(copy)
-            end for
-        end if
+    end if
 
+    ' we will have to add the custom rows to the subsections too ( quick filter row (0) for the full grid )
+    if subsec_extras.count() > 0 and type(subsecItems) = "roArray" and subsecItems.count() > 0 then
+        for each sec in subsec_extras
+            for index = 0 to subsecItems.Count() - 1
+                if subsecItems[index].key = sec.key_copy  then 
+                    template = subsecItems[index]
+                    exit for
+                end if
+            end for
+            copy = ShallowCopy(template,2) ' really? brs doesn't have a clone/copy
+            ' now set the uniq characters
+            copy.key = sec.key
+            copy.name = sec.name
+            copy.umtitle = sec.name
+            copy.title = sec.name
+            rfCDNthumb(copy,sec.name,invalid)
+            subsecItems.Push(copy)
+        end for
     end if
     ' END custom rows
 

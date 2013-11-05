@@ -1750,6 +1750,9 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
     ' Unshift these in -- easier to remember to merge with PlexTest
     values.Unshift({ title: "[movie] Recently Added (uw)", key: "all?type=1&unwatched=1&sort=addedAt:desc" })
     values.Unshift({ title: "[movie] Recently Released (uw)", key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc" })
+    values.Unshift({ title: "[tv] Recently Added Season", key: "recenltyAdded?stack=1" })
+    values.Unshift({ title: "[tv] Recently Aired Episode (uw)", key: "all?timelineState=1&type=4&unwatched=1&sort=originallyAvailableAt:desc" })
+    values.Unshift({ title: "[tv] Recently Added Episode (uw)", key: "all?timelineState=1&type=4&unwatched=1&sort=addedAt:desc" })
 
     obj.Prefs["section_row_order"] = {
         values: values,

@@ -554,6 +554,10 @@ Function createHideRowsPrefsScreen(viewController) As Object
         { title: "Unwatched", key: "unwatched" },
         { title: "[movie] Recently Added (uw)", key: "all?type=1&unwatched=1&sort=addedAt:desc" }, 'movie/film for now
         { title: "[movie] Recently Released (uw)", key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc" }, 'movie/film for now
+        { title: "[movie] Recently Released (uw)", key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc" }, 
+        { title: "[tv] Recently Added Season", key: "recenltyAdded?stack=1" }, 
+        { title: "[tv] Recently Aired (uw)", key: "all?timelineState=1&type=4&unwatched=1&sort=originallyAvailableAt:desc" }, 
+        { title: "[tv] Recently Added (uw)", key: "all?timelineState=1&type=4&unwatched=1&sort=addedAt:desc" }, 
         { title: "Recently Viewed", key: "recentlyViewed" },
         { title: "[tv] Recently Viewed Shows", key: "recentlyViewedShows" },
         { title: "By Album", key: "albums" },
@@ -1099,7 +1103,8 @@ sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
         else
             rarflix_cdn = "http://d1gah69i16tuow.cloudfront.net"
         end if 
-        NewThumb = rarflix_cdn + "/images/key/" + URLEncode(thumb_text) ' this will be a autogenerate poster (transparent)
+        cachekey = "fcfab14d40e6685f5918a2d32332a98f"
+        NewThumb = rarflix_cdn + "/" + cachekey + "/key/" + URLEncode(thumb_text) ' this will be a autogenerate poster (transparent)
         NewThumb = NewThumb + "/size/" + tostr(hdWidth) + "x" + tostr(hdHeight) ' things seem to play nice this way with the my image processor
         NewThumb = NewThumb + "/fg/" + RegRead("rf_img_overlay", "preferences","999999")
         Debug("----   newraw:" + tostr(NewThumb))
