@@ -1175,3 +1175,41 @@ function getLogDate() as string
 	return date + " " + hours + ":" + minutes + ":" + seconds
 end function
 
+sub updateVideoHUD(m,curProgress)
+    endString = invalid
+    watchedString = invalid
+
+    date = CreateObject("roDateTime")
+    if m.VideoItem.Duration > 0 then
+        duration = int(m.VideoItem.Duration/1000)
+        timeLeft = int(Duration - curProgress)
+        endString = "End Time: " + RRmktime(date.AsSeconds()+timeLeft) + "  (" + GetDurationString(timeLeft,0,1,1) + ")" + "  Watched: " + GetDurationString(int(curProgress))
+    else
+         ' include current time and watched time when video duration is unavailable (HLS & web videos)
+         watchedString = "Time: " + RRmktime(date.AsSeconds()) + "     Watched: " + GetDurationString(int(curProgress))
+    end if
+    ' set the HUD
+    content = CreateObject("roAssociativeArray")
+    content = m.VideoItem ' assign Video item and reset other keys
+    if m.VideoItem.OrigHUDreleaseDate = invalid then
+        m.VideoItem.OrigHUDreleaseDate = m.VideoItem.releasedate
+    end if
+
+    content.length = m.VideoItem.duration
+    content.title = m.VideoItem.title
+     ' overwrite release date now
+    content.releasedate = m.VideoItem.OrigHUDreleasedate
+
+    if tostr(m.VideoItem.rokustreambitrate) <> "invalid" and validint(m.VideoItem.rokustreambitrate) > 0 then
+        bitrate = RRbitrate(m.VideoItem.rokustreambitrate)
+        content.releasedate = content.releasedate + " " + bitrate
+    end if
+
+    content.releasedate = content.releasedate + chr(10) + chr(10)  'two line breaks - easier to read
+    if endString <> invalid then content.releasedate = content.releasedate +  endString
+    if watchedString <> invalid then content.releasedate = content.releasedate + watchedString
+ 
+   ' update HUD
+    m.Screen.SetContent(content)
+end sub
+
