@@ -31,7 +31,7 @@
 sub RegSetUserPrefsToCurrentUser()
     m.userRegPrefs = { myplex:"",preferences:"",servers:"",userinfo:""} 'list of prefs that are customized for each user.  
     for each key in m.userRegPrefs
-        if m.userNum <= 0 then  'for user of 0 or -1, just use the standard name
+        if (m.userNum = invalid) or (m.userNum <= 0) then  'for user of 0 or -1, just use the standard name
             m.userRegPrefs[key] = tostr(key)
         else
             m.userRegPrefs[key] = tostr(key) + "_u" + numtostr(m.userNum)
@@ -43,7 +43,7 @@ end sub
 Function RegGetSectionName(section=invalid) as string
     if section = invalid then 
         return "Default"
-    else if m.userRegPrefs[section] <> invalid then
+    else if (m.userRegPrefs <> invalid) and (m.userRegPrefs[section] <> invalid) then   
         return m.userRegPrefs[section]
     end if     
     return section
