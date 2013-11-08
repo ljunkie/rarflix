@@ -260,7 +260,7 @@ Sub showPreferencesScreen()
     ' re-ordered - RR
     m.AddItem({title: "RARflix Preferences", ShortDescriptionLine2: "the goods"}, "rarflix_prefs")
     m.AddItem({title: getCurrentMyPlexLabel()}, "myplex")
-    m.AddItem({title: "User Profiles", ShortDescriptionLine2: "Multi-User Support"}, "userprofiles")
+    m.AddItem({title: "User Profiles", ShortDescriptionLine2: "Fast user switching"}, "userprofiles")
     m.AddItem({title: "Security PIN", ShortDescriptionLine2: "Require a PIN to access (multi-user supported)"}, "securitypin")
     m.AddItem({title: "Plex Media Servers"}, "servers")
     m.AddItem({title: "Quality"}, "quality", m.GetEnumValue("quality"))
@@ -481,11 +481,34 @@ Function createSecurityPinPrefsScreen(viewController) As Object
     obj.Screen.SetHeader("Security PIN preferences")
     obj.HandleMessage = prefsSecurityPinHandleMessage
     obj.EnteredPin = false  'true when user has already entered PIN so we don't ask for it again
+    obj.BaseActivate = obj.Activate
     return obj
 End Function
 
 'Determine if we're setting a new PIN or need to change/clear an existing PIN
 sub prefsSecurityPinRefresh(screen)
+    ' Subtitle size (burned in only)
+    lockTimes = [
+        { title: "Never", EnumValue: "0" },
+        { title: "5 Minutes", EnumValue: "300" },
+        { title: "10 Minutes", EnumValue: "600" },
+        { title: "15 Minutes", EnumValue: "900" },
+        { title: "20 Minutes", EnumValue: "1200" },
+        { title: "30 Minutes", EnumValue: "1800" },
+        { title: "45 Minutes", EnumValue: "2700" },
+        { title: "1 Hour", EnumValue: "3600" },
+        { title: "2 Hours", EnumValue: "7200" },
+        { title: "3 Hours", EnumValue: "10800" },
+        { title: "4 Hours", EnumValue: "14400" },
+        { title: "6 Hours", EnumValue: "36000" },
+        { title: "12 Hours", EnumValue: "43200" }
+    ]
+    screen.Prefs["lockTime"] = {
+        values: lockTimes,
+        heading: "Lock screen after inactivity",
+        default: "10800"
+    }
+
     screen.contentArray.Clear() 
     screen.Screen.ClearContent()
     if RegRead("securityPincode","preferences",invalid) = invalid  then
@@ -495,6 +518,7 @@ sub prefsSecurityPinRefresh(screen)
         if screen.EnteredPin = true then
             screen.AddItem({title: "Change Security PIN"}, "set")
             screen.AddItem({title: "Clear Security PIN"}, "clear")
+            screen.AddItem({title: "Inactivity Lock"}, "locktime", screen.GetEnumValue("lockTime"))
         else
             screen.AddItem({title: "Enter current PIN to make changes"}, "unlock")
         end if
@@ -514,6 +538,7 @@ Function prefsSecurityPinHandleMessage(msg) As Boolean
             if command = "clear" then
                 RegDelete("securityPincode", "preferences")
                 prefsSecurityPinRefresh(m)
+                m.ViewController.CreateIdleTimer()
             else if command = "set" then 'create screen to enter PIN
                 pinScreen = SetSecurityPin(m.ViewController)
                 m.Activate = prefsSecurityPinHandleSetPin
@@ -526,6 +551,9 @@ Function prefsSecurityPinHandleMessage(msg) As Boolean
                 m.ViewController.InitializeOtherScreen(pinScreen, ["Unlock PIN Changes"])
                 m.Activate = prefsSecurityPinHandleUnlock
                 pinScreen.Show()
+            else if command = "locktime" then
+                m.HandleEnumPreference(command, msg.GetIndex())
+                m.ViewController.CreateIdleTimer()
             else if command = "close" then
                 m.Screen.Close()
             end if
@@ -536,7 +564,7 @@ End Function
 
 'Called when list screen pops to top after the PIN verification completes
 sub prefsSecurityPinHandleUnlock(priorScreen)
-    m.Activate = invalid    'dont call this routine again
+    m.Activate = m.BaseActivate    'dont call this routine again
     if (priorScreen.pinOK = invalid) or (priorScreen.pinOK <> true) then    'either no code was entered, was cancelled or wrong code
     else
         m.EnteredPin = true    
@@ -546,8 +574,8 @@ End sub
 
 'Called when list screen pops to top after setting a new PIN
 sub prefsSecurityPinHandleSetPin(priorScreen)
-    m.Activate = invalid    'dont call this routine again
-    if (priorScreen.newPinCode = invalid) or (priorScreen.newPinCode = "") then    'either no code was entered, was cancelled or wrong code
+    m.Activate = m.BaseActivate    'dont call this routine again
+    if (priorScreen.newPinCode = invalid) or (priorScreen.newPinCode = "")  then    'either no code was entered, was cancelled or wrong code
         'dialog = createBaseDialog()    'BUG: couldn't get this to work.  screen does not display.  Just return to menu when it's entered wrong
         'dialog.Title = "PIN Mismatch"
         'dialog.Text = "Security PIN's didn't match.  PIN not changed."
@@ -557,6 +585,7 @@ sub prefsSecurityPinHandleSetPin(priorScreen)
         'Debug("Set new pincode:" + tostr(priorScreen.newPinCode ))
         RegWrite("securityPincode", priorScreen.newPinCode, "preferences")
         prefsSecurityPinRefresh(m)
+        m.ViewController.CreateIdleTimer()
     endif
 End sub
 
