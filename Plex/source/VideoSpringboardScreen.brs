@@ -340,6 +340,13 @@ Function videoHandleMessage(msg) As Boolean
                 dummyItem.server = m.metadata.server
                 m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
                 closeDialog = true
+            else if command = "gotoMusicNowPlaying" then
+                obj.focusedbutton = 0
+                dummyItem = CreateObject("roAssociativeArray")
+                dummyItem.ContentType = "audio"
+                dummyItem.Key = "nowplaying"
+                obj.ViewController.CreateScreenForItem(dummyItem, invalid, ["","Now Playing"])
+                closeDialog = true
             else
                 handled = false
             end if

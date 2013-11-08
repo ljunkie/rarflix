@@ -737,7 +737,7 @@ sub posterRefresh(force=false)
             if focusedIndex <> invalid and type(content) = "roArray" and type(content[focusedIndex]) = "roAssociativeArray" then 
                 if type(content[focusedIndex].refresh) = "roFunction" then  
                     content[focusedIndex].refresh()
-                    print content[focusedIndex]
+                    ' print content[focusedIndex]
                     ' special for tv shows
                     if content[focusedIndex].titleseason <> invalid then content[focusedIndex].shortdescriptionline1 = content[focusedIndex].titleseason
                     m.screen.SetContentList(content)
@@ -962,7 +962,9 @@ sub rfDefRemoteOptionButton(m)
 end sub
 
 
-sub rfDialogGridScreen(obj as Object) as Dynamic
+sub rfDialogGridScreen(obj as Object)
+    audioPlayer = GetViewController().AudioPlayer
+    if audioplayer.IsPlaying or audioplayer.IsPaused then return
 
     if type(obj.item) = "roAssociativeArray" and tostr(obj.item.contenttype) = "section" and NOT tostr(obj.item.nodename) = "Directory" or obj.selectedrow = 0 then ' row 0 is reserved for the fullGrid shortcuts
         print obj.item
@@ -976,13 +978,13 @@ sub rfDialogGridScreen(obj as Object) as Dynamic
         dialog.SetButton("fullGridScreen", "Grid View: " + fromName) 'and type(obj.screen) = "roGridScreen" 
         dialog.Text = ""
         dialog.Title = "Options"
-    
+
+        if audioplayer.ContextScreenID <> invalid then dialog.setButton("gotoMusicNowPlaying","go to now playing [music]")
+
         dialog.SetButton("close", "Back")
         dialog.HandleButton = videoDialogHandleButton
         dialog.ParentScreen = obj
         dialog.Show()
-     else 
-         return invalid
      end if
 
 end sub
