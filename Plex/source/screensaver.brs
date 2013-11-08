@@ -1,4 +1,7 @@
-
+'RunScreenSaver() is called by Roku when idle is detected.  Note that this runs as a seperate thread and 
+'is debugged on a different port.
+'Note that this thread does NOT share global scope with the main thread.  All variables need to be recreated
+'or shared via registry or files.
 Sub RunScreenSaver()
     m.RegistryCache = CreateObject("roAssociativeArray")
     mode = RegRead("screensaver", "preferences", "random")
@@ -29,7 +32,7 @@ Sub RunScreenSaver()
             Debug("Unrecognized screensaver preference: " + tostr(mode))
             return
         end if
-        canvas.Go()
+        canvas.Go() 'Doesn't return until screensaver is cancelled'
     else
         Debug("Deferring to system screensaver")
     end if
