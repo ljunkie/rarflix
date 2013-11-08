@@ -268,32 +268,62 @@ Function loaderLoadMoreContent(focusedIndex, extraRows=0)
 End Function
 
 Sub loaderRefreshData()
-   ' ljunkie - normally this would re-load all the rows if they have already been loaded. This will cause serious 
-   ' slow downs if one loads many rows, stacks a new screen on grid, then returns to said grid. We should only 
-   ' reload the focused row, and invalidate the load status of the existing. The invalidated rows on the screen
-   ' will reload when selected again. 
-
-   ' just debugging.. to remove
-   'print "---- loader RefreshData called"
-   'print "---- current focus is row:" + tostr(m.listener.selectedRow) + ", item:" + tostr(m.listener.focusedIndex)
-   'print "---- we should only be RE-loading row:" + tostr(m.listener.selectedRow)
-
-   for row = 0 to m.contentArray.Count() - 1
-        status = m.contentArray[row]
-        doLoad = (m.listener.selectedRow = row) ' only reload the current row, invalidate the others (that are fully loaded)
-                                                ' we might want to reload m.listener.selectedRow+1 too.. we will see
-        'print "------------- checking row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus)
-        if status.key <> invalid AND status.loadStatus <> 0 then 
-            if doLoad then
-                Debug("----- loading row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
-                m.StartRequest(row, 0, m.pageSize)
-            else 
-                Debug("----- invalidate row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
-                status.loadStatus = 0 ' set to reload on focus
-                status.countloaded = 0 ' set to reload on focus
+   ' ljunkie - (2013-11-08) I think the MAIN thing we really care about when refreshing a grid row, is updating watched status in a row
+   ' We can look at removing "watched" items in an "unwatched" row, but that may be a kludge... 
+   ' This will give us some huge speed ups with a trade off of items in a row sometimes being a little stale. 
+    sel_row = m.listener.selectedRow
+    sel_item = m.listener.focusedindex
+    if type(m.listener.contentarray) = "roArray" and m.listener.contentarray.count() >= sel_row then
+        if type(m.listener.contentarray[sel_item]) = "roArray" and m.listener.contentarray[sel_item].count() >= sel_item then
+            item = m.listener.contentarray[sel_row][sel_item]
+            wkey = m.listener.contentarray[sel_row][sel_item].key
+            if item <> invalid and type(item.refresh) = "roFunction" then 
+                Debug("---- Refreshing metadata for item " + tostr(wkey))
+                item.Refresh()
+                ' iterate through loaded rows and update focus item
+                for row = 0 to m.contentArray.Count() - 1
+                    status = m.contentArray[row]
+                    if status.key <> invalid AND status.loadStatus <> 0 and type(status.content) = "roArray" then 
+                        for index = 0 to status.content.count() - 1 
+                            if status.content[index] <> invalid and status.content[index].key = wkey then 
+                                status.content[index] = item
+                                Debug("---- Refreshing item " + tostr(wkey) + " in row " + tostr(row))
+                                m.listener.Screen.SetContentListSubset(row, status.content, index , 1)
+                                ' status_item.refresh() ' no need to refresh again - same item
+                                ' m.listener.Screen.SetContentList(row, status.content)
+                            end if
+                        end for
+                    end if
+                end for
             end if
         end if
-    next
+    end if
+ 
+    ' TO REMOVE - kept for testing/code notes
+    ' newer - but old way of doing updates. This would normally try and load the entire focus row all over again. It will also invalidate other rows
+    ' which in turn would reload the entire row when focused again. This has major penalties, however it did make sure we always had the most current
+    ' data in the rows. A trade off for speed has deprecated this.
+    '
+    ' ljunkie - normally this would re-load all the rows if they have already been loaded. This will cause serious 
+    ' slow downs if one loads many rows, stacks a new screen on grid, then returns to said grid. We should only 
+    ' reload the focused row, and invalidate the load status of the existing. The invalidated rows on the screen
+    ' will reload when selected again. 
+    '        doLoad = (m.listener.selectedRow = row) ' only reload the current row, invalidate the others (that are fully loaded)
+    '                                                ' we might want to reload m.listener.selectedRow+1 too.. we will see
+    '        'print "------------- checking row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus)
+    '
+    '            if doLoad then
+    '                Debug("----- skipping - loading row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
+    '                'Debug("----- loading row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
+    '                'm.StartRequest(row, 0, m.pageSize)
+    '            else 
+    '                Debug("----- skipping - invalidate row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
+    '                'Debug("----- invalidate row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
+    '                'status.loadStatus = 0 ' set to reload on focus
+    '                'status.countloaded = 0 ' set to reload on focus
+    '            end if
+    '        end if
+    '    next
 End Sub
 
 Sub loaderStartRequest(row, startItem, count)
