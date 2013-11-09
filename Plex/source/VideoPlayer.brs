@@ -438,13 +438,13 @@ Sub videoPlayerOnUrlEvent(msg, requestContext)
 End Sub
 
 Sub videoPlayerSendTimeline(force=false)
+    if m.lastPosition >= 0 then updateVideoHUD(m,m.lastPosition)
+
     ' We can only send the event if we have some basic info about the item
     if m.Item.ratingKey = invalid OR m.Item.RawLength = invalid OR m.Item.server = invalid then
         m.timelineTimer.Active = false
         return
     end if
-
-    if m.lastPosition >= 0 then updateVideoHUD(m,m.lastPosition)
 
     ' Avoid duplicates
     if m.playState = m.lastTimelineState AND NOT force then return
