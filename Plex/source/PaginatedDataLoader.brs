@@ -284,15 +284,30 @@ Sub loaderRefreshData()
                 for row = 0 to m.contentArray.Count() - 1
                     status = m.contentArray[row]
                     if status.key <> invalid AND status.loadStatus <> 0 and type(status.content) = "roArray" then 
-                        for index = 0 to status.content.count() - 1 
-                            if status.content[index] <> invalid and status.content[index].key = wkey then 
-                                status.content[index] = item
-                                Debug("---- Refreshing item " + tostr(wkey) + " in row " + tostr(row))
-                                m.listener.Screen.SetContentListSubset(row, status.content, index , 1)
-                                ' status_item.refresh() ' no need to refresh again - same item
-                                ' m.listener.Screen.SetContentList(row, status.content)
+                        isDynamic = CreateObject("roRegex", "ondeck", "i") ' unwatched? this can still cause major slow downs for some large libraries
+                        if isDynamic.isMatch(status.key) then 
+                            ' only reload the row if it's in view or 1 up/down
+                            doLoad = (m.listener.selectedRow = row or m.listener.selectedRow = row-1 or m.listener.selectedRow = row+1)
+                            if doLoad then
+                                Debug("----- full reload row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
+                                m.StartRequest(row, 0, m.pagesize)
+                            else 
+                                Debug("----- invalidate row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
+                                status.loadStatus = 0 ' set to reload on focus
+                                status.countloaded = 0 ' set to reload on focus
                             end if
-                        end for
+                        else
+                            Debug("----- skipping full reload - row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
+                            for index = 0 to status.content.count() - 1 
+                                if status.content[index] <> invalid and status.content[index].key = wkey then 
+                                    status.content[index] = item
+                                    Debug("---- Refreshing item " + tostr(wkey) + " in row " + tostr(row))
+                                    m.listener.Screen.SetContentListSubset(row, status.content, index , 1)
+                                    ' status_item.refresh() ' no need to refresh again - same item
+                                    ' m.listener.Screen.SetContentList(row, status.content)
+                                end if
+                            end for
+                        end if 
                     end if
                 end for
             end if
