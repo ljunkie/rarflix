@@ -121,6 +121,18 @@ Function showGridScreen() As Integer
         end if
     end for
 
+    ' ljunkie - remove description ( grid popout on bottom left ) - initial release (2013-11-09)
+    ' This was asked for, however I know people are goint to complain. This will most likely need to be a bit more complicated.
+    ' As in, people are not going to want this to be GLOBAL, but set per section/full grid/or even some secific type. 
+    ' I.E. don't show on firstCharacter, but show of On Deck
+    if RegRead("rf_grid_description", "preferences", "enabled") <> "enabled" then 
+        print "------------------- Description POP OUT disabled -- sec_metadata -- more info if we need to enable certain section/types --------------------------"
+        sec_metadata = getSectionType(m)
+        print sec_metadata
+        m.screen.SetDescriptionVisible(false)
+        print "------------------------------------------------------- END ---------------------------------------------------------------------------------------"
+    end if
+
     m.Screen.Show()
     if facade <> invalid then facade.Close()
 

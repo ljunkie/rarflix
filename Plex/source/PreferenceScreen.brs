@@ -159,6 +159,17 @@ Sub prefsOnUserInput(value, screen)
     else
         label = m.contentArray[m.currentIndex].OrigTitle
         if screen.SelectedIndex <> invalid then
+            ' instead of having to close/open the channel again - we can dynamically fix some settings through the channel. 
+            ' As of now (2013-11-09) if someone disables/enables the Description Pop Out on a grid screen, we will set that on any open grid screen
+            if m.currentRegKey = "rf_grid_description" then 
+                selection = (tostr(screen.SelectedValue) = "enabled")
+                for each resetscreen in m.viewcontroller.screens
+                    if resetscreen <> invalid and type(resetscreen.screen) = "roGridScreen" then 
+                        resetscreen.screen.SetDescriptionVisible(selection)
+                    end if
+                end for
+            end if
+            ' end dynmamic set
             Debug("Set " + label + " to " + screen.SelectedValue)
             RegWrite(m.currentRegKey, screen.SelectedValue, "preferences", m.currentUser)  'm.currentUser may be "invalid" and RegWrite will use the global currentUser
             m.Changes.AddReplace(m.currentRegKey, screen.SelectedValue)
@@ -1702,6 +1713,17 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
         heading: "Size of the Grid",
         default: "flat-movie"
     }
+    ' Grid Descriptions Pop Out
+    rf_grid_description = [
+        { title: "Enabled", EnumValue: "enabled"  },
+        { title: "Disabled", EnumValue: "disabled"  },
+
+    ]
+    obj.Prefs["rf_grid_description"] = {
+        values: rf_grid_description,
+        heading: "Grid Pop Out Description",
+        default: "enabled"
+    }
 
     ' Display Mode for Grid or Poster views
     ' { title: "Zoom", EnumValue: "zoom-to-fill", ShortDescriptionLine2: "zoom image to fill boundary" }, again, no one wants this
@@ -1765,6 +1787,7 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
     obj.AddItem({title: "Movie & Others", ShortDescriptionLine2: "Posters or Grid"}, "rf_poster_grid", obj.GetEnumValue("rf_poster_grid"))
     obj.AddItem({title: "Grid Size", ShortDescriptionLine2: "Size of Grid"}, "rf_grid_style", obj.GetEnumValue("rf_grid_style"))
     obj.AddItem({title: "Grid Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_grid_displaymode", obj.GetEnumValue("rf_grid_displaymode"))
+    obj.AddItem({title: "Grid Pop Out", ShortDescriptionLine2: "Description on bottom left"}, "rf_grid_description", obj.GetEnumValue("rf_grid_description"))
     'we can add this.. but it doesn't do much yet.. let's not totally confuse people.. yet.
     'obj.AddItem({title: "Poster Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_poster_displaymode", obj.GetEnumValue("rf_poster_displaymode"))
     obj.AddItem({title: "Reorder Rows"}, "section_row_order")
@@ -1783,7 +1806,7 @@ Function prefsSectionDisplayHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "use_grid_for_series" or command = "rf_poster_grid" or command = "rf_grid_style" or command = "rf_grid_displaymode" or command = "rf_poster_displaymode" then
+            if command = "use_grid_for_series" or command = "rf_poster_grid" or command = "rf_grid_style" or command = "rf_grid_displaymode" or command = "rf_poster_displaymode" or command = "rf_grid_description" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "section_row_order" then
                 m.HandleReorderPreference(command, msg.GetIndex())
