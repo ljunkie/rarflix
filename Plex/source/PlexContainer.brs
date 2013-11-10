@@ -183,7 +183,7 @@ Sub containerParseXml()
         ' ROKU is not working with SSL ( some cloud sync thumbs ) -- 
         ' reset the thumb url from https://my.plexapp.com:443/sync/ to http://plex-cloudsync.s3.amazonaws.com/sync/
         remyplex = CreateObject("roRegex", "my.plexapp.com", "i")        
-        if metadata.server.serverurl <> invalid and remyplex.IsMatch(metadata.server.serverurl) then 
+        if metadata.server <> invalid and metadata.server.serverurl <> invalid and remyplex.IsMatch(metadata.server.serverurl) then 
             re = CreateObject("roRegex", "https://my.plexapp.com:443/sync/", "")
             if metadata.hdposterurl <> invalid then metadata.hdposterurl = re.replace(metadata.hdposterurl,"http://plex-cloudsync.s3.amazonaws.com/sync/")
             if metadata.sdposterurl <> invalid then metadata.sdposterurl = re.replace(metadata.sdposterurl,"http://plex-cloudsync.s3.amazonaws.com/sync/")
