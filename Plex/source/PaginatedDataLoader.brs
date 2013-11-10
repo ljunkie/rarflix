@@ -274,7 +274,7 @@ Sub loaderRefreshData()
     sel_row = m.listener.selectedRow
     sel_item = m.listener.focusedindex
     if type(m.listener.contentarray) = "roArray" and m.listener.contentarray.count() >= sel_row then
-        if type(m.listener.contentarray[sel_item]) = "roArray" and m.listener.contentarray[sel_item].count() >= sel_item then
+        if type(m.listener.contentarray[sel_row]) = "roArray" and m.listener.contentarray[sel_row].count() >= sel_item then
             item = m.listener.contentarray[sel_row][sel_item]
             wkey = m.listener.contentarray[sel_row][sel_item].key
             if item <> invalid and type(item.refresh) = "roFunction" then 
@@ -284,20 +284,21 @@ Sub loaderRefreshData()
                 for row = 0 to m.contentArray.Count() - 1
                     status = m.contentArray[row]
                     if status.key <> invalid AND status.loadStatus <> 0 and type(status.content) = "roArray" then 
-                        isDynamic = CreateObject("roRegex", "ondeck", "i") ' unwatched? this can still cause major slow downs for some large libraries
+                        ' some are more safe to reload - limit of < 100 items (recentlyAdded?stack=1,others?)
+                        isDynamic = CreateObject("roRegex", "ondeck|recentlyAdded\?stack=1", "i") ' unwatched? this can still cause major slow downs for some large libraries
                         if isDynamic.isMatch(status.key) then 
                             ' only reload the row if it's in view or 1 up/down
                             doLoad = (m.listener.selectedRow = row or m.listener.selectedRow = row-1 or m.listener.selectedRow = row+1)
                             if doLoad then
-                                Debug("----- full reload row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
+                                Debug("----- full reload row: " + tostr(row) + " key:" + tostr(status.key) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
                                 m.StartRequest(row, 0, m.pagesize)
                             else 
-                                Debug("----- invalidate row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
+                                Debug("----- invalidate row: " + tostr(row) + " key:" + tostr(status.key) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
                                 status.loadStatus = 0 ' set to reload on focus
                                 status.countloaded = 0 ' set to reload on focus
                             end if
                         else
-                            Debug("----- skipping full reload - row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
+                            Debug("----- skipping full reload - row: " + tostr(row) + " key:" + tostr(status.key) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
                             for index = 0 to status.content.count() - 1 
                                 if status.content[index] <> invalid and status.content[index].key = wkey then 
                                     status.content[index] = item
@@ -313,7 +314,6 @@ Sub loaderRefreshData()
             end if
         end if
     end if
- 
     ' TO REMOVE - kept for testing/code notes
     ' newer - but old way of doing updates. This would normally try and load the entire focus row all over again. It will also invalidate other rows
     ' which in turn would reload the entire row when focused again. This has major penalties, however it did make sure we always had the most current
