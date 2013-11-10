@@ -1185,7 +1185,7 @@ sub updateVideoHUD(m,curProgress)
     watchedString = invalid
 
     date = CreateObject("roDateTime")
-    if m.VideoItem.Duration > 0 then
+    if m.VideoItem.Duration <> invalid and m.VideoItem.Duration > 0 then
         duration = int(m.VideoItem.Duration/1000)
         timeLeft = int(Duration - curProgress)
         endString = "End Time: " + RRmktime(date.AsSeconds()+timeLeft) + "  (" + GetDurationString(timeLeft,0,1,1) + ")" + "  Watched: " + GetDurationString(int(curProgress),0,0,1)
