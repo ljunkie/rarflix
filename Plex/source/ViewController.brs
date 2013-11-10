@@ -396,11 +396,13 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen = createPosterScreen(item, m)
     else
         ' Where do we capture channel directory?
+        ' ljunkie - this doesn't seem to alwyas be channel items
         Debug("---- Creating a default " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
-        if tostr(contentType) = "appClip" and tostr(viewGroup) = "Invalid" then 
-            Debug("---- forcing to Poster view")
+        'sec_metadata = getSectionType(m) <- this seems unneccesary ( viewgroup = invalid|InfoList|List - do not support paginated calls )
+        if tostr(contentType) = "appClip" and (tostr(viewGroup) = "Invalid" or tostr(viewGroup) = "InfoList" or tostr(viewGroup) = "List") then 
+            Debug("---- forcing to Poster view -> viewgroup matches: invalid|InfoList|List")
             screen = createPosterScreen(item, m)
-        else if poster_grid = "grid" and tostr(viewGroup) <> "season" then 
+        else if poster_grid = "grid" and tostr(viewGroup) <> "season" then ' if we have set Full Grid and type is not a season, force Full Grid view
             screen = createFULLGridScreen(item, m, "Invalid", displaymode_grid)
         else 
             Debug("---- forcing to Poster view")
