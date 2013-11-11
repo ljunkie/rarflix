@@ -469,14 +469,24 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
                 end if
             else
                 ' Slightly strange, GDM disabled but no servers configured
+                '
+                ' ljunkie - it happens if someone disconnects from myPlex
+                ' More oddness is due to the fact this will show empty rows
+                ' new Fix is to load the MISC row and hide the others
                 Debug("No servers, no GDM, and no myPlex...")
-                ShowHelpScreen()
+                ShowHelpScreen(2)
                 status.loadStatus = 2
                 m.Listener.OnDataLoaded(loadingRow, status.content, 0, status.content.Count(), true)
             end if
         else
-            status.loadStatus = 2
-            m.Listener.OnDataLoaded(loadingRow, status.content, 0, status.content.Count(), true)
+            ' ljunkie - no valid servers, no GDM and no myPlex - hide the non MISC rows
+            if RegRead("serverList", "servers") = invalid AND NOT myPlex.IsSignedIn then
+                print m.rownames[loadingRow] + " invalid with NO servers -- hide it"
+                m.Listener.Screen.SetListVisible(loadingRow, false)
+            else 
+                status.loadStatus = 2
+                m.Listener.OnDataLoaded(loadingRow, status.content, 0, status.content.Count(), true)
+            end if
         end if
     end if
 
