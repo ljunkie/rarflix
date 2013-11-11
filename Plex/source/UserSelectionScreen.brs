@@ -225,3 +225,16 @@ sub userSelectUser(userNumber as integer)
     initTheme() 're-read rarflix theme
     GetGlobalAA().ViewController.ShowSecurityScreen = false  
 end sub
+
+'Sometimes we may need to check if multiUser is "still enabled"
+function checkMultiUserEnabled() as boolean
+    vc = GetViewController()
+    vc.RFisMultiUser = false
+    for i = 1 to 7 step 1   'Check for other users enabled
+        if RegRead("userActive", "preferences", "0",i) = "1" then 
+            vc.RFisMultiUser = true
+            exit for
+        end if
+    end for
+    return vc.RFisMultiUser
+end function

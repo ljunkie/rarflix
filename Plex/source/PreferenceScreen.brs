@@ -590,7 +590,6 @@ Function createUserProfilesPrefsScreen(viewController) As Object
     obj.Activate = refreshUserProfilesPrefsScreen
     obj.HandleMessage = prefsUserProfilesHandleMessage
     obj.Screen.SetHeader("User Selection & Profile Preferences")
-
     ' Icon Color for the User Selection Arrows
     ' not sure this is the best place for this. It's a "global" setting
     values = [

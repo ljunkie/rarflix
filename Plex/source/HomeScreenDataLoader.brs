@@ -77,6 +77,26 @@ Function createHomeScreenDataLoader(listener)
     next
 
     ' Create a static item for prefs and put it in the Misc row.
+    switchUser = CreateObject("roAssociativeArray")
+    switchUser.sourceUrl = ""
+    switchUser.ContentType = invalid
+    switchUser.Key = "switchuser"
+    switchUser.Title = "Switch User Profile"
+    switchUser.ShortDescriptionLine1 = "fast user switching"
+    switchUser.hidden = true
+    switchUser.color = RegRead("userprofile_icon_color", "preferences", "orange", 0)
+    poster = "arrow-up-po.png"
+    if switchUser.color <> "orange" then poster = "arrow-up.png"    
+    switchUser.SDPosterURL = "pkg:/images/"+poster
+    switchUser.HDPosterURL = "pkg:/images/"+poster
+    ' show on initial screen if multiUser enabled
+    if GetViewController().RFisMultiUser then 
+        switchUser.hidden = false
+        loader.contentArray[loader.RowIndexes["misc"]].content.Push(switchUser)
+    end if
+    loader.switchUserItem = switchUser
+
+    ' Create a static item for prefs and put it in the Misc row.
     prefs = CreateObject("roAssociativeArray")
     prefs.sourceUrl = ""
     prefs.ContentType = "prefs"
@@ -883,13 +903,50 @@ Sub homeRefreshData()
     ' Update the Now Playing item according to whether or not something is playing
     audioPlayer = GetViewController().AudioPlayer
     miscContent = m.contentArray[m.RowIndexes["misc"]].content
+
     if m.nowPlayingItem.CurIndex = invalid AND audioPlayer.ContextScreenID <> invalid then
         m.nowPlayingItem.CurIndex = miscContent.Count()
         miscContent.Push(m.nowPlayingItem)
     else if m.nowPlayingItem.CurIndex <> invalid AND audioPlayer.ContextScreenID = invalid then
-        miscContent.Delete(m.nowPlayingItem.CurIndex)
+        ' ljunkie curIndex could be wrong - we have added other dynamic content to this row
+        ' although - this pretty much never happens ( ContextScreenID for audioPlayer being set to invalid )
+        for index = 0 to miscContent.count()-1
+            if miscContent[index].key = m.nowPlayingItem.key then 
+                miscContent.Delete(index)
+                exit for
+            end if
+        end for
+        'miscContent.Delete(m.nowPlayingItem.CurIndex)
         m.nowPlayingItem.CurIndex = invalid
     end if
+
+    checkMultiUserEnabled() ' refresh multiUser state - if could have been disabled/enabled
+    if NOT m.switchUserItem.hidden AND GetViewController().RFisMultiUser then 
+        ' possible icon color change
+        m.switchUserItem.color = RegRead("userprofile_icon_color", "preferences", "orange", 0)
+        poster = "arrow-up-po.png"
+        if m.switchUserItem.color <> "orange" then poster = "arrow-up.png"    
+        m.switchUserItem.SDPosterURL = "pkg:/images/"+poster
+        m.switchUserItem.HDPosterURL = "pkg:/images/"+poster
+        m.switchUserItem.hidden = false
+    else if m.switchUserItem.hidden AND GetViewController().RFisMultiUser then 
+        ' switch user is hidden and enabled -- add it
+        m.switchUserItem.hidden = false
+        miscContent.Push(m.switchUserItem)
+    else if NOT m.switchUserItem.hidden AND NOT GetViewController().RFisMultiUser then 
+        ' switch user is NOT hidden and Disabled! kill it
+        ' we could potentially show the switch user icon still if we are on a Profile > 0 
+        ' however, we would need to add some crazy logic in just to handle closing a screen
+        ' and showing the user selection again while multiUser is now disabled
+        for index = 0 to miscContent.count()-1
+            if miscContent[index].key = m.switchUserItem.key then 
+                m.switchUserItem.hidden = true
+                miscContent.Delete(index)
+                exit for
+            end if
+        end for
+    end if
+    m.Listener.OnDataLoaded(m.RowIndexes["misc"], miscContent, 0, miscContent.Count(), true)
 
     ' The home screen is never empty, make sure we don't close ourself.
     m.Listener.hasData = true

@@ -372,6 +372,10 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if item.key = "globalprefs" then
         screen = createPreferencesScreen(m)
         screenName = "Preferences Main"
+    else if item.key = "switchuser" then
+        screen = m.Screens.Peek()
+        if screen <> invalid then screen.screen.close()
+        return invalid
     else if item.key = "/channels/all" then
         ' Special case for all channels to force it into a special grid view
         screen = createGridScreen(m, "flat-square")
