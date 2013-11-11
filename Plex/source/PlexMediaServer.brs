@@ -578,6 +578,12 @@ Function StartTranscodingSession(videoUrl)
     cookiesRequest.SetUrl(videoUrl)
     cookiesHead = cookiesRequest.Head()
     m.Cookie = cookiesHead.GetResponseHeaders()["set-cookie"]
+
+    if m.Cookie <> invalid then
+        arr = strTokenize(m.Cookie, ";")
+        m.Cookie = arr[0]
+    end if
+
     return m.Cookie
 End Function
 
