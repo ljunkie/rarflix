@@ -24,6 +24,7 @@ end function
 Sub InitRARFlix() 
 
     GetGlobalAA()
+    'RegDelete("userprofile_icon_color", "preferences")
     'RegDelete("rf_unwatched_limit", "preferences")
     'RegDelete("rf_grid_style", "preferences")
     'RegDelete("rf_poster_grid_style", "preferences")

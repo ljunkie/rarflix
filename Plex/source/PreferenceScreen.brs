@@ -589,7 +589,23 @@ Function createUserProfilesPrefsScreen(viewController) As Object
     obj = createBasePrefsScreen(viewController)
     obj.Activate = refreshUserProfilesPrefsScreen
     obj.HandleMessage = prefsUserProfilesHandleMessage
-    obj.Screen.SetHeader("User profile preferences")
+    obj.Screen.SetHeader("User Selection & Profile Preferences")
+
+    ' Icon Color for the User Selection Arrows
+    ' not sure this is the best place for this. It's a "global" setting
+    values = [
+        { title: "Orange (Plex)", EnumValue: "orange", SDPosterUrl: "pkg:/images/arrow-up-po.png", HDPosterUrl: "pkg:/images/arrow-up-po.png", },
+        { title: "Purple (Roku)", EnumValue: "purple", SDPosterUrl: "pkg:/images/arrow-up.png", HDPosterUrl: "pkg:/images/arrow-up.png", },
+    ]
+    obj.Prefs["userprofile_icon_color"] = {
+        values: values,
+        heading: "Icon Color for the User Sections Screen",
+        default: "orange"
+    }
+    poster = "arrow-up-po.png"
+    if RegRead("userprofile_icon_color", "preferences", "orange", 0) <> "orange" then poster = "arrow-up.png"    
+    obj.AddItem({title: "User Selection Icon Color", ShortDescriptionLine2: "Global Setting", SDPosterUrl: "pkg:/images/"+poster, HDPosterUrl: "pkg:/images/"+poster  }, "userprofile_icon_color", obj.GetEnumValue("userprofile_icon_color",0)) ' this is a global option
+
     'These must be the first 8 entries for easy parsing for the createUserEditPrefsScreen()
     fn = firstof(RegRead("friendlyName", "preferences", invalid, 0),"")
     if fn <> "" then fn = " [" + fn + "]"
@@ -617,17 +633,23 @@ Function prefsUserProfilesHandleMessage(msg) As Boolean
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
             m.FocusedListItem = msg.GetIndex()
+            re = CreateObject("roRegex", "userActive\d", "i") ' modified so we can add other buttons on previous screen
             if command = "close" then
                 m.Screen.Close()
-            else    'must be a user edit
-                m.editScreen = createUserEditPrefsScreen(m.ViewController,msg.GetIndex()) 'msg.GetIndex() be 0-3 because that's the order of the text entries
-                if msg.GetIndex() = 0 then
+            else if command = "userprofile_icon_color" then 
+                m.currentUser = 0 ' set to write this as a global setting
+                m.HandleEnumPreference(command, msg.GetIndex())
+            else if re.IsMatch(command) then    'must be a user edit
+                rep = CreateObject("roRegex", "userActive", "i")
+                userNum = rep.ReplaceAll(command,"")
+                m.editScreen = createUserEditPrefsScreen(m.ViewController,userNum.toInt()) 'msg.GetIndex() be 0-3 because that's the order of the text entries
+                if userNum = "0" then
                     name = "Default User"
                 else 
-                    name = "User Profile " + tostr(msg.GetIndex())
+                    name = "User Profile " + userNum
                 end if
-                if RegRead("friendlyName", "preferences", invalid, msg.GetIndex()) <> invalid then
-                    name = RegRead("friendlyName", "preferences", invalid, msg.GetIndex())
+                if RegRead("friendlyName", "preferences", invalid, userNum.toInt()) <> invalid then
+                    name = RegRead("friendlyName", "preferences", invalid, userNum.toInt())
                 end if 
                 m.ViewController.InitializeOtherScreen(m.editScreen, [name])
                 m.editScreen.Show()            
