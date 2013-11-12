@@ -37,6 +37,8 @@ function ClassRequest()
         ' members
         this.method   = invalid
         this.uri      = invalid
+        this.path     = invalid
+        this.query    = invalid
         this.protocol = invalid
         this.buf      = invalid
         this.fields   = invalid
@@ -96,6 +98,20 @@ function request_parse(conn as Object) as Boolean
             ' interpret some fields if present
             m.parseRange()
             m.parseConn(conn)
+
+            ' parse query string if present
+            m.query = CreateObject("roAssociativeArray")
+            parts = m.uri.tokenize("?")
+            if parts.count() = 2
+                m.path = parts.GetHead()
+                args = parts.GetTail().tokenize("&")
+                for each arg in args
+                    av = arg.tokenize("=")
+                    if av.count()=2 then m.query[UrlUnescape(av.GetHead())] = UrlUnescape(av.GetTail())
+                end for
+            else
+                m.path = m.uri
+            end if
         else
             err(m,"invalid request: "+operation)
             m.ok = false
