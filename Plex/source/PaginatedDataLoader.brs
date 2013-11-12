@@ -222,7 +222,7 @@ End Function
 '* rows are already loaded.
 '*
 Function loaderLoadMoreContent(focusedIndex, extraRows=0)
-    Debug("----- loaderMoreContent called: " + tostr(m.names[focusedIndex]))
+    'Debug("----- loaderMoreContent called: " + tostr(m.names[focusedIndex]))
     status = invalid
     extraRowsAlreadyLoaded = true
     for i = 0 to extraRows
@@ -260,8 +260,7 @@ Function loaderLoadMoreContent(focusedIndex, extraRows=0)
     end if
 
     status.loadStatus = 1
-    Debug("----- focusIndex = " + tostr(focusedIndex))
-    Debug("----- starting request for row:" + tostr(loadingRow) + " start:" + tostr(startItem) + " stop:" + tostr(count))
+    Debug("----- starting request for row:" + tostr(m.names[loadingRow]) + " : " + tostr(loadingRow) + " start:" + tostr(startItem) + " stop:" + tostr(count))
     m.StartRequest(loadingRow, startItem, count)
 
     return extraRowsAlreadyLoaded
