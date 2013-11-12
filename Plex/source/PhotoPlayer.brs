@@ -12,7 +12,8 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
 
     screen.SetUnderscan(2.5)
     screen.SetMaxUpscale(8.0)
-    screen.SetDisplayMode("photo-fit")
+    displayMode = RegRead("slideshow_displaymode", "preferences", "photo-fit")
+    screen.SetDisplayMode(displayMode)
     screen.SetPeriod(RegRead("slideshow_period", "preferences", "6").toInt())
     screen.SetTextOverlayHoldTime(RegRead("slideshow_overlay", "preferences", "2500").toInt())
 

@@ -282,7 +282,7 @@ Sub showPreferencesScreen()
     m.AddItem({title: "Section Display"}, "sections")
     m.AddItem({title: "Remote Control/Name"}, "remotecontrol")
     m.AddItem({title: "Subtitles"}, "subtitles")
-    m.AddItem({title: "Slideshow"}, "slideshow")
+    m.AddItem({title: "Slideshow & Photos"}, "slideshow")
     m.AddItem({title: "Screensaver"}, "screensaver", m.GetEnumValue("screensaver"))
     m.AddItem({title: "Logging"}, "debug")
     m.AddItem({title: "Advanced Preferences"}, "advanced")
@@ -360,7 +360,7 @@ Function prefsMainHandleMessage(msg) As Boolean
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "slideshow" then
                 screen = createSlideshowPrefsScreen(m.ViewController)
-                m.ViewController.InitializeOtherScreen(screen, ["Slideshow Preferences"])
+                m.ViewController.InitializeOtherScreen(screen, ["Slideshow & Photo Preferences"])
                 screen.Show()
             else if command = "securitypin" then
                 screen = createSecurityPinPrefsScreen(m.ViewController)
@@ -464,11 +464,31 @@ Function createSlideshowPrefsScreen(viewController) As Object
         default: "disabled"
     }
 
+    display_modes = [
+        { title: "Photo", EnumValue: "photo-fit", ShortDescriptionLine2: "roku cropping method" },
+        { title: "Fit", EnumValue: "scale-to-fit", ShortDescriptionLine2: "scale to fit"  },
+        { title: "Fill", EnumValue: "scale-to-fill", ShortDescriptionLine2: "stretch to fill" },
+        { title: "Zoom", EnumValue: "zoom-to-fill", ShortDescriptionLine2: "zoom to fill" },
+    ]
+    obj.Prefs["photoicon_displaymode"] = {
+        values: display_modes,
+        heading: "How should photos icons be displayed",
+        default: "photo-fit"
+    }
+    ' unadulterated -- we don't want cropping/zooming/etc by default
+    obj.Prefs["slideshow_displaymode"] = {
+        values: display_modes,
+        heading: "How should images be displayed",
+        default: "scale-to-fit"
+    }
+
     obj.Screen.SetHeader("Slideshow display preferences")
 
     obj.AddItem({title: "Speed"}, "slideshow_period", obj.GetEnumValue("slideshow_period"))
     obj.AddItem({title: "Text Overlay"}, "slideshow_overlay", obj.GetEnumValue("slideshow_overlay"))
     obj.AddItem({title: "Reload",ShortDescriptionLine2: "check for new images after completion"}, "slideshow_reload", obj.GetEnumValue("slideshow_reload"))
+    obj.AddItem({title: "Photo Display Mode",ShortDescriptionLine2: "How should photos 'fit' the screen"}, "slideshow_displaymode", obj.GetEnumValue("slideshow_displaymode"))
+    obj.AddItem({title: "Icons Display Mode",ShortDescriptionLine2: "How should thumbnails 'fit' the screen"}, "photoicon_displaymode", obj.GetEnumValue("photoicon_displaymode"))
     obj.AddItem({title: "Close"}, "close")
 
     return obj
@@ -484,7 +504,7 @@ Function prefsSlideshowHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "slideshow_period" OR command = "slideshow_overlay" or command = "slideshow_reload" then
+            if command = "slideshow_period" OR command = "slideshow_overlay" or command = "slideshow_reload" or command = "slideshow_displaymode" or command = "photoicon_displaymode" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "close" then
                 m.Screen.Close()

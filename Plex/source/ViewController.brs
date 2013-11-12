@@ -311,7 +311,8 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 7x3 )
         else if tostr(item.type) = "photo" then 
             Debug("---- override photo-fit/flat-16x9 for section with content of " + tostr(item.type))
-            screen = createGridScreenForItem(item, m, "flat-16X9","photo-fit")
+            displayMode = RegRead("photoicon_displaymode", "preferences", "photo-fit")
+            screen = createGridScreenForItem(item, m, "flat-16X9",displayMode)
 	    '            screen.screen.SetDisplayMode("Photo-Fit") ' this has to be called before
             if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 7x3 )
         else 
