@@ -1,3 +1,48 @@
+#2.8.4-test (2013-11-12)
+ Fast User Switching:
+    * User Profile Switch item/icon added to the home screen misc row when multiUser is enabled ( will not be displayed if multi-user is disabled - I.E. no profile enabled )
+    * Toggle: user selection icon - purple (roku) / orange (plex)
+
+ Video:
+    * 3 New TV Rows/Grid options ( re-order rows to use them )
+       - Recently Added Seasons
+       - Unwatched Recently Released
+       - Unwatched Recenlty Added
+
+    * Initial release of "Shuffle Play" for Videos
+    * HUD time/endtime/watched updated on start
+    * HUD time/endtime/watched updated when paused
+
+ Photos (slideshow) 
+    * Toggle to change "display mode" of photos in slideshow/single view ( how the image scales/crops/fits when displayed )
+    * Toggle to change "display mode" of photos thumbnail image
+    * Toggle to 'reload' slideshow after completion. I.E. check for new photos after every run
+
+ Fixing Lag - Grid Optimiziations
+    * speed improvements for paginated dataloader - trade offs included - when re-loading grid rows
+       - basically - do not fully reload focused row and do not invalidate every out of focus row
+       - load the next out of screen row ( first 8 items )
+       - reload selected item ONLY ( in every row )
+       - OnDeck will always be fully reloaded ( it's normally small in size and is more dynamic then others ) 
+
+ Others:
+    * Toggle: Initial release of GLOBALLY disabling the Grid POP Out ( description bubble on bottom left ) : prefs / section display / grid pop out 
+    * timestamp logging ( if time stamp is not logged, it's due to temporary debug messages - disregard )
+
+ Music
+    * cleanup now playing buttons ( do not show when already in now playing )
+    * remove (*) key after music was started/stopped did not bring up option for full grid ( in music section )
+
+ Fixes:
+    * more speed fixes for paginated loader
+    * hide invalid rows when there are NO Servers configured ( GDM disabled, myPlex disabled, no manual servers) - Help Screen updated to give info how to fix
+    * do not check for now playing content when server doesn't support it
+    * crash: checking metadata of some channel content
+    * crash: some channel videos do not have a duration
+    * disable full grid for sub channel content - not supported for channel content due to a limitation of the PMS
+    * HUD watched time not working on some channel content
+    * screensaver fixed ( affected v2.8.3 ) - @wagnerscastle
+
 #2.8.3 (2013-11-03)
     * RARflix & RARflixTest are in sync
     * Now Playing+Nofifications released to main channel
