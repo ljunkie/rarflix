@@ -81,13 +81,14 @@ Sub userSelectionShow(refresh=false as Boolean)
     'centerPt of screen
     x=int(canvasRect.w/2)
     y=int(canvasRect.h/2)-offsetSize.h
-    
+    icon = "arrow-up-po.png"
+    if RegRead("userprofile_icon_color", "preferences", "orange", 0) <> "orange" then icon = "arrow-up.png"    
     buttons = [ 'These can be hardcoded later so long as adjusted for HD->SD 
             'The "-picSize.w/2" means rotate around the middle
-            {url:"pkg:/images/arrow-up.png",TargetRect:{x:Int(-picSize.w/2), y:Int(-picSize.h/2), w:picSize.w, h:picSize.h},TargetRotation:270.0,TargetTranslation:{x:x-bufSize.w,y:y}}
-            {url:"pkg:/images/arrow-up.png",TargetRect:{x:Int(-picSize.w/2), y:Int(-picSize.h/2), w:picSize.w, h:picSize.h},TargetRotation:0.0,TargetTranslation:{x:x,y:y-bufSize.h}}
-            {url:"pkg:/images/arrow-up.png",TargetRect:{x:Int(-picSize.w/2), y:Int(-picSize.h/2), w:picSize.w, h:picSize.h},TargetRotation:90.0,TargetTranslation:{x:x+bufSize.w,y:y}}
-            {url:"pkg:/images/arrow-up.png",TargetRect:{x:Int(-picSize.w/2), y:Int(-picSize.h/2), w:picSize.w, h:picSize.h},TargetRotation:180.0,TargetTranslation:{x:x,y:y+bufSize.h}}
+            {url:"pkg:/images/"+icon,TargetRect:{x:Int(-picSize.w/2), y:Int(-picSize.h/2), w:picSize.w, h:picSize.h},TargetRotation:270.0,TargetTranslation:{x:x-bufSize.w,y:y}}
+            {url:"pkg:/images/"+icon,TargetRect:{x:Int(-picSize.w/2), y:Int(-picSize.h/2), w:picSize.w, h:picSize.h},TargetRotation:0.0,TargetTranslation:{x:x,y:y-bufSize.h}}
+            {url:"pkg:/images/"+icon,TargetRect:{x:Int(-picSize.w/2), y:Int(-picSize.h/2), w:picSize.w, h:picSize.h},TargetRotation:90.0,TargetTranslation:{x:x+bufSize.w,y:y}}
+            {url:"pkg:/images/"+icon,TargetRect:{x:Int(-picSize.w/2), y:Int(-picSize.h/2), w:picSize.w, h:picSize.h},TargetRotation:180.0,TargetTranslation:{x:x,y:y+bufSize.h}}
               ]
     textArea = [ 'These can be hardcoded later so long as adjusted for HD->SD 
             'The "-picSize.w/2" centers the text boxes
@@ -224,3 +225,16 @@ sub userSelectUser(userNumber as integer)
     initTheme() 're-read rarflix theme
     GetGlobalAA().ViewController.ShowSecurityScreen = false  
 end sub
+
+'Sometimes we may need to check if multiUser is "still enabled"
+function checkMultiUserEnabled() as boolean
+    vc = GetViewController()
+    vc.RFisMultiUser = false
+    for i = 1 to 7 step 1   'Check for other users enabled
+        if RegRead("userActive", "preferences", "0",i) = "1" then 
+            vc.RFisMultiUser = true
+            exit for
+        end if
+    end for
+    return vc.RFisMultiUser
+end function

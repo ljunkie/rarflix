@@ -12,7 +12,8 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
 
     screen.SetUnderscan(2.5)
     screen.SetMaxUpscale(8.0)
-    screen.SetDisplayMode("photo-fit")
+    displayMode = RegRead("slideshow_displaymode", "preferences", "photo-fit")
+    screen.SetDisplayMode(displayMode)
     screen.SetPeriod(RegRead("slideshow_period", "preferences", "6").toInt())
     screen.SetTextOverlayHoldTime(RegRead("slideshow_overlay", "preferences", "2500").toInt())
 
@@ -48,6 +49,7 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
 
     ' Standard screen properties
     obj.Screen = screen
+    obj.doReload = RegRead("slideshow_reload", "preferences", "disabled")
     if type(context) = "roArray" then
         obj.Item = context[contextIndex]
         obj.Items = context ' ljunkie - set items for access later
@@ -82,16 +84,31 @@ Function photoPlayerHandleMessage(msg) As Boolean
     if type(msg) = "roSlideShowEvent" then
         handled = true
 
+        ' ljunkie - check if we have new context. Only set if slideshow_reload is enabled
+        if m.doReload = "enabled" and m.newContext <> invalid and m.newContext.count() > 0 then 
+            Debug("---- reloading slideshow with new context " + tostr(m.newContext.count()) + " items")
+            m.screen.SetContentList(m.newContext)
+            m.items = m.newContext
+            m.newContext = invalid
+        end if
+
         if msg.isScreenClosed() then
             ' Send an analytics event
             RegWrite("slideshow_overlay_force", "0", "preferences")
             amountPlayed = m.playbackTimer.GetElapsedSeconds()
             Debug("Sending analytics event, appear to have watched slideshow for " + tostr(amountPlayed) + " seconds")
             m.ViewController.Analytics.TrackEvent("Playback", firstOf(m.Item.ContentType, "photo"), m.Item.mediaContainerIdentifier, amountPlayed)
-
             m.ViewController.PopScreen(m)
         else if msg.isPlaybackPosition() then
             m.CurIndex = msg.GetIndex() ' update current index
+            ' ljunkie - check for new images after slideshow completeion ( if slideshow_reload is enabled )
+	    if m.doReload = "enabled" and type(m.items) = "roArray" and m.CurIndex = m.items.count()-1 then 
+                if m.item <> invalid and m.item.server <> invalid and m.item.sourceurl <> invalid then 
+                    obj = createPlexContainerForUrl(m.item.server, m.item.sourceurl, "")
+                    ' verify the new context <> current - save some load time
+                    if obj.count() > 0 and obj.count() <> m.items.count() then m.newContext = obj.getmetadata()
+                end if
+            end if
         else if msg.isRequestFailed() then
             Debug("preload failed: " + tostr(msg.GetIndex()))
         else if msg.isRequestInterrupted() then

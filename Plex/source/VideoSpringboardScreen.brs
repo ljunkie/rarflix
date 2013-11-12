@@ -29,6 +29,7 @@ Function createVideoSpringboardScreen(context, index, viewController) As Object
     obj.PlayButtonState = RegRead("directplay", "preferences", "0").toint()
 
     obj.ContinuousPlay = (RegRead("continuous_play", "preferences") = "1")
+    obj.ShufflePlay = (RegRead("shuffle_play", "preferences") = "1")
 
     return obj
 End Function
@@ -41,7 +42,13 @@ Sub videoSetupButtons()
    'ljunkie - don't show stars if invalid
     if m.metadata.starrating = invalid then m.Screen.SetStaticRatingEnabled(false)
 
-    m.AddButton(m.PlayButtonStates[m.PlayButtonState].label, "play")
+    playLabel = m.PlayButtonStates[m.PlayButtonState].label
+    if m.ShufflePlay then
+        playLabel = "Shuffle+Continuous " + playLabel
+    else if m.ContinuousPlay then
+         playLabel = "Continuous " + playLabel
+    end if
+    m.AddButton(playLabel, "play")
     Debug("Media = " + tostr(m.media))
     Debug("Can direct play = " + tostr(videoCanDirectPlay(m.media)))
 
@@ -234,6 +241,17 @@ Function videoHandleMessage(msg) As Boolean
             Debug("Button command: " + tostr(buttonCommand))
 
             if buttonCommand = "play" OR buttonCommand = "resume" then
+                ' ljunkie - continuous/shuffle play - load the content required now
+
+                ' special: get all context if we came from a FullGrid and ContinuousPlay/ShufflePlay are enabled
+                if m.ContinuousPlay or m.shuffleplay and m.FullContext = invalid and fromFullGrid(m) then GetContextFromFullGrid(m)
+
+                ' shuffle the context if shufflePlay enable - as of now the selected video will always play
+                if m.shuffleplay then 
+                    m.Shuffle(m.context)
+                    m.metadata = m.context[0]
+                end if
+                
                 directPlayOptions = m.PlayButtonStates[m.PlayButtonState]
                 Debug("Playing video with Direct Play options set to: " + directPlayOptions.label)
                 m.ViewController.CreateVideoPlayer(m.metadata, invalid, directPlayOptions.value)
@@ -256,7 +274,7 @@ Function videoHandleMessage(msg) As Boolean
                 m.Item.server.Delete(key)
                 m.Screen.Close()
             else if buttonCommand = "options" then
-                screen = createVideoOptionsScreen(m.metadata, m.ViewController, m.ContinuousPlay)
+                screen = createVideoOptionsScreen(m.metadata, m.ViewController, m.ContinuousPlay, m.ShufflePlay)
                 m.ViewController.InitializeOtherScreen(screen, ["Video Playback Options"])
                 screen.Show()
                 m.checkChangesOnActivate = true
@@ -339,6 +357,13 @@ Function videoHandleMessage(msg) As Boolean
                 dummyItem.key = m.metadata.parentKey + "/children"
                 dummyItem.server = m.metadata.server
                 m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
+                closeDialog = true
+            else if command = "gotoMusicNowPlaying" then
+                obj.focusedbutton = 0
+                dummyItem = CreateObject("roAssociativeArray")
+                dummyItem.ContentType = "audio"
+                dummyItem.Key = "nowplaying"
+                obj.ViewController.CreateScreenForItem(dummyItem, invalid, ["","Now Playing"])
                 closeDialog = true
             else
                 handled = false
@@ -436,7 +461,7 @@ Function videoDialogHandleButton(command, data) As Boolean
         obj.Refresh(true)
         closeDialog = true
     else if Command = "options" then
-        screen = createVideoOptionsScreen(obj.metadata, obj.ViewController, obj.ContinuousPlay)
+        screen = createVideoOptionsScreen(obj.metadata, obj.ViewController, obj.ContinuousPlay, obj.ShufflePlay)
         obj.ViewController.InitializeOtherScreen(screen, ["Video Playback Options"])
         screen.Show()
         obj.checkChangesOnActivate = true
@@ -491,8 +516,15 @@ Sub videoActivate(priorScreen)
         end if
 
         if priorScreen.Changes.DoesExist("continuous_play") then
+            priorScreen.Changes["playback"] = tostr(m.PlayButtonState)
             m.ContinuousPlay = (priorScreen.Changes["continuous_play"] = "1")
-            priorScreen.Changes.Delete("continuous_play")
+            'priorScreen.Changes.Delete("continuous_play")
+        end if
+
+        if priorScreen.Changes.DoesExist("shuffle_play") then
+            priorScreen.Changes["playback"] = tostr(m.PlayButtonState)
+            m.ShufflePlay = (priorScreen.Changes["shuffle_play"] = "1")
+            'priorScreen.Changes.Delete("shuffle_play")
         end if
 
         if priorScreen.Changes.DoesExist("media") then
@@ -512,7 +544,7 @@ Sub videoActivate(priorScreen)
     end if
 
     if m.refreshOnActivate then
-        if m.ContinuousPlay AND (priorScreen.isPlayed = true OR priorScreen.playbackError = true) then
+        if (m.ContinuousPlay or m.ShufflePlay) AND (priorScreen.isPlayed = true OR priorScreen.playbackError = true) then
             m.GotoNextItem()
             directPlayOptions = m.PlayButtonStates[m.PlayButtonState]
             Debug("Playing video with Direct Play options set to: " + directPlayOptions.label)

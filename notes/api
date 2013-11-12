@@ -37,3 +37,32 @@
 /library/sections/6/all?type=1&unwatched=1&sort=duration:desc&X-Plex-Container-Start=0&X-Plex-Container-Size=99
 
 
+
+
+
+## TV Show filter/sorts not available
+# http://forums.plexapp.com/index.php/topic/85114-feature-request-tv-shows-recently-added/#entry492599
+
+* unwatched recently released seasons
+ "all?type=3&unwatchedLeaves=1&sort=originallyAvailableAt:desc"
+  values.Unshift({ title: "[tv] Recently Aired Season (uw)", key: "all?type=3&unwatchedLeaves=1&sort=originallyAvailableAt:desc" })
+
+
+## seem broken - the order of the results does not seem to fit any standard
+
+* unwatched recently Added season
+ "all?type=3&unwatchedLeaves=1&sort=addedAt:desc"
+  values.Unshift({ title: "[tv] Recently Added Season (uw)", key: "all?type=3&unwatchedLeaves=1&sort=addedAt:desc" })
+
+* unwatched recently released show
+ "all?type=2&unwatchedLeaves=1&sort=originallyAvailableAt:desc"
+  values.Unshift({ title: "[tv] Recently Aired Show. (uw)", key: "all?type=2&unwatchedLeaves=1&sort=originallyAvailableAt:desc" })
+
+* unwatched recently Added show
+ "all?type=2&unwatchedLeaves=1&sort=addedAt:desc"
+  values.Unshift({ title: "[tv] Recently Added Show (uw)", key: "all?type=2&unwatchedLeaves=1&sort=addedAt:desc" })
+
+        { title: "[tv] Recently Aired Season (uw)", key: "all?type=3&unwatchedLeaves=1&sort=originallyAvailableAt:desc" }, 
+        { title: "[tv] Recently Added Season (uw)", key: "all?type=3&unwatchedLeaves=1&sort=addedAt:desc" }, 
+        { title: "[tv] Recently Aired Show. (uw)", key: "all?type=2&unwatchedLeaves=1&sort=originallyAvailableAt:desc" }, 
+        { title: "[tv] Recently Added Show (uw)", key: "all?type=2&unwatchedLeaves=1&sort=addedAt:desc" }, 

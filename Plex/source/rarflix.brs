@@ -24,6 +24,7 @@ end function
 Sub InitRARFlix() 
 
     GetGlobalAA()
+    'RegDelete("userprofile_icon_color", "preferences")
     'RegDelete("rf_unwatched_limit", "preferences")
     'RegDelete("rf_grid_style", "preferences")
     'RegDelete("rf_poster_grid_style", "preferences")
@@ -554,6 +555,10 @@ Function createHideRowsPrefsScreen(viewController) As Object
         { title: "Unwatched", key: "unwatched" },
         { title: "[movie] Recently Added (uw)", key: "all?type=1&unwatched=1&sort=addedAt:desc" }, 'movie/film for now
         { title: "[movie] Recently Released (uw)", key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc" }, 'movie/film for now
+        { title: "[movie] Recently Released (uw)", key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc" }, 
+        { title: "[tv] Recently Added Season", key: "recentlyAdded?stack=1" }, 
+        { title: "[tv] Recently Aired (uw)", key: "all?timelineState=1&type=4&unwatched=1&sort=originallyAvailableAt:desc" }, 
+        { title: "[tv] Recently Added (uw)", key: "all?timelineState=1&type=4&unwatched=1&sort=addedAt:desc" }, 
         { title: "Recently Viewed", key: "recentlyViewed" },
         { title: "[tv] Recently Viewed Shows", key: "recentlyViewedShows" },
         { title: "By Album", key: "albums" },
@@ -733,7 +738,7 @@ sub posterRefresh(force=false)
             if focusedIndex <> invalid and type(content) = "roArray" and type(content[focusedIndex]) = "roAssociativeArray" then 
                 if type(content[focusedIndex].refresh) = "roFunction" then  
                     content[focusedIndex].refresh()
-                    print content[focusedIndex]
+                    ' print content[focusedIndex]
                     ' special for tv shows
                     if content[focusedIndex].titleseason <> invalid then content[focusedIndex].shortdescriptionline1 = content[focusedIndex].titleseason
                     m.screen.SetContentList(content)
@@ -958,9 +963,12 @@ sub rfDefRemoteOptionButton(m)
 end sub
 
 
-sub rfDialogGridScreen(obj as Object) as Dynamic
+sub rfDialogGridScreen(obj as Object)
+    audioPlayer = GetViewController().AudioPlayer
+    if audioplayer.IsPlaying or audioplayer.IsPaused then return
 
-    if type(obj.item) = "roAssociativeArray" and tostr(obj.item.contenttype) = "section" or obj.selectedrow = 0 then ' row 0 is reserved for the fullGrid shortcuts
+    if type(obj.item) = "roAssociativeArray" and tostr(obj.item.contenttype) = "section" and NOT tostr(obj.item.nodename) = "Directory" or obj.selectedrow = 0 then ' row 0 is reserved for the fullGrid shortcuts
+        print obj.item
         rfDefRemoteOptionButton(obj) 
     ' for now the only option is grid view so we will verify we are in a roGridScreen. It we add more buttons, the type check below is for fullGridScreen
     else if obj.isfullgrid = invalid and obj.disablefullgrid = invalid and type(obj.screen) = "roGridScreen" then 
@@ -971,13 +979,13 @@ sub rfDialogGridScreen(obj as Object) as Dynamic
         dialog.SetButton("fullGridScreen", "Grid View: " + fromName) 'and type(obj.screen) = "roGridScreen" 
         dialog.Text = ""
         dialog.Title = "Options"
-    
+
+        if audioplayer.ContextScreenID <> invalid then dialog.setButton("gotoMusicNowPlaying","go to now playing [music]")
+
         dialog.SetButton("close", "Back")
         dialog.HandleButton = videoDialogHandleButton
         dialog.ParentScreen = obj
         dialog.Show()
-     else 
-         return invalid
      end if
 
 end sub
@@ -1099,7 +1107,8 @@ sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
         else
             rarflix_cdn = "http://d1gah69i16tuow.cloudfront.net"
         end if 
-        NewThumb = rarflix_cdn + "/images/key/" + URLEncode(thumb_text) ' this will be a autogenerate poster (transparent)
+        cachekey = "fcfab14d40e6685f5918a2d32332a98f"
+        NewThumb = rarflix_cdn + "/" + cachekey + "/key/" + URLEncode(thumb_text) ' this will be a autogenerate poster (transparent)
         NewThumb = NewThumb + "/size/" + tostr(hdWidth) + "x" + tostr(hdHeight) ' things seem to play nice this way with the my image processor
         NewThumb = NewThumb + "/fg/" + RegRead("rf_img_overlay", "preferences","999999")
         Debug("----   newraw:" + tostr(NewThumb))
@@ -1134,10 +1143,80 @@ function getSectionType(vc) as object
            if row <> invalid and index <> invalid then
                if type(screen.loader.contentarray[row].content) = "roArray" then 
                    metadata = screen.loader.contentarray[row].content[index]
+		   print metadata
                end if
            end if
         end if
     end if
     return metadata ' return empty assoc
 end function
+
+function getLogDate() as string
+        datetime = CreateObject( "roDateTime" )
+        datetime.ToLocalTime()
+        date = datetime.AsDateString("short-date")
+
+        hours = datetime.GetHours()
+	if hours < 10 then 
+            hours = "0" + tostr(hours)
+        else 
+            hours = tostr(hours)
+        end if
+
+        minutes = datetime.GetMinutes()
+        if minutes < 10 then 
+            minutes = "0" + tostr(minutes)
+        else 
+            minutes = tostr(minutes)
+        end if
+
+        seconds = datetime.GetSeconds()
+        if seconds < 10 then 
+            seconds = "0" + tostr(seconds)
+        else 
+            seconds = tostr(seconds)
+        end if
+
+	return date + " " + hours + ":" + minutes + ":" + seconds
+end function
+
+sub updateVideoHUD(m,curProgress)
+    Debug("---- timeline sent :: HUD updated " + tostr(curProgress))
+
+    endString = invalid
+    watchedString = invalid
+
+    date = CreateObject("roDateTime")
+    if m.VideoItem.Duration <> invalid and m.VideoItem.Duration > 0 then
+        duration = int(m.VideoItem.Duration/1000)
+        timeLeft = int(Duration - curProgress)
+        endString = "End Time: " + RRmktime(date.AsSeconds()+timeLeft) + "  (" + GetDurationString(timeLeft,0,1,1) + ")" + "  Watched: " + GetDurationString(int(curProgress),0,0,1)
+    else
+         ' include current time and watched time when video duration is unavailable (HLS & web videos)
+         watchedString = "Time: " + RRmktime(date.AsSeconds()) + "     Watched: " + GetDurationString(int(curProgress),0,0,1)
+    end if
+    ' set the HUD
+    content = CreateObject("roAssociativeArray")
+    content = m.VideoItem ' assign Video item and reset other keys
+    if m.VideoItem.OrigHUDreleaseDate = invalid then
+        m.VideoItem.OrigHUDreleaseDate = m.VideoItem.releasedate
+    end if
+
+    content.length = m.VideoItem.duration
+    content.title = m.VideoItem.title
+     ' overwrite release date now
+    content.releasedate = m.VideoItem.OrigHUDreleasedate
+
+    if tostr(m.VideoItem.rokustreambitrate) <> "invalid" and validint(m.VideoItem.rokustreambitrate) > 0 then
+        bitrate = RRbitrate(m.VideoItem.rokustreambitrate)
+        content.releasedate = content.releasedate + " " + bitrate
+    end if
+
+    content.releasedate = content.releasedate + chr(10) + chr(10)  'two line breaks - easier to read
+    if endString <> invalid then content.releasedate = content.releasedate +  endString
+    if watchedString <> invalid then content.releasedate = content.releasedate + watchedString
+ 
+   ' update HUD
+    m.Screen.SetContent(content)
+end sub
 
