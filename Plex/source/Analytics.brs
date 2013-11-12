@@ -10,54 +10,59 @@
 '* an actual documented API.
 '*
 
-Function createAnalyticsTracker()
-    obj = CreateObject("roAssociativeArray")
+Function AnalyticsTracker()
+    if m.AnalyticsTracker = invalid then
+        obj = CreateObject("roAssociativeArray")
 
-    ' We need a ScreenID property in order to use the view controller for requests.
-    obj.ScreenID = -2
+        ' We need a ScreenID property in order to use the view controller for requests.
+        obj.ScreenID = -2
 
-    obj.NumPlaybackEvents = 0
+        obj.NumPlaybackEvents = 0
 
-    obj.TrackEvent = analyticsTrackEvent
-    obj.TrackScreen = analyticsTrackScreen
-    obj.TrackTiming = analyticsTrackTiming
-    obj.SendTrackingRequest = analyticsSendTrackingRequest
-    obj.OnUrlEvent = analyticsOnUrlEvent
-    obj.OnStartup = analyticsOnStartup
-    obj.Cleanup = analyticsCleanup
+        obj.TrackEvent = analyticsTrackEvent
+        obj.TrackScreen = analyticsTrackScreen
+        obj.TrackTiming = analyticsTrackTiming
+        obj.SendTrackingRequest = analyticsSendTrackingRequest
+        obj.OnUrlEvent = analyticsOnUrlEvent
+        obj.OnStartup = analyticsOnStartup
+        obj.Cleanup = analyticsCleanup
 
-    ' Much of the data that we need to submit is session based and can be built
-    ' now. When we're tracking an indvidual hit we'll append the hit-specific
-    ' variables.
+        ' Much of the data that we need to submit is session based and can be built
+        ' now. When we're tracking an indvidual hit we'll append the hit-specific
+        ' variables.
 
-    encoder = CreateObject("roUrlTransfer")
+        encoder = CreateObject("roUrlTransfer")
 
-    uuid = RegRead("UUID", "analytics")
-    if uuid = invalid then
-        uuid = CreateUUID()
-        RegWrite("UUID", uuid, "analytics")
+        uuid = RegRead("UUID", "analytics")
+        if uuid = invalid then
+            uuid = CreateUUID()
+            RegWrite("UUID", uuid, "analytics")
+        end if
+
+        dimensionsObj = GetGlobal("DisplaySize")
+        dimensions = tostr(dimensionsObj.w) + "x" + tostr(dimensionsObj.h)
+
+        obj.BaseData = "v=1"
+        obj.BaseData = obj.BaseData + "&tid=UA-6111912-18"
+        obj.BaseData = obj.BaseData + "&cid=" + uuid
+        obj.BaseData = obj.BaseData + "&sr=" + dimensions
+        obj.BaseData = obj.BaseData + "&ul=en-us"
+        obj.BaseData = obj.BaseData + "&cd1=" + encoder.Escape(GetGlobal("appName") + " for Roku")
+        obj.BaseData = obj.BaseData + "&cd2=" + encoder.Escape(GetGlobal("rokuUniqueID"))
+        obj.BaseData = obj.BaseData + "&cd3=Roku"
+        obj.BaseData = obj.BaseData + "&cd4=" + encoder.Escape(GetGlobal("rokuVersionStr", "unknown"))
+        obj.BaseData = obj.BaseData + "&cd5=" + encoder.Escape(GetGlobal("rokuModel"))
+        obj.BaseData = obj.BaseData + "&cd6=" + encoder.Escape(GetGlobal("appVersionStr"))
+        obj.BaseData = obj.BaseData + "&an=" + encoder.Escape(GetGlobal("appName") + " for Roku")
+        obj.BaseData = obj.BaseData + "&av=" + encoder.Escape(GetGlobal("appVersionStr"))
+
+        obj.SessionTimer = createTimer()
+
+        ' Singleton
+        m.AnalyticsTracker = obj
     end if
 
-    dimensionsObj = GetGlobal("DisplaySize")
-    dimensions = tostr(dimensionsObj.w) + "x" + tostr(dimensionsObj.h)
-
-    obj.BaseData = "v=1"
-    obj.BaseData = obj.BaseData + "&tid=UA-6111912-18"
-    obj.BaseData = obj.BaseData + "&cid=" + uuid
-    obj.BaseData = obj.BaseData + "&sr=" + dimensions
-    obj.BaseData = obj.BaseData + "&ul=en-us"
-    obj.BaseData = obj.BaseData + "&cd1=" + encoder.Escape(GetGlobal("appName") + " for Roku")
-    obj.BaseData = obj.BaseData + "&cd2=" + encoder.Escape(GetGlobal("rokuUniqueID"))
-    obj.BaseData = obj.BaseData + "&cd3=Roku"
-    obj.BaseData = obj.BaseData + "&cd4=" + encoder.Escape(GetGlobal("rokuVersionStr", "unknown"))
-    obj.BaseData = obj.BaseData + "&cd5=" + encoder.Escape(GetGlobal("rokuModel"))
-    obj.BaseData = obj.BaseData + "&cd6=" + encoder.Escape(GetGlobal("appVersionStr"))
-    obj.BaseData = obj.BaseData + "&an=" + encoder.Escape(GetGlobal("appName") + " for Roku")
-    obj.BaseData = obj.BaseData + "&av=" + encoder.Escape(GetGlobal("appVersionStr"))
-
-    obj.SessionTimer = createTimer()
-
-    return obj
+    return m.AnalyticsTracker
 End Function
 
 Sub analyticsTrackEvent(category, action, label, value, customVars={})

@@ -114,7 +114,7 @@ Function createViewController() As Object
     InitWebServer(controller)
     controller.GdmAdvertiser = createGDMAdvertiser(controller)
     controller.AudioPlayer = createAudioPlayer(controller)
-    controller.Analytics = createAnalyticsTracker()
+    AnalyticsTracker()
 
     ' ljunkie Youtube Trailers (extended to TMDB)
     controller.youtube = vcInitYouTube()
@@ -1035,7 +1035,7 @@ End Sub
 Sub vcPushScreen(screen)
     m.AssignScreenID(screen)
     screenName = firstOf(screen.ScreenName, type(screen.Screen))
-    m.Analytics.TrackScreen(screenName)
+    AnalyticsTracker().TrackScreen(screenName)
     Debug("Pushing screen " + tostr(screen.ScreenID) + " onto view controller stack - " + screenName)
     m.screens.Push(screen)
 End Sub
@@ -1153,7 +1153,7 @@ Sub vcPopScreen(screen)
 
         screenName = firstOf(newScreen.ScreenName, type(newScreen.Screen))
         Debug("Top of stack is once again: " + screenName)
-        m.Analytics.TrackScreen(screenName)
+        AnalyticsTracker().TrackScreen(screenName)
         newScreen.Activate(screen)
         'RRbreadcrumbDate(newScreen) ' ljunkie - clock
     end if
@@ -1278,15 +1278,16 @@ Sub vcShow()
     end while
 
     ' Clean up some references on the way out
-    restoreAudio = m.AudioPlayer ' save for later (maybe)
-    m.AudioPlayer.Stop()         ' stop any audio for now. This might change with exit confirmation
+    AnalyticsTracker().Cleanup()
+    ' ljunkie - TODO - change to singleton
+    '  will be required for channel exit confirmation
+    'restoreAudio = m.AudioPlayer ' save for later (maybe)
+    'm.AudioPlayer.Stop()         ' stop any audio for now. This might change with exit confirmation
 
     m.Home = invalid
     m.myplex = invalid
     m.GdmAdvertiser = invalid
     m.WebServer = invalid
-    m.Analytics.Cleanup()
-    m.Analytics = invalid
     m.AudioPlayer = invalid
     m.Timers.Clear()
     m.PendingRequests.Clear()

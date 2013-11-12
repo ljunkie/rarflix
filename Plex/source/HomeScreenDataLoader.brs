@@ -133,8 +133,7 @@ Function createHomeScreenDataLoader(listener)
     loader.OnTimerExpired = homeOnTimerExpired
 
     ' As good a place as any, note that we've started
-    analytics = GetViewController().Analytics
-    analytics.OnStartup(myPlex.IsSignedIn)
+    AnalyticsTracker().OnStartup(myPlex.IsSignedIn)
 
     return loader
 End Function
