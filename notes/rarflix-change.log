@@ -17,8 +17,9 @@
     * Toggle to change "display mode" of photos in slideshow/single view ( how the image scales/crops/fits when displayed )
     * Toggle to change "display mode" of photos thumbnail image
     * Toggle to 'reload' slideshow after completion. I.E. check for new photos after every run
+    * slideshow didn't start at the right offset when selected from the photoSpringboard
 
- Fixing Lag - Grid Optimiziations
+Fixing Lag - Grid Optimiziations
     * speed improvements for paginated dataloader - trade offs included - when re-loading grid rows
        - basically - do not fully reload focused row and do not invalidate every out of focus row
        - load the next out of screen row ( first 8 items )
@@ -31,7 +32,7 @@
 
  Music
     * cleanup now playing buttons ( do not show when already in now playing )
-    * remove (*) key after music was started/stopped did not bring up option for full grid ( in music section )
+    * remote (*) key after music was started/stopped did not bring up option for full grid ( in music section )
 
  Fixes:
     * more speed fixes for paginated loader
