@@ -131,7 +131,6 @@ End Function
 
 Function vcCreateHomeScreen()
     screen = createHomeScreen(m)
-    screen.ScreenID = -1
     screen.ScreenName = "Home"
     m.InitializeOtherScreen(screen, invalid)
     screen.Show()
@@ -1042,21 +1041,6 @@ Sub vcPushScreen(screen)
 End Sub
 
 Sub vcPopScreen(screen)
-    if (screen = invalid) or (screen.ScreenID = -1) then
-        Debug("Popping home screen, cleaning up")
-        while m.screens.Count() > 1
-            m.PopScreen(m.screens.Peek())
-        end while
-        screentmp = m.screens.Pop()
-        if screen = invalid then screen = screentmp
-        'home screen has these set
-        if screen.Loader <> invalid then 
-            if screen.Loader.Listener <> invalid then screen.Loader.Listener = invalid
-            screen.Loader = invalid
-        end if
-        return
-    end if
-
     if screen.Cleanup <> invalid then screen.Cleanup()
 
     ' Try to clean up some potential circular references
@@ -1122,12 +1106,19 @@ Sub vcPopScreen(screen)
     ' Let the new top of the stack know that it's visible again. If we have
     ' no screens on the stack, but we didn't just close the home screen, then
     ' we haven't shown the home screen yet. Show it now.
-    if m.screens.Count() = 0 then
+    if m.Home <> invalid AND screen.screenID = m.Home.ScreenID then
+        Debug("Popping home screen")
+        while m.screens.Count() > 1
+            m.PopScreen(m.screens.Peek())
+        end while
+        m.screens.Pop()
+    else if m.screens.Count() = 0 then
         if m.ShowSecurityScreen = true then
             m.CreateUserSelectionScreen()
         else
             m.Home = m.CreateHomeScreen()
         end if
+
     else if callActivate then
         newScreen = m.screens.Peek()
         ' ljunkie - extra hack to cleanup the screen we are entering when invalid or if trying to re-enter a dialog

@@ -7,8 +7,7 @@ Function createHomeScreenDataLoader(listener)
     initDataLoader(loader)
     imageDir = GetGlobalAA().Lookup("rf_theme_dir")
 
-    ' TODO(schuyler): This feels like cheating...
-    loader.ScreenID = -1
+    loader.ScreenID = listener.ScreenID
     loader.Listener = listener
     listener.Loader = loader
 
