@@ -9,9 +9,10 @@ Sub Debug(msg as String, server=invalid)
 
     ' hopefully save some CPU cycles
     if m.logger.isDev or m.logger.Enabled then 
-        print msg ' console
+        logDate = getLogDate()
+        print logDate + " : " + msg
         if server <> invalid then server.Log(msg) 'remote logging
-        m.Logger.Log(msg) ' log file for download
+        m.Logger.Log(logDate + " : " + msg) ' log file for download
     end if
 End Sub
 

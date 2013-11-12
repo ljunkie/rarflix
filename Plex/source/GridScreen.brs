@@ -121,6 +121,18 @@ Function showGridScreen() As Integer
         end if
     end for
 
+    ' ljunkie - remove description ( grid popout on bottom left ) - initial release (2013-11-09)
+    ' This was asked for, however I know people are goint to complain. This will most likely need to be a bit more complicated.
+    ' As in, people are not going to want this to be GLOBAL, but set per section/full grid/or even some secific type. 
+    ' I.E. don't show on firstCharacter, but show of On Deck
+    if RegRead("rf_grid_description", "preferences", "enabled") <> "enabled" then 
+        print "------------------- Description POP OUT disabled -- sec_metadata -- more info if we need to enable certain section/types --------------------------"
+        sec_metadata = getSectionType(m)
+        print sec_metadata
+        m.screen.SetDescriptionVisible(false)
+        print "------------------------------------------------------- END ---------------------------------------------------------------------------------------"
+    end if
+
     m.Screen.Show()
     if facade <> invalid then facade.Close()
 
@@ -277,10 +289,9 @@ Function gridHandleMessage(msg) As Boolean
                 else 
                     ' ljunkie - this does't load the extra rows as I expected. It exists if a selected row ( or the first of the called extraRows are loaded )
                     ' this only really matters for the FULL grid, so we will still use the existing logic for non FULL grid
-                     'Debug("----- NOT a full grid, we can load normally: from row " + tostr(m.selectedRow) + " PLUS  " + tostr(extraRows) )
-                     m.Loader.LoadMoreContent(m.selectedRow, extraRows) 
-                     'Debug("----- NOT a full grid, we can load normally: from row " + tostr(m.selectedRow+1) + " PLUS  " + tostr(0) )
-                     m.Loader.LoadMoreContent(m.selectedRow+2, 0) ' we normally load the two focused rows, but lets load the next on out of screen ( testing )
+                    m.Loader.LoadMoreContent(m.selectedRow, extraRows) 
+                    m.Loader.LoadMoreContent(m.selectedRow+1, extraRows) 
+                    'm.Loader.LoadMoreContent(m.selectedRow+2, extraRows) 
                 end if
             end if
         else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then ' ljunkie - use * for more options on focused item

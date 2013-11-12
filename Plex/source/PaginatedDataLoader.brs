@@ -30,7 +30,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
                     rf_hide_key = "rf_hide_" + keys[index]
     
                     ' recentlyAdded and newest(recently Release/Aired) are special/hidden per type
-                    if keys[index] = "recentlyAdded" or keys[index] = "newest" and (itype = "movie" or itype = "show" or itype = "artist") then 
+                    if keys[index] = "recentlyAdded" or keys[index] = "newest" and (itype = "movie" or itype = "show" or itype = "artist" or itype = "show") then 
                         rf_hide_key = rf_hide_key + "_" + itype 'print "Checking " + keys[index] + " for specific type of hide: " + itype
                     end if
     
@@ -48,9 +48,44 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
     ' End Hide Rows
 
     ' ljunkie - CUSTOM new rows (movies only for now) -- allow new rows based on allows PLEX filters
+    subsec_extras = []
+
+    if type(item) = "roAssociativeArray" and item.contenttype = "section" and item.type = "show" then 
+        size_limit = RegRead("rf_rowfilter_limit", "preferences","200") 'gobal size limit Toggle for filter rows
+       
+        ' unwatched recently Added season
+        new_key = "recentlyAdded?stack=1"
+        if RegRead("rf_hide_"+new_key, "preferences", "show") = "show" then 
+            keys.Push(new_key)
+            new_name = "Recently Added Seasons"
+            loader.names.Push(new_name)
+            subsec_extras.Push({ key: new_key, name: new_name, key_copy: "all" })
+        end if
+
+        ' unwatched recently Aired EPISODES
+        new_key = "all?timelineState=1&type=4&unwatched=1&sort=originallyAvailableAt:desc"
+        if RegRead("rf_hide_"+new_key, "preferences", "show") = "show" then 
+            new_key = new_key + "&X-Plex-Container-Start=0&X-Plex-Container-Size=" + size_limit
+            keys.Push(new_key)
+            new_name = "Unwatched Recently Aired"
+            loader.names.Push(new_name)
+            subsec_extras.Push({ key: new_key, name: new_name, key_copy: "all" })
+        end if
+
+        ' unwatched recently Aired EPISODES
+        new_key = "all?timelineState=1&type=4&unwatched=1&sort=addedAt:desc"
+        if RegRead("rf_hide_"+new_key, "preferences", "show") = "show" then 
+            new_key = new_key + "&X-Plex-Container-Start=0&X-Plex-Container-Size=" + size_limit
+            keys.Push(new_key)
+            new_name = "Unwatched Recently Added"
+            loader.names.Push(new_name)
+            subsec_extras.Push({ key: new_key, name: new_name, key_copy: "all" })
+        end if
+
+    end if
+
     if type(item) = "roAssociativeArray" and item.contenttype = "section" and item.type = "movie" then 
         size_limit = RegRead("rf_rowfilter_limit", "preferences","200") 'gobal size limit Toggle for filter rows
-        subsec_extras = []
 
         ' unwatched recently released
         new_key = "all?type=1&unwatched=1&sort=originallyAvailableAt:desc"
@@ -72,26 +107,26 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
             subsec_extras.Push({ key: new_key, name: new_name, key_copy: "all" })
         end if
 
-        ' we will have to add the custom rows to the subsections too ( quick filter row (0) for the full grid )
-        if subsec_extras.count() > 0 and type(subsecItems) = "roArray" and subsecItems.count() > 0 then
-            for each sec in subsec_extras
-                for index = 0 to subsecItems.Count() - 1
-                    if subsecItems[index].key = sec.key_copy  then 
-                        template = subsecItems[index]
-                        exit for
-                    end if
-                end for
-                copy = ShallowCopy(template,2) ' really? brs doesn't have a clone/copy
-                ' now set the uniq characters
-                copy.key = sec.key
-                copy.name = sec.name
-                copy.umtitle = sec.name
-                copy.title = sec.name
-                rfCDNthumb(copy,sec.name,invalid)
-                subsecItems.Push(copy)
-            end for
-        end if
+    end if
 
+    ' we will have to add the custom rows to the subsections too ( quick filter row (0) for the full grid )
+    if subsec_extras.count() > 0 and type(subsecItems) = "roArray" and subsecItems.count() > 0 then
+        for each sec in subsec_extras
+            for index = 0 to subsecItems.Count() - 1
+                if subsecItems[index].key = sec.key_copy  then 
+                    template = subsecItems[index]
+                    exit for
+                end if
+            end for
+            copy = ShallowCopy(template,2) ' really? brs doesn't have a clone/copy
+            ' now set the uniq characters
+            copy.key = sec.key
+            copy.name = sec.name
+            copy.umtitle = sec.name
+            copy.title = sec.name
+            rfCDNthumb(copy,sec.name,invalid)
+            subsecItems.Push(copy)
+        end for
     end if
     ' END custom rows
 
@@ -187,7 +222,7 @@ End Function
 '* rows are already loaded.
 '*
 Function loaderLoadMoreContent(focusedIndex, extraRows=0)
-    Debug("----- loaderMoreContent called: " + tostr(m.names[focusedIndex]))
+    'Debug("----- loaderMoreContent called: " + tostr(m.names[focusedIndex]))
     status = invalid
     extraRowsAlreadyLoaded = true
     for i = 0 to extraRows
@@ -225,40 +260,84 @@ Function loaderLoadMoreContent(focusedIndex, extraRows=0)
     end if
 
     status.loadStatus = 1
-    Debug("----- focusIndex = " + tostr(focusedIndex))
-    Debug("----- starting request for row:" + tostr(loadingRow) + " start:" + tostr(startItem) + " stop:" + tostr(count))
+    Debug("----- starting request for row:" + tostr(m.names[loadingRow]) + " : " + tostr(loadingRow) + " start:" + tostr(startItem) + " stop:" + tostr(count))
     m.StartRequest(loadingRow, startItem, count)
 
     return extraRowsAlreadyLoaded
 End Function
 
 Sub loaderRefreshData()
-   ' ljunkie - normally this would re-load all the rows if they have already been loaded. This will cause serious 
-   ' slow downs if one loads many rows, stacks a new screen on grid, then returns to said grid. We should only 
-   ' reload the focused row, and invalidate the load status of the existing. The invalidated rows on the screen
-   ' will reload when selected again. 
-
-   ' just debugging.. to remove
-   'print "---- loader RefreshData called"
-   'print "---- current focus is row:" + tostr(m.listener.selectedRow) + ", item:" + tostr(m.listener.focusedIndex)
-   'print "---- we should only be RE-loading row:" + tostr(m.listener.selectedRow)
-
-   for row = 0 to m.contentArray.Count() - 1
-        status = m.contentArray[row]
-        doLoad = (m.listener.selectedRow = row) ' only reload the current row, invalidate the others (that are fully loaded)
-                                                ' we might want to reload m.listener.selectedRow+1 too.. we will see
-        'print "------------- checking row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus)
-        if status.key <> invalid AND status.loadStatus <> 0 then 
-            if doLoad then
-                Debug("----- loading row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
-                m.StartRequest(row, 0, m.pageSize)
-            else 
-                Debug("----- invalidate row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
-                status.loadStatus = 0 ' set to reload on focus
-                status.countloaded = 0 ' set to reload on focus
+   ' ljunkie - (2013-11-08) I think the MAIN thing we really care about when refreshing a grid row, is updating watched status in a row
+   ' We can look at removing "watched" items in an "unwatched" row, but that may be a kludge... 
+   ' This will give us some huge speed ups with a trade off of items in a row sometimes being a little stale. 
+    sel_row = m.listener.selectedRow
+    sel_item = m.listener.focusedindex
+    if type(m.listener.contentarray) = "roArray" and m.listener.contentarray.count() >= sel_row then
+        if type(m.listener.contentarray[sel_row]) = "roArray" and m.listener.contentarray[sel_row].count() >= sel_item then
+            item = m.listener.contentarray[sel_row][sel_item]
+            wkey = m.listener.contentarray[sel_row][sel_item].key
+            if item <> invalid and type(item.refresh) = "roFunction" then 
+                Debug("---- Refreshing metadata for item " + tostr(wkey))
+                item.Refresh()
+                ' iterate through loaded rows and update focus item
+                for row = 0 to m.contentArray.Count() - 1
+                    status = m.contentArray[row]
+                    if status.key <> invalid AND status.loadStatus <> 0 and type(status.content) = "roArray" then 
+                        ' some are more safe to reload - limit of < 100 items (recentlyAdded?stack=1,others?)
+                        isDynamic = CreateObject("roRegex", "ondeck|recentlyAdded\?stack=1", "i") ' unwatched? this can still cause major slow downs for some large libraries
+                        if isDynamic.isMatch(status.key) then 
+                            ' only reload the row if it's in view or 1 up/down
+                            doLoad = (m.listener.selectedRow = row or m.listener.selectedRow = row-1 or m.listener.selectedRow = row+1)
+                            if doLoad then
+                                Debug("----- full reload row: " + tostr(row) + " key:" + tostr(status.key) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
+                                m.StartRequest(row, 0, m.pagesize)
+                            else 
+                                Debug("----- invalidate row: " + tostr(row) + " key:" + tostr(status.key) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
+                                status.loadStatus = 0 ' set to reload on focus
+                                status.countloaded = 0 ' set to reload on focus
+                            end if
+                        else
+                            Debug("----- skipping full reload - row: " + tostr(row) + " key:" + tostr(status.key) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
+                            for index = 0 to status.content.count() - 1 
+                                if status.content[index] <> invalid and status.content[index].key = wkey then 
+                                    status.content[index] = item
+                                    Debug("---- Refreshing item " + tostr(wkey) + " in row " + tostr(row))
+                                    m.listener.Screen.SetContentListSubset(row, status.content, index , 1)
+                                    ' status_item.refresh() ' no need to refresh again - same item
+                                    ' m.listener.Screen.SetContentList(row, status.content)
+                                end if
+                            end for
+                        end if 
+                    end if
+                end for
             end if
         end if
-    next
+    end if
+    ' TO REMOVE - kept for testing/code notes
+    ' newer - but old way of doing updates. This would normally try and load the entire focus row all over again. It will also invalidate other rows
+    ' which in turn would reload the entire row when focused again. This has major penalties, however it did make sure we always had the most current
+    ' data in the rows. A trade off for speed has deprecated this.
+    '
+    ' ljunkie - normally this would re-load all the rows if they have already been loaded. This will cause serious 
+    ' slow downs if one loads many rows, stacks a new screen on grid, then returns to said grid. We should only 
+    ' reload the focused row, and invalidate the load status of the existing. The invalidated rows on the screen
+    ' will reload when selected again. 
+    '        doLoad = (m.listener.selectedRow = row) ' only reload the current row, invalidate the others (that are fully loaded)
+    '                                                ' we might want to reload m.listener.selectedRow+1 too.. we will see
+    '        'print "------------- checking row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus)
+    '
+    '            if doLoad then
+    '                Debug("----- skipping - loading row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
+    '                'Debug("----- loading row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
+    '                'm.StartRequest(row, 0, m.pageSize)
+    '            else 
+    '                Debug("----- skipping - invalidate row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
+    '                'Debug("----- invalidate row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
+    '                'status.loadStatus = 0 ' set to reload on focus
+    '                'status.countloaded = 0 ' set to reload on focus
+    '            end if
+    '        end if
+    '    next
 End Sub
 
 Sub loaderStartRequest(row, startItem, count)

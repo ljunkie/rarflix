@@ -104,9 +104,9 @@ Sub audioSetupButtons()
         m.metadata.origStarRating = 0
     endif
 
-    ' m.AddButton("more...", "more")
-    ' more button will be handled by * -- it's pretty much redundant now
-    m.AddButton("go to now playing", "showNowPlaying")
+    if tostr(m.screenname) <> "Now Playing" then 
+        m.AddButton("go to now playing", "showNowPlaying")
+    end if
 End Sub
 
 Sub audioGetMediaDetails(content)

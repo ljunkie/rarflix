@@ -299,15 +299,13 @@ Sub initTheme()
         theme.DialogBodyText="#BFBFBF"
     end if
     theme.ButtonNormalColor = "#333333" 'normalText
-    theme.ButtonHighlightColor = plexOrange
-    ' Default for ButtonHighlightColor seems OK...
+    'theme.ButtonHighlightColor = plexOrange ' Default for ButtonHighlightColor seems OK...
 
     theme.RegistrationCodeColor = plexOrange
     theme.RegistrationFocalColor = normalText
 
     theme.SearchHeaderText = titleText
     theme.ButtonMenuHighlightText = plexOrange 'titleText
-'    theme.ButtonMenuHighlightColor = "#FFA500" ' plex orange
     theme.ButtonMenuNormalText = titleText
 
     theme.PosterScreenLine1Text = titleText

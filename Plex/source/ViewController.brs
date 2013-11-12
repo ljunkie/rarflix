@@ -367,7 +367,8 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 7x3 )
         else if tostr(item.type) = "photo" then 
             Debug("---- override photo-fit/flat-16x9 for section with content of " + tostr(item.type))
-            screen = createGridScreenForItem(item, m, "flat-16X9","photo-fit")
+            displayMode = RegRead("photoicon_displaymode", "preferences", "photo-fit")
+            screen = createGridScreenForItem(item, m, "flat-16X9",displayMode)
 	    '            screen.screen.SetDisplayMode("Photo-Fit") ' this has to be called before
             if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 7x3 )
         else 
@@ -428,6 +429,10 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if item.key = "globalprefs" then
         screen = createPreferencesScreen(m)
         screenName = "Preferences Main"
+    else if item.key = "switchuser" then
+        screen = m.Screens.Peek()
+        if screen <> invalid then screen.screen.close()
+        return invalid
     else if item.key = "/channels/all" then
         ' Special case for all channels to force it into a special grid view
         screen = createGridScreen(m, "flat-square")
@@ -452,11 +457,13 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen = createPosterScreen(item, m)
     else
         ' Where do we capture channel directory?
+        ' ljunkie - this doesn't seem to alwyas be channel items
         Debug("---- Creating a default " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
-        if tostr(contentType) = "appClip" and tostr(viewGroup) = "Invalid" then 
-            Debug("---- forcing to Poster view")
+        'sec_metadata = getSectionType(m) <- this seems unneccesary ( viewgroup = invalid|InfoList|List - do not support paginated calls )
+        if tostr(contentType) = "appClip" and (tostr(viewGroup) = "Invalid" or tostr(viewGroup) = "InfoList" or tostr(viewGroup) = "List") then 
+            Debug("---- forcing to Poster view -> viewgroup matches: invalid|InfoList|List")
             screen = createPosterScreen(item, m)
-        else if poster_grid = "grid" and tostr(viewGroup) <> "season" then 
+        else if poster_grid = "grid" and tostr(viewGroup) <> "season" then ' if we have set Full Grid and type is not a season, force Full Grid view
             screen = createFULLGridScreen(item, m, "Invalid", displaymode_grid)
         else 
             Debug("---- forcing to Poster view")
@@ -725,14 +732,15 @@ Sub vcShowReleaseNotes()
     'end if
     paragraphs.Push("Donate @ rarflix.com")
     spacer = chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)
-    paragraphs.Push(spacer + "* user profiles (fast user switching)")
-    paragraphs.Push(spacer + "* user profile pin code [optional]")
-    paragraphs.Push(spacer + "* full grid")
-    paragraphs.Push(spacer + "* black theme")
-    paragraphs.Push(spacer + "* custom icons")
-    paragraphs.Push(spacer + "* now playing+notifications ( non shared accounts )")
-    paragraphs.Push(spacer + "* info button (asterisk) button on remote works is most areas - try it!")
-    paragraphs.Push("+ Movie Trailers, Rotten Tomatoes, HUD mods, Cast & Crew, and many more in Preferences/RARflix. Did I mention you can donate @ rarflix.com")
+    paragraphs.Push(spacer + "* 3 New TV Rows/Grid options ( re-order rows to use them )")
+    paragraphs.Push(spacer + spacer + "- Recently Added Seasons")
+    paragraphs.Push(spacer + spacer + "- Unwatched Recently Released")
+    paragraphs.Push(spacer + spacer + "- Unwatched Recenlty Added")
+    paragraphs.Push(spacer + "* Shuffle Play for Video (experimental)")
+    paragraphs.Push(spacer + "* Grid Optimizations ( fixing some lag issues )")
+    paragraphs.Push(spacer + "* Grid Description Pop Out can be disabled")
+    paragraphs.Push(spacer + "* other misc fixes")
+    paragraphs.Push("+ Profiles, Pin Codes, Full Grid, Movie Trailers, Rotten Tomatoes, HUD mods, Cast & Crew, and many more. Did I mention you can donate @ rarflix.com")
 
     screen = createParagraphScreen(header, paragraphs, m)
     screen.ScreenName = "Release Notes"

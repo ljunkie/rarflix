@@ -10,7 +10,7 @@ Sub rf_homeNowPlayingChange()
     for each server in GetOwnedPlexMediaServers()
         if re.IsMatch(server.serverurl) then 
             Debug("Skipping now playing session check on 'cloud sync' server: " + server.serverurl)
-        else if server.isavailable then ' only query server if available
+        else if server.isavailable and server.supportsmultiuser then ' only query server if available and supportsmultiuser (assuming nowPlaying works with multiuser enabled)
             m.CreateServerRequests(server, true, true, invalid, rowkey) ' only request the nowPlaying;/status/sessions
         end if
     next
@@ -83,7 +83,7 @@ sub setnowplayingGlobals()
         np = []
         this_maid = GetGlobalAA().Lookup("rokuUniqueID")
         for each server in GetOwnedPlexMediaServers()
-            if server.isavailable then ' only query server if available
+            if server.isavailable and server.supportsmultiuser then ' only query server if available and supportsmultiuser (assuming nowPlaying works with multiuser enabled)
                 container = createPlexContainerForUrl(server, server.serverurl, "/status/sessions")
                 keys = container.getkeys()
                 for index = 0 to keys.Count() - 1
