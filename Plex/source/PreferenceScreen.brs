@@ -864,6 +864,18 @@ Function createAdvancedPrefsScreen(viewController) As Object
         default: "0"
     }
 
+
+    ' Continuous+shuffle play
+    shuffle_play = [
+        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Very Experimental" },
+        { title: "Disabled", EnumValue: "0" }
+    ]
+    obj.Prefs["shuffle_play"] = {
+        values: shuffle_play,
+        heading: "Continuous Play + Shuffle",
+        default: "0"
+    }
+
     ' H.264 Level
     levels = [
         { title: "Level 4.0 (Supported)", EnumValue: "40" },
@@ -908,6 +920,7 @@ Function createAdvancedPrefsScreen(viewController) As Object
 
     obj.AddItem({title: "Transcoder"}, "transcoder_version", obj.GetEnumValue("transcoder_version"))
     obj.AddItem({title: "Continuous Play"}, "continuous_play", obj.GetEnumValue("continuous_play"))
+    obj.AddItem({title: "Shuffle Play"}, "shuffle_play", obj.GetEnumValue("shuffle_play"))
     obj.AddItem({title: "H.264"}, "level", obj.GetEnumValue("level"))
 
     if GetGlobal("legacy1080p") then
@@ -1298,7 +1311,7 @@ End Sub
 
 '*** Video Playback Options ***
 
-Function createVideoOptionsScreen(item, viewController, continuousPlay) As Object
+Function createVideoOptionsScreen(item, viewController, continuousPlay, shufflePlay) As Object
     obj = createBasePrefsScreen(viewController)
 
     obj.Item = item
@@ -1431,6 +1444,23 @@ Function createVideoOptionsScreen(item, viewController, continuousPlay) As Objec
         default: defaultContinuous
     }
 
+    ' Continuous play
+    if shufflePlay = true then
+        defaultShuffle = "1"
+    else
+        defaultShuffle = "0"
+    end if
+    Shuffle_play = [
+        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Very Experimental" },
+        { title: "Disabled", EnumValue: "0" }
+    ]
+    obj.Prefs["Shuffle_play"] = {
+        values: Shuffle_play,
+        label: "Shuffle Play"
+        heading: "Shuffle+Automatically start playing the next video",
+        default: defaultShuffle
+    }
+
     ' Media selection
     mediaOptions = []
     defaultMedia = ""
@@ -1469,7 +1499,7 @@ Function createVideoOptionsScreen(item, viewController, continuousPlay) As Objec
 
     obj.Screen.SetHeader("Video playback options")
 
-    possiblePrefs = ["playback", "quality", "audio", "subtitles", "media", "continuous_play"]
+    possiblePrefs = ["playback", "quality", "audio", "subtitles", "media", "continuous_play","shuffle_play"]
     for each key in possiblePrefs
         pref = obj.Prefs[key]
         if pref <> invalid then
