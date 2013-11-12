@@ -1028,11 +1028,11 @@ function getFullGridCurIndex(vc,index,default = 2) as object
 
     ' find the full grid screen - backtrack
     if type(screens) = "roArray" and screens.count() > 1 then 
-        for index = screens.count()-1 to 1 step -1
-            print "checking if screen #" + tostr(index) + "is the fullGrid"
-            if type(screens[index].screen) = "roGridScreen" and screens[index].isfullgrid <> invalid and screens[index].isfullgrid then
-                print "screen #" + tostr(index) + "is the fullGrid"
-                screen = screens[index]
+        for sindex = screens.count()-1 to 1 step -1
+            print "checking if screen #" + tostr(sindex) + "is the fullGrid"
+            if type(screens[sindex].screen) = "roGridScreen" and screens[sindex].isfullgrid <> invalid and screens[sindex].isfullgrid then
+                print "screen #" + tostr(sindex) + "is the fullGrid"
+                screen = screens[sindex]
                 exit for 
             end if
         next
