@@ -170,8 +170,13 @@ Sub prefsOnUserInput(value, screen)
                 end for
             end if
             ' end dynmamic set
+
             Debug("Set " + label + " to " + screen.SelectedValue)
             RegWrite(m.currentRegKey, screen.SelectedValue, "preferences", m.currentUser)  'm.currentUser may be "invalid" and RegWrite will use the global currentUser
+
+            ' reset timer or remove based on settings
+            if m.currentRegKey = "locktime" then m.ViewController.CreateIdleTimer()
+
             m.Changes.AddReplace(m.currentRegKey, screen.SelectedValue)
             m.AppendValue(m.currentIndex, screen.SelectedLabel)
         end if
