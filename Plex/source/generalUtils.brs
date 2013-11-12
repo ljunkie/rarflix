@@ -191,13 +191,13 @@ End Function
 '******************************************************
 Function isint(obj as dynamic) As Boolean
     if obj = invalid return false
-    if type(obj, 3) = "" return false   'this can happen with uninitialized variables
+    if type(obj) = "" return false   'this can happen with uninitialized variables
     if GetInterface(obj, "ifInt") = invalid return false
     return true
 End Function
 
 Function validint(obj As Dynamic) As Integer
-    if type(obj, 3) = "" return false   'this can happen with uninitialized variables
+    if type(obj) = "" return false   'this can happen with uninitialized variables
     if obj <> invalid and GetInterface(obj, "ifInt") <> invalid then
         return obj
     else
@@ -224,7 +224,7 @@ End Function
 '******************************************************
 Function isstr(obj as dynamic) As Boolean
     if obj = invalid return false
-    if type(obj, 3) = "" return false   'this can happen with uninitialized variables
+    if type(obj) = "" return false   'this can happen with uninitialized variables
     if GetInterface(obj, "ifString") = invalid return false
     return true
 End Function
@@ -416,7 +416,7 @@ End Sub
 '******************************************************
 Function AnyToString(any As Dynamic) As dynamic
     if any = invalid return "invalid"
-    if type(any, 3) = "" return "empty"   'this can happen with uninitialized variables
+    if type(any) = "" return "empty"   'this can happen with uninitialized variables
     if isstr(any) return any
     if isint(any) return numtostr(any)
     if GetInterface(any, "ifBoolean") <> invalid

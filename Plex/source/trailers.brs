@@ -206,6 +206,7 @@ Function DisplayVideo(content As Object)
     while true
         msg = wait(0, video.GetMessagePort())
         if type(msg) = "roVideoScreenEvent"
+            m.ViewController.ResetIdleTimer("DisplayVideo")
             if (Instr(1, msg.getMessage(), "interrupted") > 0) then
                 ret = 1
             else if msg.isScreenClosed() then 
@@ -400,6 +401,7 @@ Sub youtube_display_video_springboard(theVideo As Object, breadcrumb As String, 
     while true
         msg = wait(0, screen.GetMessagePort())
         if type(msg) = "roSpringboardScreenEvent" then
+            m.ViewController.ResetIdleTimer("youtube_display_video_springboard")
             if msg.isScreenClosed()
                 'print "Closing springboard screen"
                 exit while
@@ -791,8 +793,8 @@ Sub ShowDialog1Button(title As dynamic, text As dynamic, but1 As String, quickRe
 
     while true
         dlgMsg = wait(0, dialog.GetMessagePort())
-
         if type(dlgMsg) = "roMessageDialogEvent"
+            'todo: m.ViewController.ResetIdleTimer()
             if dlgMsg.isScreenClosed()
                 'print "Screen closed"
                 return
@@ -823,8 +825,8 @@ Function ShowDialog2Buttons(title As dynamic, text As dynamic, but1 As String, b
 
     while true
         dlgMsg = wait(0, dialog.GetMessagePort())
-
         if type(dlgMsg) = "roMessageDialogEvent"
+            'todo: m.ViewController.ResetIdleTimer()
             if dlgMsg.isScreenClosed()
                 'print "Screen closed"
                 dialog = invalid
@@ -883,6 +885,7 @@ Function uitkDoPosterMenu(posterdata, screen, onselect_callback=invalid, onplay_
         msg = wait(0, screen.GetMessagePort())
                
                 if type(msg) = "roPosterScreenEvent" then
+                        'todo: m.ViewController.ResetIdleTimer()
                         'print "event.GetType()=";msg.GetType(); " event.GetMessage()= "; msg.GetMessage()
                         if msg.isListItemSelected() then
                                 if onselect_callback<>invalid then
@@ -972,6 +975,7 @@ Function uitkDoListMenu(posterdata, screen, onselect_callback=invalid) As Intege
         msg = wait(0, screen.GetMessagePort())
         
         if type(msg) = "roListScreenEvent" then
+            'todo: m.ViewController.ResetIdleTimer()
             'print "event.GetType()=";msg.GetType(); " Event.GetMessage()= "; msg.GetMessage()
             if msg.isListItemSelected() then
                 if onselect_callback<>invalid then
@@ -1039,6 +1043,7 @@ Function uitkDoCategoryMenu(categoryList, screen, content_callback, onclick_call
     while true
         msg = wait(0, screen.GetMessagePort())
         if type(msg) = "roPosterScreenEvent" then
+            'todo:m.ViewController.ResetIdleTimer()
             if msg.isListFocused() then
                 category_idx=msg.GetIndex()
                 contentdata1=content_callback[0]
@@ -1071,6 +1076,7 @@ Sub uitkDoMessage(message, screen)
     screen.showMessage(message)
     while true
         msg = wait(0, screen.GetMessagePort())
+        if msg <> invalid then screen.ViewController.ResetIdleTimer()
         if msg.isScreenClosed() then
             return
         end if

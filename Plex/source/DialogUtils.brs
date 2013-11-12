@@ -121,7 +121,9 @@ Sub dialogShow(blocking=false)
     if blocking then
         while m.ScreenID = m.ViewController.Screens.Peek().ScreenID
             msg = wait(0, m.Port)
-            m.HandleMessage(msg)
+            if m.HandleMessage(msg) = true then
+                 if msg <> invalid then m.ViewController.ResetIdleTimer()
+            endif 
         end while
     end if
 End Sub
