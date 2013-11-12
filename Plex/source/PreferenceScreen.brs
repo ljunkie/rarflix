@@ -272,7 +272,6 @@ Function createPreferencesScreen(viewController) As Object
         default: "random"
     }
 
-    obj.myplex = GetGlobalAA().Lookup("myplex")
     obj.checkMyPlexOnActivate = false
 
     return obj
@@ -363,8 +362,8 @@ Function prefsMainHandleMessage(msg) As Boolean
                 screen.Changes = m.Changes
                 screen.Show()
             else if command = "myplex" then
-                if m.myplex.IsSignedIn then
-                    m.myplex.Disconnect()
+                if MyPlexManager().IsSignedIn then
+                    MyPlexManager().Disconnect()
                     m.Changes["myplex"] = "disconnected"
                     m.SetTitle(msg.GetIndex(), getCurrentMyPlexLabel())
                 else
@@ -434,7 +433,7 @@ End Function
 Sub prefsMainActivate(priorScreen)
     if m.checkMyPlexOnActivate then
         m.checkMyPlexOnActivate = false
-        if m.myplex.IsSignedIn then
+        if MyPlexManager.IsSignedIn then
             m.Changes["myplex"] = "connected"
         end if
         m.SetTitle(m.myPlexIndex, getCurrentMyPlexLabel())
@@ -1250,8 +1249,7 @@ Sub debugRefreshItems()
     if m.Logger.Enabled then
         m.AddItem({title: "Disable Logging"}, "disable")
 
-        myPlex = GetGlobalAA().Lookup("myplex")
-        if myPlex <> invalid AND myPlex.IsSignedIn then
+        if MyPlexManager().IsSignedIn then
             if m.Logger.RemoteLoggingTimer <> invalid then
                 remainingMinutes = int(0.5 + (m.Logger.RemoteLoggingSeconds - m.Logger.RemoteLoggingTimer.TotalSeconds()) / 60)
                 if remainingMinutes > 1 then
@@ -2108,7 +2106,7 @@ End Function
 '*** Helper functions ***
 
 Function getCurrentMyPlexLabel() As String
-    myplex = GetMyPlexManager()
+    myplex = MyPlexManager()
     if myplex.IsSignedIn then
         return "Disconnect myPlex account (" + myplex.EmailAddress + ")"
     else

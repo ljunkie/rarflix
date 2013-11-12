@@ -108,13 +108,13 @@ Function createViewController() As Object
 
     ' Stuff the controller into the global object
     m.ViewController = controller
-    controller.myplex = createMyPlexManager(controller)
 
     ' Initialize things that run in the background and are okay to start before a user is selected. 
     InitWebServer(controller)
     controller.GdmAdvertiser = createGDMAdvertiser(controller)
     controller.AudioPlayer = createAudioPlayer(controller)
     AnalyticsTracker()
+    MyPlexManager()
 
     ' ljunkie Youtube Trailers (extended to TMDB)
     controller.youtube = vcInitYouTube()
@@ -123,10 +123,6 @@ End Function
 
 Function GetViewController()
     return m.ViewController
-End Function
-
-Function GetMyPlexManager()
-    return GetViewController().myplex
 End Function
 
 Function vcCreateHomeScreen()
@@ -1285,7 +1281,6 @@ Sub vcShow()
     'm.AudioPlayer.Stop()         ' stop any audio for now. This might change with exit confirmation
 
     m.Home = invalid
-    m.myplex = invalid
     m.GdmAdvertiser = invalid
     m.WebServer = invalid
     m.AudioPlayer = invalid

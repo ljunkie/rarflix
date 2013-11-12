@@ -2,59 +2,59 @@
 '* Utilities related to signing in to myPlex and making myPlex requests
 '*
 
-Function createMyPlexManager(viewController) As Object
-    obj = CreateObject("roAssociativeArray")
+Function MyPlexManager() As Object
+    if m.MyPlexManager = invalid then
+        obj = CreateObject("roAssociativeArray")
 
-    obj.CreateRequest = mpCreateRequest
-    obj.ValidateToken = mpValidateToken
-    obj.Disconnect = mpDisconnect
+        obj.CreateRequest = mpCreateRequest
+        obj.ValidateToken = mpValidateToken
+        obj.Disconnect = mpDisconnect
 
-    obj.ExtraHeaders = {}
-    obj.ExtraHeaders["X-Plex-Provides"] = "player"
+        obj.ExtraHeaders = {}
+        obj.ExtraHeaders["X-Plex-Provides"] = "player"
 
-    obj.ViewController = viewController
+        ' Masquerade as a basic Plex Media Server
+        obj.serverUrl = "https://my.plexapp.com"
+        obj.name = "myPlex"
+        obj.owned = false
+        obj.online = true
+        obj.StopVideo = mpStopVideo
+        obj.StartTranscode = mpStartTranscode
+        obj.PingTranscode = mpPingTranscode
+        obj.TranscodedImage = mpTranscodedImage
+        obj.TranscodingVideoUrl = mpTranscodingVideoUrl
+        obj.ConstructVideoItem = pmsConstructVideoItem
+        obj.GetQueryResponse = mpGetQueryResponse
+        obj.AddDirectPlayInfo = pmsAddDirectPlayInfo
+        obj.IsRequestToServer = pmsIsRequestToServer
+        obj.Log = mpLog
+        obj.AllowsMediaDeletion = false
+        obj.SupportsMultiuser = false
+        obj.SupportsVideoTranscoding = true
 
-    ' Masquerade as a basic Plex Media Server
-    obj.serverUrl = "https://my.plexapp.com"
-    obj.name = "myPlex"
-    obj.owned = false
-    obj.online = true
-    obj.StopVideo = mpStopVideo
-    obj.StartTranscode = mpStartTranscode
-    obj.PingTranscode = mpPingTranscode
-    obj.TranscodedImage = mpTranscodedImage
-    obj.TranscodingVideoUrl = mpTranscodingVideoUrl
-    obj.ConstructVideoItem = pmsConstructVideoItem
-    obj.GetQueryResponse = mpGetQueryResponse
-    obj.AddDirectPlayInfo = pmsAddDirectPlayInfo
-    obj.IsRequestToServer = pmsIsRequestToServer
-    obj.Log = mpLog
-    obj.AllowsMediaDeletion = false
-    obj.SupportsMultiuser = false
-    obj.SupportsVideoTranscoding = true
+        ' Commands, mostly use the PMS functions
+        obj.Timeline = mpTimeline
+        obj.SetProgress = progress
+        obj.Scrobble = scrobble
+        obj.Unscrobble = unscrobble
+        obj.Rate = rate
+        obj.Delete = mpDelete
+        obj.ExecuteCommand = mpExecuteCommand
+        obj.ExecutePostCommand = mpExecutePostCommand
 
-    ' Commands, mostly use the PMS functions
-    obj.Timeline = mpTimeline
-    obj.SetProgress = progress
-    obj.Scrobble = scrobble
-    obj.Unscrobble = unscrobble
-    obj.Rate = rate
-    obj.Delete = mpDelete
-    obj.ExecuteCommand = mpExecuteCommand
-    obj.ExecutePostCommand = mpExecutePostCommand
+        obj.IsSignedIn = false
+        obj.Username = invalid
+        obj.EmailAddress = invalid
+        obj.CheckAuthentication = mpCheckAuthentication
 
-    obj.IsSignedIn = false
-    obj.Username = invalid
-    obj.EmailAddress = invalid
-    obj.CheckAuthentication = mpCheckAuthentication
+        obj.TranscodeServer = invalid
+        obj.CheckTranscodeServer = mpCheckTranscodeServer
 
-    obj.TranscodeServer = invalid
-    obj.CheckTranscodeServer = mpCheckTranscodeServer
+        ' Singleton
+        m.MyPlexManager = obj
+    end if
 
-    ' Stash a copy in the global AA
-    GetGlobalAA().AddReplace("myplex", obj)
-
-    return obj
+    return m.MyPlexManager
 End Function
 
 Sub mpCheckAuthentication()

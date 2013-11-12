@@ -30,7 +30,6 @@ Function createMyPlexPinScreen(viewController As Object) As Object
     obj.OnTimerExpired = pinOnTimerExpired
     obj.ScreenName = "myPlex PIN"
 
-    obj.myPlex = GetMyPlexManager()
     obj.pollUrl = invalid
 
     return obj
@@ -40,7 +39,7 @@ Sub pinShow()
     m.Screen.Show()
 
     ' Kick off a request for the real pin
-    httpRequest = m.myPlex.CreateRequest("", "/pins.xml")
+    httpRequest = MyPlexManager().CreateRequest("", "/pins.xml")
     context = CreateObject("roAssociativeArray")
     context.requestType = "code"
 
@@ -65,7 +64,7 @@ Function pinHandleMessage(msg) As Boolean
             if msg.GetIndex() = 0 then
                 ' Get new code
                 m.Screen.SetRegistrationCode("retrieving code...")
-                httpRequest = m.myPlex.CreateRequest("", "/pins.xml")
+                httpRequest = MyPlexManager().CreateRequest("", "/pins.xml")
                 context = CreateObject("roAssociativeArray")
                 context.requestType = "code"
 
@@ -102,7 +101,7 @@ Sub pinOnUrlEvent(msg, requestContext)
             token = xml.auth_token.GetText()
             if len(token) > 0 then
                 Debug("Got a myPlex token")
-                if m.myPlex.ValidateToken(token) then
+                if MyPlexManager().ValidateToken(token) then
                     RegWrite("AuthToken", token, "myplex")
                 end if
                 m.Screen.Close()
@@ -120,7 +119,7 @@ Sub pinOnTimerExpired(timer)
     if m.pollUrl <> invalid then
         ' Kick off a polling request
         Debug("Polling for myPlex PIN update at " + m.pollUrl)
-        httpRequest = m.myPlex.CreateRequest("", m.pollUrl)
+        httpRequest = MyPlexManager().CreateRequest("", m.pollUrl)
         context = CreateObject("roAssociativeArray")
         context.requestType = "poll"
 

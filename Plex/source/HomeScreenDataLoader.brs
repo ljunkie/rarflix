@@ -54,7 +54,7 @@ Function createHomeScreenDataLoader(listener)
     next
 
     ' Kick off myPlex requests if we're signed in.
-    myPlex = GetMyPlexManager()
+    myPlex = MyPlexManager()
     myPlex.CheckAuthentication()
     if myPlex.IsSignedIn then
         loader.CreateMyPlexRequests(false)
@@ -286,7 +286,7 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
 End Sub
 
 Sub homeCreateMyPlexRequests(startRequests As Boolean)
-    myPlex = GetMyPlexManager()
+    myPlex = MyPlexManager()
 
     if NOT myPlex.IsSignedIn then return
 
@@ -304,7 +304,7 @@ Sub homeCreateMyPlexRequests(startRequests As Boolean)
 End Sub
 
 Sub homeCreateAllPlaylistRequests(startRequests As Boolean)
-    if NOT GetMyPlexManager().IsSignedIn then return
+    if NOT MyPlexManager().IsSignedIn then return
 
     m.CreatePlaylistRequests("queue", "All Queued Items", "All queued items, including already watched items", m.RowIndexes["queue"], startRequests)
     m.CreatePlaylistRequests("recommendations", "All Recommended Items", "All recommended items, including already watched items", m.RowIndexes["recommendations"], startRequests)
@@ -320,7 +320,7 @@ Sub homeCreatePlaylistRequests(name, title, description, row, startRequests)
 
     ' Unwatched recommended items
     currentItems = CreateObject("roAssociativeArray")
-    currentItems.server = GetMyPlexManager()
+    currentItems.server = MyPlexManager()
     currentItems.requestType = "playlist"
     currentItems.key = "/pms/playlists/" + name + "/" + view
 
@@ -397,7 +397,7 @@ Sub homeRemoveFromRowIf(row, predicate)
 End Sub
 
 Function homeLoadMoreContent(focusedIndex, extraRows=0)
-    myPlex = GetMyPlexManager()
+    myPlex = MyPlexManager()
     if m.FirstLoad then
         m.FirstLoad = false
         if NOT myPlex.IsSignedIn then
@@ -786,7 +786,7 @@ Sub homeOnUrlEvent(msg, requestContext)
             server.IsSecondary = (xml@serverClass = "secondary")
             server.SupportsMultiuser = (xml@multiuser = "1")
             if server.AccessToken = invalid AND ServerVersionCompare(xml@version, [0, 9, 7, 15]) then
-                server.AccessToken = GetMyPlexManager().AuthToken
+                server.AccessToken = MyPlexManager().AuthToken
             end if
 
             PutPlexMediaServer(server)
@@ -862,7 +862,7 @@ Sub homeOnUrlEvent(msg, requestContext)
                     newServer.ServerUrl = addr
                 end if
 
-                newServer.AccessToken = firstOf(serverElem@accessToken, GetMyPlexManager().AuthToken)
+                newServer.AccessToken = firstOf(serverElem@accessToken, MyPlexManager().AuthToken)
                 newServer.synced = (serverElem@synced = "1")
 
                 if serverElem@owned = "1" then
@@ -1011,7 +1011,7 @@ End Sub
 Sub homeOnMyPlexChange()
     Debug("myPlex status changed")
 
-    if GetMyPlexManager().IsSignedIn then
+    if MyPlexManager().IsSignedIn then
         m.CreateMyPlexRequests(true)
     else
         m.RemoveFromRowIf(m.RowIndexes["sections"], IsMyPlexServer)
@@ -1046,7 +1046,7 @@ Sub homeOnTimerExpired(timer)
 
         m.GdmTimer = invalid
 
-        if RegRead("serverList", "servers") = invalid AND NOT GetMyPlexManager().IsSignedIn then
+        if RegRead("serverList", "servers") = invalid AND NOT MyPlexManager().IsSignedIn then
             Debug("No servers and no myPlex, appears to be a first run")
             ShowHelpScreen()
             status = m.contentArray[m.RowIndexes["misc"]]

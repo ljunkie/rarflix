@@ -15,7 +15,7 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.synced = false
     pms.online = false
     pms.local = false
-    pms.AccessToken = GetMyPlexManager().AuthToken
+    pms.AccessToken = MyPlexManager().AuthToken
     pms.StopVideo = stopTranscode
     pms.StartTranscode = StartTranscodingSession
     pms.PingTranscode = pingTranscode
