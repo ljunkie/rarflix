@@ -79,12 +79,16 @@ Function createViewController() As Object
     controller.SystemLog.EnableType("bandwidth.minute")
     
     controller.CreateUserSelectionScreen = vcCreateUserSelectionScreen
+    controller.ResetIdleTimer = vcResetIdleTimer
+    controller.CreateLockScreen = vcCreateLockScreen
+    controller.CreateIdleTimer = vcCreateIdleTimer
 
     ' Figure if we need to show the securityscreen
     'First check if there are multiple users
-    controller.ShowSecurityScreen = false
-    controller.SkipUserSelection = false
-    controller.RFisMultiUser = false
+    controller.RFisMultiUser = false        'true if multi-user is enabled
+    controller.ShowSecurityScreen = false   'true to show user selection screen
+    controller.SkipUserSelection = false    'true to skip user selection screen and show PIN screen (use case: single user with PIN)
+    controller.IsLocked = false             'true when lock screen is up todo:Add method to lock without logging out
     for i = 1 to 7 step 1   'Check for other users enabled
         if RegRead("userActive", "preferences", "0",i) = "1" then 
             controller.ShowSecurityScreen = true
@@ -99,6 +103,7 @@ Function createViewController() As Object
             controller.ShowSecurityScreen = true
         end if
     end if
+    controller.timerIdleTime = invalid  'timer used for detecting idle time
 
     ' Stuff the controller into the global object
     m.ViewController = controller
@@ -128,16 +133,67 @@ Function vcCreateHomeScreen()
     m.InitializeOtherScreen(screen, invalid)
     screen.Show()
     RRbreadcrumbDate(screen) 'ljunkie - homescreen data/time
+    'start timer for detecting idle time when the home screen is created.
+    m.CreateIdleTimer()
     return screen
 End Function
 
 
 Function vcCreateUserSelectionScreen() 
     screen = createUserSelectionScreen(m)
+    screen.ScreenName = "User Profile Selection"
     m.InitializeOtherScreen(screen, invalid)
     screen.Show()
     return screen
 End Function
+
+'Assumes that multi-user is enabled
+'Lock screen stays on top of everything
+Function vcCreateLockScreen() 
+    TraceFunction("vcCreateLockScreen")
+    currentScreen = m.screens.peek()    'current screen to stack on top of
+    'this PIN screen will stay up until either the PIN is entered or Back is pressed
+    pinScreen = VerifySecurityPin(m, RegRead("securityPincode","preferences",invalid,GetGlobalAA().userNum), true, 0)
+    pinScreen.ScreenName = "Locked"
+    if GetGlobalAA().userNum = 0 then
+        fn = firstof(RegRead("friendlyName", "preferences", invalid, GetGlobalAA().userNum),"Default User")
+    else
+        fn = firstof(RegRead("friendlyName", "preferences", invalid, GetGlobalAA().userNum),"User Profile " + tostr(GetGlobalAA().userNum))
+    end if 
+    m.InitializeOtherScreen(pinScreen, [fn])
+    currentScreen.OldActivate = invalid 'store previous Activate for whatever the current screen is 
+    if currentScreen.Activate <> invalid then currentScreen.OldActivate = currentScreen.Activate          
+    currentScreen.Activate = lockScreenActivate     'new Activate routine
+    m.IsLocked = true   'global when we're locked
+    pinScreen.txtBottom = "RARFlix is locked due to inactivity.  Enter PIN Code using direction arrows on your remote control.  Press OK to retry PIN or Back to pick another User."   
+    pinScreen.Show()
+    return pinScreen
+End Function
+
+'Called when lock screen has shutdown.  Either the PIN is entered or Back is pressed
+sub lockScreenActivate(priorScreen)
+    TraceFunction("lockScreenActivate")  
+
+    if (priorScreen.pinOK = invalid) or (priorScreen.pinOK <> true) then    
+        'No code was entered.  We need to logout and return to the main user selection screen
+        'restore old Activate before calling this
+        m.Activate = m.OldActivate 
+        m.ViewController.PopScreen(invalid)    'invalid will close all screens
+    else
+        'pin is OK,
+        Debug("Valid PIN entered.  Unlocked.")
+        m.ViewController.IsLocked = false   'notify that we're unlocked
+        'restart idle timer     
+        m.ViewController.CreateIdleTimer()
+        'Do any prior screen activations that need to happen.
+        m.Activate = m.OldActivate 
+        m.OldActivate = invalid
+        if m.Activate <> invalid then
+            Debug("Calling old Activate")
+            m.Activate(priorScreen)
+        end if
+    endif
+End sub
 
 
 Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As Dynamic
@@ -722,16 +778,18 @@ Sub vcPushScreen(screen)
 End Sub
 
 Sub vcPopScreen(screen)
-    if screen.ScreenID = -1 then
+    if (screen = invalid) or (screen.ScreenID = -1) then
         Debug("Popping home screen, cleaning up")
-
         while m.screens.Count() > 1
             m.PopScreen(m.screens.Peek())
         end while
-        m.screens.Pop()
-
-        screen.Loader.Listener = invalid
-        screen.Loader = invalid
+        screentmp = m.screens.Pop()
+        if screen = invalid then screen = screentmp
+        'home screen has these set
+        if screen.Loader <> invalid then 
+            if screen.Loader.Listener <> invalid then screen.Loader.Listener = invalid
+            screen.Loader = invalid
+        end if
         return
     end if
 
@@ -848,8 +906,6 @@ Sub vcCloseScreenWithCallback(callback)
 End Sub
 
 Sub vcShow()
-    ' debug - always show release notes for testing
-    'm.ShowReleaseNotes()
     if RegRead("last_run_version", "misc", "") <> GetGlobal("appVersionStr") then
         m.ShowReleaseNotes()
         RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")
@@ -880,7 +936,10 @@ Sub vcShow()
             '    Debug("Processing " + type(msg) + " (top of stack " + type(m.screens.Peek().Screen) + "): ")
             'end if
             for i = m.screens.Count() - 1 to 0 step -1
-                if m.screens[i].HandleMessage(msg) then exit for
+                if m.screens[i].HandleMessage(msg) = true then
+                    m.ResetIdleTimer()
+                    exit for
+                end if                    
             end for
 
             ' Process URL events. Look up the request context and call a
@@ -903,7 +962,9 @@ Sub vcShow()
                     m.WebServer.postwait()
                 end if
             else if type(msg) = "roAudioPlayerEvent" then
-                m.AudioPlayer.HandleMessage(msg)
+                if m.AudioPlayer.HandleMessage(msg) = true then
+                    m.ResetIdleTimer()
+                end if
             else if type(msg) = "roSystemLogEvent" then
                 msgInfo = msg.GetInfo()
                 if msgInfo.LogType = "bandwidth.minute" then
@@ -928,6 +989,15 @@ Sub vcShow()
                 timeout = remaining
             end if
         next
+        
+        'check for idle timeout
+        if m.timerIdleTime <> invalid then 'and (msg.isRemoteKeyPressed() or msg.isButtonInfo()) then 
+            print "IDLE TIME Check: "; int(m.timerIdleTime.RemainingMillis()/int(1000))
+            if m.timerIdleTime.IsExpired()=true then  'timer expired will only return true once
+                m.createLockScreen()    
+            end if 
+        end if
+                 
     end while
 
     ' Clean up some references on the way out
@@ -958,11 +1028,11 @@ Sub vcShow()
         Debug("Exit channel - show user selection")
         m = invalid
         'GetGlobalAA().AddReplace("restoreAudio", restoreAudio)
-        Main(invalid)
+        Main(invalid)   'TODO: This needs to be changed as it's recursive and starts building up the stack.
         return
     else
         Debug("Finished global message loop")
-        end
+        end 'exit application? - why do it this way instead of letting main finish?
 '        controller = invalid
 '        port = CreateObject("roMessagePort")
 '        dialog = CreateObject("roMessageDialog")
@@ -1079,7 +1149,7 @@ Sub vcUpdateScreenProperties(screen)
             screen.Screen.SetTitle(bread2)
         end if
     else if screenType = "roImageCanvas" then
-        'roImageCanvas does not currently support breadcrumbs but allow custom function to draw them
+        'roImageCanvas does not currently support breadcrumbs but allow for custom function to draw them
         if enableBreadcrumbs then
             if screen.SetBreadcrumbText <> invalid then screen.SetBreadcrumbText(bread2) 
         end if
@@ -1180,6 +1250,28 @@ End Sub
 Sub vcAddSocketListener(socket, listener)
     m.SocketListeners[socket.GetID().tostr()] = listener
 End Sub
+
+Sub vcResetIdleTimer(fcnName="" as string)
+    if m.timerIdleTime <> invalid then 'and (msg.isRemoteKeyPressed() or msg.isButtonInfo()) then 
+        'print "IDLE TIME: Reset() :"; fcnName 
+        m.timerIdleTime.Mark()
+    else 
+        'print "IDLE TIME: invalid timerIdleTime :"; fcnName
+    endif
+End Sub
+
+Sub vcCreateIdleTimer()
+    m.timerIdleTime = invalid
+    if RegRead("securityPincode","preferences",invalid) <> invalid then         
+        lockTime = RegRead("locktime", "preferences","10800")
+        if (lockTime <> invalid) and (strtoi(lockTime) > 0) then
+            m.timerIdleTime = createTimer()
+            m.timerIdleTime.SetDuration(int(strtoi(lockTime)*1000),false)
+            m.ResetIdleTimer()
+        end if 
+    end if
+End Sub
+
 
 Sub vcAddTimer(timer, listener)
     timer.ID = m.nextTimerId.tostr()

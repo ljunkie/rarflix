@@ -119,7 +119,9 @@ Sub securityPINEntryShow(showOKButton=true as boolean, pinToVerify="" as string,
     if blocking then
         while m.ScreenID = m.ViewController.Screens.Peek().ScreenID
             msg = wait(0, m.Port)
-            m.HandleMessage(msg)
+            if m.HandleMessage(msg) = true then
+                 if msg <> invalid then m.ViewController.ResetIdleTimer()
+            endif 
         end while    
     end if 
 End Sub
@@ -173,15 +175,17 @@ End Function
 ' Routines for verifying a PIN, either at startup or on a user change
 '
 '*************************************************************************************
-'Enter PIN code.  if exitAppOnFailure then this returns what happened by setting screen.pinOK=true (invalid if not).  Use the "Activated" function to catch this returning
+'Enter PIN code.  this returns what happened by setting screen.pinOK=true (invalid if not).  Use the "Activate" function to catch this returning
 'Returns the screen object to the facade screen
-function VerifySecurityPin(viewController, pinToValidate as String, exitAppOnFailure=false as Boolean, numRetries=5 as Integer) as object
+'blockUnlessBack will not allow an exit until the PIN is entered or BACK is pressed
+function VerifySecurityPin(viewController, pinToValidate as String, blockUnlessBack=false as Boolean, numRetries=5 as Integer) as object
     'create master screen for verifying PIN
     screen = createSecurityPinScreen(viewController, pinToValidate)
     'members for verifying code
     screen.numRetries = numRetries
-    screen.exitAppOnFailure = exitAppOnFailure
+    screen.blockUnlessBack = blockUnlessBack
     screen.Activate = VerifySecurityPinActivate
+    Debug("Verifying PIN '"+pinToValidate+"'")
     return screen
 End function
 
@@ -194,25 +198,19 @@ sub VerifySecurityPinActivate(priorScreen)
         m.screen.Close()    'Closing from within Activate never calls the message loop to pop the screen
         m.ViewController.PopScreen(m)   'close this screen
     else 
-        if (m.numRetries > 0) and (priorScreen.pinCode <> "back") then
-            m.numRetries = m.numRetries - 1
+        if (priorScreen.pinCode <> "back") and ((m.blockUnlessBack = true ) or (m.numRetries > 0)) then
+            m.numRetries = m.numRetries - 1     'this can go very negative when blockUnlessBack is true
             m.pinScreen = createSecurityPINEntryScreen(m.ViewController)
+            m.pinScreen.ScreenName = "Retry PIN"
             m.ViewController.InitializeOtherScreen(m.pinScreen, [m.breadCrumb])
             m.pinScreen.txtTop = "Incorrect Security PIN. Re-enter Security PIN."   '+ m.pinToValidate 'for debugging
+            if m.txtBottom <> invalid then m.pinScreen.txtBottom = m.txtBottom   'copy text to actual pinScreen
             m.pinscreen.pinToVerify = m.pinToValidate
             m.pinScreen.Show(false)
         else 'either retries was exceeded or the back button was pressed
-            if m.exitAppOnFailure = true then
-                if priorScreen.pinCode = "back" then
-                    print "ABORT! Back button pressed"
-                else
-                    print "ABORT! PIN Failed too many times"
-                end if
-                end
-            else
-                m.screen.Close()    'Closing from within Activate never calls the message loop to pop the screen
-                m.ViewController.PopScreen(m)   'close this screen
-            end if
+            m.pinOK = invalid
+            m.screen.Close()    'Closing from within Activate never calls the message loop to pop the screen
+            m.ViewController.PopScreen(m)   'close this screen
         end if
     end if
 End sub
@@ -233,16 +231,17 @@ function SetSecurityPin(viewController) as object
     return screen
 End function
 
-'Called when screen pops to top after the PIN entering screen completes.  Called after either a PIN has been entered or cancelled
+'Called when screen pops to top after the PIN entering screen completes.  Called after either a PIN has been entered or cancelled to re-enter the same PIN
 sub SetSecurityPinActivate(priorScreen)
     'Debug("SetSecurityPinActivate")
-    if (priorScreen.pinCode = invalid) or (priorScreen.pinCode ="") then    'either no code was entered or it was cancelled
+    if (priorScreen.pinCode = invalid) or (priorScreen.pinCode ="") or (priorScreen.pinCode = "back") then    'either no code was entered or it was cancelled
         m.newPinCode = ""  'report back that no pin was created
         m.ViewController.PopScreen(m)   'close this screen
     else if m.newPinCode = "" then  'just entered the first pinCode.  re-enter to validate
         'Create second PIN verification screen
         m.newPinCode = priorScreen.pinCode
         m.pinScreen = createSecurityPINEntryScreen(m.ViewController)
+        m.pinScreen.ScreenName = "Verify PIN"
         m.ViewController.InitializeOtherScreen(m.pinScreen, [m.breadCrumb])
         m.pinScreen.txtTop = "Re-enter the PIN code to verify."                 'change the new text
         m.pinScreen.txtBottom = "Enter PIN Code using direction arrows on your remote control.  When you have entered the correct code you will automatically continue.  Press OK to try again."
@@ -303,6 +302,7 @@ sub securityPinShow(showOKButton=false as boolean)
     
     'Create first PIN verification screen
     m.pinScreen = createSecurityPINEntryScreen(m.ViewController)
+    m.pinScreen.ScreenName = "PIN Entry"
     m.ViewController.InitializeOtherScreen(m.pinScreen, [m.breadCrumb])
     if m.txtTop <> invalid then m.pinScreen.txtTop = m.txtTop    'copy text to actual pinScreen
     if m.txtBottom <> invalid then m.pinScreen.txtBottom = m.txtBottom   'copy text to actual pinScreen

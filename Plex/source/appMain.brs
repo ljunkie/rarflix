@@ -70,7 +70,6 @@ Sub Main(args)
         controller.audioPlayer.port =  resetPort
         GetGlobalAA().Delete("restoreAudio")
     end if
-
     controller.Show()
 End Sub
 

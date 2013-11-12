@@ -35,6 +35,7 @@ Function createUserSelectionScreen(viewController) as object
     obj.Screen = CreateObject("roImageCanvas")
     obj.Show = userSelectionShow
     obj.HandleMessage = userSelectionHandleMessage
+    obj.BaseActivate = obj.Activate
     
     obj.userSelected = -1
     obj.theme = getImageCanvasTheme()
@@ -170,10 +171,7 @@ Function userSelectionHandleMessage(msg) As Boolean
                 m.userSelected = 2
             else If i=0 Then   ' Back - Close the screen and exit 'codes.button_back_pressed
                 m.userSelected = -1
-                end ' we will exit the screen on back button
-                m.Screen.Close()
-            'else 
-            '    Debug("Key Pressed:" + tostr(msg.GetIndex()) + ", pinCode:" + tostr(m.pinCode))
+                end ' we will exit the roku application on back button 
             end if
             if m.userSelected <> -1 then
                 if m.currentUserPage <> 0 then
@@ -206,7 +204,7 @@ End Function
 
 'Called when screen pops to top after the PIN entering screen completes
 sub userSelectionActivate(priorScreen)
-    m.Activate = invalid    'dont call this routine again
+    m.Activate = m.BaseActivate    'dont call this routine again
     if (priorScreen.pinOK = invalid) or (priorScreen.pinOK <> true) then    'either no code was entered, was cancelled or wrong code
         'nothing to do, just wait for the next selection
     else
