@@ -1,3 +1,7 @@
+#2.8.5-test (2013-11-12)
+    * transcode session info ( video: [copy|convert] audio: [copy|convert] ) missing from HUD
+    * more to come..
+
 #2.8.4-test (2013-11-12)
  Fast User Switching:
     * User Profile Switch item/icon added to the home screen misc row when multiUser is enabled ( will not be displayed if multi-user is disabled - I.E. no profile enabled )
