@@ -557,6 +557,17 @@ sub prefsSecurityPinRefresh(screen)
         default: "10800"
     }
 
+    values = [
+        { title: "Enabled", EnumValue: "enabled" },
+        { title: "Disabled", EnumValue: "disabled" },
+    ]
+    screen.Prefs["locktime_music"] = {
+        values: values,
+        heading: "Lock screen while music is playing",
+        default: "enabled"
+    }
+
+
     screen.contentArray.Clear() 
     screen.Screen.ClearContent()
     if RegRead("securityPincode","preferences",invalid) = invalid  then
@@ -566,7 +577,8 @@ sub prefsSecurityPinRefresh(screen)
         if screen.EnteredPin = true then
             screen.AddItem({title: "Change Security PIN"}, "set")
             screen.AddItem({title: "Clear Security PIN"}, "clear")
-            screen.AddItem({title: "Inactivity Lock"}, "locktime", screen.GetEnumValue("locktime"))
+            screen.AddItem({title: "Inactivity Lock Time"}, "locktime", screen.GetEnumValue("locktime"))
+            screen.AddItem({title: "Inactivity Lock [music]"}, "locktime_music", screen.GetEnumValue("locktime_music"))
         else
             screen.AddItem({title: "Enter current PIN to make changes"}, "unlock")
         end if

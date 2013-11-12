@@ -962,8 +962,10 @@ Sub vcShow()
                     m.WebServer.postwait()
                 end if
             else if type(msg) = "roAudioPlayerEvent" then
-                if m.AudioPlayer.HandleMessage(msg) = true then
+                if m.AudioPlayer.HandleMessage(msg) = true and RegRead("locktime_music", "preferences","enabled") <> "enabled" then
                     m.ResetIdleTimer()
+                else 
+                    print "skip idle timer reset [music]"
                 end if
             else if type(msg) = "roSystemLogEvent" then
                 msgInfo = msg.GetInfo()
