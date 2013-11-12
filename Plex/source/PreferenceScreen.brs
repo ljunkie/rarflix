@@ -453,10 +453,22 @@ Function createSlideshowPrefsScreen(viewController) As Object
         default: "2500"
     }
 
+    ' reload slideshow after every full run
+    values = [
+        { title: "Disabled", EnumValue: "disabled",  ShortDescriptionLine2: "Do not check for new Photos",  },
+        { title: "Enabled", EnumValue: "enabled",  ShortDescriptionLine2: "Check for new Photos" },
+    ]
+    obj.Prefs["slideshow_reload"] = {
+        values: values,
+        heading: "Reload Slideshow after Completion (check for new photos)",
+        default: "disabled"
+    }
+
     obj.Screen.SetHeader("Slideshow display preferences")
 
     obj.AddItem({title: "Speed"}, "slideshow_period", obj.GetEnumValue("slideshow_period"))
     obj.AddItem({title: "Text Overlay"}, "slideshow_overlay", obj.GetEnumValue("slideshow_overlay"))
+    obj.AddItem({title: "Reload",ShortDescriptionLine2: "check for new images after completion"}, "slideshow_reload", obj.GetEnumValue("slideshow_reload"))
     obj.AddItem({title: "Close"}, "close")
 
     return obj
@@ -472,7 +484,7 @@ Function prefsSlideshowHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "slideshow_period" OR command = "slideshow_overlay" then
+            if command = "slideshow_period" OR command = "slideshow_overlay" or command = "slideshow_reload" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "close" then
                 m.Screen.Close()
