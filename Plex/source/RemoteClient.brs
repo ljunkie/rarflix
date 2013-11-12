@@ -6,17 +6,32 @@
 '* Note that all handlers are evaluated in the context of a Reply object.
 '*
 
-Function IsRemoteControlDisabled(reply) As Boolean
+Function CheckRemoteControlDisabled(reply) As Boolean
     if RegRead("remotecontrol", "preferences", "1") <> "1" then
-        reply.default(404, "Remote control is disabled for this device")
+        SendErrorResponse(reply, 404, "Remote control is disabled for this device")
         return true
     else
         return false
     end if
 End Function
 
+Sub SendErrorResponse(reply, code, message)
+    xml = CreateObject("roXMLElement")
+    xml.SetName("Response")
+    xml.AddAttribute("code", tostr(code))
+    xml.AddAttribute("status", tostr(message))
+    xmlStr = xml.GenXML(false)
+
+    reply.mimetype = MimeType("xml")
+    reply.buf.fromasciistring(xmlStr)
+    reply.length = reply.buf.count()
+    reply.http_code = code
+    reply.genHdr(true)
+    reply.source = reply.GENERATED
+End Sub
+
 Function ProcessPlayMediaRequest() As Boolean
-    if IsRemoteControlDisabled(m) then return true
+    if CheckRemoteControlDisabled(m) then return true
 
     Debug("Processing PlayMedia request")
     for each name in m.request.fields
@@ -107,7 +122,7 @@ Function ProcessPlayMediaRequest() As Boolean
 End Function
 
 Function ProcessStopMediaRequest() As Boolean
-    if IsRemoteControlDisabled(m) then return true
+    if CheckRemoteControlDisabled(m) then return true
 
     ' If we're playing a video, close it. Otherwise assume this is destined for
     ' the audio player, which will respond appropriately whatever state it's in.
@@ -125,7 +140,7 @@ Function ProcessStopMediaRequest() As Boolean
 End Function
 
 Function ProcessResourcesRequest() As Boolean
-    if IsRemoteControlDisabled(m) then return true
+    if CheckRemoteControlDisabled(m) then return true
 
     mc = CreateObject("roXMLElement")
     mc.SetName("MediaContainer")
@@ -147,6 +162,36 @@ Function ProcessResourcesRequest() As Boolean
     return true
 End Function
 
+Function ProcessTimelineSubscribe() As Boolean
+    if CheckRemoteControlDisabled(m) then return true
+
+    protocol = firstOf(m.request.query["protocol"], "http")
+    port = firstOf(m.request.query["port"], "32400")
+    host = m.request.remote_addr
+    deviceID = m.request.fields["X-Plex-Client-Identifier"]
+    commandID = m.request.query["commandID"]
+
+    connectionUrl = protocol + "://" + tostr(host) + ":" + port
+
+    if NowPlayingManager().AddSubscriber(deviceID, connectionUrl, commandID) then
+        m.simpleOK("")
+    else
+        SendErrorResponse(m, 400, "Invalid subscribe request")
+    end if
+
+    return true
+End Function
+
+Function ProcessTimelineUnsubscribe() As Boolean
+    if CheckRemoteControlDisabled(m) then return true
+
+    deviceID = m.request.fields["X-Plex-Client-Identifier"]
+    NowPlayingManager().RemoveSubscriber(deviceID)
+
+    m.simpleOK("")
+    return true
+End Function
+
 Sub InitRemoteControlHandlers()
     ' Old custom requests
     ClassReply().AddHandler("/application/PlayMedia", ProcessPlayMediaRequest)
@@ -154,6 +199,10 @@ Sub InitRemoteControlHandlers()
 
     ' Advertising
     ClassReply().AddHandler("/resources", ProcessResourcesRequest)
+
+    ' Timeline
+    ClassReply().AddHandler("/player/timeline/subscribe", ProcessTimelineSubscribe)
+    ClassReply().AddHandler("/player/timeline/unsubscribe", ProcessTimelineUnsubscribe)
 End Sub
 
 Sub createPlayerAfterClose()

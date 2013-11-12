@@ -43,6 +43,8 @@ function ClassRequest()
         this.buf      = invalid
         this.fields   = invalid
         this.id       = 0
+        this.remote_addr = invalid
+        this.remote_port = invalid
         ' copied members
         this.range_begin       = 0
         this.range_end         = 0
@@ -111,6 +113,13 @@ function request_parse(conn as Object) as Boolean
                 end for
             else
                 m.path = m.uri
+            end if
+
+            ' note the remote address information
+            parts = conn.client.tokenize(":")
+            if parts.count() = 2
+                m.remote_addr = parts.GetHead()
+                m.remote_port = parts.GetTail()
             end if
         else
             err(m,"invalid request: "+operation)
