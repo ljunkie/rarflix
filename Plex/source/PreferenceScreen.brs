@@ -503,7 +503,7 @@ sub prefsSecurityPinRefresh(screen)
         { title: "6 Hours", EnumValue: "36000" },
         { title: "12 Hours", EnumValue: "43200" }
     ]
-    screen.Prefs["lockTime"] = {
+    screen.Prefs["locktime"] = {
         values: lockTimes,
         heading: "Lock screen after inactivity",
         default: "10800"
@@ -518,7 +518,7 @@ sub prefsSecurityPinRefresh(screen)
         if screen.EnteredPin = true then
             screen.AddItem({title: "Change Security PIN"}, "set")
             screen.AddItem({title: "Clear Security PIN"}, "clear")
-            screen.AddItem({title: "Inactivity Lock"}, "locktime", screen.GetEnumValue("lockTime"))
+            screen.AddItem({title: "Inactivity Lock"}, "locktime", screen.GetEnumValue("locktime"))
         else
             screen.AddItem({title: "Enter current PIN to make changes"}, "unlock")
         end if
