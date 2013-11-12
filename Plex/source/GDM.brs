@@ -266,9 +266,12 @@ Function gdmAdvertiserGetResponseString() As String
         appendNameValue(buf, "Port", m.ViewController.WebServer.port.tostr())
         appendNameValue(buf, "Product", "Plex/Roku")
         appendNameValue(buf, "Content-Type", "plex/media-player")
-        appendNameValue(buf, "Protocol", "roku")
+        appendNameValue(buf, "Protocol", "plex")
+        appendNameValue(buf, "Protocol-Version", "1")
+        appendNameValue(buf, "Protocol-Capabilities", "timeline,playback,navigation")
         appendNameValue(buf, "Version", GetGlobalAA().Lookup("appVersionStr"))
         appendNameValue(buf, "Resource-Identifier", GetGlobalAA().Lookup("rokuUniqueID"))
+        appendNameValue(buf, "Device-Class", "stb")
 
         m.responseString = buf
 

@@ -66,6 +66,7 @@ function ClassReply()
         this.done      = reply_done
         this.doneHdr   = reply_done_header
         this.log       = reply_log
+        this.simpleOK  = reply_simple_ok
         ' html lines
         this.keepAlive = reply_keep_alive
         this.genBy     = reply_generated_by
@@ -396,4 +397,12 @@ end function
 
 sub reply_add_handler(prefix as String, fn as Function)
     m.handlers[prefix] = fn
+end sub
+
+sub reply_simple_ok(body)
+    m.buf.fromasciistring(body)
+    m.length = m.buf.count()
+    m.http_code = 200
+    m.genHdr(true)
+    m.source = m.GENERATED
 end sub

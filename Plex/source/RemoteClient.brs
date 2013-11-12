@@ -3,14 +3,20 @@
 '* to be controlled by other Plex clients, like the remote built into the
 '* iOS/Android apps.
 '*
+'* Note that all handlers are evaluated in the context of a Reply object.
+'*
+
+Function IsRemoteControlDisabled(reply) As Boolean
+    if RegRead("remotecontrol", "preferences", "1") <> "1" then
+        reply.default(404, "Remote control is disabled for this device")
+        return true
+    else
+        return false
+    end if
+End Function
 
 Function ProcessPlayMediaRequest() As Boolean
-    ' Note that we're evaluated in the context of a Reply object.
-
-    if RegRead("remotecontrol", "preferences", "1") <> "1" then
-        m.default(404, "Remote control is disabled for this device")
-        return true
-    end if
+    if IsRemoteControlDisabled(m) then return true
 
     Debug("Processing PlayMedia request")
     for each name in m.request.fields
@@ -95,22 +101,13 @@ Function ProcessPlayMediaRequest() As Boolean
     end if
 
     ' Always return an empty body
-    body = ""
-    m.buf.fromasciistring(body)
-    m.length = m.buf.count()
-    m.genHdr(true)
-    m.source = m.GENERATED
+    m.simpleOK("")
 
     return true
 End Function
 
 Function ProcessStopMediaRequest() As Boolean
-    ' Note that we're evaluated in the context of a Reply object.
-
-    if RegRead("remotecontrol", "preferences", "1") <> "1" then
-        m.default(404, "Remote control is disabled for this device")
-        return true
-    end if
+    if IsRemoteControlDisabled(m) then return true
 
     ' If we're playing a video, close it. Otherwise assume this is destined for
     ' the audio player, which will respond appropriately whatever state it's in.
@@ -122,15 +119,42 @@ Function ProcessStopMediaRequest() As Boolean
     end if
 
     ' Always return an empty body
-    body = ""
-    m.buf.fromasciistring(body)
-    m.length = m.buf.count()
-    m.http_code = 200
-    m.genHdr(true)
-    m.source = m.GENERATED
+    m.simpleOK("")
 
     return true
 End Function
+
+Function ProcessResourcesRequest() As Boolean
+    if IsRemoteControlDisabled(m) then return true
+
+    mc = CreateObject("roXMLElement")
+    mc.SetName("MediaContainer")
+
+    player = mc.AddElement("Player")
+    player.AddAttribute("protocolCapabilities", "timeline,playback,navigation")
+    player.AddAttribute("product", "Plex/Roku")
+    player.AddAttribute("version", GetGlobalAA().Lookup("appVersionStr"))
+    player.AddAttribute("platformVersion", GetGlobalAA().Lookup("rokuVersionStr"))
+    player.AddAttribute("platform", "Roku")
+    player.AddAttribute("machineIdentifier", GetGlobalAA().Lookup("rokuUniqueID"))
+    player.AddAttribute("title", RegRead("player_name", "preferences", GetGlobalAA().Lookup("rokuModel")))
+    player.AddAttribute("protocolVersion", "1")
+    player.AddAttribute("deviceClass", "stb")
+
+    m.mimetype = MimeType("xml")
+    m.simpleOK(mc.GenXML(false))
+
+    return true
+End Function
+
+Sub InitRemoteControlHandlers()
+    ' Old custom requests
+    ClassReply().AddHandler("/application/PlayMedia", ProcessPlayMediaRequest)
+    ClassReply().AddHandler("/application/Stop", ProcessStopMediaRequest)
+
+    ' Advertising
+    ClassReply().AddHandler("/resources", ProcessResourcesRequest)
+End Sub
 
 Sub createPlayerAfterClose()
     GetViewController().CreatePlayerForItem(m.context, m.contextIndex, m.seekValue)
