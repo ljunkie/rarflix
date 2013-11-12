@@ -111,10 +111,10 @@ Function createViewController() As Object
 
     ' Initialize things that run in the background and are okay to start before a user is selected. 
     InitWebServer(controller)
-    controller.GdmAdvertiser = createGDMAdvertiser(controller)
     controller.AudioPlayer = createAudioPlayer(controller)
     AnalyticsTracker()
     MyPlexManager()
+    GDMAdvertiser()
 
     ' ljunkie Youtube Trailers (extended to TMDB)
     controller.youtube = vcInitYouTube()
@@ -1275,13 +1275,13 @@ Sub vcShow()
 
     ' Clean up some references on the way out
     AnalyticsTracker().Cleanup()
+    GDMAdvertiser().Cleanup()
     ' ljunkie - TODO - change to singleton
     '  will be required for channel exit confirmation
     'restoreAudio = m.AudioPlayer ' save for later (maybe)
     'm.AudioPlayer.Stop()         ' stop any audio for now. This might change with exit confirmation
 
     m.Home = invalid
-    m.GdmAdvertiser = invalid
     m.WebServer = invalid
     m.AudioPlayer = invalid
     m.Timers.Clear()

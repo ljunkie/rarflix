@@ -149,23 +149,27 @@ End Sub
 
 '*** GDM Player Advertiser ***
 
-Function createGDMAdvertiser(viewController)
-    obj = CreateObject("roAssociativeArray")
+Function GDMAdvertiser()
+    if m.GDMAdvertiser = invalid then
+        obj = CreateObject("roAssociativeArray")
 
-    obj.ViewController = viewController
+        obj.OnSocketEvent = gdmAdvertiserOnSocketEvent
 
-    obj.OnSocketEvent = gdmAdvertiserOnSocketEvent
+        obj.responseString = invalid
+        obj.GetResponseString = gdmAdvertiserGetResponseString
 
-    obj.responseString = invalid
-    obj.GetResponseString = gdmAdvertiserGetResponseString
+        obj.CreateSocket = gdmAdvertiserCreateSocket
+        obj.Close = gdmAdvertiserClose
+        obj.Refresh = gdmAdvertiserRefresh
+        obj.Cleanup = gdmAdvertiserCleanup
 
-    obj.CreateSocket = gdmAdvertiserCreateSocket
-    obj.Close = gdmAdvertiserClose
-    obj.Refresh = gdmAdvertiserRefresh
+        obj.Refresh()
 
-    obj.Refresh()
+        ' Singleton
+        m.GDMAdvertiser = obj
+    end if
 
-    return obj
+    return m.GDMAdvertiser
 End Function
 
 Sub gdmAdvertiserCreateSocket()
@@ -202,11 +206,11 @@ Sub gdmAdvertiserCreateSocket()
 
     udp.setMulticastLoop(false)
     udp.notifyReadable(true)
-    udp.setMessagePort(m.ViewController.GlobalMessagePort)
+    udp.setMessagePort(GetViewController().GlobalMessagePort)
 
     m.socket = udp
 
-    m.ViewController.AddSocketListener(udp, m)
+    GetViewController().AddSocketListener(udp, m)
 
     Debug("Created GDM player advertiser")
 End Sub
@@ -229,6 +233,12 @@ Sub gdmAdvertiserRefresh()
     else if not enabled AND m.socket <> invalid then
         m.Close()
     end if
+End Sub
+
+Sub gdmAdvertiserCleanup()
+    m.Close()
+    fn = function() :m.GDMAdvertiser = invalid :end function
+    fn()
 End Sub
 
 Sub gdmAdvertiserOnSocketEvent(msg)
@@ -263,7 +273,7 @@ Function gdmAdvertiserGetResponseString() As String
         buf = box("HELLO * HTTP/1.0" + Chr(10))
 
         appendNameValue(buf, "Name", RegRead("player_name", "preferences", GetGlobalAA().Lookup("rokuModel")))
-        appendNameValue(buf, "Port", m.ViewController.WebServer.port.tostr())
+        appendNameValue(buf, "Port", GetViewController().WebServer.port.tostr())
         appendNameValue(buf, "Product", "Plex/Roku")
         appendNameValue(buf, "Content-Type", "plex/media-player")
         appendNameValue(buf, "Protocol", "plex")
