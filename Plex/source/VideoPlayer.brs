@@ -428,9 +428,12 @@ Sub videoPlayerOnUrlEvent(msg, requestContext)
                     audio = "copy"
                 end if
 
-                m.VideoItem.ReleaseDate = m.VideoItem.OrigReleaseDate + "   Transcoded " + " (" + videoRes + " " + audioChannel + ")" +chr(10)  + "video: " + video  + " audio: " + audio 
-                ' + curState -- doesn't seem useful - this doesn't get updated on the fly, useful if moved to: videoPlayerHandleMessage -> msg.isPlaybackPosition
-
+                m.VideoItem.ReleaseDate = m.VideoItem.OrigReleaseDate + "   Transcoded " + " (" + videoRes + " " + audioChannel + ")"
+                m.VideoItem.ReleaseDate = m.VideoItem.ReleaseDate + chr(10)  + "video: " + video  + "    audio: " + audio + "    "
+                ' + curState -- doesn't seem useful - this doesn't get updated on the fly, 
+                ' useful if moved to: videoPlayerHandleMessage -> msg.isPlaybackPosition
+                ' ljunkie - update the HUD with transcode info 
+                if m.lastPosition <> invalid and m.lastPosition >= 0 then updateVideoHUD(m,m.lastPosition,m.VideoItem.ReleaseDate)
                 m.VideoPlayer.SetContent(m.VideoItem)
             end if
 	end if

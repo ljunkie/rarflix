@@ -1180,8 +1180,9 @@ function getLogDate() as string
 	return date + " " + hours + ":" + minutes + ":" + seconds
 end function
 
-sub updateVideoHUD(m,curProgress)
+sub updateVideoHUD(m,curProgress,releaseDate = invalid)
     Debug("---- timeline sent :: HUD updated " + tostr(curProgress))
+    if releaseDate <> invalid then m.VideoItem.OrigHUDreleaseDate = releaseDate
 
     endString = invalid
     watchedString = invalid
