@@ -1263,7 +1263,7 @@ End Sub
 Sub vcCreateIdleTimer()
     m.timerIdleTime = invalid
     if RegRead("securityPincode","preferences",invalid) <> invalid then         
-        lockTime = RegRead("securityPincode","locktime","10800")
+        lockTime = RegRead("locktime", "preferences","10800")
         if (lockTime <> invalid) and (strtoi(lockTime) > 0) then
             m.timerIdleTime = createTimer()
             m.timerIdleTime.SetDuration(int(strtoi(lockTime)*1000),false)
