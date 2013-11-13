@@ -390,6 +390,26 @@ Function ProcessNavigationMusic() As Boolean
     return true
 End Function
 
+Function ProcessNavigationHome() As Boolean
+    if CheckRemoteControlDisabled(m) then return true
+    ProcessCommandID(m.request)
+
+    context = CreateObject("roAssociativeArray")
+    context.OnAfterClose = CloseScreenUntilHomeVisible
+    context.OnAfterClose()
+
+    m.simpleOK("")
+    return true
+End Function
+
+Sub CloseScreenUntilHomeVisible()
+    vc = GetViewController()
+
+    if vc.Home = invalid OR NOT vc.IsActiveScreen(vc.Home) then
+        vc.CloseScreenWithCallback(m)
+    end if
+End Sub
+
 Sub InitRemoteControlHandlers()
     ' Old custom requests
     ClassReply().AddHandler("/application/PlayMedia", ProcessPlayMediaRequest)
@@ -418,6 +438,7 @@ Sub InitRemoteControlHandlers()
     ClassReply().AddHandler("/player/navigation/select", ProcessNavigationSelect)
     ClassReply().AddHandler("/player/navigation/back", ProcessNavigationBack)
     ClassReply().AddHandler("/player/navigation/music", ProcessNavigationMusic)
+    ClassReply().AddHandler("/player/navigation/home", ProcessNavigationHome)
 End Sub
 
 Sub createPlayerAfterClose()
