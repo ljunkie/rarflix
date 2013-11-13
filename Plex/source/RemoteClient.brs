@@ -423,6 +423,45 @@ Function ProcessPlaybackSkipPrev() As Boolean
     return true
 End Function
 
+Function ProcessPlaybackStepBack() As Boolean
+    if NOT ValidateRemoteControlRequest(m) then return true
+    ProcessCommandID(m.request)
+
+    mediaType = m.request.query["type"]
+
+    ' Try to deal with the command directly, falling back to ECP.
+    if mediaType = "music" then
+        AudioPlayer().Seek(-15000, true)
+    else if mediaType = "photo" then
+    else 
+        SendEcpCommand("InstantReplay")
+    end if
+
+    m.simpleOK("")
+    return true
+End Function
+
+Function ProcessPlaybackStepForward() As Boolean
+    if NOT ValidateRemoteControlRequest(m) then return true
+    ProcessCommandID(m.request)
+
+    mediaType = m.request.query["type"]
+
+    player = invalid
+    if mediaType = "music" then
+        player = AudioPlayer()
+    else if mediaType = "video" then
+        player = VideoPlayer()
+    end if
+
+    if player <> invalid then
+        player.Seek(30000, true)
+    end if
+
+    m.simpleOK("")
+    return true
+End Function
+
 Function ProcessNavigationMoveRight() As Boolean
     if NOT ValidateRemoteControlRequest(m) then return true
     ProcessCommandID(m.request)
@@ -544,6 +583,8 @@ Sub InitRemoteControlHandlers()
     ClassReply().AddHandler("/player/playback/stop", ProcessPlaybackStop)
     ClassReply().AddHandler("/player/playback/skipNext", ProcessPlaybackSkipNext)
     ClassReply().AddHandler("/player/playback/skipPrev", ProcessPlaybackSkipPrev)
+    ClassReply().AddHandler("/player/playback/stepBack", ProcessPlaybackStepBack)
+    ClassReply().AddHandler("/player/playback/stepForward", ProcessPlaybackStepForward)
 
     ' Navigation
     ClassReply().AddHandler("/player/navigation/moveRight", ProcessNavigationMoveRight)

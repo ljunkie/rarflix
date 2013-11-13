@@ -191,14 +191,26 @@ Sub audioPlayerStop()
     end if
 End Sub
 
-Sub audioPlayerSeek(offset)
+Sub audioPlayerSeek(offset, relative=false)
+    if relative then
+        if m.IsPlaying then
+            offset = offset + (1000 * m.GetPlaybackProgress())
+        else if m.IsPaused then
+            offset = offset + (1000 * m.playbackOffset)
+        end if
+
+        if offset < 0 then offset = 0
+    end if
+
     if m.IsPlaying then
         m.playbackOffset = int(offset / 1000)
+        m.playbackTimer.Mark()
         m.player.Seek(offset)
     else if m.IsPaused then
         ' If we just call Seek while paused, we don't get a resumed event. This
         ' way the UI is always correct, but it's possible for a blip of audio.
         m.playbackOffset = int(offset / 1000)
+        m.playbackTimer.Mark()
         m.player.Resume()
         m.player.Seek(offset)
     end if

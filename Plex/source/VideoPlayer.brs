@@ -408,8 +408,13 @@ Sub videoPlayerStop()
     end if
 End Sub
 
-Sub videoPlayerSeek(offset)
+Sub videoPlayerSeek(offset, relative=false)
     if m.Screen <> invalid then
+        if relative then
+            offset = offset + (1000 * m.lastPosition)
+            if offset < 0 then offset = 0
+        end if
+
         if m.playState = "paused" then
             m.Screen.Resume()
             m.Screen.Seek(offset)
