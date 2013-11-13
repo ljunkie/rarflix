@@ -15,6 +15,15 @@ Function CheckRemoteControlDisabled(reply) As Boolean
     end if
 End Function
 
+Sub ProcessCommandID(request)
+    deviceID = request.fields["X-Plex-Client-Identifier"]
+    commandID = request.query["commandID"]
+
+    if deviceID <> invalid AND commandID <> invalid then
+        NowPlayingManager().UpdateCommandID(deviceID, commandID.toint())
+    end if
+End Sub
+
 Sub SendErrorResponse(reply, code, message)
     xml = CreateObject("roXMLElement")
     xml.SetName("Response")
@@ -164,6 +173,7 @@ End Function
 
 Function ProcessTimelineSubscribe() As Boolean
     if CheckRemoteControlDisabled(m) then return true
+    ProcessCommandID(m.request)
 
     protocol = firstOf(m.request.query["protocol"], "http")
     port = firstOf(m.request.query["port"], "32400")
@@ -184,9 +194,25 @@ End Function
 
 Function ProcessTimelineUnsubscribe() As Boolean
     if CheckRemoteControlDisabled(m) then return true
+    ProcessCommandID(m.request)
 
     deviceID = m.request.fields["X-Plex-Client-Identifier"]
     NowPlayingManager().RemoveSubscriber(deviceID)
+
+    m.simpleOK("")
+    return true
+End Function
+
+Function ProcessPlaybackSeekTo() As Boolean
+    if CheckRemoteControlDisabled(m) then return true
+    ProcessCommandID(m.request)
+
+    mediaType = m.request.query["type"]
+    offset = m.request.query["offset"]
+
+    if mediaType = "music" AND offset <> invalid
+        AudioPlayer().Seek(int(val(offset)))
+    end if
 
     m.simpleOK("")
     return true
@@ -203,6 +229,9 @@ Sub InitRemoteControlHandlers()
     ' Timeline
     ClassReply().AddHandler("/player/timeline/subscribe", ProcessTimelineSubscribe)
     ClassReply().AddHandler("/player/timeline/unsubscribe", ProcessTimelineUnsubscribe)
+
+    ' Playback
+    ClassReply().AddHandler("/player/playback/seekTo", ProcessPlaybackSeekTo)
 End Sub
 
 Sub createPlayerAfterClose()
