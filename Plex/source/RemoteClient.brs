@@ -218,6 +218,97 @@ Function ProcessPlaybackSeekTo() As Boolean
     return true
 End Function
 
+Function ProcessPlaybackPlay() As Boolean
+    if CheckRemoteControlDisabled(m) then return true
+    ProcessCommandID(m.request)
+
+    mediaType = m.request.query["type"]
+
+    ' Try to deal with the command directly, falling back to ECP.
+    if mediaType = "music" then
+        player = AudioPlayer()
+        if player.IsPaused then
+            player.Resume()
+        else
+            player.Play()
+        end if
+    else
+        SendEcpCommand("Play")
+    end if
+
+    m.simpleOK("")
+    return true
+End Function
+
+Function ProcessPlaybackPause() As Boolean
+    if CheckRemoteControlDisabled(m) then return true
+    ProcessCommandID(m.request)
+
+    mediaType = m.request.query["type"]
+
+    ' Try to deal with the command directly, falling back to ECP.
+    if mediaType = "music" then
+        AudioPlayer().Pause()
+    else
+        SendEcpCommand("Play")
+    end if
+
+    m.simpleOK("")
+    return true
+End Function
+
+Function ProcessPlaybackStop() As Boolean
+    if CheckRemoteControlDisabled(m) then return true
+    ProcessCommandID(m.request)
+
+    mediaType = m.request.query["type"]
+
+    ' Try to deal with the command directly, falling back to ECP.
+    if mediaType = "music" then
+        AudioPlayer().Stop()
+    else
+        SendEcpCommand("Back")
+    end if
+
+    m.simpleOK("")
+    return true
+End Function
+
+
+Function ProcessPlaybackSkipNext() As Boolean
+    if CheckRemoteControlDisabled(m) then return true
+    ProcessCommandID(m.request)
+
+    mediaType = m.request.query["type"]
+
+    ' Try to deal with the command directly, falling back to ECP.
+    if mediaType = "music" then
+        AudioPlayer().Next()
+    else
+        SendEcpCommand("Fwd")
+    end if
+
+    m.simpleOK("")
+    return true
+End Function
+
+Function ProcessPlaybackSkipPrev() As Boolean
+    if CheckRemoteControlDisabled(m) then return true
+    ProcessCommandID(m.request)
+
+    mediaType = m.request.query["type"]
+
+    ' Try to deal with the command directly, falling back to ECP.
+    if mediaType = "music" then
+        AudioPlayer().Prev()
+    else
+        SendEcpCommand("Rev")
+    end if
+
+    m.simpleOK("")
+    return true
+End Function
+
 Sub InitRemoteControlHandlers()
     ' Old custom requests
     ClassReply().AddHandler("/application/PlayMedia", ProcessPlayMediaRequest)
@@ -232,8 +323,17 @@ Sub InitRemoteControlHandlers()
 
     ' Playback
     ClassReply().AddHandler("/player/playback/seekTo", ProcessPlaybackSeekTo)
+    ClassReply().AddHandler("/player/playback/play", ProcessPlaybackPlay)
+    ClassReply().AddHandler("/player/playback/pause", ProcessPlaybackPause)
+    ClassReply().AddHandler("/player/playback/stop", ProcessPlaybackStop)
+    ClassReply().AddHandler("/player/playback/skipNext", ProcessPlaybackSkipNext)
+    ClassReply().AddHandler("/player/playback/skipPrev", ProcessPlaybackSkipPrev)
 End Sub
 
 Sub createPlayerAfterClose()
     GetViewController().CreatePlayerForItem(m.context, m.contextIndex, m.seekValue)
+End Sub
+
+Sub SendEcpCommand(command)
+    GetViewController().StartRequestIgnoringResponse("http://127.0.0.1:8060/keypress/" + command, "", "txt")
 End Sub

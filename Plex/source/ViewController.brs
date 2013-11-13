@@ -66,6 +66,7 @@ Function createViewController() As Object
     controller.PendingRequests = {}
     controller.RequestsByScreen = {}
     controller.StartRequest = vcStartRequest
+    controller.StartRequestIgnoringResponse = vcStartRequestIgnoringResponse
     controller.CancelRequests = vcCancelRequests
 
     controller.SocketListeners = {}
@@ -1517,6 +1518,23 @@ Function vcStartRequest(request, listener, context, body=invalid) As Boolean
         return false
     end if
 End Function
+
+Sub vcStartRequestIgnoringResponse(url, body=invalid, contentType="xml")
+    request = CreateURLTransferObject(url)
+    request.SetCertificatesFile("common:/certs/ca-bundle.crt")
+
+    if body <> invalid then
+        ' TODO(schuyler): Remove this
+        Debug("Sending timeline information:")
+        Debug(body)
+        request.AddHeader("Content-Type", MimeType(contentType))
+    end if
+
+    context = CreateObject("roAssociativeArray")
+    context.requestType = "ignored"
+
+    m.StartRequest(request, invalid, context, body)
+End Sub
 
 Sub vcCancelRequests(screenID)
     requests = m.RequestsByScreen[screenID.tostr()]

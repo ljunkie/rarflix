@@ -53,6 +53,7 @@ Function AudioPlayer()
         obj.UpdateNowPlaying = audioPlayerUpdateNowPlaying
         obj.OnTimerExpired = audioPlayerOnTimerExpired
 
+        obj.IgnoreTimelines = false
         obj.timelineTimer = createTimer()
         obj.timelineTimer.Name = "timeline"
         obj.timelineTimer.SetDuration(1000, true)
@@ -98,6 +99,7 @@ Function audioPlayerHandleMessage(msg) As Boolean
             m.PlayIndex = newIndex
         else if msg.isRequestFailed() then
             Debug("Audio playback failed")
+            m.IgnoreTimelines = false
             maxIndex = m.Context.Count() - 1
             ' newIndex = m.CurIndex + 1
             newIndex = m.PlayIndex + 1
@@ -106,6 +108,7 @@ Function audioPlayerHandleMessage(msg) As Boolean
             m.PlayIndex = newIndex
         else if msg.isListItemSelected() then
             Debug("Starting to play track: " + tostr(item.Url))
+            m.IgnoreTimelines = false
             m.IsPlaying = true
             m.IsPaused = false
             m.playbackOffset = 0
@@ -213,6 +216,8 @@ Sub audioPlayerNext(play=true)
     ' Allow right/left in springboard when item selected is NOT the on playing
     m.CurIndex = newIndex
     if play then 
+        m.IgnoreTimelines = true
+
         m.PlayIndex = newIndex ' only update if playing
         m.Stop()
         m.player.SetNext(newIndex)
@@ -231,6 +236,8 @@ Sub audioPlayerPrev(play=true)
     m.CurIndex = newIndex
 
     if play then 
+        m.IgnoreTimelines = true
+
         m.PlayIndex = newIndex ' only update if playing
         m.Stop()
         m.player.SetNext(newIndex)
@@ -239,7 +246,10 @@ Sub audioPlayerPrev(play=true)
 End Sub
 
 Sub audioPlayerSetContext(context, contextIndex, screen, startPlayer)
-    if startPlayer then m.Stop()
+    if startPlayer then
+        m.IgnoreTimelines = true
+        m.Stop()
+    end if
 
     item = context[contextIndex]
 
@@ -454,6 +464,7 @@ Sub audioPlayerOnTimerExpired(timer)
 End Sub
 
 Sub audioPlayerUpdateNowPlaying()
+    if m.IgnoreTimelines then return
     state = "stopped"
     item = invalid
     time = 0

@@ -112,7 +112,7 @@ Sub nowPlayingSendTimelineToSubscriber(subscriber, xml=invalid)
     xml.AddAttribute("commandID", tostr(subscriber.commandID))
 
     url = subscriber.connectionUrl + "/:/timeline"
-    StartRequestIgnoringResponse(url, xml.GenXml(false))
+    GetViewController().StartRequestIgnoringResponse(url, xml.GenXml(false))
 End Sub
 
 Sub nowPlayingSendTimelineToServer(timelineType, server)
@@ -194,21 +194,4 @@ Sub addAttributeIfValid(elem, name, value)
     if value <> invalid then
         elem.AddAttribute(name, tostr(value))
     end if
-End Sub
-
-Sub StartRequestIgnoringResponse(url, body=invalid, contentType="xml")
-    request = CreateURLTransferObject(url)
-    request.SetCertificatesFile("common:/certs/ca-bundle.crt")
-
-    if body <> invalid then
-        ' TODO(schuyler): Remove this
-        Debug("Sending timeline information:")
-        Debug(body)
-        request.AddHeader("Content-Type", MimeType(contentType))
-    end if
-
-    context = CreateObject("roAssociativeArray")
-    context.requestType = "ignored"
-
-    GetViewController().StartRequest(request, invalid, context, body)
 End Sub

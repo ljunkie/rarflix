@@ -258,6 +258,8 @@ Function audioHandleMessage(msg) As Boolean
         else if msg.isRequestFailed() then
             m.GotoNextItem()
         else if msg.isListItemSelected() then
+            m.CurIndex = player.CurIndex
+            m.Item = m.Context[m.CurIndex]
             m.Refresh(true)
             m.callbackTimer.Active = true
             m.Playstate = 2
