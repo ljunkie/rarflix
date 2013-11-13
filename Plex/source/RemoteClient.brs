@@ -309,6 +309,74 @@ Function ProcessPlaybackSkipPrev() As Boolean
     return true
 End Function
 
+Function ProcessNavigationMoveRight() As Boolean
+    if CheckRemoteControlDisabled(m) then return true
+    ProcessCommandID(m.request)
+
+    ' Just use ECP, trying to figure out how to refocus whatever is currently
+    ' visible is a mess.
+    SendEcpCommand("Right")
+
+    m.simpleOK("")
+    return true
+End Function
+
+Function ProcessNavigationMoveLeft() As Boolean
+    if CheckRemoteControlDisabled(m) then return true
+    ProcessCommandID(m.request)
+
+    ' Just use ECP, trying to figure out how to refocus whatever is currently
+    ' visible is a mess.
+    SendEcpCommand("Left")
+
+    m.simpleOK("")
+    return true
+End Function
+
+Function ProcessNavigationMoveDown() As Boolean
+    if CheckRemoteControlDisabled(m) then return true
+    ProcessCommandID(m.request)
+
+    ' Just use ECP, trying to figure out how to refocus whatever is currently
+    ' visible is a mess.
+    SendEcpCommand("Down")
+
+    m.simpleOK("")
+    return true
+End Function
+
+Function ProcessNavigationMoveUp() As Boolean
+    if CheckRemoteControlDisabled(m) then return true
+    ProcessCommandID(m.request)
+
+    ' Just use ECP, trying to figure out how to refocus whatever is currently
+    ' visible is a mess.
+    SendEcpCommand("Up")
+
+    m.simpleOK("")
+    return true
+End Function
+
+Function ProcessNavigationSelect() As Boolean
+    if CheckRemoteControlDisabled(m) then return true
+    ProcessCommandID(m.request)
+
+    SendEcpCommand("Select")
+
+    m.simpleOK("")
+    return true
+End Function
+
+Function ProcessNavigationBack() As Boolean
+    if CheckRemoteControlDisabled(m) then return true
+    ProcessCommandID(m.request)
+
+    SendEcpCommand("Back")
+
+    m.simpleOK("")
+    return true
+End Function
+
 Sub InitRemoteControlHandlers()
     ' Old custom requests
     ClassReply().AddHandler("/application/PlayMedia", ProcessPlayMediaRequest)
@@ -328,6 +396,14 @@ Sub InitRemoteControlHandlers()
     ClassReply().AddHandler("/player/playback/stop", ProcessPlaybackStop)
     ClassReply().AddHandler("/player/playback/skipNext", ProcessPlaybackSkipNext)
     ClassReply().AddHandler("/player/playback/skipPrev", ProcessPlaybackSkipPrev)
+
+    ' Navigation
+    ClassReply().AddHandler("/player/navigation/moveRight", ProcessNavigationMoveRight)
+    ClassReply().AddHandler("/player/navigation/moveLeft", ProcessNavigationMoveLeft)
+    ClassReply().AddHandler("/player/navigation/moveDown", ProcessNavigationMoveDown)
+    ClassReply().AddHandler("/player/navigation/moveUp", ProcessNavigationMoveUp)
+    ClassReply().AddHandler("/player/navigation/select", ProcessNavigationSelect)
+    ClassReply().AddHandler("/player/navigation/back", ProcessNavigationBack)
 End Sub
 
 Sub createPlayerAfterClose()
