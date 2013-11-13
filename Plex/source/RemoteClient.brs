@@ -6,12 +6,15 @@
 '* Note that all handlers are evaluated in the context of a Reply object.
 '*
 
-Function CheckRemoteControlDisabled(reply) As Boolean
+Function ValidateRemoteControlRequest(reply) As Boolean
     if RegRead("remotecontrol", "preferences", "1") <> "1" then
         SendErrorResponse(reply, 404, "Remote control is disabled for this device")
-        return true
-    else
         return false
+    else if reply.request.fields["X-Plex-Target-Client-Identifier"] <> invalid AND reply.request.fields["X-Plex-Target-Client-Identifier"] <> GetGlobalAA().Lookup("rokuUniqueID") then
+        SendErrorResponse(reply, 400, "Incorrect value for X-Plex-Target-Client-Identifer")
+        return false
+    else
+        return true
     end if
 End Function
 
@@ -40,7 +43,7 @@ Sub SendErrorResponse(reply, code, message)
 End Sub
 
 Function ProcessPlayMediaRequest() As Boolean
-    if CheckRemoteControlDisabled(m) then return true
+    if NOT ValidateRemoteControlRequest(m) then return true
 
     Debug("Processing PlayMedia request")
     for each name in m.request.fields
@@ -131,7 +134,7 @@ Function ProcessPlayMediaRequest() As Boolean
 End Function
 
 Function ProcessStopMediaRequest() As Boolean
-    if CheckRemoteControlDisabled(m) then return true
+    if NOT ValidateRemoteControlRequest(m) then return true
 
     ' If we're playing a video, close it. Otherwise assume this is destined for
     ' the audio player, which will respond appropriately whatever state it's in.
@@ -149,7 +152,7 @@ Function ProcessStopMediaRequest() As Boolean
 End Function
 
 Function ProcessResourcesRequest() As Boolean
-    if CheckRemoteControlDisabled(m) then return true
+    if NOT ValidateRemoteControlRequest(m) then return true
 
     mc = CreateObject("roXMLElement")
     mc.SetName("MediaContainer")
@@ -172,7 +175,7 @@ Function ProcessResourcesRequest() As Boolean
 End Function
 
 Function ProcessTimelineSubscribe() As Boolean
-    if CheckRemoteControlDisabled(m) then return true
+    if NOT ValidateRemoteControlRequest(m) then return true
     ProcessCommandID(m.request)
 
     protocol = firstOf(m.request.query["protocol"], "http")
@@ -193,7 +196,7 @@ Function ProcessTimelineSubscribe() As Boolean
 End Function
 
 Function ProcessTimelineUnsubscribe() As Boolean
-    if CheckRemoteControlDisabled(m) then return true
+    if NOT ValidateRemoteControlRequest(m) then return true
     ProcessCommandID(m.request)
 
     deviceID = m.request.fields["X-Plex-Client-Identifier"]
@@ -204,7 +207,7 @@ Function ProcessTimelineUnsubscribe() As Boolean
 End Function
 
 Function ProcessPlaybackSeekTo() As Boolean
-    if CheckRemoteControlDisabled(m) then return true
+    if NOT ValidateRemoteControlRequest(m) then return true
     ProcessCommandID(m.request)
 
     mediaType = m.request.query["type"]
@@ -224,7 +227,7 @@ Function ProcessPlaybackSeekTo() As Boolean
 End Function
 
 Function ProcessPlaybackPlay() As Boolean
-    if CheckRemoteControlDisabled(m) then return true
+    if NOT ValidateRemoteControlRequest(m) then return true
     ProcessCommandID(m.request)
 
     mediaType = m.request.query["type"]
@@ -252,7 +255,7 @@ Function ProcessPlaybackPlay() As Boolean
 End Function
 
 Function ProcessPlaybackPause() As Boolean
-    if CheckRemoteControlDisabled(m) then return true
+    if NOT ValidateRemoteControlRequest(m) then return true
     ProcessCommandID(m.request)
 
     mediaType = m.request.query["type"]
@@ -275,7 +278,7 @@ Function ProcessPlaybackPause() As Boolean
 End Function
 
 Function ProcessPlaybackStop() As Boolean
-    if CheckRemoteControlDisabled(m) then return true
+    if NOT ValidateRemoteControlRequest(m) then return true
     ProcessCommandID(m.request)
 
     mediaType = m.request.query["type"]
@@ -299,7 +302,7 @@ End Function
 
 
 Function ProcessPlaybackSkipNext() As Boolean
-    if CheckRemoteControlDisabled(m) then return true
+    if NOT ValidateRemoteControlRequest(m) then return true
     ProcessCommandID(m.request)
 
     mediaType = m.request.query["type"]
@@ -322,7 +325,7 @@ Function ProcessPlaybackSkipNext() As Boolean
 End Function
 
 Function ProcessPlaybackSkipPrev() As Boolean
-    if CheckRemoteControlDisabled(m) then return true
+    if NOT ValidateRemoteControlRequest(m) then return true
     ProcessCommandID(m.request)
 
     mediaType = m.request.query["type"]
@@ -345,7 +348,7 @@ Function ProcessPlaybackSkipPrev() As Boolean
 End Function
 
 Function ProcessNavigationMoveRight() As Boolean
-    if CheckRemoteControlDisabled(m) then return true
+    if NOT ValidateRemoteControlRequest(m) then return true
     ProcessCommandID(m.request)
 
     ' Just use ECP, trying to figure out how to refocus whatever is currently
@@ -357,7 +360,7 @@ Function ProcessNavigationMoveRight() As Boolean
 End Function
 
 Function ProcessNavigationMoveLeft() As Boolean
-    if CheckRemoteControlDisabled(m) then return true
+    if NOT ValidateRemoteControlRequest(m) then return true
     ProcessCommandID(m.request)
 
     ' Just use ECP, trying to figure out how to refocus whatever is currently
@@ -369,7 +372,7 @@ Function ProcessNavigationMoveLeft() As Boolean
 End Function
 
 Function ProcessNavigationMoveDown() As Boolean
-    if CheckRemoteControlDisabled(m) then return true
+    if NOT ValidateRemoteControlRequest(m) then return true
     ProcessCommandID(m.request)
 
     ' Just use ECP, trying to figure out how to refocus whatever is currently
@@ -381,7 +384,7 @@ Function ProcessNavigationMoveDown() As Boolean
 End Function
 
 Function ProcessNavigationMoveUp() As Boolean
-    if CheckRemoteControlDisabled(m) then return true
+    if NOT ValidateRemoteControlRequest(m) then return true
     ProcessCommandID(m.request)
 
     ' Just use ECP, trying to figure out how to refocus whatever is currently
@@ -393,7 +396,7 @@ Function ProcessNavigationMoveUp() As Boolean
 End Function
 
 Function ProcessNavigationSelect() As Boolean
-    if CheckRemoteControlDisabled(m) then return true
+    if NOT ValidateRemoteControlRequest(m) then return true
     ProcessCommandID(m.request)
 
     SendEcpCommand("Select")
@@ -403,7 +406,7 @@ Function ProcessNavigationSelect() As Boolean
 End Function
 
 Function ProcessNavigationBack() As Boolean
-    if CheckRemoteControlDisabled(m) then return true
+    if NOT ValidateRemoteControlRequest(m) then return true
     ProcessCommandID(m.request)
 
     SendEcpCommand("Back")
@@ -413,7 +416,7 @@ Function ProcessNavigationBack() As Boolean
 End Function
 
 Function ProcessNavigationMusic() As Boolean
-    if CheckRemoteControlDisabled(m) then return true
+    if NOT ValidateRemoteControlRequest(m) then return true
     ProcessCommandID(m.request)
 
     dummyItem = CreateObject("roAssociativeArray")
@@ -426,7 +429,7 @@ Function ProcessNavigationMusic() As Boolean
 End Function
 
 Function ProcessNavigationHome() As Boolean
-    if CheckRemoteControlDisabled(m) then return true
+    if NOT ValidateRemoteControlRequest(m) then return true
     ProcessCommandID(m.request)
 
     context = CreateObject("roAssociativeArray")
