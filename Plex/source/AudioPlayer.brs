@@ -15,6 +15,9 @@ Function AudioPlayer()
 
         obj.Port = GetViewController().GlobalMessagePort
 
+        ' We need a ScreenID property in order to use the view controller for timers
+        obj.ScreenID = -1
+
         obj.HandleMessage = audioPlayerHandleMessage
         obj.Cleanup = audioPlayerCleanup
 
@@ -45,6 +48,15 @@ Function AudioPlayer()
         obj.playbackTimer = createTimer()
         obj.playbackOffset = 0
         obj.GetPlaybackProgress = audioPlayerGetPlaybackProgress
+
+        obj.UpdateNowPlaying = audioPlayerUpdateNowPlaying
+        obj.OnTimerExpired = audioPlayerOnTimerExpired
+
+        obj.timelineTimer = createTimer()
+        obj.timelineTimer.Name = "timeline"
+        obj.timelineTimer.SetDuration(1000, true)
+        obj.timelineTimer.Active = false
+        GetViewController().AddTimer(obj.timelineTimer, obj)
 
         ' Singleton
         m.AudioPlayer = obj
@@ -134,6 +146,8 @@ Function audioPlayerHandleMessage(msg) As Boolean
             m.IsPaused = false
             m.playbackTimer.Mark()
         end if
+
+        m.UpdateNowPlaying()
     end if
 
     return handled
@@ -417,3 +431,31 @@ End Sub
 Function audioPlayerGetPlaybackProgress() As Integer
     return m.playbackOffset + m.playbackTimer.GetElapsedSeconds()
 End Function
+
+Sub audioPlayerOnTimerExpired(timer)
+    if timer.Name = "timeline"
+        m.UpdateNowPlaying()
+    end if
+End Sub
+
+Sub audioPlayerUpdateNowPlaying()
+    state = "stopped"
+    item = invalid
+    time = 0
+
+    m.timelineTimer.Active = m.IsPlaying
+
+    if m.IsPlaying then
+        state = "playing"
+        time = 1000 * m.GetPlaybackProgress()
+        item = m.Context[m.CurIndex]
+    else if m.IsPaused then
+        state = "paused"
+        time = 1000 * m.playbackOffset
+        item = m.Context[m.CurIndex]
+    else if m.Context <> invalid then
+        item = m.Context[m.CurIndex]
+    end if
+
+    NowPlayingManager().UpdatePlaybackState("music", item, state, time)
+End Sub

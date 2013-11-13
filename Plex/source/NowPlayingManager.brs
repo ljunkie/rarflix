@@ -27,6 +27,7 @@ Function NowPlayingManager()
         obj.SendTimelineToServer = nowPlayingSendTimelineToServer
         obj.SendTimelineToAll = nowPlayingSendTimelineToAll
         obj.CreateTimelineDataXml = nowPlayingCreateTimelineDataXml
+        obj.UpdatePlaybackState = nowPlayingUpdatePlaybackState
 
         ' Initialization
         for each timelineType in obj.TIMELINE_TYPES
@@ -45,6 +46,7 @@ Function TimelineData(timelineType As String)
 
     obj.type = timelineType
     obj.state = "stopped"
+    obj.item = invalid
 
     obj.attrs = CreateObject("roAssociativeArray")
 
@@ -117,6 +119,33 @@ Sub nowPlayingSendTimelineToServer(timelineType, server)
 End Sub
 
 Sub nowPlayingSendTimelineToAll()
+    m.subscribers.Reset()
+    if m.subscribers.IsNext() then
+        xml = m.CreateTimelineDataXml()
+    end if
+    expiredSubscribers = CreateObject("roList")
+
+    for each id in m.subscribers
+        subscriber = m.subscribers[id]
+        if subscriber.SubscriptionTimer.IsExpired() then
+            expiredSubscribers.AddTail(id)
+        else
+            m.SendTimelineToSubscriber(subscriber, xml)
+        end if
+    next
+
+    for each id in expiredSubscribers
+        m.subscribers.Delete(id)
+    next
+End Sub
+
+Sub nowPlayingUpdatePlaybackState(timelineType, item, state, time)
+    timeline = m.timelines[timelineType]
+    timeline.state = state
+    timeline.item = item
+    timeline.attrs["time"] = tostr(time)
+
+    m.SendTimelineToAll()
 End Sub
 
 Function nowPlayingCreateTimelineDataXml()
@@ -140,9 +169,31 @@ Sub timelineDataToXmlAttributes(elem)
     elem.AddAttribute("type", m.type)
     elem.AddAttribute("state", m.state)
 
+    if m.item <> invalid then
+        addAttributeIfValid(elem, "duration", m.item.RawLength)
+        addAttributeIfValid(elem, "ratingKey", m.item.ratingKey)
+        addAttributeIfValid(elem, "key", m.item.key)
+        addAttributeIfValid(elem, "containerKey", m.item.sourceUrl)
+
+        server = m.item.server
+        if server <> invalid then
+            elem.AddAttribute("machineIdentifier", server.machineID)
+            parts = server.serverUrl.tokenize(":")
+            elem.AddAttribute("protocol", parts.RemoveHead())
+            elem.AddAttribute("address", Mid(parts.RemoveHead(), 3))
+            elem.AddAttribute("port", parts.RemoveHead())
+        end if
+    end if
+
     for each key in m.attrs
         elem.AddAttribute(key, m.attrs[key])
     next
+End Sub
+
+Sub addAttributeIfValid(elem, name, value)
+    if value <> invalid then
+        elem.AddAttribute(name, tostr(value))
+    end if
 End Sub
 
 Sub StartRequestIgnoringResponse(url, body=invalid, contentType="xml")
@@ -150,6 +201,7 @@ Sub StartRequestIgnoringResponse(url, body=invalid, contentType="xml")
     request.SetCertificatesFile("common:/certs/ca-bundle.crt")
 
     if body <> invalid then
+        ' TODO(schuyler): Remove this
         Debug("Sending timeline information:")
         Debug(body)
         request.AddHeader("Content-Type", MimeType(contentType))

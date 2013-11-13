@@ -107,7 +107,10 @@ Function newTrackMetadata(container, item, detailed=true) As Object
 
     track.EpisodeNumber = item@index
     duration = firstOf(item@duration, item@totalTime)
-    if duration <> invalid then track.Duration = int(val(duration)/1000)
+    if duration <> invalid then
+        track.Duration = int(val(duration)/1000)
+        track.RawLength = int(val(duration))
+    end if
     track.Length = track.Duration
 
     if track.Title = invalid then
