@@ -357,11 +357,14 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen.SetListStyle("flat-episodic", "zoom-to-fill")
         screenName = "Album Poster"
     else if item.key = "nowplaying" then
-        AudioPlayer().ContextScreenID = m.nextScreenId
-        screen = createAudioSpringboardScreen(AudioPlayer().Context, AudioPlayer().PlayIndex, m)
-        screenName = "Now Playing"
-        breadcrumbs = [screenName," "," "] ' set breadcrumbs for this..
-        'print AudioPlayer().Context[AudioPlayer().PlayIndex]
+        if AudioPlayer().ContextScreenID = m.screens.Peek().ScreenID then
+            screen = invalid
+        else
+            AudioPlayer().ContextScreenID = m.nextScreenId
+            screen = createAudioSpringboardScreen(AudioPlayer().Context, AudioPlayer().CurIndex, m)
+            screenName = "Now Playing"
+            breadcrumbs = [screenName," "," "] ' set breadcrumbs for this..
+        end if
         if screen = invalid then return invalid
     else if contentType = "audio" then
         screen = createAudioSpringboardScreen(context, contextIndex, m)

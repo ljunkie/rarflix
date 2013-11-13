@@ -377,6 +377,19 @@ Function ProcessNavigationBack() As Boolean
     return true
 End Function
 
+Function ProcessNavigationMusic() As Boolean
+    if CheckRemoteControlDisabled(m) then return true
+    ProcessCommandID(m.request)
+
+    dummyItem = CreateObject("roAssociativeArray")
+    dummyItem.ContentType = "audio"
+    dummyItem.Key = "nowplaying"
+    GetViewController().CreateScreenForItem(dummyItem, invalid, ["Now Playing"])
+
+    m.simpleOK("")
+    return true
+End Function
+
 Sub InitRemoteControlHandlers()
     ' Old custom requests
     ClassReply().AddHandler("/application/PlayMedia", ProcessPlayMediaRequest)
@@ -404,6 +417,7 @@ Sub InitRemoteControlHandlers()
     ClassReply().AddHandler("/player/navigation/moveUp", ProcessNavigationMoveUp)
     ClassReply().AddHandler("/player/navigation/select", ProcessNavigationSelect)
     ClassReply().AddHandler("/player/navigation/back", ProcessNavigationBack)
+    ClassReply().AddHandler("/player/navigation/music", ProcessNavigationMusic)
 End Sub
 
 Sub createPlayerAfterClose()
