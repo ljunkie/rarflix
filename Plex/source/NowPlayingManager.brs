@@ -12,6 +12,7 @@ Function NowPlayingManager()
         obj.FULLSCREEN_VIDEO = "fullScreenVideo"
         obj.FULLSCREEN_MUSIC = "fullScreenMusic"
         obj.FULLSCREEN_PHOTO = "fullScreenPhoto"
+        obj.TIMELINE_TYPES = ["video", "music", "photo"]
 
         ' Members
         obj.subscribers = CreateObject("roAssociativeArray")
@@ -19,15 +20,18 @@ Function NowPlayingManager()
         obj.location = obj.NAVIGATION
 
         ' Functions
+        obj.UpdateCommandID = nowPlayingUpdateCommandID
         obj.AddSubscriber = nowPlayingAddSubscriber
         obj.RemoveSubscriber = nowPlayingRemoveSubscriber
         obj.SendTimelineToSubscriber = nowPlayingSendTimelineToSubscriber
         obj.SendTimelineToServer = nowPlayingSendTimelineToServer
+        obj.SendTimelineToAll = nowPlayingSendTimelineToAll
+        obj.CreateTimelineDataXml = nowPlayingCreateTimelineDataXml
 
         ' Initialization
-        obj.timelines.video = TimelineData("video")
-        obj.timelines.music = TimelineData("music")
-        obj.timelines.photo = TimelineData("photo")
+        for each timelineType in obj.TIMELINE_TYPES
+            obj.timelines[timelineType] = TimelineData(timelineType)
+        next
 
         ' Singleton
         m.NowPlayingManager = obj
@@ -40,6 +44,12 @@ Function TimelineData(timelineType As String)
     obj = CreateObject("roAssociativeArray")
 
     obj.type = timelineType
+    obj.state = "stopped"
+
+    obj.attrs = CreateObject("roAssociativeArray")
+
+    obj.ToQueryString = timelineDataToQueryString
+    obj.ToXmlAttributes = timelineDataToXmlAttributes
 
     return obj
 End Function
@@ -56,6 +66,13 @@ Function NowPlayingSubscriber(deviceID, connectionUrl, commandID)
 
     return obj
 End Function
+
+Sub nowPlayingUpdateCommandID(deviceID, commandID)
+    subscriber = m.subscribers[deviceID]
+    if subscriber <> invalid then
+        subscriber.commandID = validint(commandID)
+    end if
+End Sub
 
 Function nowPlayingAddSubscriber(deviceID, connectionUrl, commandID) As Boolean
     if firstOf(deviceID, "") = "" then
@@ -85,8 +102,61 @@ Sub nowPlayingRemoveSubscriber(deviceID)
     end if
 End Sub
 
-Sub nowPlayingSendTimelineToSubscriber(subscriber)
+Sub nowPlayingSendTimelineToSubscriber(subscriber, xml=invalid)
+    if xml = invalid then
+        xml = m.CreateTimelineDataXml()
+    end if
+
+    xml.AddAttribute("commandID", tostr(subscriber.commandID))
+
+    url = subscriber.connectionUrl + "/:/timeline"
+    StartRequestIgnoringResponse(url, xml.GenXml(false))
 End Sub
 
 Sub nowPlayingSendTimelineToServer(timelineType, server)
+End Sub
+
+Sub nowPlayingSendTimelineToAll()
+End Sub
+
+Function nowPlayingCreateTimelineDataXml()
+    mc = CreateObject("roXMLElement")
+    mc.SetName("MediaContainer")
+    mc.AddAttribute("location", m.location)
+
+    for each timelineType in m.TIMELINE_TYPES
+        timeline = mc.AddElement("Timeline")
+        m.timelines[timelineType].ToXmlAttributes(timeline)
+    next
+
+    return mc
+End Function
+
+Function timelineDataToQueryString()
+    return ""
+End Function
+
+Sub timelineDataToXmlAttributes(elem)
+    elem.AddAttribute("type", m.type)
+    elem.AddAttribute("state", m.state)
+
+    for each key in m.attrs
+        elem.AddAttribute(key, m.attrs[key])
+    next
+End Sub
+
+Sub StartRequestIgnoringResponse(url, body=invalid, contentType="xml")
+    request = CreateURLTransferObject(url)
+    request.SetCertificatesFile("common:/certs/ca-bundle.crt")
+
+    if body <> invalid then
+        Debug("Sending timeline information:")
+        Debug(body)
+        request.AddHeader("Content-Type", MimeType(contentType))
+    end if
+
+    context = CreateObject("roAssociativeArray")
+    context.requestType = "ignored"
+
+    GetViewController().StartRequest(request, invalid, context, body)
 End Sub

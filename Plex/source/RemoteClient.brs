@@ -169,7 +169,7 @@ Function ProcessTimelineSubscribe() As Boolean
     port = firstOf(m.request.query["port"], "32400")
     host = m.request.remote_addr
     deviceID = m.request.fields["X-Plex-Client-Identifier"]
-    commandID = m.request.query["commandID"]
+    commandID = firstOf(m.request.query["commandID"], "0").toint()
 
     connectionUrl = protocol + "://" + tostr(host) + ":" + port
 

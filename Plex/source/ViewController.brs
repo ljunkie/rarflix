@@ -1215,7 +1215,9 @@ Sub vcShow()
                 requestContext = m.PendingRequests[id]
                 if requestContext <> invalid then
                     m.PendingRequests.Delete(id)
-                    requestContext.Listener.OnUrlEvent(msg, requestContext)
+                    if requestContext.Listener <> invalid then
+                        requestContext.Listener.OnUrlEvent(msg, requestContext)
+                    end if
                     requestContext = invalid
                 end if
             else if type(msg) = "roSocketEvent" then
@@ -1498,14 +1500,18 @@ Function vcStartRequest(request, listener, context, body=invalid) As Boolean
     if started then
         id = request.GetIdentity().tostr()
         m.PendingRequests[id] = context
-        screenID = listener.ScreenID.tostr()
-        if NOT m.RequestsByScreen.DoesExist(screenID) then
-            m.RequestsByScreen[screenID] = []
+
+        if listener <> invalid then
+            screenID = listener.ScreenID.tostr()
+            if NOT m.RequestsByScreen.DoesExist(screenID) then
+                m.RequestsByScreen[screenID] = []
+            end if
+            ' Screen ID's less than 0 are fake screens that won't be popped until
+            ' the app is cleaned up, so no need to waste the bytes tracking them
+            ' here.
+            if listener.ScreenID >= 0 then m.RequestsByScreen[screenID].Push(id)
         end if
-        ' Screen ID's less than 0 are fake screens that won't be popped until
-        ' the app is cleaned up, so no need to waste the bytes tracking them
-        ' here.
-        if listener.ScreenID >= 0 then m.RequestsByScreen[screenID].Push(id)
+
         return true
     else
         return false
