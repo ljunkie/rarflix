@@ -65,11 +65,15 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
         screen.SetContentList(context)
         screen.SetNext(contextIndex, true)
         Debug("PhotoPlayer total items: " + tostr(context.count()))
+        obj.CurIndex = contextIndex
+        obj.PhotoCount = context.count()
     else
         obj.Item = context
         AddAccountHeaders(screen, obj.Item.server.AccessToken)
         screen.AddContent(context)
         screen.SetNext(0, true)
+        obj.CurIndex = 0
+        obj.PhotoCount = 1
     end if
 
     obj.IsPaused = false
@@ -78,9 +82,26 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
 
     obj.HandleMessage = photoPlayerHandleMessage
 
+    obj.Pause = photoPlayerPause
+    obj.Resume = photoPlayerResume
+    obj.Next = photoPlayerNext
+    obj.Prev = photoPlayerPrev
+    obj.Stop = photoPlayerStop
+
     obj.playbackTimer = createTimer()
+    obj.IsPaused = false
 
     return obj
+End Function
+
+Function PhotoPlayer()
+    ' If the active screen is a slideshow, return it. Otherwise, invalid.
+    screen = GetViewController().screens.Peek()
+    if type(screen.Screen) = "roSlideShow" then
+        return screen
+    else
+        return invalid
+    end if
 End Function
 
 Function photoPlayerHandleMessage(msg) As Boolean
@@ -240,4 +261,52 @@ sub photoPlayerOnTimerExpired(timer)
         m.screen.SetTextOverlayHoldTime(timer.time)
         m.overlayTimer.Active = false
     end if
+End Sub
+
+Sub photoPlayerPause()
+    if NOT m.IsPaused then
+        m.Screen.Pause()
+    end if
+end Sub
+
+Sub photoPlayerResume()
+    if m.IsPaused then
+        m.Screen.Resume()
+    end if
+End Sub
+
+Sub photoPlayerNext()
+    maxIndex = m.PhotoCount - 1
+    index = m.CurIndex
+    newIndex = index
+
+    if index < maxIndex then
+        newIndex = index + 1
+    else
+        newIndex = 0
+    end if
+
+    if index <> newIndex then
+        m.Screen.SetNext(newIndex, true)
+    end if
+End Sub
+
+Sub photoPlayerPrev()
+    maxIndex = m.PhotoCount - 1
+    index = m.CurIndex
+    newIndex = index
+
+    if index > 0 then
+        newIndex = index - 1
+    else
+        newIndex = maxIndex
+    end if
+
+    if index <> newIndex then
+        m.Screen.SetNext(newIndex, true)
+    end if
+End Sub
+
+Sub photoPlayerStop()
+    m.Screen.Close()
 End Sub

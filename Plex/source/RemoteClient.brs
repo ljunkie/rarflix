@@ -232,6 +232,9 @@ Function ProcessPlaybackPlay() As Boolean
         else
             player.Play()
         end if
+    else if mediaType = "photo" then
+        player = PhotoPlayer()
+        if player <> invalid then player.Resume()
     else
         SendEcpCommand("Play")
     end if
@@ -249,6 +252,9 @@ Function ProcessPlaybackPause() As Boolean
     ' Try to deal with the command directly, falling back to ECP.
     if mediaType = "music" then
         AudioPlayer().Pause()
+    else if mediaType = "photo" then
+        player = PhotoPlayer()
+        if player <> invalid then player.Pause()
     else
         SendEcpCommand("Play")
     end if
@@ -266,6 +272,9 @@ Function ProcessPlaybackStop() As Boolean
     ' Try to deal with the command directly, falling back to ECP.
     if mediaType = "music" then
         AudioPlayer().Stop()
+    else if mediaType = "photo" then
+        player = PhotoPlayer()
+        if player <> invalid then player.Stop()
     else
         SendEcpCommand("Back")
     end if
@@ -284,6 +293,9 @@ Function ProcessPlaybackSkipNext() As Boolean
     ' Try to deal with the command directly, falling back to ECP.
     if mediaType = "music" then
         AudioPlayer().Next()
+    else if mediaType = "photo" then
+        player = PhotoPlayer()
+        if player <> invalid then player.Next()
     else
         SendEcpCommand("Fwd")
     end if
@@ -301,6 +313,9 @@ Function ProcessPlaybackSkipPrev() As Boolean
     ' Try to deal with the command directly, falling back to ECP.
     if mediaType = "music" then
         AudioPlayer().Prev()
+    else if mediaType = "photo" then
+        player = PhotoPlayer()
+        if player <> invalid then player.Prev()
     else
         SendEcpCommand("Rev")
     end if
