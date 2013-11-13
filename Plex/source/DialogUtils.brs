@@ -156,7 +156,7 @@ Function dialogHandleMessage(msg) As Boolean
             end if
         else if msg.isButtonPressed() then
             command = m.ButtonCommands[msg.getIndex()]
-            Debug("Button pressed: " + tostr(command))
+            Debug("Button pressed in dialog: " + tostr(command))
             done = true
             ' ljunkie - if screen has a SetFocusButton function call it before the normal handle buttom; dialog.SetFocusButton = dialogSetFocusButton
             if m.SetFocusButton <> invalid then 
