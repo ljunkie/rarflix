@@ -963,9 +963,7 @@ Sub vcShow()
                 end if
             else if type(msg) = "roAudioPlayerEvent" then
                 if m.AudioPlayer.HandleMessage(msg) = true and RegRead("locktime_music", "preferences","enabled") <> "enabled" then
-                    m.ResetIdleTimer()
-                else 
-                    print "skip idle timer reset [music]"
+                    m.ResetIdleTimer() ' reset timer if music lock is disabled. I.E. when song changes timer will be reset
                 end if
             else if type(msg) = "roSystemLogEvent" then
                 msgInfo = msg.GetInfo()
@@ -994,10 +992,15 @@ Sub vcShow()
         
         'check for idle timeout
         if m.timerIdleTime <> invalid then 'and (msg.isRemoteKeyPressed() or msg.isButtonInfo()) then 
-            print "IDLE TIME Check: "; int(m.timerIdleTime.RemainingMillis()/int(1000))
-            if m.timerIdleTime.IsExpired()=true then  'timer expired will only return true once
-                m.createLockScreen()    
-            end if 
+            ' if for some reason one wants to disable timer during music, we'll handle it - we can handle paused if needed later [m.audioplayer.ispaused]
+            if RegRead("locktime_music", "preferences","enabled") <> "enabled" and (m.audioplayer.isplaying) then 
+                m.ResetIdleTimer()                
+            else 
+                print "IDLE TIME Check: "; int(m.timerIdleTime.RemainingMillis()/int(1000))
+                if m.timerIdleTime.IsExpired()=true then  'timer expired will only return true once
+                    m.createLockScreen()    
+                end if 
+            end if
         end if
                  
     end while

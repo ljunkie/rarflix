@@ -558,15 +558,14 @@ sub prefsSecurityPinRefresh(screen)
     }
 
     values = [
-        { title: "Enabled", EnumValue: "enabled" },
-        { title: "Disabled", EnumValue: "disabled" },
+        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Lock screen if inactive"+chr(10)+"while music is playing" },
+        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Do not lock screen if inactive" + chr(10) +"while music is playing" },
     ]
     screen.Prefs["locktime_music"] = {
         values: values,
         heading: "Lock screen while music is playing",
         default: "enabled"
     }
-
 
     screen.contentArray.Clear() 
     screen.Screen.ClearContent()
@@ -578,7 +577,7 @@ sub prefsSecurityPinRefresh(screen)
             screen.AddItem({title: "Change Security PIN"}, "set")
             screen.AddItem({title: "Clear Security PIN"}, "clear")
             screen.AddItem({title: "Inactivity Lock Time"}, "locktime", screen.GetEnumValue("locktime"))
-            screen.AddItem({title: "Inactivity Lock [music]"}, "locktime_music", screen.GetEnumValue("locktime_music"))
+            screen.AddItem({title: "Inactivity Lock [music]",  ShortDescriptionLine2: "Lock Screen if inactive"+chr(10)+"while music is playing"}, "locktime_music", screen.GetEnumValue("locktime_music"))
         else
             screen.AddItem({title: "Enter current PIN to make changes"}, "unlock")
         end if
@@ -614,6 +613,8 @@ Function prefsSecurityPinHandleMessage(msg) As Boolean
             else if command = "locktime" then
                 m.HandleEnumPreference(command, msg.GetIndex())
                 m.ViewController.CreateIdleTimer()
+            else if command = "locktime_music" then
+                m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "close" then
                 m.Screen.Close()
             end if
