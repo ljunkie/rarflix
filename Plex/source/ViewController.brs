@@ -544,6 +544,10 @@ Function vcCreateContextMenu()
     ' ljunkie -- we need some more checks here -- if audio is not playing/etc and we want to use the asterisk button for other things.. how do we work this?
     if m.AudioPlayer.ContextScreenID = invalid then return invalid
 
+    ' if screen if locked do not show dialog ( we might want to allow this, but we'd need to disable the go to now playing screen )
+    ' redundant check - we don't allow option key globally
+    if m.IsLocked <> invalid and m.IsLocked then return invalid
+
     screen = m.screens.peek()
     showDialog = false
 
@@ -971,7 +975,8 @@ Sub vcShow()
                     GetGlobalAA().AddReplace("bandwidth", msgInfo.Bandwidth)
                 end if
             else if msg.isRemoteKeyPressed() and msg.GetIndex() = 10 then
-                m.CreateContextMenu()
+                ' do not allow global option key while screen is locked
+                if m.IsLocked <> invalid or NOT m.IsLocked then m.CreateContextMenu()
             end if
         end if
 

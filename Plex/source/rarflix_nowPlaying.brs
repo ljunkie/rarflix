@@ -197,6 +197,7 @@ end function
 
 ' This needs some work - rough draft - should add link to view videoDetial screen from here
 Sub ShowNotifyDialog(obj As dynamic, notifyIndex = 0, isNowPlaying = false) 
+    if m.viewcontroller.IsLocked <> invalid and m.viewcontroller.IsLocked then return
     Debug("showing Dialog notifications ")
     ' isNowPlaying is special - if true, we will show all the NowPlaying items when a user selectes to show the notification (allows this dialog to be used for other notifications)
 
