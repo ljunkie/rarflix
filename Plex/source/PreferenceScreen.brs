@@ -1917,7 +1917,7 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
     obj.AddItem({title: "Movie & Others", ShortDescriptionLine2: "Posters or Grid"}, "rf_poster_grid", obj.GetEnumValue("rf_poster_grid"))
     obj.AddItem({title: "Grid Size", ShortDescriptionLine2: "Size of Grid"}, "rf_grid_style", obj.GetEnumValue("rf_grid_style"))
     obj.AddItem({title: "Grid Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_grid_displaymode", obj.GetEnumValue("rf_grid_displaymode"))
-    obj.AddItem({title: "Grid Pop Out", ShortDescriptionLine2: "Description on bottom left"}, "rf_grid_description", obj.GetEnumValue("rf_grid_description"))
+    obj.AddItem({title: "Grid Pop Out", ShortDescriptionLine2: "Description on bottom right"}, "rf_grid_description", obj.GetEnumValue("rf_grid_description"))
     'we can add this.. but it doesn't do much yet.. let's not totally confuse people.. yet.
     'obj.AddItem({title: "Poster Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_poster_displaymode", obj.GetEnumValue("rf_poster_displaymode"))
     obj.AddItem({title: "Reorder Rows"}, "section_row_order")
