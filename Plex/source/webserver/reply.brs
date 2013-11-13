@@ -402,7 +402,7 @@ end sub
 sub reply_simple_ok(body)
     m.buf.fromasciistring(body)
     m.length = m.buf.count()
-    m.http_code = 200
+    if validint(m.http_code) = 0 then m.http_code = 200
     m.genHdr(true)
     m.source = m.GENERATED
 end sub

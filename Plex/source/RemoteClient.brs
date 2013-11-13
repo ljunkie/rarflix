@@ -206,6 +206,82 @@ Function ProcessTimelineUnsubscribe() As Boolean
     return true
 End Function
 
+Function ProcessPlaybackPlayMedia() As Boolean
+    if NOT ValidateRemoteControlRequest(m) then return true
+    ProcessCommandID(m.request)
+
+    machineID = m.request.query["machineIdentifier"]
+
+    server = GetPlexMediaServer(machineID)
+
+    if server = invalid then
+        port = firstOf(m.request.query["port"], "32400")
+        protocol = firstOf(m.request.query["protocol"], "http")
+        address = m.request.query["address"]
+        if address = invalid then
+            SendErrorResponse(m, 400, "address must be specified")
+            return true
+        end if
+
+        server = newSyntheticPlexMediaServer(protocol + "://" + address + ":" + port, machineID)
+    end if
+
+    offset = firstOf(m.request.query["offset"], "0").toint()
+    key = m.request.query["key"]
+    containerKey = firstOf(m.request.query["containerKey"], key)
+
+    ' If we have a container key, fetch the container and look for the matching
+    ' item. Otherwise, just fetch the key and use the first result.
+
+    if containerKey = invalid then
+        SendErrorResponse(m, 400, "at least one of key or containerKey must be specified")
+        return true
+    end if
+
+    container = createPlexContainerForUrl(server, "", containerKey)
+    children = container.GetMetadata()
+    matchIndex = invalid
+    for i = 0 to children.Count() - 1
+        item = children[i]
+        if key = item.key then
+            matchIndex = i
+            exit for
+        end if
+    end for
+
+    if matchIndex <> invalid then
+        ' If we currently have a video playing, things are tricky. We can't
+        ' play anything on top of video or Bad Things happen. But we also
+        ' can't quickly close the screen and throw up a new video player
+        ' because the new video screen will see the isScreenClosed event
+        ' meant for the old video player. So we have to register a callback,
+        ' which is always awkward.
+
+        if GetViewController().IsVideoPlaying() then
+            callback = CreateObject("roAssociativeArray")
+            callback.context = children
+            callback.contextIndex = matchIndex
+            callback.seekValue = offset
+            callback.OnAfterClose = createPlayerAfterClose
+            GetViewController().CloseScreenWithCallback(callback)
+        else
+            GetViewController().CreatePlayerForItem(children, matchIndex, offset)
+
+            ' If the screensaver is on, which we can't reliably know, then the
+            ' video won't start until the user wakes the Roku up. We can do that
+            ' for them by sending a harmless keystroke. Down is harmless, as long
+            ' as they started a video or slideshow.
+            SendEcpCommand("Down")
+        end if
+    else
+        SendErrorResponse(m, 400, "unable to find media for key")
+        return true
+    end if
+
+    m.simpleOK("")
+    return true
+End Function
+
 Function ProcessPlaybackSeekTo() As Boolean
     if NOT ValidateRemoteControlRequest(m) then return true
     ProcessCommandID(m.request)
@@ -461,6 +537,7 @@ Sub InitRemoteControlHandlers()
     ClassReply().AddHandler("/player/timeline/unsubscribe", ProcessTimelineUnsubscribe)
 
     ' Playback
+    ClassReply().AddHandler("/player/playback/playMedia", ProcessPlaybackPlayMedia)
     ClassReply().AddHandler("/player/playback/seekTo", ProcessPlaybackSeekTo)
     ClassReply().AddHandler("/player/playback/play", ProcessPlaybackPlay)
     ClassReply().AddHandler("/player/playback/pause", ProcessPlaybackPause)
