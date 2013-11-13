@@ -1,5 +1,5 @@
 '*
-'* A wrapper around a video player that implements are screen interface.
+'* A wrapper around a video player that implements our screen interface.
 '*
 
 Function createVideoPlayerScreen(metadata, seekValue, directPlayOptions, viewController)
@@ -30,7 +30,7 @@ Function createVideoPlayerScreen(metadata, seekValue, directPlayOptions, viewCon
     obj.bufferingTimer = createTimer()
 
     obj.ShowPlaybackError = videoPlayerShowPlaybackError
-    obj.SendTimeline = videoPlayerSendTimeline
+    obj.UpdateNowPlaying = videoPlayerUpdateNowPlaying
 
     obj.curPart = metadata.SelectPartForOffset(seekValue)
 
@@ -195,7 +195,7 @@ Function videoPlayerCreateVideoPlayer()
         next
     end if
 
-    videoPlayer.SetPositionNotificationPeriod(5)
+    videoPlayer.SetPositionNotificationPeriod(1)
 
     m.IsTranscoded = videoItem.IsTranscoded
     m.videoItem = videoItem
@@ -268,7 +268,7 @@ Function videoPlayerHandleMessage(msg) As Boolean
             m.timelineTimer.Active = false
             m.playState = "stopped"
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isScreenClosed: position -> " + tostr(m.lastPosition))
-            m.SendTimeline()
+            m.UpdateNowPlaying()
             if m.IsTranscoded then server.StopVideo()
 
             ' Send an analytics event.
@@ -312,7 +312,7 @@ Function videoPlayerHandleMessage(msg) As Boolean
                 end if
             end if
             m.playState = "playing"
-            m.SendTimeline(true)
+            m.UpdateNowPlaying(true)
         else if msg.isRequestFailed() then
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed - message = " + tostr(msg.GetMessage()))
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed - data = " + tostr(msg.GetData()))
@@ -321,22 +321,21 @@ Function videoPlayerHandleMessage(msg) As Boolean
         else if msg.isPaused() then
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isPaused: position -> " + tostr(m.lastPosition))
             m.playState = "paused"
-            m.SendTimeline()
-            'SendRemoteKey("Down")
+            m.UpdateNowPlaying()
         else if msg.isResumed() then
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isResumed")
             m.playState = "playing"
-            m.SendTimeline()
+            m.UpdateNowPlaying()
         else if msg.isPartialResult() then
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isPartialResult: position -> " + tostr(m.lastPosition))
             m.playState = "stopped"
-            m.SendTimeline()
+            m.UpdateNowPlaying()
             if m.IsTranscoded then server.StopVideo()
         else if msg.isFullResult() then
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isFullResult: position -> " + tostr(m.lastPosition))
             m.isPlayed = true
             m.playState = "stopped"
-            m.SendTimeline()
+            m.UpdateNowPlaying()
             if m.IsTranscoded then server.StopVideo()
         else if msg.isStreamStarted() then
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isStreamStarted: position -> " + tostr(m.lastPosition))
@@ -383,7 +382,7 @@ Sub videoPlayerOnTimerExpired(timer)
         m.StartTranscodeSessionRequest()
         m.Item.server.PingTranscode()
     else if timer.Name = "timeline"
-        m.SendTimeline(true)
+        m.UpdateNowPlaying(true)
     end if
 End Sub
 
@@ -439,9 +438,8 @@ Sub videoPlayerOnUrlEvent(msg, requestContext)
     end if
 End Sub
 
-Sub videoPlayerSendTimeline(force=false)
+Sub videoPlayerUpdateNowPlaying(force=false)
     if m.lastPosition >= 0 then updateVideoHUD(m,m.lastPosition)
-
     ' We can only send the event if we have some basic info about the item
     if m.Item.ratingKey = invalid OR m.Item.RawLength = invalid OR m.Item.server = invalid then
         m.timelineTimer.Active = false
@@ -454,6 +452,8 @@ Sub videoPlayerSendTimeline(force=false)
     m.lastTimelineState = m.playState
     m.Item.server.Timeline(m.Item, m.playState, 1000 * m.lastPosition, m.isPlayed)
     m.timelineTimer.Mark()
+
+    NowPlayingManager().UpdatePlaybackState("video", m.Item, m.playState, 1000 * m.lastPosition)
 End Sub
 
 Function qualityHandleButton(key, data) As Boolean
