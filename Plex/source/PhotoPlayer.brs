@@ -67,6 +67,7 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
         Debug("PhotoPlayer total items: " + tostr(context.count()))
         obj.CurIndex = contextIndex
         obj.PhotoCount = context.count()
+        obj.Context = context
     else
         obj.Item = context
         AddAccountHeaders(screen, obj.Item.server.AccessToken)
@@ -74,6 +75,7 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
         screen.SetNext(0, true)
         obj.CurIndex = 0
         obj.PhotoCount = 1
+        obj.Context = [context]
     end if
 
     obj.IsPaused = false
@@ -127,9 +129,14 @@ Function photoPlayerHandleMessage(msg) As Boolean
             amountPlayed = m.playbackTimer.GetElapsedSeconds()
             Debug("Sending analytics event, appear to have watched slideshow for " + tostr(amountPlayed) + " seconds")
             AnalyticsTracker().TrackEvent("Playback", firstOf(m.Item.ContentType, "photo"), m.Item.mediaContainerIdentifier, amountPlayed)
+            NowPlayingManager().location = "navigation"
+            NowPlayingManager().UpdatePlaybackState("photo", invalid, "stopped", 0)
 
             m.ViewController.PopScreen(m)
         else if msg.isPlaybackPosition() then
+            m.CurIndex = msg.GetIndex()
+            NowPlayingManager().location = "fullScreenPhoto"
+            NowPlayingManager().UpdatePlaybackState("photo", m.Context[m.CurIndex], "playing", 0)
             m.CurIndex = msg.GetIndex() ' update current index
             ' ljunkie - check for new images after slideshow completeion ( if slideshow_reload is enabled )
             if type(m.items) = "roArray" then 
@@ -151,12 +158,14 @@ Function photoPlayerHandleMessage(msg) As Boolean
             audioplayer = GetViewController().AudioPlayer
             Debug("paused")
             m.isPaused = true
-            if audioplayer.IsPlaying then audioplayer.Pause()
+            if AudioPlayer().IsPlaying then AudioPlayer().Pause()
+            NowPlayingManager().UpdatePlaybackState("photo", m.Context[m.CurIndex], "paused", 0)
         else if msg.isResumed() then
-            audioplayer = GetViewController().AudioPlayer
+            audioplayer = AudioPlayer()
             Debug("resumed")
             m.isPaused = false
             if audioplayer.IsPaused then audioplayer.Resume()
+            NowPlayingManager().UpdatePlaybackState("photo", m.Context[m.CurIndex], "playing", 0)
         else if msg.isRemoteKeyPressed() then
             if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then ' ljunkie - use * for more options on focused item
                 obj = m.item     
@@ -209,7 +218,7 @@ End Function
 
 
 Sub photoPlayerShowContextMenu(obj,force_show = false)
-    audioplayer = GetViewController().AudioPlayer
+    audioplayer = AudioPlayer()
 
     ' show audio dialog if item is directory and audio is playing/paused
     if tostr(obj.nodename) = "Directory" then
@@ -266,12 +275,20 @@ End Sub
 Sub photoPlayerPause()
     if NOT m.IsPaused then
         m.Screen.Pause()
+
+        ' Calling Pause on the screen won't trigger an isPaused event
+        m.IsPaused = true
+        NowPlayingManager().UpdatePlaybackState("photo", m.Context[m.CurIndex], "paused", 0)
     end if
 end Sub
 
 Sub photoPlayerResume()
     if m.IsPaused then
         m.Screen.Resume()
+
+        ' Calling Resume on the screen won't trigger an isResumed event
+        m.IsPaused = false
+        NowPlayingManager().UpdatePlaybackState("photo", m.Context[m.CurIndex], "playing", 0)
     end if
 End Sub
 

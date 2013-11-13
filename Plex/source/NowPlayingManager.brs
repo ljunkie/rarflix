@@ -173,7 +173,15 @@ Sub timelineDataToXmlAttributes(elem)
         addAttributeIfValid(elem, "duration", m.item.RawLength)
         addAttributeIfValid(elem, "ratingKey", m.item.ratingKey)
         addAttributeIfValid(elem, "key", m.item.key)
-        addAttributeIfValid(elem, "containerKey", m.item.sourceUrl)
+
+        if m.item.sourceUrl <> invalid then
+            ' Make sure the container key is relative. It's probably not yet.
+            if left(m.item.sourceUrl, 1) = "/" then
+                elem.AddAttribute("containerKey", m.item.sourceUrl)
+            else
+                elem.AddAttribute("containerKey", Mid(m.item.sourceUrl, Instr(9, m.item.sourceUrl, "/")))
+            end if
+        end if
 
         server = m.item.server
         if server <> invalid then
