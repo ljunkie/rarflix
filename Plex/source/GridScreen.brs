@@ -142,7 +142,10 @@ Function showGridScreen() As Integer
         print "isType: " + tostr(isType)
     end if
 
-    if RegRead("rf_grid_description_"+isType, "preferences", "enabled") <> "enabled" then
+    ' hide description if delay is enabled or disabled
+    if RegRead("rf_grid_description_delay", "preferences", "enabled") = "enabled" then
+        m.screen.SetDescriptionVisible(false)
+    else if RegRead("rf_grid_description_"+isType, "preferences", "enabled") <> "enabled" then
         m.screen.SetDescriptionVisible(false)
     end if
     print "------------------------------------------------------- END ---------------------------------------------------------------------------------------"
@@ -212,6 +215,20 @@ Function gridHandleMessage(msg) As Boolean
         else if msg.isListItemFocused() then
             ' If the user is getting close to the limit of what we've
             ' preloaded, make sure we kick off another update.
+
+            if RegRead("rf_grid_description_delay", "preferences", "enabled") = "enabled" then
+                m.screen.SetDescriptionVisible(false)
+                if m.timerDesc = invalid then 
+                    m.timerDesc = createTimer()
+                    m.timerDesc.Name = "hideDescription"
+                    m.timerDesc.SetDuration(1200,true)
+                    m.ViewController.AddTimer(m.timerDesc, m)
+                end if
+                m.timerDesc.Active = true
+                m.timerDesc.Mark()
+            end if
+
+            'm.AddTimer(timer, m)
 
             m.selectedRow = msg.GetIndex()
             m.focusedIndex = msg.GetData()
@@ -584,4 +601,26 @@ Sub gridOnTimerExpired(timer)
     if timer.Name = "Reactivate" AND m.ViewController.IsActiveScreen(m) then
         m.Activate(invalid)
     end if
+
+    if timer.Name = "hideDescription" AND m.ViewController.IsActiveScreen(m) then
+        timer.Active = false
+        showDesc(m,true)
+    end if
+
 End Sub
+
+sub showDesc(m,bool) 
+    if m.ScreenID = -1 then 
+        isType = "home"
+    else 
+        sec_metadata = getSectionType(m)
+        secTypes = ["photo","artist","movie","show"]
+        isType = "other"
+        for each st in secTypes
+            if tostr(sec_metadata.type) = st then isType = st
+        end for
+    end if
+    if RegRead("rf_grid_description_"+isType, "preferences", "enabled") = "enabled" then
+        m.screen.SetDescriptionVisible(bool)
+    end if
+end sub

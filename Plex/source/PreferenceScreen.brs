@@ -1963,10 +1963,15 @@ Function createGridDescriptionPrefsScreen(viewController) As Object
 
     ' Grid Descriptions Pop Out
     values = [
-        { title: "Enabled", EnumValue: "enabled"  },
+        { title: "Enabled",  EnumValue: "enabled"  },
         { title: "Disabled", EnumValue: "disabled"  },
 
     ]
+    obj.Prefs["rf_grid_description_delay"] = {
+        values: values,
+        heading: "Grid Pop Out Delay",
+        default: "enabled"
+    }
     obj.Prefs["rf_grid_description_movie"] = {
         values: values,
         heading: "Grid Pop Out: Movie Section",
@@ -2000,6 +2005,7 @@ Function createGridDescriptionPrefsScreen(viewController) As Object
 
     obj.Screen.SetHeader("Grid Pop Out Description")
 
+    obj.AddItem({title: "Delay"  }, "rf_grid_description_delay",  obj.GetEnumValue("rf_grid_description_delay"))
     obj.AddItem({title: "Home"  }, "rf_grid_description_home",  obj.GetEnumValue("rf_grid_description_home"))
     obj.AddItem({title: "Movie" }, "rf_grid_description_movie", obj.GetEnumValue("rf_grid_description_movie"))
     obj.AddItem({title: "TV"    }, "rf_grid_description_show",  obj.GetEnumValue("rf_grid_description_show"))

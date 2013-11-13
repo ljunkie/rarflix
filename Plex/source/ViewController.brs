@@ -103,7 +103,7 @@ Function createViewController() As Object
             controller.ShowSecurityScreen = true
         end if
     end if
-    controller.timerIdleTime = invalid  'timer used for detecting idle time
+    controller.timerIdleTime = invalid  'timerhideDescriptionhideDescriptionhideDescription used for detecting idle time
 
     ' Stuff the controller into the global object
     m.ViewController = controller

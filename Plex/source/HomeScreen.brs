@@ -119,9 +119,15 @@ End Sub
 
 
 Sub homeScreenOnTimerExpired(timer)
+
     if timer.Name = "clock" AND m.ViewController.IsActiveScreen(m) then
         RRbreadcrumbDate(m.viewcontroller.screens[0])
         'm.Screen.SetBreadcrumbText("", CurrentTimeAsString())
+    end if
+
+    if timer.Name = "hideDescription" AND m.ViewController.IsActiveScreen(m) then
+        timer.Active = false
+        showDesc(m,true)
     end if
 
     ' Now Playing and Notify Section (RARflixTest only)
