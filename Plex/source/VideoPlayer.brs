@@ -32,9 +32,26 @@ Function createVideoPlayerScreen(metadata, seekValue, directPlayOptions, viewCon
     obj.ShowPlaybackError = videoPlayerShowPlaybackError
     obj.UpdateNowPlaying = videoPlayerUpdateNowPlaying
 
+    obj.Pause = videoPlayerPause
+    obj.Resume = videoPlayerResume
+    obj.Next = videoPlayerNext
+    obj.Prev = videoPlayerPrev
+    obj.Stop = videoPlayerStop
+    obj.Seek = videoPlayerSeek
+
     obj.curPart = metadata.SelectPartForOffset(seekValue)
 
     return obj
+End Function
+
+Function VideoPlayer()
+    ' If the active screen is a slideshow, return it. Otherwise, invalid.
+    screen = GetViewController().screens.Peek()
+    if type(screen.Screen) = "roVideoScreen" then
+        return screen
+    else
+        return invalid
+    end if
 End Function
 
 Sub videoPlayerShow()
@@ -166,42 +183,41 @@ Function videoPlayerCreateVideoPlayer()
 
     end if
 
-    videoPlayer = CreateObject("roVideoScreen")
-    videoPlayer.SetMessagePort(m.Port)
+    player = CreateObject("roVideoScreen")
+    player.SetMessagePort(m.Port)
     if GetGlobal("rokuVersionArr", [0])[0] >= 4 then
-        videoPlayer.EnableCookies()
+        player.EnableCookies()
     end if
 
     ' If we're playing the video from the server, add appropriate X-Plex
     ' headers.
     if server.IsRequestToServer(videoItem.StreamUrls[0]) then
-        AddPlexHeaders(videoPlayer, server.AccessToken)
+        AddPlexHeaders(player, server.AccessToken)
     end if
 
-    videoPlayer.SetCertificatesFile("common:/certs/ca-bundle.crt")
-    videoPlayer.SetCertificatesDepth(5)
-    videoPlayer.SetContent(videoItem)
+    player.SetCertificatesFile("common:/certs/ca-bundle.crt")
+    player.SetCertificatesDepth(5)
+    player.SetContent(videoItem)
 
     if videoItem.IsTranscoded then
         cookie = server.StartTranscode(videoItem.StreamUrls[0])
         if cookie <> invalid then
-            videoPlayer.AddHeader("Cookie", cookie)
+            player.AddHeader("Cookie", cookie)
         end if
     else
         for each header in videoItem.IndirectHttpHeaders
             for each name in header
-                videoPlayer.AddHeader(name, header[name])
+                player.AddHeader(name, header[name])
             next
         next
     end if
 
-    videoPlayer.SetPositionNotificationPeriod(1)
+    player.SetPositionNotificationPeriod(1)
 
     m.IsTranscoded = videoItem.IsTranscoded
     m.videoItem = videoItem
-    m.videoPlayer = videoPlayer
 
-    return videoPlayer
+    return player
 End Function
 
 Sub videoPlayerCleanup()
@@ -368,6 +384,41 @@ Function videoPlayerHandleMessage(msg) As Boolean
     return handled
 End Function
 
+Sub videoPlayerPause()
+    if m.Screen <> invalid then
+        m.Screen.Pause()
+    end if
+End Sub
+
+Sub videoPlayerResume()
+    if m.Screen <> invalid then
+        m.Screen.Resume()
+    end if
+End Sub
+
+Sub videoPlayerNext()
+End Sub
+
+Sub videoPlayerPrev()
+End Sub
+
+Sub videoPlayerStop()
+    if m.Screen <> invalid then
+        m.Screen.Close()
+    end if
+End Sub
+
+Sub videoPlayerSeek(offset)
+    if m.Screen <> invalid then
+        if m.playState = "paused" then
+            m.Screen.Resume()
+            m.Screen.Seek(offset)
+        else
+            m.Screen.Seek(offset)
+        end if
+    end if
+End Sub
+
 Sub videoPlayerStartTranscodeSessionRequest()
     if m.IsTranscoded then
         httpRequest = m.videoItem.TranscodeServer.CreateRequest("", "/transcode/sessions/" + GetGlobal("rokuUniqueId"))
@@ -432,7 +483,7 @@ Sub videoPlayerOnUrlEvent(msg, requestContext)
                 ' useful if moved to: videoPlayerHandleMessage -> msg.isPlaybackPosition
                 ' ljunkie - update the HUD with transcode info 
                 if m.lastPosition <> invalid and m.lastPosition >= 0 then updateVideoHUD(m,m.lastPosition,m.VideoItem.ReleaseDate)
-                m.VideoPlayer.SetContent(m.VideoItem)
+                m.Screen.SetContent(m.VideoItem)
             end if
 	end if
     end if

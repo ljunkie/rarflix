@@ -212,6 +212,11 @@ Function ProcessPlaybackSeekTo() As Boolean
 
     if mediaType = "music" AND offset <> invalid
         AudioPlayer().Seek(int(val(offset)))
+    else if mediaType = "video" AND offset <> invalid
+        player = VideoPlayer()
+        if player <> invalid then
+            player.Seek(int(val(offset)))
+        end if
     end if
 
     m.simpleOK("")
@@ -235,6 +240,9 @@ Function ProcessPlaybackPlay() As Boolean
     else if mediaType = "photo" then
         player = PhotoPlayer()
         if player <> invalid then player.Resume()
+    else if mediaType = "video" then
+        player = VideoPlayer()
+        if player <> invalid then player.Resume()
     else
         SendEcpCommand("Play")
     end if
@@ -255,6 +263,9 @@ Function ProcessPlaybackPause() As Boolean
     else if mediaType = "photo" then
         player = PhotoPlayer()
         if player <> invalid then player.Pause()
+    else if mediaType = "video" then
+        player = VideoPlayer()
+        if player <> invalid then player.Pause()
     else
         SendEcpCommand("Play")
     end if
@@ -274,6 +285,9 @@ Function ProcessPlaybackStop() As Boolean
         AudioPlayer().Stop()
     else if mediaType = "photo" then
         player = PhotoPlayer()
+        if player <> invalid then player.Stop()
+    else if mediaType = "video" then
+        player = VideoPlayer()
         if player <> invalid then player.Stop()
     else
         SendEcpCommand("Back")
@@ -296,6 +310,9 @@ Function ProcessPlaybackSkipNext() As Boolean
     else if mediaType = "photo" then
         player = PhotoPlayer()
         if player <> invalid then player.Next()
+    else if mediaType = "video" then
+        player = VideoPlayer()
+        if player <> invalid then player.Next()
     else
         SendEcpCommand("Fwd")
     end if
@@ -315,6 +332,9 @@ Function ProcessPlaybackSkipPrev() As Boolean
         AudioPlayer().Prev()
     else if mediaType = "photo" then
         player = PhotoPlayer()
+        if player <> invalid then player.Prev()
+    else if mediaType = "video" then
+        player = VideoPlayer()
         if player <> invalid then player.Prev()
     else
         SendEcpCommand("Rev")
