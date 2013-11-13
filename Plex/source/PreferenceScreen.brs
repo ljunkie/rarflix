@@ -161,11 +161,13 @@ Sub prefsOnUserInput(value, screen)
         if screen.SelectedIndex <> invalid then
             ' instead of having to close/open the channel again - we can dynamically fix some settings through the channel. 
             ' As of now (2013-11-09) if someone disables/enables the Description Pop Out on a grid screen, we will set that on any open grid screen
-            if m.currentRegKey = "rf_grid_description" then 
+            ' update (2013-11-12) the only screen we need to upate is the HOME screen since we are in settings
+            if m.currentRegKey = "rf_grid_description_home" then 
                 selection = (tostr(screen.SelectedValue) = "enabled")
                 for each resetscreen in m.viewcontroller.screens
-                    if resetscreen <> invalid and type(resetscreen.screen) = "roGridScreen" then 
+                    if resetscreen <> invalid and type(resetscreen.screen) = "roGridScreen" and resetscreen.ScreenID = -1 then 
                         resetscreen.screen.SetDescriptionVisible(selection)
+                        exit for
                     end if
                 end for
             end if
@@ -1917,7 +1919,7 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
     obj.AddItem({title: "Movie & Others", ShortDescriptionLine2: "Posters or Grid"}, "rf_poster_grid", obj.GetEnumValue("rf_poster_grid"))
     obj.AddItem({title: "Grid Size", ShortDescriptionLine2: "Size of Grid"}, "rf_grid_style", obj.GetEnumValue("rf_grid_style"))
     obj.AddItem({title: "Grid Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_grid_displaymode", obj.GetEnumValue("rf_grid_displaymode"))
-    obj.AddItem({title: "Grid Pop Out", ShortDescriptionLine2: "Description on bottom right"}, "rf_grid_description", obj.GetEnumValue("rf_grid_description"))
+    obj.AddItem({title: "Grid Pop Out", ShortDescriptionLine2: "Description on bottom right"}, "rf_grid_description")
     'we can add this.. but it doesn't do much yet.. let's not totally confuse people.. yet.
     'obj.AddItem({title: "Poster Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_poster_displaymode", obj.GetEnumValue("rf_poster_displaymode"))
     obj.AddItem({title: "Reorder Rows"}, "section_row_order")
@@ -1936,12 +1938,93 @@ Function prefsSectionDisplayHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "use_grid_for_series" or command = "rf_poster_grid" or command = "rf_grid_style" or command = "rf_grid_displaymode" or command = "rf_poster_displaymode" or command = "rf_grid_description" then
+            if command = "use_grid_for_series" or command = "rf_poster_grid" or command = "rf_grid_style" or command = "rf_grid_displaymode" or command = "rf_poster_displaymode" then 
                 m.HandleEnumPreference(command, msg.GetIndex())
+            else if command = "rf_grid_description" then
+                screen = createGridDescriptionPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["Grid Description Option"])
+                screen.Show()
             else if command = "section_row_order" then
                 m.HandleReorderPreference(command, msg.GetIndex())
             else if command = "close" then
                 m.Screen.Close()
+            end if
+        end if
+    end if
+
+    return handled
+End Function
+
+
+Function createGridDescriptionPrefsScreen(viewController) As Object
+    obj = createBasePrefsScreen(viewController)
+
+    obj.HandleMessage = prefsGridDescriptionHandleMessage
+
+    ' Grid Descriptions Pop Out
+    values = [
+        { title: "Enabled", EnumValue: "enabled"  },
+        { title: "Disabled", EnumValue: "disabled"  },
+
+    ]
+    obj.Prefs["rf_grid_description_movie"] = {
+        values: values,
+        heading: "Grid Pop Out: Movie Section",
+        default: "enabled"
+    }
+    obj.Prefs["rf_grid_description_show"] = {
+        values: values,
+        heading: "Grid Pop Out: TV Show Section",
+        default: "enabled"
+    }
+    obj.Prefs["rf_grid_description_photo"] = {
+        values: values,
+        heading: "Grid Pop Out: Photo Section",
+        default: "enabled"
+    }
+    obj.Prefs["rf_grid_description_artist"] = {
+        values: values,
+        heading: "Grid Pop Out: Music Section",
+        default: "enabled"
+    }
+    obj.Prefs["rf_grid_description_other"] = {
+        values: values,
+        heading: "Grid Pop Out: All other sections",
+        default: "enabled"
+    }
+    obj.Prefs["rf_grid_description_home"] = {
+        values: values,
+        heading: "Grid Pop Out: Home Screen",
+        default: "enabled"
+    }
+
+    obj.Screen.SetHeader("Grid Pop Out Description")
+
+    obj.AddItem({title: "Home"  }, "rf_grid_description_home",  obj.GetEnumValue("rf_grid_description_home"))
+    obj.AddItem({title: "Movie" }, "rf_grid_description_movie", obj.GetEnumValue("rf_grid_description_movie"))
+    obj.AddItem({title: "TV"    }, "rf_grid_description_show",  obj.GetEnumValue("rf_grid_description_show"))
+    obj.AddItem({title: "Photo" }, "rf_grid_description_photo", obj.GetEnumValue("rf_grid_description_photo"))
+    obj.AddItem({title: "Music" }, "rf_grid_description_artist", obj.GetEnumValue("rf_grid_description_artist"))
+    obj.AddItem({title: "Other" }, "rf_grid_description_other", obj.GetEnumValue("rf_grid_description_other"))
+    obj.AddItem({title: "Close" }, "close")
+
+    return obj
+End Function
+
+Function prefsGridDescriptionHandleMessage(msg) As Boolean
+    handled = false
+
+    if type(msg) = "roListScreenEvent" then
+        handled = true
+
+        if msg.isScreenClosed() then
+            m.ViewController.PopScreen(m)
+        else if msg.isListItemSelected() then
+            command = m.GetSelectedCommand(msg.GetIndex())
+            if command = "close" then
+                m.Screen.Close()
+            else 
+                m.HandleEnumPreference(command, msg.GetIndex())
             end if
         end if
     end if

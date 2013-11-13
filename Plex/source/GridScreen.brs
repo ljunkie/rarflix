@@ -125,13 +125,27 @@ Function showGridScreen() As Integer
     ' This was asked for, however I know people are goint to complain. This will most likely need to be a bit more complicated.
     ' As in, people are not going to want this to be GLOBAL, but set per section/full grid/or even some secific type. 
     ' I.E. don't show on firstCharacter, but show of On Deck
-    if RegRead("rf_grid_description", "preferences", "enabled") <> "enabled" then 
-        print "------------------- Description POP OUT disabled -- sec_metadata -- more info if we need to enable certain section/types --------------------------"
+    print "------------------- Description POP OUT disabled -- sec_metadata -- more info if we need to enable certain section/types --------------------------"
+    if m.ScreenID = -1 then 
+        isType = "home"
+        print m
+    else 
+        print m
         sec_metadata = getSectionType(m)
         print sec_metadata
-        m.screen.SetDescriptionVisible(false)
-        print "------------------------------------------------------- END ---------------------------------------------------------------------------------------"
+        secTypes = ["photo","artist","movie","show"]
+        isType = "other"
+        print "curType: " + tostr(sec_metadata.type)
+        for each st in secTypes
+            if tostr(sec_metadata.type) = st then isType = st
+        end for
+        print "isType: " + tostr(isType)
     end if
+
+    if RegRead("rf_grid_description_"+isType, "preferences", "enabled") <> "enabled" then
+        m.screen.SetDescriptionVisible(false)
+    end if
+    print "------------------------------------------------------- END ---------------------------------------------------------------------------------------"
 
     m.Screen.Show()
     if facade <> invalid then facade.Close()
