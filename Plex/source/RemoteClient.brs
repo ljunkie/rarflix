@@ -130,7 +130,7 @@ Function ProcessStopMediaRequest() As Boolean
     if vc.IsVideoPlaying() then
         vc.CloseScreenWithCallback(invalid)
     else
-        vc.AudioPlayer.Stop()
+        AudioPlayer().Stop()
     end if
 
     ' Always return an empty body

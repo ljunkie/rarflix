@@ -111,7 +111,7 @@ Function createViewController() As Object
 
     ' Initialize things that run in the background and are okay to start before a user is selected. 
     InitWebServer(controller)
-    controller.AudioPlayer = createAudioPlayer(controller)
+    AudioPlayer()
     AnalyticsTracker()
     MyPlexManager()
     GDMAdvertiser()
@@ -356,12 +356,11 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen.SetListStyle("flat-episodic", "zoom-to-fill")
         screenName = "Album Poster"
     else if item.key = "nowplaying" then
-        m.AudioPlayer.ContextScreenID = m.nextScreenId
-        ' screen = createAudioSpringboardScreen(m.AudioPlayer.Context, m.AudioPlayer.CurIndex, m) (curindex can be different now)
-        screen = createAudioSpringboardScreen(m.AudioPlayer.Context, m.AudioPlayer.PlayIndex, m)
+        AudioPlayer().ContextScreenID = m.nextScreenId
+        screen = createAudioSpringboardScreen(AudioPlayer().Context, AudioPlayer().PlayIndex, m)
         screenName = "Now Playing"
         breadcrumbs = [screenName," "," "] ' set breadcrumbs for this..
-        'print m.AudioPlayer.Context[m.AudioPlayer.PlayIndex]
+        'print AudioPlayer().Context[AudioPlayer().PlayIndex]
         if screen = invalid then return invalid
     else if contentType = "audio" then
         screen = createAudioSpringboardScreen(context, contextIndex, m)
@@ -584,7 +583,7 @@ End Function
 Function vcCreateContextMenu()
     ' Our context menu is only relevant if the audio player has content.
     ' ljunkie -- we need some more checks here -- if audio is not playing/etc and we want to use the asterisk button for other things.. how do we work this?
-    if m.AudioPlayer.ContextScreenID = invalid then return invalid
+    if AudioPlayer().ContextScreenID = invalid then return invalid
 
     ' if screen if locked do not show dialog ( we might want to allow this, but we'd need to disable the go to now playing screen )
     ' redundant check - we don't allow option key globally
@@ -608,7 +607,7 @@ Function vcCreateContextMenu()
     end if
 
     ' Audios is playing - we should show it if the selected type is a "section" -- maybe we should look at secondary? -- also allow invalids
-    if m.audioplayer.ispaused or m.audioplayer.isplaying then 
+    if AudioPlayer().ispaused or AudioPlayer().isplaying then 
         r = CreateObject("roRegex", "section|secondary", "i") ' section too - those are not special
         'showDialog = (   (r.IsMatch(itype) or r.IsMatch(ctype) or r.IsMatch(vtype)) or (itype = "invalid" and ctype = "invalid" and vtype = "invalid") )
         showDialog = ( (r.IsMatch(itype) or r.IsMatch(ctype) or r.IsMatch(vtype)) or (itype = "invalid"))
@@ -623,7 +622,7 @@ Function vcCreateContextMenu()
 
     Debug("show audio dialog:" + tostr(showDialog) + "; itype:" +  tostr(itype) + "; ctype:" +  tostr(ctype) + "; vtype:" +  tostr(vtype) + "; screenname:" +  tostr(screen.screenname))
     if NOT showDialog then return invalid
-    return m.AudioPlayer.ShowContextMenu()
+    return AudioPlayer().ShowContextMenu()
 End Function
 
 Function vcCreatePhotoPlayer(context, contextIndex=invalid, show=true)
@@ -641,7 +640,7 @@ End Function
 
 Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=true)
     ' Stop any background audio first
-    m.AudioPlayer.Stop()
+    AudioPlayer().Stop()
 
     ' Make sure we have full details before trying to play.
     metadata.ParseDetails()
@@ -740,13 +739,13 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
             print "--- trying to play an album from a directory"
             container = createPlexContainerForUrl(item.server, item.server.serverurl, item.key)
             context = container.getmetadata()
-            m.AudioPlayer.Stop()
+            AudioPlayer().Stop()
             return m.CreateScreenForItem(context, 0, invalid)
          end if
     else if item.ContentType = "photo" then '  and (item.nodename = invalid or item.nodename <> "Directory") then 
         return m.CreatePhotoPlayer(context, contextIndex)
     else if item.ContentType = "audio" then
-        m.AudioPlayer.Stop()
+        AudioPlayer().Stop()
         return m.CreateScreenForItem(context, contextIndex, invalid)
     else if item.ContentType = "movie" OR item.ContentType = "episode" OR item.ContentType = "clip" then
         directplay = RegRead("directplay", "preferences", "0").toint()
@@ -1229,7 +1228,7 @@ Sub vcShow()
                     m.WebServer.postwait()
                 end if
             else if type(msg) = "roAudioPlayerEvent" then
-                if m.AudioPlayer.HandleMessage(msg) = true and RegRead("locktime_music", "preferences","enabled") <> "enabled" then
+                if AudioPlayer().HandleMessage(msg) = true and RegRead("locktime_music", "preferences","enabled") <> "enabled" then
                     m.ResetIdleTimer() ' reset timer if music lock is disabled. I.E. when song changes timer will be reset
                 end if
             else if type(msg) = "roSystemLogEvent" then
@@ -1260,8 +1259,8 @@ Sub vcShow()
         
         'check for idle timeout
         if m.timerIdleTime <> invalid then 'and (msg.isRemoteKeyPressed() or msg.isButtonInfo()) then 
-            ' if for some reason one wants to disable timer during music, we'll handle it - we can handle paused if needed later [m.audioplayer.ispaused]
-            if RegRead("locktime_music", "preferences","enabled") <> "enabled" and (m.audioplayer.isplaying) then 
+            ' if for some reason one wants to disable timer during music, we'll handle it - we can handle paused if needed later [AudioPlayer().ispaused]
+            if RegRead("locktime_music", "preferences","enabled") <> "enabled" and (AudioPlayer().isplaying) then 
                 m.ResetIdleTimer()                
             else 
                 print "IDLE TIME Check: "; int(m.timerIdleTime.RemainingMillis()/int(1000))
@@ -1276,14 +1275,14 @@ Sub vcShow()
     ' Clean up some references on the way out
     AnalyticsTracker().Cleanup()
     GDMAdvertiser().Cleanup()
+    AudioPlayer().Cleanup()
     ' ljunkie - TODO - change to singleton
     '  will be required for channel exit confirmation
     'restoreAudio = m.AudioPlayer ' save for later (maybe)
-    'm.AudioPlayer.Stop()         ' stop any audio for now. This might change with exit confirmation
+    'AudioPlayer().Stop()         ' stop any audio for now. This might change with exit confirmation
 
     m.Home = invalid
     m.WebServer = invalid
-    m.AudioPlayer = invalid
     m.Timers.Clear()
     m.PendingRequests.Clear()
     m.SocketListeners.Clear()

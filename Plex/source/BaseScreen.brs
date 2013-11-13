@@ -59,5 +59,5 @@ Function baseHandleMessage(msg) As Boolean
 End Function
 
 Sub baseStopAudioPlayer()
-    m.ViewController.AudioPlayer.Stop()
+    AudioPlayer().Stop()
 End Sub

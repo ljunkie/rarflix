@@ -81,8 +81,8 @@ Function createGridScreenForItem(item, viewController, style, SetDisplayMode = "
 
     ' Don't play theme music on top of grid screens on the older Roku models.
     ' It's not worth the DestroyAndRecreate headache.
-    if item.theme <> invalid AND GetGlobal("rokuVersionArr", [0])[0] >= 4 AND NOT obj.ViewController.AudioPlayer.IsPlaying AND RegRead("theme_music", "preferences", "loop") <> "disabled" then
-        obj.ViewController.AudioPlayer.PlayThemeMusic(item)
+    if item.theme <> invalid AND GetGlobal("rokuVersionArr", [0])[0] >= 4 AND NOT AudioPlayer().IsPlaying AND RegRead("theme_music", "preferences", "loop") <> "disabled" then
+        AudioPlayer().PlayThemeMusic(item)
         obj.Cleanup = baseStopAudioPlayer
     end if
 

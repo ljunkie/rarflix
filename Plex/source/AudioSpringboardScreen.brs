@@ -41,10 +41,11 @@ Function createAudioSpringboardScreen(context, index, viewController) As Dynamic
     viewController.AddTimer(obj.callbackTimer, obj)
 
     ' Start playback when screen is opened if there's nothing playing
-    if NOT viewController.AudioPlayer.IsPlaying then
+    player = AudioPlayer()
+    if NOT player.IsPlaying then
         obj.Playstate = 2
-        viewController.AudioPlayer.SetContext(obj.Context, obj.CurIndex, obj, true)
-        viewController.AudioPlayer.Play()
+        player.SetContext(obj.Context, obj.CurIndex, obj, true)
+        player.Play()
     else if isItemPlaying(obj) then ' this will allow us to update Now Playing and Details screen
         obj.Playstate = 2
         obj.callbackTimer.Active = true
@@ -118,7 +119,7 @@ Function audioHandleMessage(msg) As Boolean
     handled = false
 
     server = m.Item.server
-    audioPlayer = m.ViewController.AudioPlayer
+    player = AudioPlayer()
     UpdateButtons = false
     DisableUpdateButtons = false
     if type(msg) = "roSpringboardScreenEvent" then
@@ -127,9 +128,9 @@ Function audioHandleMessage(msg) As Boolean
             buttonCommand = m.buttonCommands[str(msg.getIndex())]
             Debug("Button command: " + tostr(buttonCommand))
             if buttonCommand = "play" then
+                player.SetContext(m.Context, m.CurIndex, m, true)
+                player.Play()
                 print "--------------- play pressed"
-                audioPlayer.SetContext(m.Context, m.CurIndex, m, true)
-                audioPlayer.Play()
                 'm.PlayIndex = m.CurIndex
                 m.Playstate = 2
                 UpdateButtons = true
@@ -137,10 +138,10 @@ Function audioHandleMessage(msg) As Boolean
                 audioPlayer.Resume()
                 UpdateButtons = true
             else if buttonCommand = "pause" then
-                audioPlayer.Pause()
+                player.Pause()
                 UpdateButtons = true
             else if buttonCommand = "stop" then
-                audioPlayer.Stop()
+                player.Stop()
 
                 ' There's no audio player event for stop, so we need to do some
                 ' extra work here.
@@ -149,12 +150,12 @@ Function audioHandleMessage(msg) As Boolean
                 UpdateButtons = true
             else if buttonCommand = "next" then
                 if m.GotoNextItem() then
-                    audioPlayer.Next()
+                    player.Next()
                     DisableUpdateButtons = true
                 end if
             else if buttonCommand = "prev" then
                 if m.GotoPrevItem() then
-                    audioPlayer.Prev()
+                    player.Prev()
                     DisableUpdateButtons = true
                 end if
             else if buttonCommand = "more" then
@@ -173,13 +174,13 @@ Function audioHandleMessage(msg) As Boolean
                     m.Shuffle(m.Context)
                     m.IsShuffled = true
                 end if
-                audioPlayer.ShufflePlay = Not audioPlayer.ShufflePlay
-                audioPlayer.SetContext(m.Context, m.CurIndex, m, true)
-                audioPlayer.Play()
+                player.ShufflePlay = Not player.ShufflePlay
+                player.SetContext(m.Context, m.CurIndex, m, true)
+                player.Play()
                 UpdateButtons = true
             else if buttonCommand = "loop" then
-                audioPlayer.Loop = Not audioPlayer.Loop
-                audioPlayer.audioPlayer.SetLoop(audioPlayer.Loop)
+                player.Loop = Not player.Loop
+                player.player.SetLoop(player.Loop)
                 UpdateButtons = true
             else
                 handled = false
@@ -191,25 +192,25 @@ Function audioHandleMessage(msg) As Boolean
             button = msg.GetIndex()
             Debug("Remote Key button = " + tostr(button))
 
-            if button = 8 and audioplayer.IsPlaying then ' rewind
-                 curOffset = audioplayer.GetPlaybackProgress()
+            if button = 8 and player.IsPlaying then ' rewind
+                 curOffset = player.GetPlaybackProgress()
                  newOffset = (curOffset*1000)-10000
                  if newOffset < 0 then newOffset = 0
                  Debug(tostr(newOffset))
-                 audioPlayer.audioPlayer.Seek(newOffset)
-                 audioPlayer.playbackOffset = newOffset/1000
-                 audioPlayer.playbackTimer.Mark()
+                 player.player.Seek(newOffset)
+                 player.playbackOffset = newOffset/1000
+                 player.playbackTimer.Mark()
                  DisableUpdateButtons = true
-            else if button = 9 and audioplayer.IsPlaying then ' forward
-                 curOffset = audioplayer.GetPlaybackProgress()
+            else if button = 9 and player.IsPlaying then ' forward
+                 curOffset = player.GetPlaybackProgress()
                  newOffset = (curOffset*1000)+10000
-                 if audioplayer.context[audioplayer.curindex].duration <> invalid then 
-                     duration = audioplayer.context[audioplayer.curindex].duration*1000
+                 if player.context[player.curindex].duration <> invalid then 
+                     duration = player.context[player.curindex].duration*1000
                      if newOffset < int(duration) then 
                          Debug(tostr(newOffset))
-                         audioPlayer.audioPlayer.Seek(newOffset)
-                         audioPlayer.playbackOffset = newOffset/1000
-                         audioPlayer.playbackTimer.Mark()
+                         player.player.Seek(newOffset)
+                         player.playbackOffset = newOffset/1000
+                         player.playbackTimer.Mark()
                      end if
                  end if
                  DisableUpdateButtons = true
@@ -221,7 +222,7 @@ Function audioHandleMessage(msg) As Boolean
                  'play = (m.Playstate = 2) ' Allow right/left in springboard when item selected is NOT the on playing
                  play = false
                  if m.GotoNextItem() then 
-                     audioPlayer.Next(play)
+                     player.Next(play)
                      if isItemPlaying(m) then 
                          m.Playstate = 2
                          m.callbackTimer.Active = true
@@ -238,7 +239,7 @@ Function audioHandleMessage(msg) As Boolean
                  'play = (m.Playstate = 2) ' Allow right/left in springboard when item selected is NOT the on playing
                  play = false
                  if m.GotoPrevItem() then 
-                     audioPlayer.Prev(play)
+                     player.Prev(play)
                      if isItemPlaying(m) then 
                          m.Playstate = 2
                          m.callbackTimer.Active = true
@@ -250,7 +251,7 @@ Function audioHandleMessage(msg) As Boolean
             end if
             'm.SetupButtons() ' no need for this.. keep the buttons stable
         end if
-    else if type(msg) = "roAudioPlayerEvent" AND m.ViewController.AudioPlayer.ContextScreenID = m.ScreenID then
+    else if type(msg) = "roAudioPlayerEvent" AND player.ContextScreenID = m.ScreenID then
         UpdateButtons = false ' we will only update buttons on events (when things change)
         if msg.isRequestSucceeded() then
             m.GotoNextItem()
@@ -294,7 +295,7 @@ End Function
 
 Sub audioOnTimerExpired(timer)
     if m.Playstate = 2 AND m.metadata.Duration <> invalid then
-        m.Screen.SetProgressIndicator(m.ViewController.AudioPlayer.GetPlaybackProgress(), m.metadata.Duration)
+        m.Screen.SetProgressIndicator(AudioPlayer().GetPlaybackProgress(), m.metadata.Duration)
     end if
 End Sub
 
@@ -302,6 +303,7 @@ Function audioDialogHandleButton(command, data) As Boolean
     ' We're evaluated in the context of the dialog, but we want to be in
     ' the context of the original screen.
     obj = m.ParentScreen
+    player = AudioPlayer()
 
     if command = "shuffle" then
         if obj.IsShuffled then
@@ -315,9 +317,8 @@ Function audioDialogHandleButton(command, data) As Boolean
         end if
         m.Refresh()
 
-        audioPlayer = GetViewController().AudioPlayer
-        if audioPlayer.ContextScreenID = obj.ScreenID
-            audioPlayer.SetContext(obj.Context, obj.CurIndex, obj, false)
+        if player.ContextScreenID = obj.ScreenID
+            player.SetContext(obj.Context, obj.CurIndex, obj, false)
         end if
     else if command = "show" then
         dummyItem = CreateObject("roAssociativeArray")
@@ -326,14 +327,13 @@ Function audioDialogHandleButton(command, data) As Boolean
         obj.ViewController.CreateScreenForItem(dummyItem, invalid, ["","Now Playing"])
         return true
     else if command = "loop" then
-        audioPlayer = GetViewController().AudioPlayer
-        if audioPlayer.Loop then
+        if player.Loop then
             m.SetButton(command, "Loop: Off")
         else
             m.SetButton(command, "Loop: On")
         end if
-        audioPlayer.Loop = Not audioPlayer.Loop
-        audioPlayer.audioPlayer.SetLoop(audioPlayer.Loop)
+        player.Loop = Not player.Loop
+        player.player.SetLoop(player.Loop)
         m.Refresh()
     else if command = "delete" then
         obj.metadata.server.delete(obj.metadata.key)

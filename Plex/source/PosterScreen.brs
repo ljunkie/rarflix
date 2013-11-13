@@ -31,8 +31,8 @@ Function createPosterScreen(item, viewController, style = invalid) As Object
     obj.focusedList = 0
     obj.names = []
 
-    if item.theme <> invalid AND NOT obj.ViewController.AudioPlayer.IsPlaying AND RegRead("theme_music", "preferences", "loop") <> "disabled" then
-        obj.ViewController.AudioPlayer.PlayThemeMusic(item)
+    if item.theme <> invalid AND NOT AudioPlayer().IsPlaying AND RegRead("theme_music", "preferences", "loop") <> "disabled" then
+        AudioPlayer().PlayThemeMusic(item)
         obj.Cleanup = baseStopAudioPlayer
     end if
 
