@@ -43,6 +43,7 @@ function ClassReply()
         this.request     = invalid
         this.id          = 0
         this.files       = invalid
+        this.headers     = {}
         ' copy-initializable members
         this.start       = 0
         this.length      = 0
@@ -67,6 +68,7 @@ function ClassReply()
         this.doneHdr   = reply_done_header
         this.log       = reply_log
         this.simpleOK  = reply_simple_ok
+        this.preflight = reply_handle_cors_preflight
         ' html lines
         this.keepAlive = reply_keep_alive
         this.genBy     = reply_generated_by
@@ -181,6 +183,11 @@ function reply_generate_header(close=false as Boolean)
     if code=206 then m.header = m.header + "Content-Range: bytes" + makeRange(m.start,m.length,m.filelength) + WinNL()
     m.header = m.header + "Content-Type: " + m.mimetype + WinNL()
     m.header = m.header + "Accept-Ranges: bytes" + WinNL()
+
+    for each name in m.headers
+        m.header = m.header + name + ": " + m.headers[name] + WinNL()
+    next
+
     m.header = m.header + WinNL()
     m.header_length = m.header.len()
 end function
@@ -359,6 +366,10 @@ function reply_process()
         m.header_only = true
     end if
 
+    if method = "OPTIONS" then
+        return m.preflight()
+    end if
+
     ' See if we've registered a handler for this path
     path = UrlUnescape(m.request.uri)
     for each prefix in m.handlers
@@ -406,3 +417,22 @@ sub reply_simple_ok(body)
     m.genHdr(true)
     m.source = m.GENERATED
 end sub
+
+function reply_handle_cors_preflight()
+    ' We'll be super permissive
+    m.headers["Access-Control-Allow-Origin"] = "*"
+    m.headers["Access-Control-Allow-Methods"] = "POST, GET, OPTIONS, HEAD"
+    m.headers["Access-Control-Max-Age"] = "1209600"
+
+    if m.request.fields["Access-Control-Request-Headers"] <> invalid then
+        m.headers["Access-Control-Allow-Headers"] = m.request.fields["Access-Control-Request-Headers"]
+    end if
+
+    m.buf.fromasciistring("")
+    m.length = m.buf.count()
+    m.http_code = 200
+    m.genHdr(true)
+    m.source = m.GENERATED
+
+    return true
+end function

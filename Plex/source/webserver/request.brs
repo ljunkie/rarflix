@@ -94,8 +94,8 @@ function request_parse(conn as Object) as Boolean
             m.protocol = Ucase(parts.RemoveHead())
             info(m,m.method + " '" + m.uri + "'")
             for each line in lines
-                av = line.tokenize(": ")
-                if av.count()=2 then m.fields[av.GetHead()] = av.GetTail()
+                av = line.tokenize(":")
+                if av.count()=2 then m.fields[av.GetHead()] = av.GetTail().Trim()
             end for
             ' interpret some fields if present
             m.parseRange()
