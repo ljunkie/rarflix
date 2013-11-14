@@ -206,6 +206,26 @@ Function ProcessTimelineUnsubscribe() As Boolean
     return true
 End Function
 
+Function ProcessTimelinePoll() As Boolean
+    if NOT ValidateRemoteControlRequest(m) then return true
+    ProcessCommandID(m.request)
+
+    deviceID = m.request.fields["X-Plex-Client-Identifier"]
+    commandID = firstOf(m.request.query["commandID"], "0").toint()
+
+    NowPlayingManager().AddPollSubscriber(deviceID, commandID)
+
+    if firstOf(m.request.query["wait"], "0") = "0" then
+        xml = NowPlayingManager().TimelineDataXmlForSubscriber(deviceID)
+        m.mimetype = MimeType("xml")
+        m.simpleOK(xml)
+    else
+        NowPlayingManager().WaitForNextTimeline(deviceID, m)
+    end if
+
+    return true
+End Function
+
 Function ProcessPlaybackPlayMedia() As Boolean
     if NOT ValidateRemoteControlRequest(m) then return true
     ProcessCommandID(m.request)
@@ -574,6 +594,7 @@ Sub InitRemoteControlHandlers()
     ' Timeline
     ClassReply().AddHandler("/player/timeline/subscribe", ProcessTimelineSubscribe)
     ClassReply().AddHandler("/player/timeline/unsubscribe", ProcessTimelineUnsubscribe)
+    ClassReply().AddHandler("/player/timeline/poll", ProcessTimelinePoll)
 
     ' Playback
     ClassReply().AddHandler("/player/playback/playMedia", ProcessPlaybackPlayMedia)

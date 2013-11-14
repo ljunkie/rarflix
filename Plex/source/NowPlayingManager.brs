@@ -16,18 +16,22 @@ Function NowPlayingManager()
 
         ' Members
         obj.subscribers = CreateObject("roAssociativeArray")
+        obj.pollReplies = CreateObject("roAssociativeArray")
         obj.timelines = CreateObject("roAssociativeArray")
         obj.location = obj.NAVIGATION
 
         ' Functions
         obj.UpdateCommandID = nowPlayingUpdateCommandID
         obj.AddSubscriber = nowPlayingAddSubscriber
+        obj.AddPollSubscriber = nowPlayingAddPollSubscriber
         obj.RemoveSubscriber = nowPlayingRemoveSubscriber
         obj.SendTimelineToSubscriber = nowPlayingSendTimelineToSubscriber
         obj.SendTimelineToServer = nowPlayingSendTimelineToServer
         obj.SendTimelineToAll = nowPlayingSendTimelineToAll
         obj.CreateTimelineDataXml = nowPlayingCreateTimelineDataXml
         obj.UpdatePlaybackState = nowPlayingUpdatePlaybackState
+        obj.TimelineDataXmlForSubscriber = nowPlayingTimelineDataXmlForSubscriber
+        obj.WaitForNextTimeline = nowPlayingWaitForNextTimeline
 
         ' Initialization
         for each timelineType in obj.TIMELINE_TYPES
@@ -56,15 +60,17 @@ Function TimelineData(timelineType As String)
     return obj
 End Function
 
-Function NowPlayingSubscriber(deviceID, connectionUrl, commandID)
+Function NowPlayingSubscriber(deviceID, connectionUrl, commandID, poll=false)
     obj = CreateObject("roAssociativeArray")
 
     obj.deviceID = deviceID
     obj.connectionUrl = connectionUrl
     obj.commandID = validint(commandID)
 
-    obj.SubscriptionTimer = createTimer()
-    obj.SubscriptionTimer.SetDuration(90000)
+    if NOT poll then
+        obj.SubscriptionTimer = createTimer()
+        obj.SubscriptionTimer.SetDuration(90000)
+    end if
 
     return obj
 End Function
@@ -97,6 +103,17 @@ Function nowPlayingAddSubscriber(deviceID, connectionUrl, commandID) As Boolean
     return true
 End Function
 
+Sub nowPlayingAddPollSubscriber(deviceID, commandID)
+    if firstOf(deviceID, "") = "" then return
+
+    subscriber = m.subscribers[deviceID]
+
+    if subscriber = invalid then
+        subscriber = NowPlayingSubscriber(deviceID, invalid, commandID, true)
+        m.subscribers[deviceID] = subscriber
+    end if
+End Sub
+
 Sub nowPlayingRemoveSubscriber(deviceID)
     if deviceID <> invalid then
         Debug("Now Playing: Removing subscriber " + deviceID)
@@ -127,10 +144,12 @@ Sub nowPlayingSendTimelineToAll()
 
     for each id in m.subscribers
         subscriber = m.subscribers[id]
-        if subscriber.SubscriptionTimer.IsExpired() then
-            expiredSubscribers.AddTail(id)
-        else
-            m.SendTimelineToSubscriber(subscriber, xml)
+        if subscriber.SubscriptionTimer <> invalid then
+            if subscriber.SubscriptionTimer.IsExpired() then
+                expiredSubscribers.AddTail(id)
+            else
+                m.SendTimelineToSubscriber(subscriber, xml)
+            end if
         end if
     next
 
@@ -146,6 +165,18 @@ Sub nowPlayingUpdatePlaybackState(timelineType, item, state, time)
     timeline.attrs["time"] = tostr(time)
 
     m.SendTimelineToAll()
+
+    ' Send the timeline data to any waiting poll requests
+    for each id in m.pollReplies
+        reply = m.pollReplies[id]
+        xml = m.TimelineDataXmlForSubscriber(reply.deviceID)
+        reply.mimetype = MimeType("xml")
+        reply.simpleOK(xml)
+        reply.timeoutTimer.Active = false
+        reply.timeoutTimer.Listener = invalid
+    next
+
+    m.pollReplies.Clear()
 End Sub
 
 Function nowPlayingCreateTimelineDataXml()
@@ -160,6 +191,42 @@ Function nowPlayingCreateTimelineDataXml()
 
     return mc
 End Function
+
+Function nowPlayingTimelineDataXmlForSubscriber(deviceID)
+    commandID = 0
+    subscriber = m.subscribers[firstOf(deviceID, "")]
+    if subscriber <> invalid then commandID = subscriber.commandID
+
+    xml = m.CreateTimelineDataXml()
+    xml.AddAttribute("commandID", tostr(commandID))
+
+    return xml.GenXml(false)
+End Function
+
+Sub nowPlayingWaitForNextTimeline(deviceID, reply)
+    reply.source = reply.WAITING
+
+    reply.ScreenID = -4
+    timeoutTimer = createTimer()
+    timeoutTimer.Name = "timeout"
+    timeoutTimer.SetDuration(3000)
+    timeoutTimer.Active = true
+
+    reply.deviceID = deviceID
+    reply.timeoutTimer = timeoutTimer
+    reply.OnTimerExpired = pollOnTimerExpired
+    GetViewController().AddTimer(timeoutTimer, reply)
+
+    m.pollReplies[tostr(reply.id)] = reply
+End Sub
+
+Sub pollOnTimerExpired(timer)
+    timer.Listener = invalid
+
+    xml = NowPlayingManager().TimelineDataXmlForSubscriber(m.deviceID)
+    m.mimetype = MimeType("xml")
+    m.simpleOK(xml)
+End Sub
 
 Function timelineDataToQueryString()
     return ""
