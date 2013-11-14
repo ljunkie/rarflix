@@ -210,6 +210,8 @@ Function ProcessTimelinePoll() As Boolean
     if NOT ValidateRemoteControlRequest(m) then return true
     ProcessCommandID(m.request)
 
+    m.headers["X-Plex-Client-Identifier"] = GetGlobalAA().Lookup("rokuUniqueID")
+
     deviceID = m.request.fields["X-Plex-Client-Identifier"]
     commandID = firstOf(m.request.query["commandID"], "0").toint()
 
