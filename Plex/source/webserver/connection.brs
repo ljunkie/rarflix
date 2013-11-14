@@ -38,6 +38,7 @@ function ClassConnection()
         this.SEND_HEADER        = 2 ' sending generated header
         this.SEND_REPLY         = 3 ' sending reply
         this.DONE               = 4 ' reply sent, close or reuse as indicated
+        this.WAITING            = 5
         this.BUFSIZE            = 65536
         this.MAX_REQUEST_LENGTH = 4000
         ' copy-initializable members
@@ -165,7 +166,11 @@ function connection_poll_receive_request(server as Object)
         if m.request.process(m)
             m.reply = InitReply(m.request)
             m.reply.process()
-            m.setState(m.SEND_HEADER)
+            if m.reply.isWaiting()
+                m.setState(m.WAITING)
+            else
+                m.setState(m.SEND_HEADER)
+            end if
         else
             m.setState(m.DONE)
             m.close = true

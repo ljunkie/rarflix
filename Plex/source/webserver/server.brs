@@ -107,6 +107,8 @@ function server_prewait()
         else if cs=conn.SEND_HEADER or cs=conn.SEND_REPLY
             conn.socket.notifyWritable(true)
             conn.socket.notifyReadable(false)
+        else if cs=conn.WAITING
+            if NOT conn.reply.isWaiting() then conn.setState(conn.SEND_HEADER)
         else
             errx(m, "invalid state")
         end if
@@ -130,11 +132,14 @@ function server_postwait()
             if conn.socket.isWritable() then conn.pollReply(m)
         else if cs=conn.DONE
             ' handle with other connections that might transition to done
+        else if cs=conn.WAITING
+            ' Do nothing
         else
             errx(m, "invalid state")
         end if
         cs = conn.state
         if cs=conn.DONE
+            conn.request.conn = invalid
             if conn.close
                 conn.socket.close()
                 connections.delete(id)

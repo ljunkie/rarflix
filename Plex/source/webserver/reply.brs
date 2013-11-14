@@ -35,6 +35,7 @@ function ClassReply()
         this.GENERATED   = 1
         this.FROMFILE    = 2
         this.CONCATFILES = 3
+        this.WAITING     = 4
         this.source      = 0
         ' members
         this.buf         = invalid
@@ -66,6 +67,7 @@ function ClassReply()
         this.genHdr    = reply_generate_header
         this.done      = reply_done
         this.doneHdr   = reply_done_header
+        this.isWaiting = reply_waiting
         this.log       = reply_log
         this.simpleOK  = reply_simple_ok
         this.preflight = reply_handle_cors_preflight
@@ -391,11 +393,15 @@ function reply_process()
 end function
 
 function reply_done() as Boolean
-    return m.sent=m.length
+    return m.sent=m.length AND NOT m.isWaiting()
 end function
 
 function reply_done_header() as Boolean
     return m.header_sent=m.header_length
+end function
+
+function reply_waiting() as Boolean
+    return m.source = m.WAITING
 end function
 
 function makeRange(start as Integer, length as Integer, total as Integer)
@@ -414,8 +420,8 @@ sub reply_simple_ok(body)
     m.buf.fromasciistring(body)
     m.length = m.buf.count()
     if validint(m.http_code) = 0 then m.http_code = 200
-    m.genHdr(true)
     m.source = m.GENERATED
+    m.genHdr(true)
 end sub
 
 function reply_handle_cors_preflight()

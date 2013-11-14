@@ -43,6 +43,7 @@ function ClassRequest()
         this.buf      = invalid
         this.fields   = invalid
         this.id       = 0
+        this.conn     = invalid
         this.remote_addr = invalid
         this.remote_port = invalid
         ' copied members
@@ -84,6 +85,7 @@ function request_is_complete() as Boolean
 end function
 
 function request_parse(conn as Object) as Boolean
+    m.conn = conn
     lines = m.buf.tokenize(WinNL())
     operation = lines.RemoveHead()
     if operation<>invalid 
