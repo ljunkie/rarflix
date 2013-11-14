@@ -32,6 +32,7 @@ Function NowPlayingManager()
         obj.UpdatePlaybackState = nowPlayingUpdatePlaybackState
         obj.TimelineDataXmlForSubscriber = nowPlayingTimelineDataXmlForSubscriber
         obj.WaitForNextTimeline = nowPlayingWaitForNextTimeline
+        obj.SetControllable = nowPlayingSetControllable
 
         ' Initialization
         for each timelineType in obj.TIMELINE_TYPES
@@ -52,10 +53,25 @@ Function TimelineData(timelineType As String)
     obj.state = "stopped"
     obj.item = invalid
 
+    obj.controllable = CreateObject("roAssociativeArray")
+    obj.controllableStr = invalid
+
     obj.attrs = CreateObject("roAssociativeArray")
 
+    obj.UpdateControllableStr = timelineDataUpdateControllableStr
+    obj.SetControllable = timelineDataSetControllable
     obj.ToQueryString = timelineDataToQueryString
     obj.ToXmlAttributes = timelineDataToXmlAttributes
+
+    if timelineType = "video" then
+        obj.SetControllable("seekTo", true)
+        obj.SetControllable("stepBack", true)
+        obj.SetControllable("stepForward", true)
+    else if timelineType = "music" then
+        obj.SetControllable("seekTo", true)
+        obj.SetControllable("stepBack", true)
+        obj.SetControllable("stepForward", true)
+    end if
 
     return obj
 End Function
@@ -228,13 +244,45 @@ Sub pollOnTimerExpired(timer)
     m.simpleOK(xml)
 End Sub
 
+Sub nowPlayingSetControllable(timelineType, name, isControllable)
+    m.timelines[timelineType].SetControllable(name, isControllable)
+End Sub
+
+Sub timelineDataSetControllable(name, isControllable)
+    if isControllable then
+        m.controllable[name] = ""
+    else
+        m.controllable.Delete(name)
+    end if
+
+    m.controllableStr = invalid
+End Sub
+
+Sub timelineDataUpdateControllableStr()
+    if m.controllableStr = invalid then
+        m.controllableStr = box("")
+        prependComma = false
+
+        for each name in m.controllable
+            if prependComma then
+                m.controllableStr.AppendString(",", 1)
+            else
+                prependComma = true
+            end if
+            m.controllableStr.AppendString(name, len(name))
+        next
+    end if
+End Sub
+
 Function timelineDataToQueryString()
     return ""
 End Function
 
 Sub timelineDataToXmlAttributes(elem)
+    m.UpdateControllableStr()
     elem.AddAttribute("type", m.type)
     elem.AddAttribute("state", m.state)
+    elem.AddAttribute("controllable", m.controllableStr)
 
     if m.item <> invalid then
         addAttributeIfValid(elem, "duration", m.item.RawLength)
