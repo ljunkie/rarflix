@@ -420,7 +420,7 @@ Function ProcessPlaybackSkipNext() As Boolean
     return true
 End Function
 
-Function ProcessPlaybackSkipPrev() As Boolean
+Function ProcessPlaybackSkipPrevious() As Boolean
     if NOT ValidateRemoteControlRequest(m) then return true
     ProcessCommandID(m.request)
 
@@ -603,7 +603,7 @@ Sub InitRemoteControlHandlers()
     ClassReply().AddHandler("/player/playback/pause", ProcessPlaybackPause)
     ClassReply().AddHandler("/player/playback/stop", ProcessPlaybackStop)
     ClassReply().AddHandler("/player/playback/skipNext", ProcessPlaybackSkipNext)
-    ClassReply().AddHandler("/player/playback/skipPrev", ProcessPlaybackSkipPrev)
+    ClassReply().AddHandler("/player/playback/skipPrevious", ProcessPlaybackSkipPrevious)
     ClassReply().AddHandler("/player/playback/stepBack", ProcessPlaybackStepBack)
     ClassReply().AddHandler("/player/playback/stepForward", ProcessPlaybackStepForward)
 
