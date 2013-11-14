@@ -99,8 +99,10 @@ Sub videoPlayerShow()
 
         m.playbackTimer.Mark()
         m.Screen.Show()
+        NowPlayingManager().location = "fullScreenVideo"
     else
         m.ViewController.PopScreen(m)
+        NowPlayingManager().location = "navigation"
     end if
 End Sub
 
@@ -284,6 +286,7 @@ Function videoPlayerHandleMessage(msg) As Boolean
             m.timelineTimer.Active = false
             m.playState = "stopped"
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isScreenClosed: position -> " + tostr(m.lastPosition))
+            NowPlayingManager().location = "navigation"
             m.UpdateNowPlaying()
             if m.IsTranscoded then server.StopVideo()
 
