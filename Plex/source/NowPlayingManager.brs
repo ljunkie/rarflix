@@ -209,7 +209,7 @@ Sub nowPlayingWaitForNextTimeline(deviceID, reply)
     reply.ScreenID = -4
     timeoutTimer = createTimer()
     timeoutTimer.Name = "timeout"
-    timeoutTimer.SetDuration(3000)
+    timeoutTimer.SetDuration(30000)
     timeoutTimer.Active = true
 
     reply.deviceID = deviceID
