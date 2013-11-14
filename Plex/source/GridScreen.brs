@@ -142,9 +142,9 @@ Function showGridScreen() As Integer
         print "isType: " + tostr(isType)
     end if
 
-    ' hide description if delay is enabled or disabled
-    if RegRead("rf_grid_description_delay", "preferences", "enabled") = "enabled" then
-        m.screen.SetDescriptionVisible(false)
+    ' hide description if delay is enabled or disabled [ disabled by default ]
+    if RegRead("rf_grid_description_delay", "preferences", "disabled") = "enabled" then
+        m.screen.SetDescriptionVisible(false) ' stops flashing - we will enable it when needed
     else if RegRead("rf_grid_description_"+isType, "preferences", "enabled") <> "enabled" then
         m.screen.SetDescriptionVisible(false)
     end if
@@ -216,22 +216,74 @@ Function gridHandleMessage(msg) As Boolean
             ' If the user is getting close to the limit of what we've
             ' preloaded, make sure we kick off another update.
 
-            if RegRead("rf_grid_description_delay", "preferences", "enabled") = "enabled" then
-                m.screen.SetDescriptionVisible(false)
-                if m.timerDesc = invalid then 
-                    m.timerDesc = createTimer()
-                    m.timerDesc.Name = "hideDescription"
-                    m.timerDesc.SetDuration(1200,true)
-                    m.ViewController.AddTimer(m.timerDesc, m)
-                end if
-                m.timerDesc.Active = true
-                m.timerDesc.Mark()
-            end if
+            ' this is just nasty - I'm not sure this will make the cut
+            ' hoping Roku will get back to me and let me know if we can key or a button press
+            ' instead of msg.isListItemFocused()
+            if RegRead("rf_grid_description_delay", "preferences", "disabled") = "enabled" then
 
-            'm.AddTimer(timer, m)
+                if m.contentArray <> invalid and type(m.contentArray[msg.GetIndex()]) = "roArray" and msg.GetData() <= m.contentArray[msg.GetIndex()].count() then
+ 
+                    ' this may need to be moved. but it doesn't hurt anything since we only hide desc if the criteria matches
+                    if m.timerDesc = invalid then 
+                        m.timerDesc = createTimer()
+                        m.timerDesc.Name = "hideDescription"
+                        m.timerDesc.SetDuration(1200,true)
+                        m.ViewController.AddTimer(m.timerDesc, m)
+                    end if
+                    m.timerDesc.Active = true
+    
+                    maxItems = m.contentArray[msg.GetIndex()].count()-1
+                    itemWrapped = (m.focusedIndex+maxItems = msg.GetData() or  msg.GetData() = m.focusedIndex-maxItems)
+                    ' itemWrapped = false
+                    if  (m.selectedRow = invalid or m.selectedRow = msg.GetIndex()) and (m.focusedIndex = msg.GetData()+1 or m.focusedIndex = msg.GetData()-1  or itemWrapped ) then 
+                        print "--------------------------------------------"
+                        print "---- HIDE and reset timer - focus ITEM changed"
+                        print "selected row:"; m.selectedRow; "focused row"; msg.GetIndex()
+                        print "selected item:"; m.focusedIndex; "focused item"; msg.GetData()
+                        print "--------------------------------------------"
+                        print m
+                        m.screen.SetDescriptionVisible(false)
+                        m.timerDesc.Mark()
+                    ' this doesn't work as expected.. else if m.selectedRow = msg.GetIndex()+1 or m.selectedRow = msg.GetIndex()-1 then 
+                    else if m.selectedRow <> msg.GetIndex() and m.screenid <> -1 then
+                        print "--------------------------------------------"
+                        print "---- HIDE and reset timer - focus ROW changed"
+                        print "selected row:"; m.selectedRow; "focused row"; msg.GetIndex()
+                        print "selected item:"; m.focusedIndex; "focused item"; msg.GetData()
+                        print "--------------------------------------------"
+                        print m
+                        m.screen.SetDescriptionVisible(false)
+                        m.timerDesc.Mark()
+                    else if m.selectedRow <> msg.GetIndex() and m.screenid = -1 then 
+                        ' TODO -- home doesn't play nice
+                        'if m.loader <> invalid then
+                        'if m.loader.contentarray[msg.GetIndex()].pendingrequests <= 0 then 
+                        'print "WOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO mark - differenct row"
+                        'print "selected row:"; m.selectedRow; "focused row"; msg.GetIndex()
+                        'print "selected item:"; m.focusedIndex; "focused item"; msg.GetData()
+                        'm.screen.SetDescriptionVisible(false)
+                        'm.timerDesc.Mark()
+                        'end if
+                        'print m
+                        'print m.loader
+                        'print m.loader.contentarray[msg.GetIndex()]
+                        'end if
+                    else 
+                        print "selected row:"; m.selectedRow; "focused row"; msg.GetIndex()
+                        print "selected item:"; m.focusedIndex; "focused item"; msg.GetData()
+                        print "item/row are too different - maybe we held a button down -- instantly showing the description now"
+                        showDesc(m,true)
+                        'm.screen.SetDescriptionVisible(true)
+                    end if
+                 else 
+                   showDesc(m,true)
+                   'm.screen.SetDescriptionVisible(true)
+                 end if
+            end if
 
             m.selectedRow = msg.GetIndex()
             m.focusedIndex = msg.GetData()
+
 
             if m.screenid <> invalid and m.screenid > 0 and m.contentArray <> invalid and type(m.contentArray[m.selectedRow]) = "roArray" then 
                 item = m.contentArray[m.selectedRow][m.focusedIndex]
@@ -609,6 +661,8 @@ Sub gridOnTimerExpired(timer)
 
 End Sub
 
+' this is use to set the show the GridDesc we can blindly do this as it 
+' won't show if one disabled the description on a specific section
 sub showDesc(m,bool) 
     if m.ScreenID = -1 then 
         isType = "home"
@@ -620,7 +674,12 @@ sub showDesc(m,bool)
             if tostr(sec_metadata.type) = st then isType = st
         end for
     end if
+
     if RegRead("rf_grid_description_"+isType, "preferences", "enabled") = "enabled" then
+        print "show/hide desc"
         m.screen.SetDescriptionVisible(bool)
+    else 
+        ' disabled on purpose - so we'll set it false
+        m.screen.SetDescriptionVisible(false)
     end if
 end sub

@@ -1970,7 +1970,7 @@ Function createGridDescriptionPrefsScreen(viewController) As Object
     obj.Prefs["rf_grid_description_delay"] = {
         values: values,
         heading: "Grid Pop Out Delay",
-        default: "enabled"
+        default: "disabled"
     }
     obj.Prefs["rf_grid_description_movie"] = {
         values: values,
@@ -2005,10 +2005,13 @@ Function createGridDescriptionPrefsScreen(viewController) As Object
 
     obj.Screen.SetHeader("Grid Pop Out Description")
 
-    obj.AddItem({title: "Delay"  }, "rf_grid_description_delay",  obj.GetEnumValue("rf_grid_description_delay"))
+    if isRFdev() then 
+        ' not ready for prime time yet
+        obj.AddItem({title: "Delay"  }, "rf_grid_description_delay",  obj.GetEnumValue("rf_grid_description_delay"))
+    end if
     obj.AddItem({title: "Home"  }, "rf_grid_description_home",  obj.GetEnumValue("rf_grid_description_home"))
     obj.AddItem({title: "Movie" }, "rf_grid_description_movie", obj.GetEnumValue("rf_grid_description_movie"))
-    obj.AddItem({title: "TV"    }, "rf_grid_description_show",  obj.GetEnumValue("rf_grid_description_show"))
+    obj.AddItem({title: "Show"  }, "rf_grid_description_show",  obj.GetEnumValue("rf_grid_description_show"))
     obj.AddItem({title: "Photo" }, "rf_grid_description_photo", obj.GetEnumValue("rf_grid_description_photo"))
     obj.AddItem({title: "Music" }, "rf_grid_description_artist", obj.GetEnumValue("rf_grid_description_artist"))
     obj.AddItem({title: "Other" }, "rf_grid_description_other", obj.GetEnumValue("rf_grid_description_other"))
