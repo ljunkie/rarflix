@@ -537,13 +537,9 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     return screen
 End Function
 
-Function vcCreateTextInputScreen(heading, breadcrumbs, show=true) As Dynamic
-    screen = createKeyboardScreen(m)
+Function vcCreateTextInputScreen(heading, breadcrumbs, show=true, initialValue="", secure=false) As Dynamic
+    screen = createKeyboardScreen(m, invalid, heading, initialValue, secure)
     screen.ScreenName = "Keyboard: " + tostr(heading)
-
-    if heading <> invalid then
-        screen.Screen.SetDisplayText(heading)
-    end if
 
     m.AddBreadcrumbs(screen, breadcrumbs)
     m.UpdateScreenProperties(screen)

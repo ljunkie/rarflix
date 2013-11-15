@@ -30,6 +30,10 @@ Function createSearchScreen(item, viewController) As Object
     obj.Progressive = true
     obj.History = history
 
+    obj.SetText = ssSetText
+
+    NowPlayingManager().SetFocusedTextField("Search", "", false)
+
     return obj
 End Function
 
@@ -39,6 +43,7 @@ Function ssHandleMessage(msg) As Boolean
     if type(msg) = "roSearchScreenEvent" then
         if msg.isScreenClosed() then
             m.ViewController.PopScreen(m)
+            NowPlayingManager().SetFocusedTextField(invalid, invalid, false)
         else if msg.isCleared() then
             m.History.Clear()
             m.Screen.ClearSearchTerms()
@@ -54,6 +59,7 @@ Function ssHandleMessage(msg) As Boolean
                 m.ProgressiveTimer.Active = true
                 m.ViewController.AddTimer(m.ProgressiveTimer, m)
                 m.SearchTerm = msg.GetMessage()
+                NowPlayingManager().SetFocusedTextField("Search", m.SearchTerm, false)
             end if
         else if msg.isFullResult() then
             term = msg.GetMessage()
@@ -129,4 +135,8 @@ Sub ssOnUrlEvent(msg, requestContext)
         m.Screen.SetClearButtonEnabled(false)
         m.Screen.SetSearchTerms(suggestions)
     end if
+End Sub
+
+Sub ssSetText(text)
+    m.Screen.SetSearchText(text)
 End Sub

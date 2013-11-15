@@ -20,6 +20,10 @@ Function NowPlayingManager()
         obj.timelines = CreateObject("roAssociativeArray")
         obj.location = obj.NAVIGATION
 
+        obj.textFieldName = invalid
+        obj.textFieldContent = invalid
+        obj.textFieldSecure = false
+
         ' Functions
         obj.UpdateCommandID = nowPlayingUpdateCommandID
         obj.AddSubscriber = nowPlayingAddSubscriber
@@ -33,6 +37,7 @@ Function NowPlayingManager()
         obj.TimelineDataXmlForSubscriber = nowPlayingTimelineDataXmlForSubscriber
         obj.WaitForNextTimeline = nowPlayingWaitForNextTimeline
         obj.SetControllable = nowPlayingSetControllable
+        obj.SetFocusedTextField = nowPlayingSetFocusedTextField
 
         ' Initialization
         for each timelineType in obj.TIMELINE_TYPES
@@ -204,6 +209,14 @@ Function nowPlayingCreateTimelineDataXml()
     mc.SetName("MediaContainer")
     mc.AddAttribute("location", m.location)
 
+    if m.textFieldName <> invalid then
+        mc.AddAttribute("textFieldFocused", m.textFieldName)
+        mc.AddAttribute("textFieldContent", m.textFieldContent)
+        if m.textFieldSecure then
+            mc.AddAttribute("textFieldSecure", "1")
+        end if
+    end if
+
     for each timelineType in m.TIMELINE_TYPES
         timeline = mc.AddElement("Timeline")
         m.timelines[timelineType].ToXmlAttributes(timeline)
@@ -321,4 +334,11 @@ Sub addAttributeIfValid(elem, name, value)
     if value <> invalid then
         elem.AddAttribute(name, tostr(value))
     end if
+End Sub
+
+Sub nowPlayingSetFocusedTextField(name, content, secure)
+    m.textFieldName = name
+    m.textFieldContent = firstOf(content, "")
+    m.textFieldSecure = secure
+    m.SendTimelineToAll()
 End Sub

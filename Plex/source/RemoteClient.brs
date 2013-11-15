@@ -602,6 +602,22 @@ Function ProcessNavigationHome() As Boolean
     return true
 End Function
 
+Function ProcessApplicationSetText() As Boolean
+    if NOT ValidateRemoteControlRequest(m) then return true
+    ProcessCommandID(m.request)
+
+    screen = GetViewController().screens.Peek()
+
+    if type(screen.SetText) = "roFunction" AND m.request.query["field"] = NowPlayingManager().textFieldName then
+        value = firstOf(m.request.query["text"], "")
+        NowPlayingManager().textFieldContent = value
+        screen.SetText(value)
+    end if
+
+    m.simpleOK("")
+    return true
+End Function
+
 Sub CloseScreenUntilHomeVisible()
     vc = GetViewController()
 
@@ -644,6 +660,9 @@ Sub InitRemoteControlHandlers()
     ClassReply().AddHandler("/player/navigation/back", ProcessNavigationBack)
     ClassReply().AddHandler("/player/navigation/music", ProcessNavigationMusic)
     ClassReply().AddHandler("/player/navigation/home", ProcessNavigationHome)
+
+    ' Application
+    ClassReply().AddHandler("/player/application/setText", ProcessApplicationSetText)
 End Sub
 
 Sub createPlayerAfterClose()
