@@ -96,8 +96,12 @@ function request_parse(conn as Object) as Boolean
             m.protocol = Ucase(parts.RemoveHead())
             info(m,m.method + " '" + m.uri + "'")
             for each line in lines
-                av = line.tokenize(":")
-                if av.count()=2 then m.fields[av.GetHead()] = av.GetTail().Trim()
+                sep = instr(1, line, ":")
+                if sep > 1 then
+                    name = left(line, sep-1)
+                    value = mid(line, sep+1).Trim()
+                    m.fields[name] = value
+                end if
             end for
             ' interpret some fields if present
             m.parseRange()

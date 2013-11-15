@@ -186,6 +186,7 @@ function reply_generate_header(close=false as Boolean)
     if code=206 then m.header = m.header + "Content-Range: bytes" + makeRange(m.start,m.length,m.filelength) + WinNL()
     m.header = m.header + "Content-Type: " + m.mimetype + WinNL()
     m.header = m.header + "Accept-Ranges: bytes" + WinNL()
+    if m.request.fields["Origin"] <> invalid then m.header = m.header + "Access-Control-Allow-Origin: *" + WinNL()
 
     for each name in m.headers
         m.header = m.header + name + ": " + m.headers[name] + WinNL()
@@ -427,7 +428,6 @@ end sub
 
 function reply_handle_cors_preflight()
     ' We'll be super permissive
-    m.headers["Access-Control-Allow-Origin"] = "*"
     m.headers["Access-Control-Allow-Methods"] = "POST, GET, OPTIONS, HEAD"
     m.headers["Access-Control-Max-Age"] = "1209600"
 
