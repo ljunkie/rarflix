@@ -211,6 +211,7 @@ Function ProcessTimelinePoll() As Boolean
     ProcessCommandID(m.request)
 
     m.headers["X-Plex-Client-Identifier"] = GetGlobalAA().Lookup("rokuUniqueID")
+    m.headers["Access-Control-Expose-Headers"] = "X-Plex-Client-Identifier"
 
     deviceID = m.request.fields["X-Plex-Client-Identifier"]
     commandID = firstOf(m.request.query["commandID"], "0").toint()
