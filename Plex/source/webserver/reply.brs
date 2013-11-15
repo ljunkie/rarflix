@@ -44,7 +44,7 @@ function ClassReply()
         this.request     = invalid
         this.id          = 0
         this.files       = invalid
-        this.headers     = {}
+        this.headers     = invalid
         ' copy-initializable members
         this.start       = 0
         this.length      = 0
@@ -94,6 +94,7 @@ end function
 function reply_init(request)
     m.buf = CreateObject("roByteArray")
     m.request = request
+    m.headers = CreateObject("roAssociativeArray")
 end function
 
 function reply_send(sock as Object, bufsize as Integer) as Integer
@@ -429,6 +430,7 @@ function reply_handle_cors_preflight()
     m.headers["Access-Control-Allow-Origin"] = "*"
     m.headers["Access-Control-Allow-Methods"] = "POST, GET, OPTIONS, HEAD"
     m.headers["Access-Control-Max-Age"] = "1209600"
+    m.headers["Access-Control-Expose-Headers"] = "X-Plex-Client-Identifier"
 
     if m.request.fields["Access-Control-Request-Headers"] <> invalid then
         m.headers["Access-Control-Allow-Headers"] = m.request.fields["Access-Control-Request-Headers"]
