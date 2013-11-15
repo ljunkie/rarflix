@@ -34,7 +34,6 @@ Function MyPlexManager() As Object
 
         ' Commands, mostly use the PMS functions
         obj.Timeline = pmsTimeline
-        obj.SetProgress = progress
         obj.Scrobble = scrobble
         obj.Unscrobble = unscrobble
         obj.Rate = rate

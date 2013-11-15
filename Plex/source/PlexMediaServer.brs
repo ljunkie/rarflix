@@ -21,7 +21,6 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.PingTranscode = pingTranscode
     pms.CreateRequest = pmsCreateRequest
     pms.GetQueryResponse = xmlContent
-    pms.SetProgress = progress
     pms.Timeline = pmsTimeline
     pms.Scrobble = scrobble
     pms.Unscrobble = unscrobble
@@ -80,13 +79,6 @@ Function issuePostCommand(commandPath)
     Debug("Executing POST command with full command URL: " + commandUrl)
     request = m.CreateRequest("", commandUrl)
     request.PostFromString("")
-End Function
-
-Function progress(key, identifier, time)
-    if identifier <> invalid then
-        commandUrl = "/:/progress?key="+HttpEncode(key)+"&identifier="+identifier+"&time="+time.tostr()
-        m.ExecuteCommand(commandUrl)
-    end if
 End Function
 
 Sub pmsTimeline(item, state, time, isPlayed)
