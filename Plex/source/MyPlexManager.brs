@@ -33,7 +33,7 @@ Function MyPlexManager() As Object
         obj.SupportsVideoTranscoding = true
 
         ' Commands, mostly use the PMS functions
-        obj.Timeline = mpTimeline
+        obj.Timeline = pmsTimeline
         obj.SetProgress = progress
         obj.Scrobble = scrobble
         obj.Unscrobble = unscrobble
@@ -226,15 +226,3 @@ End Function
 Sub mpLog(msg="", level=3, timeout=0)
     ' Noop, only defined to implement PlexMediaServer "interface"
 End Sub
-
-Sub mpTimeline(item, state, time, isPlayed)
-    ' No timeline support at myPlex yet, so translate to progress and scrobble
-    if state = "playing" then
-        ' Send a progress event
-        m.SetProgress(item.ratingKey, item.mediaContainerIdentifier, time)
-    else if state = "stopped" AND isPlayed then
-        ' Send a scrobble
-        m.Scrobble(item.ratingKey, item.mediaContainerIdentifier)
-    end if
-End Sub
-
