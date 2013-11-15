@@ -137,7 +137,7 @@ Function photoDialogHandleButton(command, data) As Boolean
             obj.IsShuffled = false
             m.SetButton(command, "Shuffle: Off")
         else
-            obj.Shuffle(obj.Context)
+            obj.Shuffle()
             obj.IsShuffled = true
             m.SetButton(command, "Shuffle: On")
         end if

@@ -484,6 +484,26 @@ Function ProcessPlaybackStepForward() As Boolean
     return true
 End Function
 
+Function ProcessPlaybackSetParameters() As Boolean
+    if NOT ValidateRemoteControlRequest(m) then return true
+    ProcessCommandID(m.request)
+
+    mediaType = m.request.query["type"]
+
+    if mediaType = "music" then
+        if m.request.query["shuffle"] <> invalid then
+            AudioPlayer().SetShuffle(m.request.query["shuffle"].toint())
+        end if
+
+        if m.request.query["repeat"] <> invalid then
+            AudioPlayer().SetRepeat(m.request.query["repeat"].toint())
+        end if
+    end if
+
+    m.simpleOK("")
+    return true
+End Function
+
 Function ProcessNavigationMoveRight() As Boolean
     if NOT ValidateRemoteControlRequest(m) then return true
     ProcessCommandID(m.request)
@@ -608,6 +628,7 @@ Sub InitRemoteControlHandlers()
     ClassReply().AddHandler("/player/playback/skipPrevious", ProcessPlaybackSkipPrevious)
     ClassReply().AddHandler("/player/playback/stepBack", ProcessPlaybackStepBack)
     ClassReply().AddHandler("/player/playback/stepForward", ProcessPlaybackStepForward)
+    ClassReply().AddHandler("/player/playback/setParameters", ProcessPlaybackSetParameters)
 
     ' Navigation
     ClassReply().AddHandler("/player/navigation/moveRight", ProcessNavigationMoveRight)

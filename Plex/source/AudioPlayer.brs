@@ -46,6 +46,14 @@ Function AudioPlayer()
     obj.IsPlaying = false
     obj.IsPaused = false
 
+        obj.Repeat = 0
+        obj.SetRepeat = audioPlayerSetRepeat
+        NowPlayingManager().timelines["music"].attrs["repeat"] = "0"
+
+        obj.IsShuffled = false
+        obj.SetShuffle = audioPlayerSetShuffle
+        NowPlayingManager().timelines["music"].attrs["shuffle"] = "0"
+
         obj.playbackTimer = createTimer()
         obj.playbackOffset = 0
         obj.GetPlaybackProgress = audioPlayerGetPlaybackProgress
@@ -90,13 +98,15 @@ Function audioPlayerHandleMessage(msg) As Boolean
                 Debug("Sending analytics event, appear to have listened to audio for " + tostr(amountPlayed) + " seconds")
                 AnalyticsTracker().TrackEvent("Playback", firstOf(item.ContentType, "track"), item.mediaContainerIdentifier, amountPlayed)
             end if
-
-            maxIndex = m.Context.Count() - 1
-            'newIndex = m.CurIndex + 1
-            newIndex = m.PlayIndex + 1
-            if newIndex > maxIndex then newIndex = 0
-            'm.CurIndex = newIndex 
-            m.PlayIndex = newIndex
+            ' is m.Repeat set to 1 for normal music? seems related to theme loop
+            if m.Repeat <> 1 then ' ljunkie - TODO verify - seems wrong
+                maxIndex = m.Context.Count() - 1
+                'newIndex = m.CurIndex + 1
+                newIndex = m.PlayIndex + 1
+                if newIndex > maxIndex then newIndex = 0
+                'm.CurIndex = newIndex 
+                m.PlayIndex = newIndex
+            end if
         else if msg.isRequestFailed() then
             Debug("Audio playback failed")
             m.IgnoreTimelines = false
@@ -115,9 +125,13 @@ Function audioPlayerHandleMessage(msg) As Boolean
             m.playbackTimer.Mark()
             GetViewController().DestroyGlitchyScreens()
 
+            if m.Repeat = 1 then
+                m.player.SetNext(m.CurIndex)
+            end if
+
             if m.Context.Count() > 1 then
-                NowPlayingManager().SetControllable("music", "skipPrevious", (m.CurIndex > 0 OR m.Loop))
-                NowPlayingManager().SetControllable("music", "skipNext", (m.CurIndex < m.Context.Count() - 1 OR m.Loop))
+                NowPlayingManager().SetControllable("music", "skipPrevious", (m.CurIndex > 0 OR m.Repeat = 2))
+                NowPlayingManager().SetControllable("music", "skipNext", (m.CurIndex < m.Context.Count() - 1 OR m.Repeat = 2))
             end if
         else if msg.isStatusMessage() then
             'Debug("Audio player status: " + tostr(msg.getMessage()))
@@ -285,18 +299,34 @@ Sub audioPlayerSetContext(context, contextIndex, screen, startPlayer)
     end if
 
     if screen = invalid then
-        m.Loop = (RegRead("theme_music", "preferences", "disabled") = "loop")
+        if RegRead("theme_music", "preferences", "disabled") = "loop" then
+            m.Repeat = 1
+        else
+            m.Repeat = 0
+        end if
     else
         pref = RegRead("loopalbums", "preferences", "sometimes")
         if pref = "sometimes" then
-            m.Loop = (context.Count() > 1)
+            loop = (context.Count() > 1)
         else
-            m.Loop = (pref = "always")
+            loop = (pref = "always")
+        end if
+        if loop then
+            m.SetRepeat(2)
+        else
+            m.SetRepeat(0)
         end if
     end if
 
-    m.player.SetLoop(m.Loop)
+    m.player.SetLoop(m.Repeat = 2)
     m.player.SetContentList(context)
+
+    m.IsShuffled = (screen <> invalid AND screen.IsShuffled)
+    if m.IsShuffled then
+        NowPlayingManager().timelines["music"].attrs["shuffle"] = "1"
+    else
+        NowPlayingManager().timelines["music"].attrs["shuffle"] = "0"
+    end if
 
     NowPlayingManager().SetControllable("music", "skipPrevious", context.Count() > 1)
     NowPlayingManager().SetControllable("music", "skipNext", context.Count() > 1)
@@ -504,5 +534,40 @@ Sub audioPlayerUpdateNowPlaying()
         item = m.Context[m.CurIndex]
     end if
 
-    NowPlayingManager().UpdatePlaybackState("music", item, state, time)
+    if m.ContextScreenID <> invalid then
+        NowPlayingManager().UpdatePlaybackState("music", item, state, time)
+    end if
+End Sub
+
+Sub audioPlayerSetRepeat(repeatVal)
+    if m.Repeat = repeatVal then return
+
+    m.Repeat = repeatVal
+    m.player.SetLoop(repeatVal = 2)
+
+    if repeatVal = 1 then
+        m.player.SetNext(m.CurIndex)
+    end if
+
+    NowPlayingManager().timelines["music"].attrs["repeat"] = tostr(repeatVal)
+End Sub
+
+Sub audioPlayerSetShuffle(shuffleVal)
+    newVal = (shuffleVal = 1)
+    if newVal = m.IsShuffled then return
+
+    m.IsShuffled = newVal
+    if m.IsShuffled then
+        m.CurIndex = ShuffleArray(m.Context, m.CurIndex)
+    else
+        m.CurIndex = UnshuffleArray(m.Context, m.CurIndex)
+    end if
+
+    m.player.SetContentList(m.Context)
+    maxIndex = m.Context.Count() - 1
+    newIndex = m.CurIndex + 1
+    if newIndex > maxIndex then newIndex = 0
+    m.player.SetNext(newIndex)
+
+    NowPlayingManager().timelines["music"].attrs["shuffle"] = tostr(shuffleVal)
 End Sub

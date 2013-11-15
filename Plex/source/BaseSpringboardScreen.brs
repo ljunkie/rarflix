@@ -71,35 +71,16 @@ Function createBaseSpringboardScreen(context, index, viewController, includePred
     return obj
 End Function
 
-Sub SwapArray(arr, i, j)
-    if i <> j then
-        temp = arr[i]
-        arr[i] = arr[j]
-        arr[j] = temp
-    end if
-End Sub
-
-Sub sbShuffle(arr)
+Sub sbShuffle()
     ' Our context is already a copy of the original, so we can safely shuffle
     ' in place. Mixing up the list means that all the navigation will work as
     ' expected without needing a bunch of special logic elsewhere.
 
-    ' Start by moving the current song to the front so we can easily play it.
-    SwapArray(m.Context, 0, m.CurIndex)
-    m.CurIndex = 0
-
-    for i = m.Context.Count() - 1 to 1 step -1
-        ' Note that we're only looping to 1, and Rnd doesn't return 0, so
-        ' the item we put at 0 will be left untouched.
-        SwapArray(m.Context, i, Rnd(i))
-    next
+    m.CurIndex = ShuffleArray(m.Context, m.CurIndex)
 End Sub
 
-Sub sbUnshuffle(arr)
-    for i = 0 to m.Context.Count() - 1
-        SwapArray(m.Context, i, m.Context[i].OrigIndex)
-    next
-    m.CurIndex = m.Item.OrigIndex
+Sub sbUnshuffle()
+    m.CurIndex = UnshuffleArray(m.Context, m.CurIndex)
 End Sub
 
 Sub sbShow()

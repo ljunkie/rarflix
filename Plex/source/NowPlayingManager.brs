@@ -71,6 +71,8 @@ Function TimelineData(timelineType As String)
         obj.SetControllable("seekTo", true)
         obj.SetControllable("stepBack", true)
         obj.SetControllable("stepForward", true)
+        obj.SetControllable("repeat", true)
+        obj.SetControllable("shuffle", true)
     end if
 
     return obj

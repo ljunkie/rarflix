@@ -1527,9 +1527,6 @@ Sub vcStartRequestIgnoringResponse(url, body=invalid, contentType="xml")
     request.SetCertificatesFile("common:/certs/ca-bundle.crt")
 
     if body <> invalid then
-        ' TODO(schuyler): Remove this
-        Debug("Sending timeline information:")
-        Debug(body)
         request.AddHeader("Content-Type", MimeType(contentType))
     end if
 
