@@ -498,6 +498,11 @@ Function ProcessPlaybackSetParameters() As Boolean
         if m.request.query["repeat"] <> invalid then
             AudioPlayer().SetRepeat(m.request.query["repeat"].toint())
         end if
+    else if mediaType = "photo" then
+        player = PhotoPlayer()
+        if player <> invalid AND m.request.query["shuffle"] <> invalid then
+            player.SetShuffle(m.request.query["shuffle"].toint())
+        end if
     end if
 
     m.simpleOK("")

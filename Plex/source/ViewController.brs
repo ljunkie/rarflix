@@ -629,8 +629,8 @@ Function vcCreateContextMenu()
     return AudioPlayer().ShowContextMenu()
 End Function
 
-Function vcCreatePhotoPlayer(context, contextIndex=invalid, show=true)
-    screen = createPhotoPlayerScreen(context, contextIndex, m)
+Function vcCreatePhotoPlayer(context, contextIndex=invalid, show=true, shuffled=false)
+    screen = createPhotoPlayerScreen(context, contextIndex, m, shuffled)
     screen.ScreenName = "Photo Player"
 
     m.AddBreadcrumbs(screen, invalid)

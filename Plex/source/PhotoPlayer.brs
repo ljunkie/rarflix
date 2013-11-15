@@ -2,7 +2,7 @@
 '* A simple wrapper around a slideshow. Single items and lists are both supported.
 '*
 
-Function createPhotoPlayerScreen(context, contextIndex, viewController)
+Function createPhotoPlayerScreen(context, contextIndex, viewController, shuffled=false)
     obj = CreateObject("roAssociativeArray")
     obj.OnTimerExpired = photoPlayerOnTimerExpired
 
@@ -94,6 +94,14 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
 
     obj.playbackTimer = createTimer()
     obj.IsPaused = false
+
+    obj.IsShuffled = shuffled
+    obj.SetShuffle = photoPlayerSetShuffle
+    if shuffled then
+        NowPlayingManager().timelines["photo"].attrs["shuffle"] = "1"
+    else
+        NowPlayingManager().timelines["photo"].attrs["shuffle"] = "0"
+    end if
 
     return obj
 End Function
@@ -336,4 +344,26 @@ End Sub
 
 Sub photoPlayerStop()
     m.Screen.Close()
+End Sub
+
+Sub photoPlayerSetShuffle(shuffleVal)
+    newVal = (shuffleVal = 1)
+    if newVal = m.IsShuffled then return
+
+    m.IsShuffled = newVal
+    if m.IsShuffled then
+        m.CurIndex = ShuffleArray(m.Context, m.CurIndex)
+    else
+        m.CurIndex = UnshuffleArray(m.Context, m.CurIndex)
+    end if
+
+    m.Screen.SetContentList(m.Context)
+
+    if m.CurIndex < m.PhotoCount - 1 then
+        m.Screen.SetNext(m.CurIndex + 1, false)
+    else
+        m.Screen.SetNext(0, false)
+    end if
+
+    NowPlayingManager().timelines["photo"].attrs["shuffle"] = tostr(shuffleVal)
 End Sub

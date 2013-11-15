@@ -73,6 +73,8 @@ Function TimelineData(timelineType As String)
         obj.SetControllable("stepForward", true)
         obj.SetControllable("repeat", true)
         obj.SetControllable("shuffle", true)
+    else if timelineType = "photo" then
+        obj.SetControllable("shuffle", true)
     end if
 
     return obj

@@ -309,7 +309,7 @@ Function audioDialogHandleButton(command, data) As Boolean
 
     if command = "shuffle" then
         if obj.IsShuffled then
-            obj.Unshuffle(obj.Context)
+            obj.Unshuffle()
             obj.IsShuffled = false
             m.SetButton(command, "Shuffle: Off")
         else
