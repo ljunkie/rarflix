@@ -509,7 +509,6 @@ Sub videoPlayerUpdateNowPlaying(force=false)
     if m.playState = m.lastTimelineState AND NOT force then return
 
     m.lastTimelineState = m.playState
-    m.Item.server.Timeline(m.Item, m.playState, 1000 * m.lastPosition, m.isPlayed)
     m.timelineTimer.Mark()
 
     NowPlayingManager().UpdatePlaybackState("video", m.Item, m.playState, 1000 * m.lastPosition)

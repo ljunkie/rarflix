@@ -30,7 +30,6 @@ Function NowPlayingManager()
         obj.AddPollSubscriber = nowPlayingAddPollSubscriber
         obj.RemoveSubscriber = nowPlayingRemoveSubscriber
         obj.SendTimelineToSubscriber = nowPlayingSendTimelineToSubscriber
-        obj.SendTimelineToServer = nowPlayingSendTimelineToServer
         obj.SendTimelineToAll = nowPlayingSendTimelineToAll
         obj.CreateTimelineDataXml = nowPlayingCreateTimelineDataXml
         obj.UpdatePlaybackState = nowPlayingUpdatePlaybackState
@@ -65,7 +64,6 @@ Function TimelineData(timelineType As String)
 
     obj.UpdateControllableStr = timelineDataUpdateControllableStr
     obj.SetControllable = timelineDataSetControllable
-    obj.ToQueryString = timelineDataToQueryString
     obj.ToXmlAttributes = timelineDataToXmlAttributes
 
     if timelineType = "video" then
@@ -157,9 +155,6 @@ Sub nowPlayingSendTimelineToSubscriber(subscriber, xml=invalid)
     GetViewController().StartRequestIgnoringResponse(url, xml.GenXml(false))
 End Sub
 
-Sub nowPlayingSendTimelineToServer(timelineType, server)
-End Sub
-
 Sub nowPlayingSendTimelineToAll()
     m.subscribers.Reset()
     if m.subscribers.IsNext() then
@@ -202,6 +197,11 @@ Sub nowPlayingUpdatePlaybackState(timelineType, item, state, time)
     next
 
     m.pollReplies.Clear()
+
+    ' Send the timeline to the item's server, if any
+    if item <> invalid AND item.server <> invalid then
+        item.server.Timeline(item, state, time)
+    end if
 End Sub
 
 Function nowPlayingCreateTimelineDataXml()
@@ -290,10 +290,6 @@ Sub timelineDataUpdateControllableStr()
         next
     end if
 End Sub
-
-Function timelineDataToQueryString()
-    return ""
-End Function
 
 Sub timelineDataToXmlAttributes(elem)
     m.UpdateControllableStr()

@@ -56,6 +56,11 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.ScreenID = -3
     pms.OnUrlEvent = pmsOnUrlEvent
 
+    pms.lastTimelineItem = invalid
+    pms.lastTimelineState = invalid
+    pms.timelineTimer = createTimer()
+    pms.timelineTimer.SetDuration(15000, true)
+
     return pms
 End Function
 
@@ -81,7 +86,14 @@ Function issuePostCommand(commandPath)
     request.PostFromString("")
 End Function
 
-Sub pmsTimeline(item, state, time, isPlayed)
+Sub pmsTimeline(item, state, time)
+    itemsEqual = (item <> invalid AND m.lastTimelineItem <> invalid AND item.ratingKey = m.lastTimelineItem.ratingKey)
+    if itemsEqual AND state = m.lastTimelineState AND NOT m.timelineTimer.IsExpired() then return
+
+    m.timelineTimer.Mark()
+    m.lastTimelineItem = item
+    m.lastTimelineState = state
+
     encoder = CreateObject("roUrlTransfer")
 
     query = "time=" + tostr(time)
