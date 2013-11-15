@@ -54,6 +54,10 @@ Function createAudioSpringboardScreen(context, index, viewController) As Dynamic
         obj.Playstate = 0
     end if
 
+    if player.ContextScreenID = obj.ScreenID then
+        NowPlayingManager().location = "fullScreenMusic"
+    end if
+
     return obj
 End Function
 

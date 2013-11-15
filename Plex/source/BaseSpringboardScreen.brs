@@ -104,6 +104,7 @@ Function sbHandleMessage(msg) As Boolean
             m.thumbnailsToReset.Clear()
 
             m.ViewController.PopScreen(m)
+            NowPlayingManager().location = "navigation"
         else if msg.isButtonPressed() then
             buttonCommand = m.buttonCommands[str(msg.getIndex())]
             Debug("Unhandled button press: " + tostr(buttonCommand))
