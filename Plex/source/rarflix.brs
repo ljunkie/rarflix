@@ -109,10 +109,6 @@ Sub InitRARFlix()
     RegRead("rf_notify_np_type", "preferences", "all") ' now playing notify types
     RegRead("securityPincode", "preferences", invalid)  'PIN code required for startup
 
-    ' ljunkie Youtube Trailers (extended to TMDB)
-    m.youtube = InitYouTube()
-
-
     Debug("rf_theme: " + tostr(RegRead("rf_theme", "preferences")))
     Debug("rf_img_overlay: " + tostr(RegRead("rf_img_overlay", "preferences")))
     Debug("rf_channel_text: " + tostr(RegRead("rf_channel_text", "preferences")))

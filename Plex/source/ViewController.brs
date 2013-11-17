@@ -20,6 +20,7 @@ Function createViewController() As Object
 
     controller.CreateHomeScreen = vcCreateHomeScreen
     controller.CreateScreenForItem = vcCreateScreenForItem
+
     controller.CreateTextInputScreen = vcCreateTextInputScreen
     controller.CreateEnumInputScreen = vcCreateEnumInputScreen
     controller.CreateReorderScreen = vcCreateReorderScreen
@@ -114,7 +115,9 @@ Function createViewController() As Object
     controller.GdmAdvertiser = createGDMAdvertiser(controller)
     controller.AudioPlayer = createAudioPlayer(controller)
     controller.Analytics = createAnalyticsTracker()
-    
+
+    ' ljunkie Youtube Trailers (extended to TMDB)
+    controller.youtube = vcInitYouTube()
     return controller
 End Function
 
@@ -429,6 +432,20 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if item.key = "globalprefs" then
         screen = createPreferencesScreen(m)
         screenName = "Preferences Main"
+    else if item.key = "movietrailer" then
+        yt_videos = m.youtube.SearchTrailer(item.searchTitle, item.year)
+        if yt_videos.Count() > 0 then
+            metadata=GetVideoMetaData(yt_videos)
+            screen = createPosterScreenExt(metadata, m)
+            screen.screen.SetListStyle("flat-episodic")
+            screen.screen.SetListStyle("flat-episodic-16x9") ' TODO - whats better for youtube?
+            screen.screen.SetListDisplayMode("scale-to-fill") ' default
+            screen.handlemessage = trailerHandleMessage
+            screenName = "Movie Trailer"
+        else
+            ShowErrorDialog("No videos match your search","Search results")
+            return invalid
+        end if
     else if item.key = "switchuser" then
         screen = m.Screens.Peek()
         if screen <> invalid then screen.screen.close()
