@@ -284,7 +284,7 @@ Sub loaderRefreshData()
                     status = m.contentArray[row]
                     if status.key <> invalid AND status.loadStatus <> 0 and type(status.content) = "roArray" then 
                         ' some are more safe to reload - limit of < 100 items (recentlyAdded?stack=1,others?)
-                        isDynamic = CreateObject("roRegex", "ondeck|recentlyAdded\?stack=1", "i") ' unwatched? this can still cause major slow downs for some large libraries
+                        isDynamic = CreateObject("roRegex", "ondeck|recentlyAdded\?stack=1|unwatched", "i") ' unwatched? this can still cause major slow downs for some large libraries
                         if isDynamic.isMatch(status.key) then 
                             ' only reload the row if it's in view or 1 up/down
                             doLoad = (m.listener.selectedRow = row or m.listener.selectedRow = row-1 or m.listener.selectedRow = row+1)

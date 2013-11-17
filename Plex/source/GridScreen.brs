@@ -164,8 +164,11 @@ Function showGridScreen() As Integer
         maxRow = 20 ' in the FULL grid, loading 20 rows seems like an ok number. Might be able to raise this.
         if maxRow > names.Count() then maxRow=names.Count()
         Debug("---- Loading FULL grid - load row 0 to row " + tostr(maxRow))
-    else if maxRow > 1 then 
-        maxRow = 1
+'    else if maxRow > 1 then 
+'        maxRow = 1
+'    end if
+    else if maxRow > 10 then 
+        maxRow = 10
     end if
 
     for row = 0 to maxRow
