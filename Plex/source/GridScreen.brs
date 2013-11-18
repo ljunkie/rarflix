@@ -24,7 +24,7 @@ Function createGridScreen(viewController, style="flat-movie", upBehavior="exit",
         imageDir = GetGlobalAA().Lookup("rf_theme_dir")
         SDPosterURL = imageDir + "LoadingPoster.png"
         HDPosterURL = imageDir + "LoadingPoster.png"
-        grid.setloadingposter(SDPosterURL,HDPosterURL)
+        'grid.setloadingposter(SDPosterURL,HDPosterURL)
     end if
 
     ' If we don't know exactly what we're displaying, scale-to-fit looks the
