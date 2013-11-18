@@ -520,9 +520,9 @@ End function
 
 
 ' Play Video
-function DisplayYouTubeVideo(video As Object)
+function DisplayYouTubeVideo(video As Object, waitDialog = invalid)
     videoHDflag(video)
-    ret = DisplayVideo(video)
+    ret = DisplayVideo(video,waitDialog)
     return ret
 end function
 

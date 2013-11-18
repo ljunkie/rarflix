@@ -67,7 +67,7 @@ Function createPosterScreenExt(items, viewController) As Object
     return obj
 End Function
 
-Function DisplayVideo(content As Object)
+Function DisplayVideo(content As Object, waitDialog = invalid)
     ' Generic Video Display - no ties to Plex
     m.ViewController.AudioPlayer.Stop() ' stop and cleanup any audioplayer
 
@@ -89,6 +89,9 @@ Function DisplayVideo(content As Object)
     video.SetContent(content)
     video.show()
     ret = -1
+
+    ' if we have a messageDialog - close it now, after we started the video
+    if waitDialog <> invalid then waitDialog.Close()
 
     ' TODO - move this into the global port? not really required for now. We don't send timelines on external videos or require to lock the screen
     ' note: if someone pauses a video here, the screen will not be locked if enabled ( idleTimer is not checked here )

@@ -295,6 +295,18 @@ Function createRARFlixPrefsScreen(viewController) As Object
         default: "audience"
     }
 
+    ' trailers - play first trailer automatically
+    values = [
+        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Play first trailer" },
+        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Show trailer list before playing" },
+    ]
+    obj.Prefs["rf_trailerplayfirst"] = {
+        values: values,
+        heading: "Play the first Movie Trailer automatically",
+        default: "enabled"
+    }
+
+
     ' RT/Trailers - search title
     rt_prefs = [
         { title: "Title", EnumValue: "title", ShortDescriptionLine2: "Search by Movie Title" },
@@ -482,6 +494,7 @@ Function createRARFlixPrefsScreen(viewController) As Object
     obj.AddItem({title: "Section Display", ShortDescriptionLine2: "a plex original, for easy access"}, "sections")
 
     obj.AddItem({title: "Movie Trailers", ShortDescriptionLine2: "Got Trailers?"}, "rf_trailers", obj.GetEnumValue("rf_trailers"))
+    obj.AddItem({title: "Play first Trailer", ShortDescriptionLine2: "Automatically play first trailer"}, "rf_trailerplayfirst", obj.GetEnumValue("rf_trailerplayfirst"))
     obj.AddItem({title: "Rotten Tomatoes", ShortDescriptionLine2: "Movie Ratings from Rotten Tomatoes"}, "rf_rottentomatoes", obj.GetEnumValue("rf_rottentomatoes"))
     if RegRead("rf_rottentomatoes", "preferences","enabled") = "enabled" then
         obj.AddItem({title: "Rotten Tomatoes Score", ShortDescriptionLine2: "Who do you trust more..." + chr(10) + "A Critic or an Audience?"}, "rf_rottentomatoes_score", obj.GetEnumValue("rf_rottentomatoes_score"))

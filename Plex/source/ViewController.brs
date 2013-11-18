@@ -433,17 +433,23 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen = createPreferencesScreen(m)
         screenName = "Preferences Main"
     else if item.key = "movietrailer" then
+        hasWaitDialog = ShowPleaseWait("Please wait","Searching TMDB & YouTube for " + Quote()+tostr(item.SearchTitle)+Quote())
         yt_videos = m.youtube.SearchTrailer(item.searchTitle, item.year)
+        playTrailer = false
         if yt_videos.Count() > 0 then
             metadata=GetVideoMetaData(yt_videos)
             screen = createPosterScreenExt(metadata, m)
+            screen.hasWaitDialog = hasWaitDialog
             screen.screen.SetListStyle("flat-episodic")
             screen.screen.SetListStyle("flat-episodic-16x9") ' TODO - whats better for youtube?
             screen.screen.SetListDisplayMode("scale-to-fill") ' default
             screen.handlemessage = trailerHandleMessage
             screenName = "Movie Trailer"
+            if RegRead("rf_trailerplayfirst", "preferences", "enabled") = "enabled" then DisplayYouTubeVideo(metadata[0],screen.hasWaitDialog)
+'            playTrailer = true
         else
             ShowErrorDialog("No videos match your search","Search results")
+            hasWaitDialog.close()
             return invalid
         end if
     else if item.key = "switchuser" then
@@ -499,11 +505,12 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     m.PushScreen(screen)
 
     if show then screen.Show()
+
     if screen.hasWaitdialog <> invalid then screen.hasWaitdialog.close()
- 
+
     ' set the inital focus row if we have set it ( normally due to the sub section row being added - look at the createpaginateddataloader )
     if screen.loader <> invalid and screen.loader.focusrow <> invalid then 
-        screen.screen.SetFocusedListItem(screen.loader.focusrow,3)
+        screen.screen.SetFocusedListItem(screen.loader.focusrow,0)
     end if
 
     return screen

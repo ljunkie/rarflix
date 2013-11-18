@@ -177,7 +177,6 @@ Sub videoGetMediaDetails(content)
         rair = CreateObject("roRegex", "/newest", "")
         rallLeaves = CreateObject("roRegex", "/allLeaves", "")
         rnp = CreateObject("roRegex", "/status/sessions", "")
-	'stop
 
         where = "invalid"
         if ra.Match(m.metadata.sourceurl)[0] <> invalid then
@@ -307,7 +306,6 @@ Function videoHandleMessage(msg) As Boolean
                 m.metadata.UserRating = msg.getdata()
                 m.Item.server.Rate(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier,rateValue%.ToStr())
             else if buttonCommand = "getTrailers" then
-                dialog=ShowPleaseWait("Please wait","Searching TMDB & YouTube for " + Quote()+tostr(m.metadata.RFSearchTitle)+Quote())
                 if m.metaData.OrigReleaseDate <> invalid then
                      year = m.metaData.OrigReleaseDate
                 else 
@@ -321,7 +319,6 @@ Function videoHandleMessage(msg) As Boolean
                 dummyItem.year = year
                 dummyItem.searchTitle = tostr(m.metadata.RFSearchTitle)
                 m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
-                dialog.close()
                 closeDialog = true
             else if buttonCommand = "tomatoes" then
                 dialog = createBaseDialog()
@@ -440,7 +437,6 @@ Function videoDialogHandleButton(command, data) As Boolean
         obj.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
         closeDialog = true
     else if command = "getTrailers" then
-        dialog=ShowPleaseWait("Please wait","Searching TMDB & YouTube for " + Quote()+tostr(obj.metadata.RFSearchTitle)+Quote())
         if obj.metaData.OrigReleaseDate <> invalid then
             year = obj.metaData.OrigReleaseDate
         else 
@@ -453,7 +449,6 @@ Function videoDialogHandleButton(command, data) As Boolean
         dummyItem.year = year
         dummyItem.searchTitle = tostr(obj.metadata.RFSearchTitle)
         m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
-        dialog.Close()
         closeDialog = true
     else if command = "RFCastAndCrewList" then
         'm.ViewController.PopScreen(m) ' close dialog before we show the Cast&Crew screen ' not needed and wrong
