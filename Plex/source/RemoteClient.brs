@@ -613,6 +613,10 @@ Function ProcessApplicationSetText() As Boolean
         value = firstOf(m.request.query["text"], "")
         NowPlayingManager().textFieldContent = value
         screen.SetText(value)
+        m.simpleOK("")
+    else
+        Debug("Illegal remote setText call: " + tostr(m.request.query["field"]) + "/" + tostr(NowPlayingManager().textFieldName))
+        SendErrorResponse(m, 400, "Invalid setText request")
     end if
 
     m.simpleOK("")
