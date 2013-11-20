@@ -62,25 +62,7 @@ Function ssHandleMessage(msg) As Boolean
                 NowPlayingManager().SetFocusedTextField("Search", m.SearchTerm, false)
             end if
         else if msg.isFullResult() then
-            term = msg.GetMessage()
-            m.History.Push(term)
-
-            Debug("Searching for " + term)
-
-            ' Create a dummy item with the key set to the search URL
-            item = CreateObject("roAssociativeArray")
-            item.server = m.Item.Server
-            item.Title = "Search for '" + term + "'"
-            item.sourceUrl = m.Item.sourceUrl
-            item.viewGroup = m.Item.viewGroup
-            item.searchTerm = term
-            if instr(1, m.Item.Key, "?") > 0 then
-                item.Key = m.Item.Key + "&query=" + HttpEncode(term)
-            else
-                item.Key = m.Item.Key + "?query=" + HttpEncode(term)
-            end if
-
-            m.ViewController.CreateScreenForItem(item, invalid, [item.Title])
+            m.SetText(msg.GetMessage(), true)
         end if
     end if
 
@@ -137,6 +119,27 @@ Sub ssOnUrlEvent(msg, requestContext)
     end if
 End Sub
 
-Sub ssSetText(text)
-    m.Screen.SetSearchText(text)
+Sub ssSetText(text, isComplete)
+    if isComplete then
+        m.History.Push(text)
+
+        Debug("Searching for " + text)
+
+        ' Create a dummy item with the key set to the search URL
+        item = CreateObject("roAssociativeArray")
+        item.server = m.Item.Server
+        item.Title = "Search for '" + text + "'"
+        item.sourceUrl = m.Item.sourceUrl
+        item.viewGroup = m.Item.viewGroup
+        item.searchTerm = text
+        if instr(1, m.Item.Key, "?") > 0 then
+            item.Key = m.Item.Key + "&query=" + HttpEncode(text)
+        else
+            item.Key = m.Item.Key + "?query=" + HttpEncode(text)
+        end if
+
+        m.ViewController.CreateScreenForItem(item, invalid, [item.Title])
+    else
+        m.Screen.SetSearchText(text)
+    end if
 End Sub

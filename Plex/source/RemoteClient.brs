@@ -612,7 +612,7 @@ Function ProcessApplicationSetText() As Boolean
     if type(screen.SetText) = "roFunction" AND m.request.query["field"] = NowPlayingManager().textFieldName then
         value = firstOf(m.request.query["text"], "")
         NowPlayingManager().textFieldContent = value
-        screen.SetText(value)
+        screen.SetText(value, (m.request.query["complete"] = "1"))
         m.simpleOK("")
     else
         Debug("Illegal remote setText call: " + tostr(m.request.query["field"]) + "/" + tostr(NowPlayingManager().textFieldName))

@@ -59,30 +59,7 @@ Function kbHandleMessage(msg) As Boolean
             NowPlayingManager().SetFocusedTextField(invalid, invalid, false)
         else if msg.isButtonPressed() then
             if msg.GetIndex() = 1 then
-                if m.ValidateText = invalid OR m.ValidateText(m.Screen.GetText()) then
-                    m.Text = m.Screen.GetText()
-                    if m.Listener <> invalid then
-                        m.Listener.OnUserInput(m.Text, m)
-                    else if m.Item <> invalid then
-                        callback = CreateObject("roAssociativeArray")
-                        callback.Heading = m.Text
-                        callback.Item = CreateObject("roAssociativeArray")
-                        callback.Item.server = m.Item.server
-                        callback.Item.Title = m.Text
-                        callback.Item.sourceUrl = m.Item.sourceUrl
-                        callback.Item.viewGroup = m.Item.viewGroup
-
-                        if instr(1, m.Item.Key, "?") > 0 then
-                            callback.Item.Key = m.Item.Key + "&query=" + HttpEncode(m.Text)
-                        else
-                            callback.Item.Key = m.Item.Key + "?query=" + HttpEncode(m.Text)
-                        end if
-
-                        callback.OnAfterClose = createScreenForItemCallback
-                        m.ViewController.afterCloseCallback = callback
-                    end if
-                    m.Screen.Close()
-                end if
+                m.SetText(m.Screen.GetText(), true)
             else if msg.GetIndex() = 2 then
                 m.Screen.Close()
             end if
@@ -92,6 +69,35 @@ Function kbHandleMessage(msg) As Boolean
     return handled
 End Function
 
-Sub kbSetText(text)
-    m.Screen.SetText(text)
+Sub kbSetText(text, isComplete)
+    if isComplete then
+        if m.ValidateText = invalid OR m.ValidateText(text) then
+            m.Text = text
+            if m.Listener <> invalid then
+                m.Listener.OnUserInput(m.Text, m)
+            else if m.Item <> invalid then
+                callback = CreateObject("roAssociativeArray")
+                callback.Heading = m.Text
+                callback.Item = CreateObject("roAssociativeArray")
+                callback.Item.server = m.Item.server
+                callback.Item.Title = m.Text
+                callback.Item.sourceUrl = m.Item.sourceUrl
+                callback.Item.viewGroup = m.Item.viewGroup
+
+                if instr(1, m.Item.Key, "?") > 0 then
+                    callback.Item.Key = m.Item.Key + "&query=" + HttpEncode(m.Text)
+                else
+                    callback.Item.Key = m.Item.Key + "?query=" + HttpEncode(m.Text)
+                end if
+
+                callback.OnAfterClose = createScreenForItemCallback
+                m.ViewController.afterCloseCallback = callback
+            end if
+            m.Screen.Close()
+        else
+            m.Screen.SetText(text)
+        end if
+    else
+        m.Screen.SetText(text)
+    end if
 End Sub
