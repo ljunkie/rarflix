@@ -235,7 +235,11 @@ Function ProcessPlaybackPlayMedia() As Boolean
 
     machineID = m.request.query["machineIdentifier"]
 
-    server = GetPlexMediaServer(machineID)
+    if machineID = "node" then
+        server = GetPrimaryServer()
+    else
+        server = GetPlexMediaServer(machineID)
+    end if
 
     if server = invalid then
         port = firstOf(m.request.query["port"], "32400")
