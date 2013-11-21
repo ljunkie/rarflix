@@ -66,6 +66,9 @@ Function TimelineData(timelineType As String)
     obj.SetControllable = timelineDataSetControllable
     obj.ToXmlAttributes = timelineDataToXmlAttributes
 
+    obj.SetControllable("playPause", true)
+    obj.SetControllable("stop", true)
+    
     if timelineType = "video" then
         obj.SetControllable("seekTo", true)
         obj.SetControllable("stepBack", true)
