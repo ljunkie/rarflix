@@ -245,12 +245,13 @@ Function ProcessPlaybackPlayMedia() As Boolean
         port = firstOf(m.request.query["port"], "32400")
         protocol = firstOf(m.request.query["protocol"], "http")
         address = m.request.query["address"]
+        token = m.request.query["token"]
         if address = invalid then
             SendErrorResponse(m, 400, "address must be specified")
             return true
         end if
 
-        server = newSyntheticPlexMediaServer(protocol + "://" + address + ":" + port, machineID)
+        server = newSyntheticPlexMediaServer(protocol + "://" + address + ":" + port, machineID, token)
     end if
 
     offset = firstOf(m.request.query["offset"], "0").toint()

@@ -64,12 +64,12 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     return pms
 End Function
 
-Function newSyntheticPlexMediaServer(pmsUrl, machineID) As Object
+Function newSyntheticPlexMediaServer(pmsUrl, machineID, token) As Object
     Debug("Creating synthetic server for " + tostr(machineID) + " at " + tostr(pmsUrl))
     pms = newPlexMediaServer(pmsUrl, invalid, machineID)
     pms.owned = false
     pms.online = true
-    pms.AccessToken = invalid
+    pms.AccessToken = token
     return pms
 End Function
 
