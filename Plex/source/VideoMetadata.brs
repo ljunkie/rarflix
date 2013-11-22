@@ -673,7 +673,6 @@ Function RewriteNodeKey(key)
     primaryServer = GetPrimaryServer()
     if Left(key, Len(nodePrefix)) = nodePrefix AND primaryServer <> invalid then
         key = primaryServer.serverUrl + Mid(key, Len(nodePrefix) + 1)
-        Debug("Rewrote node key to: " + key)
     end if
     return key
 End Function
