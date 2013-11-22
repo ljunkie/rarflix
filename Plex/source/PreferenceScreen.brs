@@ -214,6 +214,8 @@ Function createPreferencesScreen(viewController) As Object
 
     ' Quality settings
     qualities = [
+        { title: "208 kbps, 160p", EnumValue: "2" },
+        { title: "320 kbps, 240p", EnumValue: "3" },
         { title: "720 kbps, 320p", EnumValue: "4" },
         { title: "1.5 Mbps, 480p", EnumValue: "5" },
         { title: "2.0 Mbps, 720p", EnumValue: "6" },
