@@ -577,8 +577,13 @@ Function IIf(Condition, Result1, Result2) As Dynamic
 
 end Function
 
-Sub SwapArray(arr, i, j)
+Sub SwapArray(arr, i, j, setOrigIndex=false)
     if i <> j then
+        if setOrigIndex then
+            if arr[i].OrigIndex = invalid then arr[i].OrigIndex = i
+            if arr[j].OrigIndex = invalid then arr[j].OrigIndex = j
+        end if
+
         temp = arr[i]
         arr[i] = arr[j]
         arr[j] = temp
@@ -586,15 +591,13 @@ Sub SwapArray(arr, i, j)
 End Sub
 
 Function ShuffleArray(arr, focusedIndex)
-    ' The array being shuffled should already have items with .OrigIndex set
-
     ' Start by moving the current focused item to the front.
-    SwapArray(arr, 0, focusedIndex)
+    SwapArray(arr, 0, focusedIndex, true)
 
     ' Now loop from the end to 1. Rnd doesn't return 0, so the item we just put
     ' up front won't be touched.
     for i = arr.Count() - 1 to 1 step -1
-        SwapArray(arr, i, Rnd(i))
+        SwapArray(arr, i, Rnd(i), true)
     next
 
     return 0
