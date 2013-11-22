@@ -277,6 +277,9 @@ Function ProcessPlaybackPlayMedia() As Boolean
         end if
     end for
 
+    ' Be slightly forgiving of mismatched keys if there's only one item.
+    if matchIndex = invalid AND children.Count() = 1 then matchIndex = 0
+
     if matchIndex <> invalid then
         ' If we currently have a video playing, things are tricky. We can't
         ' play anything on top of video or Bad Things happen. But we also
