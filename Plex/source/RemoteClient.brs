@@ -577,7 +577,9 @@ Function ProcessNavigationBack() As Boolean
     if NOT ValidateRemoteControlRequest(m) then return true
     ProcessCommandID(m.request)
 
-    SendEcpCommand("Back")
+    ' Sending an ECP back can potentially exit the app, so leave it up to the
+    ' ViewController to close the active screen.
+    GetViewController().CloseScreen(true)
 
     m.simpleOK("")
     return true
