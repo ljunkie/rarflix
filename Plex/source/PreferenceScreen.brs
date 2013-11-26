@@ -274,6 +274,7 @@ Function createPreferencesScreen(viewController) As Object
     }
 
     obj.checkMyPlexOnActivate = false
+    obj.checkStatusOnActivate = false
 
     return obj
 End Function
@@ -304,6 +305,8 @@ Sub showPreferencesScreen()
     m.AddItem({title: "Screensaver"}, "screensaver", m.GetEnumValue("screensaver"))
     m.AddItem({title: "Logging"}, "debug")
     m.AddItem({title: "Advanced Preferences"}, "advanced")
+    m.AddItem({title: "Channel Status: " + AppManager().State}, "status")
+
     m.AddItem({title: "Close Preferences"}, "close")
 
     m.serversBefore = {}
@@ -374,7 +377,30 @@ Function prefsMainHandleMessage(msg) As Boolean
                     m.ViewController.InitializeOtherScreen(screen, invalid)
                     screen.Show()
                 end if
-            else if command = "quality" OR command = "quality_remote" OR command = "level" OR command = "directplay" OR command = "screensaver" then
+            else if command = "status" then
+                m.checkStatusOnActivate = true
+                m.statusIndex = msg.GetIndex()
+
+                dialog = createBaseDialog()
+                dialog.Title = "Channel Status"
+
+                manager = AppManager()
+                if manager.State = "PlexPass" then
+                    dialog.Text = "Plex/Roku is fully unlocked since you're a PlexPass member."
+                else if manager.State = "Purchased" then
+                    dialog.Text = "Plex/Roku has been purchased and is fully unlocked."
+                else if manager.State = "Trial" then
+                    dialog.Text = "Plex/Roku is currently in a trial period. To fully unlock the channel, you can purchase it or connect a PlexPass account."
+                    dialog.SetButton("purchase", "Purchase the channel")
+                else if manager.State = "Limited" then
+                    dialog.Text = "Your Plex/Roku trial has expired and the app is currently limited. To fully unlock the channel, you can purchase it or connect a PlexPass account."
+                    dialog.SetButton("purchase", "Purchase the channel")
+                end if
+
+                dialog.SetButton("close", "Close")
+                dialog.HandleButton = channelStatusHandleButton
+                dialog.Show()
+            else if command = "quality" OR command = "quality_remote" OR command = "level" OR command = "fivepointone" OR command = "directplay" OR command = "screensaver" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "slideshow" then
                 screen = createSlideshowPrefsScreen(m.ViewController)
@@ -438,8 +464,18 @@ Sub prefsMainActivate(priorScreen)
             m.Changes["myplex"] = "connected"
         end if
         m.SetTitle(m.myPlexIndex, getCurrentMyPlexLabel())
+    else if m.checkStatusOnActivate then
+        m.checkStatusOnActivate = false
+        m.SetTitle(m.statusIndex, "Channel Status: " + AppManager().State)
     end if
 End Sub
+
+Function channelStatusHandleButton(key, data) As Boolean
+    if key = "purchase" then
+        AppManager().StartPurchase()
+    end if
+    return true
+End Function
 
 '*** Slideshow Preferences ***
 

@@ -2,6 +2,9 @@ Function AppManager()
     if m.AppManager = invalid then
         obj = CreateObject("roAssociativeArray")
 
+        'obj.productCode = "PROD1" ' Sample product when sideloaded
+        obj.productCode = "plexunlock"
+
         ' The unlocked state of the app, one of: PlexPass, Purchased, Trial, or Limited
         obj.IsPlexPass = false
         obj.IsPurchased = false
@@ -25,6 +28,7 @@ Function AppManager()
         ' Channel store
         obj.FetchProducts = managerFetchProducts
         obj.HandleChannelStoreEvent = managerHandleChannelStoreEvent
+        obj.StartPurchase = managerStartPurchase
 
         ' Singleton
         m.AppManager = obj
@@ -86,8 +90,7 @@ End Sub
 Sub managerHandleChannelStoreEvent(msg)
     if msg.isRequestSucceeded() then
         for each product in msg.GetResponse()
-            'if product.code = "PROD1" then ' Sample product when sideloaded
-            if product.code = "plexunlock" then
+            if product.code = m.productCode then
                 m.IsAvailableForPurchase = true
                 if product.purchaseDate <> invalid then
                     date = CreateObject("roDateTime")
@@ -105,4 +108,20 @@ Sub managerHandleChannelStoreEvent(msg)
 
     m.ClearInitializer("channelstore")
     m.PendingStore = invalid
+End Sub
+
+Sub managerStartPurchase()
+    store = CreateObject("roChannelStore")
+    cart = CreateObject("roList")
+    order = {code: m.productCode, qty: 1}
+    cart.AddTail(order)
+    store.SetOrder(cart)
+
+    if store.DoOrder() then
+        Debug("Product purchased!")
+        m.IsPurchased = true
+        m.ResetState()
+    else
+        Debug("Product not purchased")
+    end if
 End Sub
