@@ -101,7 +101,7 @@ Sub pinOnUrlEvent(msg, requestContext)
             token = xml.auth_token.GetText()
             if len(token) > 0 then
                 Debug("Got a myPlex token")
-                if MyPlexManager().ValidateToken(token) then
+                if MyPlexManager().ValidateToken(token, false) then
                     RegWrite("AuthToken", token, "myplex")
                 end if
                 m.Screen.Close()

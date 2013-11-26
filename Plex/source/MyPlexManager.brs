@@ -6,6 +6,8 @@ Function MyPlexManager() As Object
     if m.MyPlexManager = invalid then
         obj = CreateObject("roAssociativeArray")
 
+        AppManager().AddInitializer("myplex")
+
         obj.CreateRequest = mpCreateRequest
         obj.ValidateToken = mpValidateToken
         obj.Disconnect = mpDisconnect
@@ -42,6 +44,7 @@ Function MyPlexManager() As Object
         obj.ExecutePostCommand = mpExecutePostCommand
 
         obj.IsSignedIn = false
+        obj.IsPlexPass = false
         obj.Username = invalid
         obj.EmailAddress = invalid
         obj.CheckAuthentication = mpCheckAuthentication
@@ -49,8 +52,22 @@ Function MyPlexManager() As Object
         obj.TranscodeServer = invalid
         obj.CheckTranscodeServer = mpCheckTranscodeServer
 
+        obj.ProcessAccountResponse = mpProcessAccountResponse
+
+        ' For using the view controller for HTTP requests
+        obj.ScreenID = -5
+        obj.OnUrlEvent = mpOnUrlEvent
+
         ' Singleton
         m.MyPlexManager = obj
+
+        ' Kick off initialization
+        token = RegRead("AuthToken", "myplex")
+        if token <> invalid then
+            obj.ValidateToken(token, true)
+        else
+            AppManager().ClearInitializer("myplex")
+        end if
     end if
 
     return m.MyPlexManager
@@ -64,29 +81,53 @@ Sub mpCheckAuthentication()
     end if
 End Sub
 
-Function mpValidateToken(token) As Boolean
+Function mpValidateToken(token, async) As Boolean
     req = m.CreateRequest("", "/users/sign_in.xml", false)
-    port = CreateObject("roMessagePort")
-    req.SetPort(port)
-    req.AsyncPostFromString("auth_token=" + token)
 
-    event = wait(10000, port)
+    if async then
+        context = CreateObject("roAssociativeArray")
+        context.requestType = "account"
+        GetViewController().StartRequest(req, m, context, "auth_token=" + token)
+    else
+        port = CreateObject("roMessagePort")
+        req.SetPort(port)
+        req.AsyncPostFromString("auth_token=" + token)
+
+        event = wait(10000, port)
+        m.ProcessAccountResponse(event)
+    end if
+
+    return m.IsSignedIn
+End Function
+
+Sub mpOnUrlEvent(msg, requestContext)
+    if requestContext.requestType = "account" then
+        m.ProcessAccountResponse(msg)
+        AppManager().ClearInitializer("myplex")
+    end if
+End Sub
+
+Sub mpProcessAccountResponse(event)
     if type(event) = "roUrlEvent" AND event.GetInt() = 1 AND event.GetResponseCode() = 201 then
         xml = CreateObject("roXMLElement")
         xml.Parse(event.GetString())
         m.Username = xml@username
         m.EmailAddress = xml@email
         m.IsSignedIn = true
-        m.AuthToken = token
+        m.AuthToken = xml@authenticationToken
+        m.IsPlexPass = (xml.subscription <> invalid AND xml.subscription@active = "1")
 
         Debug("Validated myPlex token, corresponds to " + tostr(m.Username))
+        Debug("PlexPass: " + tostr(m.IsPlexPass))
+
+        mgr = AppManager()
+        mgr.IsPlexPass = m.IsPlexPass
+        mgr.ResetState()
     else
         Debug("Failed to validate myPlex token")
         m.IsSignedIn = false
     end if
-
-    return m.IsSignedIn
-End Function
+End Sub
 
 Function mpCreateRequest(sourceUrl As String, path As String, appendToken=true As Boolean, connectionUrl=invalid) As Object
     url = FullUrl(m.serverUrl, sourceUrl, path)

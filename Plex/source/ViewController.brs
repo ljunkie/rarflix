@@ -31,6 +31,7 @@ Function createViewController() As Object
     controller.CreatePlayerForItem = vcCreatePlayerForItem
     controller.IsVideoPlaying = vcIsVideoPlaying
 
+    controller.ShowFirstRun = vcShowFirstRun
     controller.ShowReleaseNotes = vcShowReleaseNotes
 
     controller.InitializeOtherScreen = vcInitializeOtherScreen
@@ -44,6 +45,7 @@ Function createViewController() As Object
     controller.CloseScreen = vcCloseScreen
 
     controller.Show = vcShow
+    controller.OnInitialized = vcOnInitialized
     controller.UpdateScreenProperties = vcUpdateScreenProperties
     controller.AddBreadcrumbs = vcAddBreadcrumbs
 
@@ -114,7 +116,8 @@ Function createViewController() As Object
     ' Stuff the controller into the global object
     m.ViewController = controller
 
-    ' Initialize things that run in the background and are okay to start before a user is selected. 
+    ' Initialize things that run in the background
+    AppManager().AddInitializer("viewcontroller")
     InitWebServer(controller)
     AudioPlayer()
     AnalyticsTracker()
@@ -777,6 +780,11 @@ Function vcIsVideoPlaying() As Boolean
     return type(m.screens.Peek().Screen) = "roVideoScreen"
 End Function
 
+Sub vcShowFirstRun()
+    ' TODO(schuyler): Unify these
+    ShowHelpScreen()
+End Sub
+
 Sub vcShowReleaseNotes(options = invalid)
     if options <> invalid then 
         header = GetGlobal("appName") + " v" + GetGlobal("appVersionStr")
@@ -1190,8 +1198,10 @@ Sub vcCloseScreen(simulateRemote)
 End Sub
 
 Sub vcShow()
-    testNotes = false ' testNotes = true
-    if RegRead("last_run_version", "misc", "") <> GetGlobal("appVersionStr") or testNotes then
+    if RegRead("last_run_version", "misc") = invalid then
+        m.ShowFirstRun()
+        RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")
+    else if RegRead("last_run_version", "misc", "") <> GetGlobal("appVersionStr") then
         m.ShowReleaseNotes()
         RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")
     else
@@ -1203,10 +1213,11 @@ Sub vcShow()
     end if
 
     Debug("Starting global message loop")
+    AppManager().ClearInitializer("viewcontroller")
 
     timeout = 0
     lastmin = -1 'container to update every minute
-    while m.screens.Count() > 0
+    while m.screens.Count() > 0 OR NOT AppManager().IsInitialized()
         m.WebServer.prewait()
         msg = wait(timeout, m.GlobalMessagePort)
 
@@ -1359,6 +1370,15 @@ Sub vcShow()
     end if
 '
     return
+End Sub
+
+Sub vcOnInitialized()
+    ' As good a place as any, note that we've started
+    AnalyticsTracker().OnStartup(MyPlexManager().IsSignedIn)
+
+    if m.screens.Count() = 0 then
+        m.Home = m.CreateHomeScreen()
+    end if
 End Sub
 
 Sub vcAddBreadcrumbs(screen, breadcrumbs)
