@@ -1268,6 +1268,8 @@ Sub vcShow()
                 if msgInfo.LogType = "bandwidth.minute" then
                     GetGlobalAA().AddReplace("bandwidth", msgInfo.Bandwidth)
                 end if
+            else if type(msg) = "roChannelStoreEvent" then
+                AppManager().HandleChannelStoreEvent(msg)
             else if msg.isRemoteKeyPressed() and msg.GetIndex() = 10 then
                 ' do not allow global option key while screen is locked
                 if m.IsLocked <> invalid or NOT m.IsLocked then m.CreateContextMenu()
