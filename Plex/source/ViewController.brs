@@ -33,6 +33,9 @@ Function createViewController() As Object
 
     controller.ShowFirstRun = vcShowFirstRun
     controller.ShowReleaseNotes = vcShowReleaseNotes
+    controller.ShowHelpScreen = vcShowHelpScreen
+    controller.ShowLimitedWelcome = vcShowLimitedWelcome
+    controller.ShowPlaybackNotAllowed = vcShowPlaybackNotAllowed
 
     controller.InitializeOtherScreen = vcInitializeOtherScreen
     controller.AssignScreenID = vcAssignScreenID
@@ -781,8 +784,8 @@ Function vcIsVideoPlaying() As Boolean
 End Function
 
 Sub vcShowFirstRun()
-    ' TODO(schuyler): Unify these
-    ShowHelpScreen()
+    ' TODO(schuyler): Are these different?
+    m.ShowHelpScreen()
 End Sub
 
 Sub vcShowReleaseNotes(options = invalid)
@@ -1026,6 +1029,41 @@ Sub vcShowReleaseNotes(options = invalid)
     screen.Show()
 End Sub
 
+Sub vcShowHelpScreen()
+    header = "Welcome to Plex/Roku!"
+    paragraphs = []
+    paragraphs.Push("Plex for Roku automatically connects to Plex Media Servers on your local network and also works with myPlex to view queued items and connect to your published and shared servers.")
+    paragraphs.Push("To download and install Plex Media Server on your computer, visit http://plexapp.com/getplex")
+    paragraphs.Push("For more information on getting started, visit http://plexapp.com/roku")
+
+    screen = createParagraphScreen(header, paragraphs, m)
+    m.InitializeOtherScreen(screen, invalid)
+
+    screen.Show()
+End Sub
+
+Sub vcShowLimitedWelcome()
+    header = "Your Plex/Roku trial has ended"
+    paragraphs = []
+    paragraphs.Push("Your Plex/Roku trial period has ended. You can continue to browse content in your library, but you'll be unable to play anything.")
+
+    if AppManager().IsAvailableForPurchase then
+        paragraphs.Push("To continue using Plex/Roku, you can either buy the channel or connect a PlexPass-enabled myPlex account.")
+    else
+        paragraphs.Push("To continue using Plex/Roku, you must connect a PlexPass-enabled myPlex account.")
+    end if
+
+    screen = createParagraphScreen(header, paragraphs, m)
+    m.InitializeOtherScreen(screen, invalid)
+
+    screen.Show()
+End Sub
+
+Sub vcShowPlaybackNotAllowed()
+    ' TODO(schuyler): Are these different?
+    m.ShowLimitedWelcome()
+End Sub
+
 Sub vcInitializeOtherScreen(screen, breadcrumbs)
     m.AddBreadcrumbs(screen, breadcrumbs)
     m.UpdateScreenProperties(screen)
@@ -1198,21 +1236,9 @@ Sub vcCloseScreen(simulateRemote)
 End Sub
 
 Sub vcShow()
-    if RegRead("last_run_version", "misc") = invalid then
-        m.ShowFirstRun()
-        RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")
-    else if RegRead("last_run_version", "misc", "") <> GetGlobal("appVersionStr") then
-        m.ShowReleaseNotes()
-        RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")
-    else
-        if m.ShowSecurityScreen = true then
-            m.CreateUserSelectionScreen()
-        else
-            m.Home = m.CreateHomeScreen()
-        end if
+   if m.ShowSecurityScreen = true then
+       m.CreateUserSelectionScreen()
     end if
-
-    Debug("Starting global message loop")
     AppManager().ClearInitializer("viewcontroller")
 
     timeout = 0
@@ -1379,7 +1405,17 @@ Sub vcOnInitialized()
     AnalyticsTracker().OnStartup(MyPlexManager().IsSignedIn)
 
     if m.screens.Count() = 0 then
-        m.Home = m.CreateHomeScreen()
+        if RegRead("last_run_version", "misc") = invalid then
+            m.ShowFirstRun()
+            RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")
+        else if RegRead("last_run_version", "misc", "") <> GetGlobal("appVersionStr") then
+            m.ShowReleaseNotes()
+            RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")
+        else if AppManager().State = "Limited" then
+            m.ShowLimitedWelcome()
+        else
+            m.Home = m.CreateHomeScreen()
+        end if
     end if
 End Sub
 

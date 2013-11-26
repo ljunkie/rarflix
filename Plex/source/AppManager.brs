@@ -84,7 +84,6 @@ Sub managerFetchProducts()
 End Sub
 
 Sub managerHandleChannelStoreEvent(msg)
-    m.ClearInitializer("channelstore")
     if msg.isRequestSucceeded() then
         for each product in msg.GetResponse()
             'if product.code = "PROD1" then ' Sample product when sideloaded
@@ -104,5 +103,6 @@ Sub managerHandleChannelStoreEvent(msg)
         m.ResetState()
     end if
 
+    m.ClearInitializer("channelstore")
     m.PendingStore = invalid
 End Sub

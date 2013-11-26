@@ -475,7 +475,7 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
                 ' More oddness is due to the fact this will show empty rows
                 ' new Fix is to load the MISC row and hide the others
                 Debug("No servers, no GDM, and no myPlex...")
-                ShowHelpScreen(2)
+                GetViewController().ShowHelpScreen()
                 status.loadStatus = 2
                 m.Listener.OnDataLoaded(loadingRow, status.content, 0, status.content.Count(), true)
             end if
@@ -1041,7 +1041,7 @@ Sub homeOnTimerExpired(timer)
 
         if RegRead("serverList", "servers") = invalid AND NOT MyPlexManager().IsSignedIn then
             Debug("No servers and no myPlex, appears to be a first run")
-            ShowHelpScreen()
+            GetViewController().ShowHelpScreen()
             status = m.contentArray[m.RowIndexes["misc"]]
             status.loadStatus = 2
             m.Listener.OnDataLoaded(m.RowIndexes["misc"], status.content, 0, status.content.Count(), true)
