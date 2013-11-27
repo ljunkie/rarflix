@@ -1056,15 +1056,25 @@ Sub vcShowLimitedWelcome()
     header = "Your Plex/Roku trial has ended"
     paragraphs = []
     paragraphs.Push("Your Plex/Roku trial period has ended. You can continue to browse content in your library, but you'll be unable to play anything.")
+    addPurchaseButton = false
 
     if AppManager().IsAvailableForPurchase then
         paragraphs.Push("To continue using Plex/Roku, you can either buy the channel or connect a PlexPass-enabled myPlex account.")
+        addPurchaseButton = true
     else
         paragraphs.Push("To continue using Plex/Roku, you must connect a PlexPass-enabled myPlex account.")
     end if
 
     screen = createParagraphScreen(header, paragraphs, m)
     m.InitializeOtherScreen(screen, invalid)
+
+    if addPurchaseButton then
+        screen.SetButton("purchase", "Purchase channel")
+    end if
+
+    screen.HandleButton = channelStatusHandleButton
+
+    screen.SetButton("close", "Close")
 
     screen.Show()
 End Sub
