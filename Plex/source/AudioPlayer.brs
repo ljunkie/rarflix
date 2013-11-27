@@ -278,6 +278,11 @@ Sub audioPlayerPrev(play=true)
 End Sub
 
 Sub audioPlayerSetContext(context, contextIndex, screen, startPlayer)
+    if NOT AppManager().IsPlaybackAllowed() then
+        GetViewController().ShowPlaybackNotAllowed()
+        return
+    end if
+
     if startPlayer then
         m.IgnoreTimelines = true
         m.Stop()

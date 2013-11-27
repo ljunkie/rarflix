@@ -9,7 +9,18 @@ Function AppManager()
         obj.IsPlexPass = false
         obj.IsPurchased = false
         obj.IsAvailableForPurchase = false
-        obj.IsInTrialWindow = true
+
+        obj.firstPlaybackTimestamp = RegRead("first_playback_timestamp", "misc")
+        if obj.firstPlaybackTimestamp <> invalid then
+            currentTime = Now().AsSeconds()
+            firstPlayback = obj.firstPlaybackTimestamp.toint()
+            trialDuration = 30 * 24 * 60 * 60 ' 30 days
+            obj.IsInTrialWindow = (currentTime - firstPlayback < trialDuration)
+        else
+            ' The user hasn't tried to play any media yet, still in trial.
+            obj.IsInTrialWindow = true
+        end if
+
         obj.ResetState = managerResetState
         obj.ResetState()
 
@@ -55,6 +66,13 @@ Function managerIsInitialized() As Boolean
 End Function
 
 Function managerIsPlaybackAllowed() As Boolean
+    ' If we've never noted a playback attempt before, write it to the registry
+    ' now. It will serve as the start of the trial period.
+
+    if m.firstPlaybackTimestamp = invalid then
+        RegWrite("first_playback_timestamp", "misc", tostr(Now().AsSeconds()))
+    end if
+
     return m.State <> "Limited"
 End Function
 

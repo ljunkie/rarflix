@@ -636,6 +636,11 @@ Function vcCreateContextMenu()
 End Function
 
 Function vcCreatePhotoPlayer(context, contextIndex=invalid, show=true, shuffled=false)
+    if NOT AppManager().IsPlaybackAllowed() then
+        m.ShowPlaybackNotAllowed()
+        return invalid
+    end if
+
     screen = createPhotoPlayerScreen(context, contextIndex, m, shuffled)
     screen.ScreenName = "Photo Player"
 
@@ -649,6 +654,11 @@ Function vcCreatePhotoPlayer(context, contextIndex=invalid, show=true, shuffled=
 End Function
 
 Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=true)
+    if NOT AppManager().IsPlaybackAllowed() then
+        m.ShowPlaybackNotAllowed()
+        return invalid
+    end if
+
     ' Stop any background audio first
     AudioPlayer().Stop()
 
