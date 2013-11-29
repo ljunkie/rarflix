@@ -612,8 +612,13 @@ End Sub
 Function newSeasonMetadata(container, item) As Object
     ' Seasons often have their own posters, but in many circumstances we prefer
     ' show's poster.
+    ' ljunkie - added toggle for this. We prefer the Seasons poster - but one can set it back to Show if wanted
     if container.xml@mixedParents = "1" then
-        thumb = firstOf(item@parentThumb, item@thumb, container.xml@thumb)
+        if RegRead("rf_season_poster", "preferences", "season") = "season" then    
+            thumb = firstOf(item@thumb, item@parentThumb, container.xml@thumb)
+        else
+            thumb = firstOf(item@parentThumb, item@thumb, container.xml@thumb)
+        end if
     else
         thumb = invalid
     end if
