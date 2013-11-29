@@ -24,11 +24,17 @@
 PKGREL = ../packages
 ZIPREL = ../zips
 SOURCEREL = ..
-FILE1 = PlexDev
-FILE2 = RARflix
-FILE3 = RARflixTest
-FILE4 = RARflixDev
-FILE5 = RARflixBeta
+
+ROKU_DEV_USERNAME ?= rokudev
+ROKU_DEV_PASSWORD ?= plex
+CURL = curl --digest -u $(ROKU_DEV_USERNAME):$(ROKU_DEV_PASSWORD)
+
+# remove these -- otherwise your'd have to exclude them on every make/push
+#FILE1 = PlexDev
+#FILE2 = RARflix
+#FILE3 = RARflixTest
+#FILE4 = RARflixDev
+#FILE5 = RARflixBeta
 
 .PHONY: all $(APPNAME)
 
@@ -41,31 +47,31 @@ $(APPNAME): $(APPDEPS)
 		rm  $(ZIPREL)/Plex.zip; \
 	fi
 
-	@echo "  >> removing old release zip $(SOURCEREL)/$(FILE1).zip"
-	@if [ -e "$(SOURCEREL)/$(FILE1).zip" ]; \
-	then \
-		rm  $(SOURCEREL)/$(FILE1).zip; \
-	fi
-	@echo "  >> removing old release zip $(SOURCEREL)/$(FILE2).zip"
-	@if [ -e "$(SOURCEREL)/$(FILE2).zip" ]; \
-	then \
-		rm  $(SOURCEREL)/$(FILE2).zip; \
-	fi
-	@echo "  >> removing old release zip $(SOURCEREL)/$(FILE3).zip"
-	@if [ -e "$(SOURCEREL)/$(FILE3).zip" ]; \
-	then \
-		rm  $(SOURCEREL)/$(FILE3).zip; \
-	fi
-	@echo "  >> removing old release zip $(SOURCEREL)/$(FILE4).zip"
-	@if [ -e "$(SOURCEREL)/$(FILE4).zip" ]; \
-	then \
-		rm  $(SOURCEREL)/$(FILE4).zip; \
-	fi
-	@echo "  >> removing old release zip $(SOURCEREL)/$(FILE5).zip"
-	@if [ -e "$(SOURCEREL)/$(FILE5).zip" ]; \
-	then \
-		rm  $(SOURCEREL)/$(FILE5).zip; \
-	fi
+#	@echo "  >> removing old release zip $(SOURCEREL)/$(FILE1).zip"
+#	@if [ -e "$(SOURCEREL)/$(FILE1).zip" ]; \
+#	then \
+#		rm  $(SOURCEREL)/$(FILE1).zip; \
+#	fi
+#	@echo "  >> removing old release zip $(SOURCEREL)/$(FILE2).zip"
+#	@if [ -e "$(SOURCEREL)/$(FILE2).zip" ]; \
+#	then \
+#		rm  $(SOURCEREL)/$(FILE2).zip; \
+#	fi
+#	@echo "  >> removing old release zip $(SOURCEREL)/$(FILE3).zip"
+#	@if [ -e "$(SOURCEREL)/$(FILE3).zip" ]; \
+#	then \
+#		rm  $(SOURCEREL)/$(FILE3).zip; \
+#	fi
+#	@echo "  >> removing old release zip $(SOURCEREL)/$(FILE4).zip"
+#	@if [ -e "$(SOURCEREL)/$(FILE4).zip" ]; \
+#	then \
+#		rm  $(SOURCEREL)/$(FILE4).zip; \
+#	fi
+#	@echo "  >> removing old release zip $(SOURCEREL)/$(FILE5).zip"
+#	@if [ -e "$(SOURCEREL)/$(FILE5).zip" ]; \
+#	then \
+#		rm  $(SOURCEREL)/$(FILE5).zip; \
+#	fi
 
 	@echo "  >> creating destination directory $(ZIPREL)"	
 	@if [ ! -d $(ZIPREL) ]; \
@@ -93,11 +99,13 @@ $(APPNAME): $(APPDEPS)
 	@echo "*** developer zip  $(APPNAME) complete ***"
 
 	cp "$(ZIPREL)/Plex.zip" "$(ZIPREL)/$(APPTITLE)-$(VERSION).zip"
-	cp "$(ZIPREL)/Plex.zip" "$(SOURCEREL)/$(APPTITLE).zip"
+	cp "$(ZIPREL)/Plex.zip" "$(ZIPREL)/$(APPNAME).zip"
+#	cp "$(ZIPREL)/Plex.zip" "$(SOURCEREL)/$(APPTITLE).zip"
 
 install: $(APPNAME)
 	@echo "Installing $(APPNAME) to host $(ROKU_DEV_TARGET)"
-	@curl -s -S -F "mysubmit=Install" -F "archive=@$(ZIPREL)/Plex.zip" -F "passwd=" http://$(ROKU_DEV_TARGET)/plugin_install | grep "<font color" | sed "s/<font color=\"red\">//"
+#	@curl -s -S -F "mysubmit=Install" -F "archive=@$(ZIPREL)/Plex.zip" -F "passwd=" http://$(ROKU_DEV_TARGET)/plugin_install | grep "<font color" | sed "s/<font color=\"red\">//"
+	@$(CURL) -s -S -F "mysubmit=Install" -F "archive=@$(ZIPREL)/$(APPNAME).zip" -F "passwd=" http://$(ROKU_DEV_TARGET)/plugin_install | grep "<font color" | sed "s/<font color=\"red\">//"
 
 pkg: install
 	@echo "*** Creating Package ***"
@@ -115,9 +123,11 @@ pkg: install
 	fi
 
 	@echo "Packaging  $(APPNAME) on host $(ROKU_DEV_TARGET)"
-	@read -p "Password: " REPLY ; echo $$REPLY | xargs -i curl -s -S -Fmysubmit=Package -Fapp_name=$(APPNAME)/$(VERSION) -Fpasswd={} -Fpkg_time=`expr \`date +%s\` \* 1000` "http://$(ROKU_DEV_TARGET)/plugin_package" | grep '^<font face=' | sed 's/.*href=\"\([^\"]*\)\".*/\1/' | sed 's#pkgs/##' | xargs -i curl -s -S -o $(PKGREL)/$(APPNAME)_{} http://$(ROKU_DEV_TARGET)/pkgs/{}
+#	@read -p "Password: " REPLY ; echo $$REPLY | xargs -i curl -s -S -Fmysubmit=Package -Fapp_name=$(APPNAME)/$(VERSION) -Fpasswd={} -Fpkg_time=`expr \`date +%s\` \* 1000` "http://$(ROKU_DEV_TARGET)/plugin_package" | grep '^<font face=' | sed 's/.*href=\"\([^\"]*\)\".*/\1/' | sed 's#pkgs/##' | xargs -i curl -s -S -o $(PKGREL)/$(APPNAME)_{} http://$(ROKU_DEV_TARGET)/pkgs/{}
+	@read -p "Password: " REPLY ; echo $$REPLY | xargs -i $(CURL) -s -S -Fmysubmit=Package -Fapp_name=$(APPNAME)/$(VERSION) -Fpasswd={} -Fpkg_time=`expr \`date +%s\` \* 1000` "http://$(ROKU_DEV_TARGET)/plugin_package" | grep '^<font face=' | sed 's/.*href=\"\([^\"]*\)\".*/\1/' | sed 's#pkgs/##' | xargs -i $(CURL) -s -S -o $(PKGREL)/$(APPNAME)_{} http://$(ROKU_DEV_TARGET)/pkgs/{}
 
 	@echo "*** Package  $(APPNAME) complete ***" 
 remove:
 	@echo "Removing $(APPNAME) from host $(ROKU_DEV_TARGET)"
-	@curl -s -S -F "mysubmit=Delete" -F "archive=" -F "passwd=" http://$(ROKU_DEV_TARGET)/plugin_install | grep "<font color" | sed "s/<font color=\"red\">//"
+#	@curl -s -S -F "mysubmit=Delete" -F "archive=" -F "passwd=" http://$(ROKU_DEV_TARGET)/plugin_install | grep "<font color" | sed "s/<font color=\"red\">//"
+	@$(CURL) -s -S -F "mysubmit=Delete" -F "archive=" -F "passwd=" http://$(ROKU_DEV_TARGET)/plugin_install | grep "<font color" | sed "s/<font color=\"red\">//"
