@@ -1871,6 +1871,18 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
         default: "enabled"
     }
 
+    ' Hide the header text for Rows on the GridScreen ( full grid )
+    values = [
+        { title: "Enabled", EnumValue: "enabled"  },
+        { title: "Disabled", EnumValue: "disabled"  },
+
+    ]
+    obj.Prefs["rf_fullgrid_hidetext"] = {
+        values: values
+        heading: "Hide text above each row in the Full Grid",
+        default: "disabled"
+    }
+
     ' Display Mode for Grid or Poster views
     ' { title: "Zoom", EnumValue: "zoom-to-fill", ShortDescriptionLine2: "zoom image to fill boundary" }, again, no one wants this
     display_modes = [
@@ -1928,14 +1940,15 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
 
     obj.Screen.SetHeader("Change the appearance of your sections")
 
+    obj.AddItem({title: "Reorder Rows"}, "section_row_order")
     obj.AddItem({title: "TV Series"}, "use_grid_for_series", obj.GetEnumValue("use_grid_for_series"))
     obj.AddItem({title: "Movie & Others", ShortDescriptionLine2: "Posters or Grid"}, "rf_poster_grid", obj.GetEnumValue("rf_poster_grid"))
     obj.AddItem({title: "Grid Size", ShortDescriptionLine2: "Size of Grid"}, "rf_grid_style", obj.GetEnumValue("rf_grid_style"))
     obj.AddItem({title: "Grid Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_grid_displaymode", obj.GetEnumValue("rf_grid_displaymode"))
     obj.AddItem({title: "Grid Pop Out", ShortDescriptionLine2: "Description on bottom right"}, "rf_grid_description")
+    obj.AddItem({title: "Full Grid - hide text", ShortDescriptionLine2: "Hide text on top of each row"}, "rf_fullgrid_hidetext", obj.GetEnumValue("rf_fullgrid_hidetext"))
     'we can add this.. but it doesn't do much yet.. let's not totally confuse people.. yet.
     'obj.AddItem({title: "Poster Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_poster_displaymode", obj.GetEnumValue("rf_poster_displaymode"))
-    obj.AddItem({title: "Reorder Rows"}, "section_row_order")
     obj.AddItem({title: "Close"}, "close")
 
     return obj
@@ -1951,7 +1964,7 @@ Function prefsSectionDisplayHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "use_grid_for_series" or command = "rf_poster_grid" or command = "rf_grid_style" or command = "rf_grid_displaymode" or command = "rf_poster_displaymode" then 
+            if command = "use_grid_for_series" or command = "rf_poster_grid" or command = "rf_grid_style" or command = "rf_grid_displaymode" or command = "rf_poster_displaymode" or command = "rf_fullgrid_hidetext" then 
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "rf_grid_description" then
                 screen = createGridDescriptionPrefsScreen(m.ViewController)

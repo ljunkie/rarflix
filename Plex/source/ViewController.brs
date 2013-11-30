@@ -911,6 +911,18 @@ Sub vcPopScreen(screen)
             'print type(newScreen.Screen)
         end if
 
+        ' ljunkie - hack to allow hiding the row text on grid screens ( mainly for the Full Grid )
+        ' sadly the counterText when changed on the fly affects all screen - but not the counter seperator
+        ' another small bug ( or odd feature ) in the Roku firmware. So we will have to reset it for previous screens
+        newScreen = m.screens.peek()
+        if newScreen <> invalid and tostr(newScreen.screen) = "roGridScreen" then 
+            if newScreen.isFullGrid <> invalid and newScreen.isFullGrid = true then 
+                hideRowText(true)
+            else 
+                hideRowText(false)
+            end if
+        end if
+
         screenName = firstOf(newScreen.ScreenName, type(newScreen.Screen))
         Debug("Top of stack is once again: " + screenName)
         m.Analytics.TrackScreen(screenName)

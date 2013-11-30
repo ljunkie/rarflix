@@ -1,10 +1,15 @@
 Function createFULLGridScreen(item, viewController, style = "flat-movie", SetDisplayMode = "scale-to-fit") As Object
     dialog=ShowPleaseWait("Please wait","")
+
+    ' hide header text of each row ( set color to BGcolor )
+    hideHeaderText = false
+    if RegRead("rf_fullgrid_hidetext", "preferences", "disabled") = "enabled" then hideHeaderText = true
+
     if style = "Invalid" then style = RegRead("rf_grid_style", "preferences", "flat-movie")
 
     Debug("---- Creating FULL grid with style" + tostr(style) + " SetDisplayMode:" + tostr(SetDisplayMode))
 
-    obj = createGridScreen(viewController, style, RegRead("rf_up_behavior", "preferences", "exit"), SetDisplayMode)
+    obj = createGridScreen(viewController, style, RegRead("rf_up_behavior", "preferences", "exit"), SetDisplayMode, hideHeaderText)
     obj.Item = item
     obj.isFullGrid = true
     ' depending on the row we have, we might alrady have filters in place. Lets remove the bad ones (X-Plex-Container-Start and X-Plex-Container-Size)

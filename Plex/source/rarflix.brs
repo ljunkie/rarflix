@@ -1245,3 +1245,25 @@ sub updateVideoHUD(m,curProgress,releaseDate = invalid)
     m.Screen.SetContent(content)
 end sub
 
+' hide Row Text (headers) for Rows on the Grid Screen
+' refer to vcPopScreen in ViewController.brs - we have to call this on every Pop for any GridScreen
+' due to Roku globally setting the counterText* for every open screen
+sub hideRowText(hide = true)
+    if RegRead("rf_fullgrid_hidetext", "preferences", "disabled") = "disabled" return ' nothing to do if we haven't set this pref
+
+    app = CreateObject("roAppManager")
+    if hide then 
+        app.SetThemeAttribute("GridScreenListNameColor", "#" +  GetGlobalAA().Lookup("rfBGcolor"))
+        app.SetThemeAttribute("CounterTextRight", "#" +  GetGlobalAA().Lookup("rfBGcolor"))
+        app.SetThemeAttribute("CounterTextLeft", "#" +  GetGlobalAA().Lookup("rfBGcolor"))
+        app.SetThemeAttribute("CounterSeparator", "#" +  GetGlobalAA().Lookup("rfBGcolor"))
+    else 
+        titleText = "#BFBFBF" 
+        normalText = "#999999"
+        subtleText = "#525252"
+        app.SetThemeAttribute("GridScreenListNameColor", titleText)
+        app.SetThemeAttribute("CounterTextRight", normalText)
+        app.SetThemeAttribute("CounterTextLeft", titleText)
+        app.SetThemeAttribute("CounterSeparator", normalText)
+    end if
+end sub

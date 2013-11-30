@@ -2,8 +2,14 @@
 '* A grid screen backed by XML from a PMS.
 '*
 
-Function createGridScreen(viewController, style=RegRead("rf_grid_style", "preferences", "flat-movie"), upBehavior="exit", SetDisplayMode = "scale-to-fit") As Object
+Function createGridScreen(viewController, style=RegRead("rf_grid_style", "preferences", "flat-movie"), upBehavior="exit", SetDisplayMode = "scale-to-fit", hideHeaderText = false) As Object
     Debug("######## Creating Grid Screen ########")
+
+    if hideHeaderText <> invalid and hideHeaderText then 
+        hideRowText(true)
+    else 
+        hideRowText(false)
+    end if
 
     if upBehavior <> "stop" then ' allow us to force a stop
         upBehavior = RegRead("rf_up_behavior", "preferences", "exit")
