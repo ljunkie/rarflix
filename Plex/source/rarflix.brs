@@ -27,6 +27,7 @@ Sub InitRARFlix()
     'RegDelete("userprofile_icon_color", "preferences")
     'RegDelete("rf_unwatched_limit", "preferences")
     'RegDelete("rf_grid_style", "preferences")
+    'RegDelete("rf_photos_grid_style", "preferences")
     'RegDelete("rf_poster_grid_style", "preferences")
     'RegDelete("rf_theme", "preferences")
     'RegDelete("rf_img_overlay", "preferences")
@@ -348,8 +349,8 @@ Function createRARFlixPrefsScreen(viewController) As Object
 
     ' TV Seasons Poster ( prefer season over show )
     values = [
-        { title: "Season", EnumValue: "Season", },
-        { title: "Show", EnumValue: "Show" },
+        { title: "Season", EnumValue: "season", },
+        { title: "Show", EnumValue: "show" },
 
     ]
     obj.Prefs["rf_season_poster"] = {

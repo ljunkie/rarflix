@@ -315,13 +315,15 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     poster_grid = RegRead("rf_poster_grid", "preferences", "grid")
     displaymode_poster = RegRead("rf_poster_displaymode", "preferences", "scale-to-fit")
     displaymode_grid = RegRead("rf_grid_displaymode", "preferences", "scale-to-fit")
+    grid_style_photos = RegRead("rf_photos_grid_style", "preferences","flat-movie")
+    grid_style = RegRead("rf_grid_style", "preferences","flat-movie")
 
     if contentType = "movie" OR contentType = "episode" OR contentType = "clip" then
         screen = createVideoSpringboardScreen(context, contextIndex, m)
         screenName = "Preplay " + contentType
     else if contentType = "series" then
         if RegRead("use_grid_for_series", "preferences", "") <> "" then
-            screen = createGridScreenForItem(item, m, "flat-16X9")
+            screen = createGridScreenForItem(item, m, "flat-16X9") ' we want 16x9 for series ( maybe flat-landscape when available )
             screenName = "Series Grid"
             if screen.loader.focusrow <> invalid then screen.loader.focusrow = 1 ' override this so we can hide the sub sections ( flat-16x9 is 5x3 )
         else
@@ -364,27 +366,29 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screenName = "Section: " + tostr(item.type)
         if tostr(item.type) = "artist" then 
             Debug("---- override photo-fit/flat-square for section with content of " + tostr(item.type))
-            screen = createGridScreenForItem(item, m, "flat-square","photo-fit")
+            screen = createGridScreenForItem(item, m, "flat-square","photo-fit") ' might need to change back to defaults ( grid_style -- to fit the standard )
             screen.screen.SetDisplayMode("Photo-Fit")
             screen.screen.SetListPosterStyles("landscape")
             if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 7x3 )
         else if tostr(item.type) = "photo" then 
-            Debug("---- override photo-fit/flat-16x9 for section with content of " + tostr(item.type))
+            ' Photo Section has it's own settings for DisplayMode and GridStyle
             displayMode = RegRead("photoicon_displaymode", "preferences", "photo-fit")
-            screen = createGridScreenForItem(item, m, "flat-16X9",displayMode)
-	    '            screen.screen.SetDisplayMode("Photo-Fit") ' this has to be called before
+            Debug("---- override " + tostr(displayMode) + "/" + tostr(grid_style_photos) + " for section with content of " + tostr(item.type))
+            screen = createGridScreenForItem(item, m, grid_style_photos ,displayMode)
             if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 7x3 )
         else 
-            screen = createGridScreenForItem(item, m, "flat-movie", displaymode_grid)
+            screen = createGridScreenForItem(item, m, grid_style, displaymode_grid)
         end if
     else if contentType = "playlists" then
-        screen = createGridScreenForItem(item, m, "flat-16X9")
+        screen = createGridScreenForItem(item, m, "flat-16X9") ' not really sure where this is ( maybe the myPlex queue )
         screenName = "Playlist Grid"
         if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( flat-16x9 is 5x3 )
     else if contentType = "photo" then
         if right(item.key, 8) = "children" then
             if poster_grid = "grid" then 
-                screen = createFULLGridScreen(item, m, "flat-16x9", "photo-fit") ' we override photos to use photo fit -- toggle added later TODO
+                displayMode = RegRead("photoicon_displaymode", "preferences", "photo-fit")
+                Debug("---- override FULL Grid" + tostr(displayMode) + "/" + tostr(grid_style_photos) + "for section with content of " + tostr(item.type))
+                screen = createFULLGridScreen(item, m, grid_style_photos, displayMode) ' we override photos to use photo fit -- toggle added later TODO
                 screen.loader.focusrow = 1 ' lets fill the screen ( 5x3 ) - no header row ( might be annoying page up for first section.. TODO)
             else 
                 screen = createPosterScreen(item, m)
@@ -416,15 +420,14 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             sec_metadata = getSectionType(m)
             DisplayMode = displaymode_grid
 
-            style = RegRead("rf_grid_style", "preferences","flat-movie")
             focusrow = 0
             if tostr(sec_metadata.type) = "photo" then 
-                style="flat-16x9"
-                DisplayMode = "photo-fit"
-                Debug("---- forcing to photo-fit")
+                grid_style=grid_style_photos ' Use GRID style for photos
+                displayMode = RegRead("photoicon_displaymode", "preferences", "photo-fit") ' Use Display Mode for Photos
+                Debug("---- override " + tostr(displayMode) + "/" + tostr(grid_style_photos) + "for section with content of " + tostr(item.type))
                 focusrow = 1 ' lets fill the screen ( 5x3 )
             end if
-            screen = createFULLGridScreen(item, m, style, DisplayMode)
+            screen = createFULLGridScreen(item, m, grid_style, DisplayMode)
 	    screen.loader.focusrow = focusrow ' lets fill the screen ( 5x3 )
         else 
             screen = createPosterScreen(item, m)
@@ -467,8 +470,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen.Loader.Port = screen.Port
         screenName = "All Channels"
     else if item.searchTerm <> invalid AND item.server = invalid then
-        'screen = createGridScreen(m, "flat-square")
-        screen = createGridScreen(m, "flat-movie", RegRead("rf_up_behavior", "preferences", "exit"), displaymode_grid)
+        screen = createGridScreen(m, grid_style, RegRead("rf_up_behavior", "preferences", "exit"), displaymode_grid)
         screen.Loader = createSearchLoader(item.searchTerm)
         screen.Loader.Listener = screen
         screenName = "Search Results"

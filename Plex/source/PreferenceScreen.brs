@@ -489,11 +489,24 @@ Function createSlideshowPrefsScreen(viewController) As Object
         default: "scale-to-fit"
     }
 
+    ' Prefer Grid or Poster view for most?
+    rf_photos_grid_style = [
+        { title: "Portrait", EnumValue: "flat-movie", ShortDescriptionLine2: "Grid 5x2"  },
+        { title: "Landscape 16x9", EnumValue: "flat-16X9", ShortDescriptionLine2: "Grid 5x3"  },
+        { title: "Landscape", EnumValue: "flat-landscape", ShortDescriptionLine2: "Grid 5x3"  },
+    ]
+    obj.Prefs["rf_photos_grid_style"] = {
+        values: rf_photos_grid_style,
+        heading: "Size of the Grid",
+        default: "flat-movie"
+    }
+
     obj.Screen.SetHeader("Slideshow display preferences")
 
     obj.AddItem({title: "Speed"}, "slideshow_period", obj.GetEnumValue("slideshow_period"))
     obj.AddItem({title: "Text Overlay"}, "slideshow_overlay", obj.GetEnumValue("slideshow_overlay"))
     obj.AddItem({title: "Reload",ShortDescriptionLine2: "check for new images after completion"}, "slideshow_reload", obj.GetEnumValue("slideshow_reload"))
+    obj.AddItem({title: "Grid Style",ShortDescriptionLine2: "Grid Display Mode"}, "rf_photos_grid_style", obj.GetEnumValue("rf_photos_grid_style"))
     obj.AddItem({title: "Photo Display Mode",ShortDescriptionLine2: "How should photos 'fit' the screen"}, "slideshow_displaymode", obj.GetEnumValue("slideshow_displaymode"))
     obj.AddItem({title: "Icons Display Mode",ShortDescriptionLine2: "How should thumbnails 'fit' the screen"}, "photoicon_displaymode", obj.GetEnumValue("photoicon_displaymode"))
     obj.AddItem({title: "Close"}, "close")
@@ -511,7 +524,7 @@ Function prefsSlideshowHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "slideshow_period" OR command = "slideshow_overlay" or command = "slideshow_reload" or command = "slideshow_displaymode" or command = "photoicon_displaymode" then
+            if command = "slideshow_period" OR command = "slideshow_overlay" or command = "slideshow_reload" or command = "slideshow_displaymode" or command = "photoicon_displaymode" or command = "rf_photos_grid_style" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "close" then
                 m.Screen.Close()
@@ -1836,8 +1849,9 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
 
     ' Prefer Grid or Poster view for most?
     rf_grid_style = [
-        { title: "Normal", EnumValue: "flat-movie", ShortDescriptionLine2: "5x2"  },
-        { title: "Small", EnumValue: "flat-square", ShortDescriptionLine2: "7x3" },
+        { title: "Normal", EnumValue: "flat-movie", ShortDescriptionLine2: "Grid 5x2 - Short Portrait"  },
+        { title: "Portrait", EnumValue: "flat-portrait", ShortDescriptionLine2: "Grid 5x2 - Tall Portrait"  },
+        { title: "Small", EnumValue: "flat-square", ShortDescriptionLine2: "Grid 7x3 - Sqaure" },
 
     ]
     obj.Prefs["rf_grid_style"] = {
@@ -1861,9 +1875,8 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
     ' { title: "Zoom", EnumValue: "zoom-to-fill", ShortDescriptionLine2: "zoom image to fill boundary" }, again, no one wants this
     display_modes = [
         { title: "Fit [default]", EnumValue: "scale-to-fit", ShortDescriptionLine2: "Default"  },
+        { title: "Photo", EnumValue: "photo-fit", ShortDescriptionLine2: "all the above to fit boundary" + chr(10) + " no stretching " },
         { title: "Fill", EnumValue: "scale-to-fill", ShortDescriptionLine2: "stretch image to fill boundary" },
-        { title: "Photo", EnumValue: "photo-fit", ShortDescriptionLine2: "all the above to fit boundary" },
-
     ]
     obj.Prefs["rf_grid_displaymode"] = {
         values: display_modes,

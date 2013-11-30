@@ -2,7 +2,7 @@
 '* A grid screen backed by XML from a PMS.
 '*
 
-Function createGridScreen(viewController, style="flat-movie", upBehavior="exit", SetDisplayMode = "scale-to-fit") As Object
+Function createGridScreen(viewController, style=RegRead("rf_grid_style", "preferences", "flat-movie"), upBehavior="exit", SetDisplayMode = "scale-to-fit") As Object
     Debug("######## Creating Grid Screen ########")
 
     if upBehavior <> "stop" then ' allow us to force a stop
@@ -496,14 +496,18 @@ Sub setGridTheme(style as String)
         app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-episode-hd.png")
         app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-episode-sd.png")
     else if style = "flat-movie" then
-        'if RegRead("rf_grid_displaymode", "preferences", "scale-to-fit") = "scale-to-fit" then 
-        '    ' plex uses tall movie posters. So we will use a custom box to fit the poster
-        '    app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-movie-hd-skinny.png")
-        'else 
-        '    app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-movie-hd.png")
-        'end if
         app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-movie-hd.png")
         app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-movie-sd.png")
+    else if style = "flat-landscape" then
+        ' ljunkie - images created
+        ' TODO test on SD
+        app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-landscape-hd.png")
+        app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-landscape-sd.png")
+    else if style = "flat-portrait" then
+        ' ljunkie - images created
+        ' TODO test on SD
+        app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-portrait-hd.png")
+        app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-portrait-sd.png")
     end if
 End Sub
 
