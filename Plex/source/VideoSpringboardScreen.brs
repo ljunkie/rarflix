@@ -36,6 +36,7 @@ End Function
 
 Sub videoSetupButtons()
     m.ClearButtons()
+    versionArr = GetGlobal("rokuVersionArr", [0])
 
     isMovieShowEpisode = (m.metadata.ContentType = "movie" or m.metadata.ContentType = "show" or m.metadata.ContentType = "episode")
 
@@ -57,7 +58,10 @@ Sub videoSetupButtons()
          m.AddButton("Trailer", "getTrailers")
     end if
 
-    if isMovieShowEpisode and m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then m.AddButton("Cast & Crew","RFCastAndCrewList")
+    ' hide cast and crew to show ratings instead ( firmware 3.x and less only allow for 5 buttons )
+    if versionArr[0] >= 4 then 
+        if isMovieShowEpisode and m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then m.AddButton("Cast & Crew","RFCastAndCrewList")
+    end if
 
     supportedIdentifier = (m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
     if supportedIdentifier then
@@ -86,7 +90,16 @@ Sub videoSetupButtons()
     if m.metadata.parentKey <> invalid AND m.metadata.parentIndex <> invalid then
         m.AddButton( "View Season " + m.metadata.parentIndex, "seasonFromEpisode")
     end if
-    
+
+    ' show more button now for firmware 3.x and less -- only allow for 5 buttons
+    if versionArr[0] < 4 then 
+        if isMovieShowEpisode then
+            m.AddButton("Playback Options & More...", "more")
+        else 
+            m.AddButton("More...", "more")
+        end if
+    end if
+
     ' Delete button for myplex vidoes (queue/recommended) - we should have room for this
     if m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex" AND m.metadata.id <> invalid then
         m.AddButton("Delete from queue", "delete")
@@ -150,10 +163,12 @@ Sub videoSetupButtons()
 
     end if
 
-    if isMovieShowEpisode then
-        m.AddButton("Playback Options & More...", "more")
-    else 
-        m.AddButton("More...", "more")
+    if versionArr[0] >= 4 then 
+        if isMovieShowEpisode then
+            m.AddButton("Playback Options & More...", "more")
+        else 
+            m.AddButton("More...", "more")
+        end if
     end if
 
 End Sub
