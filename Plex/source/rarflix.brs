@@ -101,6 +101,7 @@ Sub InitRARFlix()
     RegRead("rf_trailers", "preferences","enabled")
     RegRead("rf_tvwatch", "preferences","enabled")
     RegRead("rf_season_poster", "preferences","season") ' seasons poster instead of show ( show was Plex Official Channel default )
+    RegRead("rf_episode_poster", "preferences","season") ' seasons poster instead of show ( show was Plex Official Channel default )
     RegRead("rf_searchtitle", "preferences","title")
     RegRead("rf_rowfilter_limit", "preferences","200") ' no toggle yet
     RegRead("rf_hs_clock", "preferences", "enabled")
@@ -126,6 +127,7 @@ Sub InitRARFlix()
     Debug("rf_trailers: " + tostr(RegRead("rf_trailers", "preferences")))
     Debug("rf_tvwatch: " + tostr(RegRead("rf_tvwatch", "preferences")))
     Debug("rf_season_poster: " + tostr(RegRead("rf_season_poster", "preferences")))
+    Debug("rf_episode_poster: " + tostr(RegRead("rf_episode_poster", "preferences")))
     Debug("rf_searchtitle: " + tostr(RegRead("rf_searchtitle", "preferences")))
     Debug("rf_rowfilter_limit: " + tostr(RegRead("rf_rowfilter_limit", "preferences")))
     Debug("rf_focus_unwatched: " + tostr(RegRead("rf_focus_unwatched", "preferences")))
@@ -355,7 +357,12 @@ Function createRARFlixPrefsScreen(viewController) As Object
     ]
     obj.Prefs["rf_season_poster"] = {
         values: values,
-        heading: "Poster to display when viewing a TV Show Season",
+        heading: "Poster to display when viewing a TV Show Season on the Grid",
+        default: "season"
+    }
+    obj.Prefs["rf_episode_poster"] = {
+        values: values,
+        heading: "Poster to display when viewing a TV Show Episode on the Grid",
         default: "season"
     }
 
@@ -518,7 +525,8 @@ Function createRARFlixPrefsScreen(viewController) As Object
     end if
     obj.AddItem({title: "Dynamic Headers", ShortDescriptionLine2: "Info on the top Right of the Screen"}, "rf_bcdynamic", obj.GetEnumValue("rf_bcdynamic"))
     obj.AddItem({title: "TV Show (Watched Status)", ShortDescriptionLine2: "feels good enabled"}, "rf_tvwatch", obj.GetEnumValue("rf_tvwatch"))
-    obj.AddItem({title: "TV Season Poster", ShortDescriptionLine2: "Season or Show's Poster"}, "rf_season_poster", obj.GetEnumValue("rf_season_poster"))
+    obj.AddItem({title: "TV Season Poster (Grid)", ShortDescriptionLine2: "Season or Show's Poster on Grid"}, "rf_season_poster", obj.GetEnumValue("rf_season_poster"))
+    obj.AddItem({title: "TV Episode Poster (Grid)", ShortDescriptionLine2: "Season or Show's Poster on Grid"}, "rf_episode_poster", obj.GetEnumValue("rf_episode_poster"))
     obj.AddItem({title: "Focus on Unwatched", ShortDescriptionLine2: "Default to the first unwatched " + chr(10) + "item (poster screen only)"}, "rf_focus_unwatched", obj.GetEnumValue("rf_focus_unwatched"))
     obj.AddItem({title: "Clock on Home Screen"}, "rf_hs_clock", obj.GetEnumValue("rf_hs_clock"))
     obj.AddItem({title: "Unwatched Added/Released", ShortDescriptionLine2: "Item limit for unwatched Recently Added &" + chr(10) +"Recently Released rows [movies]"}, "rf_rowfilter_limit", obj.GetEnumValue("rf_rowfilter_limit"))

@@ -2,13 +2,16 @@
 Function newVideoMetadata(container, item, detailed=false) As Object
     ' Videos only have a grandparent thumb in situations where we prefer it,
     ' so pass that to the base constructor.
-    video = createBaseMetadata(container, item, item@grandparentThumb)
+
+    gpThumb = item@grandparentThumb
+    if RegRead("rf_episode_poster", "preferences", "season") = "season" then gpThumb = firstof(item@parentThumb,item@grandparentThumb)
+
+    video = createBaseMetadata(container, item, gpThumb)
 
     if item@grandparentThumb <> invalid AND item@thumb <> invalid AND video.server <> invalid then
         sizes = ImageSizes(container.ViewGroup, item@type)
-
-        video.SDGridThumb = video.server.TranscodedImage(container.sourceUrl, item@grandparentThumb, sizes.sdWidth, sizes.sdHeight)
-        video.HDGridThumb = video.server.TranscodedImage(container.sourceUrl, item@grandparentThumb, sizes.hdWidth, sizes.hdHeight)
+        video.SDGridThumb = video.server.TranscodedImage(container.sourceUrl, gpThumb, sizes.sdWidth, sizes.sdHeight)
+        video.HDGridThumb = video.server.TranscodedImage(container.sourceUrl, gpThumb, sizes.hdWidth, sizes.hdHeight)
         video.SDDetailThumb = video.server.TranscodedImage(container.sourceUrl, item@thumb, sizes.sdWidth, sizes.sdHeight)
         video.HDDetailThumb = video.server.TranscodedImage(container.sourceUrl, item@thumb, sizes.hdWidth, sizes.hdHeight)
     end if
