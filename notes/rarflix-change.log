@@ -1,3 +1,21 @@
+#2.8.6-test (2013-12-01)
+    Grid Changes - Display Modes and Styles
+      * TV/Movie Posters should fit the Orange Focus Box (better)
+      * Addition to Grid Style/Size Toggle: "Portrait (tall)" fit's the Plex Movie Posters better ( when used with Grid Display Mode: Photo )
+      * Toggle to 'hide' the Text above each row while in a Full Grid ( header rows text: 1-5 of 250 ...  1-5 ) 
+      * Photo section now defaults to landscape (Grid: 5x3) -- used to be 'landscape 16x9'
+      * Toggle to change photo sections from landscape to Portrait/Landscape/Landscape 16x9
+      * Fix: Grid Style/Size toggle only affected the Full Grid. Now it toggles Grids for Movies/Shows
+
+    Use Season Poster when viewing a season/episode ( recently added, recently releases, on deck, etc.. )
+      * Toggle allowed to set it back to 'Show'
+      * Official Channel only allowed 'Show'
+
+    Firmware 3.x bugfixes ( first gen roku )
+      * more button was hidden ( only have 5 buttons to work with instead of 6 )
+      * crash on * remote key - firmware didn't allow for button separator in dialog
+      * now playing dialog notification crash
+
 #2.8.5-test (2013-11-12)
     * transcode session info ( video: [copy|convert] audio: [copy|convert] ) missing from HUD
     * initial release of "lock screen"

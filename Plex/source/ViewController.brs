@@ -760,15 +760,17 @@ Sub vcShowReleaseNotes()
     paragraphs = []
     'if isRFtest() then 
     'end if
+    ' SD allows for 12 lines ( width is shorter though )
+    ' HD allows for 11 lines 
     paragraphs.Push("Donate @ rarflix.com")
     spacer = chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)
+    paragraphs.Push(spacer + "* Orange focus border fits the Posters (better)")
+    paragraphs.Push(spacer + "* Use TV Season poster for Episodes/Seasons on Grid")
+    paragraphs.Push(spacer + "* Toggle to change Grid Style/Size for Photos Section")
     paragraphs.Push(spacer + "* Idle Lock Screen when using PIN codes")
-    paragraphs.Push(spacer + "* Grid Description Pop Out can be disabled ( per library section )")
+    paragraphs.Push(spacer + "* Grid Pop Out can be disabled per library section")
     paragraphs.Push(spacer + "* First Movie Trailer will auto play when selected")
     paragraphs.Push(spacer + "* 3 New TV Rows/Grid options ( re-order rows to use them )")
-    paragraphs.Push(spacer + spacer + "- Recently Added Seasons")
-    paragraphs.Push(spacer + spacer + "- Unwatched Recently Released")
-    paragraphs.Push(spacer + spacer + "- Unwatched Recenlty Added")
     paragraphs.Push(spacer + "* Shuffle Play for Video (experimental)")
     paragraphs.Push("+ Profiles, Pin Codes, Full Grid, Movie Trailers, Rotten Tomatoes, HUD mods, Cast & Crew, and many more. Did I mention you can donate @ rarflix.com")
 
