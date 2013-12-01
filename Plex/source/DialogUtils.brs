@@ -64,7 +64,12 @@ Sub dialogRefresh()
 
     if m.Title <> invalid then m.Screen.SetTitle(m.Title)
     if m.Text <> invalid then m.Screen.SetText(m.Text)
-    if m.StaticText <> invalid then m.Screen.AddStaticText(m.StaticText)
+
+    ' ljunkie - Roku states the static Text is in 2.7,  but it doesn't seem to be.
+    versionArr = GetGlobal("rokuVersionArr", [0])
+    if versionArr[0] >= 4 then
+        if m.StaticText <> invalid then m.Screen.AddStaticText(m.StaticText)
+    end if
 
     if m.Buttons.Count() = 0 then
         m.Buttons.Push({ok: "Ok"})
