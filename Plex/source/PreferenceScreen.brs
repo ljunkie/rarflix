@@ -1129,7 +1129,7 @@ Function createAudioPrefsScreen(viewController) As Object
     obj.Prefs["theme_music"] = {
         values: theme_music,
         heading: "Play theme music in the background while browsing",
-        default: "loop"
+        default: "disabled"
     }
 
     ' 5.1 Support - AC-3
