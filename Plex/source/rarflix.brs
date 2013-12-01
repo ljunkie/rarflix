@@ -79,20 +79,31 @@ Sub InitRARFlix()
     Debug("---- end purge ----")
 
     ' Temporarily disable theme music due to bug - user can change it back if they really want it
-    if RegRead("rf_temp_thememusic", "preferences","first") = "first" then
-        prev_setting = RegRead("theme_music", "preferences","disabled")
-        Debug("first run - disabling theme music due to bug")
-        RegWrite("theme_music", "disabled", "preferences")
-        RegWrite("rf_temp_thememusic", prev_setting, "preferences")
+    ' 2013-12-01 -- this has played it's role now... theme_music defaults to "disabled"
+    'if RegRead("rf_temp_thememusic", "preferences","first") = "first" then
+    '    prev_setting = RegRead("theme_music", "preferences","disabled")
+    '    Debug("first run - disabling theme music due to bug")
+    '    RegWrite("theme_music", "disabled", "preferences")
+    '    RegWrite("rf_temp_thememusic", prev_setting, "preferences")
+    'end if
+
+    ' reset the grid style to flat-portrait/photo-fit - only once
+    ' we can imcrement this to change settings on newer versions
+    ' 2013-12-01
+    if RegRead("rf_force_reg", "preferences","0") <> "1" then
+        Debug("---- first run - forcing grid mode/styule")
+        RegWrite("rf_force_reg", "1", "preferences")
+        if GetGlobal("IsHD") <> true then RegWrite("rf_grid_style", "flat-portrait", "preferences")
+        RegWrite("rf_poster_displaymode", "photo-fit", "preferences")
     end if
  
     'RegRead("rf_theme", "preferences","black") done in appMain initTheme()
     RegRead("rf_img_overlay", "preferences","BFBFBF") ' plex white
     RegRead("rf_channel_text", "preferences","disabled") ' enabled channel icons to show text ( after the main row )
     RegRead("rf_poster_grid", "preferences","grid")
-    RegRead("rf_grid_style", "preferences","flat-movie")
+    RegRead("rf_grid_style", "preferences","flat-portrait")
     RegRead("rf_home_displaymode", "preferences","photo-fit")
-    RegRead("rf_grid_displaymode", "preferences","scale-to-fit")
+    RegRead("rf_grid_displaymode", "preferences","photo-fit")
     RegRead("rf_poster_displaymode", "preferences","scale-to-fit")
     RegRead("rf_music_artist", "preferences","track")
     RegRead("rf_bcdynamic", "preferences","enabled")
