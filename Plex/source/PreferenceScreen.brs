@@ -505,8 +505,8 @@ Function createSlideshowPrefsScreen(viewController) As Object
 
     obj.AddItem({title: "Speed"}, "slideshow_period", obj.GetEnumValue("slideshow_period"))
     obj.AddItem({title: "Text Overlay"}, "slideshow_overlay", obj.GetEnumValue("slideshow_overlay"))
-    obj.AddItem({title: "Reload",ShortDescriptionLine2: "check for new images after completion"}, "slideshow_reload", obj.GetEnumValue("slideshow_reload"))
-    obj.AddItem({title: "Grid Style",ShortDescriptionLine2: "Grid Display Mode"}, "rf_photos_grid_style", obj.GetEnumValue("rf_photos_grid_style"))
+    obj.AddItem({title: "Reload",ShortDescriptionLine2: "check for new images after every completion"}, "slideshow_reload", obj.GetEnumValue("slideshow_reload"))
+    obj.AddItem({title: "Grid Style/Size",ShortDescriptionLine2: "Grid Display Mode"}, "rf_photos_grid_style", obj.GetEnumValue("rf_photos_grid_style"))
     obj.AddItem({title: "Photo Display Mode",ShortDescriptionLine2: "How should photos 'fit' the screen"}, "slideshow_displaymode", obj.GetEnumValue("slideshow_displaymode"))
     obj.AddItem({title: "Icons Display Mode",ShortDescriptionLine2: "How should thumbnails 'fit' the screen"}, "photoicon_displaymode", obj.GetEnumValue("photoicon_displaymode"))
     obj.AddItem({title: "Close"}, "close")
@@ -1849,14 +1849,18 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
 
     ' Prefer Grid or Poster view for most?
     rf_grid_style = [
-        { title: "Normal", EnumValue: "flat-movie", ShortDescriptionLine2: "Grid 5x2 - Short Portrait"  },
-        { title: "Portrait", EnumValue: "flat-portrait", ShortDescriptionLine2: "Grid 5x2 - Tall Portrait"  },
-        { title: "Small", EnumValue: "flat-square", ShortDescriptionLine2: "Grid 7x3 - Sqaure" },
-
+        { title: "Portrait", EnumValue: "flat-movie", ShortDescriptionLine2: "Grid 5x2 - Short Portrait"  },
+        { title: "Square", EnumValue: "flat-square", ShortDescriptionLine2: "Grid 7x3 - Square" },
     ]
+
+    ' We don't want to show the Portrait options for SD.. it's even short than flat-movie - odd
+    if GetGlobal("IsHD") = true then 
+        rf_grid_style.Unshift({ title: "Portrait (tall)", EnumValue: "flat-portrait", ShortDescriptionLine2: "Grid 5x2 - Tall Portrait"  })
+    end if
+
     obj.Prefs["rf_grid_style"] = {
         values: rf_grid_style,
-        heading: "Size of the Grid",
+        heading: "Style and Size of the Grid",
         default: "flat-movie"
     }
     ' Grid Descriptions Pop Out
@@ -1943,7 +1947,7 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
     obj.AddItem({title: "Reorder Rows"}, "section_row_order")
     obj.AddItem({title: "TV Series"}, "use_grid_for_series", obj.GetEnumValue("use_grid_for_series"))
     obj.AddItem({title: "Movie & Others", ShortDescriptionLine2: "Posters or Grid"}, "rf_poster_grid", obj.GetEnumValue("rf_poster_grid"))
-    obj.AddItem({title: "Grid Size", ShortDescriptionLine2: "Size of Grid"}, "rf_grid_style", obj.GetEnumValue("rf_grid_style"))
+    obj.AddItem({title: "Grid Style/Size", ShortDescriptionLine2: "Size of Grid"}, "rf_grid_style", obj.GetEnumValue("rf_grid_style"))
     obj.AddItem({title: "Grid Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_grid_displaymode", obj.GetEnumValue("rf_grid_displaymode"))
     obj.AddItem({title: "Grid Pop Out", ShortDescriptionLine2: "Description on bottom right"}, "rf_grid_description")
     obj.AddItem({title: "Full Grid - hide text", ShortDescriptionLine2: "Hide text on top of each row"}, "rf_fullgrid_hidetext", obj.GetEnumValue("rf_fullgrid_hidetext"))

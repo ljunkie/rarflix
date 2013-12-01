@@ -3,8 +3,10 @@
 '*
 
 Function createGridScreen(viewController, style=RegRead("rf_grid_style", "preferences", "flat-movie"), upBehavior="exit", SetDisplayMode = "scale-to-fit", hideHeaderText = false) As Object
-    Debug("######## Creating Grid Screen ########")
+    Debug("######## Creating Grid Screen " + tostr(style) + ":" + tostr(SetDisplayMode) + "  ########")
 
+    if tostr(style) = "flat-portrait" and GetGlobal("IsHD") <> true then style = "flat-movie"
+        
     if hideHeaderText <> invalid and hideHeaderText then 
         hideRowText(true)
     else 
@@ -490,9 +492,15 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
 End Sub
 
 Sub setGridTheme(style as String)
-    imageDir = GetGlobalAA().Lookup("rf_theme_dir")
+    ' ljunkie - normally we have separate images per theme - but these, for now, are shared between the themes
+    ' imageDir = GetGlobalAA().Lookup("rf_theme_dir")
+    imageDir = "file://pkg:/images/"
+
     ' This has to be done before the CreateObject call. Once the grid has
     ' been created you can change its style, but you can't change its theme.
+
+    ' SD version of flat-portrait is actually shorter than flat-movie ( opposite of HD ) we do not want shorter than the already short images
+    if tostr(style) = "flat-portrait" and GetGlobal("IsHD") <> true then style = "flat-movie"
 
     app = CreateObject("roAppManager")
     if style = "flat-square" then
@@ -505,15 +513,12 @@ Sub setGridTheme(style as String)
         app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-movie-hd.png")
         app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-movie-sd.png")
     else if style = "flat-landscape" then
-        ' ljunkie - images created
-        ' TODO test on SD
         app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-landscape-hd.png")
         app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-landscape-sd.png")
     else if style = "flat-portrait" then
-        ' ljunkie - images created
-        ' TODO test on SD
         app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-portrait-hd.png")
-        app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-portrait-sd.png")
+        ' SD version of flat-portrait is actually shorter than flat-movie ( opposite of HD ) we do not want shorter than the already short images
+        app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-movie-sd.png")
     end if
 End Sub
 
