@@ -1239,15 +1239,20 @@ sub updateVideoHUD(m,curProgress,releaseDate = invalid)
          ' include current time and watched time when video duration is unavailable (HLS & web videos)
          watchedString = "Time: " + RRmktime(date.AsSeconds()) + "     Watched: " + GetDurationString(int(curProgress),0,0,1)
     end if
+
     ' set the HUD
     content = CreateObject("roAssociativeArray")
     content = m.VideoItem ' assign Video item and reset other keys
-    if m.VideoItem.OrigHUDreleaseDate = invalid then
-        m.VideoItem.OrigHUDreleaseDate = m.VideoItem.releasedate
-    end if
-
     content.length = m.VideoItem.duration
     content.title = m.VideoItem.title
+
+    ' set the Orig Release date before we start appending. We can then reuse the OrigHUDreleaseDate for future calls
+    if m.VideoItem.OrigHUDreleaseDate = invalid and content.releasedate <> invalid then
+        m.VideoItem.OrigHUDreleaseDate = content.releasedate
+    else if m.VideoItem.OrigHUDreleaseDate = invalid then 
+        m.VideoItem.OrigHUDreleaseDate = "" ' set the release date to empty string if invalid
+    end if
+
      ' overwrite release date now
     content.releasedate = m.VideoItem.OrigHUDreleasedate
 
