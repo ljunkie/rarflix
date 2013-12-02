@@ -281,7 +281,7 @@ Function getDefaultListStyle(viewGroup, contentType) As Object
 
 
     if viewGroup = "episode" AND contentType = "episode" then
-        aa.style = "flat-episodic"
+        aa.style = RegRead("rf_episode_episodic_style", "preferences", "flat-episodic-16x9")
         aa.display = "zoom-to-fill"
     else if viewGroup = "movie" OR viewGroup = "show" OR viewGroup = "season" OR viewGroup = "episode" then
         aa.style = "arced-portrait"
