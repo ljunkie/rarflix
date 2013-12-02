@@ -90,11 +90,12 @@ Sub InitRARFlix()
     ' reset the grid style to flat-portrait/photo-fit - only once
     ' we can imcrement this to change settings on newer versions
     ' 2013-12-01
-    if RegRead("rf_force_reg", "preferences","0") <> "1" then
+    if RegRead("rf_force_reg", "preferences","0") <> "2" then
         Debug("---- first run - forcing grid mode/styule")
-        RegWrite("rf_force_reg", "1", "preferences")
-        if GetGlobal("IsHD") <> true then RegWrite("rf_grid_style", "flat-portrait", "preferences")
-        RegWrite("rf_poster_displaymode", "photo-fit", "preferences")
+        RegWrite("rf_force_reg", "2", "preferences")
+        if GetGlobal("IsHD") = true then RegWrite("rf_grid_style", "flat-portrait", "preferences")
+        RegWrite("rf_poster_displaymode", "scale-to-fit", "preferences")
+        RegWrite("rf_grid_displaymode", "photo-fit", "preferences")
     end if
  
     'RegRead("rf_theme", "preferences","black") done in appMain initTheme()
