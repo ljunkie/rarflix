@@ -46,6 +46,7 @@ Function newVideoMetadata(container, item, detailed=false) As Object
     video.isLibraryContent = (video.mediaContainerIdentifier = "com.plexapp.plugins.library")
 
     video.ReleaseDate = item@originallyAvailableAt
+    if video.ReleaseDate = invalid then video.ReleaseDate = item@year ' ljunkie - use the Year for an empty ReleaseDate
 
     length = item@duration
     if length <> invalid then

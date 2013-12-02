@@ -1248,10 +1248,12 @@ sub updateVideoHUD(m,curProgress,releaseDate = invalid)
     content.title = m.VideoItem.title
 
     ' set the Orig Release date before we start appending. We can then reuse the OrigHUDreleaseDate for future calls
-    if m.VideoItem.OrigHUDreleaseDate = invalid and content.releasedate <> invalid then
-        m.VideoItem.OrigHUDreleaseDate = content.releasedate
-    else if m.VideoItem.OrigHUDreleaseDate = invalid then 
-        m.VideoItem.OrigHUDreleaseDate = "" ' set the release date to empty string if invalid
+    if m.VideoItem.OrigHUDreleaseDate = invalid then
+        if content.releasedate <> invalid then
+            m.VideoItem.OrigHUDreleaseDate = content.releasedate
+        else
+            m.VideoItem.OrigHUDreleaseDate = ""
+        end if
     end if
 
      ' overwrite release date now

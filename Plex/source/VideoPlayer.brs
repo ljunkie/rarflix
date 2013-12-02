@@ -137,11 +137,10 @@ Function videoPlayerCreateVideoPlayer()
         end if
     end if
 
-    videoItem.OrigReleaseDate = videoItem.ReleaseDate
-
     if mediaItem <> invalid then videoItem.Duration = mediaItem.duration ' set duration - used for EndTime/TimeLeft on HUD  - ljunkie
 
-    if videoItem.ReleaseDate = "invalid" then  videoItem.ReleaseDate = "" ' we never want to display invalid
+    if tostr(videoItem.ReleaseDate) = "invalid" then  videoItem.ReleaseDate = "" ' we never want to display invalid
+    videoItem.OrigReleaseDate = videoItem.ReleaseDate
 
     if videoItem.IsTranscoded then
         server = videoItem.TranscodeServer
