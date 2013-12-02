@@ -1,17 +1,28 @@
 
 Function newVideoMetadata(container, item, detailed=false) As Object
     ' Videos only have a grandparent thumb in situations where we prefer it,
-    ' so pass that to the base constructor.
+    ' so pass that to the base constructor. 
+    ' ljunkie ^^ is where Plex Prefers it via the PMS API. This could change at any point breaking some logic. 
 
-    gpThumb = item@grandparentThumb
-    if RegRead("rf_episode_poster", "preferences", "season") = "season" then gpThumb = firstof(item@parentThumb,item@grandparentThumb)
+    ' ljunkie - allow end users to choose Season or Show poster for Episodes via the Grid
+    ' ONLY valid to check if grandparentThumb exists - otherwise we might set 
+    '  parentThumb when a Episode thumb is supposed to be used
+    ' Seasons Poster (recently added Seasons / Stacked can also be toggled between Season/Show via 'newSeasonMetadata()'
+    gridThumb = invalid 
+    if item@grandparentThumb <> invalid then 
+        if RegRead("rf_episode_poster", "preferences", "season") = "season" then 
+            gridthumb = firstof(item@parentThumb,item@grandparentThumb) ' prefer Season Poster over Show
+        else 
+            gridThumb = item@grandparentThumb  ' use show poster
+        end if
+    end if
 
-    video = createBaseMetadata(container, item, gpThumb)
+    video = createBaseMetadata(container, item, gridThumb) ' note if thumb is not specified, it will use the "closest" relative Thumb
 
     if item@grandparentThumb <> invalid AND item@thumb <> invalid AND video.server <> invalid then
         sizes = ImageSizes(container.ViewGroup, item@type)
-        video.SDGridThumb = video.server.TranscodedImage(container.sourceUrl, gpThumb, sizes.sdWidth, sizes.sdHeight)
-        video.HDGridThumb = video.server.TranscodedImage(container.sourceUrl, gpThumb, sizes.hdWidth, sizes.hdHeight)
+        video.SDGridThumb = video.server.TranscodedImage(container.sourceUrl, gridThumb, sizes.sdWidth, sizes.sdHeight)
+        video.HDGridThumb = video.server.TranscodedImage(container.sourceUrl, gridThumb, sizes.hdWidth, sizes.hdHeight)
         video.SDDetailThumb = video.server.TranscodedImage(container.sourceUrl, item@thumb, sizes.sdWidth, sizes.sdHeight)
         video.HDDetailThumb = video.server.TranscodedImage(container.sourceUrl, item@thumb, sizes.hdWidth, sizes.hdHeight)
     end if
