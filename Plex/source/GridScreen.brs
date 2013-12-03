@@ -519,6 +519,8 @@ Sub setGridTheme(style as String)
         app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-portrait-hd.png")
         ' SD version of flat-portrait is actually shorter than flat-movie ( opposite of HD ) we do not want shorter than the already short images
         app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-movie-sd.png")
+        ' the BoB is too short for this screen.. nice going roku
+        app.SetThemeAttribute("GridScreenDescriptionImageHD", "pkg:/images/grid/hd-description-background-portrait.png")
     end if
 End Sub
 
