@@ -97,6 +97,13 @@ Sub InitRARFlix()
         RegWrite("rf_poster_displaymode", "scale-to-fit", "preferences")
         RegWrite("rf_grid_displaymode", "photo-fit", "preferences")
     end if
+
+    ' cleaning up some options -- these *should* not need a toggle anymore
+    '   I.E. we changed ways the Official channel works, but don't need to toggle to go back to the Official way
+    '
+    ' Force dynamic breadcrumbs
+    RegWrite("rf_bcdynamic", "enabled", "preferences")
+    ' end cleaning of options
  
     'RegRead("rf_theme", "preferences","black") done in appMain initTheme()
     RegRead("rf_img_overlay", "preferences","BFBFBF") ' plex white
@@ -107,7 +114,7 @@ Sub InitRARFlix()
     RegRead("rf_grid_displaymode", "preferences","photo-fit")
     RegRead("rf_poster_displaymode", "preferences","scale-to-fit")
     RegRead("rf_music_artist", "preferences","track")
-    RegRead("rf_bcdynamic", "preferences","enabled")
+    RegRead("rf_grid_dynamic", "preferences","full")
     RegRead("rf_rottentomatoes", "preferences","enabled")
     RegRead("rf_rottentomatoes_score", "preferences","audience")
     RegRead("rf_trailers", "preferences","enabled")
@@ -133,6 +140,7 @@ Sub InitRARFlix()
     Debug("rf_grid_displaymode: " + tostr(RegRead("rf_grid_displaymode", "preferences")))
     Debug("rf_poster_displaymode: " + tostr(RegRead("rf_poster_displaymode", "preferences")))
     Debug("rf_bcdynamic: " + tostr(RegRead("rf_bcdynamic", "preferences")))
+    Debug("rf_dynamic_grid: " + tostr(RegRead("rf_dynamic_grid", "preferences")))
     Debug("rf_hs_clock: " + tostr(RegRead("rf_hs_clock", "preferences")))
     Debug("rf_rottentomatoes: " + tostr(RegRead("rf_rottentomatoes", "preferences")))
     Debug("rf_rottentomatoes_score: " + tostr(RegRead("rf_rottentomatoes_score", "preferences")))
@@ -348,17 +356,29 @@ Function createRARFlixPrefsScreen(viewController) As Object
         default: "enabled_tmdb_yt"
     }
 
-    ' Breadcrumb fixes
-    bc_prefs = [
-        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Update header when browsing " +chr(10)+ "On Deck, Recently Added, etc.."  },
-        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Update header when browsing " +chr(10)+ "On Deck, Recently Added, etc.."  },
-
-
+' Toggle removed - it's now a forced default
+'    ' Breadcrumb fixes
+'    bc_prefs = [
+'        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Update header when browsing " +chr(10)+ "On Deck, Recently Added, etc.."  },
+'        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Update header when browsing " +chr(10)+ "On Deck, Recently Added, etc.."  },
+'
+'
+'    ]
+'    obj.Prefs["rf_bcdynamic"] = {
+'        values: bc_prefs,
+'        heading: "Update Header (top right)",
+'        default: "enabled"
+'    }
+'
+    ' partially update grid or full reload -- to fix any speed issues people experience 
+    grid_dynamic = [
+        { title: "Full", EnumValue: "full", ShortDescriptionLine2: "Try partial if the grid seems slow"  },
+        { title: "Partial", EnumValue: "partial", ShortDescriptionLine2: "Increases Speed/Less dynamic"  },
     ]
-    obj.Prefs["rf_bcdynamic"] = {
-        values: bc_prefs,
-        heading: "Update Header (top right)",
-        default: "enabled"
+    obj.Prefs["rf_grid_dynamic"] = {
+        values: grid_dynamic,
+        heading: "Grid Updates / Reloading of Rows",
+        default: "full"
     }
 
     ' TV Seasons Poster ( prefer season over show )
@@ -535,7 +555,8 @@ Function createRARFlixPrefsScreen(viewController) As Object
     if RegRead("rf_rottentomatoes", "preferences","enabled") = "enabled" or RegRead("rf_trailers", "preferences") <> "disabled" then
         obj.AddItem({title: "Trailers/Tomatoes Search by", ShortDescriptionLine2: "You probably don't want to change this"}, "rf_searchtitle", obj.GetEnumValue("rf_searchtitle"))
     end if
-    obj.AddItem({title: "Dynamic Headers", ShortDescriptionLine2: "Info on the top Right of the Screen"}, "rf_bcdynamic", obj.GetEnumValue("rf_bcdynamic"))
+'    Toggle removed - it's now a forced default
+'    obj.AddItem({title: "Dynamic Headers", ShortDescriptionLine2: "Info on the top Right of the Screen"}, "rf_bcdynamic", obj.GetEnumValue("rf_bcdynamic"))
     obj.AddItem({title: "TV Show (Watched Status)", ShortDescriptionLine2: "feels good enabled"}, "rf_tvwatch", obj.GetEnumValue("rf_tvwatch"))
     obj.AddItem({title: "TV Season Poster (Grid)", ShortDescriptionLine2: "Season or Show's Poster on Grid"}, "rf_season_poster", obj.GetEnumValue("rf_season_poster"))
     obj.AddItem({title: "TV Episode Poster (Grid)", ShortDescriptionLine2: "Season or Show's Poster on Grid"}, "rf_episode_poster", obj.GetEnumValue("rf_episode_poster"))
@@ -551,6 +572,8 @@ Function createRARFlixPrefsScreen(viewController) As Object
     if RegRead("rf_notify", "preferences","enabled") = "enabled" then 
         obj.AddItem({title: "Now Playing Notify Types", ShortDescriptionLine2: "When do you want to be notified?" + chr(10) + " On Start/Stop or Both"}, "rf_notify_np_type", obj.GetEnumValue("rf_notify_np_type"))
     end if
+
+    obj.AddItem({title: "Grid Updates/Speed", ShortDescriptionLine2: "Change how the Grid Refreshes/Reloads content"}, "rf_grid_dynamic", obj.GetEnumValue("rf_grid_dynamic"))
  
     obj.AddItem({title: "Close"}, "close")
     return obj
@@ -1194,6 +1217,11 @@ function getSectionType(vc) as object
     end if
     return metadata ' return empty assoc
 end function
+
+function getEpoch() as integer
+        datetime = CreateObject( "roDateTime" )
+        return datetime.AsSeconds()
+end function 
 
 function getLogDate() as string
         datetime = CreateObject( "roDateTime" )
