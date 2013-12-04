@@ -314,9 +314,9 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     screenName = invalid
     poster_grid = RegRead("rf_poster_grid", "preferences", "grid")
     displaymode_poster = RegRead("rf_poster_displaymode", "preferences", "scale-to-fit")
-    displaymode_grid = RegRead("rf_grid_displaymode", "preferences", "scale-to-fit")
+    displaymode_grid = RegRead("rf_grid_displaymode", "preferences", "photo-fit")
     grid_style_photos = RegRead("rf_photos_grid_style", "preferences","flat-landscape")
-    grid_style = RegRead("rf_grid_style", "preferences","flat-movie")
+    grid_style = RegRead("rf_grid_style", "preferences","flat-portrait")
 
     if contentType = "movie" OR contentType = "episode" OR contentType = "clip" then
         screen = createVideoSpringboardScreen(context, contextIndex, m)
