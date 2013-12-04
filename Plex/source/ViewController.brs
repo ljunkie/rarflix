@@ -709,8 +709,12 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
         if item.ContentType = "photo" then 
             print "--- trying to play photos from a directory"
             container = createPlexContainerForUrl(item.server, item.server.serverurl, item.key)
-            context = container.getmetadata()
-            return m.CreatePhotoPlayer(context, 0)
+            newContext = container.getmetadata()
+            ' verify the container has images - it still could be all directories. 
+            ' If directory, skip and create screen for item
+            for each item in newContext
+                if item.nodename = "Photo" then return m.CreatePhotoPlayer(newContext, 0)
+            end for
         'else if tostr(sec_metadata.type) = "photo" and item.ContentType ="appClip" then 
         '    print "--- trying to play photos (appClip) from a directory"
         '    container = createPlexContainerForUrl(item.server, item.sourceurl, item.key)
