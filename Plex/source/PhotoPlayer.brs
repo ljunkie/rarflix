@@ -4,8 +4,10 @@
 
 Function createPhotoPlayerScreen(context, contextIndex, viewController)
     obj = CreateObject("roAssociativeArray")
+    obj.OnTimerExpired = photoPlayerOnTimerExpired
+
     initBaseScreen(obj, viewController)
-    RegWrite("slideshow_overlay_force", "0", "preferences")
+    GetGlobalAA().AddReplace("slideshow_overlay", false)
 
     screen = CreateObject("roSlideShow")
     screen.SetMessagePort(obj.Port)
@@ -94,7 +96,7 @@ Function photoPlayerHandleMessage(msg) As Boolean
 
         if msg.isScreenClosed() then
             ' Send an analytics event
-            RegWrite("slideshow_overlay_force", "0", "preferences")
+            GetGlobalAA().AddReplace("slideshow_overlay", false)
             amountPlayed = m.playbackTimer.GetElapsedSeconds()
             Debug("Sending analytics event, appear to have watched slideshow for " + tostr(amountPlayed) + " seconds")
             m.ViewController.Analytics.TrackEvent("Playback", firstOf(m.Item.ContentType, "photo"), m.Item.mediaContainerIdentifier, amountPlayed)
@@ -132,34 +134,39 @@ Function photoPlayerHandleMessage(msg) As Boolean
                 m.isPaused = true
                 photoPlayerShowContextMenu(obj)
             else if msg.GetIndex() = 3 then
-                ' this needs work -- but the options button (*) now works to show the title.. so maybe another day
-                ol = RegRead("slideshow_overlay_force", "preferences","0")
-                time = invalid            
-                if ol = "0" then
-                    time = 2500 ' force show overlay
-                    if RegRead("slideshow_overlay", "preferences", "2500").toInt() > 0 then time = 0 'prefs to show, force NO show
-                    RegWrite("slideshow_overlay_force", "1", "preferences")
-                else
-                    ' print "Making overlay invisible ( or set back to the perferred settings )"
-                    RegWrite("slideshow_overlay_force", "0", "preferences")
-                    time = RegRead("slideshow_overlay", "preferences", "2500").toInt()
-               end if
 
-               if time <> invalid then
-                   if time = 0 then
-                       ' print "Forcing NO overlay"
-                       m.screen.SetTextOverlayHoldTime(0)
-                       m.screen.SetTextOverlayIsVisible(true) 'yea, gotta set it true to set it false?
-                       m.screen.SetTextOverlayIsVisible(false)
-                   else 
-                      ' print "Forcing Overlay"
-                       m.screen.SetTextOverlayHoldTime(0)
-                       m.screen.SetTextOverlayIsVisible(true)
-                       Debug("sleeping " + tostr(time) + "to show overlay")
-                       sleep(time) ' sleeping to show overlay, otherwise we just get a blip (even with m.screen.SetTextOverlayHoldTime(1000)
-                       m.screen.SetTextOverlayIsVisible(false)
-                       m.screen.SetTextOverlayHoldTime(time)
-                   end if
+                if GetGlobalAA().Lookup("slideshow_overlay") = false then
+                    time = 2500 ' force show overlay (default to 2500 msec)
+                    ' if EU has set pref as showing slideshow by default, set time to 0 ( to reverse logic - hide ol )
+                    if RegRead("slideshow_overlay", "preferences", "2500").toInt() > 0 then time = 0
+                    GetGlobalAA().AddReplace("slideshow_overlay", true)
+                else
+                    GetGlobalAA().AddReplace("slideshow_overlay", false)
+                    ' we can now used the stored pref to either hide or show the overlay
+                    time = RegRead("slideshow_overlay", "preferences", "2500").toInt()
+                end if
+
+                if time = 0 then
+                    ' hide overlay
+                    if m.overlayTimer <> invalid then m.overlayTimer.Active = false
+                    m.screen.SetTextOverlayHoldTime(0)
+                    ' Roku bug or feature? hae to set the overlay to true befre we can set it to false
+                    m.screen.SetTextOverlayIsVisible(true)
+                    m.screen.SetTextOverlayIsVisible(false)
+                else 
+                    ' show overlay
+                    m.screen.SetTextOverlayHoldTime(0)
+                    m.screen.SetTextOverlayIsVisible(true)
+                    ' using a timer will be less obtrusive. 
+                    if m.overlayTimer = invalid then
+                        m.overlayTimer = createTimer()
+                        m.overlayTimer.Name = "overlay"
+                        m.overlayTimer.Time = time
+                        m.overlayTimer.SetDuration(time, true)
+                        m.ViewController.AddTimer(m.overlayTimer, m)
+                    end if
+                    m.overlayTimer.Active = true
+                    m.overlayTimer.Mark()
                 end if
             end if
         end if
@@ -214,4 +221,12 @@ Sub photoPlayerShowContextMenu(obj,force_show = false)
         end if
     end if
 
+End Sub
+
+sub photoPlayerOnTimerExpired(timer)
+    if timer.Name = "overlay" then
+        m.screen.SetTextOverlayIsVisible(false)
+        m.screen.SetTextOverlayHoldTime(timer.time)
+        m.overlayTimer.Active = false
+    end if
 End Sub
