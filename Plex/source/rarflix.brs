@@ -90,12 +90,16 @@ Sub InitRARFlix()
     ' reset the grid style to flat-portrait/photo-fit - only once
     ' we can imcrement this to change settings on newer versions
     ' 2013-12-01
-    if RegRead("rf_force_reg", "preferences","0") <> "2" then
+    ' 2013-12-04 (3) - forcing images instead of numbers for episodic view
+    '                  this will also force Poster/Photo-fit for grid still ( but that's ok )
+    forceVer = "3"
+    if RegRead("rf_force_reg", "preferences","0") <> forceVer then
+        RegWrite("rf_force_reg", forceVer, "preferences")
         Debug("---- first run - forcing grid mode/styule")
-        RegWrite("rf_force_reg", "2", "preferences")
         if GetGlobal("IsHD") = true then RegWrite("rf_grid_style", "flat-portrait", "preferences")
         RegWrite("rf_poster_displaymode", "scale-to-fit", "preferences")
         RegWrite("rf_grid_displaymode", "photo-fit", "preferences")
+        RegWrite("rf_episode_episodic_thumbnail", "enabled", "preferences")
     end if
 
     ' cleaning up some options -- these *should* not need a toggle anymore
