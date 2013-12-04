@@ -97,10 +97,11 @@ function getCastAndCrew(item as object, key = invalid) as object
     
         SDThumb = item.metadata.server.TranscodedImage(item.metadata.server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
         HDThumb = item.metadata.server.TranscodedImage(item.metadata.server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
-        if item.metadata.server.AccessToken <> invalid then
-            SDThumb = SDThumb + "&X-Plex-Token=" + item.metadata.server.AccessToken
-            HDThumb = HDThumb + "&X-Plex-Token=" + item.metadata.server.AccessToken
-        end if
+        ' token is now part of TranscodedImage
+        'if item.metadata.server.AccessToken <> invalid then
+        '    SDThumb = SDThumb + "&X-Plex-Token=" + item.metadata.server.AccessToken
+        '    HDThumb = HDThumb + "&X-Plex-Token=" + item.metadata.server.AccessToken
+        'end if
 
         for each Actor in castxml.Role
             CastCrewList.Push({ name: Actor@tag, id: Actor@id, role: Actor@role, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Actor" })
@@ -144,10 +145,11 @@ Function getPostersForCastCrew(item As Object) As Object
                     default_img = container.xml.Directory[index]@thumb
                     i.imageSD = server.TranscodedImage(server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
                     i.imageHD = server.TranscodedImage(server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
-                    if server.AccessToken <> invalid then 
-                        i.imageSD = i.imageSD + "&X-Plex-Token=" + server.AccessToken
-                        i.imageHD = i.imageHD + "&X-Plex-Token=" + server.AccessToken
-                    end if
+                    ' token is now part of TranscodedImage
+                    'if server.AccessToken <> invalid then 
+                    '    i.imageSD = i.imageSD + "&X-Plex-Token=" + server.AccessToken
+                    '    i.imageHD = i.imageHD + "&X-Plex-Token=" + server.AccessToken
+                    'end if
                 end if
                 exit for
             end if
@@ -161,10 +163,11 @@ Function getPostersForCastCrew(item As Object) As Object
                         default_img = container.xml.Directory[index]@thumb
                         i.imageSD = server.TranscodedImage(server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
                         i.imageHD = server.TranscodedImage(server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
-                        if server.AccessToken <> invalid then 
-                            i.imageSD = i.imageSD + "&X-Plex-Token=" + server.AccessToken
-                            i.imageHD = i.imageHD + "&X-Plex-Token=" + server.AccessToken
-                        end if
+                        ' token is now part of TranscodedImage
+                        'if server.AccessToken <> invalid then 
+                        '    i.imageSD = i.imageSD + "&X-Plex-Token=" + server.AccessToken
+                        '    i.imageHD = i.imageHD + "&X-Plex-Token=" + server.AccessToken
+                        'end if
                     end if
                     exit for
                 end if

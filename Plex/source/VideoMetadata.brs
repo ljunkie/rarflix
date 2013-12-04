@@ -337,10 +337,11 @@ Sub setVideoDetails(video, container, videoItemXml, hasDetails=true)
 
     SDThumb = video.server.TranscodedImage(video.server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
     HDThumb = video.server.TranscodedImage(video.server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
-    if video.server.AccessToken <> invalid then
-        SDThumb = SDThumb + "&X-Plex-Token=" + video.server.AccessToken
-        HDThumb = HDThumb + "&X-Plex-Token=" + video.server.AccessToken
-    end if
+    ' token is now part of TranscodedImage
+    'if video.server.AccessToken <> invalid then
+    '    SDThumb = SDThumb + "&X-Plex-Token=" + video.server.AccessToken
+    '    HDThumb = HDThumb + "&X-Plex-Token=" + video.server.AccessToken
+    'end if
     ' end thumbs - ljunkie
 
     'ondeck doesn't give actor/director/etc id's -- so we will force this in rarflix.brs:getPostersForCastCrew

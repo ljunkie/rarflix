@@ -551,6 +551,8 @@ Function TranscodedImage(queryUrl, imagePath, width, height, forceBackgroundColo
     imageUrl = m.ConvertURLToLoopback(imageUrl)
     encodedUrl = HttpEncode(imageUrl)
     image = m.serverUrl + "/photo/:/transcode?url="+encodedUrl+"&width="+width+"&height="+height
+    ' use the X-Plex-Token here :: headers are not useable in all scenarios
+    if m.AccessToken <> invalid then image = image + "&X-Plex-Token=" + m.AccessToken
     if forceBackgroundColor <> invalid then
         image = image + "&format=jpeg&background=" + forceBackgroundColor
     end if
