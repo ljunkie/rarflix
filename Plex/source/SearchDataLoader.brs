@@ -36,8 +36,11 @@ Function createSearchLoader(searchTerm,cast=invalid)
     loader.ArtistRow = loader.CreateRow("Artists", "artist")
     loader.AlbumRow = loader.CreateRow("Albums", "album")
     loader.TrackRow = loader.CreateRow("Tracks", "track")
-    if cast = invalid then loader.ActorRow = loader.CreateRow("Actors", "person")
-    loader.ClipRow = loader.CreateRow("Clips", "clip")
+    ' these are not valid for a Cast & Crew search
+    if cast = invalid then 
+        loader.ActorRow = loader.CreateRow("Actors", "person") ' already using the actor ( loop )
+        loader.ClipRow = loader.CreateRow("Clips", "clip") ' external content
+    end if
 
     return loader
 End Function
