@@ -444,10 +444,8 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         playTrailer = false
         if yt_videos.Count() > 0 then
             metadata=GetVideoMetaData(yt_videos)
-            screen = createPosterScreenExt(metadata, m, "flat-episodic-16x9")
+            screen = createPosterScreenExt(metadata, m, "arced-16x9","scale-to-fill")
             screen.hasWaitDialog = hasWaitDialog
-	    'screen.screen.SetListStyle("flat-episodic-16x9") ' this can be removed now
-            screen.screen.SetListDisplayMode("scale-to-fill")
             screen.handlemessage = trailerHandleMessage
             screenName = "Movie Trailer"
             if RegRead("rf_trailerplayfirst", "preferences", "enabled") = "enabled" then DisplayYouTubeVideo(metadata[0],screen.hasWaitDialog)

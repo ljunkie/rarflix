@@ -3,6 +3,11 @@
 '
 
 function createSpringboardScreenExt(content, index, viewController) as object
+    ' TODO: allow style/displayMode to sent - this can still be changed after createSpringboardScreenExt
+    style = "rounded-rect-16x9-generic"
+    displayMode = "zoom-to-fill"
+
+    Debug("######## Creating Ext Springboard Screen " + tostr(style) + ":" + tostr(DisplayMode) + "  ########")
 
     obj = CreateObject("roAssociativeArray")
     initBaseScreen(obj, viewController)
@@ -26,8 +31,10 @@ function createSpringboardScreenExt(content, index, viewController) as object
         screen.AllowNavLeft(true)
         screen.AllowNavRight(true)
     end if
-    screen.SetPosterStyle("rounded-rect-16x9-generic")
-    screen.SetDisplayMode("zoom-to-fill")
+
+    screen.SetPosterStyle(style)
+    screen.SetDisplayMode(displayMode)
+
     screen.SetBreadcrumbText("Video","")
 
     videoHDflag(obj.item)
@@ -39,9 +46,11 @@ end function
 
 ' ljunkie function to create a poster screen with external metadata  
 ' using the viewController/message handlers
-Function createPosterScreenExt(items, viewController, style = invalid) As Object
+Function createPosterScreenExt(items, viewController, style = invalid, displayMode = invalid) As Object
     obj = CreateObject("roAssociativeArray")
     initBaseScreen(obj, viewController)
+
+    Debug("######## Creating Ext Source Poster Screen " + tostr(style) + ":" + tostr(DisplayMode) + "  ########")
 
     SetGlobalPosterStyle(style) 
 
@@ -56,8 +65,10 @@ Function createPosterScreenExt(items, viewController, style = invalid) As Object
     '    obj.UseDefaultStyles = true
     '    obj.OnDataLoaded = posterOnDataLoaded
 
-    obj.ListStyle = invalid
-    obj.ListDisplayMode = invalid
+    if style <> invalid then obj.screen.SetListStyle(style)
+    if displayMode <> invalid then obj.screen.SetListDisplayMode(displayMode)
+    obj.ListStyle = style
+    obj.ListDisplayMode = displayMode
     obj.FilterMode = invalid
     obj.Facade = invalid
 
