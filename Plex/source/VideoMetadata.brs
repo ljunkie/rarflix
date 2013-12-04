@@ -5,13 +5,21 @@ Function newVideoMetadata(container, item, detailed=false) As Object
     ' ljunkie ^^ is where Plex Prefers it via the PMS API. This could change at any point breaking some logic. 
 
     ' ljunkie - allow end users to choose Season or Show poster for Episodes via the Grid
-    ' ONLY valid to check if grandparentThumb exists - otherwise we might set 
-    '  parentThumb when a Episode thumb is supposed to be used
+    ' ONLY valid to check if grandparentThumb exists - otherwise we might set parentThumb when a Episode thumb is supposed to be used
     ' Seasons Poster (recently added Seasons / Stacked can also be toggled between Season/Show via 'newSeasonMetadata()'
     gridThumb = invalid 
     if item@grandparentThumb <> invalid then 
         if RegRead("rf_episode_poster", "preferences", "season") = "season" then 
-            gridthumb = firstof(item@parentThumb,item@grandparentThumb) ' prefer Season Poster over Show
+            gridthumb = item@parentThumb
+            ' Ugh - the PMS doesn't seem to always give the ParentThumb even though it exists. So I guess we will have to query for it. 
+            ' at least we only have to query the parentKey which is the specific season, so it should be "quick"
+            ' If this causes slowdown, EU can always disable this fieature ( of course they may not know to )
+            if gridthumb = invalid and item@parentKey <> invalid then 
+                Debug("---- Finding Parent thumb for TV Show " + tostr(item@grandparentTitle) + ": " + tostr(item@title) + " -- key:" + tostr(item@parentKey))
+                seaCon = createPlexContainerForUrl(container.server, container.server.serverurl, item@parentKey)
+                if seaCon <> invalid then gridthumb = firstof( seaCon.xml.Directory[0]@Thumb, item@parentThumb)
+                if gridthumb <> item@parentThumb then Debug("---- Forced using Season Thumb " + tostr(gridThumb) + " had to search for it!")
+            end if
         else 
             gridThumb = item@grandparentThumb  ' use show poster
         end if
