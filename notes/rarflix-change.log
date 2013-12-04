@@ -1,3 +1,38 @@
+#2.8.7-dev
+
+    * Fix Images Sizes (globally) - the Roku specifically wants images of a certain size or it has to resize internally
+        - custom icons will now use the correct size based on the Screen Style (grid/poster screens)
+        - all over icons/images/thumbnails will use the correct size based on the Screen Style
+        - changes above should speed up the display (roku will not have to internally resize images 99% of the time)
+    
+    * Music Section Style ( on the list to make this a toggle, no eta )
+        - change from flat-square (the tiny 7x3 row) to flat-landscape (5x3 row)
+        - all subsections in music library section will use the 5x3 now. Before it was "random"
+
+    * TV Season Posters ( when using TV Seasons Posters vs the TV Show Poster )
+        - TV Season Posters: In some scenarios the Season poster was being used when it should have been the actual episode thumb
+        - TV Season Posters: sometimes the parentThumb (season thumb) isn't exposed via the PMS API. Query the API for it.
+
+    * Grid Description background (BoB) was too short in the new Portrait mode (roku bug) - text could overflow. Fixed with custom background
+
+    * Toggle added to change "Grid Updates/Speed"
+	- default is FULL ( what people should use )
+        - Partial will only reload the focused item
+        - Partial will be less dynamic but very quick -- I would suggest not to use this unless needed
+
+    * Grid Reloading (slow grid screen issues) logic updated again ( will yet again improve the speed of the grid )
+        - Always full reload the onDeck row
+        - Only do a full reload once every 90 seconds. You can now enter focused item and return to grid without speed issues. Same goes for using the * remote key.
+        - Check the focused item index against the PMS api. If keys do not match, a full reload will be forced (even before the 90 seconds) - Usually due to marking an item as watched/unwatched or newly scanned items are inserted
+        - Full Grid screens will always get a full reload. It's fast enough since it only load 5 items per row
+
+    * HUD would show "invalid" when originallyAvailableAt (Release Date) was empty. Display the Year or leave it empty if invalid.
+
+    * TV Episodes Screen
+        - TV Series episodes: use 16x9 for thumbs instead of 4x3. Toggle created, end user can change between 4x3 or 16x9
+        - Toggle to show Episode Images instead of a "blank images with a number" for unfocused episodes
+
+
 #2.8.6-test (2013-12-01)
     Grid Changes - Display Modes and Styles
       * TV/Movie Posters should fit the Orange Focus Box (better)
