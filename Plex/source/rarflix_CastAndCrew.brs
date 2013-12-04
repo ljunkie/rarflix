@@ -53,8 +53,9 @@ Function RFCastAndCrewHandleMessage(msg) As Boolean
             cast = obj.item.metadata.castcrewlist[msg.GetIndex()]
             ' create the gridScreen for the cast member ( uses a modified search loader )
             if cast.id <> invalid and cast.name <> invalid then 
-                displaymode_grid = RegRead("rf_grid_displaymode", "preferences", "scale-to-fit")
-                screen = createGridScreen(m.viewcontroller, "flat-movie", invalid, displaymode_grid)
+                displaymode_grid = RegRead("rf_grid_displaymode", "preferences", "photo-fit")
+                grid_style = RegRead("rf_grid_style", "preferences","flat-portrait")
+                screen = createGridScreen(m.viewcontroller, grid_style, invalid, displaymode_grid)
                 screen.Loader = createSearchLoader("invalid",cast) ' including the cast array - causes search loader to function differently
                 screen.Loader.Listener = screen
                 breadcrumbs = [cast.itemtype,cast.name]
