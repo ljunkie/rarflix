@@ -39,9 +39,11 @@ end function
 
 ' ljunkie function to create a poster screen with external metadata  
 ' using the viewController/message handlers
-Function createPosterScreenExt(items, viewController) As Object
+Function createPosterScreenExt(items, viewController, style = invalid) As Object
     obj = CreateObject("roAssociativeArray")
     initBaseScreen(obj, viewController)
+
+    SetGlobalPosterStyle(style) 
 
     screen = CreateObject("roPosterScreen")
     screen.SetMessagePort(obj.Port)

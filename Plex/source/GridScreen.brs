@@ -502,6 +502,8 @@ Sub setGridTheme(style as String)
     ' SD version of flat-portrait is actually shorter than flat-movie ( opposite of HD ) we do not want shorter than the already short images
     if tostr(style) = "flat-portrait" and GetGlobal("IsHD") <> true then style = "flat-movie"
 
+    SetGlobalGridStyle(style) ' set the new grid style - needed for determine image sizes
+
     app = CreateObject("roAppManager")
     if style = "flat-square" then
         app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-square-hd.png")

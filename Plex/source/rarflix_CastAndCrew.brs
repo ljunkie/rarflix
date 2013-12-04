@@ -21,7 +21,7 @@ function RFcreateCastAndCrewScreen(item as object) as Dynamic
 
     if type(item.metadata.castcrewlist) = "roArray" and item.metadata.castcrewlist.count() > 0 then 
         obj = CreateObject("roAssociativeArray")
-        obj = createPosterScreen(item, m.viewcontroller)
+        obj = createPosterScreen(item, m.viewcontroller, "arced-portrait")
         obj.noRefresh = true
         screenName = "Cast & Crew List"
         obj.HandleMessage = RFCastAndCrewHandleMessage ' override default Handler

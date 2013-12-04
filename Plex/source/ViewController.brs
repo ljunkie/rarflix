@@ -327,7 +327,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             screenName = "Series Grid"
             if screen.loader.focusrow <> invalid then screen.loader.focusrow = 1 ' override this so we can hide the sub sections ( flat-16x9 is 5x3 )
         else
-            screen = createPosterScreen(item, m)
+            screen = createPosterScreen(item, m, "arced-portrait")
             screenName = "Series Poster"
             if fromFullGrid(m) and (item.umtitle <> invalid or item.title <> invalid) then 
                 breadcrumbs[0] = "All Seasons"
@@ -336,14 +336,14 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         end if
     else if contentType = "artist" then
         if poster_grid = "grid" then 
-            screen = createFULLGridScreen(item, m, "Invalid", displaymode_grid)
+            screen = createFULLGridScreen(item, m, "flat-landscape", displaymode_grid)
         else 
-            screen = createPosterScreen(item, m)
+            screen = createPosterScreen(item, m, "arced-square")
         end if
         screenName = "Artist Poster"
     else if contentType = "album" then
         ' grid looks horrible in this view. - do not enable FULL grid
-        screen = createPosterScreen(item, m)
+        screen = createPosterScreen(item, m, "flat-episodic")
         screen.SetListStyle("flat-episodic", "zoom-to-fill")
         screenName = "Album Poster"
     else if item.key = "nowplaying" then
@@ -366,10 +366,9 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screenName = "Section: " + tostr(item.type)
         if tostr(item.type) = "artist" then 
             Debug("---- override photo-fit/flat-square for section with content of " + tostr(item.type))
-            screen = createGridScreenForItem(item, m, "flat-square","photo-fit") ' might need to change back to defaults ( grid_style -- to fit the standard )
-            screen.screen.SetDisplayMode("Photo-Fit")
-            screen.screen.SetListPosterStyles("landscape")
-            if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 7x3 )
+            'screen = createGridScreenForItem(item, m, "flat-square","photo-fit") ' might need to change back to defaults ( grid_style -- to fit the standard )
+            screen = createGridScreenForItem(item, m, "flat-landscape", "photo-fit")
+            if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 5x3 )
         else if tostr(item.type) = "photo" then 
             ' Photo Section has it's own settings for DisplayMode and GridStyle
             displayMode = RegRead("photoicon_displaymode", "preferences", "photo-fit")
@@ -391,7 +390,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
                 screen = createFULLGridScreen(item, m, grid_style_photos, displayMode) ' we override photos to use photo fit -- toggle added later TODO
                 screen.loader.focusrow = 1 ' lets fill the screen ( 5x3 ) - no header row ( might be annoying page up for first section.. TODO)
             else 
-                screen = createPosterScreen(item, m)
+                screen = createPosterScreen(item, m, "arced-landscape")
             end if
             screenName = "Photo Poster"
         else
@@ -416,12 +415,14 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         ' these are subsections of a main section ( secondary )
         Debug("---- Creating secondary grid " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
         ' ljunkie TODO review this code
+        sec_metadata = getSectionType(m)
         if poster_grid = "grid" then 
-            sec_metadata = getSectionType(m)
             DisplayMode = displaymode_grid
 
             focusrow = 0
-            if tostr(sec_metadata.type) = "photo" then 
+            if tostr(sec_metadata.type) = "artist" then 
+                grid_style="flat-landscape" ' TODO - create toggle for music grid style
+            else if tostr(sec_metadata.type) = "photo" then 
                 grid_style=grid_style_photos ' Use GRID style for photos
                 displayMode = RegRead("photoicon_displaymode", "preferences", "photo-fit") ' Use Display Mode for Photos
                 Debug("---- override " + tostr(displayMode) + "/" + tostr(grid_style_photos) + "for section with content of " + tostr(item.type))
@@ -430,7 +431,9 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             screen = createFULLGridScreen(item, m, grid_style, DisplayMode)
 	    screen.loader.focusrow = focusrow ' lets fill the screen ( 5x3 )
         else 
-            screen = createPosterScreen(item, m)
+            posterStyle = "arced-portrait"
+            if tostr(sec_metadata.type) = "photo" then posterStyle = "arced-landscape"
+            screen = createPosterScreen(item, m, posterStyle)
         end if
     else if item.key = "globalprefs" then
         screen = createPreferencesScreen(m)
@@ -441,11 +444,10 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         playTrailer = false
         if yt_videos.Count() > 0 then
             metadata=GetVideoMetaData(yt_videos)
-            screen = createPosterScreenExt(metadata, m)
+            screen = createPosterScreenExt(metadata, m, "flat-episodic-16x9")
             screen.hasWaitDialog = hasWaitDialog
-            screen.screen.SetListStyle("flat-episodic")
-            screen.screen.SetListStyle("flat-episodic-16x9") ' TODO - whats better for youtube?
-            screen.screen.SetListDisplayMode("scale-to-fill") ' default
+	    'screen.screen.SetListStyle("flat-episodic-16x9") ' this can be removed now
+            screen.screen.SetListDisplayMode("scale-to-fill")
             screen.handlemessage = trailerHandleMessage
             screenName = "Movie Trailer"
             if RegRead("rf_trailerplayfirst", "preferences", "enabled") = "enabled" then DisplayYouTubeVideo(metadata[0],screen.hasWaitDialog)
@@ -477,9 +479,12 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if item.settings = "1"
         screen = createSettingsScreen(item, m)
         screenName = "Settings"
-    else if tostr(item.type) = "season" or tostr(item.type) = "channel" then 
-        ' others we want to fost into a poster screen
-        screen = createPosterScreen(item, m)
+    else if tostr(item.type) = "season" then
+        ' no full grid
+        screen = createPosterScreen(item, m, "arced-portrait")
+    else if tostr(item.type) = "channel" then 
+        ' no full grid
+        screen = createPosterScreen(item, m, "arced-square")
     else
         ' Where do we capture channel directory?
         ' ljunkie - this doesn't seem to alwyas be channel items
@@ -487,12 +492,12 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         'sec_metadata = getSectionType(m) <- this seems unneccesary ( viewgroup = invalid|InfoList|List - do not support paginated calls )
         if tostr(contentType) = "appClip" and (tostr(viewGroup) = "Invalid" or tostr(viewGroup) = "InfoList" or tostr(viewGroup) = "List") then 
             Debug("---- forcing to Poster view -> viewgroup matches: invalid|InfoList|List")
-            screen = createPosterScreen(item, m)
+            screen = createPosterScreen(item, m, "arced-portrait")
         else if poster_grid = "grid" and tostr(viewGroup) <> "season" then ' if we have set Full Grid and type is not a season, force Full Grid view
             screen = createFULLGridScreen(item, m, "Invalid", displaymode_grid)
         else 
             Debug("---- forcing to Poster view")
-            screen = createPosterScreen(item, m)
+            screen = createPosterScreen(item, m, "arced-portrait")
         end if
     end if
 
@@ -925,6 +930,9 @@ Sub vcPopScreen(screen)
                 hideRowText(false)
             end if
         end if
+
+        'ljunkie - another hack to set the current GridStyle ( only used if we refresh custom icons, for now )
+        SetGlobalGridStyle(newScreen.gridstyle) 
 
         screenName = firstOf(newScreen.ScreenName, type(newScreen.Screen))
         Debug("Top of stack is once again: " + screenName)

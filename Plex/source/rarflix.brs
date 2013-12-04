@@ -1153,7 +1153,16 @@ sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
             end if
             print "overriding cloudsync thumb" + metadata.HDPosterURL
         end if
-        sizes = ImageSizes(metadata.ViewGroup, nodeType)
+
+
+        if tostr(GetGlobalAA().lookup("GlobalNewScreen")) = "poster" then
+            sizes = PosterImageSizes()
+        else if tostr(GetGlobalAA().lookup("GlobalNewScreen")) = "grid" then
+            sizes = GridImageSizes()
+        else
+            sizes = ImageSizes(metadata.ViewGroup, nodeType)
+        end if
+
         ' mod_rewrite/apache do not allow & or %26
         ' replace with :::: - the cdn will replace with &
         reand = CreateObject("roRegex", "&", "") 
@@ -1165,18 +1174,29 @@ sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
         ' append cloud to the text if not a secondary ( this should only be on library sections )
         ' if there are complaints, we can skip these so people see their default TV icon in the section
         if remyplex.IsMatch(metadata.server.serverurl) and tostr(nodeType) <> "secondary" and tostr(metadata.ViewGroup) <> "secondary" then thumb_text = thumb_text + " (cloud)"
-        sdWidth  = "223"
-        sdHeight = "200"
-        hdWidth  = "300"
-        hdHeight = "300"
+
+	if GetGlobal("IsHD") = true then 
+            Width = sizes.hdWidth
+            Height = sizes.hdHeight
+        else
+            Width = sizes.sdWidth
+            Height = sizes.sdHeight
+        end if
+
+        ' the Image Processor expects images to be 300px wide ( text is set to fit that )
+        ' reset the height accordingly. The PMS transcoder will resize it after the image has been created
+        Height = int((300/Width.toInt())*Height.toInt())
+        Width = "300"
+
         if isRFdev() then 
             rarflix_cdn = "http://ec2.rarflix.com" ' use non-cached server for testing (same destination as cloudfrount)
         else
             rarflix_cdn = "http://d1gah69i16tuow.cloudfront.net"
         end if 
-        cachekey = "fcfab14d40e6685f5918a2d32332a98f"
+        cachekey = "fcfab14d40e6685f5918a2d32332a98f" ' only update this is I broke something :) so we can expire the PMS Cache
         NewThumb = rarflix_cdn + "/" + cachekey + "/key/" + URLEncode(thumb_text) ' this will be a autogenerate poster (transparent)
-        NewThumb = NewThumb + "/size/" + tostr(hdWidth) + "x" + tostr(hdHeight) ' things seem to play nice this way with the my image processor
+'        NewThumb = NewThumb + "/size/" + tostr(hdWidth) + "x" + tostr(hdHeight) ' things seem to play nice this way with the my image processor
+        NewThumb = NewThumb + "/size/" + tostr(Width) + "x" + tostr(Height) ' things seem to play nice this way with the my image processor
         NewThumb = NewThumb + "/fg/" + RegRead("rf_img_overlay", "preferences","999999")
         Debug("----   newraw:" + tostr(NewThumb))
         ' we still want to transcode the size to the specific roku standard
@@ -1321,4 +1341,143 @@ sub hideRowText(hide = true)
         app.SetThemeAttribute("CounterTextLeft", titleText)
         app.SetThemeAttribute("CounterSeparator", normalText)
     end if
+end sub
+
+
+Function GridImageSizes(style = invalid) As Object
+    ' will have to modify this if we use multi-aspect-ratio -- get the gridStyle for the focused index. TODO at a later date
+    if style = invalid then style = GetGlobalAA().Lookup("GlobalGridStyle")
+
+    if style = "flat-movie" then 
+        sdWidth = "110"
+        sdheight = "150"
+        hdWidth = "210"
+        hdheight = "270"
+    else if style = "flat-portrait" then 
+        sdWidth = "110"
+        sdheight = "140"
+        hdWidth = "210"
+        hdheight = "300"
+    else if style = "flat-landscape" then 
+        sdWidth = "140"
+        sdheight = "94"
+        hdWidth = "210"
+        hdheight = "158"
+    else if style = "flat-square" then 
+        sdWidth = "96"
+        sdheight = "86"
+        hdWidth = "132"
+        hdheight = "132"
+    else if style = "flat-16x9" then 
+        sdWidth = "140"
+        sdheight = "70"
+        hdWidth = "210"
+        hdheight = "118"
+    else if style = "two-row-flat-landscape-custom" then
+        sdwidth = "140"
+        sdHeight = "94"
+        hdWidth = "266"
+        hdHeight = "150"
+    else if style =  "four-column-flat-landscape" then 
+        sdwidth = "140"
+        sdHeight = "70"
+        hdWidth = "210"
+        hdHeight = "118"
+    else 
+        'default to something
+        sdWidth = "223"
+        sdHeight = "200"
+        hdWidth = "300"
+        hdHeight = "300"
+    end if
+
+    ' Mixed Aspect Ratio.... fun
+    '"mixed-aspect-ratio"
+    ' HD
+    'landscape - 192 x 144
+    'portrait - 192 x 274
+    'square - 192 x 192
+    ' SD 
+    'landscape -  140 x 94
+    'portrait - 140 x 180
+    'square - 140 x 126
+
+    sizes = CreateObject("roAssociativeArray")
+    sizes.sdWidth = sdWidth
+    sizes.sdHeight = sdHeight
+    sizes.hdWidth = hdWidth
+    sizes.hdHeight = hdHeight
+    return sizes
+End Function
+
+
+
+Function PosterImageSizes(style = invalid) As Object
+    if style = invalid then style = GetGlobalAA().Lookup("GlobalPosterStyle")
+
+    if style = "arced-portrait" then
+        SDwidth = "158"
+        SDheight = "204"
+        HDwidth = "214"
+        HDheight = "306"
+    else if style = "arced-landscape" then
+        SDwidth = "214"
+        SDheight = "144"
+        HDwidth = "290"
+        HDheight = "218"
+    else if style = "arced-16x9" then
+        SDwidth = "285"
+        SDheight = "145"
+        HDwidth = "385"
+        HDheight = "218"
+    else if style = "arced-square" then
+        SDwidth = "= 223"
+        SDheight = "200"
+        HDwidth = "300"
+        HDheight = "300"
+    else if style = "flat-category" then
+        SDwidth = "224"
+        SDheight = "158"
+        HDwidth = "304"
+        HDheight = "237"
+    else if style = "flat-episodic" then
+        SDwidth = "166"
+        SDheight = "112"
+        HDwidth = "224"
+        HDheight = "168"
+    else if style = "rounded-rect-16x9-generic" then
+        SDwidth = "177"
+        SDheight = "90"
+        HDwidth = "269"
+        HDheight = "152"
+    else if style = "flat-episodic-16x9" then
+        SDwidth = "185"
+        SDheight = "94"
+        HDwidth = "250"
+        HDheight = "141"
+    else 
+        'default to something
+        sdWidth = "223"
+        sdHeight = "200"
+        hdWidth = "300"
+        hdHeight = "300"
+    end if
+
+    sizes = CreateObject("roAssociativeArray")
+    sizes.sdWidth = sdWidth
+    sizes.sdHeight = sdHeight
+    sizes.hdWidth = hdWidth
+    sizes.hdHeight = hdHeight
+    return sizes
+End Function
+
+
+sub SetGlobalGridStyle(style = invalid) 
+    GetGlobalAA().AddReplace("GlobalGridStyle", style)
+    GetGlobalAA().AddReplace("GlobalNewScreen", "grid")
+end sub
+
+sub SetGlobalPosterStyle(style = invalid) 
+    GetGlobalAA().AddReplace("GlobalPosterStyle", style)
+    GetGlobalAA().AddReplace("GlobalNewScreen", "poster")
 end sub
