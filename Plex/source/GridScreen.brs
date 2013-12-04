@@ -505,6 +505,7 @@ Sub setGridTheme(style as String)
     SetGlobalGridStyle(style) ' set the new grid style - needed for determine image sizes
 
     app = CreateObject("roAppManager")
+    app.ClearThemeAttribute("GridScreenDescriptionImageHD")
     if style = "flat-square" then
         app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-square-hd.png")
         app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-square-sd.png")
