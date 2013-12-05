@@ -31,8 +31,11 @@ Function newVideoMetadata(container, item, detailed=false) As Object
         sizes = ImageSizes(container.ViewGroup, item@type)
         video.SDGridThumb = video.server.TranscodedImage(container.sourceUrl, gridThumb, sizes.sdWidth, sizes.sdHeight)
         video.HDGridThumb = video.server.TranscodedImage(container.sourceUrl, gridThumb, sizes.hdWidth, sizes.hdHeight)
-        video.SDDetailThumb = video.server.TranscodedImage(container.sourceUrl, item@thumb, sizes.sdWidth, sizes.sdHeight)
-        video.HDDetailThumb = video.server.TranscodedImage(container.sourceUrl, item@thumb, sizes.hdWidth, sizes.hdHeight)
+        'video.SDDetailThumb = video.server.TranscodedImage(container.sourceUrl, item@thumb, sizes.sdWidth, sizes.sdHeight)
+        'video.HDDetailThumb = video.server.TranscodedImage(container.sourceUrl, item@thumb, sizes.hdWidth, sizes.hdHeight)
+        ' use larger images for detail thumb - we don't want this to be small ever
+        video.SDDetailThumb = video.server.TranscodedImage(container.sourceUrl, item@thumb, sizes.detailSDW, sizes.detailSDH)
+        video.HDDetailThumb = video.server.TranscodedImage(container.sourceUrl, item@thumb, sizes.detailHDW, sizes.detailHDH)
     end if
 
     video.Refresh = videoRefresh

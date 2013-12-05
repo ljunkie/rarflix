@@ -170,8 +170,16 @@ Function sbRefresh(force=false)
 
     ' See if we should switch the poster
     if m.metadata.SDDetailThumb <> invalid then
+        ' details Thumb is a "screenshot" preview of the video ( used for episodes )
         m.metadata.SDPosterUrl = m.metadata.SDDetailThumb
         m.metadata.HDPosterUrl = m.metadata.HDDetailThumb
+        m.thumbnailsToReset.Push(m.metadata)
+    else if m.metadata.SDsbThumb <> invalid then
+        ' SDsbThumb is a large (in roku terms) thumb
+        ' sometimes we have tiny images depending on the gridStyle we are in
+        ' so we should use a large image for the springboard
+        m.metadata.SDPosterUrl = m.metadata.SDsbThumb
+        m.metadata.HDPosterUrl = m.metadata.HDsbThumb
         m.thumbnailsToReset.Push(m.metadata)
     end if
 
