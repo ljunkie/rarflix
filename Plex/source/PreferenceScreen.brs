@@ -225,14 +225,18 @@ Function createPreferencesScreen(viewController) As Object
         { title: "12.0 Mbps, 1080p", EnumValue: "11", ShortDescriptionLine2: "May be unstable, not recommended." }
         { title: "20.0 Mbps, 1080p", EnumValue: "12", ShortDescriptionLine2: "May be unstable, not recommended." }
     ]
+    bw_text = ""
+    if GetGlobalAA().Lookup("bandwidth") <> invalid then
+        bw_text = "(Current reported bandwidth is " + tostr(GetGlobalAA().Lookup("bandwidth")) + "kbps)"
+    end if
     obj.Prefs["quality"] = {
         values: qualities,
-        heading: "Higher settings produce better video quality but require more" + Chr(10) + "network bandwidth. (Current reported bandwidth is " + tostr(GetGlobalAA().Lookup("bandwidth")) + "kbps)",
+        heading: "Higher settings produce better video quality but require more" + Chr(10) + "network bandwidth. " + bw_text,
         default: "7"
     }
     obj.Prefs["quality_remote"] = {
         values: qualities,
-        heading: "Higher settings produce better video quality but require more" + Chr(10) + "network bandwidth. (Current reported bandwidth is " + tostr(GetGlobalAA().Lookup("bandwidth")) + "kbps)",
+        heading: "Higher settings produce better video quality but require more" + Chr(10) + "network bandwidth. " + bw_text,
         default: RegRead("quality", "preferences", "7")
     }
 
