@@ -386,14 +386,14 @@ Function prefsMainHandleMessage(msg) As Boolean
 
                 manager = AppManager()
                 if manager.State = "PlexPass" then
-                    dialog.Text = "Plex/Roku is fully unlocked since you're a PlexPass member."
+                    dialog.Text = "Plex is fully unlocked since you're a PlexPass member."
                 else if manager.State = "Purchased" then
-                    dialog.Text = "Plex/Roku has been purchased and is fully unlocked."
+                    dialog.Text = "Plex has been purchased and is fully unlocked."
                 else if manager.State = "Trial" then
-                    dialog.Text = "Plex/Roku is currently in a trial period. To fully unlock the channel, you can purchase it or connect a PlexPass account."
+                    dialog.Text = "Plex is currently in a trial period. To fully unlock the channel, you can purchase it or connect a PlexPass account."
                     dialog.SetButton("purchase", "Purchase the channel")
                 else if manager.State = "Limited" then
-                    dialog.Text = "Your Plex/Roku trial has expired and the app is currently limited. To fully unlock the channel, you can purchase it or connect a PlexPass account."
+                    dialog.Text = "Your Plex trial has expired and playback is currently disabled. To fully unlock the channel, you can purchase it or connect a PlexPass account."
                     dialog.SetButton("purchase", "Purchase the channel")
                 end if
 

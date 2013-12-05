@@ -1040,11 +1040,11 @@ Sub vcShowReleaseNotes(options = invalid)
 End Sub
 
 Sub vcShowHelpScreen()
-    header = "Welcome to Plex/Roku!"
+    header = "Welcome to Plex!"
     paragraphs = []
-    paragraphs.Push("Plex for Roku automatically connects to Plex Media Servers on your local network and also works with myPlex to view queued items and connect to your published and shared servers.")
-    paragraphs.Push("To download and install Plex Media Server on your computer, visit http://plexapp.com/getplex")
-    paragraphs.Push("For more information on getting started, visit http://plexapp.com/roku")
+    paragraphs.Push("With Plex you can easily stream your videos, music, photos and home movies to your Roku using your Plex Media Server.")
+    paragraphs.Push("To download and install your free Plex Media Server on your computer, visit http://plexapp.com/getplex")
+    paragraphs.Push("Enjoy Plex free for 30 days, then unlock with a PlexPass subscription or a small one-time purchase.")
 
     screen = createParagraphScreen(header, paragraphs, m)
     m.InitializeOtherScreen(screen, invalid)
@@ -1053,16 +1053,16 @@ Sub vcShowHelpScreen()
 End Sub
 
 Sub vcShowLimitedWelcome()
-    header = "Your Plex/Roku trial has ended"
+    header = "Your Plex trial has ended"
     paragraphs = []
-    paragraphs.Push("Your Plex/Roku trial period has ended. You can continue to browse content in your library, but you'll be unable to play anything.")
+    paragraphs.Push("Your Plex trial period has ended. You can continue to browse content in your library, but playback has been disabled.")
     addPurchaseButton = false
 
     if AppManager().IsAvailableForPurchase then
-        paragraphs.Push("To continue using Plex/Roku, you can either buy the channel or connect a PlexPass-enabled myPlex account.")
+        paragraphs.Push("To continue using Plex, you can either buy the channel or connect a PlexPass-enabled myPlex account.")
         addPurchaseButton = true
     else
-        paragraphs.Push("To continue using Plex/Roku, you must connect a PlexPass-enabled myPlex account.")
+        paragraphs.Push("To continue using Plex, you must connect a PlexPass-enabled myPlex account.")
     end if
 
     screen = createParagraphScreen(header, paragraphs, m)
