@@ -1192,12 +1192,12 @@ sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
         Height = int((300/Width.toInt())*Height.toInt())
         Width = "300"
 
-        if isRFdev() then 
-            rarflix_cdn = "http://ec2.rarflix.com" ' use non-cached server for testing (same destination as cloudfrount)
-        else
-            rarflix_cdn = "http://d1gah69i16tuow.cloudfront.net"
-        end if 
-        cachekey = "fcfab14d40e6685f5918a2d32332a98f" ' only update this is I broke something :) so we can expire the PMS Cache
+        rarflix_cdn = "http://d1gah69i16tuow.cloudfront.net"
+        ' not anymore - we should use the CDN we expect to use everywhere
+        'if isRFdev() then 
+        '    rarflix_cdn = "http://ec2.rarflix.com" ' use non-cached server for testing (same destination as cloudfrount)
+        'end if 
+        cachekey = "fcfab14d40e6685f5918a2d32332a98f" ' only update this if I broke something :) so we can expire the PMS Cache
         NewThumb = rarflix_cdn + "/" + cachekey + "/key/" + URLEncode(thumb_text) ' this will be a autogenerate poster (transparent)
 '        NewThumb = NewThumb + "/size/" + tostr(hdWidth) + "x" + tostr(hdHeight) ' things seem to play nice this way with the my image processor
         NewThumb = NewThumb + "/size/" + tostr(Width) + "x" + tostr(Height) ' things seem to play nice this way with the my image processor
