@@ -1683,12 +1683,12 @@ End Sub
 Sub InitWebServer(vc)
     ' Initialize some globals for the web server
     globals = CreateObject("roAssociativeArray")
-    globals.pkgname = "Plex/Roku"
+    globals.pkgname = "Plex"
     globals.maxRequestLength = 4000
     globals.idletime = 60
     globals.wwwroot = "tmp:/"
     globals.index_name = "index.html"
-    globals.serverName = "Plex/Roku"
+    globals.serverName = "Plex"
     AddGlobals(globals)
     MimeType()
     HttpTitle()

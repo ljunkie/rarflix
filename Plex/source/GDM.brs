@@ -274,7 +274,7 @@ Function gdmAdvertiserGetResponseString() As String
 
         appendNameValue(buf, "Name", RegRead("player_name", "preferences", GetGlobalAA().Lookup("rokuModel")))
         appendNameValue(buf, "Port", GetViewController().WebServer.port.tostr())
-        appendNameValue(buf, "Product", "Plex/Roku")
+        appendNameValue(buf, "Product", "Plex for Roku")
         appendNameValue(buf, "Content-Type", "plex/media-player")
         appendNameValue(buf, "Protocol", "plex")
         appendNameValue(buf, "Protocol-Version", "1")

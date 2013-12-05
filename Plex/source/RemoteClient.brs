@@ -159,7 +159,7 @@ Function ProcessResourcesRequest() As Boolean
 
     player = mc.AddElement("Player")
     player.AddAttribute("protocolCapabilities", "timeline,playback,navigation")
-    player.AddAttribute("product", "Plex/Roku")
+    player.AddAttribute("product", "Plex for Roku")
     player.AddAttribute("version", GetGlobalAA().Lookup("appVersionStr"))
     player.AddAttribute("platformVersion", GetGlobalAA().Lookup("rokuVersionStr"))
     player.AddAttribute("platform", "Roku")
