@@ -233,7 +233,7 @@ Sub videoGetMediaDetails(content)
     end if
 
     if m.metadata.ContentType = "movie" AND RegRead("rf_rottentomatoes", "preferences", "enabled") = "enabled" then 
-        m.metadata.tomatoData = getRottenTomatoesData(m.metadata.RFSearchTitle) 
+        if m.metadata.tomatoData = invalid then m.metadata.tomatoData = getRottenTomatoesData(m.metadata.RFSearchTitle) 
     end if
     m.media = m.metadata.preferredMediaItem
 End Sub
