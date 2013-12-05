@@ -33,6 +33,12 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
             end if
         next
         
+        ' update the overlay on the upper right with (# of #)
+        size = newcontext.count()-1
+        for index = 0 to size
+            newcontext[index].TextOverlayUR = tostr(index+1) + " of " + tostr(size)
+        end for
+
         ' reset contextIndex if needed
         if context.count() <> newcontext.count() then 
             contextIndex = 0 ' reset context to zero, unless we find a match
@@ -155,7 +161,7 @@ Function photoPlayerHandleMessage(msg) As Boolean
                     m.screen.SetTextOverlayIsVisible(false)
                 else 
                     ' show overlay
-                    m.screen.SetTextOverlayHoldTime(0)
+                    m.screen.SetTextOverlayHoldTime(2500)
                     m.screen.SetTextOverlayIsVisible(true)
                     ' using a timer will be less obtrusive. 
                     if m.overlayTimer = invalid then

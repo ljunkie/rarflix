@@ -40,8 +40,10 @@ Function newPhotoMetadata(container, item, detailed=true) As Object
         photo.Url = FullUrl(photo.server.serverUrl, photo.sourceUrl, photo.key)
     end if
 
-    photo.TextOverlayUL = photo.Title
-    photo.TextOverlayBody = item@summary
+    'photo.TextOverlayBody = item@summary ' this doesn't exist
+    photo.TextOverlayBody = chr(10) + photo.Title
+    photo.TextOverlayUL = firstof(item@originallyAvailableAt,item@year)
+    'photo.TextOverlayUR is used for count: (1 of 30) -- refer to PhotoPlayer.brs createPhotoPlayerScreen()
 
     ' If there's no thumb, make a thumb out of the full URL.
     if photo.SDPosterURL = invalid OR Left(photo.SDPosterURL, 4) = "file" then
