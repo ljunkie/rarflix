@@ -16,6 +16,8 @@
         - trailer thumbnails on poster screen should use landscape instead of portrait.
         - crash: when pressing play on remote from a photo directory, whose children are also all directories.
         - some images would break after being refresh (missing authtoken). This would cause broken images (gray poster) or the image would gray/broken and reappear.
+	- current bandwidth under remote/local settings will not show invalid if empty
+	- current bandwidth will show mbps > 999kbps
 
 #2.8.7-dev
 
