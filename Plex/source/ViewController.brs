@@ -318,7 +318,11 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     grid_style_photos = RegRead("rf_photos_grid_style", "preferences","flat-landscape")
     grid_style = RegRead("rf_grid_style", "preferences","flat-portrait")
 
-    if contentType = "movie" OR contentType = "episode" OR contentType = "clip" then
+    if contentType = "episode" OR contentType = "clip" then
+        screen = createVideoSpringboardScreen(context, contextIndex, m)
+        'screen.screen.SetPosterStyle("rounded-rect-16x9-generic")
+        screenName = "Preplay " + contentType
+    else if contentType = "movie" then 
         screen = createVideoSpringboardScreen(context, contextIndex, m)
         screenName = "Preplay " + contentType
     else if contentType = "series" then
