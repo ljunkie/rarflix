@@ -34,8 +34,8 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
         next
         
         ' update the overlay on the upper right with (# of #)
-        size = newcontext.count()-1
-        for index = 0 to size
+        size = newcontext.count()
+        for index = 0 to size - 1
             newcontext[index].TextOverlayUR = tostr(index+1) + " of " + tostr(size)
         end for
 
@@ -110,8 +110,10 @@ Function photoPlayerHandleMessage(msg) As Boolean
         else if msg.isPlaybackPosition() then
             m.CurIndex = msg.GetIndex() ' update current index
             ' ljunkie - check for new images after slideshow completeion ( if slideshow_reload is enabled )
+            if m.CurIndex <> m.items.count()-1 then m.ReloadQueryDone = invalid
 	    if m.doReload = "enabled" and type(m.items) = "roArray" and m.CurIndex = m.items.count()-1 then 
-                if m.item <> invalid and m.item.server <> invalid and m.item.sourceurl <> invalid then 
+                if m.item <> invalid and m.item.server <> invalid and m.item.sourceurl <> invalid and m.ReloadQueryDone = invalid then 
+                    m.ReloadQueryDone = true
                     obj = createPlexContainerForUrl(m.item.server, m.item.sourceurl, "")
                     ' verify the new context <> current - save some load time
                     if obj.count() > 0 and obj.count() <> m.items.count() then m.newContext = obj.getmetadata()
