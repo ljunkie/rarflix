@@ -5,14 +5,20 @@
 Function getRottenTomatoesData(movieTitle)
     movieTitle = HttpEncode(movieTitle)
     apikey = "whvxdmyudad56xpnzp7ftrk5"
-    url = "http://api.rottentomatoes.com/api/public/v1.0/movies.json?apikey=whvxdmyudad56xpnzp7ftrk5&page_limit=1&q=" + movieTitle
+    ' ljunkie - we are now offloading some API calls to the rottentomatoes API
+    '  * removed using cloudfront -- it doesn't cache urls with parameters
+    '  * LB ec2 instances are using squid caching - we cache uri parameters too!
+    rt_url = "http://api.rottentomatoes.com"
+    rt_proxy = "http://rarflix-1338312912.us-west-2.elb.amazonaws.com:8888" ' ELB -> [2 ec2 reverse squid proxies] -> RT api
+    'rt_proxy = "http://d1gah69i16tuow.cloudfront.net" ' cloudfront -> ELB ...
+    if rt_proxy <> invalid then rt_url = rt_proxy
+    url = rt_url + "/api/public/v1.0/movies.json?apikey="+apikey+"&page_limit=1&q=" + movieTitle
     Debug("Calling Rotten Tomatoes API for " + movieTitle)
 
     httpRequest = NewHttp(url)
-    data = httpRequest.GetToStringWithTimeout(60)
+    data = httpRequest.GetToStringWithTimeout(5)
 
-    ' Note: in the future consider asking for 2-3 results from the API and running the titles through an algorithm
-    ' to determine which movie result matches the best.
+    ' we are already caching the RT API calls via squid - we may want to store locally ( that's another day )
     data = data.Trim() 
     json = ParseJSON(data)
     if type(json) = "roAssociativeArray" then
