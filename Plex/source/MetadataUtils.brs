@@ -45,10 +45,18 @@ Function ImageSizes(viewGroup, contentType) As Object
  
     ' for now, the detail thumbs will be hard coded 
     ' we don't specify the Style (yet) when calling a SpringBoard
-    sizes.detailHDH = "300"
-    sizes.detailHDW = "300"
-    sizes.detailSDH = "300"
-    sizes.detailSDW = "300"
+    ' ONLY if they are small.. (flat-square)
+    if sizes.hdWidth.toInt() < 200 then 
+        sizes.detailHDH = "300"
+        sizes.detailHDW = "300"
+        sizes.detailSDH = "300"
+        sizes.detailSDW = "300"
+    else
+        sizes.detailHDH = sizes.hdHeight
+        sizes.detailHDW = sizes.hdWidth
+        sizes.detailSDH = sizes.sdHeight
+        sizes.detailSDW = sizes.sdWidth
+    end if
 
     return sizes
 End Function
