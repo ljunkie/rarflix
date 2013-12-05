@@ -1,5 +1,17 @@
+#2.8.9-dev
+
+    * Rotten Tomatoes performance
+        - stage one: cache data in current screen. Do not re-query rotten tomatoes on every click right/left if already loaded.
+	- stage two: Rotten Tomatoes Proxy server added - maintained by me thanks to AWS+Squid
+
+    * v2.8.8 regressions fixes
+        - image size issues on springboard - we will no always use a 'larger' images than the grid for the SpringBoard
+        - images were not refreshed correctly from Episode Details Screen (springboard) to Episode List Screen (posterscreen)
+        - other image logic cleanup
+
+
 #2.8.8-dev
-	
+
     * Slideshow Overlay
         - it was lonely (top left: date of photo, top right: count - 1 of 100, body: Title of photo)
         - overlay toggle (down button) is now more reponsive. It can be toggled frequently on the current image.
@@ -25,7 +37,7 @@
         - custom icons will now use the correct size based on the Screen Style (grid/poster screens)
         - all over icons/images/thumbnails will use the correct size based on the Screen Style
         - changes above should speed up the display (roku will not have to internally resize images 99% of the time)
-    
+
     * Music Section Style ( on the list to make this a toggle, no eta )
         - change from flat-square (the tiny 7x3 row) to flat-landscape (5x3 row)
         - all subsections in music library section will use the 5x3 now. Before it was "random"
