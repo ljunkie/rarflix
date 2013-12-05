@@ -115,8 +115,10 @@ Function sbHandleMessage(msg) As Boolean
 
         if msg.isScreenClosed() then
             for each item in m.thumbnailsToReset
-                item.SDPosterUrl = item.SDGridThumb
-                item.HDPosterUrl = item.HDGridThumb
+                if item.SDGridThumb <> invalid then
+                    item.SDPosterUrl = item.SDGridThumb
+                    item.HDPosterUrl = item.HDGridThumb
+                end if
             next
             m.thumbnailsToReset.Clear()
 
@@ -180,7 +182,8 @@ Function sbRefresh(force=false)
         ' so we should use a large image for the springboard
         m.metadata.SDPosterUrl = m.metadata.SDsbThumb
         m.metadata.HDPosterUrl = m.metadata.HDsbThumb
-        m.thumbnailsToReset.Push(m.metadata)
+        ' we will keep using the new (larger) thumbnail on re-entry.
+        'm.thumbnailsToReset.Push(m.metadata)
     end if
 
     m.Screen.setContent(m.metadata)
