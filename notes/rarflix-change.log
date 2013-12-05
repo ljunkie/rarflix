@@ -1,3 +1,22 @@
+#2.8.8-dev
+	
+    * Slideshow Overlay
+        - it was lonely (top left: date of photo, top right: count - 1 of 100, body: Title of photo)
+        - overlay toggle (down button) is now more reponsive. It can be toggled frequently on the current image.
+
+    * Cast & Crew
+       - cast & crew search screen didn't use the preferred Grid Style (Portrait).
+       - removed "clips" from Cast & Crew search. The clip results were invalid.
+       - focus the first row on a Cast & Screen search after selecting a cast member. (fix for real this time)
+
+
+    * Misc Fixes
+        - larger BoB (grid description background) used on screens when it shouldn't have been.
+        - tv episodic view will show episode images instead of number (unfocused content).
+        - trailer thumbnails on poster screen should use landscape instead of portrait.
+        - crash: when pressing play on remote from a photo directory, whose children are also all directories.
+        - some images would break after being refresh (missing authtoken). This would cause broken images (gray poster) or the image would gray/broken and reappear.
+
 #2.8.7-dev
 
     * Fix Images Sizes (globally) - the Roku specifically wants images of a certain size or it has to resize internally
