@@ -26,10 +26,10 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
         print "---------------------wanted key" + key
         newcontext = []
         for each item in context
-            if tostr(item.nodename) = "Photo" then 
+            if item <> invalid and tostr(item.nodename) = "Photo" then 
                 newcontext.Push(item)
             else 
-                print "skipping item: " + tostr(item.nodename) + " " + tostr(item.title)
+                if item <> invalid then print "skipping item: " + tostr(item.nodename) + " " + tostr(item.title)
             end if
         next
         
