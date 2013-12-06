@@ -766,37 +766,189 @@ Function vcIsVideoPlaying() As Boolean
 End Function
 
 Sub vcShowReleaseNotes()
-    header = ""
-    title = GetGlobal("appName") + " updated to " + GetGlobal("appVersionStr")
+    header = GetGlobal("appName") + " updated to " + GetGlobal("appVersionStr")
     paragraphs = []
-    'if isRFtest() then 
-    'end if
-    ' SD allows for 12 lines ( width is shorter though )
-    ' HD allows for 11 lines 
-    paragraphs.Push("Donate @ rarflix.com")
-    spacer = chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)
-    paragraphs.Push(spacer + "* Speed improvements: Rotten Tomatoes and Grid")
-    paragraphs.Push(spacer + "* Focus border fits the Posters (better)")
-    paragraphs.Push(spacer + "* Use TV Season poster for Episodes/Seasons on Grid")
-    paragraphs.Push(spacer + "* Toggle to change Grid Style/Size for Photos Section")
-    paragraphs.Push(spacer + "* Idle Lock Screen when using PIN codes")
-    paragraphs.Push(spacer + "* Grid Pop Out can be disabled per library section")
-    paragraphs.Push(spacer + "* First Movie Trailer will auto play when selected")
-'    paragraphs.Push(spacer + "* 3 New TV Rows/Grid options ( re-order rows to use them )")
-    paragraphs.Push(spacer + "* Shuffle Play for Video (experimental)")
-    paragraphs.Push("+ Profiles, Pin Codes, Movie Trailers, Rotten Tomatoes, Cast & Crew, and many more! Did I mention you can donate @ rarflix.com")
+    breadcrumbs = invalid
 
-    screen = createParagraphScreen(header, paragraphs, m)
-    screen.ScreenName = "Release Notes"
-    screen.Screen.SetTitle(title)
-    m.InitializeOtherScreen(screen, invalid)
+    ' roTextScreen was introduced via firmware 4.3+
+    major = GetGlobalAA().Lookup("rokuVersionArr")[0]
+    minor = GetGlobalAA().Lookup("rokuVersionArr")[1]
+    textScreen = false
+    if (major > 4) or (major = 4 and minor > 2) then textScreen = true
+
+    spacer = chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)
+
+    if NOT textScreen then 
+            paragraphs.Push("Donate @ rarflix.com")
+            paragraphs.Push(spacer + "* Speed improvements: Rotten Tomatoes and Grid")
+            paragraphs.Push(spacer + "* Focus border fits the Posters (better)")
+            paragraphs.Push(spacer + "* Use TV Season poster for Episodes/Seasons on Grid")
+            paragraphs.Push(spacer + "* Toggle to change Grid Style/Size for Photos Section")
+            paragraphs.Push(spacer + "* Idle Lock Screen when using PIN codes")
+            paragraphs.Push(spacer + "* Grid Pop Out can be disabled per library section")
+            paragraphs.Push(spacer + "* First Movie Trailer will auto play when selected")
+            paragraphs.Push(spacer + "* 3 New TV Rows/Grid options ( re-order rows to use them )")
+            paragraphs.Push(spacer + "* Shuffle Play for Video (experimental)")
+            paragraphs.Push("+ Profiles, Pin Codes, Movie Trailers, Rotten Tomatoes, Cast & Crew, and many more! Did I mention you can donate @ rarflix.com")
+    else 
+        ' We have a scrollable text screen now - we can include all the updates - yay
+        us = "_______________"
+        paragraphs.Push("                 Donations accepted at http://www.rarflix.com")
+        paragraphs.Push("  ")
+        paragraphs.Push(GetGlobal("appName") + " has been updated. You can click down to read about all"+chr(10)+" the changes, or click BACK on the remote to start using " + GetGlobal("appName") + "!" )
+
+        paragraphs.Push("  ")
+        paragraphs.Push(us+"v2.9.0 (2013-12-06)"+us)
+        paragraphs.Push(chr(10) + " Original Theme")
+        paragraphs.Push("  * User selection icon was not working correctly for the Original theme")
+        paragraphs.Push("  * Dialog text was hard to head on the Original theme")
+        paragraphs.Push("  * New Release Notes screen. You can see all the changes now.")
+        paragraphs.Push("  ")
+        
+        paragraphs.Push(us+"v2.8.9 (2013-12-05)"+us)
+        paragraphs.Push(chr(10) + " Rotten Tomatoes Performance")
+        paragraphs.Push("  * Do not re-query rotten tomatoes on every click right/left if already loaded. (cache)")
+        paragraphs.Push("  * Rotten Tomatoes Proxy server added & maintained by me, thanks to AWS+Squid.")
+        paragraphs.Push("  ")
+        
+        paragraphs.Push(us+"v2.8.8 (2013-12-04)"+us)
+        paragraphs.Push(chr(10) + " Slideshow Overlay")
+        paragraphs.Push("  * It was lonely (top left: photo date, top right: photo count [1 of 100], body: photo title).")
+        paragraphs.Push("  * Overlay toggle (down button) is now more responsive.")
+        paragraphs.Push(chr(10) + " Cast & Crew")
+        paragraphs.Push("  * Cast & Crew search screen didn't use the preferred Grid Style (Portrait).")
+        paragraphs.Push("  * Removed 'clips' from Cast & Crew search. The clip results were invalid.")
+        paragraphs.Push("  * Focus the first row on a Cast & Screen search after selecting a cast member.")
+        paragraphs.Push(chr(10) + " Misc Fixes")
+        paragraphs.Push("  * Larger BoB (grid description background) required for portrait grid mode.")
+        paragraphs.Push("  * TV episode will now images instead of blank image with number (unfocused content).")
+        paragraphs.Push("  * Crash when trying to play from a photo directory")
+        paragraphs.Push("  * Some images would break after being refresh (missing authtoken).")
+        paragraphs.Push("  * Current bandwidth under remote/local settings will not show invalid if empty.")
+        paragraphs.Push("  * Current bandwidth will show mbps when 1+ mbps.")
+        paragraphs.Push("  ")
+        
+        paragraphs.Push(us+"v2.8.7 (2013-12-03)"+us)
+        paragraphs.Push(chr(10) + " Fix Image Sizes (globally). Should improve load times.")
+        paragraphs.Push("  * Custom icons will now use the correct size for the screen style (grid/poster screens).")
+        paragraphs.Push("  * All over icons/images/thumbnails will use the correct size based on the Screen Style.")
+        paragraphs.Push("  * Changes above should will increase speed (roku will not have to internally resize images).")
+        paragraphs.Push(chr(10) + " Grid Reloading (slow grid screen issues).")
+        paragraphs.Push("  * Always full reload the onDeck row.")
+        paragraphs.Push("  * Only do a full reload once every 90 seconds.")
+        paragraphs.Push("  * Refresh focused item if modified (watched/unwatched/added/deleted).")
+        paragraphs.Push("  * Full Grid screens will always fully reload.")
+        paragraphs.Push(chr(10) + " Toggle added to change 'Grid Updates/Speed'.")
+        paragraphs.Push("  * Default is Full ( what people should use ).")
+        paragraphs.Push("  * Partial will only reload the focused item.")
+        paragraphs.Push("  * Partial will be less dynamic but very quick. NOT suggested.")
+        paragraphs.Push(chr(10) + " TV Episodes Screen")
+        paragraphs.Push("  * Use 16x9 for thumbs instead of 4x3. Can be toggled between 4x3 or 16x9.")
+        paragraphs.Push("  * Toggle to show Episode Image instead of a number for unfocused content.")
+        paragraphs.Push(chr(10) + " Music Section Style")
+        paragraphs.Push("  * change from flat-square (the tiny 7x3 row) to flat-landscape (5x3 row).")
+        paragraphs.Push("  * all subsections in music library section will use the 5x3 now. Before it was 'random'.")
+        paragraphs.Push(chr(10) + " TV Season Posters ( when using TV Seasons Posters vs the TV Show Poster ).")
+        paragraphs.Push("  * In some scenarios the Season poster was being instead of the episode thumb.")
+        paragraphs.Push("  * Sometimes the Season Poster isn't exposed via the PMS API. Query the API for it.")
+        paragraphs.Push(chr(10) + " Misc Fixes")
+        paragraphs.Push("  * HUD would show 'invalid' if Release Date was empty.")
+        paragraphs.Push("  ")
+        
+        paragraphs.Push(us+"v2.8.6 (2013-12-01)"+us)
+        paragraphs.Push(chr(10) + " Grid Changes - Display Modes and Styles")
+        paragraphs.Push("  * TV/Movie Posters should fit the Orange Focus Box (better).")
+        paragraphs.Push("  * Addition to Grid Style/Size Toggle: 'Portrait (tall)' fits the Posters better.")
+        paragraphs.Push("  * Toggle to 'hide' the Text above each row while in a Full Grid ( I.E. 1-5 of 250 ...  1-5 ). ")
+        paragraphs.Push("  * Photo section now defaults to landscape (Grid: 5x3) -- used to be 'landscape 16x9'.")
+        paragraphs.Push("  * Toggle to change photo sections from landscape to Portrait/Landscape/Landscape 16x9.")
+        paragraphs.Push("  * Fix: Grid Style/Size toggle didn't work on Movies/TV Show sections.")
+        paragraphs.Push(chr(10) + " Use Season Poster when viewing a season/episode.")
+        paragraphs.Push("  * Toggle added to set it back to 'TV Show'.")
+        paragraphs.Push("  * Official Channel only allowed 'TV Show'.")
+        paragraphs.Push(chr(10) + " Firmware 3.x bugfixes ( first gen roku ).")
+        paragraphs.Push("  * More button was hidden ( only have 5 buttons to work with instead of 6 ).")
+        paragraphs.Push("  * Crash on * remote key - firmware didn't allow for button separator in dialog.")
+        paragraphs.Push("  * Now playing dialog notification crash.")
+        paragraphs.Push("  ")
+        
+        paragraphs.Push(us+"v2.8.5 (2013-11-18)"+us)
+        paragraphs.Push(chr(10) + " Initial Release of the Lock Screen. h/t @wagnerscastle.")
+        paragraphs.Push("  * Must use a PIN code - idle time settings are in Security PIN prefs.")
+        paragraphs.Push("  * Any user navigation action is 'Non idle'.")
+        paragraphs.Push("  * Videos/Slideshow playing is 'Non idle'.")
+        paragraphs.Push("  * Music: you can toggle music events (track change) as Non idle.")
+        paragraphs.Push(chr(10) + " Movie Trailers")
+        paragraphs.Push("  * First trailer will now automatically play. You can change behavior in Prefs.")
+        paragraphs.Push("  * Only 10 trailers will be shown on the poster screen.")
+        paragraphs.Push("  * Code cleanup ( required for the lock screen addition )")
+        paragraphs.Push(chr(10) + " Grid Speed Improvements ( change from v2.8.4 )")
+        paragraphs.Push("  * Load up to 8 items in the first 10 rows when first entering a grid screen.")
+        paragraphs.Push("  * OnDeck and 'Unwatched' rows will fully reload when re-entering grid from a child screen.")
+        paragraphs.Push(chr(10) + " Misc Fixes")
+        paragraphs.Push("  * Enable/Disable grid pop out per section: home, movie, show, music, photo , other.")
+        paragraphs.Push("  * Transcode session info ( video: [copy|convert] audio: [copy|convert] ) missing from HUD.")
+        paragraphs.Push("  ")
+        
+        paragraphs.Push(us+"v2.8.4 (2013-11-12)"+us)
+        paragraphs.Push(chr(10) + " Fast User Switching")
+        paragraphs.Push("  * User Profile Switch icon added to the home screen when multiUser is enabled.")
+        paragraphs.Push("  * Toggle: user selection icon - purple (roku) / orange (plex).")
+        paragraphs.Push(chr(10) + " 3 New TV Rows/Grid options ( re-order rows to use them )")
+        paragraphs.Push("  * Recently Added Seasons")
+        paragraphs.Push("  * Unwatched Recently Released")
+        paragraphs.Push("  * Unwatched Recenlty Added")
+        paragraphs.Push(chr(10) + " Initial release of 'Shuffle Play' for Videos (experimental)")
+        paragraphs.Push("  * Works just like continuous play ( must be started from within video spring board ).")
+        paragraphs.Push("  * Toggle in Playback Options and Global Preferences (advanced).")
+        paragraphs.Push(chr(10) + " Video Changes")
+        paragraphs.Push("  * 'Play' button should now show 'Play Continuous' or 'Play Shuffle+Continuous' if selected.")
+        paragraphs.Push("  * HUD time/endtime/watched updated on start.")
+        paragraphs.Push("  * HUD time/endtime/watched updated when paused.")
+        paragraphs.Push(chr(10) + " Photos (slideshow) ")
+        paragraphs.Push("  * Toggle to change 'display mode' of photos in slideshow/single view ")
+        paragraphs.Push("        (how the image scales/crops/fits when displayed ) [ default is now scale-to-fit ])")
+        paragraphs.Push("  * Toggle to change 'display mode' of photos thumbnail image.")
+        paragraphs.Push("  * Toggle to 'reload' slideshow after completion. I.E. check for new photos after every run.")
+        paragraphs.Push("  * Slideshow didn't start at the right offset when selected from the photoSpringboard.")
+        paragraphs.Push(chr(10) + " Grid Speed improvements  (trade offs included)")
+        paragraphs.Push("  * Do not fully reload focused row and do not invalidate every out of focus row.")
+        paragraphs.Push("  * Load the next out of screen row ( first 8 items ).")
+        paragraphs.Push("  * Reload selected item ONLY ( in every row ).")
+        paragraphs.Push("  * OnDeck will always be fully reloaded.")
+        paragraphs.Push(chr(10) + " Music")
+        paragraphs.Push("  * Cleanup now playing buttons ( do not show when already in now playing ).")
+        paragraphs.Push("  * Remote (*) key after music was started/stopped did not bring up option for full grid.")
+        paragraphs.Push(chr(10) + " Others")
+        paragraphs.Push("  * Toggle: Initial release of Globally disabling the Grid Pop out description.")
+        paragraphs.Push(chr(10) + " Misc Fixes")
+        paragraphs.Push("  * More speed fixes for the grid.")
+        paragraphs.Push("  * Hide invalid rows when there are NO Servers configured and show Help Screen.")
+        paragraphs.Push("        ( when GDM disabled, myPlex disabled, no manual servers)")
+        paragraphs.Push("  * Misc bug fixes")
+        paragraphs.Push("  * Disable full grid for sub channel content. Channel content not supported by PMS.")
+        paragraphs.Push("  * HUD watched time not working on some channel content.")
+        paragraphs.Push("  * Screensaver fixed ( affected v2.8.3 ) - @wagnerscastle")
+    end if
+
+    if NOT textScreen then 
+        screen = createParagraphScreen(header, paragraphs, m)
+        screen.SetTitle = "Release Notes"
+    else 
+        screen = createTextScreen(header, invalid , paragraphs, m, true)
+        screen.screen.AddButton(1, "Press OK or Back to Continue")
+        breadcrumbs =  ["Release Notes",GetGlobal("appVersionStr")]
+    end if
+
+    screen.screenName = "Release Notes"
+    m.InitializeOtherScreen(screen, breadcrumbs)
 
     ' As a one time fix, if the user is just updating and previously specifically
     ' set the H.264 level preference to 4.0, update it to 4.1.
 
-'    if RegRead("level", "preferences", "41") = "40" then
-'        RegWrite("level", "41", "preferences")
-'    end if
+    '    if RegRead("level", "preferences", "41") = "40" then
+    '        RegWrite("level", "41", "preferences")
+    '    end if
 
     screen.Show()
 End Sub
@@ -966,7 +1118,8 @@ Sub vcCloseScreenWithCallback(callback)
 End Sub
 
 Sub vcShow()
-    if RegRead("last_run_version", "misc", "") <> GetGlobal("appVersionStr") then
+    testNotes = false ' testNotes = true
+    if RegRead("last_run_version", "misc", "") <> GetGlobal("appVersionStr") or testNotes then
         m.ShowReleaseNotes()
         RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")
     else
@@ -1151,7 +1304,8 @@ Sub vcAddBreadcrumbs(screen, breadcrumbs)
         breadcrumbs.Pop()
     end if
 
-    if (breadcrumbs.Count() = 0 AND m.breadcrumbs.Count() > 0) or (m.screens.peek().isfullgrid <> invalid and breadcrumbs.Count() < 2 AND m.breadcrumbs.Count() > 0) then
+    if m.breadcrumbs = invalid then m.breadrumbs = "roArray"
+    if (breadcrumbs.Count() = 0 AND m.breadcrumbs.Count() > 0) or (m.screens.peek() <> invalid and m.screens.peek().isfullgrid <> invalid and breadcrumbs.Count() < 2 AND m.breadcrumbs.Count() > 0) then
         count = m.breadcrumbs.Count()
         if count >= 2 then
             breadcrumbs = [m.breadcrumbs[count-2], m.breadcrumbs[count-1]]
@@ -1207,6 +1361,10 @@ Sub vcUpdateScreenProperties(screen)
             screen.Screen.SetBreadcrumbEnabled(false)
         end if
     else if screenType = "roSearchScreen" then
+        if enableBreadcrumbs then
+            screen.Screen.SetBreadcrumbText(bread1, bread2)
+        end if
+    else if screenType = "roTextScreen" then
         if enableBreadcrumbs then
             screen.Screen.SetBreadcrumbText(bread1, bread2)
         end if
