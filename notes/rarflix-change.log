@@ -1,9 +1,11 @@
-#2.9.0-test
-    * dialog text was hard to read on the Original theme
-    * User Switch icon was wrong on home screen ( original theme only )
+#2.9.0-test  (2013-12-06)
+   * Original Theme
+        - dialog text was hard to read on the Original theme
+        - User Switch icon was wrong on home screen ( original theme only )
+    * firmware 4.3+ will see a Text Screen about the updates. Scrollable!
     * includes all changes from v2.8.7-dev-v2.8.8-dev (v2.9.0=RARflixTest release)
 
-#2.8.9-dev
+#2.8.9-dev  (2013-12-05)
 
     * Rotten Tomatoes performance
         - stage one: cache data in current screen. Do not re-query rotten tomatoes on every click right/left if already loaded.
@@ -15,7 +17,7 @@
         - other image logic cleanup
 
 
-#2.8.8-dev
+#2.8.8-dev  (2013-12-04)
 
     * Slideshow Overlay
         - it was lonely (top left: date of photo, top right: count - 1 of 100, body: Title of photo)
@@ -36,7 +38,7 @@
 	- current bandwidth under remote/local settings will not show invalid if empty
 	- current bandwidth will show mbps > 999kbps
 
-#2.8.7-dev
+#2.8.7-dev (2013-12-03)
 
     * Fix Images Sizes (globally) - the Roku specifically wants images of a certain size or it has to resize internally
         - custom icons will now use the correct size based on the Screen Style (grid/poster screens)
