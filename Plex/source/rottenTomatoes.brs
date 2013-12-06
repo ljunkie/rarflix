@@ -4,6 +4,7 @@
 
 Function getRottenTomatoesData(movieTitle)
     movieTitle = HttpEncode(movieTitle)
+    movieTitle = LCase(movieTitle) ' better for caching - case matters
     apikey = "whvxdmyudad56xpnzp7ftrk5"
     ' ljunkie - we are now offloading some API calls to the rottentomatoes API
     '  * removed using cloudfront -- it doesn't cache urls with parameters
