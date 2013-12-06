@@ -242,7 +242,7 @@ Sub initTheme()
     theme.OverhangLogoSD  = "pkg:/images/logo_final_SD.png" ' logo is transparent
 
     theme.OverhangOffsetHD_X = "125"    'these settings are duplicated in getImageCanvasTheme() so keep them in sync with this
-    theme.OverhangOffsetHD_Y = "10"
+    theme.OverhangOffsetHD_Y = "200"
     theme.OverhangSliceHD = imageDir + "Background_HD.jpg"
     theme.OverhangLogoHD  = "pkg:/images/logo_final_HD.png" ' logo is transparent
 
@@ -299,6 +299,18 @@ Sub initTheme()
         theme.DialogTitleText="#000000" ' header should be bold and black
         theme.DialogBodyText="#222222"  ' test should not be too light or to dark
         theme.ButtonNormalColor = normalText
+    end if
+
+    if rfTheme = "black" then 
+        theme.TextScreenBodyText = "#f0f0f0"
+        theme.TextScreenBodyBackgroundColor = "#111111"
+        theme.TextScreenScrollBarColor = "#a0a0a0"
+        theme.TextScreenScrollThumbColor = "#f0f0f0"
+    else 
+        theme.TextScreenBodyText = "#f0f0f0"
+        theme.TextScreenBodyBackgroundColor = "#111111"
+        theme.TextScreenScrollBarColor = "#a0a0a0"
+        theme.TextScreenScrollThumbColor = "#f0f0f0"
     end if
     'theme.ButtonHighlightColor = plexOrange ' Default for ButtonHighlightColor seems OK...
 
