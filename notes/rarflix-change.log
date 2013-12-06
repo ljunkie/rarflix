@@ -1,3 +1,8 @@
+#2.9.0-test
+    * dialog text was hard to read on the Original theme
+    * User Switch icon was wrong on home screen ( original theme only )
+    * includes all changes from v2.8.7-dev-v2.8.8-dev (v2.9.0=RARflixTest release)
+
 #2.8.9-dev
 
     * Rotten Tomatoes performance
