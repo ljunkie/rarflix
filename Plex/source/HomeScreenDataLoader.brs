@@ -85,10 +85,18 @@ Function createHomeScreenDataLoader(listener)
     switchUser.ShortDescriptionLine1 = "fast user switching"
     switchUser.hidden = true
     switchUser.color = RegRead("userprofile_icon_color", "preferences", "orange", 0)
-    poster = "arrow-up-po.png"
-    if switchUser.color <> "orange" then poster = "arrow-up.png"    
+    curTheme = RegRead("rf_theme", "preferences", "black", 0)
+    if curTheme = "black" then
+        poster = "arrow-up.png"
+        if switchUser.color = "orange" then poster = "arrow-up-po.png"    
+    else
+        poster = "arrow-up-gray.png"
+        if switchUser.color = "orange" then poster = "arrow-up-po-gray.png"    
+    end if
+
     switchUser.SDPosterURL = "pkg:/images/"+poster
     switchUser.HDPosterURL = "pkg:/images/"+poster
+
     ' show on initial screen if multiUser enabled
     if GetViewController().RFisMultiUser then 
         switchUser.hidden = false
@@ -943,10 +951,17 @@ Sub homeRefreshData()
 
     checkMultiUserEnabled() ' refresh multiUser state - if could have been disabled/enabled
     if NOT m.switchUserItem.hidden AND GetViewController().RFisMultiUser then 
-        ' possible icon color change
+        ' possible icon color change & theme change
         m.switchUserItem.color = RegRead("userprofile_icon_color", "preferences", "orange", 0)
-        poster = "arrow-up-po.png"
-        if m.switchUserItem.color <> "orange" then poster = "arrow-up.png"    
+        curTheme = RegRead("rf_theme", "preferences", "black", 0)
+        if curTheme = "black" then
+            poster = "arrow-up.png"
+            if m.switchUserItem.color = "orange" then poster = "arrow-up-po.png"    
+        else
+            poster = "arrow-up-gray.png"
+            if m.switchUserItem.color = "orange" then poster = "arrow-up-po-gray.png"    
+        end if
+
         m.switchUserItem.SDPosterURL = "pkg:/images/"+poster
         m.switchUserItem.HDPosterURL = "pkg:/images/"+poster
         m.switchUserItem.hidden = false

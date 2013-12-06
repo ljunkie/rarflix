@@ -696,18 +696,25 @@ Function createUserProfilesPrefsScreen(viewController) As Object
     obj.Screen.SetHeader("User Selection & Profile Preferences")
     ' Icon Color for the User Selection Arrows
     ' not sure this is the best place for this. It's a "global" setting
+    arrowUpPO = "pkg:/images/arrow-up-po-gray.png"
+    arrowUp = "pkg:/images/arrow-up-gray.png"
+    if RegRead("rf_theme", "preferences", "black", 0) = "black" then 
+        arrowUpPO = "pkg:/images/arrow-up-po.png"
+        arrowUp = "pkg:/images/arrow-up.png"
+    end if
+
     values = [
-        { title: "Orange (Plex)", EnumValue: "orange", SDPosterUrl: "pkg:/images/arrow-up-po.png", HDPosterUrl: "pkg:/images/arrow-up-po.png", },
-        { title: "Purple (Roku)", EnumValue: "purple", SDPosterUrl: "pkg:/images/arrow-up.png", HDPosterUrl: "pkg:/images/arrow-up.png", },
+        { title: "Orange (Plex)", EnumValue: "orange", SDPosterUrl: arrowUpPO, HDPosterUrl: arrowUpPO, },
+        { title: "Purple (Roku)", EnumValue: "purple", SDPosterUrl: arrowUp, HDPosterUrl: arrowUp, },
     ]
     obj.Prefs["userprofile_icon_color"] = {
         values: values,
         heading: "Icon Color for the User Sections Screen",
         default: "orange"
     }
-    poster = "arrow-up-po.png"
-    if RegRead("userprofile_icon_color", "preferences", "orange", 0) <> "orange" then poster = "arrow-up.png"    
-    obj.AddItem({title: "User Selection Icon Color", ShortDescriptionLine2: "Global Setting", SDPosterUrl: "pkg:/images/"+poster, HDPosterUrl: "pkg:/images/"+poster  }, "userprofile_icon_color", obj.GetEnumValue("userprofile_icon_color",0)) ' this is a global option
+    poster = arrowUpPO
+    if RegRead("userprofile_icon_color", "preferences", "orange", 0) <> "orange" then poster = arrowUp
+    obj.AddItem({title: "User Selection Icon Color", ShortDescriptionLine2: "Global Setting", SDPosterUrl: poster, HDPosterUrl: poster  }, "userprofile_icon_color", obj.GetEnumValue("userprofile_icon_color",0)) ' this is a global option
 
     'These must be the first 8 entries for easy parsing for the createUserEditPrefsScreen()
     fn = firstof(RegRead("friendlyName", "preferences", invalid, 0),"")
