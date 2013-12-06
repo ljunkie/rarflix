@@ -293,12 +293,13 @@ Sub initTheme()
     if rfTheme = "black" then 
         theme.ThemeType = "generic-dark"
         theme.DialogTitleText="#000000" ' header should be bold and black
-        theme.DialogBodyText="#222222"  ' test should now be too light or to dark
+        theme.DialogBodyText="#222222"  ' test should not be too light or to dark
+        theme.ButtonNormalColor = "#333333" 'normalText
     else
-        theme.DialogTitleText="#BFBFBF"
-        theme.DialogBodyText="#BFBFBF"
+        theme.DialogTitleText="#000000" ' header should be bold and black
+        theme.DialogBodyText="#222222"  ' test should not be too light or to dark
+        theme.ButtonNormalColor = normalText
     end if
-    theme.ButtonNormalColor = "#333333" 'normalText
     'theme.ButtonHighlightColor = plexOrange ' Default for ButtonHighlightColor seems OK...
 
     theme.RegistrationCodeColor = plexOrange
