@@ -21,7 +21,7 @@ function isRFtest() as boolean
     return true
 end function
 
-Sub InitRARFlix() 
+Sub InitRARflix() 
 
     GetGlobalAA()
     'RegDelete("userprofile_icon_color", "preferences")
@@ -277,7 +277,7 @@ Function RRbreadcrumbDate(myscreen) As Object
     end if
 End function
 
-Function createRARFlixPrefsScreen(viewController) As Object
+Function createRARflixPrefsScreen(viewController) As Object
     obj = createBasePrefsScreen(viewController)
     obj.HandleMessage = prefsRARFflixHandleMessage
 
@@ -541,7 +541,7 @@ Function createRARFlixPrefsScreen(viewController) As Object
     }
 
 
-    obj.Screen.SetHeader("RARFlix Preferences")
+    obj.Screen.SetHeader("RARflix Preferences")
     obj.AddItem({title: "Theme"}, "rf_theme", obj.GetEnumValue("rf_theme"))
     obj.AddItem({title: "Custom Icons", ShortDescriptionLine2: "Replace generic icons with Text"}, "rf_custom_thumbs", obj.GetEnumValue("rf_custom_thumbs"))
     if RegRead("rf_custom_thumbs", "preferences","enabled") = "enabled" then

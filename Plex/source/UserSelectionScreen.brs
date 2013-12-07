@@ -182,7 +182,7 @@ Function userSelectionHandleMessage(msg) As Boolean
                     m.userSelected = -1 'disable selection
                 else if RegRead("securityPincode","preferences",invalid,m.userSelected) <> invalid then    'pop up PIN screen when user has a password
                     pinScreen = VerifySecurityPin(m.ViewController, RegRead("securityPincode","preferences",invalid,m.userSelected), false, 2)
-                    m.ViewController.InitializeOtherScreen(pinScreen, ["Access to RARFlix"])
+                    m.ViewController.InitializeOtherScreen(pinScreen, ["Access to RARflix"])
                     m.Activate = userSelectionActivate
                     pinScreen.Show()
                 else

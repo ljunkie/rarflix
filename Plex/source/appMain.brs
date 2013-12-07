@@ -54,7 +54,7 @@ Sub Main(args)
     initGlobals()
  
     'load rarflix prefs
-    rarflix = InitRARFlix() 
+    rarflix = InitRARflix() 
 
     'prepare the screen for display and get ready to begin
     controller = createViewController()

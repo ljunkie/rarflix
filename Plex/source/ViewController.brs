@@ -168,7 +168,7 @@ Function vcCreateLockScreen()
     if currentScreen.Activate <> invalid then currentScreen.OldActivate = currentScreen.Activate          
     currentScreen.Activate = lockScreenActivate     'new Activate routine
     m.IsLocked = true   'global when we're locked
-    pinScreen.txtBottom = "RARFlix is locked due to inactivity.  Enter PIN Code using direction arrows on your remote control.  Press OK to retry PIN or Back to pick another User."   
+    pinScreen.txtBottom = "RARflix is locked due to inactivity.  Enter PIN Code using direction arrows on your remote control.  Press OK to retry PIN or Back to pick another User."   
     pinScreen.Show()
     return pinScreen
 End Function
@@ -780,16 +780,17 @@ Sub vcShowReleaseNotes()
 
     if NOT textScreen then 
             paragraphs.Push("Donate @ rarflix.com")
+            paragraphs.Push(spacer + "* Many bug fixes and improvements")
             paragraphs.Push(spacer + "* Speed improvements: Rotten Tomatoes and Grid")
             paragraphs.Push(spacer + "* Focus border fits the Posters (better)")
             paragraphs.Push(spacer + "* Use TV Season poster for Episodes/Seasons on Grid")
-            paragraphs.Push(spacer + "* Toggle to change Grid Style/Size for Photos Section")
+'            paragraphs.Push(spacer + "* Toggle to change Grid Style/Size for Photos Section")
             paragraphs.Push(spacer + "* Idle Lock Screen when using PIN codes")
             paragraphs.Push(spacer + "* Grid Pop Out can be disabled per library section")
-            paragraphs.Push(spacer + "* First Movie Trailer will auto play when selected")
+'            paragraphs.Push(spacer + "* First Movie Trailer will auto play when selected")
             paragraphs.Push(spacer + "* 3 New TV Rows/Grid options ( re-order rows to use them )")
             paragraphs.Push(spacer + "* Shuffle Play for Video (experimental)")
-            paragraphs.Push("+ Profiles, Pin Codes, Movie Trailers, Rotten Tomatoes, Cast & Crew, and many more! Did I mention you can donate @ rarflix.com")
+            paragraphs.Push("+ Profiles, Pin Codes, and many more! Did I mention you can donate @ rarflix.com")
     else 
         ' We have a scrollable text screen now - we can include all the updates - yay
         us = "_______________"

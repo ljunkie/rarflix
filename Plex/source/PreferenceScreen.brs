@@ -416,8 +416,8 @@ Function prefsMainHandleMessage(msg) As Boolean
                 m.ViewController.InitializeOtherScreen(screen, ["Audio Preferences"])
                 screen.Show()
             else if command = "rarflix_prefs" then
-                screen = createRARFlixPrefsScreen(m.ViewController)
-                m.ViewController.InitializeOtherScreen(screen, ["RARFlix Preferences"])
+                screen = createRARflixPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["RARflix Preferences"])
                 screen.Show()
             else if command = "close" then
                 m.Screen.Close()
