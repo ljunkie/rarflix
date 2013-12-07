@@ -785,12 +785,12 @@ Sub vcShowReleaseNotes()
             paragraphs.Push(spacer + "* Focus border fits the Posters (better)")
             paragraphs.Push(spacer + "* Use TV Season poster for Episodes/Seasons on Grid")
 '            paragraphs.Push(spacer + "* Toggle to change Grid Style/Size for Photos Section")
-            paragraphs.Push(spacer + "* Idle Lock Screen when using PIN codes")
-            paragraphs.Push(spacer + "* Grid Pop Out can be disabled per library section")
+'            paragraphs.Push(spacer + "* Idle Lock Screen when using PIN codes")
+'            paragraphs.Push(spacer + "* Grid Pop Out can be disabled per library section")
 '            paragraphs.Push(spacer + "* First Movie Trailer will auto play when selected")
             paragraphs.Push(spacer + "* 3 New TV Rows/Grid options ( re-order rows to use them )")
             paragraphs.Push(spacer + "* Shuffle Play for Video (experimental)")
-            paragraphs.Push("+ Profiles, Pin Codes, and many more! Did I mention you can donate @ rarflix.com")
+            paragraphs.Push("+ Profiles, Pin Codes, and many more! http://www.rarflix.com")
     else 
         ' We have a scrollable text screen now - we can include all the updates - yay
         us = "_______________"
@@ -799,6 +799,10 @@ Sub vcShowReleaseNotes()
         paragraphs.Push(GetGlobal("appName") + " has been updated. You can click down to read about all"+chr(10)+" the changes, or click BACK on the remote to start using " + GetGlobal("appName") + "!" )
 
         paragraphs.Push("  ")
+        paragraphs.Push(us+"v2.9.1 (2013-12-07)"+us)
+        paragraphs.Push("  * Pin Codes did not work for SD screens")
+        paragraphs.Push("  ")
+
         paragraphs.Push(us+"v2.9.0 (2013-12-06)"+us)
         paragraphs.Push(chr(10) + " Original Theme")
         paragraphs.Push("  * User selection icon was not working correctly for the Original theme")

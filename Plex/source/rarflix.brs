@@ -542,6 +542,7 @@ Function createRARflixPrefsScreen(viewController) As Object
 
 
     obj.Screen.SetHeader("RARflix Preferences")
+    obj.AddItem({title: "About RARflix"}, "ShowReleaseNotes")
     obj.AddItem({title: "Theme"}, "rf_theme", obj.GetEnumValue("rf_theme"))
     obj.AddItem({title: "Custom Icons", ShortDescriptionLine2: "Replace generic icons with Text"}, "rf_custom_thumbs", obj.GetEnumValue("rf_custom_thumbs"))
     if RegRead("rf_custom_thumbs", "preferences","enabled") = "enabled" then
@@ -578,7 +579,7 @@ Function createRARflixPrefsScreen(viewController) As Object
     end if
 
     obj.AddItem({title: "Grid Updates/Speed", ShortDescriptionLine2: "Change how the Grid Refreshes/Reloads content"}, "rf_grid_dynamic", obj.GetEnumValue("rf_grid_dynamic"))
- 
+
     obj.AddItem({title: "Close"}, "close")
     return obj
 End Function
@@ -602,6 +603,8 @@ Function prefsRARFflixHandleMessage(msg) As Boolean
                 screen = createSectionDisplayPrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["Section Display Preferences"])
                 screen.Show()
+            else if command = "ShowReleaseNotes" then
+                m.ViewController.ShowReleaseNotes()
             else if command = "close" then
                 m.Screen.Close()
             else
