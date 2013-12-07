@@ -65,7 +65,7 @@ Sub securityPINEntryShow(showOKButton=true as boolean, pinToVerify="" as string,
     bottomRect = {x:200,y:360,w:880,h:360}  'set .h and .y programmatically
     if GetGlobal("IsHD") <> true then
         'scale down for SD.  Not perfect but good enough on an SD screen. 
-        HDRectToSDRect(picSize) 
+        HDRectToSDRect(pinRect) 
         HDRectToSDRect(topRect) 
         HDRectToSDRect(bottomRect) 
     end if
