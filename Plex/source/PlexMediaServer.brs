@@ -540,6 +540,14 @@ Function FullUrl(serverUrl, sourceUrl, key) As String
             'endif
         endif
     endif
+
+    ' ljunkie - cleanup any double slashes ( the PMS api doesn't like it )
+    '   definitely not a fault of the PMS
+    remDS  = CreateObject("roRegex", "([^:]/)/","")
+    if remDS.IsMatch(finalUrl) then
+        Debug("---- removing double slashes from URL: " + tostr(finalUrl))
+        finalUrl = remDS.replaceall(finalUrl,"\1")
+    end if
     return finalUrl
 End Function
 
