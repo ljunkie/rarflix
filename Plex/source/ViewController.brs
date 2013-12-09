@@ -799,6 +799,12 @@ Sub vcShowReleaseNotes()
         paragraphs.Push(GetGlobal("appName") + " has been updated. You can click down to read about all"+chr(10)+" the changes, or click BACK on the remote to start using " + GetGlobal("appName") + "!" )
 
         paragraphs.Push("  ")
+        paragraphs.Push(us+"v2.9.2 (2013-12-09)"+us)
+        paragraphs.Push("  ")
+        paragraphs.Push("  * Crashed showing a single photo")
+        paragraphs.Push("  ")
+
+        paragraphs.Push("  ")
         paragraphs.Push(us+"v2.9.1 (2013-12-07)"+us)
         paragraphs.Push("  ")
         paragraphs.Push("  * Pin Codes did not work for SD screens")

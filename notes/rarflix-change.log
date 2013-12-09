@@ -1,9 +1,14 @@
+#2.9.2-test  (2013-12-09)
+   * crash showing a single photo
+
+#2.9.1-test  (2013-12-07)
+    * crash trying to set a PIN code on SD screens
+
 #2.9.0-test  (2013-12-06)
-   * Original Theme
+    * Original Theme
         - dialog text was hard to read on the Original theme
-        - User Switch icon was wrong on home screen ( original theme only )
-    * firmware 4.3+ will see a Text Screen about the updates. Scrollable!
-    * includes all changes from v2.8.7-dev-v2.8.8-dev (v2.9.0=RARflixTest release)
+	- User Switch icon was wrong on home screen ( original theme only )
+    * Release Notes screen is now a scrollable paragraph with all release notes (firmware 4.3+)
 
 #2.8.9-dev  (2013-12-05)
 
