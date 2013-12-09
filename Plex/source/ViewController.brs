@@ -799,6 +799,12 @@ Sub vcShowReleaseNotes()
         paragraphs.Push(GetGlobal("appName") + " has been updated. You can click down to read about all"+chr(10)+" the changes, or click BACK on the remote to start using " + GetGlobal("appName") + "!" )
 
         paragraphs.Push("  ")
+        paragraphs.Push(us+"v2.9.3 (2013-12-09)"+us)
+        paragraphs.Push("  ")
+        paragraphs.Push("  * URL cleanup - fixing various possible crashes")
+        paragraphs.Push("  ")
+
+        paragraphs.Push("  ")
         paragraphs.Push(us+"v2.9.2 (2013-12-09)"+us)
         paragraphs.Push("  ")
         paragraphs.Push("  * Crashed showing a single photo")
