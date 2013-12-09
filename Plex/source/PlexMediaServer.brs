@@ -726,7 +726,7 @@ Function classicTranscodingVideoUrl(videoUrl As String, item As Object, httpHead
     if identifier <> invalid then
         query = query + "&identifier=" + identifier
     end if
-    query = query + "&ratingKey=" + ratingKey
+    query = query + "&ratingKey=" + HttpEncode(ratingKey)
     if len(fullKey) > 0 then
         query = query + "&key=" + HttpEncode(fullKey)
     end if
@@ -946,7 +946,7 @@ Sub pmsAddDirectPlayInfo(video, item, mediaKey)
     if video.StreamFormat = "hls" then video.SwitchingStrategy = "full-adaptation"
 
     part = mediaItem.parts[mediaItem.curPartIndex]
-    if part <> invalid AND part.subtitles <> invalid AND part.subtitles.Codec = "srt" and part.subtitles.key <> invalid then
+    if part <> invalid AND part.subtitles <> invalid AND part.subtitles.Codec = "srt" AND part.subtitles.key <> invalid then
         video.SubtitleUrl = FullUrl(m.serverUrl, "", part.subtitles.key) + "?encoding=utf-8"
     end if
 
