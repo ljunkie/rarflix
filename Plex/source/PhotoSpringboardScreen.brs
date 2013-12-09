@@ -74,9 +74,13 @@ Function photoHandleMessage(msg) As Boolean
             else if buttonCommand = "slideshow" then
                 ' Playing Photos from springBoard in a FULL grid context
                 GetContextFromFullGrid(m,m.focusedIndex) 
-                Debug("photoHandleMessage:: springboard Start slideshow with " + tostr(m.context.count()) + " items")
-                Debug("starting at index: " + tostr(m.curindex))
-                m.ViewController.CreatePhotoPlayer(m.context, m.curIndex)
+		if m.context.count() = 0 then
+                    ShowErrorDialog("Sorry! We were unable to load your photos.","Warning")
+                else 
+                    Debug("photoHandleMessage:: springboard Start slideshow with " + tostr(m.context.count()) + " items")
+                    Debug("starting at index: " + tostr(m.curindex))
+                    m.ViewController.CreatePhotoPlayer(m.context, m.curIndex)
+                end if
             else if buttonCommand = "next" then
                 Debug("photoHandleMessage:: show next photo")
                  m.GotoNextItem()
