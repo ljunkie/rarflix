@@ -924,7 +924,7 @@ Sub pmsAddDirectPlayInfo(video, item, mediaKey)
     if video.StreamFormat = "hls" then video.SwitchingStrategy = "full-adaptation"
 
     part = mediaItem.parts[mediaItem.curPartIndex]
-    if part <> invalid AND part.subtitles <> invalid AND part.subtitles.Codec = "srt" then
+    if part <> invalid AND part.subtitles <> invalid AND part.subtitles.Codec = "srt" and part.subtitles.key <> invalid then
         video.SubtitleUrl = FullUrl(m.serverUrl, "", part.subtitles.key) + "?encoding=utf-8"
     end if
 
