@@ -802,6 +802,7 @@ Sub vcShowReleaseNotes()
         paragraphs.Push(us+"v2.9.3 (2013-12-09)"+us)
         paragraphs.Push("  ")
         paragraphs.Push("  * URL cleanup - fixing various possible crashes")
+        paragraphs.Push("  * crash: forcing direct play + subtitles")
         paragraphs.Push("  ")
 
         paragraphs.Push("  ")

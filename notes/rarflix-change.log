@@ -1,5 +1,6 @@
 #2.9.3-test  (2013-12-09)
    * URL cleanup - fixes various possible crashes
+   * crash: forcing direct play + subtitles
 
 #2.9.2-test  (2013-12-09)
    * crash showing a single photo
