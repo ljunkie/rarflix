@@ -1,9 +1,14 @@
+#2.9.4-test  (2013-12-10)
+    * Some posterScreen item do not need to be refreshed (yet) -- channel/music/photo content
+    * Do not prepend show title to episode title unless we are really 'mixed' (multiple parent shows)
+    * URL cleanup - could have affected channel content
+
 #2.9.3-test  (2013-12-09)
-   * URL cleanup - fixes various possible crashes
-   * crash: forcing direct play + subtitles
+    * URL cleanup - fixes various possible crashes
+    * crash: forcing direct play + subtitles
 
 #2.9.2-test  (2013-12-09)
-   * crash showing a single photo
+    * crash showing a single photo
 
 #2.9.1-test  (2013-12-07)
     * crash trying to set a PIN code on SD screens
