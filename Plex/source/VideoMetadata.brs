@@ -155,7 +155,9 @@ Sub setVideoBasics(video, container, item)
     if container.ViewGroup = "episode" OR item@type = "episode" then
         episodeStr = invalid
         seasonStr = invalid
-        if item@grandparentTitle <> invalid then
+        ' ljunkie - if the viewGroup is "episode", then this is "All Seasons" of the same episode. 
+        ' -- it has been proven ( so far )
+        if item@grandparentTitle <> invalid and container.ViewGroup <> "episode" then
             video.ShortDescriptionLine1 = item@grandparentTitle + ": " + video.ShortDescriptionLine1
         end if
         if item@index <> invalid then
