@@ -343,11 +343,13 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             screen = createFULLGridScreen(item, m, "flat-landscape", displaymode_grid)
         else 
             screen = createPosterScreen(item, m, "arced-square")
+            screen.noRefresh = true ' no need to refresh these items (yet)
         end if
         screenName = "Artist Poster"
     else if contentType = "album" then
         ' grid looks horrible in this view. - do not enable FULL grid
         screen = createPosterScreen(item, m, "flat-episodic")
+        screen.noRefresh = true ' no need to refresh these items (yet)
         screen.SetListStyle("flat-episodic", "zoom-to-fill")
         screenName = "Album Poster"
     else if item.key = "nowplaying" then
@@ -395,6 +397,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
                 screen.loader.focusrow = 1 ' lets fill the screen ( 5x3 ) - no header row ( might be annoying page up for first section.. TODO)
             else 
                 screen = createPosterScreen(item, m, "arced-landscape")
+                screen.noRefresh = true ' no need to refresh these items (yet)
             end if
             screenName = "Photo Poster"
         else
@@ -484,9 +487,11 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if tostr(item.type) = "season" then
         ' no full grid
         screen = createPosterScreen(item, m, "arced-portrait")
+        screen.noRefresh = true ' no need to refresh these items (yet)
     else if tostr(item.type) = "channel" then 
         ' no full grid
         screen = createPosterScreen(item, m, "arced-square")
+        screen.noRefresh = true ' no need to refresh these items (yet)
     else
         ' Where do we capture channel directory?
         ' ljunkie - this doesn't seem to alwyas be channel items
@@ -495,6 +500,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         if tostr(contentType) = "appClip" and (tostr(viewGroup) = "Invalid" or tostr(viewGroup) = "InfoList" or tostr(viewGroup) = "List") then 
             Debug("---- forcing to Poster view -> viewgroup matches: invalid|InfoList|List")
             screen = createPosterScreen(item, m, "arced-portrait")
+            screen.noRefresh = true ' no need to refresh these items (yet)
         else if poster_grid = "grid" and tostr(viewGroup) <> "season" then ' if we have set Full Grid and type is not a season, force Full Grid view
             screen = createFULLGridScreen(item, m, "Invalid", displaymode_grid)
         else 

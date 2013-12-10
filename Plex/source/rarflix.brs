@@ -798,8 +798,12 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
 end sub
 
 sub posterRefresh(force=false) 
-    Debug("poster fresh called! do we have a valid item")
-    if m.noRefresh <> invalid then return
+    Debug("posterRefresh called! do we have a valid item")
+ 
+    if m.noRefresh <> invalid then 
+        Debug("---- noRefresh set -- skipping item.refresh()")
+        return
+    end if
     if m.item <> invalid and type(m.item.refresh) = "roFunction" then 
         m.item.refresh()
         Debug("item refreshed!")
