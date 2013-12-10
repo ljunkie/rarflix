@@ -1,4 +1,7 @@
-#2.9.4-test  (2013-12-10)
+#2.9.5-test  (2013-12-10)
+    * Rotten Tomatoes caching updates -- using round robin DNS ( no need to ELB )
+
+#2.9.4-test  (2013-12-09)
     * Some posterScreen item do not need to be refreshed (yet) -- channel/music/photo content
     * Do not prepend show title to episode title unless we are really 'mixed' (multiple parent shows)
     * URL cleanup - could have affected channel content
