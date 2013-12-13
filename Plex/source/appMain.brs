@@ -235,26 +235,31 @@ Sub initTheme()
         GetGlobalAA().AddReplace("rfBGcolor", "363636")
     end if
     imageDir = GetGlobalAA().Lookup("rf_theme_dir")
+    ' ljunkie TODO fix black theme overhang
+    theme.OverhangOffsetSD_X = "42"
+    theme.OverhangOffsetSD_Y = "27"
+    theme.OverhangSliceSD = "pkg:/images/Background_SD.jpg"
+    theme.OverhangLogoSD  = "pkg:/images/logo_final_SD.png"
 
-    theme.OverhangOffsetSD_X = "72"
-    theme.OverhangOffsetSD_Y = "10"
-    theme.OverhangSliceSD = imageDir + "Background_SD.jpg"
-    theme.OverhangLogoSD  = "pkg:/images/logo_final_SD.png" ' logo is transparent
+    'theme.OverhangOffsetSD_X = "72"
+    'theme.OverhangOffsetSD_Y = "10"
+    'theme.OverhangSliceSD = imageDir + "Background_SD.jpg"
+    'theme.OverhangLogoSD  = "pkg:/images/logo_final_SD.png" ' logo is transparent
 
-    theme.OverhangOffsetHD_X = "125"    'these settings are duplicated in getImageCanvasTheme() so keep them in sync with this
-    theme.OverhangOffsetHD_Y = "200"
-    theme.OverhangSliceHD = imageDir + "Background_HD.jpg"
-    theme.OverhangLogoHD  = "pkg:/images/logo_final_HD.png" ' logo is transparent
+    theme.OverhangOffsetHD_X = "125"
+    theme.OverhangOffsetHD_Y = "10"
+    theme.OverhangSliceHD = "pkg:/images/Background_HD.jpg"
+    theme.OverhangLogoHD  = "pkg:/images/logo_final_HD.png"
 
-    theme.GridScreenLogoOffsetHD_X = "125"
-    theme.GridScreenLogoOffsetHD_Y = "10"
+    theme.GridScreenLogoOffsetHD_X = "70"
+    theme.GridScreenLogoOffsetHD_Y = "28"
     ' ljunkie - TODO - black theme
     theme.GridScreenOverhangSliceHD = "pkg:/images/Background_HD.jpg"
     theme.GridScreenLogoHD  = "pkg:/images/logo_final_HD.png"
     theme.GridScreenOverhangHeightHD = "124"
 
-    theme.GridScreenLogoOffsetSD_X = "72"
-    theme.GridScreenLogoOffsetSD_Y = "10"
+    theme.GridScreenLogoOffsetSD_X = "42"
+    theme.GridScreenLogoOffsetSD_Y = "27"
     theme.GridScreenOverhangSliceSD = "pkg:/images/Background_SD.jpg"
     theme.GridScreenLogoSD  = "pkg:/images/logo_final_SD.png"
     theme.GridScreenOverhangHeightSD = "66"
