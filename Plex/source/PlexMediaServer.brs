@@ -543,10 +543,13 @@ Function FullUrl(serverUrl, sourceUrl, key) As String
 
     ' ljunkie - cleanup any double slashes ( the PMS api doesn't like it )
     '   definitely not a fault of the PMS (include non|encoded ://)
-    remDS  = CreateObject("roRegex", "([^:|%3A]/)/+","")
+    '   2013-12-13: need to be careful here -- channel content has ...?url=//etc.. which is also valid
+    ' NOTE: if these seems to cause other issues ( someone expecting double quotes, we may have to be more specific )
+    remDS  = CreateObject("roRegex", "([^:|%3A|=]/)/+","")
     if remDS.IsMatch(finalUrl) then
         Debug("---- removing double slashes from URL: " + tostr(finalUrl))
         finalUrl = remDS.replaceall(finalUrl,"\1")
+        Debug("----  removed double slashes from URL: " + tostr(finalUrl))
     end if
     return finalUrl
 End Function
