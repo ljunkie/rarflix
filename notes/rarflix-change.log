@@ -1,3 +1,8 @@
+#2.9.6-test  (2013-12-13)
+    * Various channel content failed to play (SS-Plex)
+    * Posters size wrong for sub channel sections
+    * Crash: extra precautions for the now playing check
+
 #2.9.5-test  (2013-12-10)
     * Rotten Tomatoes caching updates -- using round robin DNS ( no need to ELB )
 
