@@ -130,7 +130,7 @@ Function createBaseMetadata(container, item, thumb=invalid) As Object
         thumb = firstOf(item@thumb, item@parentThumb, item@grandparentThumb, container.xml@thumb)
     end if
 
-    if thumb <> invalid AND server <> invalid then
+    if thumb <> invalid AND thumb <> "" AND server <> invalid then
         metadata.SDPosterURL = server.TranscodedImage(container.sourceUrl, thumb, sizes.sdWidth, sizes.sdHeight)
         metadata.HDPosterURL = server.TranscodedImage(container.sourceUrl, thumb, sizes.hdWidth, sizes.hdHeight)
         ' use a larger thumb for the SpringBoard screen
