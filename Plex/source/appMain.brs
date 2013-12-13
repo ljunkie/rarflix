@@ -248,14 +248,15 @@ Sub initTheme()
 
     theme.GridScreenLogoOffsetHD_X = "125"
     theme.GridScreenLogoOffsetHD_Y = "10"
-    theme.GridScreenOverhangSliceHD = imageDir + "Background_HD.jpg"
-    theme.GridScreenLogoHD  = "pkg:/images/logo_final_HD.png" ' logo is transparent
-    theme.GridScreenOverhangHeightHD = "99"
+    ' ljunkie - TODO - black theme
+    theme.GridScreenOverhangSliceHD = "pkg:/images/Background_HD.jpg"
+    theme.GridScreenLogoHD  = "pkg:/images/logo_final_HD.png"
+    theme.GridScreenOverhangHeightHD = "124"
 
     theme.GridScreenLogoOffsetSD_X = "72"
     theme.GridScreenLogoOffsetSD_Y = "10"
-    theme.GridScreenOverhangSliceSD = imageDir + "Background_SD.jpg"
-    theme.GridScreenLogoSD  = "pkg:/images/logo_final_SD.png" ' logo is transparent
+    theme.GridScreenOverhangSliceSD = "pkg:/images/Background_SD.jpg"
+    theme.GridScreenLogoSD  = "pkg:/images/logo_final_SD.png"
     theme.GridScreenOverhangHeightSD = "66"
 
     'these settings are duplicated in getImageCanvasTheme() so keep them in sync with this
