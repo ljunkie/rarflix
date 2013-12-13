@@ -499,7 +499,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         'sec_metadata = getSectionType(m) <- this seems unneccesary ( viewgroup = invalid|InfoList|List - do not support paginated calls )
         if tostr(contentType) = "appClip" and (tostr(viewGroup) = "Invalid" or tostr(viewGroup) = "InfoList" or tostr(viewGroup) = "List") then 
             Debug("---- forcing to Poster view -> viewgroup matches: invalid|InfoList|List")
-            screen = createPosterScreen(item, m, "arced-portrait")
+            screen = createPosterScreen(item, m, "arced-square")
             screen.noRefresh = true ' no need to refresh these items (yet)
         else if poster_grid = "grid" and tostr(viewGroup) <> "season" then ' if we have set Full Grid and type is not a season, force Full Grid view
             screen = createFULLGridScreen(item, m, "Invalid", displaymode_grid)
