@@ -757,15 +757,32 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
     end if
 
     if supportedIdentifier then
-        if obj.metadata.viewOffset <> invalid AND val(obj.metadata.viewOffset) > 0 then ' partially watched
-            dialog.SetButton("unscrobble", "Mark as unwatched")
-            dialog.SetButton("scrobble", "Mark as watched")
-        else if obj.metadata.viewCount <> invalid AND val(obj.metadata.viewCount) > 0 then ' watched
-            dialog.SetButton("unscrobble", "Mark as unwatched")
-            ' no need to show watched button (already watched)
-        else if obj.metadata.viewCount = invalid then  ' not watched
-            dialog.SetButton("scrobble", "Mark as watched")
-            ' no need to show unwatched 
+        ' this might be a TV season/All Seasons
+        print obj.metadata
+        if tostr(obj.metadata.type) = "season" or tostr(obj.metadata.viewgroup) = "season" then
+           print obj.metadata.type
+	   print obj.metadata.viewedLeafCount
+	   print obj.metadata.leafCount
+
+           if val(obj.metadata.viewedLeafCount) = val(obj.metadata.leafCount) then
+                dialog.SetButton("unscrobble", "Mark as unwatched")
+           else if val(obj.metadata.viewedLeafCount) > 0 then
+                dialog.SetButton("unscrobble", "Mark as unwatched")
+                dialog.SetButton("scrobble", "Mark as watched")
+           else if val(obj.metadata.leafCount) > 0 then
+                dialog.SetButton("scrobble", "Mark as watched")
+           end if
+        else 
+            if obj.metadata.viewOffset <> invalid AND val(obj.metadata.viewOffset) > 0 then ' partially watched
+                dialog.SetButton("unscrobble", "Mark as unwatched")
+                dialog.SetButton("scrobble", "Mark as watched")
+            else if obj.metadata.viewCount <> invalid AND val(obj.metadata.viewCount) > 0 then ' watched
+                dialog.SetButton("unscrobble", "Mark as unwatched")
+                ' no need to show watched button (already watched)
+            else if obj.metadata.viewCount = invalid then  ' not watched
+                dialog.SetButton("scrobble", "Mark as watched")
+                ' no need to show unwatched 
+            end if
         end if
         if obj.metadata.server.AllowsMediaDeletion AND obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
             dialog.SetButton("delete", "Delete permanently")
@@ -923,15 +940,31 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     supportedIdentifier = (obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
 
     if supportedIdentifier then
-        if obj.metadata.viewOffset <> invalid AND val(obj.metadata.viewOffset) > 0 then ' partially watched
-            dialog.SetButton("unscrobble", "Mark as unwatched")
-            dialog.SetButton("scrobble", "Mark as watched")
-        else if obj.metadata.viewCount <> invalid AND val(obj.metadata.viewCount) > 0 then ' watched
-            dialog.SetButton("unscrobble", "Mark as unwatched")
-            ' no need to show watched button (already watched)
-        else if obj.metadata.viewCount = invalid then  ' not watched
-            dialog.SetButton("scrobble", "Mark as watched")
-            ' no need to show unwatched 
+        print obj.metadata
+        if tostr(obj.metadata.type) = "season" or tostr(obj.metadata.viewgroup) = "season" then
+           print obj.metadata.type
+	   print obj.metadata.viewedLeafCount
+	   print obj.metadata.leafCount
+
+           if val(obj.metadata.viewedLeafCount) = val(obj.metadata.leafCount) then
+                dialog.SetButton("unscrobble", "Mark as unwatched")
+           else if val(obj.metadata.viewedLeafCount) > 0 then
+                dialog.SetButton("unscrobble", "Mark as unwatched")
+                dialog.SetButton("scrobble", "Mark as watched")
+           else if val(obj.metadata.leafCount) > 0 then
+                dialog.SetButton("scrobble", "Mark as watched")
+           end if
+        else 
+            if obj.metadata.viewOffset <> invalid AND val(obj.metadata.viewOffset) > 0 then ' partially watched
+                dialog.SetButton("unscrobble", "Mark as unwatched")
+                dialog.SetButton("scrobble", "Mark as watched")
+            else if obj.metadata.viewCount <> invalid AND val(obj.metadata.viewCount) > 0 then ' watched
+                dialog.SetButton("unscrobble", "Mark as unwatched")
+                ' no need to show watched button (already watched)
+            else if obj.metadata.viewCount = invalid then  ' not watched
+                dialog.SetButton("scrobble", "Mark as watched")
+                ' no need to show unwatched 
+            end if
         end if
 
         if obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "episode" or obj.metadata.ContentType = "show"  then

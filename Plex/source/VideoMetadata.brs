@@ -658,6 +658,13 @@ Function newSeasonMetadata(container, item) As Object
 
     season = createBaseMetadata(container, item, thumb)
 
+    ' testing adding this info -- required if we want to scrobble 
+    ' not sure if this should jus be part of createBaseMetadata
+    season.mediaContainerIdentifier = container.xml@identifier
+    season.ratingKey = item@ratingKey
+    if season.ratingKey = invalid and container.xml@viewGroup = "season" then season.ratingKey = container.xml@key
+    print season
+
     season.HasDetails = true
 
     return season

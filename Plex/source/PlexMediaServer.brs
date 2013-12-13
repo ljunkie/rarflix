@@ -91,6 +91,8 @@ Sub pmsTimeline(item, state, time, isPlayed)
     if item.url <> invalid then query = query + "&url=" + encoder.Escape(item.url)
     if item.key <> invalid then query = query + "&key=" + encoder.Escape(item.key)
     if item.sourceUrl <> invalid then query = query + "&containerKey=" + encoder.Escape(item.sourceUrl)
+ 
+    print query
 
     request = m.CreateRequest("", "/:/timeline?" + query)
     context = CreateObject("roAssociativeArray")
