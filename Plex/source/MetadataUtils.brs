@@ -144,6 +144,10 @@ Function createBaseMetadata(container, item, thumb=invalid) As Object
     metadata.sourceUrl = container.sourceUrl
     metadata.server = server
 
+    if item@userRating <> invalid then
+        metadata.UserRating =  int(val(item@userRating)*10)
+    endif
+
     metadata.HasDetails = false
     metadata.ParseDetails = baseParseDetails
     metadata.Refresh = baseMetadataRefresh
