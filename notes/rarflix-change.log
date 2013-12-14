@@ -1,3 +1,9 @@
+#2.9.7-test  (2013-12-13)
+    * crash: channel content ( poster screens ) when 'content is unavailable' -- the new screen with no content was never closed
+    * crash: properly handle when content 'year' is empty/invalid
+    * crash: devour channel (others) & now playing -- properly handle when a video.description is invalid/empty
+    * fixed: custom icons font size -- mainly done on the backend ( text should fit better )
+
 #2.9.6-test  (2013-12-13)
     * Various channel content failed to play (SS-Plex)
     * Posters size wrong for sub channel sections
