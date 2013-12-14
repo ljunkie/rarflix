@@ -221,7 +221,7 @@ Function video_check_embed(videoID as String) As string
 End Function
 
 
-Function youtube_new_video_list(xmllist As Object, videolist = invalid as Object, searchString = "invalid" as String) As Object
+Function youtube_new_video_list(xmllist As Object, videolist = invalid as Object, searchString = invalid) As Object
     if videolist = invalid then videolist=CreateObject("roList")
     for each record in xmllist
         'ljunkie - might be slower -- but at least all the videos will play instead of having random videos that fail
@@ -229,7 +229,7 @@ Function youtube_new_video_list(xmllist As Object, videolist = invalid as Object
             source = record.GetNamedElements("media:group")[0].GetNamedElements("yt:videoid")[0].GetText()
             exclude = false
             if video_check_embed(source) <> "invalid" then
-                video=m.newVideoFromXML(record, SearchString)
+                video=m.newVideoFromXML(record, tostr(SearchString))
                 ' check if video already exists
                 for each vi in videolist
                     if vi.getid() = video.getid() 
@@ -244,7 +244,7 @@ Function youtube_new_video_list(xmllist As Object, videolist = invalid as Object
     return videolist
 End Function
 
-Function youtube_new_video(xml As Object, searchString = "invalid" as String, provider = "YouTube" as String, providerLong = "YouTube" as String) As Object
+Function youtube_new_video(xml As Object, searchString = invalid, provider = "YouTube" as String, providerLong = "YouTube" as String) As Object
     video = CreateObject("roAssociativeArray")
     video.youtube=m
     video.xml=xml
@@ -261,7 +261,7 @@ Function youtube_new_video(xml As Object, searchString = "invalid" as String, pr
     video.GetLength=get_length 
     video.Provider=provider
     video.ProviderLong=providerLong
-    video.SearchString=searchString
+    video.SearchString=tostr(searchString)
     return video
 End Function
 
@@ -439,7 +439,7 @@ Function build_buttons() as Object
     return buttons
 End Function
 
-function youtube_search_trailer(keyword as string, year = "invalid" as string) as object
+function youtube_search_trailer(keyword as string, year = invalid) as object
     'dialog=ShowPleaseWait("Please wait","Searching TMDB & YouTube for " + Quote()+keyword+Quote())
     origSearch_trailer = keyword + " trailer"
     searchString_trailer = URLEncode(origSearch_trailer)
@@ -450,7 +450,7 @@ function youtube_search_trailer(keyword as string, year = "invalid" as string) a
 
     Videos=CreateObject("roList")
 
-    if year <> "invalid" then
+    if year <> invalid then
         re = CreateObject("roRegex", "-", "") ' only grab the year
         year = re.split(year)[0]
         s_tmdb = m.viewcontroller.youtube.ExecTmdbAPI("search/movie?query="+searchString+"&page=1&include_adult=false&year=" + tostr(year))["json"]
@@ -458,10 +458,8 @@ function youtube_search_trailer(keyword as string, year = "invalid" as string) a
             Debug("---------------- no match found with year.. try again")
             year = "invalid" ' invalidate year to try again without it
         end if
-    end if
-    
-    ' try TMDB lookup without year
-    if year = "invalid" then
+    else
+        ' try TMDB lookup without year
         s_tmdb = m.viewcontroller.youtube.ExecTmdbAPI("search/movie?query="+searchString+"&page=1&include_adult=false")["json"]
     end if
 
