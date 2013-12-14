@@ -1196,18 +1196,17 @@ sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
 
         ' the Image Processor expects images to be 300px wide ( text is set to fit that )
         ' reset the height accordingly. The PMS transcoder will resize it after the image has been created
+        ' this is also done in the image processor.. 2013-12-13
         Height = int((300/Width.toInt())*Height.toInt())
         Width = "300"
 
         rarflix_cdn = "http://d1gah69i16tuow.cloudfront.net"
-        ' not anymore - we should use the CDN we expect to use everywhere
-        'if isRFdev() then 
-        '    rarflix_cdn = "http://ec2.rarflix.com" ' use non-cached server for testing (same destination as cloudfrount)
-        'end if 
-        cachekey = "fcfab14d40e6685f5918a2d32332a98f" ' only update this if I broke something :) so we can expire the PMS Cache
+        ' rarflix_cdn = "http://ec2-b.rarflix.com"
+        ' new format -- no longer need to update apache 'CK\d\d\d\d\d\d\d\d'
+        cachekey = "CK20130001" ' 2013-12-13 ( changed font size / wrap / etc ) ' previous fcfab14d40e6685f5918a2d32332a98f
         NewThumb = rarflix_cdn + "/" + cachekey + "/key/" + URLEncode(thumb_text) ' this will be a autogenerate poster (transparent)
 '        NewThumb = NewThumb + "/size/" + tostr(hdWidth) + "x" + tostr(hdHeight) ' things seem to play nice this way with the my image processor
-        NewThumb = NewThumb + "/size/" + tostr(Width) + "x" + tostr(Height) ' things seem to play nice this way with the my image processor
+        NewThumb = NewThumb + "/size/" + tostr(Width) + "x" + tostr(Height)
         NewThumb = NewThumb + "/fg/" + RegRead("rf_img_overlay", "preferences","999999")
         Debug("----   newraw:" + tostr(NewThumb))
         ' we still want to transcode the size to the specific roku standard
