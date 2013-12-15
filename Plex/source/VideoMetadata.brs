@@ -273,6 +273,8 @@ Sub setVideoBasics(video, container, item)
         if video.viewoffset <> invalid then 
              video.description = "Progress: " + GetDurationString(int(video.viewoffset.toint()/1000),0,1,1)
              video.description = video.description + " [" + percentComplete(video.viewOffset,video.length) + "%]"
+        else if item@sourceTitle <> invalid then
+             video.description = item@sourceTitle
         end if
 
         video.description = video.description + " on " + firstof(item.Player@title, item.Player@platform)

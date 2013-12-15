@@ -24,7 +24,9 @@ sub rf_updateNowPlayingSB(screen)
     if new_metadata.viewOffset <> invalid then
         screen.metadata.isStopped = invalid
         screen.metadata.description = " * Progress: " + GetDurationString(int(new_metadata.viewOffset.toint()/1000),0,1,1) ' update progress - if we exit player
-        screen.metadata.description = screen.metadata.description + " [" + percentComplete(new_metadata.viewOffset,new_metadata.length) + "%]"
+        if new_metadata.length <> invalid then 
+            screen.metadata.description = screen.metadata.description + " [" + percentComplete(new_metadata.viewOffset,new_metadata.length) + "%]"
+        end if
         screen.metadata.viewOffset = new_metadata.viewOffset ' set new offset
     else 
         screen.metadata.isStopped = true
@@ -85,26 +87,29 @@ sub setnowplayingGlobals()
         for each server in GetOwnedPlexMediaServers()
             if server.isavailable and server.supportsmultiuser then ' only query server if available and supportsmultiuser (assuming nowPlaying works with multiuser enabled)
                 container = createPlexContainerForUrl(server, server.serverurl, "/status/sessions")
-                if container = invalid then return
-                if container.getkeys().count() < 1 then return
-                keys = container.getkeys()
-                for index = 0 to keys.Count() - 1
-                    ratingKey = keys[index]
-                    if ratingKey <> invalid and container.xml <> invalid and type(container.xml.Video) = "roXMLList" and container.xml.Video.count() > index then 
-                        maid = container.xml.Video[index].Player@machineIdentifier
-                        user = container.xml.Video[index].User@title
-                        metadata = container.metadata[index]
-                        platform = firstof(container.xml.Video[index].Player@title, container.xml.Video[index].Player@platform, "")
-                        length = firstof(tostr((container.xml.Video[index]@duration).toint()/1000), 0)
-                        if metadata.episodestr <> invalid then 
-                            title = metadata.cleantitle + " - " + metadata.episodestr
-                        else
-                            title = metadata.cleantitle
+                if container <> invalid and container.getkeys().count() > 0 then
+                    keys = container.getkeys()
+                    for index = 0 to keys.Count() - 1
+                        ratingKey = keys[index]
+                        if ratingKey <> invalid and container.xml <> invalid and type(container.xml.Video) = "roXMLList" and container.xml.Video.count() > index then 
+                            maid = container.xml.Video[index].Player@machineIdentifier
+                            user = container.xml.Video[index].User@title
+                            metadata = container.metadata[index]
+                            platform = firstof(container.xml.Video[index].Player@title, container.xml.Video[index].Player@platform, "")
+                            length = invalid
+                            if container.xml.Video[index]@duration <> invalid then 
+                                length = firstof(tostr((container.xml.Video[index]@duration).toint()/1000), 0)
+                            end if
+                            if metadata.episodestr <> invalid then 
+                                title = metadata.cleantitle + " - " + metadata.episodestr
+                            else
+                                title = metadata.cleantitle
+                            end if
+                            if this_maid <> maid then np.Push({maid: maid, title: title, user: user, key: ratingKey, platform: platform, length: length, item: metadata})
                         end if
-                        if this_maid <> maid then np.Push({maid: maid, title: title, user: user, key: ratingKey, platform: platform, length: length, item: metadata})
-                    end if
-                end for
-             end if
+                    end for
+                 end if
+            end if
         end for
         GetGlobalAA().rf_nowPlaying = [] 
         GetGlobalAA().AddReplace("rf_nowPlaying", np)
@@ -155,14 +160,15 @@ function getNowPlayingNotifications() as object
 
             if NOT RFinarray then ' if NOT inArray(seen,found) then -- very bad TOFI
                 ' notification for stopped content - we will need to grab the itemKey if we want to link the video
-		n = CreateObject("roAssociativeArray")
+                n = CreateObject("roAssociativeArray")
                 n.type = "stop" 
                 n.title = UcaseFirst(GetGlobalAA().Lookup(maid + "_user"),true) + " stopped " + GetGlobalAA().Lookup(maid + "_title")
 
                 n.viewOffset = GetGlobalAA().Lookup(maid + "_viewOffset")
-                n.length = GetGlobalAA().Lookup(maid + "_length").toInt()
-		
-		n.title = "[" + percentComplete(n.viewOffset,n.length,true) + "%]" + " " + n.title
+                n.length = GetGlobalAA().Lookup(maid + "_length")
+                if n.length <> invalid then 
+                    n.title = "[" + percentComplete(n.viewOffset,n.length.toInt(),true) + "%]" + " " + n.title
+                end if
                 n.text = ""
                 if RegRead("rf_notify_np_type","preferences","all") <> "start"  then 
                     notify.Push(n) 
@@ -191,7 +197,7 @@ end function
 
 function percentComplete(viewOffset as dynamic, Length as dynamic, round=false as boolean) as String
    'TODO - check if string or integer just to be safe
-   if viewOffset <> invalid then 
+   if viewOffset <> invalid and length <> invalid then 
        percent = int(((viewOffset.toInt()/1000)/length )*100)
        if round and percent > 90 then return "100"
        return tostr(percent)
