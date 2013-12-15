@@ -152,9 +152,17 @@ End Function
 
 'Assumes that multi-user is enabled
 'Lock screen stays on top of everything
+' -- new addition: we must close any open dialogs 
 Function vcCreateLockScreen() 
     TraceFunction("vcCreateLockScreen")
     currentScreen = m.screens.peek()    'current screen to stack on top of
+    if currentScreen <> invalid and type(currentScreen.Screen) = "roMessageDialog" then 
+        Debug("---- Top screen is a Dialog -- need to close before we lock")
+        ' close the screen -- vcPopScreen takes care of any other dialogs
+        m.popscreen(currentScreen)
+        currentScreen = m.screens.Peek()
+    end if
+
     'this PIN screen will stay up until either the PIN is entered or Back is pressed
     pinScreen = VerifySecurityPin(m, RegRead("securityPincode","preferences",invalid,GetGlobalAA().userNum), true, 0)
     pinScreen.ScreenName = "Locked"
