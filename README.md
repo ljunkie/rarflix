@@ -1,4 +1,4 @@
-# RARflixTest v3.0.0 (2013-12-17)
+# RARflix v3.0.0 (2013-12-17)
 Changes: https://github.com/ljunkie/rarflix/blob/master/notes/rarflix-change.log
 
 ### Modified Plex for Roku
