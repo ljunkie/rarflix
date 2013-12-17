@@ -137,11 +137,10 @@ Function videoPlayerCreateVideoPlayer()
         end if
     end if
 
+    if mediaItem <> invalid then videoItem.Duration = mediaItem.duration ' set duration - used for EndTime/TimeLeft on HUD  - ljunkie
+
+    if tostr(videoItem.ReleaseDate) = "invalid" then  videoItem.ReleaseDate = "" ' we never want to display invalid
     videoItem.OrigReleaseDate = videoItem.ReleaseDate
-
-    videoItem.Duration = mediaItem.duration ' set duration - used for EndTime/TimeLeft on HUD  - ljunkie
-
-    if videoItem.ReleaseDate = "invalid" then  videoItem.ReleaseDate = "" ' we never want to display invalid
 
     if videoItem.IsTranscoded then
         server = videoItem.TranscodeServer
@@ -314,48 +313,6 @@ Function videoPlayerHandleMessage(msg) As Boolean
             end if
             m.playState = "playing"
             m.SendTimeline(true)
-
-            ' START: EndTime and Time Left to HUD - ljunkie
-	    endString = "invalid"
-	    watchedString = "invalid"
-	    if msg.GetIndex() > 0 then
-                date = CreateObject("roDateTime")
-                if m.VideoItem.Duration > 0 then
-                    duration = int(m.VideoItem.Duration/1000)
-                    timeLeft = int(Duration - msg.GetIndex())
-                    endString = "End Time: " + RRmktime(date.AsSeconds()+timeLeft) + "  (" + GetDurationString(timeLeft,0,1,1) + ")" + "  Watched: " + GetDurationString(int(msg.GetIndex()))                    
-                else
-                    ' include current time and watched time when video duration is unavailable (HLS & web videos)
-                    watchedString = "Time: " + RRmktime(date.AsSeconds()) + "     Watched: " + GetDurationString(int(msg.GetIndex()))                    
-                end if
-		' set the HUD
-                content = CreateObject("roAssociativeArray")
-                content = m.VideoItem ' assign Video item and reset other keys
-		if m.VideoItem.OrigHUDreleaseDate = invalid then
-                   m.VideoItem.OrigHUDreleaseDate = m.VideoItem.releasedate
-                end if
-                content.length = m.VideoItem.duration
-                content.title = m.VideoItem.title
-
-                ' overwrite release date now
-                content.releasedate = m.VideoItem.OrigHUDreleasedate
-
-		if tostr(m.VideoItem.rokustreambitrate) <> "invalid" and validint(m.VideoItem.rokustreambitrate) > 0 then
-	  	    bitrate = RRbitrate(m.VideoItem.rokustreambitrate)
-		    'if tostr(m.videoItem.IsTranscoded) = "false" then
-                        'bitrate = chr(10) + bitrate ' put bitrate on a new line -- string might be too long
-		    'end if
-                    content.releasedate = content.releasedate + " " + bitrate
-                end if
-
-                content.releasedate = content.releasedate + chr(10) + chr(10)  'two line breaks - easier to read
-                if endString <> "invalid" then content.releasedate = content.releasedate +  endString
-                if watchedString <> "invalid" then content.releasedate = content.releasedate + watchedString
-             
-		' update HUD
-                m.Screen.SetContent(content)
-            end if
-            ' END: EndTime/TimeLeft HUD - ljunkie
         else if msg.isRequestFailed() then
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed - message = " + tostr(msg.GetMessage()))
             Debug("MediaPlayer::playVideo::VideoScreenEvent::isRequestFailed - data = " + tostr(msg.GetData()))
@@ -387,7 +344,7 @@ Function videoPlayerHandleMessage(msg) As Boolean
 	    'printAA(msg.GetInfo())
 	    m.VideoItem.rokuStreamBitrate = msg.GetInfo().StreamBitrate
             m.StartTranscodeSessionRequest()
-
+            if m.lastPosition >= 0 then updateVideoHUD(m,m.lastPosition)
             if msg.GetInfo().IsUnderrun = true then
                 m.underrunCount = m.underrunCount + 1
                 if m.underrunCount = 4 and not GetGlobalAA().DoesExist("underrun_warning_shown") then
@@ -470,9 +427,12 @@ Sub videoPlayerOnUrlEvent(msg, requestContext)
                     audio = "copy"
                 end if
 
-                m.VideoItem.ReleaseDate = m.VideoItem.OrigReleaseDate + "   Transcoded " + " (" + videoRes + " " + audioChannel + ")" +chr(10)  + "video: " + video  + " audio: " + audio 
-                ' + curState -- doesn't seem useful - this doesn't get updated on the fly, useful if moved to: videoPlayerHandleMessage -> msg.isPlaybackPosition
-
+                m.VideoItem.ReleaseDate = m.VideoItem.OrigReleaseDate + "   Transcoded " + " (" + videoRes + " " + audioChannel + ")"
+                m.VideoItem.ReleaseDate = m.VideoItem.ReleaseDate + chr(10)  + "video: " + video  + "    audio: " + audio + "    "
+                ' + curState -- doesn't seem useful - this doesn't get updated on the fly, 
+                ' useful if moved to: videoPlayerHandleMessage -> msg.isPlaybackPosition
+                ' ljunkie - update the HUD with transcode info 
+                if m.lastPosition <> invalid and m.lastPosition >= 0 then updateVideoHUD(m,m.lastPosition,m.VideoItem.ReleaseDate)
                 m.VideoPlayer.SetContent(m.VideoItem)
             end if
 	end if
@@ -480,6 +440,8 @@ Sub videoPlayerOnUrlEvent(msg, requestContext)
 End Sub
 
 Sub videoPlayerSendTimeline(force=false)
+    if m.lastPosition >= 0 then updateVideoHUD(m,m.lastPosition)
+
     ' We can only send the event if we have some basic info about the item
     if m.Item.ratingKey = invalid OR m.Item.RawLength = invalid OR m.Item.server = invalid then
         m.timelineTimer.Active = false

@@ -2,8 +2,16 @@
 '* A grid screen backed by XML from a PMS.
 '*
 
-Function createGridScreen(viewController, style="flat-movie", upBehavior="exit", SetDisplayMode = "scale-to-fit") As Object
-    Debug("######## Creating Grid Screen ########")
+Function createGridScreen(viewController, style=RegRead("rf_grid_style", "preferences", "flat-movie"), upBehavior="exit", SetDisplayMode = "scale-to-fit", hideHeaderText = false) As Object
+    Debug("######## Creating Grid Screen " + tostr(style) + ":" + tostr(SetDisplayMode) + "  ########")
+
+    if tostr(style) = "flat-portrait" and GetGlobal("IsHD") <> true then style = "flat-movie"
+        
+    if hideHeaderText <> invalid and hideHeaderText then 
+        hideRowText(true)
+    else 
+        hideRowText(false)
+    end if
 
     if upBehavior <> "stop" then ' allow us to force a stop
         upBehavior = RegRead("rf_up_behavior", "preferences", "exit")
@@ -121,6 +129,32 @@ Function showGridScreen() As Integer
         end if
     end for
 
+    ' ljunkie - remove description ( grid popout on bottom left ) - initial release (2013-11-09)
+    ' This was asked for, however I know people are goint to complain. This will most likely need to be a bit more complicated.
+    ' As in, people are not going to want this to be GLOBAL, but set per section/full grid/or even some secific type. 
+    ' I.E. don't show on firstCharacter, but show of On Deck
+    print "------------------- Description POP OUT disabled -- sec_metadata -- more info if we need to enable certain section/types --------------------------"
+    if m.ScreenID = -1 then 
+        isType = "home"
+        print m
+    else 
+        print m
+        sec_metadata = getSectionType(m)
+        print sec_metadata
+        secTypes = ["photo","artist","movie","show"]
+        isType = "other"
+        print "curType: " + tostr(sec_metadata.type)
+        for each st in secTypes
+            if tostr(sec_metadata.type) = st then isType = st
+        end for
+        print "isType: " + tostr(isType)
+    end if
+
+    if RegRead("rf_grid_description_"+isType, "preferences", "enabled") <> "enabled" then
+        m.screen.SetDescriptionVisible(false)
+    end if
+    print "------------------------------------------------------- END ---------------------------------------------------------------------------------------"
+
     m.Screen.Show()
     if facade <> invalid then facade.Close()
 
@@ -138,8 +172,11 @@ Function showGridScreen() As Integer
         maxRow = 20 ' in the FULL grid, loading 20 rows seems like an ok number. Might be able to raise this.
         if maxRow > names.Count() then maxRow=names.Count()
         Debug("---- Loading FULL grid - load row 0 to row " + tostr(maxRow))
-    else if maxRow > 1 then 
-        maxRow = 1
+'    else if maxRow > 1 then 
+'        maxRow = 1
+'    end if
+    else if maxRow > 10 then 
+        maxRow = 10
     end if
 
     for row = 0 to maxRow
@@ -277,10 +314,9 @@ Function gridHandleMessage(msg) As Boolean
                 else 
                     ' ljunkie - this does't load the extra rows as I expected. It exists if a selected row ( or the first of the called extraRows are loaded )
                     ' this only really matters for the FULL grid, so we will still use the existing logic for non FULL grid
-                     'Debug("----- NOT a full grid, we can load normally: from row " + tostr(m.selectedRow) + " PLUS  " + tostr(extraRows) )
-                     m.Loader.LoadMoreContent(m.selectedRow, extraRows) 
-                     'Debug("----- NOT a full grid, we can load normally: from row " + tostr(m.selectedRow+1) + " PLUS  " + tostr(0) )
-                     m.Loader.LoadMoreContent(m.selectedRow+2, 0) ' we normally load the two focused rows, but lets load the next on out of screen ( testing )
+                    m.Loader.LoadMoreContent(m.selectedRow, extraRows) 
+                    m.Loader.LoadMoreContent(m.selectedRow+1, extraRows) 
+                    'm.Loader.LoadMoreContent(m.selectedRow+2, extraRows) 
                 end if
             end if
         else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then ' ljunkie - use * for more options on focused item
@@ -424,7 +460,7 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
         if m.Screen <> invalid then m.Screen.SetContentList(row, data)
         m.lastUpdatedSize[row] = data.Count()
         ' ljunkie - focus row when we are finished loading if we have specified a show before show()
-        if  m.focusrow <> invalid then 
+        if  m.focusrow <> invalid and row = m.focusrow then 
             m.screen.SetFocusedListItem(m.focusrow,0) ' we will also focus the first item, this might need to be changed
             m.focusrow = invalid
         end if
@@ -456,11 +492,20 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
 End Sub
 
 Sub setGridTheme(style as String)
-    imageDir = GetGlobalAA().Lookup("rf_theme_dir")
+    ' ljunkie - normally we have separate images per theme - but these, for now, are shared between the themes
+    ' imageDir = GetGlobalAA().Lookup("rf_theme_dir")
+    imageDir = "file://pkg:/images/"
+
     ' This has to be done before the CreateObject call. Once the grid has
     ' been created you can change its style, but you can't change its theme.
 
+    ' SD version of flat-portrait is actually shorter than flat-movie ( opposite of HD ) we do not want shorter than the already short images
+    if tostr(style) = "flat-portrait" and GetGlobal("IsHD") <> true then style = "flat-movie"
+
+    SetGlobalGridStyle(style) ' set the new grid style - needed for determine image sizes
+
     app = CreateObject("roAppManager")
+    app.ClearThemeAttribute("GridScreenDescriptionImageHD")
     if style = "flat-square" then
         app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-square-hd.png")
         app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-square-sd.png")
@@ -468,14 +513,17 @@ Sub setGridTheme(style as String)
         app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-episode-hd.png")
         app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-episode-sd.png")
     else if style = "flat-movie" then
-        'if RegRead("rf_grid_displaymode", "preferences", "scale-to-fit") = "scale-to-fit" then 
-        '    ' plex uses tall movie posters. So we will use a custom box to fit the poster
-        '    app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-movie-hd-skinny.png")
-        'else 
-        '    app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-movie-hd.png")
-        'end if
         app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-movie-hd.png")
         app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-movie-sd.png")
+    else if style = "flat-landscape" then
+        app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-landscape-hd.png")
+        app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-landscape-sd.png")
+    else if style = "flat-portrait" then
+        app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-portrait-hd.png")
+        ' SD version of flat-portrait is actually shorter than flat-movie ( opposite of HD ) we do not want shorter than the already short images
+        app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-movie-sd.png")
+        ' the BoB is too short for this screen.. nice going roku
+        app.SetThemeAttribute("GridScreenDescriptionImageHD", "pkg:/images/grid/hd-description-background-portrait.png")
     end if
 End Sub
 

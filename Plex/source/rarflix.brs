@@ -21,11 +21,13 @@ function isRFtest() as boolean
     return true
 end function
 
-Sub InitRARFlix() 
+Sub InitRARflix() 
 
     GetGlobalAA()
+    'RegDelete("userprofile_icon_color", "preferences")
     'RegDelete("rf_unwatched_limit", "preferences")
     'RegDelete("rf_grid_style", "preferences")
+    'RegDelete("rf_photos_grid_style", "preferences")
     'RegDelete("rf_poster_grid_style", "preferences")
     'RegDelete("rf_theme", "preferences")
     'RegDelete("rf_img_overlay", "preferences")
@@ -77,27 +79,52 @@ Sub InitRARFlix()
     Debug("---- end purge ----")
 
     ' Temporarily disable theme music due to bug - user can change it back if they really want it
-    if RegRead("rf_temp_thememusic", "preferences","first") = "first" then
-        prev_setting = RegRead("theme_music", "preferences","disabled")
-        Debug("first run - disabling theme music due to bug")
-        RegWrite("theme_music", "disabled", "preferences")
-        RegWrite("rf_temp_thememusic", prev_setting, "preferences")
+    ' 2013-12-01 -- this has played it's role now... theme_music defaults to "disabled"
+    'if RegRead("rf_temp_thememusic", "preferences","first") = "first" then
+    '    prev_setting = RegRead("theme_music", "preferences","disabled")
+    '    Debug("first run - disabling theme music due to bug")
+    '    RegWrite("theme_music", "disabled", "preferences")
+    '    RegWrite("rf_temp_thememusic", prev_setting, "preferences")
+    'end if
+
+    ' reset the grid style to flat-portrait/photo-fit - only once
+    ' we can imcrement this to change settings on newer versions
+    ' 2013-12-01
+    ' 2013-12-04 (3) - forcing images instead of numbers for episodic view
+    '                  this will also force Poster/Photo-fit for grid still ( but that's ok )
+    forceVer = "3"
+    if RegRead("rf_force_reg", "preferences","0") <> forceVer then
+        RegWrite("rf_force_reg", forceVer, "preferences")
+        Debug("---- first run - forcing grid mode/styule")
+        if GetGlobal("IsHD") = true then RegWrite("rf_grid_style", "flat-portrait", "preferences")
+        RegWrite("rf_poster_displaymode", "scale-to-fit", "preferences")
+        RegWrite("rf_grid_displaymode", "photo-fit", "preferences")
+        RegWrite("rf_episode_episodic_thumbnail", "enabled", "preferences")
     end if
+
+    ' cleaning up some options -- these *should* not need a toggle anymore
+    '   I.E. we changed ways the Official channel works, but don't need to toggle to go back to the Official way
+    '
+    ' Force dynamic breadcrumbs
+    RegWrite("rf_bcdynamic", "enabled", "preferences")
+    ' end cleaning of options
  
     'RegRead("rf_theme", "preferences","black") done in appMain initTheme()
     RegRead("rf_img_overlay", "preferences","BFBFBF") ' plex white
     RegRead("rf_channel_text", "preferences","disabled") ' enabled channel icons to show text ( after the main row )
     RegRead("rf_poster_grid", "preferences","grid")
-    RegRead("rf_grid_style", "preferences","flat-movie")
+    RegRead("rf_grid_style", "preferences","flat-portrait")
     RegRead("rf_home_displaymode", "preferences","photo-fit")
-    RegRead("rf_grid_displaymode", "preferences","scale-to-fit")
+    RegRead("rf_grid_displaymode", "preferences","photo-fit")
     RegRead("rf_poster_displaymode", "preferences","scale-to-fit")
     RegRead("rf_music_artist", "preferences","track")
-    RegRead("rf_bcdynamic", "preferences","enabled")
+    RegRead("rf_grid_dynamic", "preferences","full")
     RegRead("rf_rottentomatoes", "preferences","enabled")
     RegRead("rf_rottentomatoes_score", "preferences","audience")
     RegRead("rf_trailers", "preferences","enabled")
     RegRead("rf_tvwatch", "preferences","enabled")
+    RegRead("rf_season_poster", "preferences","season") ' seasons poster instead of show ( show was Plex Official Channel default )
+    RegRead("rf_episode_poster", "preferences","season") ' seasons poster instead of show ( show was Plex Official Channel default )
     RegRead("rf_searchtitle", "preferences","title")
     RegRead("rf_rowfilter_limit", "preferences","200") ' no toggle yet
     RegRead("rf_hs_clock", "preferences", "enabled")
@@ -108,10 +135,6 @@ Sub InitRARFlix()
     RegRead("rf_notify_np_type", "preferences", "all") ' now playing notify types
     RegRead("securityPincode", "preferences", invalid)  'PIN code required for startup
 
-    ' ljunkie Youtube Trailers (extended to TMDB)
-    m.youtube = InitYouTube()
-
-
     Debug("rf_theme: " + tostr(RegRead("rf_theme", "preferences")))
     Debug("rf_img_overlay: " + tostr(RegRead("rf_img_overlay", "preferences")))
     Debug("rf_channel_text: " + tostr(RegRead("rf_channel_text", "preferences")))
@@ -121,11 +144,14 @@ Sub InitRARFlix()
     Debug("rf_grid_displaymode: " + tostr(RegRead("rf_grid_displaymode", "preferences")))
     Debug("rf_poster_displaymode: " + tostr(RegRead("rf_poster_displaymode", "preferences")))
     Debug("rf_bcdynamic: " + tostr(RegRead("rf_bcdynamic", "preferences")))
+    Debug("rf_dynamic_grid: " + tostr(RegRead("rf_dynamic_grid", "preferences")))
     Debug("rf_hs_clock: " + tostr(RegRead("rf_hs_clock", "preferences")))
     Debug("rf_rottentomatoes: " + tostr(RegRead("rf_rottentomatoes", "preferences")))
     Debug("rf_rottentomatoes_score: " + tostr(RegRead("rf_rottentomatoes_score", "preferences")))
     Debug("rf_trailers: " + tostr(RegRead("rf_trailers", "preferences")))
     Debug("rf_tvwatch: " + tostr(RegRead("rf_tvwatch", "preferences")))
+    Debug("rf_season_poster: " + tostr(RegRead("rf_season_poster", "preferences")))
+    Debug("rf_episode_poster: " + tostr(RegRead("rf_episode_poster", "preferences")))
     Debug("rf_searchtitle: " + tostr(RegRead("rf_searchtitle", "preferences")))
     Debug("rf_rowfilter_limit: " + tostr(RegRead("rf_rowfilter_limit", "preferences")))
     Debug("rf_focus_unwatched: " + tostr(RegRead("rf_focus_unwatched", "preferences")))
@@ -251,7 +277,7 @@ Function RRbreadcrumbDate(myscreen) As Object
     end if
 End function
 
-Function createRARFlixPrefsScreen(viewController) As Object
+Function createRARflixPrefsScreen(viewController) As Object
     obj = createBasePrefsScreen(viewController)
     obj.HandleMessage = prefsRARFflixHandleMessage
 
@@ -298,6 +324,18 @@ Function createRARFlixPrefsScreen(viewController) As Object
         default: "audience"
     }
 
+    ' trailers - play first trailer automatically
+    values = [
+        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Play first trailer" },
+        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Show trailer list before playing" },
+    ]
+    obj.Prefs["rf_trailerplayfirst"] = {
+        values: values,
+        heading: "Play the first Movie Trailer automatically",
+        default: "enabled"
+    }
+
+
     ' RT/Trailers - search title
     rt_prefs = [
         { title: "Title", EnumValue: "title", ShortDescriptionLine2: "Search by Movie Title" },
@@ -322,19 +360,47 @@ Function createRARFlixPrefsScreen(viewController) As Object
         default: "enabled_tmdb_yt"
     }
 
-    ' Breadcrumb fixes
-    bc_prefs = [
-        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Update header when browsing " +chr(10)+ "On Deck, Recently Added, etc.."  },
-        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Update header when browsing " +chr(10)+ "On Deck, Recently Added, etc.."  },
-
-
+' Toggle removed - it's now a forced default
+'    ' Breadcrumb fixes
+'    bc_prefs = [
+'        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Update header when browsing " +chr(10)+ "On Deck, Recently Added, etc.."  },
+'        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Update header when browsing " +chr(10)+ "On Deck, Recently Added, etc.."  },
+'
+'
+'    ]
+'    obj.Prefs["rf_bcdynamic"] = {
+'        values: bc_prefs,
+'        heading: "Update Header (top right)",
+'        default: "enabled"
+'    }
+'
+    ' partially update grid or full reload -- to fix any speed issues people experience 
+    grid_dynamic = [
+        { title: "Full", EnumValue: "full", ShortDescriptionLine2: "Try partial if the grid seems slow"  },
+        { title: "Partial", EnumValue: "partial", ShortDescriptionLine2: "Increases Speed/Less dynamic"  },
     ]
-    obj.Prefs["rf_bcdynamic"] = {
-        values: bc_prefs,
-        heading: "Update Header (top right)",
-        default: "enabled"
+    obj.Prefs["rf_grid_dynamic"] = {
+        values: grid_dynamic,
+        heading: "Grid Updates / Reloading of Rows",
+        default: "full"
     }
 
+    ' TV Seasons Poster ( prefer season over show )
+    values = [
+        { title: "Season", EnumValue: "season", },
+        { title: "Show", EnumValue: "show" },
+
+    ]
+    obj.Prefs["rf_season_poster"] = {
+        values: values,
+        heading: "Poster to display when viewing a TV Show Season on the Grid",
+        default: "season"
+    }
+    obj.Prefs["rf_episode_poster"] = {
+        values: values,
+        heading: "Poster to display when viewing a TV Show Episode on the Grid",
+        default: "season"
+    }
 
     ' TV Watched status next to ShowTITLE
     tv_watch_prefs = [
@@ -475,7 +541,8 @@ Function createRARFlixPrefsScreen(viewController) As Object
     }
 
 
-    obj.Screen.SetHeader("RARFlix Preferences")
+    obj.Screen.SetHeader("RARflix Preferences")
+    obj.AddItem({title: "About RARflix"}, "ShowReleaseNotes")
     obj.AddItem({title: "Theme"}, "rf_theme", obj.GetEnumValue("rf_theme"))
     obj.AddItem({title: "Custom Icons", ShortDescriptionLine2: "Replace generic icons with Text"}, "rf_custom_thumbs", obj.GetEnumValue("rf_custom_thumbs"))
     if RegRead("rf_custom_thumbs", "preferences","enabled") = "enabled" then
@@ -485,6 +552,7 @@ Function createRARFlixPrefsScreen(viewController) As Object
     obj.AddItem({title: "Section Display", ShortDescriptionLine2: "a plex original, for easy access"}, "sections")
 
     obj.AddItem({title: "Movie Trailers", ShortDescriptionLine2: "Got Trailers?"}, "rf_trailers", obj.GetEnumValue("rf_trailers"))
+    obj.AddItem({title: "Play first Trailer", ShortDescriptionLine2: "Automatically play first trailer"}, "rf_trailerplayfirst", obj.GetEnumValue("rf_trailerplayfirst"))
     obj.AddItem({title: "Rotten Tomatoes", ShortDescriptionLine2: "Movie Ratings from Rotten Tomatoes"}, "rf_rottentomatoes", obj.GetEnumValue("rf_rottentomatoes"))
     if RegRead("rf_rottentomatoes", "preferences","enabled") = "enabled" then
         obj.AddItem({title: "Rotten Tomatoes Score", ShortDescriptionLine2: "Who do you trust more..." + chr(10) + "A Critic or an Audience?"}, "rf_rottentomatoes_score", obj.GetEnumValue("rf_rottentomatoes_score"))
@@ -492,8 +560,11 @@ Function createRARFlixPrefsScreen(viewController) As Object
     if RegRead("rf_rottentomatoes", "preferences","enabled") = "enabled" or RegRead("rf_trailers", "preferences") <> "disabled" then
         obj.AddItem({title: "Trailers/Tomatoes Search by", ShortDescriptionLine2: "You probably don't want to change this"}, "rf_searchtitle", obj.GetEnumValue("rf_searchtitle"))
     end if
-    obj.AddItem({title: "Dynamic Headers", ShortDescriptionLine2: "Info on the top Right of the Screen"}, "rf_bcdynamic", obj.GetEnumValue("rf_bcdynamic"))
+'    Toggle removed - it's now a forced default
+'    obj.AddItem({title: "Dynamic Headers", ShortDescriptionLine2: "Info on the top Right of the Screen"}, "rf_bcdynamic", obj.GetEnumValue("rf_bcdynamic"))
     obj.AddItem({title: "TV Show (Watched Status)", ShortDescriptionLine2: "feels good enabled"}, "rf_tvwatch", obj.GetEnumValue("rf_tvwatch"))
+    obj.AddItem({title: "TV Season Poster (Grid)", ShortDescriptionLine2: "Season or Show's Poster on Grid"}, "rf_season_poster", obj.GetEnumValue("rf_season_poster"))
+    obj.AddItem({title: "TV Episode Poster (Grid)", ShortDescriptionLine2: "Season or Show's Poster on Grid"}, "rf_episode_poster", obj.GetEnumValue("rf_episode_poster"))
     obj.AddItem({title: "Focus on Unwatched", ShortDescriptionLine2: "Default to the first unwatched " + chr(10) + "item (poster screen only)"}, "rf_focus_unwatched", obj.GetEnumValue("rf_focus_unwatched"))
     obj.AddItem({title: "Clock on Home Screen"}, "rf_hs_clock", obj.GetEnumValue("rf_hs_clock"))
     obj.AddItem({title: "Unwatched Added/Released", ShortDescriptionLine2: "Item limit for unwatched Recently Added &" + chr(10) +"Recently Released rows [movies]"}, "rf_rowfilter_limit", obj.GetEnumValue("rf_rowfilter_limit"))
@@ -506,7 +577,9 @@ Function createRARFlixPrefsScreen(viewController) As Object
     if RegRead("rf_notify", "preferences","enabled") = "enabled" then 
         obj.AddItem({title: "Now Playing Notify Types", ShortDescriptionLine2: "When do you want to be notified?" + chr(10) + " On Start/Stop or Both"}, "rf_notify_np_type", obj.GetEnumValue("rf_notify_np_type"))
     end if
- 
+
+    obj.AddItem({title: "Grid Updates/Speed", ShortDescriptionLine2: "Change how the Grid Refreshes/Reloads content"}, "rf_grid_dynamic", obj.GetEnumValue("rf_grid_dynamic"))
+
     obj.AddItem({title: "Close"}, "close")
     return obj
 End Function
@@ -530,6 +603,8 @@ Function prefsRARFflixHandleMessage(msg) As Boolean
                 screen = createSectionDisplayPrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["Section Display Preferences"])
                 screen.Show()
+            else if command = "ShowReleaseNotes" then
+                m.ViewController.ShowReleaseNotes()
             else if command = "close" then
                 m.Screen.Close()
             else
@@ -554,6 +629,10 @@ Function createHideRowsPrefsScreen(viewController) As Object
         { title: "Unwatched", key: "unwatched" },
         { title: "[movie] Recently Added (uw)", key: "all?type=1&unwatched=1&sort=addedAt:desc" }, 'movie/film for now
         { title: "[movie] Recently Released (uw)", key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc" }, 'movie/film for now
+        { title: "[movie] Recently Released (uw)", key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc" }, 
+        { title: "[tv] Recently Added Season", key: "recentlyAdded?stack=1" }, 
+        { title: "[tv] Recently Aired (uw)", key: "all?timelineState=1&type=4&unwatched=1&sort=originallyAvailableAt:desc" }, 
+        { title: "[tv] Recently Added (uw)", key: "all?timelineState=1&type=4&unwatched=1&sort=addedAt:desc" }, 
         { title: "Recently Viewed", key: "recentlyViewed" },
         { title: "[tv] Recently Viewed Shows", key: "recentlyViewedShows" },
         { title: "By Album", key: "albums" },
@@ -719,8 +798,12 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
 end sub
 
 sub posterRefresh(force=false) 
-    Debug("poster fresh called! do we have a valid item")
-    if m.noRefresh <> invalid then return
+    Debug("posterRefresh called! do we have a valid item")
+ 
+    if m.noRefresh <> invalid then 
+        Debug("---- noRefresh set -- skipping item.refresh()")
+        return
+    end if
     if m.item <> invalid and type(m.item.refresh) = "roFunction" then 
         m.item.refresh()
         Debug("item refreshed!")
@@ -733,7 +816,7 @@ sub posterRefresh(force=false)
             if focusedIndex <> invalid and type(content) = "roArray" and type(content[focusedIndex]) = "roAssociativeArray" then 
                 if type(content[focusedIndex].refresh) = "roFunction" then  
                     content[focusedIndex].refresh()
-                    print content[focusedIndex]
+                    ' print content[focusedIndex]
                     ' special for tv shows
                     if content[focusedIndex].titleseason <> invalid then content[focusedIndex].shortdescriptionline1 = content[focusedIndex].titleseason
                     m.screen.SetContentList(content)
@@ -958,9 +1041,12 @@ sub rfDefRemoteOptionButton(m)
 end sub
 
 
-sub rfDialogGridScreen(obj as Object) as Dynamic
+sub rfDialogGridScreen(obj as Object)
+    audioPlayer = GetViewController().AudioPlayer
+    if audioplayer.IsPlaying or audioplayer.IsPaused then return
 
-    if type(obj.item) = "roAssociativeArray" and tostr(obj.item.contenttype) = "section" or obj.selectedrow = 0 then ' row 0 is reserved for the fullGrid shortcuts
+    if type(obj.item) = "roAssociativeArray" and tostr(obj.item.contenttype) = "section" and NOT tostr(obj.item.nodename) = "Directory" or obj.selectedrow = 0 then ' row 0 is reserved for the fullGrid shortcuts
+        print obj.item
         rfDefRemoteOptionButton(obj) 
     ' for now the only option is grid view so we will verify we are in a roGridScreen. It we add more buttons, the type check below is for fullGridScreen
     else if obj.isfullgrid = invalid and obj.disablefullgrid = invalid and type(obj.screen) = "roGridScreen" then 
@@ -971,13 +1057,13 @@ sub rfDialogGridScreen(obj as Object) as Dynamic
         dialog.SetButton("fullGridScreen", "Grid View: " + fromName) 'and type(obj.screen) = "roGridScreen" 
         dialog.Text = ""
         dialog.Title = "Options"
-    
+
+        if audioplayer.ContextScreenID <> invalid then dialog.setButton("gotoMusicNowPlaying","go to now playing [music]")
+
         dialog.SetButton("close", "Back")
         dialog.HandleButton = videoDialogHandleButton
         dialog.ParentScreen = obj
         dialog.Show()
-     else 
-         return invalid
      end if
 
 end sub
@@ -1020,11 +1106,11 @@ function getFullGridCurIndex(vc,index,default = 2) as object
 
     ' find the full grid screen - backtrack
     if type(screens) = "roArray" and screens.count() > 1 then 
-        for index = screens.count()-1 to 1 step -1
-            print "checking if screen #" + tostr(index) + "is the fullGrid"
-            if type(screens[index].screen) = "roGridScreen" and screens[index].isfullgrid <> invalid and screens[index].isfullgrid then
-                print "screen #" + tostr(index) + "is the fullGrid"
-                screen = screens[index]
+        for sindex = screens.count()-1 to 1 step -1
+            print "checking if screen #" + tostr(sindex) + "is the fullGrid"
+            if type(screens[sindex].screen) = "roGridScreen" and screens[sindex].isfullgrid <> invalid and screens[sindex].isfullgrid then
+                print "screen #" + tostr(sindex) + "is the fullGrid"
+                screen = screens[sindex]
                 exit for 
             end if
         next
@@ -1078,7 +1164,16 @@ sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
             end if
             print "overriding cloudsync thumb" + metadata.HDPosterURL
         end if
-        sizes = ImageSizes(metadata.ViewGroup, nodeType)
+
+
+        if tostr(GetGlobalAA().lookup("GlobalNewScreen")) = "poster" then
+            sizes = PosterImageSizes()
+        else if tostr(GetGlobalAA().lookup("GlobalNewScreen")) = "grid" then
+            sizes = GridImageSizes()
+        else
+            sizes = ImageSizes(metadata.ViewGroup, nodeType)
+        end if
+
         ' mod_rewrite/apache do not allow & or %26
         ' replace with :::: - the cdn will replace with &
         reand = CreateObject("roRegex", "&", "") 
@@ -1090,17 +1185,28 @@ sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
         ' append cloud to the text if not a secondary ( this should only be on library sections )
         ' if there are complaints, we can skip these so people see their default TV icon in the section
         if remyplex.IsMatch(metadata.server.serverurl) and tostr(nodeType) <> "secondary" and tostr(metadata.ViewGroup) <> "secondary" then thumb_text = thumb_text + " (cloud)"
-        sdWidth  = "223"
-        sdHeight = "200"
-        hdWidth  = "300"
-        hdHeight = "300"
-        if isRFdev() then 
-            rarflix_cdn = "http://ec2.rarflix.com" ' use non-cached server for testing (same destination as cloudfrount)
+
+	if GetGlobal("IsHD") = true then 
+            Width = sizes.hdWidth
+            Height = sizes.hdHeight
         else
-            rarflix_cdn = "http://d1gah69i16tuow.cloudfront.net"
-        end if 
-        NewThumb = rarflix_cdn + "/images/key/" + URLEncode(thumb_text) ' this will be a autogenerate poster (transparent)
-        NewThumb = NewThumb + "/size/" + tostr(hdWidth) + "x" + tostr(hdHeight) ' things seem to play nice this way with the my image processor
+            Width = sizes.sdWidth
+            Height = sizes.sdHeight
+        end if
+
+        ' the Image Processor expects images to be 300px wide ( text is set to fit that )
+        ' reset the height accordingly. The PMS transcoder will resize it after the image has been created
+        ' this is also done in the image processor.. 2013-12-13
+        Height = int((300/Width.toInt())*Height.toInt())
+        Width = "300"
+
+        rarflix_cdn = "http://d1gah69i16tuow.cloudfront.net"
+        ' rarflix_cdn = "http://ec2-b.rarflix.com"
+        ' new format -- no longer need to update apache 'CK\d\d\d\d\d\d\d\d'
+        cachekey = "CK20130001" ' 2013-12-13 ( changed font size / wrap / etc ) ' previous fcfab14d40e6685f5918a2d32332a98f
+        NewThumb = rarflix_cdn + "/" + cachekey + "/key/" + URLEncode(thumb_text) ' this will be a autogenerate poster (transparent)
+'        NewThumb = NewThumb + "/size/" + tostr(hdWidth) + "x" + tostr(hdHeight) ' things seem to play nice this way with the my image processor
+        NewThumb = NewThumb + "/size/" + tostr(Width) + "x" + tostr(Height)
         NewThumb = NewThumb + "/fg/" + RegRead("rf_img_overlay", "preferences","999999")
         Debug("----   newraw:" + tostr(NewThumb))
         ' we still want to transcode the size to the specific roku standard
@@ -1134,6 +1240,7 @@ function getSectionType(vc) as object
            if row <> invalid and index <> invalid then
                if type(screen.loader.contentarray[row].content) = "roArray" then 
                    metadata = screen.loader.contentarray[row].content[index]
+		   print metadata
                end if
            end if
         end if
@@ -1141,3 +1248,246 @@ function getSectionType(vc) as object
     return metadata ' return empty assoc
 end function
 
+function getEpoch() as integer
+        datetime = CreateObject( "roDateTime" )
+        return datetime.AsSeconds()
+end function 
+
+function getLogDate() as string
+        datetime = CreateObject( "roDateTime" )
+        datetime.ToLocalTime()
+        date = datetime.AsDateString("short-date")
+
+        hours = datetime.GetHours()
+	if hours < 10 then 
+            hours = "0" + tostr(hours)
+        else 
+            hours = tostr(hours)
+        end if
+
+        minutes = datetime.GetMinutes()
+        if minutes < 10 then 
+            minutes = "0" + tostr(minutes)
+        else 
+            minutes = tostr(minutes)
+        end if
+
+        seconds = datetime.GetSeconds()
+        if seconds < 10 then 
+            seconds = "0" + tostr(seconds)
+        else 
+            seconds = tostr(seconds)
+        end if
+
+	return date + " " + hours + ":" + minutes + ":" + seconds
+end function
+
+sub updateVideoHUD(m,curProgress,releaseDate = invalid)
+    Debug("---- timeline sent :: HUD updated " + tostr(curProgress))
+    if releaseDate <> invalid then m.VideoItem.OrigHUDreleaseDate = releaseDate
+
+    endString = invalid
+    watchedString = invalid
+
+    date = CreateObject("roDateTime")
+    if m.VideoItem.Duration <> invalid and m.VideoItem.Duration > 0 then
+        duration = int(m.VideoItem.Duration/1000)
+        timeLeft = int(Duration - curProgress)
+        endString = "End Time: " + RRmktime(date.AsSeconds()+timeLeft) + "  (" + GetDurationString(timeLeft,0,1,1) + ")" + "  Watched: " + GetDurationString(int(curProgress),0,0,1)
+    else
+         ' include current time and watched time when video duration is unavailable (HLS & web videos)
+         watchedString = "Time: " + RRmktime(date.AsSeconds()) + "     Watched: " + GetDurationString(int(curProgress),0,0,1)
+    end if
+
+    ' set the HUD
+    content = CreateObject("roAssociativeArray")
+    content = m.VideoItem ' assign Video item and reset other keys
+    content.length = m.VideoItem.duration
+    content.title = m.VideoItem.title
+
+    ' set the Orig Release date before we start appending. We can then reuse the OrigHUDreleaseDate for future calls
+    if m.VideoItem.OrigHUDreleaseDate = invalid then
+        if content.releasedate <> invalid then
+            m.VideoItem.OrigHUDreleaseDate = content.releasedate
+        else
+            m.VideoItem.OrigHUDreleaseDate = ""
+        end if
+    end if
+
+     ' overwrite release date now
+    content.releasedate = m.VideoItem.OrigHUDreleasedate
+
+    if tostr(m.VideoItem.rokustreambitrate) <> "invalid" and validint(m.VideoItem.rokustreambitrate) > 0 then
+        bitrate = RRbitrate(m.VideoItem.rokustreambitrate)
+        content.releasedate = content.releasedate + " " + bitrate
+    end if
+
+    content.releasedate = content.releasedate + chr(10) + chr(10)  'two line breaks - easier to read
+    if endString <> invalid then content.releasedate = content.releasedate +  endString
+    if watchedString <> invalid then content.releasedate = content.releasedate + watchedString
+ 
+   ' update HUD
+    m.Screen.SetContent(content)
+end sub
+
+' hide Row Text (headers) for Rows on the Grid Screen
+' refer to vcPopScreen in ViewController.brs - we have to call this on every Pop for any GridScreen
+' due to Roku globally setting the counterText* for every open screen
+sub hideRowText(hide = true)
+    if RegRead("rf_fullgrid_hidetext", "preferences", "disabled") = "disabled" return ' nothing to do if we haven't set this pref
+
+    app = CreateObject("roAppManager")
+    if hide then 
+        app.SetThemeAttribute("GridScreenListNameColor", "#" +  GetGlobalAA().Lookup("rfBGcolor"))
+        app.SetThemeAttribute("CounterTextRight", "#" +  GetGlobalAA().Lookup("rfBGcolor"))
+        app.SetThemeAttribute("CounterTextLeft", "#" +  GetGlobalAA().Lookup("rfBGcolor"))
+        app.SetThemeAttribute("CounterSeparator", "#" +  GetGlobalAA().Lookup("rfBGcolor"))
+    else 
+        titleText = "#BFBFBF" 
+        normalText = "#999999"
+        subtleText = "#525252"
+        app.SetThemeAttribute("GridScreenListNameColor", titleText)
+        app.SetThemeAttribute("CounterTextRight", normalText)
+        app.SetThemeAttribute("CounterTextLeft", titleText)
+        app.SetThemeAttribute("CounterSeparator", normalText)
+    end if
+end sub
+
+
+Function GridImageSizes(style = invalid) As Object
+    ' will have to modify this if we use multi-aspect-ratio -- get the gridStyle for the focused index. TODO at a later date
+    if style = invalid then style = GetGlobalAA().Lookup("GlobalGridStyle")
+
+    if style = "flat-movie" then 
+        sdWidth = "110"
+        sdheight = "150"
+        hdWidth = "210"
+        hdheight = "270"
+    else if style = "flat-portrait" then 
+        sdWidth = "110"
+        sdheight = "140"
+        hdWidth = "210"
+        hdheight = "300"
+    else if style = "flat-landscape" then 
+        sdWidth = "140"
+        sdheight = "94"
+        hdWidth = "210"
+        hdheight = "158"
+    else if style = "flat-square" then 
+        sdWidth = "96"
+        sdheight = "86"
+        hdWidth = "132"
+        hdheight = "132"
+    else if style = "flat-16x9" then 
+        sdWidth = "140"
+        sdheight = "70"
+        hdWidth = "210"
+        hdheight = "118"
+    else if style = "two-row-flat-landscape-custom" then
+        sdwidth = "140"
+        sdHeight = "94"
+        hdWidth = "266"
+        hdHeight = "150"
+    else if style =  "four-column-flat-landscape" then 
+        sdwidth = "140"
+        sdHeight = "70"
+        hdWidth = "210"
+        hdHeight = "118"
+    else 
+        'default to something
+        sdWidth = "223"
+        sdHeight = "200"
+        hdWidth = "300"
+        hdHeight = "300"
+    end if
+
+    ' Mixed Aspect Ratio.... fun
+    '"mixed-aspect-ratio"
+    ' HD
+    'landscape - 192 x 144
+    'portrait - 192 x 274
+    'square - 192 x 192
+    ' SD 
+    'landscape -  140 x 94
+    'portrait - 140 x 180
+    'square - 140 x 126
+
+    sizes = CreateObject("roAssociativeArray")
+    sizes.sdWidth = sdWidth
+    sizes.sdHeight = sdHeight
+    sizes.hdWidth = hdWidth
+    sizes.hdHeight = hdHeight
+    return sizes
+End Function
+
+
+
+Function PosterImageSizes(style = invalid) As Object
+    if style = invalid then style = GetGlobalAA().Lookup("GlobalPosterStyle")
+
+    if style = "arced-portrait" then
+        SDwidth = "158"
+        SDheight = "204"
+        HDwidth = "214"
+        HDheight = "306"
+    else if style = "arced-landscape" then
+        SDwidth = "214"
+        SDheight = "144"
+        HDwidth = "290"
+        HDheight = "218"
+    else if style = "arced-16x9" then
+        SDwidth = "285"
+        SDheight = "145"
+        HDwidth = "385"
+        HDheight = "218"
+    else if style = "arced-square" then
+        SDwidth = "= 223"
+        SDheight = "200"
+        HDwidth = "300"
+        HDheight = "300"
+    else if style = "flat-category" then
+        SDwidth = "224"
+        SDheight = "158"
+        HDwidth = "304"
+        HDheight = "237"
+    else if style = "flat-episodic" then
+        SDwidth = "166"
+        SDheight = "112"
+        HDwidth = "224"
+        HDheight = "168"
+    else if style = "rounded-rect-16x9-generic" then
+        SDwidth = "177"
+        SDheight = "90"
+        HDwidth = "269"
+        HDheight = "152"
+    else if style = "flat-episodic-16x9" then
+        SDwidth = "185"
+        SDheight = "94"
+        HDwidth = "250"
+        HDheight = "141"
+    else 
+        'default to something
+        sdWidth = "223"
+        sdHeight = "200"
+        hdWidth = "300"
+        hdHeight = "300"
+    end if
+
+    sizes = CreateObject("roAssociativeArray")
+    sizes.sdWidth = sdWidth
+    sizes.sdHeight = sdHeight
+    sizes.hdWidth = hdWidth
+    sizes.hdHeight = hdHeight
+    return sizes
+End Function
+
+
+sub SetGlobalGridStyle(style = invalid) 
+    GetGlobalAA().AddReplace("GlobalGridStyle", style)
+    GetGlobalAA().AddReplace("GlobalNewScreen", "grid")
+end sub
+
+sub SetGlobalPosterStyle(style = invalid) 
+    GetGlobalAA().AddReplace("GlobalPosterStyle", style)
+    GetGlobalAA().AddReplace("GlobalNewScreen", "poster")
+end sub

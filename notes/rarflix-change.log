@@ -1,3 +1,187 @@
+#2.9.8-test  (2013-12-15)
+    * crash: now playing + channel content
+
+#2.9.7-test  (2013-12-14)
+    * crash: channel content ( poster screens ) when 'content is unavailable' -- the new screen with no content was never closed
+    * crash: properly handle when content 'year' is empty/invalid
+    * crash: devour channel (others) & now playing -- properly handle when a video.description is invalid/empty
+    * fixed: custom icons font size -- mainly done on the backend ( text should fit better )
+
+#2.9.6-test  (2013-12-13)
+    * Various channel content failed to play (SS-Plex)
+    * Posters size wrong for sub channel sections
+    * Crash: extra precautions for the now playing check
+
+#2.9.5-test  (2013-12-10)
+    * Rotten Tomatoes caching updates -- using round robin DNS ( no need to ELB )
+
+#2.9.4-test  (2013-12-09)
+    * Some posterScreen item do not need to be refreshed (yet) -- channel/music/photo content
+    * Do not prepend show title to episode title unless we are really 'mixed' (multiple parent shows)
+    * URL cleanup - could have affected channel content
+
+#2.9.3-test  (2013-12-09)
+    * URL cleanup - fixes various possible crashes
+    * crash: forcing direct play + subtitles
+
+#2.9.2-test  (2013-12-09)
+    * crash showing a single photo
+
+#2.9.1-test  (2013-12-07)
+    * crash trying to set a PIN code on SD screens
+
+#2.9.0-test  (2013-12-06)
+    * Original Theme
+        - dialog text was hard to read on the Original theme
+	- User Switch icon was wrong on home screen ( original theme only )
+    * Release Notes screen is now a scrollable paragraph with all release notes (firmware 4.3+)
+
+#2.8.9-dev  (2013-12-05)
+
+    * Rotten Tomatoes performance
+        - stage one: cache data in current screen. Do not re-query rotten tomatoes on every click right/left if already loaded.
+	- stage two: Rotten Tomatoes Proxy server added - maintained by me thanks to AWS+Squid
+
+    * v2.8.8 regressions fixes
+        - image size issues on springboard - we will no always use a 'larger' images than the grid for the SpringBoard
+        - images were not refreshed correctly from Episode Details Screen (springboard) to Episode List Screen (posterscreen)
+        - other image logic cleanup
+
+
+#2.8.8-dev  (2013-12-04)
+
+    * Slideshow Overlay
+        - it was lonely (top left: date of photo, top right: count - 1 of 100, body: Title of photo)
+        - overlay toggle (down button) is now more reponsive. It can be toggled frequently on the current image.
+
+    * Cast & Crew
+       - cast & crew search screen didn't use the preferred Grid Style (Portrait).
+       - removed "clips" from Cast & Crew search. The clip results were invalid.
+       - focus the first row on a Cast & Screen search after selecting a cast member. (fix for real this time)
+
+
+    * Misc Fixes
+        - larger BoB (grid description background) used on screens when it shouldn't have been.
+        - tv episodic view will show episode images instead of number (unfocused content).
+        - trailer thumbnails on poster screen should use landscape instead of portrait.
+        - crash: when pressing play on remote from a photo directory, whose children are also all directories.
+        - some images would break after being refresh (missing authtoken). This would cause broken images (gray poster) or the image would gray/broken and reappear.
+	- current bandwidth under remote/local settings will not show invalid if empty
+	- current bandwidth will show mbps > 999kbps
+
+#2.8.7-dev (2013-12-03)
+
+    * Fix Images Sizes (globally) - the Roku specifically wants images of a certain size or it has to resize internally
+        - custom icons will now use the correct size based on the Screen Style (grid/poster screens)
+        - all over icons/images/thumbnails will use the correct size based on the Screen Style
+        - changes above should speed up the display (roku will not have to internally resize images 99% of the time)
+
+    * Music Section Style ( on the list to make this a toggle, no eta )
+        - change from flat-square (the tiny 7x3 row) to flat-landscape (5x3 row)
+        - all subsections in music library section will use the 5x3 now. Before it was "random"
+
+    * TV Season Posters ( when using TV Seasons Posters vs the TV Show Poster )
+        - TV Season Posters: In some scenarios the Season poster was being used when it should have been the actual episode thumb
+        - TV Season Posters: sometimes the parentThumb (season thumb) isn't exposed via the PMS API. Query the API for it.
+
+    * Grid Description background (BoB) was too short in the new Portrait mode (roku bug) - text could overflow. Fixed with custom background
+
+    * Toggle added to change "Grid Updates/Speed"
+	- default is FULL ( what people should use )
+        - Partial will only reload the focused item
+        - Partial will be less dynamic but very quick -- I would suggest not to use this unless needed
+
+    * Grid Reloading (slow grid screen issues) logic updated again ( will yet again improve the speed of the grid )
+        - Always full reload the onDeck row
+        - Only do a full reload once every 90 seconds. You can now enter focused item and return to grid without speed issues. Same goes for using the * remote key.
+        - Check the focused item index against the PMS api. If keys do not match, a full reload will be forced (even before the 90 seconds) - Usually due to marking an item as watched/unwatched or newly scanned items are inserted
+        - Full Grid screens will always get a full reload. It's fast enough since it only load 5 items per row
+
+    * HUD would show "invalid" when originallyAvailableAt (Release Date) was empty. Display the Year or leave it empty if invalid.
+
+    * TV Episodes Screen
+        - TV Series episodes: use 16x9 for thumbs instead of 4x3. Toggle created, end user can change between 4x3 or 16x9
+        - Toggle to show Episode Images instead of a "blank images with a number" for unfocused episodes
+
+
+#2.8.6-test (2013-12-01)
+    Grid Changes - Display Modes and Styles
+      * TV/Movie Posters should fit the Orange Focus Box (better)
+      * Addition to Grid Style/Size Toggle: "Portrait (tall)" fit's the Plex Movie Posters better ( when used with Grid Display Mode: Photo )
+      * Toggle to 'hide' the Text above each row while in a Full Grid ( header rows text: 1-5 of 250 ...  1-5 ) 
+      * Photo section now defaults to landscape (Grid: 5x3) -- used to be 'landscape 16x9'
+      * Toggle to change photo sections from landscape to Portrait/Landscape/Landscape 16x9
+      * Fix: Grid Style/Size toggle only affected the Full Grid. Now it toggles Grids for Movies/Shows
+
+    Use Season Poster when viewing a season/episode ( recently added, recently releases, on deck, etc.. )
+      * Toggle allowed to set it back to 'Show'
+      * Official Channel only allowed 'Show'
+
+    Firmware 3.x bugfixes ( first gen roku )
+      * more button was hidden ( only have 5 buttons to work with instead of 6 )
+      * crash on * remote key - firmware didn't allow for button separator in dialog
+      * now playing dialog notification crash
+
+#2.8.5-test (2013-11-12)
+    * transcode session info ( video: [copy|convert] audio: [copy|convert] ) missing from HUD
+    * initial release of "lock screen"
+       - any user navigation action is NON idle
+       - videos/slideshow playing is NON idle
+       - music: you can toggle music events as NON idle/idle ( track changes )
+    * enable/disable grid pop out ( item description ) per section type: home, movie, show, music, photo , others (channels)
+    * movie trailer code cleanup ( required for the lock screen addition )
+	- First trailer will now automatically play. You can change behavious in Prefs. 
+	- only 10 trailers will be shown on the poster screen
+    * speed improvements for paginated dataloader modified again ( change from v2.8.4 ) - when re-loading grid rows
+        - load up to 8 items in the first 10 rows when first entering a grid screen
+	- OnDeck and any "Unwatched" row will be fully reloaded when re-entering grid from a child screen ( and focused )
+
+#2.8.4-test (2013-11-12)
+ Fast User Switching:
+    * User Profile Switch item/icon added to the home screen misc row when multiUser is enabled ( will not be displayed if multi-user is disabled - I.E. no profile enabled )
+    * Toggle: user selection icon - purple (roku) / orange (plex)
+
+ Video:
+    * 3 New TV Rows/Grid options ( re-order rows to use them )
+       - Recently Added Seasons
+       - Unwatched Recently Released
+       - Unwatched Recenlty Added
+
+    * Initial release of "Shuffle Play" for Videos
+    * HUD time/endtime/watched updated on start
+    * HUD time/endtime/watched updated when paused
+
+ Photos (slideshow) 
+    * Toggle to change "display mode" of photos in slideshow/single view ( how the image scales/crops/fits when displayed )
+    * Toggle to change "display mode" of photos thumbnail image
+    * Toggle to 'reload' slideshow after completion. I.E. check for new photos after every run
+    * slideshow didn't start at the right offset when selected from the photoSpringboard
+
+Fixing Lag - Grid Optimiziations
+    * speed improvements for paginated dataloader - trade offs included - when re-loading grid rows
+       - basically - do not fully reload focused row and do not invalidate every out of focus row
+       - load the next out of screen row ( first 8 items )
+       - reload selected item ONLY ( in every row )
+       - OnDeck will always be fully reloaded ( it's normally small in size and is more dynamic then others ) 
+
+ Others:
+    * Toggle: Initial release of GLOBALLY disabling the Grid POP Out ( description bubble on bottom left ) : prefs / section display / grid pop out 
+    * timestamp logging ( if time stamp is not logged, it's due to temporary debug messages - disregard )
+
+ Music
+    * cleanup now playing buttons ( do not show when already in now playing )
+    * remote (*) key after music was started/stopped did not bring up option for full grid ( in music section )
+
+ Fixes:
+    * more speed fixes for paginated loader
+    * hide invalid rows when there are NO Servers configured ( GDM disabled, myPlex disabled, no manual servers) - Help Screen updated to give info how to fix
+    * do not check for now playing content when server doesn't support it
+    * crash: checking metadata of some channel content
+    * crash: some channel videos do not have a duration
+    * disable full grid for sub channel content - not supported for channel content due to a limitation of the PMS
+    * HUD watched time not working on some channel content
+    * screensaver fixed ( affected v2.8.3 ) - @wagnerscastle
+
 #2.8.3 (2013-11-03)
     * RARflix & RARflixTest are in sync
     * Now Playing+Nofifications released to main channel

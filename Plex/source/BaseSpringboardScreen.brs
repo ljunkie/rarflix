@@ -115,8 +115,10 @@ Function sbHandleMessage(msg) As Boolean
 
         if msg.isScreenClosed() then
             for each item in m.thumbnailsToReset
-                item.SDPosterUrl = item.SDGridThumb
-                item.HDPosterUrl = item.HDGridThumb
+                if item.SDGridThumb <> invalid then
+                    item.SDPosterUrl = item.SDGridThumb
+                    item.HDPosterUrl = item.HDGridThumb
+                end if
             next
             m.thumbnailsToReset.Clear()
 
@@ -170,9 +172,18 @@ Function sbRefresh(force=false)
 
     ' See if we should switch the poster
     if m.metadata.SDDetailThumb <> invalid then
+        ' details Thumb is a "screenshot" preview of the video ( used for episodes )
         m.metadata.SDPosterUrl = m.metadata.SDDetailThumb
         m.metadata.HDPosterUrl = m.metadata.HDDetailThumb
         m.thumbnailsToReset.Push(m.metadata)
+    else if m.metadata.SDsbThumb <> invalid then
+        ' SDsbThumb is a large (in roku terms) thumb
+        ' sometimes we have tiny images depending on the gridStyle we are in
+        ' so we should use a large image for the springboard
+        m.metadata.SDPosterUrl = m.metadata.SDsbThumb
+        m.metadata.HDPosterUrl = m.metadata.HDsbThumb
+        ' we will keep using the new (larger) thumbnail on re-entry.
+        'm.thumbnailsToReset.Push(m.metadata)
     end if
 
     m.Screen.setContent(m.metadata)

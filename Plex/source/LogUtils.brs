@@ -6,12 +6,14 @@ Sub Debug(msg as String, server=invalid)
     ' override logging setting if this is the DEV channel
     ' otherwise one will have to enable logging to see the logs
     if type(isRFdev) = "roFunction" and NOT isRFdev() then m.Logger.isDev = false
+    m.Logger.isDev = false ' force logger off for this DEV - we are releasing it public
 
     ' hopefully save some CPU cycles
     if m.logger.isDev or m.logger.Enabled then 
-        print msg ' console
+        logDate = getLogDate()
+        print logDate + " : " + msg
         if server <> invalid then server.Log(msg) 'remote logging
-        m.Logger.Log(msg) ' log file for download
+        m.Logger.Log(logDate + " : " + msg) ' log file for download
     end if
 End Sub
 

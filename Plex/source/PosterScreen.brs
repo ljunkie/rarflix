@@ -1,8 +1,10 @@
 '* Displays the content in a poster screen. Can be any content type.
 
-Function createPosterScreen(item, viewController) As Object
+Function createPosterScreen(item, viewController, style = invalid) As Object
     obj = CreateObject("roAssociativeArray")
     initBaseScreen(obj, viewController)
+
+    SetGlobalPosterStyle(style) ' set the new poster style - needed for determine image sizes
 
     screen = CreateObject("roPosterScreen")
     screen.SetMessagePort(obj.Port)
@@ -17,7 +19,8 @@ Function createPosterScreen(item, viewController) As Object
     obj.SetListStyle = posterSetListStyle
 
     obj.UseDefaultStyles = true
-    obj.ListStyle = invalid
+'    obj.ListStyle = invalid
+    obj.ListStyle = style
     obj.ListDisplayMode = invalid
     obj.FilterMode = invalid
     obj.Facade = invalid
@@ -52,10 +55,12 @@ Function showPosterScreen() As Integer
         dialog.Title = "Content Unavailable"
         dialog.Text = "An error occurred while trying to load this content, make sure the server is running."
         dialog.Facade = m.Facade
-        dialog.Show()
+        dialog.closePrevious = true ' or check to see if there is a facade?
+        dialog.Show(true) ' blocking
         m.closeOnActivate = true
         m.Facade = invalid
-        return 0
+        m.popOnActivate = true
+        return -1
     end if
 
     if m.FilterMode = invalid then m.FilterMode = container.ViewGroup = "secondary"
@@ -104,7 +109,8 @@ Function showPosterScreen() As Integer
 
         if m.UseDefaultStyles then
             aa = getDefaultListStyle(container.ViewGroup, contentType)
-            status.listStyle = aa.style
+            ' we now specify the listStyle during the creatPosterScreen. Fallback just in case
+            if status.listStyle = invalid then status.listStyle = aa.style
             status.listDisplayMode = aa.display
         else
             status.listStyle = m.ListStyle
@@ -281,7 +287,7 @@ Function getDefaultListStyle(viewGroup, contentType) As Object
 
 
     if viewGroup = "episode" AND contentType = "episode" then
-        aa.style = "flat-episodic"
+        aa.style = RegRead("rf_episode_episodic_style", "preferences", "flat-episodic-16x9")
         aa.display = "zoom-to-fill"
     else if viewGroup = "movie" OR viewGroup = "show" OR viewGroup = "season" OR viewGroup = "episode" then
         aa.style = "arced-portrait"
@@ -290,6 +296,11 @@ Function getDefaultListStyle(viewGroup, contentType) As Object
         aa.display = "photo-fit"
     end if
     Debug("--- Poster Style for " + tostr(viewGroup) + " " + tostr(aa.style) +":" + tostr(aa.display))
+
+    ' set the new poster style - needed for determine image sizes
+    ' this should have already been set and by now it's probably too late, but we will set this for good measure
+    SetGlobalPosterStyle(aa.style) 
+
     return aa
 End Function
 

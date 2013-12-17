@@ -20,6 +20,7 @@ Function createViewController() As Object
 
     controller.CreateHomeScreen = vcCreateHomeScreen
     controller.CreateScreenForItem = vcCreateScreenForItem
+
     controller.CreateTextInputScreen = vcCreateTextInputScreen
     controller.CreateEnumInputScreen = vcCreateEnumInputScreen
     controller.CreateReorderScreen = vcCreateReorderScreen
@@ -79,12 +80,16 @@ Function createViewController() As Object
     controller.SystemLog.EnableType("bandwidth.minute")
     
     controller.CreateUserSelectionScreen = vcCreateUserSelectionScreen
+    controller.ResetIdleTimer = vcResetIdleTimer
+    controller.CreateLockScreen = vcCreateLockScreen
+    controller.CreateIdleTimer = vcCreateIdleTimer
 
     ' Figure if we need to show the securityscreen
     'First check if there are multiple users
-    controller.ShowSecurityScreen = false
-    controller.SkipUserSelection = false
-    controller.RFisMultiUser = false
+    controller.RFisMultiUser = false        'true if multi-user is enabled
+    controller.ShowSecurityScreen = false   'true to show user selection screen
+    controller.SkipUserSelection = false    'true to skip user selection screen and show PIN screen (use case: single user with PIN)
+    controller.IsLocked = false             'true when lock screen is up todo:Add method to lock without logging out
     for i = 1 to 7 step 1   'Check for other users enabled
         if RegRead("userActive", "preferences", "0",i) = "1" then 
             controller.ShowSecurityScreen = true
@@ -99,6 +104,7 @@ Function createViewController() As Object
             controller.ShowSecurityScreen = true
         end if
     end if
+    controller.timerIdleTime = invalid  'timer used for detecting idle time
 
     ' Stuff the controller into the global object
     m.ViewController = controller
@@ -109,7 +115,9 @@ Function createViewController() As Object
     controller.GdmAdvertiser = createGDMAdvertiser(controller)
     controller.AudioPlayer = createAudioPlayer(controller)
     controller.Analytics = createAnalyticsTracker()
-    
+
+    ' ljunkie Youtube Trailers (extended to TMDB)
+    controller.youtube = vcInitYouTube()
     return controller
 End Function
 
@@ -128,16 +136,75 @@ Function vcCreateHomeScreen()
     m.InitializeOtherScreen(screen, invalid)
     screen.Show()
     RRbreadcrumbDate(screen) 'ljunkie - homescreen data/time
+    'start timer for detecting idle time when the home screen is created.
+    m.CreateIdleTimer()
     return screen
 End Function
 
 
 Function vcCreateUserSelectionScreen() 
     screen = createUserSelectionScreen(m)
+    screen.ScreenName = "User Profile Selection"
     m.InitializeOtherScreen(screen, invalid)
     screen.Show()
     return screen
 End Function
+
+'Assumes that multi-user is enabled
+'Lock screen stays on top of everything
+' -- new addition: we must close any open dialogs 
+Function vcCreateLockScreen() 
+    TraceFunction("vcCreateLockScreen")
+    currentScreen = m.screens.peek()    'current screen to stack on top of
+    if currentScreen <> invalid and type(currentScreen.Screen) = "roMessageDialog" then 
+        Debug("---- Top screen is a Dialog -- need to close before we lock")
+        ' close the screen -- vcPopScreen takes care of any other dialogs
+        m.popscreen(currentScreen)
+        currentScreen = m.screens.Peek()
+    end if
+
+    'this PIN screen will stay up until either the PIN is entered or Back is pressed
+    pinScreen = VerifySecurityPin(m, RegRead("securityPincode","preferences",invalid,GetGlobalAA().userNum), true, 0)
+    pinScreen.ScreenName = "Locked"
+    if GetGlobalAA().userNum = 0 then
+        fn = firstof(RegRead("friendlyName", "preferences", invalid, GetGlobalAA().userNum),"Default User")
+    else
+        fn = firstof(RegRead("friendlyName", "preferences", invalid, GetGlobalAA().userNum),"User Profile " + tostr(GetGlobalAA().userNum))
+    end if 
+    m.InitializeOtherScreen(pinScreen, [fn])
+    currentScreen.OldActivate = invalid 'store previous Activate for whatever the current screen is 
+    if currentScreen.Activate <> invalid then currentScreen.OldActivate = currentScreen.Activate          
+    currentScreen.Activate = lockScreenActivate     'new Activate routine
+    m.IsLocked = true   'global when we're locked
+    pinScreen.txtBottom = "RARflix is locked due to inactivity.  Enter PIN Code using direction arrows on your remote control.  Press OK to retry PIN or Back to pick another User."   
+    pinScreen.Show()
+    return pinScreen
+End Function
+
+'Called when lock screen has shutdown.  Either the PIN is entered or Back is pressed
+sub lockScreenActivate(priorScreen)
+    TraceFunction("lockScreenActivate")  
+
+    if (priorScreen.pinOK = invalid) or (priorScreen.pinOK <> true) then    
+        'No code was entered.  We need to logout and return to the main user selection screen
+        'restore old Activate before calling this
+        m.Activate = m.OldActivate 
+        m.ViewController.PopScreen(invalid)    'invalid will close all screens
+    else
+        'pin is OK,
+        Debug("Valid PIN entered.  Unlocked.")
+        m.ViewController.IsLocked = false   'notify that we're unlocked
+        'restart idle timer     
+        m.ViewController.CreateIdleTimer()
+        'Do any prior screen activations that need to happen.
+        m.Activate = m.OldActivate 
+        m.OldActivate = invalid
+        if m.Activate <> invalid then
+            Debug("Calling old Activate")
+            m.Activate(priorScreen)
+        end if
+    endif
+End sub
 
 
 Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As Dynamic
@@ -255,18 +322,24 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     screenName = invalid
     poster_grid = RegRead("rf_poster_grid", "preferences", "grid")
     displaymode_poster = RegRead("rf_poster_displaymode", "preferences", "scale-to-fit")
-    displaymode_grid = RegRead("rf_grid_displaymode", "preferences", "scale-to-fit")
+    displaymode_grid = RegRead("rf_grid_displaymode", "preferences", "photo-fit")
+    grid_style_photos = RegRead("rf_photos_grid_style", "preferences","flat-landscape")
+    grid_style = RegRead("rf_grid_style", "preferences","flat-portrait")
 
-    if contentType = "movie" OR contentType = "episode" OR contentType = "clip" then
+    if contentType = "episode" OR contentType = "clip" then
+        screen = createVideoSpringboardScreen(context, contextIndex, m)
+        'screen.screen.SetPosterStyle("rounded-rect-16x9-generic")
+        screenName = "Preplay " + contentType
+    else if contentType = "movie" then 
         screen = createVideoSpringboardScreen(context, contextIndex, m)
         screenName = "Preplay " + contentType
     else if contentType = "series" then
         if RegRead("use_grid_for_series", "preferences", "") <> "" then
-            screen = createGridScreenForItem(item, m, "flat-16X9")
+            screen = createGridScreenForItem(item, m, "flat-16X9") ' we want 16x9 for series ( maybe flat-landscape when available )
             screenName = "Series Grid"
             if screen.loader.focusrow <> invalid then screen.loader.focusrow = 1 ' override this so we can hide the sub sections ( flat-16x9 is 5x3 )
         else
-            screen = createPosterScreen(item, m)
+            screen = createPosterScreen(item, m, "arced-portrait")
             screenName = "Series Poster"
             if fromFullGrid(m) and (item.umtitle <> invalid or item.title <> invalid) then 
                 breadcrumbs[0] = "All Seasons"
@@ -275,14 +348,16 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         end if
     else if contentType = "artist" then
         if poster_grid = "grid" then 
-            screen = createFULLGridScreen(item, m, "Invalid", displaymode_grid)
+            screen = createFULLGridScreen(item, m, "flat-landscape", displaymode_grid)
         else 
-            screen = createPosterScreen(item, m)
+            screen = createPosterScreen(item, m, "arced-square")
+            screen.noRefresh = true ' no need to refresh these items (yet)
         end if
         screenName = "Artist Poster"
     else if contentType = "album" then
         ' grid looks horrible in this view. - do not enable FULL grid
-        screen = createPosterScreen(item, m)
+        screen = createPosterScreen(item, m, "flat-episodic")
+        screen.noRefresh = true ' no need to refresh these items (yet)
         screen.SetListStyle("flat-episodic", "zoom-to-fill")
         screenName = "Album Poster"
     else if item.key = "nowplaying" then
@@ -305,29 +380,32 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screenName = "Section: " + tostr(item.type)
         if tostr(item.type) = "artist" then 
             Debug("---- override photo-fit/flat-square for section with content of " + tostr(item.type))
-            screen = createGridScreenForItem(item, m, "flat-square","photo-fit")
-            screen.screen.SetDisplayMode("Photo-Fit")
-            screen.screen.SetListPosterStyles("landscape")
-            if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 7x3 )
+            'screen = createGridScreenForItem(item, m, "flat-square","photo-fit") ' might need to change back to defaults ( grid_style -- to fit the standard )
+            screen = createGridScreenForItem(item, m, "flat-landscape", "photo-fit")
+            if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 5x3 )
         else if tostr(item.type) = "photo" then 
-            Debug("---- override photo-fit/flat-16x9 for section with content of " + tostr(item.type))
-            screen = createGridScreenForItem(item, m, "flat-16X9","photo-fit")
-	    '            screen.screen.SetDisplayMode("Photo-Fit") ' this has to be called before
+            ' Photo Section has it's own settings for DisplayMode and GridStyle
+            displayMode = RegRead("photoicon_displaymode", "preferences", "photo-fit")
+            Debug("---- override " + tostr(displayMode) + "/" + tostr(grid_style_photos) + " for section with content of " + tostr(item.type))
+            screen = createGridScreenForItem(item, m, grid_style_photos ,displayMode)
             if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 7x3 )
         else 
-            screen = createGridScreenForItem(item, m, "flat-movie", displaymode_grid)
+            screen = createGridScreenForItem(item, m, grid_style, displaymode_grid)
         end if
     else if contentType = "playlists" then
-        screen = createGridScreenForItem(item, m, "flat-16X9")
+        screen = createGridScreenForItem(item, m, "flat-16X9") ' not really sure where this is ( maybe the myPlex queue )
         screenName = "Playlist Grid"
         if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( flat-16x9 is 5x3 )
     else if contentType = "photo" then
         if right(item.key, 8) = "children" then
             if poster_grid = "grid" then 
-                screen = createFULLGridScreen(item, m, "flat-16x9", "photo-fit") ' we override photos to use photo fit -- toggle added later TODO
+                displayMode = RegRead("photoicon_displaymode", "preferences", "photo-fit")
+                Debug("---- override FULL Grid" + tostr(displayMode) + "/" + tostr(grid_style_photos) + "for section with content of " + tostr(item.type))
+                screen = createFULLGridScreen(item, m, grid_style_photos, displayMode) ' we override photos to use photo fit -- toggle added later TODO
                 screen.loader.focusrow = 1 ' lets fill the screen ( 5x3 ) - no header row ( might be annoying page up for first section.. TODO)
             else 
-                screen = createPosterScreen(item, m)
+                screen = createPosterScreen(item, m, "arced-landscape")
+                screen.noRefresh = true ' no need to refresh these items (yet)
             end if
             screenName = "Photo Poster"
         else
@@ -352,26 +430,50 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         ' these are subsections of a main section ( secondary )
         Debug("---- Creating secondary grid " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
         ' ljunkie TODO review this code
+        sec_metadata = getSectionType(m)
         if poster_grid = "grid" then 
-            sec_metadata = getSectionType(m)
             DisplayMode = displaymode_grid
 
-            style = RegRead("rf_grid_style", "preferences","flat-movie")
             focusrow = 0
-            if tostr(sec_metadata.type) = "photo" then 
-                style="flat-16x9"
-                DisplayMode = "photo-fit"
-                Debug("---- forcing to photo-fit")
+            if tostr(sec_metadata.type) = "artist" then 
+                grid_style="flat-landscape" ' TODO - create toggle for music grid style
+            else if tostr(sec_metadata.type) = "photo" then 
+                grid_style=grid_style_photos ' Use GRID style for photos
+                displayMode = RegRead("photoicon_displaymode", "preferences", "photo-fit") ' Use Display Mode for Photos
+                Debug("---- override " + tostr(displayMode) + "/" + tostr(grid_style_photos) + "for section with content of " + tostr(item.type))
                 focusrow = 1 ' lets fill the screen ( 5x3 )
             end if
-            screen = createFULLGridScreen(item, m, style, DisplayMode)
+            screen = createFULLGridScreen(item, m, grid_style, DisplayMode)
 	    screen.loader.focusrow = focusrow ' lets fill the screen ( 5x3 )
         else 
-            screen = createPosterScreen(item, m)
+            posterStyle = "arced-portrait"
+            if tostr(sec_metadata.type) = "photo" then posterStyle = "arced-landscape"
+            screen = createPosterScreen(item, m, posterStyle)
         end if
     else if item.key = "globalprefs" then
         screen = createPreferencesScreen(m)
         screenName = "Preferences Main"
+    else if item.key = "movietrailer" then
+        hasWaitDialog = ShowPleaseWait("Please wait","Searching TMDB & YouTube for " + Quote()+tostr(item.SearchTitle)+Quote())
+        yt_videos = m.youtube.SearchTrailer(item.searchTitle, item.year)
+        playTrailer = false
+        if yt_videos.Count() > 0 then
+            metadata=GetVideoMetaData(yt_videos)
+            screen = createPosterScreenExt(metadata, m, "arced-16x9","scale-to-fill")
+            screen.hasWaitDialog = hasWaitDialog
+            screen.handlemessage = trailerHandleMessage
+            screenName = "Movie Trailer"
+            if RegRead("rf_trailerplayfirst", "preferences", "enabled") = "enabled" then DisplayYouTubeVideo(metadata[0],screen.hasWaitDialog)
+'            playTrailer = true
+        else
+            ShowErrorDialog("No videos match your search","Search results")
+            hasWaitDialog.close()
+            return invalid
+        end if
+    else if item.key = "switchuser" then
+        screen = m.Screens.Peek()
+        if screen <> invalid then screen.screen.close()
+        return invalid
     else if item.key = "/channels/all" then
         ' Special case for all channels to force it into a special grid view
         screen = createGridScreen(m, "flat-square")
@@ -383,28 +485,35 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen.Loader.Port = screen.Port
         screenName = "All Channels"
     else if item.searchTerm <> invalid AND item.server = invalid then
-        'screen = createGridScreen(m, "flat-square")
-        screen = createGridScreen(m, "flat-movie", RegRead("rf_up_behavior", "preferences", "exit"), displaymode_grid)
+        screen = createGridScreen(m, grid_style, RegRead("rf_up_behavior", "preferences", "exit"), displaymode_grid)
         screen.Loader = createSearchLoader(item.searchTerm)
         screen.Loader.Listener = screen
         screenName = "Search Results"
     else if item.settings = "1"
         screen = createSettingsScreen(item, m)
         screenName = "Settings"
-    else if tostr(item.type) = "season" or tostr(item.type) = "channel" then 
-        ' others we want to fost into a poster screen
-        screen = createPosterScreen(item, m)
+    else if tostr(item.type) = "season" then
+        ' no full grid
+        screen = createPosterScreen(item, m, "arced-portrait")
+        screen.noRefresh = true ' no need to refresh these items (yet)
+    else if tostr(item.type) = "channel" then 
+        ' no full grid
+        screen = createPosterScreen(item, m, "arced-square")
+        screen.noRefresh = true ' no need to refresh these items (yet)
     else
         ' Where do we capture channel directory?
+        ' ljunkie - this doesn't seem to alwyas be channel items
         Debug("---- Creating a default " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
-        if tostr(contentType) = "appClip" and tostr(viewGroup) = "Invalid" then 
-            Debug("---- forcing to Poster view")
-            screen = createPosterScreen(item, m)
-        else if poster_grid = "grid" and tostr(viewGroup) <> "season" then 
+        'sec_metadata = getSectionType(m) <- this seems unneccesary ( viewgroup = invalid|InfoList|List - do not support paginated calls )
+        if tostr(contentType) = "appClip" and (tostr(viewGroup) = "Invalid" or tostr(viewGroup) = "InfoList" or tostr(viewGroup) = "List") then 
+            Debug("---- forcing to Poster view -> viewgroup matches: invalid|InfoList|List")
+            screen = createPosterScreen(item, m, "arced-square")
+            screen.noRefresh = true ' no need to refresh these items (yet)
+        else if poster_grid = "grid" and tostr(viewGroup) <> "season" then ' if we have set Full Grid and type is not a season, force Full Grid view
             screen = createFULLGridScreen(item, m, "Invalid", displaymode_grid)
         else 
             Debug("---- forcing to Poster view")
-            screen = createPosterScreen(item, m)
+            screen = createPosterScreen(item, m, "arced-portrait")
         end if
     end if
 
@@ -419,11 +528,12 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     m.PushScreen(screen)
 
     if show then screen.Show()
+
     if screen.hasWaitdialog <> invalid then screen.hasWaitdialog.close()
- 
+
     ' set the inital focus row if we have set it ( normally due to the sub section row being added - look at the createpaginateddataloader )
     if screen.loader <> invalid and screen.loader.focusrow <> invalid then 
-        screen.screen.SetFocusedListItem(screen.loader.focusrow,3)
+        screen.screen.SetFocusedListItem(screen.loader.focusrow,0)
     end if
 
     return screen
@@ -480,6 +590,10 @@ Function vcCreateContextMenu()
     ' Our context menu is only relevant if the audio player has content.
     ' ljunkie -- we need some more checks here -- if audio is not playing/etc and we want to use the asterisk button for other things.. how do we work this?
     if m.AudioPlayer.ContextScreenID = invalid then return invalid
+
+    ' if screen if locked do not show dialog ( we might want to allow this, but we'd need to disable the go to now playing screen )
+    ' redundant check - we don't allow option key globally
+    if m.IsLocked <> invalid and m.IsLocked then return invalid
 
     screen = m.screens.peek()
     showDialog = false
@@ -613,8 +727,12 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
         if item.ContentType = "photo" then 
             print "--- trying to play photos from a directory"
             container = createPlexContainerForUrl(item.server, item.server.serverurl, item.key)
-            context = container.getmetadata()
-            return m.CreatePhotoPlayer(context, 0)
+            newContext = container.getmetadata()
+            ' verify the container has images - it still could be all directories. 
+            ' If directory, skip and create screen for item
+            for each item in newContext
+                if item.nodename = "Photo" then return m.CreatePhotoPlayer(newContext, 0)
+            end for
         'else if tostr(sec_metadata.type) = "photo" and item.ContentType ="appClip" then 
         '    print "--- trying to play photos (appClip) from a directory"
         '    container = createPlexContainerForUrl(item.server, item.sourceurl, item.key)
@@ -662,32 +780,229 @@ Function vcIsVideoPlaying() As Boolean
 End Function
 
 Sub vcShowReleaseNotes()
-    header = ""
-    title = GetGlobal("appName") + " updated to " + GetGlobal("appVersionStr")
+    header = GetGlobal("appName") + " updated to " + GetGlobal("appVersionStr")
     paragraphs = []
-    'if isRFtest() then 
-    'end if
-    paragraphs.Push("Donate @ rarflix.com")
-    spacer = chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)
-    paragraphs.Push(spacer + "* user profiles (fast user switching)")
-    paragraphs.Push(spacer + "* user profile pin code [optional]")
-    paragraphs.Push(spacer + "* full grid")
-    paragraphs.Push(spacer + "* black theme")
-    paragraphs.Push(spacer + "* custom icons")
-    paragraphs.Push(spacer + "* now playing+notifications ( non shared accounts )")
-    paragraphs.Push(spacer + "* info button (asterisk) button on remote works is most areas - try it!")
-    paragraphs.Push("+ Movie Trailers, Rotten Tomatoes, HUD mods, Cast & Crew, and many more in Preferences/RARflix. Did I mention you can donate @ rarflix.com")
+    breadcrumbs = invalid
 
-    screen = createParagraphScreen(header, paragraphs, m)
-    screen.ScreenName = "Release Notes"
-    screen.Screen.SetTitle(title)
-    m.InitializeOtherScreen(screen, invalid)
+    ' roTextScreen was introduced via firmware 4.3+
+    major = GetGlobalAA().Lookup("rokuVersionArr")[0]
+    minor = GetGlobalAA().Lookup("rokuVersionArr")[1]
+    textScreen = false
+    if (major > 4) or (major = 4 and minor > 2) then textScreen = true
+
+    spacer = chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)
+
+    if NOT textScreen then 
+            paragraphs.Push("Donate @ rarflix.com")
+            paragraphs.Push(spacer + "* Many bug fixes and improvements")
+            paragraphs.Push(spacer + "* Speed improvements: Rotten Tomatoes and Grid")
+            paragraphs.Push(spacer + "* Focus border fits the Posters (better)")
+            paragraphs.Push(spacer + "* Use TV Season poster for Episodes/Seasons on Grid")
+'            paragraphs.Push(spacer + "* Toggle to change Grid Style/Size for Photos Section")
+'            paragraphs.Push(spacer + "* Idle Lock Screen when using PIN codes")
+'            paragraphs.Push(spacer + "* Grid Pop Out can be disabled per library section")
+'            paragraphs.Push(spacer + "* First Movie Trailer will auto play when selected")
+            paragraphs.Push(spacer + "* 3 New TV Rows/Grid options ( re-order rows to use them )")
+            paragraphs.Push(spacer + "* Shuffle Play for Video (experimental)")
+            paragraphs.Push("+ Profiles, Pin Codes, and many more! http://www.rarflix.com")
+    else 
+        ' We have a scrollable text screen now - we can include all the updates - yay
+        us = "_______________"
+        paragraphs.Push("                 Donations accepted at http://www.rarflix.com")
+        paragraphs.Push("  ")
+        paragraphs.Push(GetGlobal("appName") + " has been updated. You can click down to read about all"+chr(10)+" the changes, or click BACK on the remote to start using " + GetGlobal("appName") + "!" )
+        paragraphs.Push("  ")
+        paragraphs.Push(us+"v2.9.8 (2013-12-15)"+us)
+        paragraphs.Push("  ")
+        paragraphs.Push(" * crash: now playing + channel content")
+        paragraphs.Push("  ")
+
+        paragraphs.Push("  ")
+        paragraphs.Push(us+"v2.9.7 (2013-12-14)"+us)
+        paragraphs.Push("  ")
+        paragraphs.Push(" * crash: channels when 'content is unavailable'")
+        paragraphs.Push(" * crash: properly handle when content 'year' is empty/invalid")
+        paragraphs.Push(" * crash: devour channel (others) & now playing when video description invalid/empty")
+        paragraphs.Push(" * fixed: custom icons font size ( text should fit better )")
+        paragraphs.Push("  ")
+
+        paragraphs.Push("  ")
+        paragraphs.Push(us+"v2.9.6 (2013-12-13)"+us)
+        paragraphs.Push("  ")
+        paragraphs.Push("  * Various channel content failed to play")
+        paragraphs.Push("  * Posters size wrong for sub channel sections")
+        paragraphs.Push("  * Crash: extra precautions for the now playing check")
+        paragraphs.Push("  ")
+
+        paragraphs.Push("  ")
+        paragraphs.Push(us+"v2.9.2 - v2.9.5 (2013-12-10)"+us)
+        paragraphs.Push("  ")
+        paragraphs.Push("  * Rotten Tomatoes caching updates")
+        paragraphs.Push("  * Some posterScreen items do not need to be refreshed (yet) -- channels")
+        paragraphs.Push("  * Do not prepend show title to episode title unless we are really 'mixed'")
+        paragraphs.Push("  * URL cleanup - could have affected channel content")
+        paragraphs.Push("  * URL cleanup - fixing various possible crashes")
+        paragraphs.Push("  * Crash: forcing direct play + subtitles")
+        paragraphs.Push("  * Crash: showing a single photo")
+        paragraphs.Push("  ")
+
+        paragraphs.Push("  ")
+        paragraphs.Push(us+"v2.9.1 (2013-12-07)"+us)
+        paragraphs.Push("  ")
+        paragraphs.Push("  * Pin Codes did not work for SD screens")
+        paragraphs.Push("  ")
+
+        paragraphs.Push(us+"v2.9.0 (2013-12-06)"+us)
+        paragraphs.Push(chr(10) + " Original Theme")
+        paragraphs.Push("  * User selection icon was not working correctly for the Original theme")
+        paragraphs.Push("  * Dialog text was hard to head on the Original theme")
+        paragraphs.Push("  * New Release Notes screen. You can see all the changes now.")
+        paragraphs.Push("  ")
+        
+        paragraphs.Push(us+"v2.8.9 (2013-12-05)"+us)
+        paragraphs.Push(chr(10) + " Rotten Tomatoes Performance")
+        paragraphs.Push("  * Do not re-query rotten tomatoes on every click right/left if already loaded. (cache)")
+        paragraphs.Push("  * Rotten Tomatoes Proxy server added & maintained by me, thanks to AWS+Squid.")
+        paragraphs.Push("  ")
+        
+        paragraphs.Push(us+"v2.8.8 (2013-12-04)"+us)
+        paragraphs.Push(chr(10) + " Slideshow Overlay")
+        paragraphs.Push("  * It was lonely (top left: photo date, top right: photo count [1 of 100], body: photo title).")
+        paragraphs.Push("  * Overlay toggle (down button) is now more responsive.")
+        paragraphs.Push(chr(10) + " Cast & Crew")
+        paragraphs.Push("  * Cast & Crew search screen didn't use the preferred Grid Style (Portrait).")
+        paragraphs.Push("  * Removed 'clips' from Cast & Crew search. The clip results were invalid.")
+        paragraphs.Push("  * Focus the first row on a Cast & Screen search after selecting a cast member.")
+        paragraphs.Push(chr(10) + " Misc Fixes")
+        paragraphs.Push("  * Larger BoB (grid description background) required for portrait grid mode.")
+        paragraphs.Push("  * TV episode will now images instead of blank image with number (unfocused content).")
+        paragraphs.Push("  * Crash when trying to play from a photo directory")
+        paragraphs.Push("  * Some images would break after being refresh (missing authtoken).")
+        paragraphs.Push("  * Current bandwidth under remote/local settings will not show invalid if empty.")
+        paragraphs.Push("  * Current bandwidth will show mbps when 1+ mbps.")
+        paragraphs.Push("  ")
+        
+        paragraphs.Push(us+"v2.8.7 (2013-12-03)"+us)
+        paragraphs.Push(chr(10) + " Fix Image Sizes (globally). Should improve load times.")
+        paragraphs.Push("  * Custom icons will now use the correct size for the screen style (grid/poster screens).")
+        paragraphs.Push("  * All over icons/images/thumbnails will use the correct size based on the Screen Style.")
+        paragraphs.Push("  * Changes above should will increase speed (roku will not have to internally resize images).")
+        paragraphs.Push(chr(10) + " Grid Reloading (slow grid screen issues).")
+        paragraphs.Push("  * Always full reload the onDeck row.")
+        paragraphs.Push("  * Only do a full reload once every 90 seconds.")
+        paragraphs.Push("  * Refresh focused item if modified (watched/unwatched/added/deleted).")
+        paragraphs.Push("  * Full Grid screens will always fully reload.")
+        paragraphs.Push(chr(10) + " Toggle added to change 'Grid Updates/Speed'.")
+        paragraphs.Push("  * Default is Full ( what people should use ).")
+        paragraphs.Push("  * Partial will only reload the focused item.")
+        paragraphs.Push("  * Partial will be less dynamic but very quick. NOT suggested.")
+        paragraphs.Push(chr(10) + " TV Episodes Screen")
+        paragraphs.Push("  * Use 16x9 for thumbs instead of 4x3. Can be toggled between 4x3 or 16x9.")
+        paragraphs.Push("  * Toggle to show Episode Image instead of a number for unfocused content.")
+        paragraphs.Push(chr(10) + " Music Section Style")
+        paragraphs.Push("  * change from flat-square (the tiny 7x3 row) to flat-landscape (5x3 row).")
+        paragraphs.Push("  * all subsections in music library section will use the 5x3 now. Before it was 'random'.")
+        paragraphs.Push(chr(10) + " TV Season Posters ( when using TV Seasons Posters vs the TV Show Poster ).")
+        paragraphs.Push("  * In some scenarios the Season poster was being instead of the episode thumb.")
+        paragraphs.Push("  * Sometimes the Season Poster isn't exposed via the PMS API. Query the API for it.")
+        paragraphs.Push(chr(10) + " Misc Fixes")
+        paragraphs.Push("  * HUD would show 'invalid' if Release Date was empty.")
+        paragraphs.Push("  ")
+        
+        paragraphs.Push(us+"v2.8.6 (2013-12-01)"+us)
+        paragraphs.Push(chr(10) + " Grid Changes - Display Modes and Styles")
+        paragraphs.Push("  * TV/Movie Posters should fit the Orange Focus Box (better).")
+        paragraphs.Push("  * Addition to Grid Style/Size Toggle: 'Portrait (tall)' fits the Posters better.")
+        paragraphs.Push("  * Toggle to 'hide' the Text above each row while in a Full Grid ( I.E. 1-5 of 250 ...  1-5 ). ")
+        paragraphs.Push("  * Photo section now defaults to landscape (Grid: 5x3) -- used to be 'landscape 16x9'.")
+        paragraphs.Push("  * Toggle to change photo sections from landscape to Portrait/Landscape/Landscape 16x9.")
+        paragraphs.Push("  * Fix: Grid Style/Size toggle didn't work on Movies/TV Show sections.")
+        paragraphs.Push(chr(10) + " Use Season Poster when viewing a season/episode.")
+        paragraphs.Push("  * Toggle added to set it back to 'TV Show'.")
+        paragraphs.Push("  * Official Channel only allowed 'TV Show'.")
+        paragraphs.Push(chr(10) + " Firmware 3.x bugfixes ( first gen roku ).")
+        paragraphs.Push("  * More button was hidden ( only have 5 buttons to work with instead of 6 ).")
+        paragraphs.Push("  * Crash on * remote key - firmware didn't allow for button separator in dialog.")
+        paragraphs.Push("  * Now playing dialog notification crash.")
+        paragraphs.Push("  ")
+        
+        paragraphs.Push(us+"v2.8.5 (2013-11-18)"+us)
+        paragraphs.Push(chr(10) + " Initial Release of the Lock Screen. h/t @wagnerscastle.")
+        paragraphs.Push("  * Must use a PIN code - idle time settings are in Security PIN prefs.")
+        paragraphs.Push("  * Any user navigation action is 'Non idle'.")
+        paragraphs.Push("  * Videos/Slideshow playing is 'Non idle'.")
+        paragraphs.Push("  * Music: you can toggle music events (track change) as Non idle.")
+        paragraphs.Push(chr(10) + " Movie Trailers")
+        paragraphs.Push("  * First trailer will now automatically play. You can change behavior in Prefs.")
+        paragraphs.Push("  * Only 10 trailers will be shown on the poster screen.")
+        paragraphs.Push("  * Code cleanup ( required for the lock screen addition )")
+        paragraphs.Push(chr(10) + " Grid Speed Improvements ( change from v2.8.4 )")
+        paragraphs.Push("  * Load up to 8 items in the first 10 rows when first entering a grid screen.")
+        paragraphs.Push("  * OnDeck and 'Unwatched' rows will fully reload when re-entering grid from a child screen.")
+        paragraphs.Push(chr(10) + " Misc Fixes")
+        paragraphs.Push("  * Enable/Disable grid pop out per section: home, movie, show, music, photo , other.")
+        paragraphs.Push("  * Transcode session info ( video: [copy|convert] audio: [copy|convert] ) missing from HUD.")
+        paragraphs.Push("  ")
+        
+        paragraphs.Push(us+"v2.8.4 (2013-11-12)"+us)
+        paragraphs.Push(chr(10) + " Fast User Switching")
+        paragraphs.Push("  * User Profile Switch icon added to the home screen when multiUser is enabled.")
+        paragraphs.Push("  * Toggle: user selection icon - purple (roku) / orange (plex).")
+        paragraphs.Push(chr(10) + " 3 New TV Rows/Grid options ( re-order rows to use them )")
+        paragraphs.Push("  * Recently Added Seasons")
+        paragraphs.Push("  * Unwatched Recently Released")
+        paragraphs.Push("  * Unwatched Recenlty Added")
+        paragraphs.Push(chr(10) + " Initial release of 'Shuffle Play' for Videos (experimental)")
+        paragraphs.Push("  * Works just like continuous play ( must be started from within video spring board ).")
+        paragraphs.Push("  * Toggle in Playback Options and Global Preferences (advanced).")
+        paragraphs.Push(chr(10) + " Video Changes")
+        paragraphs.Push("  * 'Play' button should now show 'Play Continuous' or 'Play Shuffle+Continuous' if selected.")
+        paragraphs.Push("  * HUD time/endtime/watched updated on start.")
+        paragraphs.Push("  * HUD time/endtime/watched updated when paused.")
+        paragraphs.Push(chr(10) + " Photos (slideshow) ")
+        paragraphs.Push("  * Toggle to change 'display mode' of photos in slideshow/single view ")
+        paragraphs.Push("        (how the image scales/crops/fits when displayed ) [ default is now scale-to-fit ])")
+        paragraphs.Push("  * Toggle to change 'display mode' of photos thumbnail image.")
+        paragraphs.Push("  * Toggle to 'reload' slideshow after completion. I.E. check for new photos after every run.")
+        paragraphs.Push("  * Slideshow didn't start at the right offset when selected from the photoSpringboard.")
+        paragraphs.Push(chr(10) + " Grid Speed improvements  (trade offs included)")
+        paragraphs.Push("  * Do not fully reload focused row and do not invalidate every out of focus row.")
+        paragraphs.Push("  * Load the next out of screen row ( first 8 items ).")
+        paragraphs.Push("  * Reload selected item ONLY ( in every row ).")
+        paragraphs.Push("  * OnDeck will always be fully reloaded.")
+        paragraphs.Push(chr(10) + " Music")
+        paragraphs.Push("  * Cleanup now playing buttons ( do not show when already in now playing ).")
+        paragraphs.Push("  * Remote (*) key after music was started/stopped did not bring up option for full grid.")
+        paragraphs.Push(chr(10) + " Others")
+        paragraphs.Push("  * Toggle: Initial release of Globally disabling the Grid Pop out description.")
+        paragraphs.Push(chr(10) + " Misc Fixes")
+        paragraphs.Push("  * More speed fixes for the grid.")
+        paragraphs.Push("  * Hide invalid rows when there are NO Servers configured and show Help Screen.")
+        paragraphs.Push("        ( when GDM disabled, myPlex disabled, no manual servers)")
+        paragraphs.Push("  * Misc bug fixes")
+        paragraphs.Push("  * Disable full grid for sub channel content. Channel content not supported by PMS.")
+        paragraphs.Push("  * HUD watched time not working on some channel content.")
+        paragraphs.Push("  * Screensaver fixed ( affected v2.8.3 ) - @wagnerscastle")
+    end if
+
+    if NOT textScreen then 
+        screen = createParagraphScreen(header, paragraphs, m)
+        screen.SetTitle = "Release Notes"
+    else 
+        screen = createTextScreen(header, invalid , paragraphs, m, true)
+        screen.screen.AddButton(1, "Press OK or Back to Continue")
+        breadcrumbs =  ["Release Notes",GetGlobal("appVersionStr")]
+    end if
+
+    screen.screenName = "Release Notes"
+    m.InitializeOtherScreen(screen, breadcrumbs)
 
     ' As a one time fix, if the user is just updating and previously specifically
     ' set the H.264 level preference to 4.0, update it to 4.1.
-    if RegRead("level", "preferences", "41") = "40" then
-        RegWrite("level", "41", "preferences")
-    end if
+
+    '    if RegRead("level", "preferences", "41") = "40" then
+    '        RegWrite("level", "41", "preferences")
+    '    end if
 
     screen.Show()
 End Sub
@@ -714,16 +1029,18 @@ Sub vcPushScreen(screen)
 End Sub
 
 Sub vcPopScreen(screen)
-    if screen.ScreenID = -1 then
+    if (screen = invalid) or (screen.ScreenID = -1) then
         Debug("Popping home screen, cleaning up")
-
         while m.screens.Count() > 1
             m.PopScreen(m.screens.Peek())
         end while
-        m.screens.Pop()
-
-        screen.Loader.Listener = invalid
-        screen.Loader = invalid
+        screentmp = m.screens.Pop()
+        if screen = invalid then screen = screentmp
+        'home screen has these set
+        if screen.Loader <> invalid then 
+            if screen.Loader.Listener <> invalid then screen.Loader.Listener = invalid
+            screen.Loader = invalid
+        end if
         return
     end if
 
@@ -815,6 +1132,21 @@ Sub vcPopScreen(screen)
             'print type(newScreen.Screen)
         end if
 
+        ' ljunkie - hack to allow hiding the row text on grid screens ( mainly for the Full Grid )
+        ' sadly the counterText when changed on the fly affects all screen - but not the counter seperator
+        ' another small bug ( or odd feature ) in the Roku firmware. So we will have to reset it for previous screens
+        newScreen = m.screens.peek()
+        if newScreen <> invalid and tostr(newScreen.screen) = "roGridScreen" then 
+            if newScreen.isFullGrid <> invalid and newScreen.isFullGrid = true then 
+                hideRowText(true)
+            else 
+                hideRowText(false)
+            end if
+        end if
+
+        'ljunkie - another hack to set the current GridStyle ( only used if we refresh custom icons, for now )
+        SetGlobalGridStyle(newScreen.gridstyle) 
+
         screenName = firstOf(newScreen.ScreenName, type(newScreen.Screen))
         Debug("Top of stack is once again: " + screenName)
         m.Analytics.TrackScreen(screenName)
@@ -840,9 +1172,8 @@ Sub vcCloseScreenWithCallback(callback)
 End Sub
 
 Sub vcShow()
-    ' debug - always show release notes for testing
-    'm.ShowReleaseNotes()
-    if RegRead("last_run_version", "misc", "") <> GetGlobal("appVersionStr") then
+    testNotes = false ' testNotes = true
+    if RegRead("last_run_version", "misc", "") <> GetGlobal("appVersionStr") or testNotes then
         m.ShowReleaseNotes()
         RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")
     else
@@ -872,7 +1203,10 @@ Sub vcShow()
             '    Debug("Processing " + type(msg) + " (top of stack " + type(m.screens.Peek().Screen) + "): ")
             'end if
             for i = m.screens.Count() - 1 to 0 step -1
-                if m.screens[i].HandleMessage(msg) then exit for
+                if m.screens[i].HandleMessage(msg) = true then
+                    m.ResetIdleTimer()
+                    exit for
+                end if                    
             end for
 
             ' Process URL events. Look up the request context and call a
@@ -895,14 +1229,17 @@ Sub vcShow()
                     m.WebServer.postwait()
                 end if
             else if type(msg) = "roAudioPlayerEvent" then
-                m.AudioPlayer.HandleMessage(msg)
+                if m.AudioPlayer.HandleMessage(msg) = true and RegRead("locktime_music", "preferences","enabled") <> "enabled" then
+                    m.ResetIdleTimer() ' reset timer if music lock is disabled. I.E. when song changes timer will be reset
+                end if
             else if type(msg) = "roSystemLogEvent" then
                 msgInfo = msg.GetInfo()
                 if msgInfo.LogType = "bandwidth.minute" then
                     GetGlobalAA().AddReplace("bandwidth", msgInfo.Bandwidth)
                 end if
             else if msg.isRemoteKeyPressed() and msg.GetIndex() = 10 then
-                m.CreateContextMenu()
+                ' do not allow global option key while screen is locked
+                if m.IsLocked <> invalid or NOT m.IsLocked then m.CreateContextMenu()
             end if
         end if
 
@@ -920,6 +1257,20 @@ Sub vcShow()
                 timeout = remaining
             end if
         next
+        
+        'check for idle timeout
+        if m.timerIdleTime <> invalid then 'and (msg.isRemoteKeyPressed() or msg.isButtonInfo()) then 
+            ' if for some reason one wants to disable timer during music, we'll handle it - we can handle paused if needed later [m.audioplayer.ispaused]
+            if RegRead("locktime_music", "preferences","enabled") <> "enabled" and (m.audioplayer.isplaying) then 
+                m.ResetIdleTimer()                
+            else 
+                print "IDLE TIME Check: "; int(m.timerIdleTime.RemainingMillis()/int(1000))
+                if m.timerIdleTime.IsExpired()=true then  'timer expired will only return true once
+                    m.createLockScreen()    
+                end if 
+            end if
+        end if
+                 
     end while
 
     ' Clean up some references on the way out
@@ -950,11 +1301,11 @@ Sub vcShow()
         Debug("Exit channel - show user selection")
         m = invalid
         'GetGlobalAA().AddReplace("restoreAudio", restoreAudio)
-        Main(invalid)
+        Main(invalid)   'TODO: This needs to be changed as it's recursive and starts building up the stack.
         return
     else
         Debug("Finished global message loop")
-        end
+        end 'exit application? - why do it this way instead of letting main finish?
 '        controller = invalid
 '        port = CreateObject("roMessagePort")
 '        dialog = CreateObject("roMessageDialog")
@@ -1007,7 +1358,8 @@ Sub vcAddBreadcrumbs(screen, breadcrumbs)
         breadcrumbs.Pop()
     end if
 
-    if (breadcrumbs.Count() = 0 AND m.breadcrumbs.Count() > 0) or (m.screens.peek().isfullgrid <> invalid and breadcrumbs.Count() < 2 AND m.breadcrumbs.Count() > 0) then
+    if m.breadcrumbs = invalid then m.breadrumbs = "roArray"
+    if (breadcrumbs.Count() = 0 AND m.breadcrumbs.Count() > 0) or (m.screens.peek() <> invalid and m.screens.peek().isfullgrid <> invalid and breadcrumbs.Count() < 2 AND m.breadcrumbs.Count() > 0) then
         count = m.breadcrumbs.Count()
         if count >= 2 then
             breadcrumbs = [m.breadcrumbs[count-2], m.breadcrumbs[count-1]]
@@ -1066,12 +1418,16 @@ Sub vcUpdateScreenProperties(screen)
         if enableBreadcrumbs then
             screen.Screen.SetBreadcrumbText(bread1, bread2)
         end if
+    else if screenType = "roTextScreen" then
+        if enableBreadcrumbs then
+            screen.Screen.SetBreadcrumbText(bread1, bread2)
+        end if
     else if screenType = "roListScreen" OR screenType = "roKeyboardScreen" OR screenType = "roParagraphScreen" then
         if enableBreadcrumbs then
             screen.Screen.SetTitle(bread2)
         end if
     else if screenType = "roImageCanvas" then
-        'roImageCanvas does not currently support breadcrumbs but allow custom function to draw them
+        'roImageCanvas does not currently support breadcrumbs but allow for custom function to draw them
         if enableBreadcrumbs then
             if screen.SetBreadcrumbText <> invalid then screen.SetBreadcrumbText(bread2) 
         end if
@@ -1172,6 +1528,28 @@ End Sub
 Sub vcAddSocketListener(socket, listener)
     m.SocketListeners[socket.GetID().tostr()] = listener
 End Sub
+
+Sub vcResetIdleTimer(fcnName="" as string)
+    if m.timerIdleTime <> invalid then 'and (msg.isRemoteKeyPressed() or msg.isButtonInfo()) then 
+        'print "IDLE TIME: Reset() :"; fcnName 
+        m.timerIdleTime.Mark()
+    else 
+        'print "IDLE TIME: invalid timerIdleTime :"; fcnName
+    endif
+End Sub
+
+Sub vcCreateIdleTimer()
+    m.timerIdleTime = invalid
+    if RegRead("securityPincode","preferences",invalid) <> invalid then         
+        lockTime = RegRead("locktime", "preferences","10800")
+        if (lockTime <> invalid) and (strtoi(lockTime) > 0) then
+            m.timerIdleTime = createTimer()
+            m.timerIdleTime.SetDuration(int(strtoi(lockTime)*1000),false)
+            m.ResetIdleTimer()
+        end if 
+    end if
+End Sub
+
 
 Sub vcAddTimer(timer, listener)
     timer.ID = m.nextTimerId.tostr()

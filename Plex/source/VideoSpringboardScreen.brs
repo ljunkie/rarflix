@@ -29,19 +29,27 @@ Function createVideoSpringboardScreen(context, index, viewController) As Object
     obj.PlayButtonState = RegRead("directplay", "preferences", "0").toint()
 
     obj.ContinuousPlay = (RegRead("continuous_play", "preferences") = "1")
+    obj.ShufflePlay = (RegRead("shuffle_play", "preferences") = "1")
 
     return obj
 End Function
 
 Sub videoSetupButtons()
     m.ClearButtons()
+    versionArr = GetGlobal("rokuVersionArr", [0])
 
     isMovieShowEpisode = (m.metadata.ContentType = "movie" or m.metadata.ContentType = "show" or m.metadata.ContentType = "episode")
 
    'ljunkie - don't show stars if invalid
     if m.metadata.starrating = invalid then m.Screen.SetStaticRatingEnabled(false)
 
-    m.AddButton(m.PlayButtonStates[m.PlayButtonState].label, "play")
+    playLabel = m.PlayButtonStates[m.PlayButtonState].label
+    if m.ShufflePlay then
+        playLabel = "Shuffle+Continuous " + playLabel
+    else if m.ContinuousPlay then
+         playLabel = "Continuous " + playLabel
+    end if
+    m.AddButton(playLabel, "play")
     Debug("Media = " + tostr(m.media))
     Debug("Can direct play = " + tostr(videoCanDirectPlay(m.media)))
 
@@ -50,7 +58,10 @@ Sub videoSetupButtons()
          m.AddButton("Trailer", "getTrailers")
     end if
 
-    if isMovieShowEpisode and m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then m.AddButton("Cast & Crew","RFCastAndCrewList")
+    ' hide cast and crew to show ratings instead ( firmware 3.x and less only allow for 5 buttons )
+    if versionArr[0] >= 4 then 
+        if isMovieShowEpisode and m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then m.AddButton("Cast & Crew","RFCastAndCrewList")
+    end if
 
     supportedIdentifier = (m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
     if supportedIdentifier then
@@ -79,7 +90,16 @@ Sub videoSetupButtons()
     if m.metadata.parentKey <> invalid AND m.metadata.parentIndex <> invalid then
         m.AddButton( "View Season " + m.metadata.parentIndex, "seasonFromEpisode")
     end if
-    
+
+    ' show more button now for firmware 3.x and less -- only allow for 5 buttons
+    if versionArr[0] < 4 then 
+        if isMovieShowEpisode then
+            m.AddButton("Playback Options & More...", "more")
+        else 
+            m.AddButton("More...", "more")
+        end if
+    end if
+
     ' Delete button for myplex vidoes (queue/recommended) - we should have room for this
     if m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex" AND m.metadata.id <> invalid then
         m.AddButton("Delete from queue", "delete")
@@ -143,10 +163,12 @@ Sub videoSetupButtons()
 
     end if
 
-    if isMovieShowEpisode then
-        m.AddButton("Playback Options & More...", "more")
-    else 
-        m.AddButton("More...", "more")
+    if versionArr[0] >= 4 then 
+        if isMovieShowEpisode then
+            m.AddButton("Playback Options & More...", "more")
+        else 
+            m.AddButton("More...", "more")
+        end if
     end if
 
 End Sub
@@ -170,7 +192,6 @@ Sub videoGetMediaDetails(content)
         rair = CreateObject("roRegex", "/newest", "")
         rallLeaves = CreateObject("roRegex", "/allLeaves", "")
         rnp = CreateObject("roRegex", "/status/sessions", "")
-	'stop
 
         where = "invalid"
         if ra.Match(m.metadata.sourceurl)[0] <> invalid then
@@ -212,7 +233,7 @@ Sub videoGetMediaDetails(content)
     end if
 
     if m.metadata.ContentType = "movie" AND RegRead("rf_rottentomatoes", "preferences", "enabled") = "enabled" then 
-        m.metadata.tomatoData = getRottenTomatoesData(m.metadata.RFSearchTitle) 
+        if m.metadata.tomatoData = invalid then m.metadata.tomatoData = getRottenTomatoesData(m.metadata.RFSearchTitle) 
     end if
     m.media = m.metadata.preferredMediaItem
 End Sub
@@ -234,6 +255,17 @@ Function videoHandleMessage(msg) As Boolean
             Debug("Button command: " + tostr(buttonCommand))
 
             if buttonCommand = "play" OR buttonCommand = "resume" then
+                ' ljunkie - continuous/shuffle play - load the content required now
+
+                ' special: get all context if we came from a FullGrid and ContinuousPlay/ShufflePlay are enabled
+                if m.ContinuousPlay or m.shuffleplay and m.FullContext = invalid and fromFullGrid(m) then GetContextFromFullGrid(m)
+
+                ' shuffle the context if shufflePlay enable - as of now the selected video will always play
+                if m.shuffleplay then 
+                    m.Shuffle(m.context)
+                    m.metadata = m.context[0]
+                end if
+                
                 directPlayOptions = m.PlayButtonStates[m.PlayButtonState]
                 Debug("Playing video with Direct Play options set to: " + directPlayOptions.label)
                 m.ViewController.CreateVideoPlayer(m.metadata, invalid, directPlayOptions.value)
@@ -256,7 +288,7 @@ Function videoHandleMessage(msg) As Boolean
                 m.Item.server.Delete(key)
                 m.Screen.Close()
             else if buttonCommand = "options" then
-                screen = createVideoOptionsScreen(m.metadata, m.ViewController, m.ContinuousPlay)
+                screen = createVideoOptionsScreen(m.metadata, m.ViewController, m.ContinuousPlay, m.ShufflePlay)
                 m.ViewController.InitializeOtherScreen(screen, ["Video Playback Options"])
                 screen.Show()
                 m.checkChangesOnActivate = true
@@ -294,7 +326,15 @@ Function videoHandleMessage(msg) As Boolean
                 else 
                      year = m.metaData.ReleaseDate
                 end if
-                youtube_search(tostr(m.metadata.RFSearchTitle),tostr(year))
+                breadcrumbs = ["Trailers",tostr(m.metadata.RFSearchTitle)]
+                dummyItem = CreateObject("roAssociativeArray")
+                dummyItem.ContentType = invalid
+                dummyItem.server = invalid
+                dummyItem.key = "movietrailer"
+                dummyItem.year = year
+                dummyItem.searchTitle = tostr(m.metadata.RFSearchTitle)
+                m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
+                closeDialog = true
             else if buttonCommand = "tomatoes" then
                 dialog = createBaseDialog()
                 dialog.Title = "Rotten Tomatoes Review"
@@ -417,10 +457,16 @@ Function videoDialogHandleButton(command, data) As Boolean
         else 
             year = obj.metaData.ReleaseDate
         end if
-        youtube_search(tostr(obj.metadata.RFSearchTitle),tostr(year))
+        breadcrumbs = ["Trailers",tostr(obj.metadata.RFSearchTitle)]
+        dummyItem = CreateObject("roAssociativeArray")
+        dummyItem.server = invalid
+        dummyItem.key = "movietrailer"
+        dummyItem.year = year
+        dummyItem.searchTitle = tostr(obj.metadata.RFSearchTitle)
+        m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
         closeDialog = true
     else if command = "RFCastAndCrewList" then
-        m.ViewController.PopScreen(m) ' close dialog before we show the Cast&Crew screen
+        'm.ViewController.PopScreen(m) ' close dialog before we show the Cast&Crew screen ' not needed and wrong
         ' for now lets not use the show with episode
         dialog = ShowPleaseWait("Please wait","Gathering the Cast and Crew for '" + firstof(obj.metadata.showtitle,obj.metadata.cleantitle,obj.metadata.umtitle,obj.metadata.title) + "'")
         screen = RFcreateCastAndCrewScreen(obj)
@@ -436,7 +482,7 @@ Function videoDialogHandleButton(command, data) As Boolean
         obj.Refresh(true)
         closeDialog = true
     else if Command = "options" then
-        screen = createVideoOptionsScreen(obj.metadata, obj.ViewController, obj.ContinuousPlay)
+        screen = createVideoOptionsScreen(obj.metadata, obj.ViewController, obj.ContinuousPlay, obj.ShufflePlay)
         obj.ViewController.InitializeOtherScreen(screen, ["Video Playback Options"])
         screen.Show()
         obj.checkChangesOnActivate = true
@@ -456,6 +502,13 @@ Function videoDialogHandleButton(command, data) As Boolean
         if obj.metadata.ratingKey <> invalid then
             obj.Item.server.Rate(obj.metadata.ratingKey, obj.metadata.mediaContainerIdentifier, rateValue%.ToStr())
         end if
+    else if command = "gotoMusicNowPlaying" then
+        obj.focusedbutton = 0
+        dummyItem = CreateObject("roAssociativeArray")
+        dummyItem.ContentType = "audio"
+        dummyItem.Key = "nowplaying"
+        obj.ViewController.CreateScreenForItem(dummyItem, invalid, ["","Now Playing"])
+        closeDialog = true
     else if command = "close" then
         closeDialog = true
     end if
@@ -491,8 +544,15 @@ Sub videoActivate(priorScreen)
         end if
 
         if priorScreen.Changes.DoesExist("continuous_play") then
+            priorScreen.Changes["playback"] = tostr(m.PlayButtonState)
             m.ContinuousPlay = (priorScreen.Changes["continuous_play"] = "1")
-            priorScreen.Changes.Delete("continuous_play")
+            'priorScreen.Changes.Delete("continuous_play")
+        end if
+
+        if priorScreen.Changes.DoesExist("shuffle_play") then
+            priorScreen.Changes["playback"] = tostr(m.PlayButtonState)
+            m.ShufflePlay = (priorScreen.Changes["shuffle_play"] = "1")
+            'priorScreen.Changes.Delete("shuffle_play")
         end if
 
         if priorScreen.Changes.DoesExist("media") then
@@ -512,7 +572,7 @@ Sub videoActivate(priorScreen)
     end if
 
     if m.refreshOnActivate then
-        if m.ContinuousPlay AND (priorScreen.isPlayed = true OR priorScreen.playbackError = true) then
+        if (m.ContinuousPlay or m.ShufflePlay) AND (priorScreen.isPlayed = true OR priorScreen.playbackError = true) then
             m.GotoNextItem()
             directPlayOptions = m.PlayButtonStates[m.PlayButtonState]
             Debug("Playing video with Direct Play options set to: " + directPlayOptions.label)

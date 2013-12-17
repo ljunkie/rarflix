@@ -1,16 +1,41 @@
 
 Function newVideoMetadata(container, item, detailed=false) As Object
     ' Videos only have a grandparent thumb in situations where we prefer it,
-    ' so pass that to the base constructor.
-    video = createBaseMetadata(container, item, item@grandparentThumb)
+    ' so pass that to the base constructor. 
+    ' ljunkie ^^ is where Plex Prefers it via the PMS API. This could change at any point breaking some logic. 
+
+    ' ljunkie - allow end users to choose Season or Show poster for Episodes via the Grid
+    ' ONLY valid to check if grandparentThumb exists - otherwise we might set parentThumb when a Episode thumb is supposed to be used
+    ' Seasons Poster (recently added Seasons / Stacked can also be toggled between Season/Show via 'newSeasonMetadata()'
+    gridThumb = invalid 
+    if item@grandparentThumb <> invalid then 
+        if RegRead("rf_episode_poster", "preferences", "season") = "season" then 
+            gridthumb = item@parentThumb
+            ' Ugh - the PMS doesn't seem to always give the ParentThumb even though it exists. So I guess we will have to query for it. 
+            ' at least we only have to query the parentKey which is the specific season, so it should be "quick"
+            ' If this causes slowdown, EU can always disable this fieature ( of course they may not know to )
+            if gridthumb = invalid and item@parentKey <> invalid then 
+                Debug("---- Finding Parent thumb for TV Show " + tostr(item@grandparentTitle) + ": " + tostr(item@title) + " -- key:" + tostr(item@parentKey))
+                seaCon = createPlexContainerForUrl(container.server, container.server.serverurl, item@parentKey)
+                if seaCon <> invalid then gridthumb = firstof( seaCon.xml.Directory[0]@Thumb, item@parentThumb)
+                if gridthumb <> item@parentThumb then Debug("---- Forced using Season Thumb " + tostr(gridThumb) + " had to search for it!")
+            end if
+        else 
+            gridThumb = item@grandparentThumb  ' use show poster
+        end if
+    end if
+
+    video = createBaseMetadata(container, item, gridThumb) ' note if thumb is not specified, it will use the "closest" relative Thumb
 
     if item@grandparentThumb <> invalid AND item@thumb <> invalid AND video.server <> invalid then
         sizes = ImageSizes(container.ViewGroup, item@type)
-
-        video.SDGridThumb = video.server.TranscodedImage(container.sourceUrl, item@grandparentThumb, sizes.sdWidth, sizes.sdHeight)
-        video.HDGridThumb = video.server.TranscodedImage(container.sourceUrl, item@grandparentThumb, sizes.hdWidth, sizes.hdHeight)
-        video.SDDetailThumb = video.server.TranscodedImage(container.sourceUrl, item@thumb, sizes.sdWidth, sizes.sdHeight)
-        video.HDDetailThumb = video.server.TranscodedImage(container.sourceUrl, item@thumb, sizes.hdWidth, sizes.hdHeight)
+        video.SDGridThumb = video.server.TranscodedImage(container.sourceUrl, gridThumb, sizes.sdWidth, sizes.sdHeight)
+        video.HDGridThumb = video.server.TranscodedImage(container.sourceUrl, gridThumb, sizes.hdWidth, sizes.hdHeight)
+        'video.SDDetailThumb = video.server.TranscodedImage(container.sourceUrl, item@thumb, sizes.sdWidth, sizes.sdHeight)
+        'video.HDDetailThumb = video.server.TranscodedImage(container.sourceUrl, item@thumb, sizes.hdWidth, sizes.hdHeight)
+        ' use larger images for detail thumb - we don't want this to be small ever
+        video.SDDetailThumb = video.server.TranscodedImage(container.sourceUrl, item@thumb, sizes.detailSDW, sizes.detailSDH)
+        video.HDDetailThumb = video.server.TranscodedImage(container.sourceUrl, item@thumb, sizes.detailHDW, sizes.detailHDH)
     end if
 
     video.Refresh = videoRefresh
@@ -32,6 +57,7 @@ Function newVideoMetadata(container, item, detailed=false) As Object
     video.isLibraryContent = (video.mediaContainerIdentifier = "com.plexapp.plugins.library")
 
     video.ReleaseDate = item@originallyAvailableAt
+    if video.ReleaseDate = invalid then video.ReleaseDate = item@year ' ljunkie - use the Year for an empty ReleaseDate
 
     length = item@duration
     if length <> invalid then
@@ -129,7 +155,9 @@ Sub setVideoBasics(video, container, item)
     if container.ViewGroup = "episode" OR item@type = "episode" then
         episodeStr = invalid
         seasonStr = invalid
-        if item@grandparentTitle <> invalid then
+        ' ljunkie - if the viewGroup is "episode", then this is "All Seasons" of the same episode. 
+        ' -- it has been proven ( so far )
+        if item@grandparentTitle <> invalid and container.ViewGroup <> "episode" then
             video.ShortDescriptionLine1 = item@grandparentTitle + ": " + video.ShortDescriptionLine1
         end if
         if item@index <> invalid then
@@ -144,6 +172,10 @@ Sub setVideoBasics(video, container, item)
             video.EpisodeNumber = 0
             episode = "Episode ??"
         end if
+
+        'ljunkie - exclude episode number to display images on a poster screen
+        if RegRead("rf_episode_episodic_thumbnail", "preferences","disabled") = "enabled" then video.EpisodeNumber = invalid
+
         parentIndex = firstOf(item@parentIndex, container.xml@parentIndex)
         if parentIndex <> invalid then
             video.ShortDescriptionLine2 = "Season " + parentIndex + " - " + episode
@@ -237,17 +269,22 @@ Sub setVideoBasics(video, container, item)
         video.nowPlaying_orig_title = video.title
         video.nowPlaying_orig_description = video.description
       
+        video.description = "" ' reset video Description -- blank but not invalid
         if video.viewoffset <> invalid then 
              video.description = "Progress: " + GetDurationString(int(video.viewoffset.toint()/1000),0,1,1)
              video.description = video.description + " [" + percentComplete(video.viewOffset,video.length) + "%]"
-        else 
-             video.description = "" ' sometime the offset is invalid, so we will just set it empty. It will be updated with the timer
+        else if item@sourceTitle <> invalid then
+             video.description = item@sourceTitle
         end if
 
         video.description = video.description + " on " + firstof(item.Player@title, item.Player@platform)
         if video.server.name <> invalid then video.description = video.description + " [" + video.server.name + "]" ' show the server 
         video.nowPlaying_progress = video.description ' container for HUD notify
-        video.description = video.description + chr(10) + video.nowPlaying_orig_description
+
+        ' append the original description if NOT invalid
+        if video.nowPlaying_orig_description <> invalid then video.description = video.description + chr(10) + video.nowPlaying_orig_description
+
+        ' prepend the "user:" to the video title
         video.title = UcaseFirst(item.user@title,true) + " " + UcaseFirst(item.Player@state) + ": "  + video.CleanTitle
 
         ' set nowPlaying info for later
@@ -310,10 +347,11 @@ Sub setVideoDetails(video, container, videoItemXml, hasDetails=true)
 
     SDThumb = video.server.TranscodedImage(video.server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
     HDThumb = video.server.TranscodedImage(video.server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
-    if video.server.AccessToken <> invalid then
-        SDThumb = SDThumb + "&X-Plex-Token=" + video.server.AccessToken
-        HDThumb = HDThumb + "&X-Plex-Token=" + video.server.AccessToken
-    end if
+    ' token is now part of TranscodedImage
+    'if video.server.AccessToken <> invalid then
+    '    SDThumb = SDThumb + "&X-Plex-Token=" + video.server.AccessToken
+    '    HDThumb = HDThumb + "&X-Plex-Token=" + video.server.AccessToken
+    'end if
     ' end thumbs - ljunkie
 
     'ondeck doesn't give actor/director/etc id's -- so we will force this in rarflix.brs:getPostersForCastCrew
@@ -612,8 +650,13 @@ End Sub
 Function newSeasonMetadata(container, item) As Object
     ' Seasons often have their own posters, but in many circumstances we prefer
     ' show's poster.
+    ' ljunkie - added toggle for this. We prefer the Seasons poster - but one can set it back to Show if wanted
     if container.xml@mixedParents = "1" then
-        thumb = firstOf(item@parentThumb, item@thumb, container.xml@thumb)
+        if RegRead("rf_season_poster", "preferences", "season") = "season" then    
+            thumb = firstOf(item@thumb, item@parentThumb, container.xml@thumb)
+        else
+            thumb = firstOf(item@parentThumb, item@thumb, container.xml@thumb)
+        end if
     else
         thumb = invalid
     end if

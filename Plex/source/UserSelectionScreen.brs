@@ -35,6 +35,7 @@ Function createUserSelectionScreen(viewController) as object
     obj.Screen = CreateObject("roImageCanvas")
     obj.Show = userSelectionShow
     obj.HandleMessage = userSelectionHandleMessage
+    obj.BaseActivate = obj.Activate
     
     obj.userSelected = -1
     obj.theme = getImageCanvasTheme()
@@ -81,13 +82,14 @@ Sub userSelectionShow(refresh=false as Boolean)
     'centerPt of screen
     x=int(canvasRect.w/2)
     y=int(canvasRect.h/2)-offsetSize.h
-    
+    icon = "arrow-up-po.png"
+    if RegRead("userprofile_icon_color", "preferences", "orange", 0) <> "orange" then icon = "arrow-up.png"    
     buttons = [ 'These can be hardcoded later so long as adjusted for HD->SD 
             'The "-picSize.w/2" means rotate around the middle
-            {url:"pkg:/images/arrow-up.png",TargetRect:{x:Int(-picSize.w/2), y:Int(-picSize.h/2), w:picSize.w, h:picSize.h},TargetRotation:270.0,TargetTranslation:{x:x-bufSize.w,y:y}}
-            {url:"pkg:/images/arrow-up.png",TargetRect:{x:Int(-picSize.w/2), y:Int(-picSize.h/2), w:picSize.w, h:picSize.h},TargetRotation:0.0,TargetTranslation:{x:x,y:y-bufSize.h}}
-            {url:"pkg:/images/arrow-up.png",TargetRect:{x:Int(-picSize.w/2), y:Int(-picSize.h/2), w:picSize.w, h:picSize.h},TargetRotation:90.0,TargetTranslation:{x:x+bufSize.w,y:y}}
-            {url:"pkg:/images/arrow-up.png",TargetRect:{x:Int(-picSize.w/2), y:Int(-picSize.h/2), w:picSize.w, h:picSize.h},TargetRotation:180.0,TargetTranslation:{x:x,y:y+bufSize.h}}
+            {url:"pkg:/images/"+icon,TargetRect:{x:Int(-picSize.w/2), y:Int(-picSize.h/2), w:picSize.w, h:picSize.h},TargetRotation:270.0,TargetTranslation:{x:x-bufSize.w,y:y}}
+            {url:"pkg:/images/"+icon,TargetRect:{x:Int(-picSize.w/2), y:Int(-picSize.h/2), w:picSize.w, h:picSize.h},TargetRotation:0.0,TargetTranslation:{x:x,y:y-bufSize.h}}
+            {url:"pkg:/images/"+icon,TargetRect:{x:Int(-picSize.w/2), y:Int(-picSize.h/2), w:picSize.w, h:picSize.h},TargetRotation:90.0,TargetTranslation:{x:x+bufSize.w,y:y}}
+            {url:"pkg:/images/"+icon,TargetRect:{x:Int(-picSize.w/2), y:Int(-picSize.h/2), w:picSize.w, h:picSize.h},TargetRotation:180.0,TargetTranslation:{x:x,y:y+bufSize.h}}
               ]
     textArea = [ 'These can be hardcoded later so long as adjusted for HD->SD 
             'The "-picSize.w/2" centers the text boxes
@@ -169,10 +171,7 @@ Function userSelectionHandleMessage(msg) As Boolean
                 m.userSelected = 2
             else If i=0 Then   ' Back - Close the screen and exit 'codes.button_back_pressed
                 m.userSelected = -1
-                end ' we will exit the screen on back button
-                m.Screen.Close()
-            'else 
-            '    Debug("Key Pressed:" + tostr(msg.GetIndex()) + ", pinCode:" + tostr(m.pinCode))
+                end ' we will exit the roku application on back button 
             end if
             if m.userSelected <> -1 then
                 if m.currentUserPage <> 0 then
@@ -183,7 +182,7 @@ Function userSelectionHandleMessage(msg) As Boolean
                     m.userSelected = -1 'disable selection
                 else if RegRead("securityPincode","preferences",invalid,m.userSelected) <> invalid then    'pop up PIN screen when user has a password
                     pinScreen = VerifySecurityPin(m.ViewController, RegRead("securityPincode","preferences",invalid,m.userSelected), false, 2)
-                    m.ViewController.InitializeOtherScreen(pinScreen, ["Access to RARFlix"])
+                    m.ViewController.InitializeOtherScreen(pinScreen, ["Access to RARflix"])
                     m.Activate = userSelectionActivate
                     pinScreen.Show()
                 else
@@ -205,7 +204,7 @@ End Function
 
 'Called when screen pops to top after the PIN entering screen completes
 sub userSelectionActivate(priorScreen)
-    m.Activate = invalid    'dont call this routine again
+    m.Activate = m.BaseActivate    'dont call this routine again
     if (priorScreen.pinOK = invalid) or (priorScreen.pinOK <> true) then    'either no code was entered, was cancelled or wrong code
         'nothing to do, just wait for the next selection
     else
@@ -224,3 +223,16 @@ sub userSelectUser(userNumber as integer)
     initTheme() 're-read rarflix theme
     GetGlobalAA().ViewController.ShowSecurityScreen = false  
 end sub
+
+'Sometimes we may need to check if multiUser is "still enabled"
+function checkMultiUserEnabled() as boolean
+    vc = GetViewController()
+    vc.RFisMultiUser = false
+    for i = 1 to 7 step 1   'Check for other users enabled
+        if RegRead("userActive", "preferences", "0",i) = "1" then 
+            vc.RFisMultiUser = true
+            exit for
+        end if
+    end for
+    return vc.RFisMultiUser
+end function

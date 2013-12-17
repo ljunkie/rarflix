@@ -27,11 +27,16 @@
 '
 '******************************************************
 
+function RegGetUniqueSections()
+    obj = { myplex:"",preferences:"",servers:"",userinfo:""} 'list of prefs that are customized for each user.
+    return obj  
+end function
+
 'Create AA keyed off of section for quick lookup 
 sub RegSetUserPrefsToCurrentUser()
-    m.userRegPrefs = { myplex:"",preferences:"",servers:"",userinfo:""} 'list of prefs that are customized for each user.  
+    m.userRegPrefs = RegGetUniqueSections() 'list of prefs that are customized for each user.  
     for each key in m.userRegPrefs
-        if m.userNum <= 0 then  'for user of 0 or -1, just use the standard name
+        if (m.userNum = invalid) or (m.userNum <= 0) then  'for user of 0 or -1, just use the standard name
             m.userRegPrefs[key] = tostr(key)
         else
             m.userRegPrefs[key] = tostr(key) + "_u" + numtostr(m.userNum)
@@ -41,10 +46,11 @@ end sub
 
 'Return the section name, converting the required ones to the right format
 Function RegGetSectionName(section=invalid) as string
-    if section = invalid then 
-        return "Default"
-    else if m.userRegPrefs[section] <> invalid then
-        return m.userRegPrefs[section]
+    if section = invalid then  return "Default"
+    userRegPrefs = m.userRegPrefs
+    if userRegPrefs = invalid then userRegPrefs = RegGetUniqueSections()
+    if userRegPrefs[section] <> invalid then   
+        return userRegPrefs[section]
     end if     
     return section
 end function
@@ -53,7 +59,9 @@ end function
 function RegGetSectionByUserNumber(userNumber as integer, section = invalid) as string
     'this is slow but rarely gets called
     if section = invalid then return "Default"
-    for each key in m.userRegPrefs
+    userRegPrefs = m.userRegPrefs
+    if userRegPrefs = invalid then userRegPrefs = RegGetUniqueSections()
+    for each key in userRegPrefs
         if key = section then
             if userNumber <= 0 then 'for user of 0 or -1, just use the standard name
                 return tostr(key)
@@ -68,7 +76,9 @@ end function
 'Erases all the prefs for a usernumber
 sub RegEraseUser(userNumber as integer)
     Debug("Erasing user " + numtostr(userNumber))
-    for each section in m.userRegPrefs
+    userRegPrefs = m.userRegPrefs
+    if userRegPrefs = invalid then userRegPrefs = RegGetUniqueSections()
+    for each section in userRegPrefs
         print "section="; section
         old = CreateObject("roRegistrySection", RegGetSectionByUserNumber(userNumber, section))
         keyList = old.GetKeyList()
@@ -181,13 +191,13 @@ End Function
 '******************************************************
 Function isint(obj as dynamic) As Boolean
     if obj = invalid return false
-    if type(obj, 3) = "" return false   'this can happen with uninitialized variables
+    if type(obj) = "" return false   'this can happen with uninitialized variables
     if GetInterface(obj, "ifInt") = invalid return false
     return true
 End Function
 
 Function validint(obj As Dynamic) As Integer
-    if type(obj, 3) = "" return false   'this can happen with uninitialized variables
+    if type(obj) = "" return false   'this can happen with uninitialized variables
     if obj <> invalid and GetInterface(obj, "ifInt") <> invalid then
         return obj
     else
@@ -214,7 +224,7 @@ End Function
 '******************************************************
 Function isstr(obj as dynamic) As Boolean
     if obj = invalid return false
-    if type(obj, 3) = "" return false   'this can happen with uninitialized variables
+    if type(obj) = "" return false   'this can happen with uninitialized variables
     if GetInterface(obj, "ifString") = invalid return false
     return true
 End Function
@@ -406,7 +416,7 @@ End Sub
 '******************************************************
 Function AnyToString(any As Dynamic) As dynamic
     if any = invalid return "invalid"
-    if type(any, 3) = "" return "empty"   'this can happen with uninitialized variables
+    if type(any) = "" return "empty"   'this can happen with uninitialized variables
     if isstr(any) return any
     if isint(any) return numtostr(any)
     if GetInterface(any, "ifBoolean") <> invalid

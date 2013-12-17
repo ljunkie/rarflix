@@ -2,7 +2,17 @@
 '* This logic reflects that in the PosterScreen.SetListStyle
 '* Not using the standard sizes appears to slow navigation down
 Function ImageSizes(viewGroup, contentType) As Object
-	'* arced-square size
+    ' ljunkie -- these still are not the correct sizes for all screens...
+    ' ljunkie (2013-12-03) we now set the screen we are creating globally ( for roGridScree & roPosterScreen )
+    ' let's use the sizes documented by Roku for these screens - it should speed up the display
+    ' fall back to the default sizes the Official channel uses if neither are set
+    sizes = CreateObject("roAssociativeArray")
+
+    if tostr(GetGlobalAA().lookup("GlobalNewScreen")) = "poster" then
+        sizes = PosterImageSizes()
+    else if tostr(GetGlobalAA().lookup("GlobalNewScreen")) = "grid" then
+        sizes = GridImageSizes()
+    else
 	sdWidth = "223"
 	sdHeight = "200"
 	hdWidth = "300"
@@ -27,12 +37,28 @@ Function ImageSizes(viewGroup, contentType) As Object
 		hdHeight = "300"
 
 	endif
-	sizes = CreateObject("roAssociativeArray")
 	sizes.sdWidth = sdWidth
 	sizes.sdHeight = sdHeight
 	sizes.hdWidth = hdWidth
 	sizes.hdHeight = hdHeight
-	return sizes
+    end if
+ 
+    ' for now, the detail thumbs will be hard coded 
+    ' we don't specify the Style (yet) when calling a SpringBoard
+    ' ONLY if they are small.. (flat-square)
+    if sizes.hdWidth.toInt() < 200 then 
+        sizes.detailHDH = "300"
+        sizes.detailHDW = "300"
+        sizes.detailSDH = "300"
+        sizes.detailSDW = "300"
+    else
+        sizes.detailHDH = sizes.hdHeight
+        sizes.detailHDW = sizes.hdWidth
+        sizes.detailSDH = sizes.sdHeight
+        sizes.detailSDW = sizes.sdWidth
+    end if
+
+    return sizes
 End Function
 
 Function createBaseMetadata(container, item, thumb=invalid) As Object
@@ -107,6 +133,9 @@ Function createBaseMetadata(container, item, thumb=invalid) As Object
     if thumb <> invalid AND server <> invalid then
         metadata.SDPosterURL = server.TranscodedImage(container.sourceUrl, thumb, sizes.sdWidth, sizes.sdHeight)
         metadata.HDPosterURL = server.TranscodedImage(container.sourceUrl, thumb, sizes.hdWidth, sizes.hdHeight)
+        ' use a larger thumb for the SpringBoard screen
+        metadata.SDsbThumb = server.TranscodedImage(container.sourceUrl, thumb, sizes.detailSDW, sizes.detailSDH)
+        metadata.HDsbThumb = server.TranscodedImage(container.sourceUrl, thumb, sizes.detailHDW, sizes.detailHDH)
     else
         metadata.SDPosterURL = imageDir + "BlankPoster.png"
         metadata.HDPosterURL = imageDir + "BlankPoster.png"

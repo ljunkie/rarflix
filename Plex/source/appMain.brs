@@ -54,7 +54,7 @@ Sub Main(args)
     initGlobals()
  
     'load rarflix prefs
-    rarflix = InitRARFlix() 
+    rarflix = InitRARflix() 
 
     'prepare the screen for display and get ready to begin
     controller = createViewController()
@@ -70,7 +70,6 @@ Sub Main(args)
         controller.audioPlayer.port =  resetPort
         GetGlobalAA().Delete("restoreAudio")
     end if
-
     controller.Show()
 End Sub
 
@@ -243,7 +242,7 @@ Sub initTheme()
     theme.OverhangLogoSD  = "pkg:/images/logo_final_SD.png" ' logo is transparent
 
     theme.OverhangOffsetHD_X = "125"    'these settings are duplicated in getImageCanvasTheme() so keep them in sync with this
-    theme.OverhangOffsetHD_Y = "10"
+    theme.OverhangOffsetHD_Y = "200"
     theme.OverhangSliceHD = imageDir + "Background_HD.jpg"
     theme.OverhangLogoHD  = "pkg:/images/logo_final_HD.png" ' logo is transparent
 
@@ -294,21 +293,32 @@ Sub initTheme()
     if rfTheme = "black" then 
         theme.ThemeType = "generic-dark"
         theme.DialogTitleText="#000000" ' header should be bold and black
-        theme.DialogBodyText="#222222"  ' test should now be too light or to dark
+        theme.DialogBodyText="#222222"  ' test should not be too light or to dark
+        theme.ButtonNormalColor = "#333333" 'normalText
     else
-        theme.DialogTitleText="#BFBFBF"
-        theme.DialogBodyText="#BFBFBF"
+        theme.DialogTitleText="#000000" ' header should be bold and black
+        theme.DialogBodyText="#222222"  ' test should not be too light or to dark
+        theme.ButtonNormalColor = normalText
     end if
-    theme.ButtonNormalColor = "#333333" 'normalText
-    theme.ButtonHighlightColor = plexOrange
-    ' Default for ButtonHighlightColor seems OK...
+
+    if rfTheme = "black" then 
+        theme.TextScreenBodyText = "#f0f0f0"
+        theme.TextScreenBodyBackgroundColor = "#111111"
+        theme.TextScreenScrollBarColor = "#a0a0a0"
+        theme.TextScreenScrollThumbColor = "#f0f0f0"
+    else 
+        theme.TextScreenBodyText = "#f0f0f0"
+        theme.TextScreenBodyBackgroundColor = "#111111"
+        theme.TextScreenScrollBarColor = "#a0a0a0"
+        theme.TextScreenScrollThumbColor = "#f0f0f0"
+    end if
+    'theme.ButtonHighlightColor = plexOrange ' Default for ButtonHighlightColor seems OK...
 
     theme.RegistrationCodeColor = plexOrange
     theme.RegistrationFocalColor = normalText
 
     theme.SearchHeaderText = titleText
     theme.ButtonMenuHighlightText = plexOrange 'titleText
-'    theme.ButtonMenuHighlightColor = "#FFA500" ' plex orange
     theme.ButtonMenuNormalText = titleText
 
     theme.PosterScreenLine1Text = titleText

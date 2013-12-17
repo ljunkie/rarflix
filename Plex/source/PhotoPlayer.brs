@@ -4,15 +4,18 @@
 
 Function createPhotoPlayerScreen(context, contextIndex, viewController)
     obj = CreateObject("roAssociativeArray")
+    obj.OnTimerExpired = photoPlayerOnTimerExpired
+
     initBaseScreen(obj, viewController)
-    RegWrite("slideshow_overlay_force", "0", "preferences")
+    GetGlobalAA().AddReplace("slideshow_overlay", false)
 
     screen = CreateObject("roSlideShow")
     screen.SetMessagePort(obj.Port)
 
     screen.SetUnderscan(2.5)
     screen.SetMaxUpscale(8.0)
-    screen.SetDisplayMode("photo-fit")
+    displayMode = RegRead("slideshow_displaymode", "preferences", "scale-to-fit")
+    screen.SetDisplayMode(displayMode)
     screen.SetPeriod(RegRead("slideshow_period", "preferences", "6").toInt())
     screen.SetTextOverlayHoldTime(RegRead("slideshow_overlay", "preferences", "2500").toInt())
 
@@ -23,13 +26,19 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
         print "---------------------wanted key" + key
         newcontext = []
         for each item in context
-            if tostr(item.nodename) = "Photo" then 
+            if item <> invalid and tostr(item.nodename) = "Photo" then 
                 newcontext.Push(item)
             else 
-                print "skipping item: " + tostr(item.nodename) + " " + tostr(item.title)
+                if item <> invalid then print "skipping item: " + tostr(item.nodename) + " " + tostr(item.title)
             end if
         next
         
+        ' update the overlay on the upper right with (# of #)
+        size = newcontext.count()
+        for index = 0 to size - 1
+            newcontext[index].TextOverlayUR = tostr(index+1) + " of " + tostr(size)
+        end for
+
         ' reset contextIndex if needed
         if context.count() <> newcontext.count() then 
             contextIndex = 0 ' reset context to zero, unless we find a match
@@ -48,6 +57,7 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController)
 
     ' Standard screen properties
     obj.Screen = screen
+    obj.doReload = RegRead("slideshow_reload", "preferences", "disabled")
     if type(context) = "roArray" then
         obj.Item = context[contextIndex]
         obj.Items = context ' ljunkie - set items for access later
@@ -82,16 +92,35 @@ Function photoPlayerHandleMessage(msg) As Boolean
     if type(msg) = "roSlideShowEvent" then
         handled = true
 
+        ' ljunkie - check if we have new context. Only set if slideshow_reload is enabled
+        if m.doReload = "enabled" and m.newContext <> invalid and m.newContext.count() > 0 then 
+            Debug("---- reloading slideshow with new context " + tostr(m.newContext.count()) + " items")
+            m.screen.SetContentList(m.newContext)
+            m.items = m.newContext
+            m.newContext = invalid
+        end if
+
         if msg.isScreenClosed() then
             ' Send an analytics event
-            RegWrite("slideshow_overlay_force", "0", "preferences")
+            GetGlobalAA().AddReplace("slideshow_overlay", false)
             amountPlayed = m.playbackTimer.GetElapsedSeconds()
             Debug("Sending analytics event, appear to have watched slideshow for " + tostr(amountPlayed) + " seconds")
             m.ViewController.Analytics.TrackEvent("Playback", firstOf(m.Item.ContentType, "photo"), m.Item.mediaContainerIdentifier, amountPlayed)
-
             m.ViewController.PopScreen(m)
         else if msg.isPlaybackPosition() then
             m.CurIndex = msg.GetIndex() ' update current index
+            ' ljunkie - check for new images after slideshow completeion ( if slideshow_reload is enabled )
+            if type(m.items) = "roArray" then 
+                if m.CurIndex <> m.items.count()-1 then m.ReloadQueryDone = invalid
+                if m.doReload = "enabled" and m.CurIndex = m.items.count()-1 then 
+                    if m.item <> invalid and m.item.server <> invalid and m.item.sourceurl <> invalid and m.ReloadQueryDone = invalid then 
+                        m.ReloadQueryDone = true
+                        obj = createPlexContainerForUrl(m.item.server, m.item.sourceurl, "")
+                        ' verify the new context <> current - save some load time
+                        if obj.count() > 0 and obj.count() <> m.items.count() then m.newContext = obj.getmetadata()
+                    end if
+                end if
+            end if
         else if msg.isRequestFailed() then
             Debug("preload failed: " + tostr(msg.GetIndex()))
         else if msg.isRequestInterrupted() then
@@ -115,34 +144,39 @@ Function photoPlayerHandleMessage(msg) As Boolean
                 m.isPaused = true
                 photoPlayerShowContextMenu(obj)
             else if msg.GetIndex() = 3 then
-                ' this needs work -- but the options button (*) now works to show the title.. so maybe another day
-                ol = RegRead("slideshow_overlay_force", "preferences","0")
-                time = invalid            
-                if ol = "0" then
-                    time = 2500 ' force show overlay
-                    if RegRead("slideshow_overlay", "preferences", "2500").toInt() > 0 then time = 0 'prefs to show, force NO show
-                    RegWrite("slideshow_overlay_force", "1", "preferences")
-                else
-                    ' print "Making overlay invisible ( or set back to the perferred settings )"
-                    RegWrite("slideshow_overlay_force", "0", "preferences")
-                    time = RegRead("slideshow_overlay", "preferences", "2500").toInt()
-               end if
 
-               if time <> invalid then
-                   if time = 0 then
-                       ' print "Forcing NO overlay"
-                       m.screen.SetTextOverlayHoldTime(0)
-                       m.screen.SetTextOverlayIsVisible(true) 'yea, gotta set it true to set it false?
-                       m.screen.SetTextOverlayIsVisible(false)
-                   else 
-                      ' print "Forcing Overlay"
-                       m.screen.SetTextOverlayHoldTime(0)
-                       m.screen.SetTextOverlayIsVisible(true)
-                       Debug("sleeping " + tostr(time) + "to show overlay")
-                       sleep(time) ' sleeping to show overlay, otherwise we just get a blip (even with m.screen.SetTextOverlayHoldTime(1000)
-                       m.screen.SetTextOverlayIsVisible(false)
-                       m.screen.SetTextOverlayHoldTime(time)
-                   end if
+                if GetGlobalAA().Lookup("slideshow_overlay") = false then
+                    time = 2500 ' force show overlay (default to 2500 msec)
+                    ' if EU has set pref as showing slideshow by default, set time to 0 ( to reverse logic - hide ol )
+                    if RegRead("slideshow_overlay", "preferences", "2500").toInt() > 0 then time = 0
+                    GetGlobalAA().AddReplace("slideshow_overlay", true)
+                else
+                    GetGlobalAA().AddReplace("slideshow_overlay", false)
+                    ' we can now used the stored pref to either hide or show the overlay
+                    time = RegRead("slideshow_overlay", "preferences", "2500").toInt()
+                end if
+
+                if time = 0 then
+                    ' hide overlay
+                    if m.overlayTimer <> invalid then m.overlayTimer.Active = false
+                    m.screen.SetTextOverlayHoldTime(0)
+                    ' Roku bug or feature? hae to set the overlay to true befre we can set it to false
+                    m.screen.SetTextOverlayIsVisible(true)
+                    m.screen.SetTextOverlayIsVisible(false)
+                else 
+                    ' show overlay
+                    m.screen.SetTextOverlayHoldTime(2500)
+                    m.screen.SetTextOverlayIsVisible(true)
+                    ' using a timer will be less obtrusive. 
+                    if m.overlayTimer = invalid then
+                        m.overlayTimer = createTimer()
+                        m.overlayTimer.Name = "overlay"
+                        m.overlayTimer.Time = time
+                        m.overlayTimer.SetDuration(time, true)
+                        m.ViewController.AddTimer(m.overlayTimer, m)
+                    end if
+                    m.overlayTimer.Active = true
+                    m.overlayTimer.Mark()
                 end if
             end if
         end if
@@ -197,4 +231,12 @@ Sub photoPlayerShowContextMenu(obj,force_show = false)
         end if
     end if
 
+End Sub
+
+sub photoPlayerOnTimerExpired(timer)
+    if timer.Name = "overlay" then
+        m.screen.SetTextOverlayIsVisible(false)
+        m.screen.SetTextOverlayHoldTime(timer.time)
+        m.overlayTimer.Active = false
+    end if
 End Sub

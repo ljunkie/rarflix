@@ -46,7 +46,7 @@ Sub refreshHomeScreen(changes)
         changes = CreateObject("roAssociativeArray") ' hack for info button from grid screen (mark as watched) -- TODO later and find out why this is a Boolean
         'changes["servers"] = "true"
     end if
-    ' printAny(5","1",changes) ' this prints better than printAA
+    ' printAny(5,"1",changes) ' this prints better than printAA
     ' ljunkie Enum Changes - we could just look at changes ( but without _previous_ ) we don't know if this really changed.
     if changes.DoesExist("rf_hs_clock") and changes.DoesExist("_previous_rf_hs_clock") and changes["rf_hs_clock"] <> changes["_previous_rf_hs_clock"] then
         if changes["rf_hs_clock"] = "disabled" then
@@ -97,9 +97,16 @@ Sub refreshHomeScreen(changes)
     Capabilities(true)
 End Sub
 
-Sub ShowHelpScreen()
+Sub ShowHelpScreen(opt = invalid)
     header = "Welcome to Plex for Roku!"
     paragraphs = []
+    if opt <> invalid and opt = 2 then
+        ' GDM disabled, myPlex not connected and no manual servers?
+        paragraphs.Push("There are no servers configured. Please enable one or more of the following:")
+        paragraphs.Push(" * Connect your myPlex account: Prefs")
+        paragraphs.Push(" * Enable Server Discovery: Prefs / Plex Media Servers")
+        paragraphs.Push(" * Add a server manually: Prefs / Plex Media Servers")
+    end if
     paragraphs.Push("Plex for Roku automatically connects to Plex Media Servers on your local network and also works with myPlex to view queued items and connect to your published and shared servers.")
     paragraphs.Push("To download and install Plex Media Server on your computer, visit http://plexapp.com/getplex")
     paragraphs.Push("For more information on getting started, visit http://plexapp.com/roku")

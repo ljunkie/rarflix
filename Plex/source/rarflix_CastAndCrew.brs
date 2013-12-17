@@ -21,7 +21,7 @@ function RFcreateCastAndCrewScreen(item as object) as Dynamic
 
     if type(item.metadata.castcrewlist) = "roArray" and item.metadata.castcrewlist.count() > 0 then 
         obj = CreateObject("roAssociativeArray")
-        obj = createPosterScreen(item, m.viewcontroller)
+        obj = createPosterScreen(item, m.viewcontroller, "arced-portrait")
         obj.noRefresh = true
         screenName = "Cast & Crew List"
         obj.HandleMessage = RFCastAndCrewHandleMessage ' override default Handler
@@ -53,8 +53,9 @@ Function RFCastAndCrewHandleMessage(msg) As Boolean
             cast = obj.item.metadata.castcrewlist[msg.GetIndex()]
             ' create the gridScreen for the cast member ( uses a modified search loader )
             if cast.id <> invalid and cast.name <> invalid then 
-                displaymode_grid = RegRead("rf_grid_displaymode", "preferences", "scale-to-fit")
-                screen = createGridScreen(m.viewcontroller, "flat-movie", invalid, displaymode_grid)
+                displaymode_grid = RegRead("rf_grid_displaymode", "preferences", "photo-fit")
+                grid_style = RegRead("rf_grid_style", "preferences","flat-portrait")
+                screen = createGridScreen(m.viewcontroller, grid_style, invalid, displaymode_grid)
                 screen.Loader = createSearchLoader("invalid",cast) ' including the cast array - causes search loader to function differently
                 screen.Loader.Listener = screen
                 breadcrumbs = [cast.itemtype,cast.name]
@@ -96,10 +97,11 @@ function getCastAndCrew(item as object, key = invalid) as object
     
         SDThumb = item.metadata.server.TranscodedImage(item.metadata.server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
         HDThumb = item.metadata.server.TranscodedImage(item.metadata.server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
-        if item.metadata.server.AccessToken <> invalid then
-            SDThumb = SDThumb + "&X-Plex-Token=" + item.metadata.server.AccessToken
-            HDThumb = HDThumb + "&X-Plex-Token=" + item.metadata.server.AccessToken
-        end if
+        ' token is now part of TranscodedImage
+        'if item.metadata.server.AccessToken <> invalid then
+        '    SDThumb = SDThumb + "&X-Plex-Token=" + item.metadata.server.AccessToken
+        '    HDThumb = HDThumb + "&X-Plex-Token=" + item.metadata.server.AccessToken
+        'end if
 
         for each Actor in castxml.Role
             CastCrewList.Push({ name: Actor@tag, id: Actor@id, role: Actor@role, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Actor" })
@@ -143,10 +145,11 @@ Function getPostersForCastCrew(item As Object) As Object
                     default_img = container.xml.Directory[index]@thumb
                     i.imageSD = server.TranscodedImage(server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
                     i.imageHD = server.TranscodedImage(server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
-                    if server.AccessToken <> invalid then 
-                        i.imageSD = i.imageSD + "&X-Plex-Token=" + server.AccessToken
-                        i.imageHD = i.imageHD + "&X-Plex-Token=" + server.AccessToken
-                    end if
+                    ' token is now part of TranscodedImage
+                    'if server.AccessToken <> invalid then 
+                    '    i.imageSD = i.imageSD + "&X-Plex-Token=" + server.AccessToken
+                    '    i.imageHD = i.imageHD + "&X-Plex-Token=" + server.AccessToken
+                    'end if
                 end if
                 exit for
             end if
@@ -160,10 +163,11 @@ Function getPostersForCastCrew(item As Object) As Object
                         default_img = container.xml.Directory[index]@thumb
                         i.imageSD = server.TranscodedImage(server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
                         i.imageHD = server.TranscodedImage(server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
-                        if server.AccessToken <> invalid then 
-                            i.imageSD = i.imageSD + "&X-Plex-Token=" + server.AccessToken
-                            i.imageHD = i.imageHD + "&X-Plex-Token=" + server.AccessToken
-                        end if
+                        ' token is now part of TranscodedImage
+                        'if server.AccessToken <> invalid then 
+                        '    i.imageSD = i.imageSD + "&X-Plex-Token=" + server.AccessToken
+                        '    i.imageHD = i.imageHD + "&X-Plex-Token=" + server.AccessToken
+                        'end if
                     end if
                     exit for
                 end if

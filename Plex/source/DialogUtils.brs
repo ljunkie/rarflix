@@ -64,7 +64,12 @@ Sub dialogRefresh()
 
     if m.Title <> invalid then m.Screen.SetTitle(m.Title)
     if m.Text <> invalid then m.Screen.SetText(m.Text)
-    if m.StaticText <> invalid then m.Screen.AddStaticText(m.StaticText)
+
+    ' ljunkie - Roku states the static Text is in 2.7,  but it doesn't seem to be.
+    versionArr = GetGlobal("rokuVersionArr", [0])
+    if versionArr[0] >= 4 then
+        if m.StaticText <> invalid then m.Screen.AddStaticText(m.StaticText)
+    end if
 
     if m.Buttons.Count() = 0 then
         m.Buttons.Push({ok: "Ok"})
@@ -82,9 +87,9 @@ Sub dialogRefresh()
             if m.Item.origStarRating = invalid then m.Item.origStarRating = 0
             m.Screen.AddRatingButton(buttonCount, m.Item.UserRating, m.Item.origStarRating, "")
         else
-	    if inArray(m.sepBefore,cmd) then m.Screen.AddButtonSeparator()
+	    if versionArr[0] >= 4 and inArray(m.sepBefore,cmd) then m.Screen.AddButtonSeparator()
             m.Screen.AddButton(buttonCount, button[cmd])
-	    if inArray(m.sepAfter,cmd) then m.Screen.AddButtonSeparator()
+	    if versionArr[0] >= 4 and inArray(m.sepAfter,cmd) then m.Screen.AddButtonSeparator()
         end if
         buttonCount = buttonCount + 1
     next
@@ -121,7 +126,9 @@ Sub dialogShow(blocking=false)
     if blocking then
         while m.ScreenID = m.ViewController.Screens.Peek().ScreenID
             msg = wait(0, m.Port)
-            m.HandleMessage(msg)
+            if m.HandleMessage(msg) = true then
+                 if msg <> invalid then m.ViewController.ResetIdleTimer()
+            endif 
         end while
     end if
 End Sub
@@ -154,7 +161,7 @@ Function dialogHandleMessage(msg) As Boolean
             end if
         else if msg.isButtonPressed() then
             command = m.ButtonCommands[msg.getIndex()]
-            Debug("Button pressed: " + tostr(command))
+            Debug("Button pressed in dialog: " + tostr(command))
             done = true
             ' ljunkie - if screen has a SetFocusButton function call it before the normal handle buttom; dialog.SetFocusButton = dialogSetFocusButton
             if m.SetFocusButton <> invalid then 

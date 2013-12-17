@@ -36,8 +36,11 @@ Function createSearchLoader(searchTerm,cast=invalid)
     loader.ArtistRow = loader.CreateRow("Artists", "artist")
     loader.AlbumRow = loader.CreateRow("Albums", "album")
     loader.TrackRow = loader.CreateRow("Tracks", "track")
-    if cast = invalid then loader.ActorRow = loader.CreateRow("Actors", "person")
-    loader.ClipRow = loader.CreateRow("Clips", "clip")
+    ' these are not valid for a Cast & Crew search
+    if cast = invalid then 
+        loader.ActorRow = loader.CreateRow("Actors", "person") ' already using the actor ( loop )
+        loader.ClipRow = loader.CreateRow("Clips", "clip") ' external content
+    end if
 
     return loader
 End Function
@@ -157,11 +160,11 @@ Sub searchOnUrlEvent(msg, requestContext)
             if item.sourceTitle <> invalid then
                 item.Description = "(" + item.sourceTitle + ") " + firstOf(item.Description, "")
             end if
-
-            if item.SDPosterURL <> invalid AND Left(item.SDPosterURL, 4) = "http" AND item.server <> invalid AND item.server.AccessToken <> invalid then
-                item.SDPosterURL = item.SDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
-                item.HDPosterURL = item.HDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
-            end if
+            ' token is now part of TranscodedImage
+            'if item.SDPosterURL <> invalid AND Left(item.SDPosterURL, 4) = "http" AND item.server <> invalid AND item.server.AccessToken <> invalid then
+            '    item.SDPosterURL = item.SDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
+            '    item.HDPosterURL = item.HDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
+            'end if
 
             status.content.Push(item)
             status.numLoaded = status.numLoaded + 1

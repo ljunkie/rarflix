@@ -21,3 +21,19 @@ function inArray(haystack as dynamic,needles = dynamic) as boolean
     end if
  return false
 end function
+
+Function URLEncode(str As String) As String
+    if not m.DoesExist("encodeProxyUrl") then m.encodeProxyUrl = CreateObject("roUrlTransfer")
+    return m.encodeProxyUrl.urlEncode(str)
+End Function
+
+Function URLDecode(str As String) As String
+    strReplace(str,"+"," ") ' backward compatibility
+    if not m.DoesExist("encodeProxyUrl") then m.encodeProxyUrl = CreateObject("roUrlTransfer")
+    return m.encodeProxyUrl.Unescape(str)
+End Function
+
+Function Quote()
+    q$ = Chr(34)
+    return q$
+End Function

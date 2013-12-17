@@ -217,7 +217,7 @@ Sub audioPlayerSetContext(context, contextIndex, screen, startPlayer)
     end if
 
     if screen = invalid then
-        m.Loop = (RegRead("theme_music", "preferences", "loop") = "loop")
+        m.Loop = (RegRead("theme_music", "preferences", "disabled") = "loop")
     else
         pref = RegRead("loopalbums", "preferences", "sometimes")
         if pref = "sometimes" then
