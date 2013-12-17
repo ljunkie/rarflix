@@ -1,5 +1,5 @@
 # RARflixTest v3.0.0 (2013-12-17)
-Changes: https://github.com/ljunkie/rarflix/blob/test/notes/rarflix-change.log
+Changes: https://github.com/ljunkie/rarflix/blob/master/notes/rarflix-change.log
 
 ### Modified Plex for Roku
 
@@ -24,7 +24,7 @@ If you're just trying to install the channel normally, you don't need to be
 here. You can install the released version of the channel using the Roku
 Channel Store. There's also occasionally a test version of the channel
 released as a private channel, sort of like a beta. You can install that
-using the private channel code `plextest`.
+using the private channel code `rarflixtest`.
 
 Ok, if you're still reading then you presumably want to install from source
 and hopefully make some useful changes. You don't need to download or install
