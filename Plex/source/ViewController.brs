@@ -779,8 +779,12 @@ Function vcIsVideoPlaying() As Boolean
     return type(m.screens.Peek().Screen) = "roVideoScreen"
 End Function
 
-Sub vcShowReleaseNotes()
-    header = GetGlobal("appName") + " updated to " + GetGlobal("appVersionStr")
+Sub vcShowReleaseNotes(options = invalid)
+    if options <> invalid then 
+        header = GetGlobal("appName") + " v" + GetGlobal("appVersionStr")
+    else 
+        header = GetGlobal("appName") + " updated to v" + GetGlobal("appVersionStr")
+    end if
     paragraphs = []
     breadcrumbs = invalid
 
@@ -812,14 +816,17 @@ Sub vcShowReleaseNotes()
         paragraphs.Push("  ")
         paragraphs.Push(GetGlobal("appName") + " has been updated. You can click down to read about all"+chr(10)+" the changes, or click BACK on the remote to start using " + GetGlobal("appName") + "!" )
         paragraphs.Push("  ")
-        paragraphs.Push(us+"v2.9.8 (2013-12-15)"+us)
+
         paragraphs.Push("  ")
-        paragraphs.Push(" * crash: now playing + channel content")
+        paragraphs.Push(" * RARflix v3.0.0 Release (2013-12-17)")
+        paragraphs.Push("  ")
+        paragraphs.Push(" Scroll down for details or click back to continue.")
         paragraphs.Push("  ")
 
         paragraphs.Push("  ")
-        paragraphs.Push(us+"v2.9.7 (2013-12-14)"+us)
+        paragraphs.Push(us+"v2.9.7 - v2.9.9 (2013-12-14)"+us)
         paragraphs.Push("  ")
+        paragraphs.Push(" * crash: now playing + channel content")
         paragraphs.Push(" * crash: channels when 'content is unavailable'")
         paragraphs.Push(" * crash: properly handle when content 'year' is empty/invalid")
         paragraphs.Push(" * crash: devour channel (others) & now playing when video description invalid/empty")
@@ -989,9 +996,9 @@ Sub vcShowReleaseNotes()
         screen = createParagraphScreen(header, paragraphs, m)
         screen.SetTitle = "Release Notes"
     else 
-        screen = createTextScreen(header, invalid , paragraphs, m, true)
+        screen = createTextScreen(header + " - www.rarflix.com", invalid , paragraphs, m, true)
         screen.screen.AddButton(1, "Press OK or Back to Continue")
-        breadcrumbs =  ["Release Notes",GetGlobal("appVersionStr")]
+        breadcrumbs =  ["Release Notes","v"+GetGlobal("appVersionStr")]
     end if
 
     screen.screenName = "Release Notes"

@@ -286,6 +286,7 @@ Sub showPreferencesScreen()
     m.Screen.SetHeader("Set Plex Channel Preferences")
 
     ' re-ordered - RR
+    m.AddItem({title: "About RARflix"}, "ShowReleaseNotes")
     m.AddItem({title: "RARflix Preferences", ShortDescriptionLine2: "the goods"}, "rarflix_prefs")
     m.AddItem({title: getCurrentMyPlexLabel()}, "myplex")
     m.AddItem({title: "User Profiles", ShortDescriptionLine2: "Fast user switching"}, "userprofiles")
@@ -415,6 +416,8 @@ Function prefsMainHandleMessage(msg) As Boolean
                 screen = createAudioPrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["Audio Preferences"])
                 screen.Show()
+            else if command = "ShowReleaseNotes" then
+                m.ViewController.ShowReleaseNotes("about")
             else if command = "rarflix_prefs" then
                 screen = createRARflixPrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["RARflix Preferences"])
