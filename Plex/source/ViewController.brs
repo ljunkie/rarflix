@@ -818,9 +818,15 @@ Sub vcShowReleaseNotes(options = invalid)
         paragraphs.Push("  ")
 
         paragraphs.Push("  ")
-        paragraphs.Push(" * RARflix v3.0.0 Release (2013-12-17)")
+        paragraphs.Push(us+"v3.0.1 (2013-12-20)"+us)
         paragraphs.Push("  ")
-        paragraphs.Push(" Scroll down for details or click back to continue.")
+        paragraphs.Push(" * Hiding custom rows could case a crash.")
+        paragraphs.Push("  ")
+
+        paragraphs.Push("  ")
+        paragraphs.Push(us+"v3.0.0 (2013-12-17)"+us)
+        paragraphs.Push("  ")
+        paragraphs.Push(" * RARflix Release -- RARflix/RARflixTest merged.")
         paragraphs.Push("  ")
 
         paragraphs.Push("  ")

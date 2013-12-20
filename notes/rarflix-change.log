@@ -1,3 +1,6 @@
+#3.0.1 (2013-12-20)
+    * Customer Rows could cause a crash when hidden
+
 #3.0.0 (2013-12-17)
     * RARflix/RARflixTest merger ( includes v2.8.4 - v2.9.9 )
 
