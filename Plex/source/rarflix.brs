@@ -1237,7 +1237,7 @@ function getSectionType(vc) as object
            row = screen.selectedrow
            index = screen.focusedindex
            if row <> invalid and index <> invalid then
-               if type(screen.loader.contentarray[row].content) = "roArray" then 
+               if type(screen.loader.contentarray[row].content) = "roArray" and screen.loader.contentarray[row].content.count() > 0 then 
                    metadata = screen.loader.contentarray[row].content[index]
 		   print metadata
                end if
