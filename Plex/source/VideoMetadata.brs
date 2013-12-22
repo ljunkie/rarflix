@@ -269,17 +269,22 @@ Sub setVideoBasics(video, container, item)
         video.nowPlaying_orig_title = video.title
         video.nowPlaying_orig_description = video.description
       
+        video.description = "" ' reset video Description -- blank but not invalid
         if video.viewoffset <> invalid then 
              video.description = "Progress: " + GetDurationString(int(video.viewoffset.toint()/1000),0,1,1)
              video.description = video.description + " [" + percentComplete(video.viewOffset,video.length) + "%]"
-        else 
-             video.description = "" ' sometime the offset is invalid, so we will just set it empty. It will be updated with the timer
+        else if item@sourceTitle <> invalid then
+             video.description = item@sourceTitle
         end if
 
         video.description = video.description + " on " + firstof(item.Player@title, item.Player@platform)
         if video.server.name <> invalid then video.description = video.description + " [" + video.server.name + "]" ' show the server 
         video.nowPlaying_progress = video.description ' container for HUD notify
-        video.description = video.description + chr(10) + video.nowPlaying_orig_description
+
+        ' append the original description if NOT invalid
+        if video.nowPlaying_orig_description <> invalid then video.description = video.description + chr(10) + video.nowPlaying_orig_description
+
+        ' prepend the "user:" to the video title
         video.title = UcaseFirst(item.user@title,true) + " " + UcaseFirst(item.Player@state) + ": "  + video.CleanTitle
 
         ' set nowPlaying info for later

@@ -152,9 +152,17 @@ End Function
 
 'Assumes that multi-user is enabled
 'Lock screen stays on top of everything
+' -- new addition: we must close any open dialogs 
 Function vcCreateLockScreen() 
     TraceFunction("vcCreateLockScreen")
     currentScreen = m.screens.peek()    'current screen to stack on top of
+    if currentScreen <> invalid and type(currentScreen.Screen) = "roMessageDialog" then 
+        Debug("---- Top screen is a Dialog -- need to close before we lock")
+        ' close the screen -- vcPopScreen takes care of any other dialogs
+        m.popscreen(currentScreen)
+        currentScreen = m.screens.Peek()
+    end if
+
     'this PIN screen will stay up until either the PIN is entered or Back is pressed
     pinScreen = VerifySecurityPin(m, RegRead("securityPincode","preferences",invalid,GetGlobalAA().userNum), true, 0)
     pinScreen.ScreenName = "Locked"
@@ -499,7 +507,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         'sec_metadata = getSectionType(m) <- this seems unneccesary ( viewgroup = invalid|InfoList|List - do not support paginated calls )
         if tostr(contentType) = "appClip" and (tostr(viewGroup) = "Invalid" or tostr(viewGroup) = "InfoList" or tostr(viewGroup) = "List") then 
             Debug("---- forcing to Poster view -> viewgroup matches: invalid|InfoList|List")
-            screen = createPosterScreen(item, m, "arced-portrait")
+            screen = createPosterScreen(item, m, "arced-square")
             screen.noRefresh = true ' no need to refresh these items (yet)
         else if poster_grid = "grid" and tostr(viewGroup) <> "season" then ' if we have set Full Grid and type is not a season, force Full Grid view
             screen = createFULLGridScreen(item, m, "Invalid", displaymode_grid)
@@ -771,8 +779,12 @@ Function vcIsVideoPlaying() As Boolean
     return type(m.screens.Peek().Screen) = "roVideoScreen"
 End Function
 
-Sub vcShowReleaseNotes()
-    header = GetGlobal("appName") + " updated to " + GetGlobal("appVersionStr")
+Sub vcShowReleaseNotes(options = invalid)
+    if options <> invalid then 
+        header = GetGlobal("appName") + " v" + GetGlobal("appVersionStr")
+    else 
+        header = GetGlobal("appName") + " updated to v" + GetGlobal("appVersionStr")
+    end if
     paragraphs = []
     breadcrumbs = invalid
 
@@ -803,6 +815,37 @@ Sub vcShowReleaseNotes()
         paragraphs.Push("                 Donations accepted at http://www.rarflix.com")
         paragraphs.Push("  ")
         paragraphs.Push(GetGlobal("appName") + " has been updated. You can click down to read about all"+chr(10)+" the changes, or click BACK on the remote to start using " + GetGlobal("appName") + "!" )
+        paragraphs.Push("  ")
+
+        paragraphs.Push("  ")
+        paragraphs.Push(us+"v3.0.1 (2013-12-20)"+us)
+        paragraphs.Push("  ")
+        paragraphs.Push(" * Hiding custom rows could case a crash.")
+        paragraphs.Push("  ")
+
+        paragraphs.Push("  ")
+        paragraphs.Push(us+"v3.0.0 (2013-12-17)"+us)
+        paragraphs.Push("  ")
+        paragraphs.Push(" * RARflix Release -- RARflix/RARflixTest merged.")
+        paragraphs.Push("  ")
+
+        paragraphs.Push("  ")
+        paragraphs.Push(us+"v2.9.7 - v2.9.9 (2013-12-14)"+us)
+        paragraphs.Push("  ")
+        paragraphs.Push(" * crash: now playing + channel content")
+        paragraphs.Push(" * crash: channels when 'content is unavailable'")
+        paragraphs.Push(" * crash: properly handle when content 'year' is empty/invalid")
+        paragraphs.Push(" * crash: devour channel (others) & now playing when video description invalid/empty")
+        paragraphs.Push(" * fixed: custom icons font size ( text should fit better )")
+        paragraphs.Push("  ")
+
+        paragraphs.Push("  ")
+        paragraphs.Push(us+"v2.9.6 (2013-12-13)"+us)
+        paragraphs.Push("  ")
+        paragraphs.Push("  * Various channel content failed to play")
+        paragraphs.Push("  * Posters size wrong for sub channel sections")
+        paragraphs.Push("  * Crash: extra precautions for the now playing check")
+        paragraphs.Push("  ")
 
         paragraphs.Push("  ")
         paragraphs.Push(us+"v2.9.2 - v2.9.5 (2013-12-10)"+us)
@@ -959,9 +1002,9 @@ Sub vcShowReleaseNotes()
         screen = createParagraphScreen(header, paragraphs, m)
         screen.SetTitle = "Release Notes"
     else 
-        screen = createTextScreen(header, invalid , paragraphs, m, true)
+        screen = createTextScreen(header + " - www.rarflix.com", invalid , paragraphs, m, true)
         screen.screen.AddButton(1, "Press OK or Back to Continue")
-        breadcrumbs =  ["Release Notes",GetGlobal("appVersionStr")]
+        breadcrumbs =  ["Release Notes","v"+GetGlobal("appVersionStr")]
     end if
 
     screen.screenName = "Release Notes"

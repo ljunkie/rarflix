@@ -55,10 +55,12 @@ Function showPosterScreen() As Integer
         dialog.Title = "Content Unavailable"
         dialog.Text = "An error occurred while trying to load this content, make sure the server is running."
         dialog.Facade = m.Facade
-        dialog.Show()
+        dialog.closePrevious = true ' or check to see if there is a facade?
+        dialog.Show(true) ' blocking
         m.closeOnActivate = true
         m.Facade = invalid
-        return 0
+        m.popOnActivate = true
+        return -1
     end if
 
     if m.FilterMode = invalid then m.FilterMode = container.ViewGroup = "secondary"

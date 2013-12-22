@@ -1,3 +1,25 @@
+#3.0.1 (2013-12-20)
+    * Customer Rows could cause a crash when hidden
+
+#3.0.0 (2013-12-17)
+    * RARflix/RARflixTest merger ( includes v2.8.4 - v2.9.9 )
+
+#2.9.9-test -- internal
+
+#2.9.8-test  (2013-12-15)
+    * crash: now playing + channel content
+
+#2.9.7-test  (2013-12-14)
+    * crash: channel content ( poster screens ) when 'content is unavailable' -- the new screen with no content was never closed
+    * crash: properly handle when content 'year' is empty/invalid
+    * crash: devour channel (others) & now playing -- properly handle when a video.description is invalid/empty
+    * fixed: custom icons font size -- mainly done on the backend ( text should fit better )
+
+#2.9.6-test  (2013-12-13)
+    * Various channel content failed to play (SS-Plex)
+    * Posters size wrong for sub channel sections
+    * Crash: extra precautions for the now playing check
+
 #2.9.5-test  (2013-12-10)
     * Rotten Tomatoes caching updates -- using round robin DNS ( no need to ELB )
 

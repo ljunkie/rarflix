@@ -111,6 +111,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
 
     ' we will have to add the custom rows to the subsections too ( quick filter row (0) for the full grid )
     if subsec_extras.count() > 0 and type(subsecItems) = "roArray" and subsecItems.count() > 0 then
+        template = invalid
         for each sec in subsec_extras
             for index = 0 to subsecItems.Count() - 1
                 if subsecItems[index].key = sec.key_copy  then 
@@ -118,14 +119,16 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
                     exit for
                 end if
             end for
-            copy = ShallowCopy(template,2) ' really? brs doesn't have a clone/copy
-            ' now set the uniq characters
-            copy.key = sec.key
-            copy.name = sec.name
-            copy.umtitle = sec.name
-            copy.title = sec.name
-            rfCDNthumb(copy,sec.name,invalid)
-            subsecItems.Push(copy)
+            if template <> invalid then 
+                copy = ShallowCopy(template,2) ' really? brs doesn't have a clone/copy
+                ' now set the uniq characters
+                copy.key = sec.key
+                copy.name = sec.name
+                copy.umtitle = sec.name
+                copy.title = sec.name
+                rfCDNthumb(copy,sec.name,invalid)
+                subsecItems.Push(copy)
+             end if
         end for
     end if
     ' END custom rows
