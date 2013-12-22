@@ -837,6 +837,12 @@ Sub vcShowReleaseNotes(options = invalid)
         paragraphs.Push("  ")
 
         paragraphs.Push("  ")
+        paragraphs.Push(us+"v3.0.2 (2013-12-20)"+us)
+        paragraphs.Push("  ")
+        paragraphs.Push(" * merge of Plex/Roku v2.8.2 (all changes) ")
+        paragraphs.Push("  ")
+
+        paragraphs.Push("  ")
         paragraphs.Push(us+"v3.0.1 (2013-12-20)"+us)
         paragraphs.Push("  ")
         paragraphs.Push(" * Hiding custom rows could case a crash.")
