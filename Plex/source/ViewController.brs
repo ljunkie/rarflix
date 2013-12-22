@@ -1039,12 +1039,19 @@ Sub vcShowReleaseNotes(options = invalid)
     screen.Show()
 End Sub
 
-Sub vcShowHelpScreen()
+Sub vcShowHelpScreen(opt = invalid)
     header = "Welcome to Plex!"
     paragraphs = []
+    if opt <> invalid and opt = 2 then
+        ' GDM disabled, myPlex not connected and no manual servers?
+        paragraphs.Push("There are no servers configured. Please enable one or more of the following:")
+        paragraphs.Push(" * Connect your myPlex account: Prefs")
+        paragraphs.Push(" * Enable Server Discovery: Prefs / Plex Media Servers")
+        paragraphs.Push(" * Add a server manually: Prefs / Plex Media Servers")
+    end if
     paragraphs.Push("With Plex you can easily stream your videos, music, photos and home movies to your Roku using your Plex Media Server.")
     paragraphs.Push("To download and install your free Plex Media Server on your computer, visit http://plexapp.com/getplex")
-    paragraphs.Push("Enjoy Plex free for 30 days, then unlock with a PlexPass subscription or a small one-time purchase.")
+'    paragraphs.Push("Enjoy Plex free for 30 days, then unlock with a PlexPass subscription or a small one-time purchase.")
 
     screen = createParagraphScreen(header, paragraphs, m)
     m.InitializeOtherScreen(screen, invalid)

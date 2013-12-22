@@ -472,22 +472,15 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
                 ' Slightly strange, GDM disabled but no servers configured
                 '
                 ' ljunkie - it happens if someone disconnects from myPlex
-                ' More oddness is due to the fact this will show empty rows
-                ' new Fix is to load the MISC row and hide the others
+                '  -- show a dialog explaining the issue
                 Debug("No servers, no GDM, and no myPlex...")
-                GetViewController().ShowHelpScreen()
+                ShowErrorDialog("Please enable ONE of the following" + chr(10) + " * Sign into myPlex " + chr(10) + " * Enable Server Discovery " + chr(10) + " * Add a server manually", "No Servers Found")
                 status.loadStatus = 2
                 m.Listener.OnDataLoaded(loadingRow, status.content, 0, status.content.Count(), true)
             end if
         else
-            ' ljunkie - no valid servers, no GDM and no myPlex - hide the non MISC rows
-            if RegRead("serverList", "servers") = invalid AND NOT myPlex.IsSignedIn then
-                print m.rownames[loadingRow] + " invalid with NO servers -- hide it"
-                m.Listener.Screen.SetListVisible(loadingRow, false)
-            else 
-                status.loadStatus = 2
-                m.Listener.OnDataLoaded(loadingRow, status.content, 0, status.content.Count(), true)
-            end if
+            status.loadStatus = 2
+            m.Listener.OnDataLoaded(loadingRow, status.content, 0, status.content.Count(), true)
         end if
     end if
 
@@ -1041,7 +1034,7 @@ Sub homeOnTimerExpired(timer)
 
         if RegRead("serverList", "servers") = invalid AND NOT MyPlexManager().IsSignedIn then
             Debug("No servers and no myPlex, appears to be a first run")
-            GetViewController().ShowHelpScreen()
+            GetViewController().ShowHelpScreen(2)
             status = m.contentArray[m.RowIndexes["misc"]]
             status.loadStatus = 2
             m.Listener.OnDataLoaded(m.RowIndexes["misc"], status.content, 0, status.content.Count(), true)
