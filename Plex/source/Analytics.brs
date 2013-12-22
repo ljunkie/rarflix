@@ -69,7 +69,8 @@ Sub analyticsTrackEvent(category, action, label, value, customVars={})
     ' Now's a good time to update our session variables, in case we don't shut
     ' down cleanly.
     if category = "Playback" then m.NumPlaybackEvents = m.NumPlaybackEvents + 1
-    RegWrite("session_duration", tostr(m.SessionTimer.GetElapsedSeconds()), "analytics")
+
+    if m.SessionTimer <> invalid then RegWrite("session_duration", tostr(m.SessionTimer.GetElapsedSeconds()), "analytics")
     RegWrite("session_playback_events", tostr(m.NumPlaybackEvents), "analytics")
 
     customVars["t"] = "event"
