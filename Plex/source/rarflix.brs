@@ -1050,8 +1050,8 @@ end sub
 
 sub rfDefRemoteOptionButton(m) 
     'for now we will show the preferences screen :)
-    audioplayer = GetViewController().AudioPlayer
-    if audioplayer.IsPlaying or audioplayer.IsPaused then return
+    player = AudioPlayer()
+    if player.IsPlaying or player.IsPaused then return
 
     sec_metadata = getSectionType(m)
     notAllowed = CreateObject("roRegex", "artist|music|album", "") 
@@ -1074,8 +1074,8 @@ end sub
 
 
 sub rfDialogGridScreen(obj as Object)
-    audioPlayer = GetViewController().AudioPlayer
-    if audioplayer.IsPlaying or audioplayer.IsPaused then return
+    player = AudioPlayer()
+    if player.IsPlaying or player.IsPaused then return
 
     if type(obj.item) = "roAssociativeArray" and tostr(obj.item.contenttype) = "section" and NOT tostr(obj.item.nodename) = "Directory" or obj.selectedrow = 0 then ' row 0 is reserved for the fullGrid shortcuts
         print obj.item
@@ -1090,7 +1090,7 @@ sub rfDialogGridScreen(obj as Object)
         dialog.Text = ""
         dialog.Title = "Options"
 
-        if audioplayer.ContextScreenID <> invalid then dialog.setButton("gotoMusicNowPlaying","go to now playing [music]")
+        if player.ContextScreenID <> invalid then dialog.setButton("gotoMusicNowPlaying","go to now playing [music]")
 
         dialog.SetButton("close", "Back")
         dialog.HandleButton = videoDialogHandleButton
@@ -1270,7 +1270,7 @@ function getSectionType(vc) as object
            row = screen.selectedrow
            index = screen.focusedindex
            if row <> invalid and index <> invalid then
-               if type(screen.loader.contentarray[row].content) = "roArray" then 
+               if type(screen.loader.contentarray[row].content) = "roArray" and screen.loader.contentarray[row].content.count() > 0 then 
                    metadata = screen.loader.contentarray[row].content[index]
 		   print metadata
                end if

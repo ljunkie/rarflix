@@ -7,8 +7,7 @@ Function createHomeScreenDataLoader(listener)
     initDataLoader(loader)
     imageDir = GetGlobalAA().Lookup("rf_theme_dir")
 
-    ' TODO(schuyler): This feels like cheating...
-    loader.ScreenID = -1
+    loader.ScreenID = listener.ScreenID
     loader.Listener = listener
     listener.Loader = loader
 
@@ -55,9 +54,7 @@ Function createHomeScreenDataLoader(listener)
     next
 
     ' Kick off myPlex requests if we're signed in.
-    myPlex = GetMyPlexManager()
-    myPlex.CheckAuthentication()
-    if myPlex.IsSignedIn then
+    if MyPlexManager().IsSignedIn then
         loader.CreateMyPlexRequests(false)
     end if
 
@@ -132,10 +129,6 @@ Function createHomeScreenDataLoader(listener)
     loader.lastSectionKey = RegRead("lastSectionKey", "userinfo")
 
     loader.OnTimerExpired = homeOnTimerExpired
-
-    ' As good a place as any, note that we've started
-    analytics = GetViewController().Analytics
-    analytics.OnStartup(myPlex.IsSignedIn)
 
     return loader
 End Function
@@ -288,7 +281,7 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
 End Sub
 
 Sub homeCreateMyPlexRequests(startRequests As Boolean)
-    myPlex = GetMyPlexManager()
+    myPlex = MyPlexManager()
 
     if NOT myPlex.IsSignedIn then return
 
@@ -306,7 +299,7 @@ Sub homeCreateMyPlexRequests(startRequests As Boolean)
 End Sub
 
 Sub homeCreateAllPlaylistRequests(startRequests As Boolean)
-    if NOT GetMyPlexManager().IsSignedIn then return
+    if NOT MyPlexManager().IsSignedIn then return
 
     m.CreatePlaylistRequests("queue", "All Queued Items", "All queued items, including already watched items", m.RowIndexes["queue"], startRequests)
     m.CreatePlaylistRequests("recommendations", "All Recommended Items", "All recommended items, including already watched items", m.RowIndexes["recommendations"], startRequests)
@@ -322,7 +315,7 @@ Sub homeCreatePlaylistRequests(name, title, description, row, startRequests)
 
     ' Unwatched recommended items
     currentItems = CreateObject("roAssociativeArray")
-    currentItems.server = GetMyPlexManager()
+    currentItems.server = MyPlexManager()
     currentItems.requestType = "playlist"
     currentItems.key = "/pms/playlists/" + name + "/" + view
 
@@ -399,7 +392,7 @@ Sub homeRemoveFromRowIf(row, predicate)
 End Sub
 
 Function homeLoadMoreContent(focusedIndex, extraRows=0)
-    myPlex = GetMyPlexManager()
+    myPlex = MyPlexManager()
     if m.FirstLoad then
         m.FirstLoad = false
         if NOT myPlex.IsSignedIn then
@@ -482,7 +475,7 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
                 ' More oddness is due to the fact this will show empty rows
                 ' new Fix is to load the MISC row and hide the others
                 Debug("No servers, no GDM, and no myPlex...")
-                ShowHelpScreen(2)
+                GetViewController().ShowHelpScreen()
                 status.loadStatus = 2
                 m.Listener.OnDataLoaded(loadingRow, status.content, 0, status.content.Count(), true)
             end if
@@ -788,7 +781,7 @@ Sub homeOnUrlEvent(msg, requestContext)
             server.IsSecondary = (xml@serverClass = "secondary")
             server.SupportsMultiuser = (xml@multiuser = "1")
             if server.AccessToken = invalid AND ServerVersionCompare(xml@version, [0, 9, 7, 15]) then
-                server.AccessToken = GetMyPlexManager().AuthToken
+                server.AccessToken = MyPlexManager().AuthToken
             end if
 
             PutPlexMediaServer(server)
@@ -864,7 +857,7 @@ Sub homeOnUrlEvent(msg, requestContext)
                     newServer.ServerUrl = addr
                 end if
 
-                newServer.AccessToken = firstOf(serverElem@accessToken, GetMyPlexManager().AuthToken)
+                newServer.AccessToken = firstOf(serverElem@accessToken, MyPlexManager().AuthToken)
                 newServer.synced = (serverElem@synced = "1")
 
                 if serverElem@owned = "1" then
@@ -930,13 +923,11 @@ End Function
 
 Sub homeRefreshData()
     ' Update the Now Playing item according to whether or not something is playing
-    audioPlayer = GetViewController().AudioPlayer
     miscContent = m.contentArray[m.RowIndexes["misc"]].content
-
-    if m.nowPlayingItem.CurIndex = invalid AND audioPlayer.ContextScreenID <> invalid then
+    if m.nowPlayingItem.CurIndex = invalid AND AudioPlayer().ContextScreenID <> invalid then
         m.nowPlayingItem.CurIndex = miscContent.Count()
         miscContent.Push(m.nowPlayingItem)
-    else if m.nowPlayingItem.CurIndex <> invalid AND audioPlayer.ContextScreenID = invalid then
+    else if m.nowPlayingItem.CurIndex <> invalid AND AudioPlayer().ContextScreenID = invalid then
         ' ljunkie curIndex could be wrong - we have added other dynamic content to this row
         ' although - this pretty much never happens ( ContextScreenID for audioPlayer being set to invalid )
         for index = 0 to miscContent.count()-1
@@ -1013,7 +1004,7 @@ End Sub
 Sub homeOnMyPlexChange()
     Debug("myPlex status changed")
 
-    if GetMyPlexManager().IsSignedIn then
+    if MyPlexManager().IsSignedIn then
         m.CreateMyPlexRequests(true)
     else
         m.RemoveFromRowIf(m.RowIndexes["sections"], IsMyPlexServer)
@@ -1048,9 +1039,9 @@ Sub homeOnTimerExpired(timer)
 
         m.GdmTimer = invalid
 
-        if RegRead("serverList", "servers") = invalid AND NOT GetMyPlexManager().IsSignedIn then
+        if RegRead("serverList", "servers") = invalid AND NOT MyPlexManager().IsSignedIn then
             Debug("No servers and no myPlex, appears to be a first run")
-            ShowHelpScreen()
+            GetViewController().ShowHelpScreen()
             status = m.contentArray[m.RowIndexes["misc"]]
             status.loadStatus = 2
             m.Listener.OnDataLoaded(m.RowIndexes["misc"], status.content, 0, status.content.Count(), true)

@@ -15,13 +15,12 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.synced = false
     pms.online = false
     pms.local = false
-    pms.AccessToken = GetMyPlexManager().AuthToken
+    pms.AccessToken = MyPlexManager().AuthToken
     pms.StopVideo = stopTranscode
     pms.StartTranscode = StartTranscodingSession
     pms.PingTranscode = pingTranscode
     pms.CreateRequest = pmsCreateRequest
     pms.GetQueryResponse = xmlContent
-    pms.SetProgress = progress
     pms.Timeline = pmsTimeline
     pms.Scrobble = scrobble
     pms.Unscrobble = unscrobble
@@ -57,6 +56,20 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.ScreenID = -3
     pms.OnUrlEvent = pmsOnUrlEvent
 
+    pms.lastTimelineItem = invalid
+    pms.lastTimelineState = invalid
+    pms.timelineTimer = createTimer()
+    pms.timelineTimer.SetDuration(15000, true)
+
+    return pms
+End Function
+
+Function newSyntheticPlexMediaServer(pmsUrl, machineID, token) As Object
+    Debug("Creating synthetic server for " + tostr(machineID) + " at " + tostr(pmsUrl))
+    pms = newPlexMediaServer(pmsUrl, invalid, machineID)
+    pms.owned = false
+    pms.online = true
+    pms.AccessToken = token
     return pms
 End Function
 
@@ -73,14 +86,14 @@ Function issuePostCommand(commandPath)
     request.PostFromString("")
 End Function
 
-Function progress(key, identifier, time)
-    if identifier <> invalid then
-        commandUrl = "/:/progress?key="+HttpEncode(key)+"&identifier="+identifier+"&time="+time.tostr()
-        m.ExecuteCommand(commandUrl)
-    end if
-End Function
+Sub pmsTimeline(item, state, time)
+    itemsEqual = (item <> invalid AND m.lastTimelineItem <> invalid AND item.ratingKey = m.lastTimelineItem.ratingKey)
+    if itemsEqual AND state = m.lastTimelineState AND NOT m.timelineTimer.IsExpired() then return
 
-Sub pmsTimeline(item, state, time, isPlayed)
+    m.timelineTimer.Mark()
+    m.lastTimelineItem = item
+    m.lastTimelineState = state
+
     encoder = CreateObject("roUrlTransfer")
 
     query = "time=" + tostr(time)
@@ -580,6 +593,12 @@ Function StartTranscodingSession(videoUrl)
     cookiesRequest.SetUrl(videoUrl)
     cookiesHead = cookiesRequest.Head()
     m.Cookie = cookiesHead.GetResponseHeaders()["set-cookie"]
+
+    if m.Cookie <> invalid then
+        arr = strTokenize(m.Cookie, ";")
+        m.Cookie = arr[0]
+    end if
+
     return m.Cookie
 End Function
 
@@ -709,7 +728,7 @@ Function classicTranscodingVideoUrl(videoUrl As String, item As Object, httpHead
     if identifier <> invalid then
         query = query + "&identifier=" + identifier
     end if
-    query = query + "&ratingKey=" + ratingKey
+    query = query + "&ratingKey=" + HttpEncode(ratingKey)
     if len(fullKey) > 0 then
         query = query + "&key=" + HttpEncode(fullKey)
     end if
@@ -929,7 +948,7 @@ Sub pmsAddDirectPlayInfo(video, item, mediaKey)
     if video.StreamFormat = "hls" then video.SwitchingStrategy = "full-adaptation"
 
     part = mediaItem.parts[mediaItem.curPartIndex]
-    if part <> invalid AND part.subtitles <> invalid AND part.subtitles.Codec = "srt" and part.subtitles.key <> invalid then
+    if part <> invalid AND part.subtitles <> invalid AND part.subtitles.Codec = "srt" AND part.subtitles.key <> invalid then
         video.SubtitleUrl = FullUrl(m.serverUrl, "", part.subtitles.key) + "?encoding=utf-8"
     end if
 

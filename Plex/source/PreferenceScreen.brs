@@ -49,9 +49,7 @@ Function settingsHandleMessage(msg) As Boolean
                 setting = m.contentArray[msg.GetIndex()]
 
                 if setting.type = "text" then
-                    screen = m.ViewController.CreateTextInputScreen("Enter " + setting.label, [], false)
-                    screen.Screen.SetText(setting.value)
-                    screen.Screen.SetSecureText(setting.hidden OR setting.secure)
+                    screen = m.ViewController.CreateTextInputScreen("Enter " + setting.label, [], false, setting.value, (setting.hidden OR setting.secure))
                     screen.Listener = m
                     screen.Show()
                 else if setting.type = "bool" then
@@ -129,8 +127,9 @@ Sub prefsHandleTextPreference(regKey, index)
     m.currentRegKey = regKey
     label = m.contentArray[index].OrigTitle
     pref = m.Prefs[regKey]
-    screen = m.ViewController.CreateTextInputScreen(pref.heading, [label], false)
-    screen.Text = RegRead(regKey, "preferences", pref.default, m.currentUser)  'm.currentUser may be "invalid" and RegRead will use global currentUser
+    value = RegRead(regKey, "preferences", pref.default)
+    screen = m.ViewController.CreateTextInputScreen(pref.heading, [label], false, value)
+    screen.Text = value
     screen.Screen.SetMaxLength(80)
     screen.Listener = m
     screen.Show()
@@ -215,6 +214,8 @@ Function createPreferencesScreen(viewController) As Object
 
     ' Quality settings
     qualities = [
+        { title: "208 kbps, 160p", EnumValue: "2" },
+        { title: "320 kbps, 240p", EnumValue: "3" },
         { title: "720 kbps, 320p", EnumValue: "4" },
         { title: "1.5 Mbps, 480p", EnumValue: "5" },
         { title: "2.0 Mbps, 720p", EnumValue: "6" },
@@ -272,8 +273,8 @@ Function createPreferencesScreen(viewController) As Object
         default: "random"
     }
 
-    obj.myplex = GetGlobalAA().Lookup("myplex")
     obj.checkMyPlexOnActivate = false
+    obj.checkStatusOnActivate = false
 
     return obj
 End Function
@@ -304,6 +305,8 @@ Sub showPreferencesScreen()
     m.AddItem({title: "Screensaver"}, "screensaver", m.GetEnumValue("screensaver"))
     m.AddItem({title: "Logging"}, "debug")
     m.AddItem({title: "Advanced Preferences"}, "advanced")
+    m.AddItem({title: "Channel Status: " + AppManager().State}, "status")
+
     m.AddItem({title: "Close Preferences"}, "close")
 
     m.serversBefore = {}
@@ -363,8 +366,8 @@ Function prefsMainHandleMessage(msg) As Boolean
                 screen.Changes = m.Changes
                 screen.Show()
             else if command = "myplex" then
-                if m.myplex.IsSignedIn then
-                    m.myplex.Disconnect()
+                if MyPlexManager().IsSignedIn then
+                    MyPlexManager().Disconnect()
                     m.Changes["myplex"] = "disconnected"
                     m.SetTitle(msg.GetIndex(), getCurrentMyPlexLabel())
                 else
@@ -374,7 +377,30 @@ Function prefsMainHandleMessage(msg) As Boolean
                     m.ViewController.InitializeOtherScreen(screen, invalid)
                     screen.Show()
                 end if
-            else if command = "quality" OR command = "quality_remote" OR command = "level" OR command = "directplay" OR command = "screensaver" then
+            else if command = "status" then
+                m.checkStatusOnActivate = true
+                m.statusIndex = msg.GetIndex()
+
+                dialog = createBaseDialog()
+                dialog.Title = "Channel Status"
+
+                manager = AppManager()
+                if manager.State = "PlexPass" then
+                    dialog.Text = "Plex is fully unlocked since you're a PlexPass member."
+                else if manager.State = "Purchased" then
+                    dialog.Text = "Plex has been purchased and is fully unlocked."
+                else if manager.State = "Trial" then
+                    dialog.Text = "Plex is currently in a trial period. To fully unlock the channel, you can purchase it or connect a PlexPass account."
+                    dialog.SetButton("purchase", "Purchase the channel")
+                else if manager.State = "Limited" then
+                    dialog.Text = "Your Plex trial has expired and playback is currently disabled. To fully unlock the channel, you can purchase it or connect a PlexPass account."
+                    dialog.SetButton("purchase", "Purchase the channel")
+                end if
+
+                dialog.SetButton("close", "Close")
+                dialog.HandleButton = channelStatusHandleButton
+                dialog.Show()
+            else if command = "quality" OR command = "quality_remote" OR command = "level" OR command = "fivepointone" OR command = "directplay" OR command = "screensaver" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "slideshow" then
                 screen = createSlideshowPrefsScreen(m.ViewController)
@@ -434,12 +460,22 @@ End Function
 Sub prefsMainActivate(priorScreen)
     if m.checkMyPlexOnActivate then
         m.checkMyPlexOnActivate = false
-        if m.myplex.IsSignedIn then
+        if MyPlexManager.IsSignedIn then
             m.Changes["myplex"] = "connected"
         end if
         m.SetTitle(m.myPlexIndex, getCurrentMyPlexLabel())
+    else if m.checkStatusOnActivate then
+        m.checkStatusOnActivate = false
+        m.SetTitle(m.statusIndex, "Channel Status: " + AppManager().State)
     end if
 End Sub
+
+Function channelStatusHandleButton(key, data) As Boolean
+    if key = "purchase" then
+        AppManager().StartPurchase()
+    end if
+    return true
+End Function
 
 '*** Slideshow Preferences ***
 
@@ -741,7 +777,7 @@ Function prefsUserProfilesHandleMessage(msg) As Boolean
         handled = true
         if msg.isScreenClosed() then
             Debug("User Profiles closed event")
-            m.ViewController.GdmAdvertiser.Refresh()
+            GDMAdvertiser().Refresh()
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
@@ -817,7 +853,7 @@ Function prefsUserEditHandleMessage(msg) As Boolean
         handled = true
         if msg.isScreenClosed() then
             Debug("User Edit closed event")
-            m.ViewController.GdmAdvertiser.Refresh()
+            GDMAdvertiser().Refresh()
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
@@ -1250,8 +1286,7 @@ Sub debugRefreshItems()
     if m.Logger.Enabled then
         m.AddItem({title: "Disable Logging"}, "disable")
 
-        myPlex = GetGlobalAA().Lookup("myplex")
-        if myPlex <> invalid AND myPlex.IsSignedIn then
+        if MyPlexManager().IsSignedIn then
             if m.Logger.RemoteLoggingTimer <> invalid then
                 remainingMinutes = int(0.5 + (m.Logger.RemoteLoggingSeconds - m.Logger.RemoteLoggingTimer.TotalSeconds()) / 60)
                 if remainingMinutes > 1 then
@@ -1701,7 +1736,7 @@ Function prefsRemoteControlHandleMessage(msg) As Boolean
 
         if msg.isScreenClosed() then
             Debug("Remote control closed event")
-            m.ViewController.GdmAdvertiser.Refresh()
+            GDMAdvertiser().Refresh()
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
@@ -2108,7 +2143,7 @@ End Function
 '*** Helper functions ***
 
 Function getCurrentMyPlexLabel() As String
-    myplex = GetMyPlexManager()
+    myplex = MyPlexManager()
     if myplex.IsSignedIn then
         return "Disconnect myPlex account (" + myplex.EmailAddress + ")"
     else

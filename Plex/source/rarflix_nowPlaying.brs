@@ -54,7 +54,9 @@ function rfUpdateNowPlayingMetadata(metadata,time = 0 as integer) as object
     container = createPlexContainerForUrl(metadata.server, metadata.server.serverurl, "/status/sessions")
     keys = container.getkeys()
     found = false
-    for index = 0 to keys.Count() - 1
+
+    ' ljunkie - only allow Video for now ( Track/Photo? are now valid, but untested and break )
+    for index = 0 to container.xml.Video.count() - 1      '    for index = 0 to keys.Count() - 1
         Debug("Searching for key:" + tostr(metadata.key) + " and machineID:" + tostr(metadata.nowPlaying_maid) ) ' verify same machineID to sync (multiple people can be streaming same content)
         if keys[index] = metadata.key and container.xml.Video[index].Player@machineIdentifier = metadata.nowPlaying_maid then 
             Debug("----- nowPlaying match: key:" + tostr(metadata.key) + ", machineID:" + tostr(metadata.nowPlaying_maid) + " @ " + tostr(metadata.server.serverurl) + "/status/sessions")
@@ -81,20 +83,30 @@ end function
 
 sub setnowplayingGlobals() 
     ' only set nowplaying globals if notifications are enabled (row loader will always call the plexcontainerforurl)
+    ' TODO: this will need some work for Video, Audio, Photo...
     if RegRead("rf_notify","preferences","enabled") <> "disabled" then
         np = []
         this_maid = GetGlobalAA().Lookup("rokuUniqueID")
         for each server in GetOwnedPlexMediaServers()
             if server.isavailable and server.supportsmultiuser then ' only query server if available and supportsmultiuser (assuming nowPlaying works with multiuser enabled)
                 container = createPlexContainerForUrl(server, server.serverurl, "/status/sessions")
-                if container <> invalid and container.getkeys().count() > 0 then
+                ' ljunkie - for now, we have limited this to Now Playing VIDEO
+                if container <> invalid and container.xml <> invalid and type(container.xml.Video) = "roXMLList" and container.getkeys().count() > 0 then
                     keys = container.getkeys()
-                    for index = 0 to keys.Count() - 1
-                        ratingKey = keys[index]
-                        if ratingKey <> invalid and container.xml <> invalid and type(container.xml.Video) = "roXMLList" and container.xml.Video.count() > index then 
+                    for index = 0 to container.xml.Video.count() - 1 ' for index = 0 to keys.Count() - 1
+                        libraryKey = container.xml.Video[index]@key
+                        ratingKey = container.xml.Video[index]@ratingkey
+                        if ratingKey <> invalid and container.xml.Video.count() > index then 
                             maid = container.xml.Video[index].Player@machineIdentifier
                             user = container.xml.Video[index].User@title
-                            metadata = container.metadata[index]
+                            ' match metadata for key to now playing item
+                            ' metadata = container.metadata[index]
+                            for i = 0 to container.metadata.count() 
+                                if container.metadata[i].key = libraryKey then 
+                                    metadata = container.metadata[i]
+                                    exit for
+                                end if 
+                            end for 
                             platform = firstof(container.xml.Video[index].Player@title, container.xml.Video[index].Player@platform, "")
                             length = invalid
                             if container.xml.Video[index]@duration <> invalid then 

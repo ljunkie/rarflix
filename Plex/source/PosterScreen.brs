@@ -31,8 +31,8 @@ Function createPosterScreen(item, viewController, style = invalid) As Object
     obj.focusedList = 0
     obj.names = []
 
-    if item.theme <> invalid AND NOT obj.ViewController.AudioPlayer.IsPlaying AND RegRead("theme_music", "preferences", "loop") <> "disabled" then
-        obj.ViewController.AudioPlayer.PlayThemeMusic(item)
+    if item.theme <> invalid AND NOT AudioPlayer().IsPlaying AND RegRead("theme_music", "preferences", "loop") <> "disabled" then
+        AudioPlayer().PlayThemeMusic(item)
         obj.Cleanup = baseStopAudioPlayer
     end if
 
@@ -181,14 +181,13 @@ Function posterHandleMessage(msg) As Boolean
             itype = content.type
             vg = content.viewgroup
             ctype = content.contenttype
-            audioplayer = GetViewController().AudioPlayer
             sn = m.screenname
             if (tostr(itype) <> "invalid" and (itype = "movie"  or itype = "show" or itype = "episode" or itype = "season" or itype = "series")) or (tostr(vg) <> "invalid" and vg = "season") then
                 m.metadata = m.contentArray[m.focusedList].content[m.contentArray[m.focusedList].focusedindex]
                 m.Item = m.contentArray[m.focusedList].content[m.contentArray[m.focusedList].focusedindex]
                 rfVideoMoreButtonFromGrid(m)
                 m.refreshOnActivate = true
-            else if audioplayer.ContextScreenID = invalid then
+            else if audioplayer().ContextScreenID = invalid then
                 Debug("Info Button (*) not handled for content type: " +  tostr(itype) + ":" + tostr(ctype))
                 rfDefRemoteOptionButton(m)
             else

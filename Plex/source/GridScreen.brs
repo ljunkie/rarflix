@@ -81,8 +81,8 @@ Function createGridScreenForItem(item, viewController, style, SetDisplayMode = "
 
     ' Don't play theme music on top of grid screens on the older Roku models.
     ' It's not worth the DestroyAndRecreate headache.
-    if item.theme <> invalid AND GetGlobal("rokuVersionArr", [0])[0] >= 4 AND NOT obj.ViewController.AudioPlayer.IsPlaying AND RegRead("theme_music", "preferences", "loop") <> "disabled" then
-        obj.ViewController.AudioPlayer.PlayThemeMusic(item)
+    if item.theme <> invalid AND GetGlobal("rokuVersionArr", [0])[0] >= 4 AND NOT AudioPlayer().IsPlaying AND RegRead("theme_music", "preferences", "loop") <> "disabled" then
+        AudioPlayer().PlayThemeMusic(item)
         obj.Cleanup = baseStopAudioPlayer
     end if
 
@@ -327,7 +327,6 @@ Function gridHandleMessage(msg) As Boolean
                 itype = item.contenttype
                 if itype = invalid then itype = item.type
 
-                audioplayer = GetViewController().AudioPlayer
                 isMovieTV = (itype = "movie"  or itype = "show" or itype = "episode" or itype = "season" or itype = "series")
                 sn = m.screenname
                 if tostr(itype) <> "invalid" and isMovieTV then 
@@ -342,7 +341,7 @@ Function gridHandleMessage(msg) As Boolean
                     ' show the option to see the FULL grid screen. We might want this just to do directly to it, but what if we add more options later.
                     ' might as well get people used to this.
                     rfDialogGridScreen(m)
-                else if audioplayer.ContextScreenID = invalid then  ' only create this extra screen if audioPlayer doesn't have context
+                else if audioplayer().ContextScreenID = invalid then  ' only create this extra screen if audioPlayer doesn't have context
                     Debug("Info Button (*) not handled for content type: " +  tostr(item.type) + ":" + tostr(item.contenttype))
                     rfDefRemoteOptionButton(m)
                 else
@@ -387,6 +386,24 @@ End Function
 
 Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count As Integer, finished As Boolean)
     Debug("Loaded " + tostr(count) + " elements in row " + tostr(row) + ", now have " + tostr(data.Count()))
+
+
+    ' ljunkie - exclude photo/music from the NowPlaying row (shared users) for now
+    '  -- further testing is needed to make this work ( it will be a wanted feature )
+    newData = []
+    if data.Count() > 0 then
+        re = CreateObject("roRegex", "/status/sessions", "i")
+        if tostr(data[0]) = "roAssociativeArray" and re.IsMatch(data[0].sourceurl) then 
+            for index = 0 to data.Count() - 1
+                if tostr(data[index].contenttype) = "audio" or tostr(data[index].contenttype) = "photo" then 
+                    print "---- skipping audio item in now playing row ( not supported yet ) "
+                else 
+                    newData.push(data[index])
+                end if
+            end for
+            data = newData
+        end if
+    end if
 
     m.contentArray[row] = data
 

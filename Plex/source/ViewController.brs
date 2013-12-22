@@ -31,7 +31,11 @@ Function createViewController() As Object
     controller.CreatePlayerForItem = vcCreatePlayerForItem
     controller.IsVideoPlaying = vcIsVideoPlaying
 
+    controller.ShowFirstRun = vcShowFirstRun
     controller.ShowReleaseNotes = vcShowReleaseNotes
+    controller.ShowHelpScreen = vcShowHelpScreen
+    controller.ShowLimitedWelcome = vcShowLimitedWelcome
+    controller.ShowPlaybackNotAllowed = vcShowPlaybackNotAllowed
 
     controller.InitializeOtherScreen = vcInitializeOtherScreen
     controller.AssignScreenID = vcAssignScreenID
@@ -41,8 +45,10 @@ Function createViewController() As Object
 
     controller.afterCloseCallback = invalid
     controller.CloseScreenWithCallback = vcCloseScreenWithCallback
+    controller.CloseScreen = vcCloseScreen
 
     controller.Show = vcShow
+    controller.OnInitialized = vcOnInitialized
     controller.UpdateScreenProperties = vcUpdateScreenProperties
     controller.AddBreadcrumbs = vcAddBreadcrumbs
 
@@ -66,6 +72,7 @@ Function createViewController() As Object
     controller.PendingRequests = {}
     controller.RequestsByScreen = {}
     controller.StartRequest = vcStartRequest
+    controller.StartRequestIgnoringResponse = vcStartRequestIgnoringResponse
     controller.CancelRequests = vcCancelRequests
 
     controller.SocketListeners = {}
@@ -78,6 +85,9 @@ Function createViewController() As Object
     controller.SystemLog = CreateObject("roSystemLog")
     controller.SystemLog.SetMessagePort(controller.GlobalMessagePort)
     controller.SystemLog.EnableType("bandwidth.minute")
+
+    controller.backButtonTimer = createTimer()
+    controller.backButtonTimer.SetDuration(60000, true)
     
     controller.CreateUserSelectionScreen = vcCreateUserSelectionScreen
     controller.ResetIdleTimer = vcResetIdleTimer
@@ -108,13 +118,14 @@ Function createViewController() As Object
 
     ' Stuff the controller into the global object
     m.ViewController = controller
-    controller.myplex = createMyPlexManager(controller)
 
-    ' Initialize things that run in the background and are okay to start before a user is selected. 
+    ' Initialize things that run in the background
+    AppManager().AddInitializer("viewcontroller")
     InitWebServer(controller)
-    controller.GdmAdvertiser = createGDMAdvertiser(controller)
-    controller.AudioPlayer = createAudioPlayer(controller)
-    controller.Analytics = createAnalyticsTracker()
+    AudioPlayer()
+    AnalyticsTracker()
+    MyPlexManager()
+    GDMAdvertiser()
 
     ' ljunkie Youtube Trailers (extended to TMDB)
     controller.youtube = vcInitYouTube()
@@ -125,13 +136,8 @@ Function GetViewController()
     return m.ViewController
 End Function
 
-Function GetMyPlexManager()
-    return GetViewController().myplex
-End Function
-
 Function vcCreateHomeScreen()
     screen = createHomeScreen(m)
-    screen.ScreenID = -1
     screen.ScreenName = "Home"
     m.InitializeOtherScreen(screen, invalid)
     screen.Show()
@@ -361,12 +367,14 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen.SetListStyle("flat-episodic", "zoom-to-fill")
         screenName = "Album Poster"
     else if item.key = "nowplaying" then
-        m.AudioPlayer.ContextScreenID = m.nextScreenId
-        ' screen = createAudioSpringboardScreen(m.AudioPlayer.Context, m.AudioPlayer.CurIndex, m) (curindex can be different now)
-        screen = createAudioSpringboardScreen(m.AudioPlayer.Context, m.AudioPlayer.PlayIndex, m)
-        screenName = "Now Playing"
-        breadcrumbs = [screenName," "," "] ' set breadcrumbs for this..
-        'print m.AudioPlayer.Context[m.AudioPlayer.PlayIndex]
+        if AudioPlayer().ContextScreenID = m.screens.Peek().ScreenID then
+            screen = invalid
+        else
+            AudioPlayer().ContextScreenID = m.nextScreenId
+            screen = createAudioSpringboardScreen(AudioPlayer().Context, AudioPlayer().CurIndex, m)
+            screenName = "Now Playing"
+            breadcrumbs = [screenName," "," "] ' set breadcrumbs for this..
+        end if
         if screen = invalid then return invalid
     else if contentType = "audio" then
         screen = createAudioSpringboardScreen(context, contextIndex, m)
@@ -539,13 +547,9 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     return screen
 End Function
 
-Function vcCreateTextInputScreen(heading, breadcrumbs, show=true) As Dynamic
-    screen = createKeyboardScreen(m)
+Function vcCreateTextInputScreen(heading, breadcrumbs, show=true, initialValue="", secure=false) As Dynamic
+    screen = createKeyboardScreen(m, invalid, heading, initialValue, secure)
     screen.ScreenName = "Keyboard: " + tostr(heading)
-
-    if heading <> invalid then
-        screen.Screen.SetDisplayText(heading)
-    end if
 
     m.AddBreadcrumbs(screen, breadcrumbs)
     m.UpdateScreenProperties(screen)
@@ -589,7 +593,7 @@ End Function
 Function vcCreateContextMenu()
     ' Our context menu is only relevant if the audio player has content.
     ' ljunkie -- we need some more checks here -- if audio is not playing/etc and we want to use the asterisk button for other things.. how do we work this?
-    if m.AudioPlayer.ContextScreenID = invalid then return invalid
+    if AudioPlayer().ContextScreenID = invalid then return invalid
 
     ' if screen if locked do not show dialog ( we might want to allow this, but we'd need to disable the go to now playing screen )
     ' redundant check - we don't allow option key globally
@@ -613,7 +617,7 @@ Function vcCreateContextMenu()
     end if
 
     ' Audios is playing - we should show it if the selected type is a "section" -- maybe we should look at secondary? -- also allow invalids
-    if m.audioplayer.ispaused or m.audioplayer.isplaying then 
+    if AudioPlayer().ispaused or AudioPlayer().isplaying then 
         r = CreateObject("roRegex", "section|secondary", "i") ' section too - those are not special
         'showDialog = (   (r.IsMatch(itype) or r.IsMatch(ctype) or r.IsMatch(vtype)) or (itype = "invalid" and ctype = "invalid" and vtype = "invalid") )
         showDialog = ( (r.IsMatch(itype) or r.IsMatch(ctype) or r.IsMatch(vtype)) or (itype = "invalid"))
@@ -628,11 +632,16 @@ Function vcCreateContextMenu()
 
     Debug("show audio dialog:" + tostr(showDialog) + "; itype:" +  tostr(itype) + "; ctype:" +  tostr(ctype) + "; vtype:" +  tostr(vtype) + "; screenname:" +  tostr(screen.screenname))
     if NOT showDialog then return invalid
-    return m.AudioPlayer.ShowContextMenu()
+    return AudioPlayer().ShowContextMenu()
 End Function
 
-Function vcCreatePhotoPlayer(context, contextIndex=invalid, show=true)
-    screen = createPhotoPlayerScreen(context, contextIndex, m)
+Function vcCreatePhotoPlayer(context, contextIndex=invalid, show=true, shuffled=false)
+    if NOT AppManager().IsPlaybackAllowed() then
+        m.ShowPlaybackNotAllowed()
+        return invalid
+    end if
+
+    screen = createPhotoPlayerScreen(context, contextIndex, m, shuffled)
     screen.ScreenName = "Photo Player"
 
     m.AddBreadcrumbs(screen, invalid)
@@ -645,8 +654,13 @@ Function vcCreatePhotoPlayer(context, contextIndex=invalid, show=true)
 End Function
 
 Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=true)
+    if NOT AppManager().IsPlaybackAllowed() then
+        m.ShowPlaybackNotAllowed()
+        return invalid
+    end if
+
     ' Stop any background audio first
-    m.AudioPlayer.Stop()
+    AudioPlayer().Stop()
 
     ' Make sure we have full details before trying to play.
     metadata.ParseDetails()
@@ -745,13 +759,13 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
             print "--- trying to play an album from a directory"
             container = createPlexContainerForUrl(item.server, item.server.serverurl, item.key)
             context = container.getmetadata()
-            m.AudioPlayer.Stop()
+            AudioPlayer().Stop()
             return m.CreateScreenForItem(context, 0, invalid)
          end if
     else if item.ContentType = "photo" then '  and (item.nodename = invalid or item.nodename <> "Directory") then 
         return m.CreatePhotoPlayer(context, contextIndex)
     else if item.ContentType = "audio" then
-        m.AudioPlayer.Stop()
+        AudioPlayer().Stop()
         return m.CreateScreenForItem(context, contextIndex, invalid)
     else if item.ContentType = "movie" OR item.ContentType = "episode" OR item.ContentType = "clip" then
         directplay = RegRead("directplay", "preferences", "0").toint()
@@ -778,6 +792,11 @@ End Function
 Function vcIsVideoPlaying() As Boolean
     return type(m.screens.Peek().Screen) = "roVideoScreen"
 End Function
+
+Sub vcShowFirstRun()
+    ' TODO(schuyler): Are these different?
+    m.ShowHelpScreen()
+End Sub
 
 Sub vcShowReleaseNotes(options = invalid)
     if options <> invalid then 
@@ -1020,6 +1039,51 @@ Sub vcShowReleaseNotes(options = invalid)
     screen.Show()
 End Sub
 
+Sub vcShowHelpScreen()
+    header = "Welcome to Plex!"
+    paragraphs = []
+    paragraphs.Push("With Plex you can easily stream your videos, music, photos and home movies to your Roku using your Plex Media Server.")
+    paragraphs.Push("To download and install your free Plex Media Server on your computer, visit http://plexapp.com/getplex")
+    paragraphs.Push("Enjoy Plex free for 30 days, then unlock with a PlexPass subscription or a small one-time purchase.")
+
+    screen = createParagraphScreen(header, paragraphs, m)
+    m.InitializeOtherScreen(screen, invalid)
+
+    screen.Show()
+End Sub
+
+Sub vcShowLimitedWelcome()
+    header = "Your Plex trial has ended"
+    paragraphs = []
+    paragraphs.Push("Your Plex trial period has ended. You can continue to browse content in your library, but playback has been disabled.")
+    addPurchaseButton = false
+
+    if AppManager().IsAvailableForPurchase then
+        paragraphs.Push("To continue using Plex, you can either buy the channel or connect a PlexPass-enabled myPlex account.")
+        addPurchaseButton = true
+    else
+        paragraphs.Push("To continue using Plex, you must connect a PlexPass-enabled myPlex account.")
+    end if
+
+    screen = createParagraphScreen(header, paragraphs, m)
+    m.InitializeOtherScreen(screen, invalid)
+
+    if addPurchaseButton then
+        screen.SetButton("purchase", "Purchase channel")
+    end if
+
+    screen.HandleButton = channelStatusHandleButton
+
+    screen.SetButton("close", "Close")
+
+    screen.Show()
+End Sub
+
+Sub vcShowPlaybackNotAllowed()
+    ' TODO(schuyler): Are these different?
+    m.ShowLimitedWelcome()
+End Sub
+
 Sub vcInitializeOtherScreen(screen, breadcrumbs)
     m.AddBreadcrumbs(screen, breadcrumbs)
     m.UpdateScreenProperties(screen)
@@ -1036,27 +1100,12 @@ End Sub
 Sub vcPushScreen(screen)
     m.AssignScreenID(screen)
     screenName = firstOf(screen.ScreenName, type(screen.Screen))
-    m.Analytics.TrackScreen(screenName)
+    AnalyticsTracker().TrackScreen(screenName)
     Debug("Pushing screen " + tostr(screen.ScreenID) + " onto view controller stack - " + screenName)
     m.screens.Push(screen)
 End Sub
 
 Sub vcPopScreen(screen)
-    if (screen = invalid) or (screen.ScreenID = -1) then
-        Debug("Popping home screen, cleaning up")
-        while m.screens.Count() > 1
-            m.PopScreen(m.screens.Peek())
-        end while
-        screentmp = m.screens.Pop()
-        if screen = invalid then screen = screentmp
-        'home screen has these set
-        if screen.Loader <> invalid then 
-            if screen.Loader.Listener <> invalid then screen.Loader.Listener = invalid
-            screen.Loader = invalid
-        end if
-        return
-    end if
-
     if screen.Cleanup <> invalid then screen.Cleanup()
 
     ' Try to clean up some potential circular references
@@ -1122,12 +1171,19 @@ Sub vcPopScreen(screen)
     ' Let the new top of the stack know that it's visible again. If we have
     ' no screens on the stack, but we didn't just close the home screen, then
     ' we haven't shown the home screen yet. Show it now.
-    if m.screens.Count() = 0 then
+    if m.Home <> invalid AND screen.screenID = m.Home.ScreenID then
+        Debug("Popping home screen")
+        while m.screens.Count() > 1
+            m.PopScreen(m.screens.Peek())
+        end while
+        m.screens.Pop()
+    else if m.screens.Count() = 0 then
         if m.ShowSecurityScreen = true then
             m.CreateUserSelectionScreen()
         else
             m.Home = m.CreateHomeScreen()
         end if
+
     else if callActivate then
         newScreen = m.screens.Peek()
         ' ljunkie - extra hack to cleanup the screen we are entering when invalid or if trying to re-enter a dialog
@@ -1162,7 +1218,7 @@ Sub vcPopScreen(screen)
 
         screenName = firstOf(newScreen.ScreenName, type(newScreen.Screen))
         Debug("Top of stack is once again: " + screenName)
-        m.Analytics.TrackScreen(screenName)
+        AnalyticsTracker().TrackScreen(screenName)
         newScreen.Activate(screen)
         'RRbreadcrumbDate(newScreen) ' ljunkie - clock
     end if
@@ -1184,24 +1240,27 @@ Sub vcCloseScreenWithCallback(callback)
     m.screens.Peek().Screen.Close()
 End Sub
 
-Sub vcShow()
-    testNotes = false ' testNotes = true
-    if RegRead("last_run_version", "misc", "") <> GetGlobal("appVersionStr") or testNotes then
-        m.ShowReleaseNotes()
-        RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")
-    else
-        if m.ShowSecurityScreen = true then
-            m.CreateUserSelectionScreen()
+Sub vcCloseScreen(simulateRemote)
+    ' Unless the visible screen is the home screen.
+    if m.Home <> invalid AND NOT m.IsActiveScreen(m.Home) then
+        ' Our one complication is the screensaver, which we can't know anything
+        ' about. So if we're simulating the remote control and haven't been
+        ' called in a while, send an ECP back. Otherwise, directly close our
+        ' top screen.
+        if m.backButtonTimer.IsExpired() then
+            SendEcpCommand("Back")
         else
-            m.Home = m.CreateHomeScreen()
+            m.screens.Peek().Screen.Close()
         end if
     end if
+End Sub
 
-    Debug("Starting global message loop")
+Sub vcShow()
+    AppManager().ClearInitializer("viewcontroller")
 
     timeout = 0
     lastmin = -1 'container to update every minute
-    while m.screens.Count() > 0
+    while m.screens.Count() > 0 OR NOT AppManager().IsInitialized()
         m.WebServer.prewait()
         msg = wait(timeout, m.GlobalMessagePort)
 
@@ -1229,7 +1288,9 @@ Sub vcShow()
                 requestContext = m.PendingRequests[id]
                 if requestContext <> invalid then
                     m.PendingRequests.Delete(id)
-                    requestContext.Listener.OnUrlEvent(msg, requestContext)
+                    if requestContext.Listener <> invalid then
+                        requestContext.Listener.OnUrlEvent(msg, requestContext)
+                    end if
                     requestContext = invalid
                 end if
             else if type(msg) = "roSocketEvent" then
@@ -1242,7 +1303,7 @@ Sub vcShow()
                     m.WebServer.postwait()
                 end if
             else if type(msg) = "roAudioPlayerEvent" then
-                if m.AudioPlayer.HandleMessage(msg) = true and RegRead("locktime_music", "preferences","enabled") <> "enabled" then
+                if AudioPlayer().HandleMessage(msg) = true and RegRead("locktime_music", "preferences","enabled") <> "enabled" then
                     m.ResetIdleTimer() ' reset timer if music lock is disabled. I.E. when song changes timer will be reset
                 end if
             else if type(msg) = "roSystemLogEvent" then
@@ -1250,6 +1311,8 @@ Sub vcShow()
                 if msgInfo.LogType = "bandwidth.minute" then
                     GetGlobalAA().AddReplace("bandwidth", msgInfo.Bandwidth)
                 end if
+            else if type(msg) = "roChannelStoreEvent" then
+                AppManager().HandleChannelStoreEvent(msg)
             else if msg.isRemoteKeyPressed() and msg.GetIndex() = 10 then
                 ' do not allow global option key while screen is locked
                 if m.IsLocked <> invalid or NOT m.IsLocked then m.CreateContextMenu()
@@ -1273,8 +1336,8 @@ Sub vcShow()
         
         'check for idle timeout
         if m.timerIdleTime <> invalid then 'and (msg.isRemoteKeyPressed() or msg.isButtonInfo()) then 
-            ' if for some reason one wants to disable timer during music, we'll handle it - we can handle paused if needed later [m.audioplayer.ispaused]
-            if RegRead("locktime_music", "preferences","enabled") <> "enabled" and (m.audioplayer.isplaying) then 
+            ' if for some reason one wants to disable timer during music, we'll handle it - we can handle paused if needed later [AudioPlayer().ispaused]
+            if RegRead("locktime_music", "preferences","enabled") <> "enabled" and (AudioPlayer().isplaying) then 
                 m.ResetIdleTimer()                
             else 
                 print "IDLE TIME Check: "; int(m.timerIdleTime.RemainingMillis()/int(1000))
@@ -1287,16 +1350,16 @@ Sub vcShow()
     end while
 
     ' Clean up some references on the way out
-    restoreAudio = m.AudioPlayer ' save for later (maybe)
-    m.AudioPlayer.Stop()         ' stop any audio for now. This might change with exit confirmation
+    AnalyticsTracker().Cleanup()
+    GDMAdvertiser().Cleanup()
+    AudioPlayer().Cleanup()
+    ' ljunkie - TODO - change to singleton
+    '  will be required for channel exit confirmation
+    'restoreAudio = m.AudioPlayer ' save for later (maybe)
+    'AudioPlayer().Stop()         ' stop any audio for now. This might change with exit confirmation
 
     m.Home = invalid
-    m.myplex = invalid
-    m.GdmAdvertiser = invalid
     m.WebServer = invalid
-    m.Analytics.Cleanup()
-    m.Analytics = invalid
-    m.AudioPlayer = invalid
     m.Timers.Clear()
     m.PendingRequests.Clear()
     m.SocketListeners.Clear()
@@ -1352,6 +1415,27 @@ Sub vcShow()
     end if
 '
     return
+End Sub
+
+Sub vcOnInitialized()
+    ' As good a place as any, note that we've started
+    AnalyticsTracker().OnStartup(MyPlexManager().IsSignedIn)
+
+    if m.screens.Count() = 0 then
+        if RegRead("last_run_version", "misc") = invalid then
+            m.ShowFirstRun()
+            RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")
+        else if RegRead("last_run_version", "misc", "") <> GetGlobal("appVersionStr") then
+            m.ShowReleaseNotes()
+            RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")
+        else if AppManager().State = "Limited" then
+            m.ShowLimitedWelcome()
+        else if m.ShowSecurityScreen = true then
+            m.CreateUserSelectionScreen()
+        else
+            m.Home = m.CreateHomeScreen()
+        end if
+    end if
 End Sub
 
 Sub vcAddBreadcrumbs(screen, breadcrumbs)
@@ -1512,19 +1596,37 @@ Function vcStartRequest(request, listener, context, body=invalid) As Boolean
     if started then
         id = request.GetIdentity().tostr()
         m.PendingRequests[id] = context
-        screenID = listener.ScreenID.tostr()
-        if NOT m.RequestsByScreen.DoesExist(screenID) then
-            m.RequestsByScreen[screenID] = []
+
+        if listener <> invalid then
+            screenID = listener.ScreenID.tostr()
+            if NOT m.RequestsByScreen.DoesExist(screenID) then
+                m.RequestsByScreen[screenID] = []
+            end if
+            ' Screen ID's less than 0 are fake screens that won't be popped until
+            ' the app is cleaned up, so no need to waste the bytes tracking them
+            ' here.
+            if listener.ScreenID >= 0 then m.RequestsByScreen[screenID].Push(id)
         end if
-        ' Screen ID's less than 0 are fake screens that won't be popped until
-        ' the app is cleaned up, so no need to waste the bytes tracking them
-        ' here.
-        if listener.ScreenID >= 0 then m.RequestsByScreen[screenID].Push(id)
+
         return true
     else
         return false
     end if
 End Function
+
+Sub vcStartRequestIgnoringResponse(url, body=invalid, contentType="xml")
+    request = CreateURLTransferObject(url)
+    request.SetCertificatesFile("common:/certs/ca-bundle.crt")
+
+    if body <> invalid then
+        request.AddHeader("Content-Type", MimeType(contentType))
+    end if
+
+    context = CreateObject("roAssociativeArray")
+    context.requestType = "ignored"
+
+    m.StartRequest(request, invalid, context, body)
+End Sub
 
 Sub vcCancelRequests(screenID)
     requests = m.RequestsByScreen[screenID.tostr()]
@@ -1580,18 +1682,17 @@ End Sub
 Sub InitWebServer(vc)
     ' Initialize some globals for the web server
     globals = CreateObject("roAssociativeArray")
-    globals.pkgname = "Plex/Roku"
+    globals.pkgname = "Plex"
     globals.maxRequestLength = 4000
     globals.idletime = 60
     globals.wwwroot = "tmp:/"
     globals.index_name = "index.html"
-    globals.serverName = "Plex/Roku"
+    globals.serverName = "Plex"
     AddGlobals(globals)
     MimeType()
     HttpTitle()
     ClassReply().AddHandler("/logs", ProcessLogsRequest)
-    ClassReply().AddHandler("/application/PlayMedia", ProcessPlayMediaRequest)
-    ClassReply().AddHandler("/application/Stop", ProcessStopMediaRequest)
+    InitRemoteControlHandlers()
 
     vc.WebServer = InitServer({msgPort: vc.GlobalMessagePort, port: 8324})
 End Sub

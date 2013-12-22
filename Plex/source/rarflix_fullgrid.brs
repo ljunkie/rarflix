@@ -36,9 +36,9 @@ Function createFULLGridScreen(item, viewController, style = "flat-movie", SetDis
     obj.Loader.Listener = obj
     ' Don't play theme music on top of grid screens on the older Roku models.
     ' It's not worth the DestroyAndRecreate headache.
-    if item.theme <> invalid AND GetGlobal("rokuVersionArr", [0])[0] >= 4 AND NOT obj.ViewController.AudioPlayer.IsPlaying AND RegRead("theme_music", "preferences", "loop") <> "disabled" then
-        obj.ViewController.AudioPlayer.PlayThemeMusic(item)
-        obj.Cleanup = baseStopAudioPlayer
+    if item.theme <> invalid AND GetGlobal("rokuVersionArr", [0])[0] >= 4 AND NOT AudioPlayer().IsPlaying AND RegRead("theme_music", "preferences", "loop") <> "disabled" then
+        AudioPlayer().PlayThemeMusic(item)
+        AudioPlayer().PlayThemeMusic(item)
     end if
     obj.hasWaitdialog = dialog
     return obj
