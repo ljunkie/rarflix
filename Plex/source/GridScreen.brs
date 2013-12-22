@@ -387,6 +387,24 @@ End Function
 Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count As Integer, finished As Boolean)
     Debug("Loaded " + tostr(count) + " elements in row " + tostr(row) + ", now have " + tostr(data.Count()))
 
+
+    ' ljunkie - exclude photo/music from the NowPlaying row (shared users) for now
+    '  -- further testing is needed to make this work ( it will be a wanted feature )
+    newData = []
+    if data.Count() > 0 then
+        re = CreateObject("roRegex", "/status/sessions", "i")
+        if tostr(data[0]) = "roAssociativeArray" and re.IsMatch(data[0].sourceurl) then 
+            for index = 0 to data.Count() - 1
+                if tostr(data[index].contenttype) = "audio" or tostr(data[index].contenttype) = "photo" then 
+                    print "---- skipping audio item in now playing row ( not supported yet ) "
+                else 
+                    newData.push(data[index])
+                end if
+            end for
+            data = newData
+        end if
+    end if
+
     m.contentArray[row] = data
 
     ' Don't bother showing empty rows
