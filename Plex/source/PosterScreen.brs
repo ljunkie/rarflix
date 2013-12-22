@@ -181,14 +181,13 @@ Function posterHandleMessage(msg) As Boolean
             itype = content.type
             vg = content.viewgroup
             ctype = content.contenttype
-            audioplayer = GetViewController().AudioPlayer
             sn = m.screenname
             if (tostr(itype) <> "invalid" and (itype = "movie"  or itype = "show" or itype = "episode" or itype = "season" or itype = "series")) or (tostr(vg) <> "invalid" and vg = "season") then
                 m.metadata = m.contentArray[m.focusedList].content[m.contentArray[m.focusedList].focusedindex]
                 m.Item = m.contentArray[m.focusedList].content[m.contentArray[m.focusedList].focusedindex]
                 rfVideoMoreButtonFromGrid(m)
                 m.refreshOnActivate = true
-            else if audioplayer.ContextScreenID = invalid then
+            else if audioplayer().ContextScreenID = invalid then
                 Debug("Info Button (*) not handled for content type: " +  tostr(itype) + ":" + tostr(ctype))
                 rfDefRemoteOptionButton(m)
             else

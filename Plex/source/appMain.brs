@@ -61,15 +61,18 @@ Sub Main(args)
 
     ' restore the Audio if we set the global - and delete it. This is probably due to the exit confirmation
     ' this may need some more work. TODO once we have channel exit confirmation
-    if GetGlobalAA().Lookup("restoreAudio") <> invalid then 
-        resetPort = controller.audioPlayer.port
-        resetVC = controller.audioPlayer.viewcontroller
-        controller.audioPlayer = invalid
-        controller.audioPlayer = GetGlobalAA().Lookup("restoreAudio")
-        controller.audioPlayer.viewcontroller = resetVC
-        controller.audioPlayer.port =  resetPort
-        GetGlobalAA().Delete("restoreAudio")
-    end if
+
+    ' TODO -- AudioPlayer has been changed into a singleton.. this needs work now ( never was fully tested )
+    '    if GetGlobalAA().Lookup("restoreAudio") <> invalid then 
+    '        resetPort = audioPlayer().port
+    '        resetVC = audioPlayer().viewcontroller
+    '   * below is incorrect now * 
+    '        controller.audioPlayer = invalid
+    '        controller.audioPlayer = GetGlobalAA().Lookup("restoreAudio")
+    '        controller.audioPlayer.viewcontroller = resetVC
+    '        controller.audioPlayer.port =  resetPort
+    '        GetGlobalAA().Delete("restoreAudio")
+    '    end if
     controller.Show()
 End Sub
 

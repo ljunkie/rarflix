@@ -370,8 +370,9 @@ Sub audioPlayerShowContextMenu()
     dialog.Title = dialog.Title + " - " + firstOf(m.Context[m.PlayIndex].Title, "")
 
     ' ljunkie - slideshow fun - show current image if slideshow is the current screen
-    if type(m.viewcontroller.screens.peek().screen) = "roSlideShow" then 
-        m.slideshow = m.viewcontroller.screens.peek()
+    screen = GetViewController().screens.Peek()
+    if type(screen) = "roSlideShow" then 
+        m.slideshow = screen
         print m.slideshow
         if type(m.slideshow.CurIndex) = "roInteger" and type(m.slideshow.items) = "roArray" then  ' ljunkie - show the photo title a slide show is in progress
             dialog.Text = dialog.Text + chr(10) + " Photo: " + tostr(m.slideshow.items[m.slideshow.CurIndex].title)

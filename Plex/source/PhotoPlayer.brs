@@ -165,16 +165,14 @@ Function photoPlayerHandleMessage(msg) As Boolean
         else if msg.isRequestInterrupted() then
             Debug("preload interrupted: " + tostr(msg.GetIndex()))
         else if msg.isPaused() then
-            audioplayer = GetViewController().AudioPlayer
             Debug("paused")
             m.isPaused = true
             if AudioPlayer().IsPlaying then AudioPlayer().Pause()
             NowPlayingManager().UpdatePlaybackState("photo", m.Context[m.CurIndex], "paused", 0)
         else if msg.isResumed() then
-            audioplayer = AudioPlayer()
             Debug("resumed")
             m.isPaused = false
-            if audioplayer.IsPaused then audioplayer.Resume()
+            if audioplayer().IsPaused then audioplayer().Resume()
             NowPlayingManager().UpdatePlaybackState("photo", m.Context[m.CurIndex], "playing", 0)
         else if msg.isRemoteKeyPressed() then
             if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then ' ljunkie - use * for more options on focused item
@@ -228,18 +226,18 @@ End Function
 
 
 Sub photoPlayerShowContextMenu(obj,force_show = false)
-    audioplayer = AudioPlayer()
+    player = AudioPlayer()
 
     ' show audio dialog if item is directory and audio is playing/paused
     if tostr(obj.nodename) = "Directory" then
-        if audioplayer.IsPlaying or audioplayer.IsPaused or audioPlayer.ContextScreenID <> invalid then AudioPlayer.ShowContextMenu()
+        if player.IsPlaying or player.IsPaused or player.ContextScreenID <> invalid then player.ShowContextMenu()
         return
     end if
    
     ' do not display if audio is playing - sorry, audio dialog overrides this, maybe work more logic in later
     ' I.E. show button for this dialog from audioplayer dialog
-    if NOT force_show and  audioplayer.IsPlaying or audioplayer.IsPaused or audioPlayer.ContextScreenID <> invalid then 
-        AudioPlayer.ShowContextMenu()
+    if NOT force_show and player.IsPlaying or player.IsPaused or player.ContextScreenID <> invalid then 
+        player.ShowContextMenu()
         return
     end if
 
