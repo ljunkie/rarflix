@@ -77,15 +77,17 @@ Function managerIsPlaybackAllowed() As Boolean
 End Function
 
 Sub managerResetState()
+    m.State = "RARflix"
     if m.IsPlexPass then
         m.State = "PlexPass"
     else if m.IsPurchased then
         m.State = "Purchased"
-    else if m.IsInTrialWindow then
-        m.State = "Trial"
-    else
-        m.State = "Limited"
     end if
+'    else if m.IsInTrialWindow then
+'        m.State = "Trial"
+'    else
+'        m.State = "Limited"
+'    end if
 
     Debug("App state is now: " + m.State)
 End Sub

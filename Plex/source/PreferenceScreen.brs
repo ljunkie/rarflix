@@ -396,6 +396,12 @@ Function prefsMainHandleMessage(msg) As Boolean
                     dialog.Text = "Your Plex trial has expired and playback is currently disabled. To fully unlock the channel, you can purchase it or connect a PlexPass account."
                     dialog.SetButton("purchase", "Purchase the channel")
                 end if
+                rarflixText = "You are using the " + GetGlobal("appName") + " v" + GetGlobal("appVersionStr") + " (Private) channel."
+                if dialog.Text <> invalid then 
+                    dialog.Text = dialog.Text + chr(10) + rarflixText
+                else 
+                    dialog.Text = rarflixText
+                end if
 
                 dialog.SetButton("close", "Close")
                 dialog.HandleButton = channelStatusHandleButton
