@@ -371,7 +371,7 @@ Sub audioPlayerShowContextMenu()
 
     ' ljunkie - slideshow fun - show current image if slideshow is the current screen
     screen = GetViewController().screens.Peek()
-    if type(screen) = "roSlideShow" then 
+    if type(screen.screen) = "roSlideShow" then 
         m.slideshow = screen
         print m.slideshow
         if type(m.slideshow.CurIndex) = "roInteger" and type(m.slideshow.items) = "roArray" then  ' ljunkie - show the photo title a slide show is in progress
