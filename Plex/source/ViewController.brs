@@ -1256,9 +1256,6 @@ Sub vcCloseScreen(simulateRemote)
 End Sub
 
 Sub vcShow()
-   if m.ShowSecurityScreen = true then
-       m.CreateUserSelectionScreen()
-    end if
     AppManager().ClearInitializer("viewcontroller")
 
     timeout = 0
@@ -1433,6 +1430,8 @@ Sub vcOnInitialized()
             RegWrite("last_run_version", GetGlobal("appVersionStr"), "misc")
         else if AppManager().State = "Limited" then
             m.ShowLimitedWelcome()
+        else if m.ShowSecurityScreen = true then
+            m.CreateUserSelectionScreen()
         else
             m.Home = m.CreateHomeScreen()
         end if
