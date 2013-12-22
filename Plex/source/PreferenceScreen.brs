@@ -777,7 +777,7 @@ Function prefsUserProfilesHandleMessage(msg) As Boolean
         handled = true
         if msg.isScreenClosed() then
             Debug("User Profiles closed event")
-            m.ViewController.GdmAdvertiser.Refresh()
+            GDMAdvertiser().Refresh()
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
@@ -853,7 +853,7 @@ Function prefsUserEditHandleMessage(msg) As Boolean
         handled = true
         if msg.isScreenClosed() then
             Debug("User Edit closed event")
-            m.ViewController.GdmAdvertiser.Refresh()
+            GDMAdvertiser().Refresh()
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
@@ -1736,7 +1736,7 @@ Function prefsRemoteControlHandleMessage(msg) As Boolean
 
         if msg.isScreenClosed() then
             Debug("Remote control closed event")
-            m.ViewController.GdmAdvertiser.Refresh()
+            GDMAdvertiser().Refresh()
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
