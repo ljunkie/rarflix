@@ -1,4 +1,7 @@
 #3.0.3 (2013-12-23)
+    * MyPlex content could crash on resume (offset is flaky)
+
+#3.0.3 (2013-12-23)
     * myPlex content could crash video player -- timelines are now valid and resume points work.
 
 #3.0.2 (2013-12-22)
