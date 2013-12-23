@@ -6,7 +6,7 @@
 
 '* Constructor for a specific PMS instance identified via the URL and
 '* human readable name, which can be used in section names
-Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
+Function newPlexMediaServer(pmsUrl, pmsName, machineID, useMyPlexToken=true) As Object
     pms = CreateObject("roAssociativeArray")
     pms.serverUrl = pmsUrl
     pms.name = firstOf(pmsName, "Unknown")
@@ -15,7 +15,11 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.synced = false
     pms.online = false
     pms.local = false
-    pms.AccessToken = MyPlexManager().AuthToken
+    if useMyPlexToken then
+        pms.AccessToken = MyPlexManager().AuthToken
+    else
+        pms.AccessToken = invalid
+    end if
     pms.StopVideo = stopTranscode
     pms.StartTranscode = StartTranscodingSession
     pms.PingTranscode = pingTranscode
@@ -100,7 +104,7 @@ Sub pmsTimeline(item, state, time)
     query = query + "&duration=" + tostr(item.RawLength)
     query = query + "&state=" + state
     if item.guid <> invalid then query = query + "&guid=" + encoder.Escape(item.guid)
-    if item.ratingKey <> invalid then query = query + "&ratingKey=" + tostr(item.ratingKey)
+    if item.ratingKey <> invalid then query = query + "&ratingKey=" + encoder.Escape(tostr(item.ratingKey))
     if item.url <> invalid then query = query + "&url=" + encoder.Escape(item.url)
     if item.key <> invalid then query = query + "&key=" + encoder.Escape(item.key)
     if item.sourceUrl <> invalid then query = query + "&containerKey=" + encoder.Escape(item.sourceUrl)

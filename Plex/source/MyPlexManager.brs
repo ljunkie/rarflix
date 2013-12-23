@@ -4,7 +4,9 @@
 
 Function MyPlexManager() As Object
     if m.MyPlexManager = invalid then
-        obj = CreateObject("roAssociativeArray")
+        ' Start by creating a PlexMediaServer since we can't otherwise inherit
+        ' anything. Then tweak as appropriate.
+        obj = newPlexMediaServer("https://my.plexapp.com", "myPlex", "myplex", false)
 
         AppManager().AddInitializer("myplex")
 
@@ -16,8 +18,6 @@ Function MyPlexManager() As Object
         obj.ExtraHeaders["X-Plex-Provides"] = "player"
 
         ' Masquerade as a basic Plex Media Server
-        obj.serverUrl = "https://my.plexapp.com"
-        obj.name = "myPlex"
         obj.owned = false
         obj.online = true
         obj.StopVideo = mpStopVideo
@@ -25,20 +25,13 @@ Function MyPlexManager() As Object
         obj.PingTranscode = mpPingTranscode
         obj.TranscodedImage = mpTranscodedImage
         obj.TranscodingVideoUrl = mpTranscodingVideoUrl
-        obj.ConstructVideoItem = pmsConstructVideoItem
         obj.GetQueryResponse = mpGetQueryResponse
-        obj.AddDirectPlayInfo = pmsAddDirectPlayInfo
-        obj.IsRequestToServer = pmsIsRequestToServer
         obj.Log = mpLog
         obj.AllowsMediaDeletion = false
         obj.SupportsMultiuser = false
         obj.SupportsVideoTranscoding = true
 
         ' Commands, mostly use the PMS functions
-        obj.Timeline = pmsTimeline
-        obj.Scrobble = scrobble
-        obj.Unscrobble = unscrobble
-        obj.Rate = rate
         obj.Delete = mpDelete
         obj.ExecuteCommand = mpExecuteCommand
         obj.ExecutePostCommand = mpExecutePostCommand
@@ -225,7 +218,7 @@ Sub mpDelete(id)
         Debug("Executing delete command: " + commandUrl)
         request = m.CreateRequest("", commandUrl)
         request.PostFromString("_method=DELETE")
-     end if
+    end if
 End Sub
 
 Function mpExecuteCommand(commandPath)
