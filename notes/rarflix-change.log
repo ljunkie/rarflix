@@ -1,3 +1,9 @@
+#3.0.3 (2013-12-23)
+    * myPlex content could crash video player -- timelines are now valid and resume points work.
+
+#3.0.2 (2013-12-22)
+    * merge of PlexTest 2.8.2 changes ( includes remote control updates )
+
 #3.0.1 (2013-12-20)
     * Customer Rows could cause a crash when hidden
 

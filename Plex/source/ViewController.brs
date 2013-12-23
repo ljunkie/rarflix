@@ -837,8 +837,9 @@ Sub vcShowReleaseNotes(options = invalid)
         paragraphs.Push("  ")
 
         paragraphs.Push("  ")
-        paragraphs.Push(us+"v3.0.2 (2013-12-20)"+us)
+        paragraphs.Push(us+"v3.0.2 - v3.0.3 (2013-12-23)"+us)
         paragraphs.Push("  ")
+        paragraphs.Push(" * myPlex content crashed video player (timelines are valid/resume works)")
         paragraphs.Push(" * merge of Plex/Roku v2.8.2 (all changes) ")
         paragraphs.Push("  ")
 
