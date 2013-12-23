@@ -708,7 +708,7 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
             end if
 
             if dlg.Result = invalid or dlg.Result = "invalid" then return invalid
-            if dlg.Result = "resume" then
+            if dlg.Result = "resume" and metadata.viewOffset <> invalid then
                 seekValue = int(val(metadata.viewOffset))
             else
                 seekValue = 0
@@ -837,8 +837,9 @@ Sub vcShowReleaseNotes(options = invalid)
         paragraphs.Push("  ")
 
         paragraphs.Push("  ")
-        paragraphs.Push(us+"v3.0.2 - v3.0.3 (2013-12-23)"+us)
+        paragraphs.Push(us+"v3.0.2 - v3.0.4 (2013-12-23)"+us)
         paragraphs.Push("  ")
+        paragraphs.Push(" * myPlex content could crash on resume (offset is flaky)")
         paragraphs.Push(" * myPlex content crashed video player (timelines are valid/resume works)")
         paragraphs.Push(" * merge of Plex/Roku v2.8.2 (all changes) ")
         paragraphs.Push("  ")
