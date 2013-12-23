@@ -100,7 +100,7 @@ Function searchLoadMoreContent(focusedRow, extraRows=0) As Boolean
                 m.StartRequest(server, "/search", "Root")
             else 
                 m.StartRequest(server, "/library/people/" + m.cast.id + "/media", "Root")
-                m.StartRequest(server, "/search", "Root") ' now included
+                'm.StartRequest(server, "/search", "Root") ' excluded -- we do not want appClips ( channel plugins here ) too many bad results
             end if
         next
 
