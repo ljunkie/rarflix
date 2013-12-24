@@ -162,11 +162,17 @@ End Function
 Function vcCreateLockScreen() 
     TraceFunction("vcCreateLockScreen")
     currentScreen = m.screens.peek()    'current screen to stack on top of
-    if currentScreen <> invalid and type(currentScreen.Screen) = "roMessageDialog" then 
-        Debug("---- Top screen is a Dialog -- need to close before we lock")
-        ' close the screen -- vcPopScreen takes care of any other dialogs
-        m.popscreen(currentScreen)
-        currentScreen = m.screens.Peek()
+    print currentScreen
+    
+    if currentScreen <> invalid then 
+        ' ljunkie - Message Dialog and Video Screen ( playing video ) need to be closed
+        '  if not, they will allow backdoor access into channel after lockscreen
+        if type(currentScreen.Screen) = "roMessageDialog" or type(currentScreen.Screen) = "roVideoScreen" then 
+            Debug("---- Top screen is a " + type(currentScreen.Screen) + " -- need to close before we lock")
+            ' close the screen -- vcPopScreen takes care of any other dialogs
+            m.popscreen(currentScreen)
+            currentScreen = m.screens.Peek()
+        end if
     end if
 
     'this PIN screen will stay up until either the PIN is entered or Back is pressed
@@ -183,6 +189,10 @@ Function vcCreateLockScreen()
     currentScreen.Activate = lockScreenActivate     'new Activate routine
     m.IsLocked = true   'global when we're locked
     pinScreen.txtBottom = "RARflix is locked due to inactivity.  Enter PIN Code using direction arrows on your remote control.  Press OK to retry PIN or Back to pick another User."   
+    ' create a facade screen below the lock screen -- this will hide closing of screens if one doesn't enter the correct pin ( back button )
+    pinScreen.facade = CreateObject("roGridScreen")
+    pinScreen.facade.Show()
+    ' show the pinScreen now
     pinScreen.Show()
     return pinScreen
 End Function
@@ -194,10 +204,13 @@ sub lockScreenActivate(priorScreen)
     if (priorScreen.pinOK = invalid) or (priorScreen.pinOK <> true) then    
         'No code was entered.  We need to logout and return to the main user selection screen
         'restore old Activate before calling this
-        m.Activate = m.OldActivate 
+        'm.Activate = m.OldActivate 
         m.ViewController.PopScreen(invalid)    'invalid will close all screens
+        if m.screen <> invalid then m.screen.close() ' stragler
+        if priorScreen.facade <> invalid then priorScreen.facade.close()
     else
         'pin is OK,
+        if priorScreen.facade <> invalid then priorScreen.facade.close()
         Debug("Valid PIN entered.  Unlocked.")
         m.ViewController.IsLocked = false   'notify that we're unlocked
         'restart idle timer     
@@ -1122,6 +1135,16 @@ Sub vcPushScreen(screen)
 End Sub
 
 Sub vcPopScreen(screen)
+     ' ljunkie - invalid is "valid" use to close ALL screens
+     if screen = invalid then 
+        Debug("Invalid Screen given -- popping ALL screens, cleaning up")
+        while m.screens.Count() > 0
+            m.PopScreen(m.screens.Peek())
+        end while
+        return
+    end if
+    ' end invalid screen ( close all/restart )
+
     if screen.Cleanup <> invalid then screen.Cleanup()
 
     ' Try to clean up some potential circular references
