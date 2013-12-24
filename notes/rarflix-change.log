@@ -1,3 +1,9 @@
+#3.0.6 (2013-12-23)
+    * lock screen broke after the 2.8.2 PlexTest merge.
+    * hide screens below lockscreen on exit (privacy)
+    * photo channels (break.com) crashed -- they don't contain expected EXIF data
+    * other misc fixes
+
 #3.0.5 (2013-12-23)
     * exclude additional channels when searching cast & crew
 
