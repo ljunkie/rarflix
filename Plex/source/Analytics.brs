@@ -136,7 +136,7 @@ Sub analyticsCleanup()
     ' Just note the session duration. We wrote the number of playback events the
     ' last time we got one, and we won't send the actual event until the next
     ' startup.
-    RegWrite("session_duration", tostr(m.SessionTimer.GetElapsedSeconds()), "analytics")
+    if m.SessionTimer <> invalid then RegWrite("session_duration", tostr(m.SessionTimer.GetElapsedSeconds()), "analytics")
     m.SessionTimer = invalid
 End Sub
 
