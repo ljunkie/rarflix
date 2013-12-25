@@ -172,10 +172,10 @@ Function audioHandleMessage(msg) As Boolean
                 return true
             else if buttonCommand = "shufflePlay" then
                 if m.IsShuffled then
-                    m.Unshuffle(m.Context)
+                    m.Unshuffle() 'm.Unshuffle(m.Context)
                     m.IsShuffled = false
                else
-                    m.Shuffle(m.Context)
+                    m.Shuffle() ' m.Shuffle(m.Context)
                     m.IsShuffled = true
                 end if
                 player.ShufflePlay = Not player.ShufflePlay

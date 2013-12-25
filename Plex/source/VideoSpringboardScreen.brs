@@ -262,7 +262,7 @@ Function videoHandleMessage(msg) As Boolean
 
                 ' shuffle the context if shufflePlay enable - as of now the selected video will always play
                 if m.shuffleplay then 
-                    m.Shuffle(m.context)
+                    m.Shuffle() 'm.Shuffle(m.context)
                     m.metadata = m.context[0]
                 end if
                 
