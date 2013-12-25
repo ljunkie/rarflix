@@ -1,4 +1,7 @@
-#3.0.6 (2013-12-23)
+#3.0.7 (2013-12-25)
+    * shuffle play for video/audio crashed channel.
+
+#3.0.6 (2013-12-24)
     * lock screen broke after the 2.8.2 PlexTest merge.
     * hide screens below lockscreen on exit (privacy)
     * photo channels (break.com) crashed -- they don't contain expected EXIF data
