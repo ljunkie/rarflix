@@ -193,6 +193,8 @@ Sub containerParseXml()
             if metadata.sddetailthumb <> invalid then metadata.sddetailthumb = re.replace(metadata.sddetailthumb,"http://plex-cloudsync.s3.amazonaws.com/sync/")
         end if
 
+        PosterIndicators(metadata)
+
         if metadata.search = true AND m.SeparateSearchItems then
             m.search.Push(metadata)
         else if metadata.setting = true then

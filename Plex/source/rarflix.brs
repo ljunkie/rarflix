@@ -1523,3 +1523,98 @@ sub SetGlobalPosterStyle(style = invalid)
     GetGlobalAA().AddReplace("GlobalPosterStyle", style)
     GetGlobalAA().AddReplace("GlobalNewScreen", "poster")
 end sub
+
+Function getRARflixTools(server) as object
+    content = invalid
+
+    r1=CreateObject("roRegex", ":\d+", "")
+    baseUrl = server.serverurl
+    baseUrl = r1.Replace(baseUrl, ":32499") ' RARflix Poster Util needs to run on port 32499 (internal and external!) - apache/nginx/dnat/etc..
+    baseUrl = baseUrl + "/RARflixTools"
+    Debug("---- checking if RARflixTools are install on PMS: " + tostr(baseUrl))
+
+    req = CreateURLTransferObject(baseUrl)
+    port = CreateObject("roMessagePort")
+    req.SetPort(port)
+    req.AsyncGetToString()
+    event = wait(10000, port)
+     
+    if event.GetResponseCode() <> 200 return invalid
+
+    ' Parse the result to see if the RARflixTools are working properly
+    json=ParseJSON(event.GetString())
+    
+    ' must have a valid json result and access to the PMS (PMSaccess)
+    if json <> invalid and json.rarflix <> invalid and json.rarflix.PMSaccess = true then
+        Debug("---- RARflixTools are installed")
+
+        content = CreateObject("roAssociativeArray")
+        content.sourceurl = baseUrl
+        
+        ' for now we only have one tool, but set them from teh json results to verify they are working properly
+        content.PosterTranscoder = json.rarflix.PosterTranscoder
+        content.PosterTranscoderUrl = json.rarflix.PosterTranscoderUrl
+
+    else
+        Debug("---- RARflixTools are NOT installed")
+    end if
+
+    return content
+End Function
+
+sub PosterIndicators(item)
+    progress = 0 ' default no progress
+    watched  = 0 ' default unwatched
+
+    'print item.title
+    'print "item.server.rarflixtools: "; item.server.rarflixtools
+
+    if tostr(item.server.rarflixtools) = "invalid" then return 
+    if item.server.rarflixtools.PosterTranscoder <> true then return 
+    'print "item.server.rarflixtools.PosterTranscoder: "; item.server.rarflixtools.PosterTranscoder
+
+    baseUrl = item.server.rarflixtools.PosterTranscoderUrl
+    'print "baseUrl: "; baseUrl
+    if baseUrl = invalid then return
+   
+    ' this can probably be remove -- it to exclude myplex server during testing. The checks above should already handle this
+    skip=CreateObject("roRegex", "https", "")
+    if skip.isMatch(baseUrl) then return 
+
+    if item.viewedLeafCount <> invalid and item.leafCount <> invalid 
+        ' for seasons / mixedParent we will either show progress or wathched indication, but not both
+        if val(item.viewedLeafCount) = val(item.leafCount) then 
+           watched = 1
+        else if val(item.viewedLeafCount) > 0 then
+            progress = int( (val(item.viewedLeafCount)/val(item.leafCount)) * 100)
+        end if
+    else 
+        ' Video Meta data -- OK to show both progress indicator and watched 
+        if item.viewOffset <> invalid and item.rawlength <> invalid then progress = int( (item.viewOffset.toInt()/item.rawlength) * 100)
+        if item.Watched <> invalid and item.Watched then watched = 1
+    end if
+
+    if watched > 0 OR progress > 0 then 
+       if item.hdposterurl <> invalid then item.hdposterurl = buildPosterIndicatorUrl(baseUrl, item.hdposterurl, progress, watched)
+       if item.sdposterurl <> invalid then item.sdposterurl = buildPosterIndicatorUrl(baseUrl, item.sdposterurl, progress, watched)
+
+       if item.hdgridthumb <> invalid then item.hdgridthumb = buildPosterIndicatorUrl(baseUrl, item.hdgridthumb, progress, watched)
+       if item.sdgridthumb <> invalid then item.sdgridthumb = buildPosterIndicatorUrl(baseUrl, item.sdgridthumb, progress, watched)
+
+       if item.HDDetailThumb <> invalid then item.HDDetailThumb = buildPosterIndicatorUrl(baseUrl, item.HDDetailThumb, progress, watched)
+       if item.SDDetailThumb <> invalid then item.SDDetailThumb = buildPosterIndicatorUrl(baseUrl, item.SDDetailThumb, progress, watched)
+
+       if item.HDsbThumb <> invalid then item.HDsbThumb = buildPosterIndicatorUrl(baseUrl, item.HDsbThumb, progress, watched)
+       if item.SDsbThumb <> invalid then item.SDsbThumb = buildPosterIndicatorUrl(baseUrl, item.SDsbThumb, progress, watched)
+
+       'print "item.hdposterurl: "; item.hdposterurl
+       'print "item.HDDetailThumb: "; item.HDDetailThumb
+       'print "item.hdgridthumb: "; item.hdgridthumb
+       'print "item.HDsbThumb: "; item.HDsbThumb
+    end if
+end sub
+
+function buildPosterIndicatorUrl(baseUrl, thumbUrl, progress, watched) as string
+    newThumb = baseUrl + "?progress=" + tostr(progress) + "&watched=" + tostr(watched) + "&thumb=" + thumbUrl
+    return newThumb
+end function

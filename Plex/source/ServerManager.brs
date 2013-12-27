@@ -364,6 +364,10 @@ Sub PutPlexMediaServer(server)
             servers = {}
             GetGlobalAA().AddReplace("validated_servers", servers)
         end if
+
+	' RARflixTools Hook -- verify the tools are installed and working
+        server.RARflixTools = getRARflixTools(server)
+
         servers[server.machineID] = server
         if server.serverUrl <> invalid then SetServerForHost(server.serverUrl + "/", server)
     end if

@@ -298,6 +298,9 @@ Sub setVideoBasics(video, container, item)
 
     video.guid = item@guid
     video.url = item@url
+
+    ' RARflixTools -- PosterTranscoder ( watched/progress indicators )
+    PosterIndicators(video)
 End Sub
 
 Function videoParseDetails()
@@ -668,9 +671,12 @@ Function newSeasonMetadata(container, item) As Object
     season.mediaContainerIdentifier = container.xml@identifier
     season.ratingKey = item@ratingKey
     if season.ratingKey = invalid and container.xml@viewGroup = "season" then season.ratingKey = container.xml@key
-    print season
+    'print season
 
     season.HasDetails = true
+
+    ' RARflixTools -- PosterTranscoder ( watched/progress indicators )
+    PosterIndicators(season)
 
     return season
 End Function

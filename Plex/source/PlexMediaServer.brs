@@ -45,6 +45,11 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID, useMyPlexToken=true) As 
     pms.AddDirectPlayInfo = pmsAddDirectPlayInfo
     pms.Log = pmsLog
 
+    ' RARflix Tools
+    '  - maybe more to come, but I'd prefer these part of the PMS
+    '  2013-12-27: PosterTranscoder - will allow watched status and progress indicator overlay on Posters/Thumbs
+    pms.rarflixtools = invalid
+
     ' Set to false if a version check fails
     pms.SupportsAudioTranscoding = true
     pms.SupportsVideoTranscoding = true
