@@ -347,7 +347,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
 
     if contentType = "episode" OR contentType = "clip" then
         screen = createVideoSpringboardScreen(context, contextIndex, m)
-        'screen.screen.SetPosterStyle("rounded-rect-16x9-generic")
+        screen.screen.SetPosterStyle("rounded-rect-16x9-generic")
         screenName = "Preplay " + contentType
     else if contentType = "movie" then 
         screen = createVideoSpringboardScreen(context, contextIndex, m)
