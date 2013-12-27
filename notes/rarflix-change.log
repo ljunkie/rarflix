@@ -1,3 +1,7 @@
+#3.0.8-dev (2013-12-25)
+    * RARflixTools (https://github.com/ljunkie/rarflixtools)
+    * Initial release with Watched/Progress indicators ( poster overlay )
+
 #3.0.7 (2013-12-25)
     * shuffle play for video/audio crashed channel.
 
