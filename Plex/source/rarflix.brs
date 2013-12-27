@@ -1566,6 +1566,22 @@ sub PosterIndicators(item)
     progress = 0 ' default no progress
     watched  = 0 ' default unwatched
 
+
+    if item = invalid then return 
+
+    ' this would include music/photos ( for not we only want video )
+    'supportedIdentifier = (item.mediaContainerIdentifier = "com.plexapp.plugins.library" OR item.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
+    
+    isSupported = (item.ContentType = "movie" or item.ContentType = "show" or item.ContentType = "episode" or item.type = "season" or item.viewgroup = "season")
+
+    if not isSupported then 
+        print "skipping " + tostr(item.title)
+        print item.ContenTtype
+        if item.hasdetails and (item.type <> "album" and item.type <> "artist" and item.type <> "photo") then 
+            print item
+        end if
+	return
+    end if
     'print item.title
     'print "item.server.rarflixtools: "; item.server.rarflixtools
 
@@ -1594,7 +1610,7 @@ sub PosterIndicators(item)
         if item.Watched <> invalid and item.Watched then watched = 1
     end if
 
-    if watched > 0 OR progress > 0 then 
+    if watched = 0 OR progress > 0 then 
        if item.hdposterurl <> invalid then item.hdposterurl = buildPosterIndicatorUrl(baseUrl, item.hdposterurl, progress, watched)
        if item.sdposterurl <> invalid then item.sdposterurl = buildPosterIndicatorUrl(baseUrl, item.sdposterurl, progress, watched)
 
