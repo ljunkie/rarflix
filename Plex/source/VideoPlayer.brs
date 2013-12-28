@@ -500,7 +500,10 @@ End Sub
 Sub videoPlayerUpdateNowPlaying(force=false)
     if m.lastPosition >= 0 then updateVideoHUD(m,m.lastPosition)
     ' We can only send the event if we have some basic info about the item
+    ' -- ljunkie - we will warn about it in the log (verbose) because this sucks when this happens
     if m.Item.ratingKey = invalid OR m.Item.RawLength = invalid OR m.Item.server = invalid then
+        Debug("---- timeLineTimer set to inactive! we will not be sending timeline info for " + tostr(m.Item.ratingKey))
+        Debug("---- m.Item.RawLength: " + tostr(m.Item.RawLength))
         m.timelineTimer.Active = false
         return
     end if

@@ -60,10 +60,23 @@ Function newVideoMetadata(container, item, detailed=false) As Object
     if video.ReleaseDate = invalid then video.ReleaseDate = item@year ' ljunkie - use the Year for an empty ReleaseDate
 
     length = item@duration
+
+    ' ljunkie - for some reason the PMS fails to return a duration sometimes ( flaky )
+    '  example found was for a TV Seasons Children 'library/metadata/252428/children'
+    '  while I was testing the PMS starte to all of a sudden return a valid duration
+    '  then a few minutes later (20) somes items didn't have a duration again...
+    if length = invalid and item@key <> invalid then 
+        Debug("--- length (duration) is invalid -- let's try the key directly")
+        if container.server.serverurl+item@key <> container.sourceurl then 
+            lcon = createPlexContainerForUrl(container.server, container.server.serverurl, item@key)
+            if lcon <> invalid and lcon.xml <> invalid and type(lcon.xml.Video) = "roXMLList" then length = lcon.xml.Video[0]@duration
+        end if
+    end if
+
     if length <> invalid then
         video.Length = int(val(length)/1000)
         video.RawLength = int(val(length))
-    endif
+    end if
 
     if container.ViewGroup = "Details" OR container.ViewGroup = "InfoList" then
         video.ShortDescriptionLine2 = item@summary

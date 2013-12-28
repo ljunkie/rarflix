@@ -97,8 +97,14 @@ End Function
 
 Sub pmsTimeline(item, state, time)
     itemsEqual = (item <> invalid AND m.lastTimelineItem <> invalid AND item.ratingKey = m.lastTimelineItem.ratingKey)
-    if itemsEqual AND state = m.lastTimelineState AND NOT m.timelineTimer.IsExpired() then return
 
+    ' extra precaution -- probably not needed as the issue stemmed from an item not have a RawLength (duration)
+    if m.lastTimelineStateCount = invalid then m.lastTimelineStateCount = 0
+    m.lastTimelineStateCount = m.lastTimelineStateCount+1
+
+    if itemsEqual AND state = m.lastTimelineState AND NOT m.timelineTimer.IsExpired() and m.lastTimelineStateCount < 30 then return
+
+    m.lastTimelineStateCount = 0
     m.timelineTimer.Mark()
     m.lastTimelineItem = item
     m.lastTimelineState = state
@@ -114,8 +120,6 @@ Sub pmsTimeline(item, state, time)
     if item.key <> invalid then query = query + "&key=" + encoder.Escape(item.key)
     if item.sourceUrl <> invalid then query = query + "&containerKey=" + encoder.Escape(item.sourceUrl)
  
-    print query
-
     request = m.CreateRequest("", "/:/timeline?" + query)
     context = CreateObject("roAssociativeArray")
     context.requestType = "timeline"
