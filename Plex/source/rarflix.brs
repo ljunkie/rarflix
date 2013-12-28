@@ -1610,7 +1610,9 @@ sub PosterIndicators(item)
         if item.Watched <> invalid and item.Watched then watched = 1
     end if
 
-    if watched = 0 OR progress > 0 then 
+    if watched = 0 OR progress > 0 or item.ThumbIndicators = true then 
+       item.ThumbIndicators = true
+
        if item.hdposterurl <> invalid then item.hdposterurl = buildPosterIndicatorUrl(baseUrl, item.hdposterurl, progress, watched)
        if item.sdposterurl <> invalid then item.sdposterurl = buildPosterIndicatorUrl(baseUrl, item.sdposterurl, progress, watched)
 
@@ -1631,6 +1633,17 @@ sub PosterIndicators(item)
 end sub
 
 function buildPosterIndicatorUrl(baseUrl, thumbUrl, progress, watched) as string
-    newThumb = baseUrl + "?progress=" + tostr(progress) + "&watched=" + tostr(watched) + "&thumb=" + thumbUrl
+    ' the thumbnail might alrady be converted -- if so, replace changes instead of building
+    r=CreateObject("roRegex", baseUrl, "")
+    if r.isMatch(thumbUrl) then 
+        r1 = CreateObject("roRegex", "progress=\d", "i")
+        thumbUrl = r1.Replace(thumbUrl, "progress="+tostr(progress))
+        r2 = CreateObject("roRegex", "watched=\d", "i")
+        thumbUrl = r2.Replace(thumbUrl, "watched="+tostr(watched))
+        newThumb = thumbUrl
+    else 
+        newThumb = baseUrl + "?progress=" + tostr(progress) + "&watched=" + tostr(watched) + "&thumb=" + thumbUrl
+    end if
+
     return newThumb
 end function
