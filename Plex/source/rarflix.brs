@@ -1530,7 +1530,7 @@ Function getRARflixTools(server) as object
     r1=CreateObject("roRegex", ":\d+", "")
     baseUrl = server.serverurl
     baseUrl = r1.Replace(baseUrl, ":32499") ' RARflix Poster Util needs to run on port 32499 (internal and external!) - apache/nginx/dnat/etc..
-    baseUrl = baseUrl + "/RARflixTools"
+    baseUrl = baseUrl + "/RARflixTools/"
     Debug("---- checking if RARflixTools are install on PMS: " + tostr(baseUrl))
 
     req = CreateURLTransferObject(baseUrl)
