@@ -1636,9 +1636,9 @@ function buildPosterIndicatorUrl(baseUrl, thumbUrl, progress, watched) as string
     ' the thumbnail might alrady be converted -- if so, replace changes instead of building
     r=CreateObject("roRegex", baseUrl, "")
     if r.isMatch(thumbUrl) then 
-        r1 = CreateObject("roRegex", "progress=\d", "i")
+        r1 = CreateObject("roRegex", "progress=\d+", "i")
         thumbUrl = r1.Replace(thumbUrl, "progress="+tostr(progress))
-        r2 = CreateObject("roRegex", "watched=\d", "i")
+        r2 = CreateObject("roRegex", "watched=\d+", "i")
         thumbUrl = r2.Replace(thumbUrl, "watched="+tostr(watched))
         newThumb = thumbUrl
     else 
