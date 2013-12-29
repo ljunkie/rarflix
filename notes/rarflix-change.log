@@ -1,3 +1,9 @@
+#3.0.11-dev (2013-12-28)
+    * RARflixTools check could crash the channel
+
+#3.0.10-dev (2013-12-28)
+    * shot in the dark for a possible crash
+
 #3.0.9-dev (2013-12-28)
     * rebuild overlay and refresh on item scrobble (watched/unwatched)
     * bugfix (PMS) - sometimes a video item is missing the duration. This will cause the timeline to fail which in the end will not log the play. If this happens, we need to query the video item directly for the d
