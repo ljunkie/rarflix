@@ -1,3 +1,7 @@
+#3.0.13-dev
+    * multi-profile fast switching fix
+    * User Selection did not change myPlex user
+
 #3.0.12-dev (2013-12-28)
     * Remote Logging fixed
 
