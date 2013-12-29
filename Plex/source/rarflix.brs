@@ -1577,14 +1577,18 @@ sub PosterIndicators(item)
     watched  = 0 ' default unwatched
 
 
-    if item = invalid then return 
+    ' things that are not supported '
+    if item = invalid or tostr(item.server.rarflixtools) = "invalid" or item.server.rarflixtools.PosterTranscoder <> true then return 
+    baseUrl = item.server.rarflixtools.PosterTranscoderUrl
+    if baseUrl = invalid then return
+   
+
+    ' initialize some vars
     if item.ThumbIndicators = invalid then item.ThumbIndicators = false
 
-    ' this would include music/photos ( for not we only want video )
-    'supportedIdentifier = (item.mediaContainerIdentifier = "com.plexapp.plugins.library" OR item.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
-    
+    ' this would include music/photos ( for now we only want video )
+    ' supportedIdentifier = (item.mediaContainerIdentifier = "com.plexapp.plugins.library" OR item.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
     isSupported = (item.ContentType = "movie" or item.ContentType = "show" or item.ContentType = "episode" or item.type = "season" or item.viewgroup = "season")
-
     if not isSupported then 
         print "skipping poster overlay (indicators) " + tostr(item.title) + " type:" + tostr(item.ContentType)
         if item.hasdetails and (item.type <> "album" and item.type <> "artist" and item.type <> "photo") then 
@@ -1592,18 +1596,8 @@ sub PosterIndicators(item)
         end if
 	return
     end if
-    'print item.title
-    'print "item.server.rarflixtools: "; item.server.rarflixtools
 
-    if tostr(item.server.rarflixtools) = "invalid" then return 
-    if item.server.rarflixtools.PosterTranscoder <> true then return 
-    'print "item.server.rarflixtools.PosterTranscoder: "; item.server.rarflixtools.PosterTranscoder
-
-    baseUrl = item.server.rarflixtools.PosterTranscoderUrl
-    'print "baseUrl: "; baseUrl
-    if baseUrl = invalid then return
-   
-    ' this can probably be remove -- it to exclude myplex server during testing. The checks above should already handle this
+    ' this can probably be removed -- it to exclude myplex server during testing. The checks above should already handle this
     skip=CreateObject("roRegex", "https", "")
     if skip.isMatch(baseUrl) then return 
 
@@ -1634,12 +1628,8 @@ sub PosterIndicators(item)
 
        if item.HDsbThumb <> invalid then item.HDsbThumb = buildPosterIndicatorUrl(baseUrl, item.HDsbThumb, progress, watched)
        if item.SDsbThumb <> invalid then item.SDsbThumb = buildPosterIndicatorUrl(baseUrl, item.SDsbThumb, progress, watched)
-
-       'print "item.hdposterurl: "; item.hdposterurl
-       'print "item.HDDetailThumb: "; item.HDDetailThumb
-       'print "item.hdgridthumb: "; item.hdgridthumb
-       'print "item.HDsbThumb: "; item.HDsbThumb
     end if
+
 end sub
 
 function buildPosterIndicatorUrl(baseUrl, thumbUrl, progress, watched) as string
