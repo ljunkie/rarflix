@@ -205,6 +205,7 @@ sub lockScreenActivate(priorScreen)
         'No code was entered.  We need to logout and return to the main user selection screen
         'restore old Activate before calling this
         'm.Activate = m.OldActivate 
+        GetGlobalAA().AddReplace("ProfileExit", true)
         m.ViewController.PopScreen(invalid)    'invalid will close all screens
         if m.screen <> invalid then m.screen.close() ' stragler
         if priorScreen.facade <> invalid then priorScreen.facade.close()
@@ -1225,11 +1226,9 @@ Sub vcPopScreen(screen)
     ' no screens on the stack, but we didn't just close the home screen, then
     ' we haven't shown the home screen yet. Show it now.
     if m.Home <> invalid AND screen.screenID = m.Home.ScreenID then
+        GetGlobalAA().AddReplace("ProfileExit", true)
         Debug("Popping home screen")
-        while m.screens.Count() > 1
-            m.PopScreen(m.screens.Peek())
-        end while
-        m.screens.Pop()
+        m.PopScreen(invalid) ' invalid will close all screens
     else if m.screens.Count() = 0 then
         if m.ShowSecurityScreen = true then
             m.CreateUserSelectionScreen()
@@ -1313,7 +1312,8 @@ Sub vcShow()
 
     timeout = 0
     lastmin = -1 'container to update every minute
-    while m.screens.Count() > 0 OR NOT AppManager().IsInitialized()
+    while ( m.screens.Count() > 0 OR NOT AppManager().IsInitialized() ) and GetGlobalAA().ProfileExit = invalid
+
         m.WebServer.prewait()
         msg = wait(timeout, m.GlobalMessagePort)
 
@@ -1416,6 +1416,10 @@ Sub vcShow()
     m.Timers.Clear()
     m.PendingRequests.Clear()
     m.SocketListeners.Clear()
+
+    ' on exit clear any initializers -- required for multiProfiles
+    Appmanager().Initializers = {}
+    GetGlobalAA().Delete("ProfileExit")
 
     ' ljunkie - extra cleanup for the user switching    
     GetGlobalAA().Delete("myplex")

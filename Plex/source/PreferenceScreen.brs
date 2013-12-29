@@ -608,7 +608,7 @@ sub prefsSecurityPinRefresh(screen)
     ' Subtitle size (burned in only)
     lockTimes = [
         { title: "Never", EnumValue: "0" },
-'        { title: "fast", EnumValue: "15" },
+'        { title: "fast", EnumValue: "5" },
         { title: "5 Minutes", EnumValue: "300" },
         { title: "10 Minutes", EnumValue: "600" },
         { title: "15 Minutes", EnumValue: "900" },
