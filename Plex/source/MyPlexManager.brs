@@ -2,7 +2,12 @@
 '* Utilities related to signing in to myPlex and making myPlex requests
 '*
 
-Function MyPlexManager() As Object
+Function MyPlexManager(reinit = false) As Object
+    if reinit = true then 
+        AppManager().ClearInitializer("myplex")
+        m.MyPlexManager = invalid
+     end if
+
     if m.MyPlexManager = invalid then
         ' Start by creating a PlexMediaServer since we can't otherwise inherit
         ' anything. Then tweak as appropriate.
@@ -57,7 +62,7 @@ Function MyPlexManager() As Object
         ' Kick off initialization
         token = RegRead("AuthToken", "myplex")
         if token <> invalid then
-            obj.ValidateToken(token, true)
+            obj.ValidateToken(token, not(reinit))
         else
             AppManager().ClearInitializer("myplex")
         end if

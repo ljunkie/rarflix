@@ -222,6 +222,8 @@ sub userSelectUser(userNumber as integer)
     RegSetUserPrefsToCurrentUser()
     initTheme() 're-read rarflix theme
     GetGlobalAA().ViewController.ShowSecurityScreen = false  
+    Debug("User selected -- reinit myPlexManager")
+    MyPlexManager(true)
 end sub
 
 'Sometimes we may need to check if multiUser is "still enabled"
