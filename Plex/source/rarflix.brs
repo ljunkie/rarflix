@@ -1576,8 +1576,7 @@ sub PosterIndicators(item)
     isSupported = (item.ContentType = "movie" or item.ContentType = "show" or item.ContentType = "episode" or item.type = "season" or item.viewgroup = "season")
 
     if not isSupported then 
-        print "skipping " + tostr(item.title)
-        print item.ContenTtype
+        print "skipping poster overlay (indicators) " + tostr(item.title) + " type:" + tostr(item.ContentType)
         if item.hasdetails and (item.type <> "album" and item.type <> "artist" and item.type <> "photo") then 
             print item
         end if
