@@ -1526,6 +1526,7 @@ end sub
 
 Function getRARflixTools(server) as object
     content = invalid
+    if NOT isRFdev() then return invalid
 
     r1=CreateObject("roRegex", ":\d+", "")
     baseUrl = server.serverurl
@@ -1576,6 +1577,7 @@ sub PosterIndicators(item)
     progress = 0 ' default no progress
     watched  = 0 ' default unwatched
 
+    if NOT isRFdev() then return
 
     ' things that are not supported '
     if item = invalid or tostr(item.server.rarflixtools) = "invalid" or item.server.rarflixtools.PosterTranscoder <> true then return 
