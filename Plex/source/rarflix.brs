@@ -1537,9 +1537,19 @@ Function getRARflixTools(server) as object
     port = CreateObject("roMessagePort")
     req.SetPort(port)
     req.AsyncGetToString()
-    event = wait(10000, port)
-     
-    if event.GetResponseCode() <> 200 return invalid
+    event = wait(3000, port)
+
+    ResponseCode = invalid
+    if type(event) = "roUrlEvent"
+        ResponseCode = event.GetResponseCode()
+    else if event = invalid
+        Debug("url timeout")
+        req.AsyncCancel()
+    else
+        Debug("url unknown event: " + type(event))
+    end if
+
+    if ResponseCode = invalid or ResponseCode <> 200 return invalid
 
     ' Parse the result to see if the RARflixTools are working properly
     json=ParseJSON(event.GetString())
