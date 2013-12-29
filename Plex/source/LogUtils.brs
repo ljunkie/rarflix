@@ -180,6 +180,7 @@ Sub loggerEnablePapertrail(minutes=20, pms=invalid)
     ' enabled, the logs will continue to be associated with the original
     ' account.
 
+    aa = GetGlobalAA()
     tag = aa.appName + "_" + aa.appVersionStr + "_" + aa.rokuUniqueID
 
     m.SyslogHeader = "<135> " + tag + ": [" + MyPlexManager().Username + "] "
