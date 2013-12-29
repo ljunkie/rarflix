@@ -1568,6 +1568,7 @@ sub PosterIndicators(item)
 
 
     if item = invalid then return 
+    if item.ThumbIndicators = invalid then item.ThumbIndicators = false
 
     ' this would include music/photos ( for not we only want video )
     'supportedIdentifier = (item.mediaContainerIdentifier = "com.plexapp.plugins.library" OR item.mediaContainerIdentifier = "com.plexapp.plugins.myplex")

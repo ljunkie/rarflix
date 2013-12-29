@@ -65,11 +65,12 @@ Function newVideoMetadata(container, item, detailed=false) As Object
     '  example found was for a TV Seasons Children 'library/metadata/252428/children'
     '  while I was testing the PMS starte to all of a sudden return a valid duration
     '  then a few minutes later (20) somes items didn't have a duration again...
-    if length = invalid and item@key <> invalid then 
+    if length = invalid and item@key <> invalid and container.server.serverurl <> invalid  then 
         Debug("--- length (duration) is invalid -- let's try the key directly")
-        if container.server.serverurl+item@key <> container.sourceurl then 
+        newUrl = tostr(container.server.serverurl) + tostr(item@key)
+        if newUrl <> invalid and newUrl <> container.sourceurl then 
             lcon = createPlexContainerForUrl(container.server, container.server.serverurl, item@key)
-            if lcon <> invalid and lcon.xml <> invalid and type(lcon.xml.Video) = "roXMLList" then length = lcon.xml.Video[0]@duration
+            if lcon <> invalid and lcon.xml <> invalid and type(lcon.xml.Video) = "roXMLList" and lcon.xml.Video.Count() > 0 then length = lcon.xml.Video[0]@duration
         end if
     end if
 
