@@ -1,3 +1,7 @@
+#3.0.14-dev
+    * overlay changes -- backend prep work for checkmarks
+    * tv series posters missing indicator overlay ( e.g. TV Sections: All Shows )
+
 #3.0.13-dev
     * multi-profile fast switching fix
     * User Selection did not change myPlex user
