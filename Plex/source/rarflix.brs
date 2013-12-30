@@ -1591,7 +1591,7 @@ sub PosterIndicators(item)
 
     ' this would include music/photos ( for now we only want video )
     ' supportedIdentifier = (item.mediaContainerIdentifier = "com.plexapp.plugins.library" OR item.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
-    isSupported = (item.ContentType = "movie" or item.ContentType = "show" or item.ContentType = "episode" or item.type = "season" or item.viewgroup = "season")
+    isSupported = (item.ContentType = "movie" or item.ContentType = "show" or item.ContentType = "episode" or item.ContentType = "series" or item.type = "season" or item.viewgroup = "season" or item.viewgroup = "show")
     if not isSupported then 
         print "skipping poster overlay (indicators) " + tostr(item.title) + " type:" + tostr(item.ContentType)
         if item.hasdetails and (item.type <> "album" and item.type <> "artist" and item.type <> "photo") then 
