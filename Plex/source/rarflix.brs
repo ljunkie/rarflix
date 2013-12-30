@@ -1565,6 +1565,7 @@ Function getRARflixTools(server) as object
         ' for now we only have one tool, but set them from teh json results to verify they are working properly
         content.PosterTranscoder = json.rarflix.PosterTranscoder
         content.PosterTranscoderUrl = json.rarflix.PosterTranscoderUrl
+        content.PosterTranscoderType = json.rarflix.PosterTranscoderType
 
     else
         Debug("---- RARflixTools are NOT installed")
@@ -1616,7 +1617,16 @@ sub PosterIndicators(item)
         if item.Watched <> invalid and item.Watched then watched = 1
     end if
 
-    if watched = 0 OR progress > 0 or item.ThumbIndicators = true then 
+    createOverlay = false 
+    if item.ThumbIndicators then 
+        createOverlay = true
+    else if tostr(item.server.rarflixtools.PosterTranscoderType) = "CHECK" then 
+         if watched = 1 OR progress > 0 then createOverlay = true
+    else 
+         if watched = 0 OR progress > 0 then createOverlay = true
+    end if
+
+    if createOverlay then 
        item.ThumbIndicators = true
 
        if item.hdposterurl <> invalid then item.hdposterurl = buildPosterIndicatorUrl(baseUrl, item.hdposterurl, progress, watched)
