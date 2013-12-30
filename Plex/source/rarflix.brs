@@ -1525,20 +1525,27 @@ sub SetGlobalPosterStyle(style = invalid)
 end sub
 
 Function getRARflixTools(server) as object
-    content = invalid
+
+    if type(server.rarflixtools) = "roAssociativeArray" then 
+       print "server tools already checked - installed: " + tostr(server.rarflixtools.installed)
+       return server.rarflixtools
+    end if
+
     if NOT isRFdev() then return invalid
+
+    content = CreateObject("roAssociativeArray")
 
     r1=CreateObject("roRegex", ":\d+", "")
     baseUrl = server.serverurl
     baseUrl = r1.Replace(baseUrl, ":32499") ' RARflix Poster Util needs to run on port 32499 (internal and external!) - apache/nginx/dnat/etc..
     baseUrl = baseUrl + "/RARflixTools/"
-    Debug("---- checking if RARflixTools are install on PMS: " + tostr(baseUrl))
+    Debug("---- checking if the RARflixTools are installed on PMS: " + tostr(baseUrl))
 
     req = CreateURLTransferObject(baseUrl)
     port = CreateObject("roMessagePort")
     req.SetPort(port)
     req.AsyncGetToString()
-    event = wait(3000, port)
+    event = wait(1500, port)
 
     ResponseCode = invalid
     if type(event) = "roUrlEvent"
@@ -1558,8 +1565,7 @@ Function getRARflixTools(server) as object
     ' must have a valid json result and access to the PMS (PMSaccess)
     if json <> invalid and json.rarflix <> invalid and json.rarflix.PMSaccess = true then
         Debug("---- RARflixTools are installed")
-
-        content = CreateObject("roAssociativeArray")
+        content.installed = true
         content.sourceurl = baseUrl
         
         ' for now we only have one tool, but set them from teh json results to verify they are working properly
@@ -1568,6 +1574,7 @@ Function getRARflixTools(server) as object
         content.PosterTranscoderType = json.rarflix.PosterTranscoderType
 
     else
+        content.installed = false
         Debug("---- RARflixTools are NOT installed")
     end if
 
