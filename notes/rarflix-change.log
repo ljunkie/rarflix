@@ -1,3 +1,7 @@
+#3.0.15-dev (2013-12-30)
+    * speed up initial loading of channel -- only check online servers for the tools.. and ONLY once
+    * facade screen for the user selection/pin screen
+
 #3.0.14-dev
     * overlay changes -- backend prep work for checkmarks
     * tv series posters missing indicator overlay ( e.g. TV Sections: All Shows )
