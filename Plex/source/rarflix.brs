@@ -1078,7 +1078,7 @@ sub rfDialogGridScreen(obj as Object)
     if player.IsPlaying or player.IsPaused then return
 
     if type(obj.item) = "roAssociativeArray" and tostr(obj.item.contenttype) = "section" and NOT tostr(obj.item.nodename) = "Directory" or obj.selectedrow = 0 then ' row 0 is reserved for the fullGrid shortcuts
-        print obj.item
+        'print obj.item
         rfDefRemoteOptionButton(obj) 
     ' for now the only option is grid view so we will verify we are in a roGridScreen. It we add more buttons, the type check below is for fullGridScreen
     else if obj.isfullgrid = invalid and obj.disablefullgrid = invalid and type(obj.screen) = "roGridScreen" then 
@@ -1123,7 +1123,7 @@ function getAllRowsContext(screen,context,index) as object
 end function
 
 function getFullGridCurIndex(vc,index,default = 2) as object
-    print " ------------------ full grid index = " + tostr(index)
+    'print " ------------------ full grid index = " + tostr(index)
 
     screens = []
     screen = invalid
@@ -1139,9 +1139,9 @@ function getFullGridCurIndex(vc,index,default = 2) as object
     ' find the full grid screen - backtrack
     if type(screens) = "roArray" and screens.count() > 1 then 
         for sindex = screens.count()-1 to 1 step -1
-            print "checking if screen #" + tostr(sindex) + "is the fullGrid"
+            'print "checking if screen #" + tostr(sindex) + "is the fullGrid"
             if type(screens[sindex].screen) = "roGridScreen" and screens[sindex].isfullgrid <> invalid and screens[sindex].isfullgrid then
-                print "screen #" + tostr(sindex) + "is the fullGrid"
+                'print "screen #" + tostr(sindex) + "is the fullGrid"
                 screen = screens[sindex]
                 exit for 
             end if
@@ -1152,10 +1152,10 @@ function getFullGridCurIndex(vc,index,default = 2) as object
         srow = screen.selectedrow
         sitem = screen.focusedindex+1
         rsize = screen.contentarray[0].count()
-        print "selected row:" + tostr(srow) + " focusedindex:" + tostr(sitem) + " rowsize:" + tostr(rsize)
+        Debug("selected row:" + tostr(srow) + " focusedindex:" + tostr(sitem) + " rowsize:" + tostr(rsize))
         index = (srow*rsize)+sitem-1 ' index is zero based (minus 1)
     end if
-    print " ------------------  new grid index = " + tostr(index)
+    Debug(" ------------------  new grid index = " + tostr(index))
     return index
 end function
 
@@ -1191,10 +1191,10 @@ sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
         remyplexMD = CreateObject("roRegex", "library/metadata/\d+", "i")        
         if remyplex.IsMatch(metadata.server.serverurl) then 
 	    if metadata.HDPosterURL <> invalid and remyplexMD.isMatch(metadata.HDPosterURL) then 
-                print "Skipping custom thumb -- this is cloud sync"
+                Debug("Skipping custom thumb -- this is cloud sync")
                 return
             end if
-            print "overriding cloudsync thumb" + metadata.HDPosterURL
+            Debug("overriding cloudsync thumb" + tostr(metadata.HDPosterURL))
         end if
 
 
@@ -1272,7 +1272,7 @@ function getSectionType(vc) as object
            if row <> invalid and index <> invalid then
                if type(screen.loader.contentarray[row].content) = "roArray" and screen.loader.contentarray[row].content.count() > 0 then 
                    metadata = screen.loader.contentarray[row].content[index]
-		   print metadata
+		   'print metadata
                end if
            end if
         end if
@@ -1527,7 +1527,7 @@ end sub
 Function getRARflixTools(server) as object
 
     if type(server.rarflixtools) = "roAssociativeArray" then 
-       print "server tools already checked - installed: " + tostr(server.rarflixtools.installed)
+       Debug("server tools already checked - installed: " + tostr(server.rarflixtools.installed))
        return server.rarflixtools
     end if
 
@@ -1600,7 +1600,7 @@ sub PosterIndicators(item)
     ' supportedIdentifier = (item.mediaContainerIdentifier = "com.plexapp.plugins.library" OR item.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
     isSupported = (item.ContentType = "movie" or item.ContentType = "show" or item.ContentType = "episode" or item.ContentType = "series" or item.type = "season" or item.viewgroup = "season" or item.viewgroup = "show")
     if not isSupported then 
-        print "skipping poster overlay (indicators) " + tostr(item.title) + " type:" + tostr(item.ContentType)
+        Debug("skipping poster overlay (indicators) " + tostr(item.title) + " type:" + tostr(item.ContentType))
         if item.hasdetails and (item.type <> "album" and item.type <> "artist" and item.type <> "photo") then 
             print item
         end if

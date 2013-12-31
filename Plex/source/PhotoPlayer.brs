@@ -23,13 +23,13 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController, shuffled
     ' note: if we remove directories ( itms ) the contextIndex will be wrong - so fix it!
     if type(context) = "roArray" then
         key = context[contextIndex].key
-        print "---------------------wanted key" + key
+        'print "---------------------wanted key" + key
         newcontext = []
         for each item in context
             if item <> invalid and tostr(item.nodename) = "Photo" then 
                 newcontext.Push(item)
             else 
-                if item <> invalid then print "skipping item: " + tostr(item.nodename) + " " + tostr(item.title)
+                if item <> invalid then Debug("skipping item: " + tostr(item.nodename) + " " + tostr(item.title))
             end if
         next
         
@@ -44,7 +44,7 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController, shuffled
             contextIndex = 0 ' reset context to zero, unless we find a match
             for index = 0 to newcontext.count() - 1 
                 if key = newcontext[index].key then 
-                    print "---------------------found key" + newcontext[index].key
+                    'print "---------------------found key" + newcontext[index].key
                     contextIndex = index
                     exit for
                 end if

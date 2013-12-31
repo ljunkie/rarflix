@@ -112,7 +112,7 @@ Sub homeScreenOnTimerExpired(timer)
 
         ' hack to clean up screens - probably better elsewhere or to figure out why we have invalid screens
         if type(screen.screen) = invalid then 
-            print "screen invalid - popping screen during nowplaying timer"
+            Debug("screen invalid - popping screen during nowplaying timer")
             m.viewcontroller.popscreen(screen)
         end if 
 

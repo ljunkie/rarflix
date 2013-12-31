@@ -164,7 +164,7 @@ function getNowPlayingNotifications() as object
     seen = GetGlobalAA().nowplaying_cur
     if type(seen) = "roArray" and seen.count() > 0 then
         for each maid in seen
-            print "----- checking if " + maid + " is playing"
+            Debug( "----- checking if " + tostr(maid) + " is playing")
             RFinarray = false
             for each f_maid in found 
                 if f_maid = maid then RFinarray = true

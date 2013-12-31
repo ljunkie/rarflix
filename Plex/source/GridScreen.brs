@@ -133,27 +133,24 @@ Function showGridScreen() As Integer
     ' This was asked for, however I know people are goint to complain. This will most likely need to be a bit more complicated.
     ' As in, people are not going to want this to be GLOBAL, but set per section/full grid/or even some secific type. 
     ' I.E. don't show on firstCharacter, but show of On Deck
-    print "------------------- Description POP OUT disabled -- sec_metadata -- more info if we need to enable certain section/types --------------------------"
+    Debug("------------------- Description POP OUT disabled -- sec_metadata -- more info if we need to enable certain section/types --------------------------")
     if m.ScreenID = -1 then 
         isType = "home"
-        print m
     else 
-        print m
         sec_metadata = getSectionType(m)
-        print sec_metadata
         secTypes = ["photo","artist","movie","show"]
         isType = "other"
-        print "curType: " + tostr(sec_metadata.type)
+        Debug("curType: " + tostr(sec_metadata.type))
         for each st in secTypes
             if tostr(sec_metadata.type) = st then isType = st
         end for
-        print "isType: " + tostr(isType)
+        Debug("isType: " + tostr(isType))
     end if
 
     if RegRead("rf_grid_description_"+isType, "preferences", "enabled") <> "enabled" then
         m.screen.SetDescriptionVisible(false)
     end if
-    print "------------------------------------------------------- END ---------------------------------------------------------------------------------------"
+    Debug("------------------------------------------------------- END ---------------------------------------------------------------------------------------")
 
     m.Screen.Show()
     if facade <> invalid then facade.Close()
@@ -236,7 +233,7 @@ Function gridHandleMessage(msg) As Boolean
                         item.description = description
                         item.ExifLoaded = true
                         m.Screen.SetContentListSubset(m.selectedRow, m.contentArray[m.selectedRow], m.focusedIndex, 1)
-                        print item
+                        'print item
                     end if
                 end if
             end if
@@ -320,7 +317,7 @@ Function gridHandleMessage(msg) As Boolean
                 end if
             end if
         else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then ' ljunkie - use * for more options on focused item
-                print "----- * button pressed"
+                Debug("----- * button pressed")
                 context = m.contentArray[m.selectedRow]
                 item = context[m.focusedIndex]
                 
@@ -396,7 +393,7 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
         if tostr(data[0]) = "roAssociativeArray" and re.IsMatch(data[0].sourceurl) then 
             for index = 0 to data.Count() - 1
                 if tostr(data[index].contenttype) = "audio" or tostr(data[index].contenttype) = "photo" then 
-                    print "---- skipping audio item in now playing row ( not supported yet ) "
+                    Debug("---- skipping audio item in now playing row ( not supported yet ) ")
                 else 
                     newData.push(data[index])
                 end if
