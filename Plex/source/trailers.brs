@@ -609,11 +609,11 @@ Function trailerHandleMessage(msg) As Boolean
         else if msg.isListItemFocused() then
             m.focusedIndex = msg.GetIndex()
         else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then ' ljunkie - use * for more options on focused item
-            print "event.GetType()=";msg.GetType(); " event.GetMessage()= "; msg.GetMessage()
-            print "(*) remote key not handled for trailers"
+            'print "event.GetType()=";msg.GetType(); " event.GetMessage()= "; msg.GetMessage()
+            Debug("(*) remote key not handled for trailers")
         else if msg.isRemoteKeyPressed() then
             if msg.GetIndex() = 13 then
-                print "Handling direct play of trailer from poster"
+                Debug("Handling direct play of trailer from poster")
                 video = m.contentArray[m.focusedIndex]
                 DisplayYouTubeVideo(video)
             end if

@@ -84,7 +84,6 @@ sub RegEraseUser(userNumber as integer)
         keyList = old.GetKeyList()
         for each key in keyList
             old.Delete(key)            
-            print key
         next
     next
     reg = CreateObject("roRegistry")

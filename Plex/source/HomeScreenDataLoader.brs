@@ -610,7 +610,6 @@ Sub homeOnUrlEvent(msg, requestContext)
                 '    item.HDPosterURL = item.HDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
                 'end if
 
-                print item.HDPosterURL
                 content.Push(item)
                 countLoaded = countLoaded + 1
             end if
@@ -654,7 +653,7 @@ Sub homeOnUrlEvent(msg, requestContext)
 
                 ' if we fail to set the focus - we should just try and set sections and call it good
                 if GetGlobalAA().Lookup("first_focus_done") = invalid then 
-		    print "failed to find focused item - will focus at first item"
+		    Debug("failed to find focused item - will focus at first item")
                     GetGlobalAA().AddReplace("first_focus_done", true) ' set focus to true - we need to stop trying!
                 end if
 

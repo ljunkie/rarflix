@@ -162,7 +162,6 @@ End Function
 Function vcCreateLockScreen() 
     TraceFunction("vcCreateLockScreen")
     currentScreen = m.screens.peek()    'current screen to stack on top of
-    print currentScreen
     
     if currentScreen <> invalid then 
         ' ljunkie - Message Dialog and Video Screen ( playing video ) need to be closed
@@ -286,7 +285,6 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
          if type(breadcrumbs) = "roArray" and breadcrumbs.count() > 1 then
             breadcrumbs[0] = r1.ReplaceAll(breadcrumbs[0], ""):breadcrumbs[1] = r1.ReplaceAll(breadcrumbs[1], "")
             if ucase(breadcrumbs[0]) = ucase(breadcrumbs[1]) and item.description <> invalid and tostr(item.nodename) = "Directory" then 
-                print item
                 breadcrumbs[0] = right(item.description,38)
                 if len(item.description) > 38 then breadcrumbs[0] = "..." + breadcrumbs[0]
                 breadcrumbs[1] = ""
@@ -753,7 +751,7 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
     'sec_metadata = getSectionType(m) -- todo later - we can play appClips if they are in the photosection, but other adverse effects happen
     if item.nodename <> invalid and item.nodename = "Directory" then
         if item.ContentType = "photo" then 
-            print "--- trying to play photos from a directory"
+            Debug("--- trying to play photos from a directory")
             container = createPlexContainerForUrl(item.server, item.server.serverurl, item.key)
             newContext = container.getmetadata()
             ' verify the container has images - it still could be all directories. 
@@ -770,7 +768,7 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
         '        return m.CreatePhotoPlayer(context, 0)
         '    end if
         else if item.ContentType = "album" then
-            print "--- trying to play an album from a directory"
+            Debug("--- trying to play an album from a directory")
             container = createPlexContainerForUrl(item.server, item.server.serverurl, item.key)
             context = container.getmetadata()
             AudioPlayer().Stop()
@@ -1403,7 +1401,7 @@ Sub vcShow()
             if RegRead("locktime_music", "preferences","enabled") <> "enabled" and (AudioPlayer().isplaying) then 
                 m.ResetIdleTimer()                
             else 
-                print "IDLE TIME Check: "; int(m.timerIdleTime.RemainingMillis()/int(1000))
+	        ' print "IDLE TIME Check: "; int(m.timerIdleTime.RemainingMillis()/int(1000))
                 if m.timerIdleTime.IsExpired()=true then  'timer expired will only return true once
                     m.createLockScreen()    
                 end if 

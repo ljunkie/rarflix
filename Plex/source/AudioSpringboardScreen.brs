@@ -134,7 +134,7 @@ Function audioHandleMessage(msg) As Boolean
             if buttonCommand = "play" then
                 player.SetContext(m.Context, m.CurIndex, m, true)
                 player.Play()
-                print "--------------- play pressed"
+                'print "--------------- play pressed"
                 'm.PlayIndex = m.CurIndex
                 m.Playstate = 2
                 UpdateButtons = true
@@ -298,7 +298,7 @@ Function audioHandleMessage(msg) As Boolean
     end if
 
     if UpdateButtons and NOT DisableUpdateButtons then m.SetupButtons()
-    if DisableUpdateButtons then print "--- disabled button refresh "
+    if DisableUpdateButtons then Debug("--- disabled button refresh ")
     return handled OR m.superHandleMessage(msg)
 End Function
 
