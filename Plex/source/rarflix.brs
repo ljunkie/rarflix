@@ -813,6 +813,9 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
     dialog.Show()
 end sub
 
+sub dummyRefresh(force=false) 
+end sub
+
 sub posterRefresh(force=false) 
     Debug("posterRefresh called! do we have a valid item")
  
@@ -820,33 +823,45 @@ sub posterRefresh(force=false)
         Debug("---- noRefresh set -- skipping item.refresh()")
         return
     end if
-    if m.item <> invalid and type(m.item.refresh) = "roFunction" then 
-        m.item.refresh()
-        Debug("item refreshed!")
-    end if
 
     if type(m.screen) = "roPosterScreen" then 
         if type(m.contentarray) = "roArray" and m.contentarray.count() > 0 and type(m.contentarray[0]) = "roAssociativeArray" then 
-            focusedIndex = m.contentarray[0].focusedindex
+            focusedIndex = m.contentarray[0].focusedindex ' we have to refresh this for sure 
+                                                          ' we also have to refresh the "All Episodes" item if it exists
             content = m.contentarray[0].content
-            if focusedIndex <> invalid and type(content) = "roArray" and type(content[focusedIndex]) = "roAssociativeArray" then 
-                if type(content[focusedIndex].refresh) = "roFunction" then  
-                    content[focusedIndex].refresh()
-                    ' print content[focusedIndex]
-                    ' special for tv shows
-                    if content[focusedIndex].titleseason <> invalid then content[focusedIndex].shortdescriptionline1 = content[focusedIndex].titleseason
-                    m.screen.SetContentList(content)
-		    Debug("refresh content list!")
+            forceRefresh=false
+            for each item in content 
+                if type(item.refresh) = "roFunction" then  
+                    doRefresh=true
+                    if item.type = invalid and tostr(item.viewgroup) = "season" then 
+                        if content[focusedIndex].key = item.key then forceRefresh = true
+                    else if content[focusedIndex].key = item.key then 
+                        'print "------------ focused item -- refresh it"
+                    else if NOT forceRefresh then 
+                        doRefresh = false
+                    end if
+                    
+                    if doRefresh then 
+                        item.refresh()
+                        if item.titleseason <> invalid then item.shortdescriptionline1 = item.titleseason
+                    end if
                 end if
-            end if
+            end for
+            m.screen.SetContentList(content)
+            Debug("refresh content list!")
         end if
     end if
+
+
+'        if m.item <> invalid and type(m.item.refresh) = "roFunction" then 
+'            m.item.refresh()
+'            Debug("item refreshed!")
+'        end if
 
 end sub 
 
 ' This is the context Dialog from the GRID - I should rename this TODO
 sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
-
     ' this should probably just be combined into rfVideoMoreButton  ( there are some caveats though and maybe more to come.. so until this has been finalized )
     dialog = createBaseDialog()
 
@@ -883,9 +898,10 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     dialog.Item = obj.metadata
 
     if type(obj.Refresh) <> "roFunction" then 
-        obj.Refresh = posterRefresh ' sbRefresh is called normally - in a poster screen this doesn't happen?
-    else
-       print "not calling posterRefresh since 'obj.Refresh' exists"
+        ' obj.Refresh = posterRefresh ' this should no longer be needed ( or dupes happen ) - poster refresh is activated now
+        obj.Refresh = dummyRefresh ' still need a dummy as some logic requires it
+       'else
+       'print "not calling posterRefresh since 'obj.Refresh' exists"
     end if
 
     ' hack for global recently added ( tv shows are displayed as seasons )
@@ -1588,7 +1604,7 @@ sub PosterIndicators(item)
     if NOT isRFdev() then return
 
     ' things that are not supported '
-    if item = invalid or tostr(item.server.rarflixtools) = "invalid" or item.server.rarflixtools.PosterTranscoder <> true then return 
+    if item = invalid or item.server = invalid or tostr(item.server.rarflixtools) = "invalid" or item.server.rarflixtools.PosterTranscoder <> true then return 
     baseUrl = item.server.rarflixtools.PosterTranscoderUrl
     if baseUrl = invalid then return
    
@@ -1600,10 +1616,10 @@ sub PosterIndicators(item)
     ' supportedIdentifier = (item.mediaContainerIdentifier = "com.plexapp.plugins.library" OR item.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
     isSupported = (item.ContentType = "movie" or item.ContentType = "show" or item.ContentType = "episode" or item.ContentType = "series" or item.type = "season" or item.viewgroup = "season" or item.viewgroup = "show")
     if not isSupported then 
-        Debug("skipping poster overlay (indicators) " + tostr(item.title) + " type:" + tostr(item.ContentType))
-        if item.hasdetails and (item.type <> "album" and item.type <> "artist" and item.type <> "photo") then 
-            print item
-        end if
+        'Debug("skipping poster overlay (indicators) " + tostr(item.title) + " type:" + tostr(item.ContentType))
+        'if item.hasdetails and (item.type <> "album" and item.type <> "artist" and item.type <> "photo") then 
+        '    print item
+        'end if
 	return
     end if
 
