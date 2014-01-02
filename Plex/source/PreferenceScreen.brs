@@ -1403,8 +1403,8 @@ Function createManageServersScreen(viewController) As Object
     obj.AddItem({title: "Discover at Startup"}, "autodiscover", obj.GetEnumValue("autodiscover"))
     obj.AddItem({title: "Remove All Servers"}, "removeall")
 
-    obj.removeOffset = obj.contentArray.Count()
-    obj.RefreshServerList(obj.removeOffset)
+    obj.listOffset = obj.contentArray.Count()
+    obj.RefreshServerList(obj.listOffset)
 
     obj.RefreshOnActivate = false
 
@@ -1430,17 +1430,19 @@ Function prefsServersHandleMessage(msg) As Boolean
                 m.RefreshOnActivate = true
             else if command = "discover" then
                 DiscoverPlexMediaServers()
-                m.RefreshServerList(m.removeOffset)
+                m.RefreshServerList(m.listOffset)
             else if command = "autodiscover" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "removeall" then
                 RemoveAllServers()
                 ClearPlexMediaServers()
-                m.RefreshServerList(m.removeOffset)
-            else if command = "remove" then
-                RemoveServer(msg.GetIndex() - m.removeOffset)
-                m.contentArray.Delete(msg.GetIndex())
-                m.Screen.RemoveContent(msg.GetIndex())
+                m.RefreshServerList(m.listOffset)
+            else if  command = "edit" then
+                screen = createEditServerScreen(m.ViewController,GetServerFromIndex(msg.GetIndex() - m.listOffset))
+                m.ViewController.InitializeOtherScreen(screen, ["Edit Server"])
+                screen.ParentScreen = m
+                screen.listOffset = m.listOffset
+                screen.Show()          
             else if command = "close" then
                 m.Screen.Close()
             end if
@@ -1452,7 +1454,7 @@ End Function
 
 Sub prefsServersOnUserInput(value, screen)
     if type(screen.Screen) = "roKeyboardScreen" then
-        m.RefreshServerList(m.removeOffset)
+        m.RefreshServerList(m.listOffset)
     else
         m.superOnUserInput(value, screen)
     end if
@@ -1461,23 +1463,110 @@ End Sub
 Sub prefsServersActivate(priorScreen)
     if m.RefreshOnActivate then
         m.RefreshOnActivate = false
-        m.RefreshServerList(m.removeOffset)
+        m.RefreshServerList(m.listOffset)
     end if
 End Sub
 
-Sub manageRefreshServerList(removeOffset)
-    while m.contentArray.Count() > removeOffset
-        m.contentArray.Pop()
-        m.Screen.RemoveContent(removeOffset)
+Sub manageRefreshServerList(listOffset,obj=invalid)
+    if obj = invalid then
+        obj = m
+    end if
+    while obj.contentArray.Count() > listOffset
+        obj.contentArray.Pop()
+        obj.Screen.RemoveContent(listOffset)
     end while
 
     servers = ParseRegistryServerList()
     for each server in servers
-        m.AddItem({title: "Remove " + server.Name + " (" + server.Url + ")"}, "remove")
+        obj.AddItem({title: "Edit " + server.Name + " (" + server.Url + ")"}, "edit")
     next
 
-    m.AddItem({title: "Close"}, "close")
+    obj.AddItem({title: "Close"}, "close")
 End Sub
+
+'*** Edit Server screen ***
+sub refreshEditServerScreen(p)  'A copy of ljunkie's ingenius hack to update the screen after changing settings.  Wish i figured this out sooner!
+ screen = createEditServerScreen(m.ViewController,GetServerFromMachineID(m.server.MachineID)) 'Get a new pointer for our new screen
+ m.ViewController.InitializeOtherScreen(screen, ["Edit Server"])
+ if m.FocusedListItem <> invalid then screen.screen.SetFocusedListItem(m.FocusedListItem)
+ screen.Show()            
+ m.ViewController.popscreen(m)
+end sub
+  
+Function createEditServerScreen(viewController, server) As Object
+    'TraceFunction("createEditServerScreen", viewController, server)
+    Debug ( "Creating Edit server screen" )
+    obj = createBasePrefsScreen(viewController)
+    obj.Activate = refreshEditServerScreen
+    obj.HandleMessage = prefsEditServerHandleMessage
+    obj.server = server
+
+    obj.AddItem({title: "Edit address",heading: "The address at which this server is located"}, "url", obj.server.Url )
+    obj.AddItem({title: "Edit WOL MAC address",heading: "The MAC address used to remotely wake up the server (Wake-on-LAN)"}, "mac", GetServerData(obj.server.MachineID,"Mac") )
+    obj.AddItem({title: "Remove " + server.Name }, "remove" )
+    obj.AddItem({title: "Close"}, "close")
+      
+    return obj
+End Function
+
+Function prefsEditServerHandleMessage(msg) As Boolean
+    handled = false
+
+    if type(msg) = "roListScreenEvent" then
+        handled = true
+        if msg.isScreenClosed() then
+            Debug("Edit server closed event")
+            GDMAdvertiser().Refresh()
+            manageRefreshServerList(m.listOffset,m.ParentScreen)
+            m.ViewController.PopScreen(m)
+        else if msg.isListItemSelected() then
+            command = m.GetSelectedCommand(msg.GetIndex())
+            m.FocusedListItem = msg.GetIndex()
+            if command = "url" then
+                screen = m.ViewController.CreateTextInputScreen("Enter Host Name or IP without http:// or :32400", ["Edit Server address"], false)
+                'screen.Screen.SetText(m.server.url)  <- Should resanitize this into a hostname/ip format
+                screen.Screen.SetMaxLength(80)
+                screen.ValidateText = AddUnnamedServer
+                screen.Show()
+            else if command = "mac" then
+                m.currentIndex = msg.GetIndex()
+                screen = m.ViewController.CreateTextInputScreen("Enter Mac address in the format of xx:xx:xx:xx:xx:xx", ["Edit Server address"], false)
+                'screen.Screen.SetText(m.server.mac)  <- Should add back the colons before doing this
+                screen.Screen.SetMaxLength(17)
+                screen.MachineID = m.server.MachineID
+                screen.Listener = m
+                screen.Listener.OnUserInput = EditMacAddress
+                screen.Show()
+            else if command = "remove" then
+                'm.HandleEnumPreference(command, msg.GetIndex())
+                dialog = createBaseDialog()    
+                dialog.Title = "Confirm Remove"
+                dialog.Text = "Are you sure you want to remove this server?"
+                dialog.SetButton("remove", "Remove Server")
+                dialog.SetButton("close", "Cancel")
+                dialog.HandleButton = prefsRemoveServerHandleDialogButton    
+                dialog.ParentScreen = m
+                dialog.index = msg.GetIndex()
+                dialog.Show()
+            else if command = "close" then
+                m.Screen.Close()
+            end if
+        end if
+    end if
+
+    return handled
+End Function
+
+'Handles the confirmation dialog button when removing a server
+Function prefsRemoveServerHandleDialogButton(command, data) As Boolean
+    obj = m.ParentScreen    ' We're evaluated in the context of the dialog, but we want to pull from the parent.
+    if command = "remove" then
+        RemoveServer(obj.server.MachineID)
+        obj.contentArray.Delete(m.index)
+        obj.Screen.RemoveContent(m.index)
+    end if
+    return true 'returning true will close the dialog
+End Function
 
 '*** Video Playback Options ***
 

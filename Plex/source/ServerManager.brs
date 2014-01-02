@@ -5,7 +5,7 @@ Function ParseRegistryServerList() As Object
     list = []
     servers = RegRead("serverList", "servers")
     Debug("Registry Server list string: " + tostr(servers))
-
+    
     ' strTokenize has an interesting quirk where empty strings aren't
     ' returned. That's nice when separating the servers, but if a server
     ' doesn't have a name we don't want the machine ID to become the name.
@@ -71,20 +71,40 @@ Function RemoveAllServers()
     RegDelete("serverList", "servers")
 End Function
 
-Function RemoveServer(index)
-    Debug("Removing server with index: " + tostr(index))
+Function RemoveServer(machineIDToRemove)
+    Debug("Removing server with name: " + tostr(serverToRemove.Name))
     servers = ParseRegistryServerList()
     RemoveAllServers()
-    counter = 0
     for each serverInfo in servers
-        if counter <> index then
+        if machineIDToRemove <> serverInfo.MachineID then
             AddServer(serverInfo.Name, serverInfo.Url, serverInfo.MachineID)
         else
             Debug("Not adding server back to list: " + serverInfo.Name)
             DeletePlexMediaServer(serverInfo.MachineID)
         end if
+    end for
+End Function
+
+Function GetServerFromIndex(index) As Object
+    servers = ParseRegistryServerList()
+    counter = 0
+    for each serverInfo in servers
+        if counter = index then
+            return serverInfo
+        end if
         counter = counter + 1
     end for
+    return invalid
+End Function
+
+Function GetServerFromMachineID(machineID) As Object
+    servers = ParseRegistryServerList()
+    for each serverInfo in servers
+        if serverInfo.MachineID = machineID then
+            return serverInfo
+        end if
+    end for
+    return invalid
 End Function
 
 ' * Adds a server to the list used by the application. Not validated at this
@@ -252,6 +272,63 @@ Function AddUnnamedServer(address) As Boolean
     end if
 
     return false
+End Function
+
+Function EditMacAddress(address,obj) As Boolean
+    machineID = obj.MachineID
+    Debug("Editing mac for " + machineID + " as: " + address)
+
+    ' Check they got it right
+    r = CreateObject("roRegex", "^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$", "i")
+    if r.IsMatch(address) = false then
+       return false
+    end if
+      
+    ' Get rid of colons, and make it lowercase
+    r = CreateObject("roRegex", ":", "")
+    address = r.ReplaceAll(address, "")
+    address = LCase(address)    
+    
+    Debug("Stripped address to: " + address)
+
+    
+    ' To mantain backwards compatibility, we store MAC address in a seperate 'serverData' JSON array in the registry.
+    ' Not sure why the devs didnt think to use JSON in the first place...
+    SetServerData ( machineID, "Mac", address )
+
+    return false
+End Function
+
+Function InitServerData (machineID=invalid)
+    if GetGlobalAA().serverData = invalid then
+        Debug("Creating server data cache")
+        dataString = RegRead("serverList", "serverData")
+        GetGlobalAA().serverData = CreateObject("roAssociativeArray")
+        if dataString <> invalid then
+            Debug("Found string in the registry: " + dataString )
+            GetGlobalAA().serverData = ParseJson(dataString) 
+            Debug("Parsed as: " + tostr(GetGlobalAA().serverData) )
+            if GetGlobalAA().serverData = invalid then
+                GetGlobalAA().serverData = createObject("roAssociativeArray")
+            end if
+         end if
+    end if
+    if machineID <> invalid and GetGlobalAA().serverData[machineID] = invalid then
+        GetGlobalAA().serverData[machineID] = createObject("roAssociativeArray")
+    end if
+End Function
+
+Function GetServerData ( machineID, dataName ) As Dynamic  
+    InitServerData(machineID)
+    return GetGlobalAA().serverData[machineID][dataName]
+End Function
+
+Function SetServerData ( machineID, dataName, value ) As Boolean
+    InitServerData(machineID)
+    GetGlobalAA().serverData[machineID][dataName] = value
+    Debug ( "Array to write '" + GetGlobalAA().serverData[machineID][dataName] + "' : " + tostr(GetGlobalAA().serverData) )
+    RegWrite("serverList", rdJSONBuilder(GetGlobalAA().serverData), "serverData")
+    return true
 End Function
 
 Function DiscoverPlexMediaServers()
