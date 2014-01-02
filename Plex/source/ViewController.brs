@@ -515,14 +515,13 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if tostr(item.type) = "season" then
         ' no full grid
         screen = createPosterScreen(item, m, "arced-portrait")
-        screen.noRefresh = true ' no need to refresh these items (yet)
     else if tostr(item.type) = "channel" then 
         ' no full grid
         screen = createPosterScreen(item, m, "arced-square")
         screen.noRefresh = true ' no need to refresh these items (yet)
     else
         ' Where do we capture channel directory?
-        ' ljunkie - this doesn't seem to alwyas be channel items
+        ' ljunkie - this doesn't seem to always be channel items
         Debug("---- Creating a default " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
         'sec_metadata = getSectionType(m) <- this seems unneccesary ( viewgroup = invalid|InfoList|List - do not support paginated calls )
         if tostr(contentType) = "appClip" and (tostr(viewGroup) = "Invalid" or tostr(viewGroup) = "InfoList" or tostr(viewGroup) = "List") then 
