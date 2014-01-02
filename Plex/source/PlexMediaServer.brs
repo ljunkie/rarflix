@@ -40,6 +40,7 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID, useMyPlexToken=true) As 
     pms.IsRequestToServer = pmsIsRequestToServer
     pms.AddDirectPlayInfo = pmsAddDirectPlayInfo
     pms.Log = pmsLog
+    pms.SendWOL = pmsSendWOL
 
     ' RARflix Tools
     '  - maybe more to come, but I'd prefer these part of the PMS
@@ -973,4 +974,63 @@ End Sub
 
 Sub pmsOnUrlEvent(msg, requestContext)
     ' Don't care about the response for any of our requests.
+End Sub
+
+Sub pmsSendWOL()
+    if m.machineID <> invalid then
+        mac = GetServerData ( m.machineID, "Mac" )
+        
+        if mac = invalid then
+            return
+        end if
+        
+        ' Grab our Host from URL using Regex and Address functions
+        r = CreateObject("roRegex", "//", "") 'Get right of http://
+        splitResult = r.Split(m.serverUrl)
+        a = CreateObject("roSocketAddress")
+        a.SetAddress ( splitResult[1] )
+        host = a.GetHostName()
+        
+        ' Get our secure on pass
+        pass = GetServerData ( m.machineID, "WOLPass" )
+
+        if ( type(pass) <> "String" ) or ( type(pass) <> "roString" ) or ( pass.ifstringops.Len() <> 12 ) then
+            pass = "ffffffffffff"
+        end if
+               
+        header = "ffffffffffff"
+        For k=1 To 16
+            header = header + mac
+        End For
+        
+        'Append our SecureOn password
+        header = header + pass
+        Debug ( header )
+        
+        port = CreateObject("roMessagePort")
+        addr = CreateObject("roSocketAddress")
+        udp = CreateObject("roDatagramSocket")
+        packet = CreateObject("roByteArray")
+        udp.setMessagePort(port)
+      
+        addr.setHostname(host)
+        addr.setPort(9)
+        udp.setSendToAddress(addr)
+        
+        packet.fromhexstring(header)
+        sent = udp.send(packet,0,108)
+        Debug ( "Sent Magic Packet of " + tostr(sent) + " bytes to " + host )
+        udp.close()
+        
+        if GetGlobalAA().WOLCounter = invalid then
+            GetGlobalAA().WOLCounter  = 0
+        end if
+        GetGlobalAA().WOLCounter = GetGlobalAA().WOLCounter  + 1
+        'This delays the startup of the rest of the client by 500ms.  Maybe make this better, but it allows the HTTP request to reach successfully
+        'We should find a way to skip WOL altogether if the server is turned on already
+        Sleep(100) 
+        if GetGlobalAA().WOLCounter  < 6 then
+            m.sendWOL()
+        end if
+    end if
 End Sub

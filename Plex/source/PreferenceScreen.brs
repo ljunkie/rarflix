@@ -1438,10 +1438,8 @@ Function prefsServersHandleMessage(msg) As Boolean
                 ClearPlexMediaServers()
                 m.RefreshServerList(m.listOffset)
             else if  command = "edit" then
-                screen = createEditServerScreen(m.ViewController,GetServerFromIndex(msg.GetIndex() - m.listOffset))
+                screen = createEditServerScreen(m.ViewController,GetServerFromIndex(msg.GetIndex() - m.listOffset),m,m.listOffset)
                 m.ViewController.InitializeOtherScreen(screen, ["Edit Server"])
-                screen.ParentScreen = m
-                screen.listOffset = m.listOffset
                 screen.Show()          
             else if command = "close" then
                 m.Screen.Close()
@@ -1486,23 +1484,30 @@ End Sub
 
 '*** Edit Server screen ***
 sub refreshEditServerScreen(p)  'A copy of ljunkie's ingenius hack to update the screen after changing settings.  Wish i figured this out sooner!
- screen = createEditServerScreen(m.ViewController,GetServerFromMachineID(m.server.MachineID)) 'Get a new pointer for our new screen
+ screen = createEditServerScreen(m.ViewController,GetServerFromMachineID(m.server.MachineID),m.ParentScreen,m.listOffset) 'Get a new pointer for our new screen
  m.ViewController.InitializeOtherScreen(screen, ["Edit Server"])
  if m.FocusedListItem <> invalid then screen.screen.SetFocusedListItem(m.FocusedListItem)
  screen.Show()            
  m.ViewController.popscreen(m)
 end sub
   
-Function createEditServerScreen(viewController, server) As Object
+Function createEditServerScreen(viewController, server, parentScreen, listOffset) As Object
     'TraceFunction("createEditServerScreen", viewController, server)
-    Debug ( "Creating Edit server screen" )
     obj = createBasePrefsScreen(viewController)
     obj.Activate = refreshEditServerScreen
     obj.HandleMessage = prefsEditServerHandleMessage
     obj.server = server
+    obj.ParentScreen = parentScreen
+    obj.listOffset = listOffset
 
-    obj.AddItem({title: "Edit address",heading: "The address at which this server is located"}, "url", obj.server.Url )
-    obj.AddItem({title: "Edit WOL MAC address",heading: "The MAC address used to remotely wake up the server (Wake-on-LAN)"}, "mac", GetServerData(obj.server.MachineID,"Mac") )
+    obj.AddItem({title: "Edit address",ShortDescriptionLine2: "The address at which this server is located"}, "url", obj.server.Url )
+    obj.AddItem({title: "Edit WOL MAC address",ShortDescriptionLine1:"Wake-on-LAN MAC address",ShortDescriptionLine2: "Activates remote server wake up"}, "mac", GetServerData(obj.server.MachineID,"Mac") )
+    WOLPass = GetServerData(obj.server.MachineID,"WOLPass")
+    if ( type(WOLPass) <> "String" ) or ( type(WOLPass) <> "roString" ) or ( WOLPass.ifstringops.Len() <> 12 ) then
+        obj.AddItem({title: "Edit WOL SecureOn Password",ShortDescriptionLine1: "12-Digit hexadecimal password ",ShortDescriptionLine2: "for a Wake-on-LAN request"}, "WOLPass" )
+    else
+        obj.AddItem({title: "Edit WOL SecureOn Password",ShortDescriptionLine1: "12-Digit hexadecimal password ",ShortDescriptionLine2: "for a Wake-on-LAN request"}, "WOLPass", "************" )
+    end if
     obj.AddItem({title: "Remove " + server.Name }, "remove" )
     obj.AddItem({title: "Close"}, "close")
       
@@ -1528,9 +1533,20 @@ Function prefsEditServerHandleMessage(msg) As Boolean
                 screen.Screen.SetMaxLength(80)
                 screen.ValidateText = AddUnnamedServer
                 screen.Show()
+            else if command = "WOLPass" then
+                m.currentIndex = msg.GetIndex()
+                initialText = GetServerData(m.server.MachineID,"WOLPass")
+                if initialText = invalid then initialText = ""
+                screen = m.ViewController.CreateTextInputScreen("12-digit hexadecimal password for WOL.  Leave blank if unsure.", ["Edit SecureOn Password"], false, initialText, true )
+                'screen.Screen.SetText(m.server.mac)  <- Should add back the colons before doing this
+                screen.Screen.SetMaxLength(17)
+                screen.MachineID = m.server.MachineID
+                screen.Listener = m
+                screen.Listener.OnUserInput = EditSecureOnPass
+                screen.Show()
             else if command = "mac" then
                 m.currentIndex = msg.GetIndex()
-                screen = m.ViewController.CreateTextInputScreen("Enter Mac address in the format of xx:xx:xx:xx:xx:xx", ["Edit Server address"], false)
+                screen = m.ViewController.CreateTextInputScreen("Enter MAC address in the format of xx:xx:xx:xx:xx:xx", ["Edit MAC address"], false)
                 'screen.Screen.SetText(m.server.mac)  <- Should add back the colons before doing this
                 screen.Screen.SetMaxLength(17)
                 screen.MachineID = m.server.MachineID

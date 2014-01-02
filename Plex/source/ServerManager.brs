@@ -296,7 +296,26 @@ Function EditMacAddress(address,obj) As Boolean
     ' Not sure why the devs didnt think to use JSON in the first place...
     SetServerData ( machineID, "Mac", address )
 
-    return false
+    return true
+End Function
+
+Function EditSecureOnPass(pass,obj) As Boolean
+     machineID = obj.MachineID
+    Debug("Editing WOL Pass for " + machineID + " as: " + pass)
+
+    ' Check they got it right
+    if pass <> "" then
+        r = CreateObject("roRegex", "^([A-Fa-f0-9]{12})$", "i")
+        if r.IsMatch(pass) = false then
+           return false
+        end if  
+    else
+        pass = invalid
+    end if
+       
+    SetServerData ( machineID, "WOLPass", pass )
+
+    return true   
 End Function
 
 Function InitServerData (machineID=invalid)
@@ -326,7 +345,6 @@ End Function
 Function SetServerData ( machineID, dataName, value ) As Boolean
     InitServerData(machineID)
     GetGlobalAA().serverData[machineID][dataName] = value
-    Debug ( "Array to write '" + GetGlobalAA().serverData[machineID][dataName] + "' : " + tostr(GetGlobalAA().serverData) )
     RegWrite("serverList", rdJSONBuilder(GetGlobalAA().serverData), "serverData")
     return true
 End Function
