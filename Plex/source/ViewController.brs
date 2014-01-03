@@ -450,7 +450,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         ' these are subsections of a main section ( secondary )
         Debug("---- Creating secondary grid " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
         ' ljunkie TODO review this code
-        sec_metadata = getSectionType(m)
+        sec_metadata = getSectionType()
         if poster_grid = "grid" then 
             DisplayMode = displaymode_grid
 
@@ -529,7 +529,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         '  so we will need to query the homescreen to see if we are in a channel section
         forcePoster = false
         noRefresh = false
-        sec_metadata = getSectionType(m)
+        sec_metadata = getSectionType()
         if tostr(sec_metadata.contenttype) = "channel" or tostr(sec_metadata.type) = "channel" then 
             forcePoster = true
             noRefresh = true
@@ -762,7 +762,7 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
     ' ljunkie - check if we are viewing a directory. We can direct play certain items ( play all sort of thing )
     ' currently works for photos/albums. Not sure how it woud work for others yet
     ' I.E. if video(movie/clip/episode) then we need to add more logic how to play the next item.. 
-    'sec_metadata = getSectionType(m) -- todo later - we can play appClips if they are in the photosection, but other adverse effects happen
+    'sec_metadata = getSectionType() -- todo later - we can play appClips if they are in the photosection, but other adverse effects happen
     if item.nodename <> invalid and item.nodename = "Directory" then
         if item.ContentType = "photo" then 
             Debug("--- trying to play photos from a directory")
