@@ -38,7 +38,6 @@ Function createFULLGridScreen(item, viewController, style = "flat-movie", SetDis
     ' It's not worth the DestroyAndRecreate headache.
     if item.theme <> invalid AND GetGlobal("rokuVersionArr", [0])[0] >= 4 AND NOT AudioPlayer().IsPlaying AND RegRead("theme_music", "preferences", "loop") <> "disabled" then
         AudioPlayer().PlayThemeMusic(item)
-        AudioPlayer().PlayThemeMusic(item)
     end if
     obj.hasWaitdialog = dialog
     return obj
