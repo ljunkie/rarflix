@@ -403,27 +403,25 @@ Function videoDialogHandleButton(command, data) As Boolean
     else if command = "fullGridScreen" then
         screen = m.viewcontroller.screens.peek().parentscreen
         if screen <> invalid then
-
-	    fscreen = m.viewcontroller.screens[0]
-            itype = "Full Grid"
-	    ' Get the Section we are in for the breadcrums - probably an easier way than this?
-	    if type(fscreen) = "roAssociativeArray" and type(fscreen.contentarray) = "roArray" and fscreen.selectedrow <> invalid and fscreen.focusedindex <> invalid then 
-                itype = fscreen.contentarray[fscreen.selectedrow][fscreen.focusedindex].title 
-            end if           
-
+            itype = invalid
             dummyItem = CreateObject("roAssociativeArray")
-            
+           
             ' home screen is special...
-            if m.parentscreen.screenid < 0 then 
-                for each r in screen.loader.rowindexes
-                    if screen.loader.rowindexes[r] = screen.selectedrow then
-                        dummyItem  = m.parentscreen.contentarray[m.parentscreen.selectedrow][m.parentscreen.focusedindex]                        
-                        dummyItem.key = r
-                        itype = "All Sections" 
+            vc = GetViewController()
+            if vc.Home <> invalid AND m.parentscreen.screenid = vc.Home.ScreenID then
+                for each key in screen.loader.rowindexes
+                    if screen.loader.rowindexes[key] = screen.selectedrow then
+                        dummyItem  = m.parentscreen.contentarray[m.parentscreen.selectedrow][m.parentscreen.focusedindex]
+                        dummyItem.key = key
+                        itype = "All Sections" 'breadcrumb
                         exit for
                     end if
                 end for  
             else
+                ' get the section type name we are in for breadcrumb
+                sec_metadata = getSectionType(m)
+                if sec_metadata.title <> invalid then itype = sec_metadata.title
+
                 dummyItem.server = screen.loader.server
                 dummyItem.sourceurl = screen.loader.sourceurl
                 dummyItem.key = screen.loader.contentarray[screen.selectedrow].key
