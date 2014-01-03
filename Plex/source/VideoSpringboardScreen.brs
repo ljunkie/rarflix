@@ -235,7 +235,18 @@ Sub videoGetMediaDetails(content)
     if m.metadata.ContentType = "movie" AND RegRead("rf_rottentomatoes", "preferences", "enabled") = "enabled" then 
         if m.metadata.tomatoData = invalid then m.metadata.tomatoData = getRottenTomatoesData(m.metadata.RFSearchTitle) 
     end if
+
     m.media = m.metadata.preferredMediaItem
+
+    ' posterStyle: set episodes/clips to 16x9 -- the rest are still default ( auto size )
+    '  since TV episodes use screenshots, we can utilize the m.media.aspectratio to determine if it's 4x3 or 16x9
+    m.Screen.SetPosterStyle("default")
+    if tostr(m.metadata.contentType) = "episode" OR tostr(m.metadatacontentType) = "clip" then
+        m.Screen.SetPosterStyle("rounded-rect-16x9-generic")            
+        ' only override back to default if we know it's 4x3
+        if m.media <> invalid and type(m.media.aspectratio) = "roFloat" and m.media.aspectratio < 1.5 then m.Screen.SetPosterStyle("default")
+    end if
+
 End Sub
 
 Function videoHandleMessage(msg) As Boolean
