@@ -520,15 +520,30 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen = createPosterScreen(item, m, "arced-square")
         screen.noRefresh = true ' no need to refresh these items (yet)
     else
+        Debug("---- Creating a default " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup) + ", type=" + tostr(item.type))
         ' Where do we capture channel directory?
-        ' ljunkie - this doesn't seem to always be channel items
-        Debug("---- Creating a default " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
-        'sec_metadata = getSectionType(m) <- this seems unneccesary ( viewgroup = invalid|InfoList|List - do not support paginated calls )
-        if tostr(contentType) = "appClip" and (tostr(viewGroup) = "Invalid" or tostr(viewGroup) = "InfoList" or tostr(viewGroup) = "List") then 
-            Debug("---- forcing to Poster view -> viewgroup matches: invalid|InfoList|List")
+        ' ljunkie - this doesn't seem to always be channel items ( special checks are needed now )
+
+        ' We need to know if we are in channel content. The Full Grid does not work with channels. 
+        ' Some channels do not return valid ( expected xml ) on every query ( ICEfilms - captcha result)
+        '  so we will need to query the homescreen to see if we are in a channel section
+        forcePoster = false
+        noRefresh = false
+        sec_metadata = getSectionType(m)
+        if tostr(sec_metadata.contenttype) = "channel" or tostr(sec_metadata.type) = "channel" then 
+            forcePoster = true
+            noRefresh = true
+        else if tostr(contentType) = "appClip" and (tostr(viewGroup) = "Invalid" or tostr(viewGroup) = "InfoList" or tostr(viewGroup) = "List") then 
+            forcePoster = true
+            noRefresh = true
+        end if
+
+        if forcePoster then 
+            Debug("---- forcing to Poster view -> viewgroup matches: invalid|InfoList|List or is Channel Content")
             screen = createPosterScreen(item, m, "arced-square")
-            screen.noRefresh = true ' no need to refresh these items (yet)
-        else if poster_grid = "grid" and tostr(viewGroup) <> "season" then ' if we have set Full Grid and type is not a season, force Full Grid view
+            screen.noRefresh = noRefresh
+        else if poster_grid = "grid" and tostr(viewGroup) <> "season" then
+            ' allow the full grid if the content is not a channel or season
             screen = createFULLGridScreen(item, m, "Invalid", displaymode_grid)
         else 
             Debug("---- forcing to Poster view")
