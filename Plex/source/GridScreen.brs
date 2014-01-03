@@ -134,10 +134,11 @@ Function showGridScreen() As Integer
     ' As in, people are not going to want this to be GLOBAL, but set per section/full grid/or even some secific type. 
     ' I.E. don't show on firstCharacter, but show of On Deck
     Debug("------------------- Description POP OUT disabled -- sec_metadata -- more info if we need to enable certain section/types --------------------------")
-    if m.ScreenID = -1 then 
+    vc = GetViewController()
+    if vc.Home <> invalid AND m.screenid = vc.Home.ScreenID then
         isType = "home"
     else 
-        sec_metadata = getSectionType(m)
+        sec_metadata = getSectionType()
         secTypes = ["photo","artist","movie","show"]
         isType = "other"
         Debug("curType: " + tostr(sec_metadata.type))
@@ -348,8 +349,7 @@ Function gridHandleMessage(msg) As Boolean
             if msg.GetIndex() = 13 then
                 ' Playing Photos from a grid - we need all items
                 ' sometimes we don't know the item is photo ( appClips )            
-                sec_metadata = getSectionType(m)
-                ' old way -- didnt' work for appClips/subsections of photos if m.item <> invalid and m.item.type = "photo" and m.item.contenttype <> "section" then 
+                sec_metadata = getSectionType()
                 ' TODO fix playing from section -- TODO
                 if tostr(sec_metadata.type) = "photo" and m.item <> invalid and m.item.contenttype <> "section" then
                     Debug("Playing from GRID Screen - get context of ALL items in every row to play")

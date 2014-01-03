@@ -1069,7 +1069,7 @@ sub rfDefRemoteOptionButton(m)
     player = AudioPlayer()
     if player.IsPlaying or player.IsPaused then return
 
-    sec_metadata = getSectionType(m)
+    sec_metadata = getSectionType()
     notAllowed = CreateObject("roRegex", "artist|music|album", "") 
     if  NOT notAllowed.isMatch(tostr(sec_metadata.type)) then 
         new = CreateObject("roAssociativeArray")
@@ -1141,16 +1141,8 @@ end function
 function getFullGridCurIndex(vc,index,default = 2) as object
     'print " ------------------ full grid index = " + tostr(index)
 
-    screens = []
     screen = invalid
-
-    if type(vc.screen) = "roAssociativeArray" and vc.screen.isfullgrid <> invalid and vc.screen.isfullgrid then
-        screen = vc.screen ' we are in the context of a full grid already
-    else if type(vc.screens) = "roArray" then
-        screens = vc.screens 
-    else if type(vc.viewcontroller) = "roAssociativeArray" then
-        screens = vc.viewcontroller.screens
-    end if
+    screens = GetViewController().screens
 
     ' find the full grid screen - backtrack
     if type(screens) = "roArray" and screens.count() > 1 then 
@@ -1271,28 +1263,21 @@ sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
 end sub
 
 ' ljunkie - crazy sauce right? this is a way to figure out what section we are in 
-function getSectionType(vc) as object
+' -- better way -- just use the vc.Home object !
+function getSectionType() as object
     Debug("---- checking if we can figure out the section we are in")
     metadata = CreateObject("roAssociativeArray")
-    if type(vc.screens) = "roArray" then
-        screens = vc.screens
-    else if type(vc.viewcontroller) = "roAssociativeArray" then
-        screens = vc.viewcontroller.screens
-    end if
 
-    if type(screens) = "roArray" and screens.count() >= 0 then
-       screen = screens[0]
-       if type(screen) = "roAssociativeArray" and screen.loader <> invalid and type(screen.loader.contentarray) = "roArray" then
-           row = screen.selectedrow
-           index = screen.focusedindex
-           if row <> invalid and index <> invalid then
-               if type(screen.loader.contentarray[row].content) = "roArray" and screen.loader.contentarray[row].content.count() > 0 then 
+    screen = GetViewController().Home
+    
+    if screen <> invalid  and screen.selectedrow <> invalid and screen.focusedindex <> invalid  then 
+        row = screen.selectedrow
+        index = screen.focusedindex
+        if type(screen.loader.contentarray[row].content) = "roArray" and screen.loader.contentarray[row].content.count() > 0 then 
                    metadata = screen.loader.contentarray[row].content[index]
-		   'print metadata
-               end if
-           end if
         end if
     end if
+
     return metadata ' return empty assoc
 end function
 

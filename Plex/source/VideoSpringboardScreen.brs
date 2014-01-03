@@ -435,7 +435,7 @@ Function videoDialogHandleButton(command, data) As Boolean
                 end for  
             else
                 ' get the section type name we are in for breadcrumb
-                sec_metadata = getSectionType(m)
+                sec_metadata = getSectionType()
                 if sec_metadata.title <> invalid then itype = sec_metadata.title
 
                 dummyItem.server = screen.loader.server

@@ -19,7 +19,7 @@ Function createFULLGridScreen(item, viewController, style = "flat-movie", SetDis
     item.key = re.ReplaceAll(item.key, "")    
 
     ' yea, we still need to figure out what section type we are in
-    vc_metadata = getSectionType(viewController)
+    vc_metadata = getSectionType()
     item.key = keyFiler(item.key,tostr(vc_metadata.type)) ' ljunkie - allow us to use the new filters for the simple keys
 
     ' check if key is a loader row index.. and strip it
@@ -129,6 +129,8 @@ End Function
 
 function fromFullGrid(vc) as boolean
     Debug("---- checking if we came from a full grid view")
+    ' TODO: clean this logic up
+
     if type(vc.screens) = "roArray" then
         screens = vc.screens
         minus = 1
