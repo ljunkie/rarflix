@@ -107,22 +107,17 @@ End Function
 
 Sub baseMetadataRefresh(detailed=false)
     ' ljunkie - required to refresh watched status ( and indicators )
-    '  used to limit to season/show, but we shouldn't have to anymore.
-    '  if tostr(m.viewgroup) <> "season" and tostr(m.type) <> "season" and tostr(m.type) = "show" then return
-
-    if m.key <> invalid and m.server <> invalid and m.sourceUrl <> invalid 
+    if m.key <> invalid and m.server <> invalid and m.sourceUrl <> invalid then
         container = createPlexContainerForUrl(m.server, m.sourceUrl, "")
         if container <> invalid and container.xml <> invalid and type(container.xml.Directory) = "roXMLList" then 
-            for each dir in container.xml.Directory
-                if dir@key = m.key then 
-                    videoItemXml = dir
-                    setMetaBasics(m, container, videoItemXml)
+            for each dirXml in container.xml.Directory
+                if dirXml@key = m.key then 
+                    setMetaBasics(m, container, dirXml)
+                    exit for
                 end if
             end for
         end if
-
     end if
-
 End Sub
 
 
@@ -144,56 +139,41 @@ Sub setMetaBasics(meta, container, item)
     meta.sourceTitle = item@sourceTitle
 
     if (tostr(meta.viewgroup) <> "album" and tostr(meta.type) <> "album") and  RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" then 
+        if item@leafCount <> invalid then meta.leafCount = item@leafCount
+        if item@viewedLeafCount <> invalid then meta.viewedLeafCount = item@viewedLeafCount
 
-        if item@leafCount <> invalid  then
-           meta.leafCount = item@leafCount
-        end if
-    
-        if item@viewedLeafCount <> invalid  then
-           meta.viewedLeafCount = item@viewedLeafCount
-        end if
-
-
-        meta.umTitle = meta.Title ' change from OrigTitle -- confustion with originalTitle and unmodified Title
+        meta.umTitle = meta.Title ' change from OrigTitle -- confusion with originalTitle and unmodified Title
     
         ' append title differently based on leaf/viewed
         ' I might what to check the type here - not sure how this looks for types other than shows (TODO)
 
-    ' START: ljunkie - leafCount viewedLeafCount ( how many items, how many items watched)
+        ' START: ljunkie - leafCount viewedLeafCount ( how many items, how many items watched)
         if item@viewedLeafCount <> invalid and item@leafCount <> invalid 
-           extra = invalid
-           if val(item@viewedLeafCount) = val(item@leafCount) then
+            extra = invalid
+            if val(item@viewedLeafCount) = val(item@leafCount) then
                 extra = " (watched)" ' all items watched
-           else if val(item@viewedLeafCount) > 0 then
+            else if val(item@viewedLeafCount) > 0 then
                 extra = " (" + tostr(item@viewedLeafCount) + " of " + tostr(item@leafCount) + " watched)" ' partially watched - show count
-           else if val(item@leafCount) > 0 then
+            else if val(item@leafCount) > 0 then
                 extra = " (" + tostr(item@leafCount) + ")"
-           end if
-           if extra <> invalid then
-               meta.Title = meta.Title + extra
-               meta.ShortDescriptionLine1 = meta.ShortDescriptionLine1 + extra
-           end if
+            end if
+            if extra <> invalid then
+                meta.Title = meta.Title + extra
+                meta.ShortDescriptionLine1 = meta.ShortDescriptionLine1 + extra
+            end if
         end if
-    ' END: ljunkie - leafCount viewedLeafCount ( how many items, how many items watched)
-  end if
-
+        ' END: ljunkie - leafCount viewedLeafCount ( how many items, how many items watched)
+    end if
 
     if container.xml@mixedParents = "1" then
         parentTitle = firstOf(item@parentTitle, container.xml@parentTitle, "")
-        if parentTitle <> "" then
-            meta.Title = parentTitle + ": " + meta.Title
-        end if
+        if parentTitle <> "" then meta.Title = parentTitle + ": " + meta.Title
     end if
 
-
-    if item@userRating <> invalid then
-        meta.UserRating =  int(val(item@userRating)*10)
-    endif
+    if item@userRating <> invalid then meta.UserRating =  int(val(item@userRating)*10)
 
     PosterIndicators(meta)
 end sub
-
-
 
 Function newSearchMetadata(container, item) As Object
     metadata = createBaseMetadata(container, item)
