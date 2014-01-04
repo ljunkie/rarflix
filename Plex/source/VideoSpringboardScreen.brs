@@ -245,10 +245,11 @@ Sub videoGetMediaDetails(content)
     posterStyle = "default" 
     if tostr(m.metadata.contentType) = "episode" OR tostr(m.metadata.contentType) = "clip" then
         posterStyle = "rounded-rect-16x9-generic"
-        ' only override back to default if we know it's 4x3
-        if m.media <> invalid and type(m.media.aspectratio) = "roFloat" and m.media.aspectratio > 0 and m.media.aspectratio < 1.5 then
-            posterStyle = "default"
-        end if            
+        ' we cannot assume the thumbnail is 4x3 even is the content seems to be ( I have run into 16x9 thumbs with 4x3 content -- how is the possible? )
+        ' ' only override back to default if we know it's 4x3
+        'if m.media <> invalid and type(m.media.aspectratio) = "roFloat" and m.media.aspectratio > 0 and m.media.aspectratio < 1.5 then
+        '    posterStyle = "default"
+        'end if            
     end if
     Debug("set posterstyle " + tostr(posterStyle))
     m.Screen.SetPosterStyle(posterStyle)
