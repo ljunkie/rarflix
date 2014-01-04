@@ -30,6 +30,24 @@ Sub Main(args)
         RegDelete("directplay_restore", "preferences")
     end if
 
+    ' Due to grandfathering issues, extend the trial period.
+    registry = CreateObject("roRegistry")
+    sections = registry.GetSectionList()
+    resetTimestamp = false
+    for each sectionName in sections
+        if sectionName <> "misc" then
+            section = CreateObject("roRegistrySection", sectionName)
+            if section.Exists("first_playback_timestamp") then
+                resetTimestamp = true
+                success = registry.Delete(sectionName)
+            end if
+        end if
+    next
+    if resetTimestamp then
+        Debug("Extending trial period")
+        RegWrite("first_playback_timestamp", tostr(Now().AsSeconds()), "misc")
+    end if
+
     RegDelete("quality_override", "preferences")
 
     ' ljunkie - remove prefs on start - testing
