@@ -187,14 +187,15 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
     row = "on_deck"
     if rowkey = invalid or rowkey = row then
         view = RegRead("row_visibility_ondeck", "preferences", "")
-        if view = "owned" and NOT server.owned then view = "hidden"
         if view <> "hidden" then
-            onDeck = CreateObject("roAssociativeArray")
-            onDeck.server = server
-            onDeck.key = "/library/onDeck"
-            onDeck.connectionUrl = connectionUrl
-            onDeck.requestType = "media"
-            m.AddOrStartRequest(onDeck, m.RowIndexes[row], startRequests)
+            if view <> "owned" or (view = "owned" and server.owned) then 
+                onDeck = CreateObject("roAssociativeArray")
+                onDeck.server = server
+                onDeck.key = "/library/onDeck"
+                onDeck.connectionUrl = connectionUrl
+                onDeck.requestType = "media"
+                m.AddOrStartRequest(onDeck, m.RowIndexes[row], startRequests)
+            end if
         else
             m.Listener.OnDataLoaded(m.RowIndexes[row], [], 0, 0, true)
         end if
@@ -206,14 +207,15 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
     row = "recently_added"
     if rowkey = invalid or rowkey = row then
         view = RegRead("row_visibility_recentlyadded", "preferences", "")
-        if view = "owned" and NOT server.owned then view = "hidden"
         if view <> "hidden" then
-            recents = CreateObject("roAssociativeArray")
-            recents.server = server
-            recents.key = "/library/recentlyAdded"
-            recents.connectionUrl = connectionUrl
-            recents.requestType = "media"
-            m.AddOrStartRequest(recents, m.RowIndexes[row], startRequests)
+            if view <> "owned" or (view = "owned" and server.owned) then 
+                recents = CreateObject("roAssociativeArray")
+                recents.server = server
+                recents.key = "/library/recentlyAdded"
+                recents.connectionUrl = connectionUrl
+                recents.requestType = "media"
+                m.AddOrStartRequest(recents, m.RowIndexes[row], startRequests)
+            end if
         else
             m.Listener.OnDataLoaded(m.RowIndexes[row], [], 0, 0, true)
         end if

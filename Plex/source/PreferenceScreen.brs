@@ -1788,7 +1788,7 @@ Function createHomeScreenPrefsScreen(viewController) As Object
     ' Visibility for on deck and recently added
     valuesShared = [
         { title: "Enabled", EnumValue: "" },
-        { title: "Enabled (exclude shared)", EnumValue: "owned" },
+        { title: "Enabled (exclude shared libraries)", EnumValue: "owned" },
         { title: "Hidden", EnumValue: "hidden" }
     ]
     values = [
