@@ -187,6 +187,7 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
     row = "on_deck"
     if rowkey = invalid or rowkey = row then
         view = RegRead("row_visibility_ondeck", "preferences", "")
+        if view = "owned" and NOT server.owned then view = "hidden"
         if view <> "hidden" then
             onDeck = CreateObject("roAssociativeArray")
             onDeck.server = server
@@ -205,6 +206,7 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
     row = "recently_added"
     if rowkey = invalid or rowkey = row then
         view = RegRead("row_visibility_recentlyadded", "preferences", "")
+        if view = "owned" and NOT server.owned then view = "hidden"
         if view <> "hidden" then
             recents = CreateObject("roAssociativeArray")
             recents.server = server

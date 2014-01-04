@@ -1786,17 +1786,22 @@ Function createHomeScreenPrefsScreen(viewController) As Object
     }
 
     ' Visibility for on deck and recently added
+    valuesShared = [
+        { title: "Enabled", EnumValue: "" },
+        { title: "Enabled (exclude shared)", EnumValue: "owned" },
+        { title: "Hidden", EnumValue: "hidden" }
+    ]
     values = [
         { title: "Enabled", EnumValue: "" },
         { title: "Hidden", EnumValue: "hidden" }
     ]
     obj.Prefs["row_visibility_ondeck"] = {
-        values: values,
+        values: valuesShared,
         heading: "Show On Deck items on the home screen",
         default: ""
     }
     obj.Prefs["row_visibility_recentlyadded"] = {
-        values: values,
+        values: valuesShared,
         heading: "Show recently added items on the home screen",
         default: ""
     }
@@ -1846,8 +1851,8 @@ Function createHomeScreenPrefsScreen(viewController) As Object
     obj.AddItem({title: "Queue"}, "playlist_view_queue", obj.GetEnumValue("playlist_view_queue"))
     obj.AddItem({title: "Recommendations"}, "playlist_view_recommendations", obj.GetEnumValue("playlist_view_recommendations"))
     obj.AddItem({title: "On Deck"}, "row_visibility_ondeck", obj.GetEnumValue("row_visibility_ondeck"))
-    obj.AddItem({title: "Now Playing", ShortDescriptionLine2: "rarflix pref"}, "row_visibility_now_playing", obj.GetEnumValue("row_visibility_now_playing"))
     obj.AddItem({title: "Recently Added"}, "row_visibility_recentlyadded", obj.GetEnumValue("row_visibility_recentlyadded"))
+    obj.AddItem({title: "Now Playing", ShortDescriptionLine2: "rarflix pref"}, "row_visibility_now_playing", obj.GetEnumValue("row_visibility_now_playing"))
     obj.AddItem({title: "Channels"}, "row_visibility_channels", obj.GetEnumValue("row_visibility_channels"))
     obj.AddItem({title: "Close"}, "close")
 
