@@ -1532,7 +1532,7 @@ Function getRARflixTools(server) as object
        return server.rarflixtools
     end if
 
-    if NOT isRFdev() then return invalid
+    'if NOT isRFdev() then return invalid
 
     content = CreateObject("roAssociativeArray")
 
@@ -1586,7 +1586,7 @@ sub PosterIndicators(item)
     progress = 0 ' default no progress
     watched  = 0 ' default unwatched
 
-    if NOT isRFdev() then return
+    'if NOT isRFdev() then return
 
     ' things that are not supported '
     if item = invalid or item.server = invalid or tostr(item.server.rarflixtools) = "invalid" or item.server.rarflixtools.PosterTranscoder <> true then return 
