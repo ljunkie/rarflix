@@ -1,4 +1,11 @@
-#3.0.16-test
+#3.0.17-test (2014-01-04)
+    * Now Playing Audio Screen :: always start with context of playing track ( not the last viewed ) -- https://github.com/ljunkie/rarflix/issues/173
+    * ability to hide shared library content on HomeScreen OnDeck/RecentlyAdded -- https://github.com/ljunkie/rarflix/issues/119
+    * reload any server on the homescreen ( not just the owned ones ) -- refresh items on homescreen
+    * do not allow channel content to use the 'TV Series' Grid Mode -- fix crash with SSplex when TV Series Grid is enabled
+    * SD screen channel icons were broken
+
+#3.0.16-test (2014-01-03)
     * Merge DEV to Test ( DEV channel no longer updated )
     * Overlays extended to the RARflixTest channel
     * code/logic clean - getSectionType can use the m.Home object
