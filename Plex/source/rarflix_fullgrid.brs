@@ -22,15 +22,22 @@ Function createFULLGridScreen(item, viewController, style = "flat-movie", SetDis
     vc_metadata = getSectionType(viewController)
     item.key = keyFiler(item.key,tostr(vc_metadata.type)) ' ljunkie - allow us to use the new filters for the simple keys
 
-    container = createPlexContainerForUrl(item.server, item.sourceUrl, item.key)
+    ' check if key is a loader row index.. and strip it
+    detailKey = item.key
+    if viewController.home <> invalid and  type(viewController.home.loader) = "roAssociativeArray" and type(viewController.home.loader.rowindexes) = "roAssociativeArray" then
+        for each rkey in viewController.home.loader.rowindexes
+             if rkey = item.key then 
+                 detailKey = ""
+                 exit for
+             end if
+        end for 
+    end if
 
-    if style = "flat-square" then 
-        grid_size = 7
-    else 
-        grid_size = 5
-    end if    
+    container = createPlexContainerForUrl(item.server, item.sourceUrl, detailKey)
+
+    grid_size = 5
+    if style = "flat-square" then grid_size = 7
     container.SeparateSearchItems = true   
-
 
     obj.Loader = createFULLgridPaginatedLoader(container, grid_size, grid_size, item)
     obj.Loader.Listener = obj
