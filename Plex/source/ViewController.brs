@@ -351,7 +351,14 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen = createVideoSpringboardScreen(context, contextIndex, m)
         screenName = "Preplay " + contentType
     else if contentType = "series" then
+        ' channel content does not play well in Grid ( unexpected xml result could put the channel content in a grid )
+        useGrid = false
         if RegRead("use_grid_for_series", "preferences", "") <> "" then
+            sec_metadata = getSectionType()
+            if tostr(sec_metadata.contenttype) <> "channel" and tostr(sec_metadata.type) <> "channel" then useGrid = true
+        end if
+
+        if useGrid then
             screen = createGridScreenForItem(item, m, "flat-16X9") ' we want 16x9 for series ( maybe flat-landscape when available )
             screenName = "Series Grid"
             if screen.loader.focusrow <> invalid then screen.loader.focusrow = 1 ' override this so we can hide the sub sections ( flat-16x9 is 5x3 )
