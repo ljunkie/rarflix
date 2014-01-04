@@ -7,7 +7,7 @@ Function AppManager()
 
         ' The unlocked state of the app, one of: PlexPass, Exempt, Purchased, Trial, or Limited
         obj.IsPlexPass = false
-        obj.IsPurchased = false
+        obj.IsPurchased = (RegRead("purchased", "misc", "0") = "1")
         obj.IsAvailableForPurchase = false
         obj.IsExempt = false
 
@@ -129,12 +129,14 @@ Sub managerHandleChannelStoreEvent(msg)
     atLeastOneProduct = false
 
     if msg.isRequestSucceeded() then
+        if m.PendingRequestPurchased then m.IsPurchased = false
         for each product in msg.GetResponse()
             atLeastOneProduct = true
             if product.code = m.productCode then
                 m.IsAvailableForPurchase = true
                 if m.PendingRequestPurchased then
                     m.IsPurchased = true
+                    RegWrite("purchased", "1", "misc")
                 end if
             end if
         next
@@ -179,6 +181,7 @@ Sub managerStartPurchase()
 
     if store.DoOrder() then
         Debug("Product purchased!")
+        RegWrite("purchased", "1", "misc")
         m.IsPurchased = true
         m.ResetState()
     else
