@@ -41,6 +41,7 @@ Function createViewController() As Object
     controller.AssignScreenID = vcAssignScreenID
     controller.PushScreen = vcPushScreen
     controller.PopScreen = vcPopScreen
+    controller.ExitToUserSelection = vcExitToUserSelection
     controller.IsActiveScreen = vcIsActiveScreen
 
     controller.afterCloseCallback = invalid
@@ -204,8 +205,8 @@ sub lockScreenActivate(priorScreen)
         'No code was entered.  We need to logout and return to the main user selection screen
         'restore old Activate before calling this
         'm.Activate = m.OldActivate 
-        GetGlobalAA().AddReplace("ProfileExit", true)
-        m.ViewController.PopScreen(invalid)    'invalid will close all screens
+        'm.ViewController.PopScreen(invalid)    'invalid will close all screens
+        m.ViewController.ExitToUserSelection()
         if m.screen <> invalid then m.screen.close() ' stragler
         if priorScreen.facade <> invalid then priorScreen.facade.close()
     else
@@ -1190,16 +1191,16 @@ Sub vcPushScreen(screen)
     m.screens.Push(screen)
 End Sub
 
+sub vcExitToUserSelection()
+    Debug("vcExitToUserSelection called -- popping ALL screens, cleaning up")
+    GetGlobalAA().AddReplace("ProfileExit", true)
+    while m.screens.Count() > 0
+        m.PopScreen(m.screens.Peek())
+    end while
+end sub
+
 Sub vcPopScreen(screen)
-     ' ljunkie - invalid is "valid" use to close ALL screens
-     if screen = invalid then 
-        Debug("Invalid Screen given -- popping ALL screens, cleaning up")
-        while m.screens.Count() > 0
-            m.PopScreen(m.screens.Peek())
-        end while
-        return
-    end if
-    ' end invalid screen ( close all/restart )
+    if screen = invalid then return
 
     if screen.Cleanup <> invalid then screen.Cleanup()
 
@@ -1267,9 +1268,9 @@ Sub vcPopScreen(screen)
     ' no screens on the stack, but we didn't just close the home screen, then
     ' we haven't shown the home screen yet. Show it now.
     if m.Home <> invalid AND screen.screenID = m.Home.ScreenID then
-        GetGlobalAA().AddReplace("ProfileExit", true)
         Debug("Popping home screen")
-        m.PopScreen(invalid) ' invalid will close all screens
+        ' m.PopScreen(invalid) ' invalid will close all screens
+        m.ExitToUserSelection()
     else if m.screens.Count() = 0 then
         if m.ShowSecurityScreen = true then
             m.CreateUserSelectionScreen()
