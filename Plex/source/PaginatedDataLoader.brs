@@ -284,8 +284,8 @@ Sub loaderRefreshData()
     if type(m.listener.contentarray) = "roArray" and m.listener.contentarray.count() >= sel_row then
         if type(m.listener.contentarray[sel_row]) = "roArray" and m.listener.contentarray[sel_row].count() >= sel_item then
             item = m.listener.contentarray[sel_row][sel_item]
-            wkey = m.listener.contentarray[sel_row][sel_item].key
             if item <> invalid and type(item.refresh) = "roFunction" then 
+                wkey = m.listener.contentarray[sel_row][sel_item].key
                 Debug("---- Refreshing metadata for item " + tostr(wkey))
                 if RegRead("rf_grid_dynamic", "preferences", "full") <> "full" then item.Refresh() ' refresh for pref of partial reload
 
