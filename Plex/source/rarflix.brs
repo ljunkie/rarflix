@@ -1474,7 +1474,7 @@ Function PosterImageSizes(style = invalid) As Object
         HDwidth = "385"
         HDheight = "218"
     else if style = "arced-square" then
-        SDwidth = "= 223"
+        SDwidth = "223"
         SDheight = "200"
         HDwidth = "300"
         HDheight = "300"
