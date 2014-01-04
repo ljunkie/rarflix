@@ -1,11 +1,11 @@
 #3.0.16-test
     * Merge DEV to Test ( DEV channel no longer updated )
     * Overlays extended to the RARflixTest channel
-    * Episodes/Clips will use a 16x9 or 4x3 Thumb depending on the corresponding size
     * code/logic clean - getSectionType can use the m.Home object
-    * more springBoard thumbnail logic cleanup - 9e3a319d679172928aa4d116cd0c95388bea0373
     * Full Grid potentially used extra invalid keys
-    * bugfix issue: https://github.com/ljunkie/rarflix/issues/165 -- also allows the springBoard to use dynamic 16x9/4x3 thumbs
+    * Episodes/Clips will use a 16x9 or 4x3 Thumb depending on the corresponding size ( not true anymore - 16x9 always )
+        -- bugfix issue: https://github.com/ljunkie/rarflix/issues/165 -- also allows the springBoard to use dynamic 16x9/4x3 thumbs
+        -- reverted: all episode/clip content will be 16x9 for now. 
     * Full Grid from Home Screen info button didn't work (regression in Test/Dev channel only)
     * remove dupe audioPlayer call
     * code cleanup
