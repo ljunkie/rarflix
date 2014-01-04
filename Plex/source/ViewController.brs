@@ -390,7 +390,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             screen = invalid
         else
             AudioPlayer().ContextScreenID = m.nextScreenId
-            screen = createAudioSpringboardScreen(AudioPlayer().Context, AudioPlayer().CurIndex, m)
+            screen = createAudioSpringboardScreen(AudioPlayer().Context, AudioPlayer().PlayIndex, m)
             screenName = "Now Playing"
             breadcrumbs = [screenName," "," "] ' set breadcrumbs for this..
         end if
