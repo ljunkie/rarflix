@@ -985,7 +985,9 @@ Sub homeRefreshData()
     m.contentArray[m.RowIndexes["recently_added"]].refreshContent = []
     m.contentArray[m.RowIndexes["recently_added"]].loadedServers.Clear()
 
-    for each server in GetOwnedPlexMediaServers()
+    ' this will allow us to refresh all content from all servers ( not just owned )
+    '  for now, this might only be useful to RARflix since OnDeck/RecentlyAdded are enabled for shared users
+    for each server in GetValidPlexMediaServers()
         m.CreateServerRequests(server, true, true)
     next
 

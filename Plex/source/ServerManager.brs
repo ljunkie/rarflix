@@ -414,6 +414,20 @@ Function GetOwnedPlexMediaServers()
     return owned
 End Function
 
+Function GetValidPlexMediaServers()
+    result = []
+    servers = GetGlobalAA().Lookup("validated_servers")
+
+    if servers <> invalid then
+        for each id in servers
+            server = servers[id]
+            result.Push(server)
+        next
+    end if
+
+    return result
+End Function
+
 Function GetPrimaryServer()
     if m.PrimaryServer <> invalid then return m.PrimaryServer
 
