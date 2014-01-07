@@ -64,8 +64,8 @@ Function newVideoMetadata(container, item, detailed=false) As Object
     ' ljunkie - for some reason the PMS fails to return a duration sometimes ( flaky )
     '  example found was for a TV Seasons Children 'library/metadata/252428/children'
     '  while I was testing the PMS starte to all of a sudden return a valid duration
-    '  then a few minutes later (20) somes items didn't have a duration again...
-    if length = invalid and item@key <> invalid and container.server.serverurl <> invalid  then 
+    '  then a few minutes later (20) somes items didn't have a duration again... (we only care about library content)
+    if video.isLibraryContent and length = invalid and item@key <> invalid and container.server.serverurl <> invalid then 
         Debug("--- length (duration) is invalid -- let's try the key directly")
         newUrl = tostr(container.server.serverurl) + tostr(item@key)
         if newUrl <> invalid and newUrl <> container.sourceurl then 
