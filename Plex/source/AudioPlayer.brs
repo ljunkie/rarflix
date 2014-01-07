@@ -33,8 +33,8 @@ Function AudioPlayer()
         obj.player.SetMessagePort(obj.Port)
 
     obj.Context = invalid
-    obj.CurIndex = invalid ' this now what is currenlty displayed on the screen
-    obj.PlayIndex = invalid ' this is whats playing
+    obj.CurIndex = invalid  ' var for index of displayed object ( can be different than object playing )
+    obj.PlayIndex = invalid ' var for index of playing object
     obj.ContextScreenID = invalid
     obj.SetContext = audioPlayerSetContext
 
@@ -80,8 +80,7 @@ Function audioPlayerHandleMessage(msg) As Boolean
 
     if type(msg) = "roAudioPlayerEvent" then
         handled = true
-        ' item = m.Context[m.CurIndex] -- ljunkie
-        item = m.Context[m.PlayIndex] ' curIndex is used for switching screens ( not always the music in the backgroud)
+        item = m.Context[m.PlayIndex] ' curIndex is used for switching screens ( not always the music in the backgroud )
 
         if msg.isRequestSucceeded() then
             Debug("Playback of single song completed")
@@ -101,20 +100,18 @@ Function audioPlayerHandleMessage(msg) As Boolean
             ' is m.Repeat set to 1 for normal music? seems related to theme loop
             if m.Repeat <> 1 then ' ljunkie - TODO verify - seems wrong
                 maxIndex = m.Context.Count() - 1
-                'newIndex = m.CurIndex + 1
                 newIndex = m.PlayIndex + 1
                 if newIndex > maxIndex then newIndex = 0
-                'm.CurIndex = newIndex 
+                m.CurIndex = newIndex 
                 m.PlayIndex = newIndex
             end if
         else if msg.isRequestFailed() then
             Debug("Audio playback failed")
             m.IgnoreTimelines = false
             maxIndex = m.Context.Count() - 1
-            ' newIndex = m.CurIndex + 1
             newIndex = m.PlayIndex + 1
             if newIndex > maxIndex then newIndex = 0
-            ' m.CurIndex = newIndex
+            m.CurIndex = newIndex
             m.PlayIndex = newIndex
         else if msg.isListItemSelected() then
             Debug("Starting to play track: " + tostr(item.Url))
@@ -204,7 +201,6 @@ End Sub
 Sub audioPlayerStop()
     if m.Context <> invalid then
         m.player.Stop()
-        'm.player.SetNext(m.CurIndex)
         m.player.SetNext(m.PlayIndex)
         m.IsPlaying = false
         m.IsPaused = false
@@ -531,11 +527,11 @@ Sub audioPlayerUpdateNowPlaying()
     if m.IsPlaying then
         state = "playing"
         time = 1000 * m.GetPlaybackProgress()
-        item = m.Context[m.CurIndex]
+        item = m.Context[m.PlayIndex]
     else if m.IsPaused then
         state = "paused"
         time = 1000 * m.playbackOffset
-        item = m.Context[m.CurIndex]
+        item = m.Context[m.PlayIndex]
     else if m.Context <> invalid then
         item = m.Context[m.CurIndex]
     end if
