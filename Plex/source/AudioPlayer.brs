@@ -82,6 +82,7 @@ Function audioPlayerHandleMessage(msg) As Boolean
         handled = true
         item = m.Context[m.PlayIndex] ' curIndex is used for switching screens ( not always the music in the backgroud )
 
+        UpdateButtons = invalid
         if msg.isRequestSucceeded() then
             Debug("Playback of single song completed")
 
@@ -136,14 +137,15 @@ Function audioPlayerHandleMessage(msg) As Boolean
             if tostr(msg.getMessage()) = "playback stopped" then 
                 m.IsPlaying = false
                 m.IsPaused = false
+                UpdateButtons = true
             else if tostr(msg.getMessage()) = "start of play" then 
                 m.IsPlaying = true
                 m.IsPaused = false
+                UpdateButtons = true
             end if
         else if msg.isFullResult() then
             Debug("Playback of entire audio list finished")
             m.Stop()
-
             if item.Url = "" then
                 ' TODO(schuyler): Show something more useful, especially once
                 ' there's a server version that transcodes audio.
@@ -160,11 +162,27 @@ Function audioPlayerHandleMessage(msg) As Boolean
             m.IsPaused = true
             m.playbackOffset = m.playbackOffset + m.playbackTimer.GetElapsedSeconds()
             m.playbackTimer.Mark()
+            UpdateButtons = true
         else if msg.isResumed() then
             Debug("Stream resumed by user")
             m.IsPlaying = true
             m.IsPaused = false
             m.playbackTimer.Mark()
+            UpdateButtons = true
+        end if
+
+        if UpdateButtons <> invalid then 
+            screen = GetViewController().screens.peek()
+            if screen <> invalid and screen.PlayState <> invalid and type(screen.SetupButtons) = "roFunction" then 
+                if m.IsPlaying then 
+                    screen.PlayState = 2
+                else if m.IsPaused then 
+                    screen.PlayState = 1
+                else 
+                    screen.PlayState = 0
+                end if
+                screen.SetupButtons()
+            end if
         end if
 
         m.UpdateNowPlaying()
