@@ -109,7 +109,7 @@ Sub audioSetupButtons()
         m.metadata.origStarRating = 0
     endif
 
-    if tostr(m.screenname) <> "Now Playing" then 
+    if AudioPlayer().ContextScreenID <> m.ScreenID then 
         m.AddButton("go to now playing", "showNowPlaying")
     end if
 End Sub
