@@ -1,3 +1,10 @@
+#3.1.0 (2014-01-08)
+    * merger of RARflixText & RARflix
+    * hide the Now Playing button when we just started the AudioPlayer ( we are technically in the now playing context )
+    * Now Playing Audio Screen did not refresh properly when stopping music remotely ( companion controls )
+    * fixes bug when audio loops ( tracks do not update properly ) https://github.com/ljunkie/rarflix/issues/158
+    * When a videos duration is missing, only query it directly if it's library content
+
 #3.0.17-test (2014-01-04)
     * Now Playing Audio Screen :: always start with context of playing track ( not the last viewed ) -- https://github.com/ljunkie/rarflix/issues/173
     * ability to hide shared library content on HomeScreen OnDeck/RecentlyAdded -- https://github.com/ljunkie/rarflix/issues/119
