@@ -756,15 +756,32 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
     end if
 
     if supportedIdentifier then
-        if obj.metadata.viewOffset <> invalid AND val(obj.metadata.viewOffset) > 0 then ' partially watched
-            dialog.SetButton("unscrobble", "Mark as unwatched")
-            dialog.SetButton("scrobble", "Mark as watched")
-        else if obj.metadata.viewCount <> invalid AND val(obj.metadata.viewCount) > 0 then ' watched
-            dialog.SetButton("unscrobble", "Mark as unwatched")
-            ' no need to show watched button (already watched)
-        else if obj.metadata.viewCount = invalid then  ' not watched
-            dialog.SetButton("scrobble", "Mark as watched")
-            ' no need to show unwatched 
+        ' this might be a TV season/All Seasons
+        print obj.metadata
+        if tostr(obj.metadata.type) = "season" or tostr(obj.metadata.viewgroup) = "season" then
+           print obj.metadata.type
+	   print obj.metadata.viewedLeafCount
+	   print obj.metadata.leafCount
+
+           if val(obj.metadata.viewedLeafCount) = val(obj.metadata.leafCount) then
+                dialog.SetButton("unscrobble", "Mark as unwatched")
+           else if val(obj.metadata.viewedLeafCount) > 0 then
+                dialog.SetButton("unscrobble", "Mark as unwatched")
+                dialog.SetButton("scrobble", "Mark as watched")
+           else if val(obj.metadata.leafCount) > 0 then
+                dialog.SetButton("scrobble", "Mark as watched")
+           end if
+        else 
+            if obj.metadata.viewOffset <> invalid AND val(obj.metadata.viewOffset) > 0 then ' partially watched
+                dialog.SetButton("unscrobble", "Mark as unwatched")
+                dialog.SetButton("scrobble", "Mark as watched")
+            else if obj.metadata.viewCount <> invalid AND val(obj.metadata.viewCount) > 0 then ' watched
+                dialog.SetButton("unscrobble", "Mark as unwatched")
+                ' no need to show watched button (already watched)
+            else if obj.metadata.viewCount = invalid then  ' not watched
+                dialog.SetButton("scrobble", "Mark as watched")
+                ' no need to show unwatched 
+            end if
         end if
         if obj.metadata.server.AllowsMediaDeletion AND obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
             dialog.SetButton("delete", "Delete permanently")
@@ -796,6 +813,9 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
     dialog.Show()
 end sub
 
+sub dummyRefresh(force=false) 
+end sub
+
 sub posterRefresh(force=false) 
     Debug("posterRefresh called! do we have a valid item")
  
@@ -803,33 +823,45 @@ sub posterRefresh(force=false)
         Debug("---- noRefresh set -- skipping item.refresh()")
         return
     end if
-    if m.item <> invalid and type(m.item.refresh) = "roFunction" then 
-        m.item.refresh()
-        Debug("item refreshed!")
-    end if
 
     if type(m.screen) = "roPosterScreen" then 
         if type(m.contentarray) = "roArray" and m.contentarray.count() > 0 and type(m.contentarray[0]) = "roAssociativeArray" then 
-            focusedIndex = m.contentarray[0].focusedindex
+            focusedIndex = m.contentarray[0].focusedindex ' we have to refresh this for sure 
+                                                          ' we also have to refresh the "All Episodes" item if it exists
             content = m.contentarray[0].content
-            if focusedIndex <> invalid and type(content) = "roArray" and type(content[focusedIndex]) = "roAssociativeArray" then 
-                if type(content[focusedIndex].refresh) = "roFunction" then  
-                    content[focusedIndex].refresh()
-                    ' print content[focusedIndex]
-                    ' special for tv shows
-                    if content[focusedIndex].titleseason <> invalid then content[focusedIndex].shortdescriptionline1 = content[focusedIndex].titleseason
-                    m.screen.SetContentList(content)
-		    Debug("refresh content list!")
+            forceRefresh=false
+            for each item in content 
+                if type(item.refresh) = "roFunction" then  
+                    doRefresh=true
+                    if item.type = invalid and tostr(item.viewgroup) = "season" then 
+                        if content[focusedIndex].key = item.key then forceRefresh = true
+                    else if content[focusedIndex].key = item.key then 
+                        'print "------------ focused item -- refresh it"
+                    else if NOT forceRefresh then 
+                        doRefresh = false
+                    end if
+                    
+                    if doRefresh then 
+                        item.refresh()
+                        if item.titleseason <> invalid then item.shortdescriptionline1 = item.titleseason
+                    end if
                 end if
-            end if
+            end for
+            m.screen.SetContentList(content)
+            Debug("refresh content list!")
         end if
     end if
+
+
+'        if m.item <> invalid and type(m.item.refresh) = "roFunction" then 
+'            m.item.refresh()
+'            Debug("item refreshed!")
+'        end if
 
 end sub 
 
 ' This is the context Dialog from the GRID - I should rename this TODO
 sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
-
     ' this should probably just be combined into rfVideoMoreButton  ( there are some caveats though and maybe more to come.. so until this has been finalized )
     dialog = createBaseDialog()
 
@@ -866,9 +898,10 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     dialog.Item = obj.metadata
 
     if type(obj.Refresh) <> "roFunction" then 
-        obj.Refresh = posterRefresh ' sbRefresh is called normally - in a poster screen this doesn't happen?
-    else
-       print "not calling posterRefresh since 'obj.Refresh' exists"
+        ' obj.Refresh = posterRefresh ' this should no longer be needed ( or dupes happen ) - poster refresh is activated now
+        obj.Refresh = dummyRefresh ' still need a dummy as some logic requires it
+       'else
+       'print "not calling posterRefresh since 'obj.Refresh' exists"
     end if
 
     ' hack for global recently added ( tv shows are displayed as seasons )
@@ -922,15 +955,31 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     supportedIdentifier = (obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
 
     if supportedIdentifier then
-        if obj.metadata.viewOffset <> invalid AND val(obj.metadata.viewOffset) > 0 then ' partially watched
-            dialog.SetButton("unscrobble", "Mark as unwatched")
-            dialog.SetButton("scrobble", "Mark as watched")
-        else if obj.metadata.viewCount <> invalid AND val(obj.metadata.viewCount) > 0 then ' watched
-            dialog.SetButton("unscrobble", "Mark as unwatched")
-            ' no need to show watched button (already watched)
-        else if obj.metadata.viewCount = invalid then  ' not watched
-            dialog.SetButton("scrobble", "Mark as watched")
-            ' no need to show unwatched 
+        print obj.metadata
+        if tostr(obj.metadata.type) = "season" or tostr(obj.metadata.viewgroup) = "season" then
+           print obj.metadata.type
+	   print obj.metadata.viewedLeafCount
+	   print obj.metadata.leafCount
+
+           if val(obj.metadata.viewedLeafCount) = val(obj.metadata.leafCount) then
+                dialog.SetButton("unscrobble", "Mark as unwatched")
+           else if val(obj.metadata.viewedLeafCount) > 0 then
+                dialog.SetButton("unscrobble", "Mark as unwatched")
+                dialog.SetButton("scrobble", "Mark as watched")
+           else if val(obj.metadata.leafCount) > 0 then
+                dialog.SetButton("scrobble", "Mark as watched")
+           end if
+        else 
+            if obj.metadata.viewOffset <> invalid AND val(obj.metadata.viewOffset) > 0 then ' partially watched
+                dialog.SetButton("unscrobble", "Mark as unwatched")
+                dialog.SetButton("scrobble", "Mark as watched")
+            else if obj.metadata.viewCount <> invalid AND val(obj.metadata.viewCount) > 0 then ' watched
+                dialog.SetButton("unscrobble", "Mark as unwatched")
+                ' no need to show watched button (already watched)
+            else if obj.metadata.viewCount = invalid then  ' not watched
+                dialog.SetButton("scrobble", "Mark as watched")
+                ' no need to show unwatched 
+            end if
         end if
 
         if obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "episode" or obj.metadata.ContentType = "show"  then
@@ -1017,10 +1066,10 @@ end sub
 
 sub rfDefRemoteOptionButton(m) 
     'for now we will show the preferences screen :)
-    audioplayer = GetViewController().AudioPlayer
-    if audioplayer.IsPlaying or audioplayer.IsPaused then return
+    player = AudioPlayer()
+    if player.IsPlaying or player.IsPaused then return
 
-    sec_metadata = getSectionType(m)
+    sec_metadata = getSectionType()
     notAllowed = CreateObject("roRegex", "artist|music|album", "") 
     if  NOT notAllowed.isMatch(tostr(sec_metadata.type)) then 
         new = CreateObject("roAssociativeArray")
@@ -1041,11 +1090,11 @@ end sub
 
 
 sub rfDialogGridScreen(obj as Object)
-    audioPlayer = GetViewController().AudioPlayer
-    if audioplayer.IsPlaying or audioplayer.IsPaused then return
+    player = AudioPlayer()
+    if player.IsPlaying or player.IsPaused then return
 
     if type(obj.item) = "roAssociativeArray" and tostr(obj.item.contenttype) = "section" and NOT tostr(obj.item.nodename) = "Directory" or obj.selectedrow = 0 then ' row 0 is reserved for the fullGrid shortcuts
-        print obj.item
+        'print obj.item
         rfDefRemoteOptionButton(obj) 
     ' for now the only option is grid view so we will verify we are in a roGridScreen. It we add more buttons, the type check below is for fullGridScreen
     else if obj.isfullgrid = invalid and obj.disablefullgrid = invalid and type(obj.screen) = "roGridScreen" then 
@@ -1057,7 +1106,7 @@ sub rfDialogGridScreen(obj as Object)
         dialog.Text = ""
         dialog.Title = "Options"
 
-        if audioplayer.ContextScreenID <> invalid then dialog.setButton("gotoMusicNowPlaying","go to now playing [music]")
+        if player.ContextScreenID <> invalid then dialog.setButton("gotoMusicNowPlaying","go to now playing [music]")
 
         dialog.SetButton("close", "Back")
         dialog.HandleButton = videoDialogHandleButton
@@ -1090,25 +1139,17 @@ function getAllRowsContext(screen,context,index) as object
 end function
 
 function getFullGridCurIndex(vc,index,default = 2) as object
-    print " ------------------ full grid index = " + tostr(index)
+    'print " ------------------ full grid index = " + tostr(index)
 
-    screens = []
     screen = invalid
-
-    if type(vc.screen) = "roAssociativeArray" and vc.screen.isfullgrid <> invalid and vc.screen.isfullgrid then
-        screen = vc.screen ' we are in the context of a full grid already
-    else if type(vc.screens) = "roArray" then
-        screens = vc.screens 
-    else if type(vc.viewcontroller) = "roAssociativeArray" then
-        screens = vc.viewcontroller.screens
-    end if
+    screens = GetViewController().screens
 
     ' find the full grid screen - backtrack
     if type(screens) = "roArray" and screens.count() > 1 then 
         for sindex = screens.count()-1 to 1 step -1
-            print "checking if screen #" + tostr(sindex) + "is the fullGrid"
+            'print "checking if screen #" + tostr(sindex) + "is the fullGrid"
             if type(screens[sindex].screen) = "roGridScreen" and screens[sindex].isfullgrid <> invalid and screens[sindex].isfullgrid then
-                print "screen #" + tostr(sindex) + "is the fullGrid"
+                'print "screen #" + tostr(sindex) + "is the fullGrid"
                 screen = screens[sindex]
                 exit for 
             end if
@@ -1119,10 +1160,10 @@ function getFullGridCurIndex(vc,index,default = 2) as object
         srow = screen.selectedrow
         sitem = screen.focusedindex+1
         rsize = screen.contentarray[0].count()
-        print "selected row:" + tostr(srow) + " focusedindex:" + tostr(sitem) + " rowsize:" + tostr(rsize)
+        Debug("selected row:" + tostr(srow) + " focusedindex:" + tostr(sitem) + " rowsize:" + tostr(rsize))
         index = (srow*rsize)+sitem-1 ' index is zero based (minus 1)
     end if
-    print " ------------------  new grid index = " + tostr(index)
+    Debug(" ------------------  new grid index = " + tostr(index))
     return index
 end function
 
@@ -1158,10 +1199,10 @@ sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
         remyplexMD = CreateObject("roRegex", "library/metadata/\d+", "i")        
         if remyplex.IsMatch(metadata.server.serverurl) then 
 	    if metadata.HDPosterURL <> invalid and remyplexMD.isMatch(metadata.HDPosterURL) then 
-                print "Skipping custom thumb -- this is cloud sync"
+                Debug("Skipping custom thumb -- this is cloud sync")
                 return
             end if
-            print "overriding cloudsync thumb" + metadata.HDPosterURL
+            Debug("overriding cloudsync thumb" + tostr(metadata.HDPosterURL))
         end if
 
 
@@ -1222,28 +1263,21 @@ sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
 end sub
 
 ' ljunkie - crazy sauce right? this is a way to figure out what section we are in 
-function getSectionType(vc) as object
+' -- better way -- just use the vc.Home object !
+function getSectionType() as object
     Debug("---- checking if we can figure out the section we are in")
     metadata = CreateObject("roAssociativeArray")
-    if type(vc.screens) = "roArray" then
-        screens = vc.screens
-    else if type(vc.viewcontroller) = "roAssociativeArray" then
-        screens = vc.viewcontroller.screens
-    end if
 
-    if type(screens) = "roArray" and screens.count() >= 0 then
-       screen = screens[0]
-       if type(screen) = "roAssociativeArray" and screen.loader <> invalid and type(screen.loader.contentarray) = "roArray" then
-           row = screen.selectedrow
-           index = screen.focusedindex
-           if row <> invalid and index <> invalid then
-               if type(screen.loader.contentarray[row].content) = "roArray" then 
+    screen = GetViewController().Home
+    
+    if screen <> invalid  and screen.selectedrow <> invalid and screen.focusedindex <> invalid  then 
+        row = screen.selectedrow
+        index = screen.focusedindex
+        if type(screen.loader.contentarray[row].content) = "roArray" and screen.loader.contentarray[row].content.count() > 0 then 
                    metadata = screen.loader.contentarray[row].content[index]
-		   print metadata
-               end if
-           end if
         end if
     end if
+
     return metadata ' return empty assoc
 end function
 
@@ -1440,7 +1474,7 @@ Function PosterImageSizes(style = invalid) As Object
         HDwidth = "385"
         HDheight = "218"
     else if style = "arced-square" then
-        SDwidth = "= 223"
+        SDwidth = "223"
         SDheight = "200"
         HDwidth = "300"
         HDheight = "300"
@@ -1490,3 +1524,146 @@ sub SetGlobalPosterStyle(style = invalid)
     GetGlobalAA().AddReplace("GlobalPosterStyle", style)
     GetGlobalAA().AddReplace("GlobalNewScreen", "poster")
 end sub
+
+Function getRARflixTools(server) as object
+
+    if type(server.rarflixtools) = "roAssociativeArray" then 
+       Debug("server tools already checked - installed: " + tostr(server.rarflixtools.installed))
+       return server.rarflixtools
+    end if
+
+    'if NOT isRFdev() then return invalid
+
+    content = CreateObject("roAssociativeArray")
+
+    r1=CreateObject("roRegex", ":\d+", "")
+    baseUrl = server.serverurl
+    baseUrl = r1.Replace(baseUrl, ":32499") ' RARflix Poster Util needs to run on port 32499 (internal and external!) - apache/nginx/dnat/etc..
+    baseUrl = baseUrl + "/RARflixTools/"
+    Debug("---- checking if the RARflixTools are installed on PMS: " + tostr(baseUrl))
+
+    req = CreateURLTransferObject(baseUrl)
+    port = CreateObject("roMessagePort")
+    req.SetPort(port)
+    req.AsyncGetToString()
+    event = wait(1500, port)
+
+    ResponseCode = invalid
+    if type(event) = "roUrlEvent"
+        ResponseCode = event.GetResponseCode()
+    else if event = invalid
+        Debug("url timeout")
+        req.AsyncCancel()
+    else
+        Debug("url unknown event: " + type(event))
+    end if
+
+    if ResponseCode = invalid or ResponseCode <> 200 return invalid
+
+    ' Parse the result to see if the RARflixTools are working properly
+    json=ParseJSON(event.GetString())
+    
+    ' must have a valid json result and access to the PMS (PMSaccess)
+    if json <> invalid and json.rarflix <> invalid and json.rarflix.PMSaccess = true then
+        Debug("---- RARflixTools are installed")
+        content.installed = true
+        content.sourceurl = baseUrl
+        
+        ' for now we only have one tool, but set them from teh json results to verify they are working properly
+        content.PosterTranscoder = json.rarflix.PosterTranscoder
+        content.PosterTranscoderUrl = json.rarflix.PosterTranscoderUrl
+        content.PosterTranscoderType = json.rarflix.PosterTranscoderType
+
+    else
+        content.installed = false
+        Debug("---- RARflixTools are NOT installed")
+    end if
+
+    return content
+End Function
+
+sub PosterIndicators(item)
+    progress = 0 ' default no progress
+    watched  = 0 ' default unwatched
+
+    'if NOT isRFdev() then return
+
+    ' things that are not supported '
+    if item = invalid or item.server = invalid or tostr(item.server.rarflixtools) = "invalid" or item.server.rarflixtools.PosterTranscoder <> true then return 
+    baseUrl = item.server.rarflixtools.PosterTranscoderUrl
+    if baseUrl = invalid then return
+   
+
+    ' initialize some vars
+    if item.ThumbIndicators = invalid then item.ThumbIndicators = false
+
+    ' this would include music/photos ( for now we only want video )
+    ' supportedIdentifier = (item.mediaContainerIdentifier = "com.plexapp.plugins.library" OR item.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
+    isSupported = (item.ContentType = "movie" or item.ContentType = "show" or item.ContentType = "episode" or item.ContentType = "series" or item.type = "season" or item.viewgroup = "season" or item.viewgroup = "show")
+    if not isSupported then 
+        'Debug("skipping poster overlay (indicators) " + tostr(item.title) + " type:" + tostr(item.ContentType))
+        'if item.hasdetails and (item.type <> "album" and item.type <> "artist" and item.type <> "photo") then 
+        '    print item
+        'end if
+	return
+    end if
+
+    ' this can probably be removed -- it to exclude myplex server during testing. The checks above should already handle this
+    skip=CreateObject("roRegex", "https", "")
+    if skip.isMatch(baseUrl) then return 
+
+    if item.viewedLeafCount <> invalid and item.leafCount <> invalid 
+        ' for seasons / mixedParent we will either show progress or wathched indication, but not both
+        if val(item.viewedLeafCount) = val(item.leafCount) then 
+           watched = 1
+        else if val(item.viewedLeafCount) > 0 then
+            progress = int( (val(item.viewedLeafCount)/val(item.leafCount)) * 100)
+        end if
+    else 
+        ' Video Meta data -- OK to show both progress indicator and watched 
+        if item.viewOffset <> invalid and item.rawlength <> invalid then progress = int( (item.viewOffset.toInt()/item.rawlength) * 100)
+        if item.Watched <> invalid and item.Watched then watched = 1
+    end if
+
+    createOverlay = false 
+    if item.ThumbIndicators then 
+        createOverlay = true
+    else if tostr(item.server.rarflixtools.PosterTranscoderType) = "CHECK" then 
+         if watched = 1 OR progress > 0 then createOverlay = true
+    else 
+         if watched = 0 OR progress > 0 then createOverlay = true
+    end if
+
+    if createOverlay then 
+       item.ThumbIndicators = true
+
+       if item.hdposterurl <> invalid then item.hdposterurl = buildPosterIndicatorUrl(baseUrl, item.hdposterurl, progress, watched)
+       if item.sdposterurl <> invalid then item.sdposterurl = buildPosterIndicatorUrl(baseUrl, item.sdposterurl, progress, watched)
+
+       if item.hdgridthumb <> invalid then item.hdgridthumb = buildPosterIndicatorUrl(baseUrl, item.hdgridthumb, progress, watched)
+       if item.sdgridthumb <> invalid then item.sdgridthumb = buildPosterIndicatorUrl(baseUrl, item.sdgridthumb, progress, watched)
+
+       if item.HDDetailThumb <> invalid then item.HDDetailThumb = buildPosterIndicatorUrl(baseUrl, item.HDDetailThumb, progress, watched)
+       if item.SDDetailThumb <> invalid then item.SDDetailThumb = buildPosterIndicatorUrl(baseUrl, item.SDDetailThumb, progress, watched)
+
+       if item.HDsbThumb <> invalid then item.HDsbThumb = buildPosterIndicatorUrl(baseUrl, item.HDsbThumb, progress, watched)
+       if item.SDsbThumb <> invalid then item.SDsbThumb = buildPosterIndicatorUrl(baseUrl, item.SDsbThumb, progress, watched)
+    end if
+
+end sub
+
+function buildPosterIndicatorUrl(baseUrl, thumbUrl, progress, watched) as string
+    ' the thumbnail might alrady be converted -- if so, replace changes instead of building
+    r=CreateObject("roRegex", baseUrl, "")
+    if r.isMatch(thumbUrl) then 
+        r1 = CreateObject("roRegex", "progress=\d+", "i")
+        thumbUrl = r1.Replace(thumbUrl, "progress="+tostr(progress))
+        r2 = CreateObject("roRegex", "watched=\d+", "i")
+        thumbUrl = r2.Replace(thumbUrl, "watched="+tostr(watched))
+        newThumb = thumbUrl
+    else 
+        newThumb = baseUrl + "?progress=" + tostr(progress) + "&watched=" + tostr(watched) + "&thumb=" + thumbUrl
+    end if
+
+    return newThumb
+end function

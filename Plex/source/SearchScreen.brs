@@ -30,6 +30,10 @@ Function createSearchScreen(item, viewController) As Object
     obj.Progressive = true
     obj.History = history
 
+    obj.SetText = ssSetText
+
+    NowPlayingManager().SetFocusedTextField("Search", "", false)
+
     return obj
 End Function
 
@@ -39,6 +43,7 @@ Function ssHandleMessage(msg) As Boolean
     if type(msg) = "roSearchScreenEvent" then
         if msg.isScreenClosed() then
             m.ViewController.PopScreen(m)
+            NowPlayingManager().SetFocusedTextField(invalid, invalid, false)
         else if msg.isCleared() then
             m.History.Clear()
             m.Screen.ClearSearchTerms()
@@ -54,27 +59,10 @@ Function ssHandleMessage(msg) As Boolean
                 m.ProgressiveTimer.Active = true
                 m.ViewController.AddTimer(m.ProgressiveTimer, m)
                 m.SearchTerm = msg.GetMessage()
+                NowPlayingManager().SetFocusedTextField("Search", m.SearchTerm, false)
             end if
         else if msg.isFullResult() then
-            term = msg.GetMessage()
-            m.History.Push(term)
-
-            Debug("Searching for " + term)
-
-            ' Create a dummy item with the key set to the search URL
-            item = CreateObject("roAssociativeArray")
-            item.server = m.Item.Server
-            item.Title = "Search for '" + term + "'"
-            item.sourceUrl = m.Item.sourceUrl
-            item.viewGroup = m.Item.viewGroup
-            item.searchTerm = term
-            if instr(1, m.Item.Key, "?") > 0 then
-                item.Key = m.Item.Key + "&query=" + HttpEncode(term)
-            else
-                item.Key = m.Item.Key + "?query=" + HttpEncode(term)
-            end if
-
-            m.ViewController.CreateScreenForItem(item, invalid, [item.Title])
+            m.SetText(msg.GetMessage(), true)
         end if
     end if
 
@@ -128,5 +116,30 @@ Sub ssOnUrlEvent(msg, requestContext)
         m.Screen.SetSearchTermHeaderText("Search Suggestions:")
         m.Screen.SetClearButtonEnabled(false)
         m.Screen.SetSearchTerms(suggestions)
+    end if
+End Sub
+
+Sub ssSetText(text, isComplete)
+    if isComplete then
+        m.History.Push(text)
+
+        Debug("Searching for " + text)
+
+        ' Create a dummy item with the key set to the search URL
+        item = CreateObject("roAssociativeArray")
+        item.server = m.Item.Server
+        item.Title = "Search for '" + text + "'"
+        item.sourceUrl = m.Item.sourceUrl
+        item.viewGroup = m.Item.viewGroup
+        item.searchTerm = text
+        if instr(1, m.Item.Key, "?") > 0 then
+            item.Key = m.Item.Key + "&query=" + HttpEncode(text)
+        else
+            item.Key = m.Item.Key + "?query=" + HttpEncode(text)
+        end if
+
+        m.ViewController.CreateScreenForItem(item, invalid, [item.Title])
+    else
+        m.Screen.SetSearchText(text)
     end if
 End Sub

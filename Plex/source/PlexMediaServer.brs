@@ -6,7 +6,7 @@
 
 '* Constructor for a specific PMS instance identified via the URL and
 '* human readable name, which can be used in section names
-Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
+Function newPlexMediaServer(pmsUrl, pmsName, machineID, useMyPlexToken=true) As Object
     pms = CreateObject("roAssociativeArray")
     pms.serverUrl = pmsUrl
     pms.name = firstOf(pmsName, "Unknown")
@@ -15,13 +15,16 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.synced = false
     pms.online = false
     pms.local = false
-    pms.AccessToken = GetMyPlexManager().AuthToken
+    if useMyPlexToken then
+        pms.AccessToken = MyPlexManager().AuthToken
+    else
+        pms.AccessToken = invalid
+    end if
     pms.StopVideo = stopTranscode
     pms.StartTranscode = StartTranscodingSession
     pms.PingTranscode = pingTranscode
     pms.CreateRequest = pmsCreateRequest
     pms.GetQueryResponse = xmlContent
-    pms.SetProgress = progress
     pms.Timeline = pmsTimeline
     pms.Scrobble = scrobble
     pms.Unscrobble = unscrobble
@@ -42,6 +45,11 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.AddDirectPlayInfo = pmsAddDirectPlayInfo
     pms.Log = pmsLog
 
+    ' RARflix Tools
+    '  - maybe more to come, but I'd prefer these part of the PMS
+    '  2013-12-27: PosterTranscoder - will allow watched status and progress indicator overlay on Posters/Thumbs
+    pms.rarflixtools = invalid
+
     ' Set to false if a version check fails
     pms.SupportsAudioTranscoding = true
     pms.SupportsVideoTranscoding = true
@@ -57,6 +65,20 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID) As Object
     pms.ScreenID = -3
     pms.OnUrlEvent = pmsOnUrlEvent
 
+    pms.lastTimelineItem = invalid
+    pms.lastTimelineState = invalid
+    pms.timelineTimer = createTimer()
+    pms.timelineTimer.SetDuration(15000, true)
+
+    return pms
+End Function
+
+Function newSyntheticPlexMediaServer(pmsUrl, machineID, token) As Object
+    Debug("Creating synthetic server for " + tostr(machineID) + " at " + tostr(pmsUrl))
+    pms = newPlexMediaServer(pmsUrl, invalid, machineID)
+    pms.owned = false
+    pms.online = true
+    pms.AccessToken = token
     return pms
 End Function
 
@@ -73,25 +95,31 @@ Function issuePostCommand(commandPath)
     request.PostFromString("")
 End Function
 
-Function progress(key, identifier, time)
-    if identifier <> invalid then
-        commandUrl = "/:/progress?key="+HttpEncode(key)+"&identifier="+identifier+"&time="+time.tostr()
-        m.ExecuteCommand(commandUrl)
-    end if
-End Function
+Sub pmsTimeline(item, state, time)
+    itemsEqual = (item <> invalid AND m.lastTimelineItem <> invalid AND item.ratingKey = m.lastTimelineItem.ratingKey)
 
-Sub pmsTimeline(item, state, time, isPlayed)
+    ' extra precaution -- probably not needed as the issue stemmed from an item not have a RawLength (duration)
+    if m.lastTimelineStateCount = invalid then m.lastTimelineStateCount = 0
+    m.lastTimelineStateCount = m.lastTimelineStateCount+1
+
+    if itemsEqual AND state = m.lastTimelineState AND NOT m.timelineTimer.IsExpired() and m.lastTimelineStateCount < 30 then return
+
+    m.lastTimelineStateCount = 0
+    m.timelineTimer.Mark()
+    m.lastTimelineItem = item
+    m.lastTimelineState = state
+
     encoder = CreateObject("roUrlTransfer")
 
     query = "time=" + tostr(time)
     query = query + "&duration=" + tostr(item.RawLength)
     query = query + "&state=" + state
     if item.guid <> invalid then query = query + "&guid=" + encoder.Escape(item.guid)
-    if item.ratingKey <> invalid then query = query + "&ratingKey=" + tostr(item.ratingKey)
+    if item.ratingKey <> invalid then query = query + "&ratingKey=" + encoder.Escape(tostr(item.ratingKey))
     if item.url <> invalid then query = query + "&url=" + encoder.Escape(item.url)
     if item.key <> invalid then query = query + "&key=" + encoder.Escape(item.key)
     if item.sourceUrl <> invalid then query = query + "&containerKey=" + encoder.Escape(item.sourceUrl)
-
+ 
     request = m.CreateRequest("", "/:/timeline?" + query)
     context = CreateObject("roAssociativeArray")
     context.requestType = "timeline"
@@ -578,6 +606,12 @@ Function StartTranscodingSession(videoUrl)
     cookiesRequest.SetUrl(videoUrl)
     cookiesHead = cookiesRequest.Head()
     m.Cookie = cookiesHead.GetResponseHeaders()["set-cookie"]
+
+    if m.Cookie <> invalid then
+        arr = strTokenize(m.Cookie, ";")
+        m.Cookie = arr[0]
+    end if
+
     return m.Cookie
 End Function
 
@@ -707,7 +741,7 @@ Function classicTranscodingVideoUrl(videoUrl As String, item As Object, httpHead
     if identifier <> invalid then
         query = query + "&identifier=" + identifier
     end if
-    query = query + "&ratingKey=" + ratingKey
+    query = query + "&ratingKey=" + HttpEncode(ratingKey)
     if len(fullKey) > 0 then
         query = query + "&key=" + HttpEncode(fullKey)
     end if
@@ -927,7 +961,7 @@ Sub pmsAddDirectPlayInfo(video, item, mediaKey)
     if video.StreamFormat = "hls" then video.SwitchingStrategy = "full-adaptation"
 
     part = mediaItem.parts[mediaItem.curPartIndex]
-    if part <> invalid AND part.subtitles <> invalid AND part.subtitles.Codec = "srt" and part.subtitles.key <> invalid then
+    if part <> invalid AND part.subtitles <> invalid AND part.subtitles.Codec = "srt" AND part.subtitles.key <> invalid then
         video.SubtitleUrl = FullUrl(m.serverUrl, "", part.subtitles.key) + "?encoding=utf-8"
     end if
 

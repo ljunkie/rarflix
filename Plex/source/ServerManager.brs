@@ -364,6 +364,12 @@ Sub PutPlexMediaServer(server)
             servers = {}
             GetGlobalAA().AddReplace("validated_servers", servers)
         end if
+
+	' RARflixTools Hook -- verify the tools are installed and working ( online servers only )
+        if server.online <> invalid and server.online then 
+            server.RARflixTools = getRARflixTools(server)
+        end if
+
         servers[server.machineID] = server
         if server.serverUrl <> invalid then SetServerForHost(server.serverUrl + "/", server)
     end if
@@ -408,6 +414,20 @@ Function GetOwnedPlexMediaServers()
     return owned
 End Function
 
+Function GetValidPlexMediaServers()
+    result = []
+    servers = GetGlobalAA().Lookup("validated_servers")
+
+    if servers <> invalid then
+        for each id in servers
+            server = servers[id]
+            result.Push(server)
+        next
+    end if
+
+    return result
+End Function
+
 Function GetPrimaryServer()
     if m.PrimaryServer <> invalid then return m.PrimaryServer
 
@@ -431,8 +451,8 @@ Sub SetServerForHost(hostname, server)
     if servers = invalid then
         servers = {}
         GetGlobalAA().AddReplace("servers_by_host", servers)
-        servers["https://my.plexapp.com/"] = GetMyPlexManager()
-        servers["https://my.plexapp.com:443/"] = GetMyPlexManager()
+        servers["https://my.plexapp.com/"] = MyPlexManager()
+        servers["https://my.plexapp.com:443/"] = MyPlexManager()
         servers["http://node.plexapp.com:32400/"] = invalid
     end if
 
@@ -444,8 +464,8 @@ Function GetServerForUrl(url)
     if servers = invalid then
         servers = {}
         GetGlobalAA().AddReplace("servers_by_host", servers)
-        servers["https://my.plexapp.com/"] = GetMyPlexManager()
-        servers["https://my.plexapp.com:443/"] = GetMyPlexManager()
+        servers["https://my.plexapp.com/"] = MyPlexManager()
+        servers["https://my.plexapp.com:443/"] = MyPlexManager()
         servers["http://node.plexapp.com:32400/"] = invalid
     end if
 

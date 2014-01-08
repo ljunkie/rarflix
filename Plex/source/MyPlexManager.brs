@@ -2,59 +2,73 @@
 '* Utilities related to signing in to myPlex and making myPlex requests
 '*
 
-Function createMyPlexManager(viewController) As Object
-    obj = CreateObject("roAssociativeArray")
+Function MyPlexManager(reinit = false) As Object
+    if reinit = true then 
+        AppManager().ClearInitializer("myplex")
+        m.MyPlexManager = invalid
+     end if
 
-    obj.CreateRequest = mpCreateRequest
-    obj.ValidateToken = mpValidateToken
-    obj.Disconnect = mpDisconnect
+    if m.MyPlexManager = invalid then
+        ' Start by creating a PlexMediaServer since we can't otherwise inherit
+        ' anything. Then tweak as appropriate.
+        obj = newPlexMediaServer("https://my.plexapp.com", "myPlex", "myplex", false)
 
-    obj.ExtraHeaders = {}
-    obj.ExtraHeaders["X-Plex-Provides"] = "player"
+        AppManager().AddInitializer("myplex")
 
-    obj.ViewController = viewController
+        obj.CreateRequest = mpCreateRequest
+        obj.ValidateToken = mpValidateToken
+        obj.Disconnect = mpDisconnect
 
-    ' Masquerade as a basic Plex Media Server
-    obj.serverUrl = "https://my.plexapp.com"
-    obj.name = "myPlex"
-    obj.owned = false
-    obj.online = true
-    obj.StopVideo = mpStopVideo
-    obj.StartTranscode = mpStartTranscode
-    obj.PingTranscode = mpPingTranscode
-    obj.TranscodedImage = mpTranscodedImage
-    obj.TranscodingVideoUrl = mpTranscodingVideoUrl
-    obj.ConstructVideoItem = pmsConstructVideoItem
-    obj.GetQueryResponse = mpGetQueryResponse
-    obj.AddDirectPlayInfo = pmsAddDirectPlayInfo
-    obj.IsRequestToServer = pmsIsRequestToServer
-    obj.Log = mpLog
-    obj.AllowsMediaDeletion = false
-    obj.SupportsMultiuser = false
-    obj.SupportsVideoTranscoding = true
+        obj.ExtraHeaders = {}
+        obj.ExtraHeaders["X-Plex-Provides"] = "player"
 
-    ' Commands, mostly use the PMS functions
-    obj.Timeline = mpTimeline
-    obj.SetProgress = progress
-    obj.Scrobble = scrobble
-    obj.Unscrobble = unscrobble
-    obj.Rate = rate
-    obj.Delete = mpDelete
-    obj.ExecuteCommand = mpExecuteCommand
-    obj.ExecutePostCommand = mpExecutePostCommand
+        ' Masquerade as a basic Plex Media Server
+        obj.owned = false
+        obj.online = true
+        obj.StopVideo = mpStopVideo
+        obj.StartTranscode = mpStartTranscode
+        obj.PingTranscode = mpPingTranscode
+        obj.TranscodedImage = mpTranscodedImage
+        obj.TranscodingVideoUrl = mpTranscodingVideoUrl
+        obj.GetQueryResponse = mpGetQueryResponse
+        obj.Log = mpLog
+        obj.AllowsMediaDeletion = false
+        obj.SupportsMultiuser = false
+        obj.SupportsVideoTranscoding = true
 
-    obj.IsSignedIn = false
-    obj.Username = invalid
-    obj.EmailAddress = invalid
-    obj.CheckAuthentication = mpCheckAuthentication
+        ' Commands, mostly use the PMS functions
+        obj.Delete = mpDelete
+        obj.ExecuteCommand = mpExecuteCommand
+        obj.ExecutePostCommand = mpExecutePostCommand
 
-    obj.TranscodeServer = invalid
-    obj.CheckTranscodeServer = mpCheckTranscodeServer
+        obj.IsSignedIn = false
+        obj.IsPlexPass = false
+        obj.Username = invalid
+        obj.EmailAddress = invalid
+        obj.CheckAuthentication = mpCheckAuthentication
 
-    ' Stash a copy in the global AA
-    GetGlobalAA().AddReplace("myplex", obj)
+        obj.TranscodeServer = invalid
+        obj.CheckTranscodeServer = mpCheckTranscodeServer
 
-    return obj
+        obj.ProcessAccountResponse = mpProcessAccountResponse
+
+        ' For using the view controller for HTTP requests
+        obj.ScreenID = -5
+        obj.OnUrlEvent = mpOnUrlEvent
+
+        ' Singleton
+        m.MyPlexManager = obj
+
+        ' Kick off initialization
+        token = RegRead("AuthToken", "myplex")
+        if token <> invalid then
+            obj.ValidateToken(token, not(reinit))
+        else
+            AppManager().ClearInitializer("myplex")
+        end if
+    end if
+
+    return m.MyPlexManager
 End Function
 
 Sub mpCheckAuthentication()
@@ -65,29 +79,53 @@ Sub mpCheckAuthentication()
     end if
 End Sub
 
-Function mpValidateToken(token) As Boolean
+Function mpValidateToken(token, async) As Boolean
     req = m.CreateRequest("", "/users/sign_in.xml", false)
-    port = CreateObject("roMessagePort")
-    req.SetPort(port)
-    req.AsyncPostFromString("auth_token=" + token)
 
-    event = wait(10000, port)
+    if async then
+        context = CreateObject("roAssociativeArray")
+        context.requestType = "account"
+        GetViewController().StartRequest(req, m, context, "auth_token=" + token)
+    else
+        port = CreateObject("roMessagePort")
+        req.SetPort(port)
+        req.AsyncPostFromString("auth_token=" + token)
+
+        event = wait(10000, port)
+        m.ProcessAccountResponse(event)
+    end if
+
+    return m.IsSignedIn
+End Function
+
+Sub mpOnUrlEvent(msg, requestContext)
+    if requestContext.requestType = "account" then
+        m.ProcessAccountResponse(msg)
+        AppManager().ClearInitializer("myplex")
+    end if
+End Sub
+
+Sub mpProcessAccountResponse(event)
     if type(event) = "roUrlEvent" AND event.GetInt() = 1 AND event.GetResponseCode() = 201 then
         xml = CreateObject("roXMLElement")
         xml.Parse(event.GetString())
         m.Username = xml@username
         m.EmailAddress = xml@email
         m.IsSignedIn = true
-        m.AuthToken = token
+        m.AuthToken = xml@authenticationToken
+        m.IsPlexPass = (xml.subscription <> invalid AND xml.subscription@active = "1")
 
         Debug("Validated myPlex token, corresponds to " + tostr(m.Username))
+        Debug("PlexPass: " + tostr(m.IsPlexPass))
+
+        mgr = AppManager()
+        mgr.IsPlexPass = m.IsPlexPass
+        mgr.ResetState()
     else
         Debug("Failed to validate myPlex token")
         m.IsSignedIn = false
     end if
-
-    return m.IsSignedIn
-End Function
+End Sub
 
 Function mpCreateRequest(sourceUrl As String, path As String, appendToken=true As Boolean, connectionUrl=invalid) As Object
     url = FullUrl(m.serverUrl, sourceUrl, path)
@@ -185,7 +223,7 @@ Sub mpDelete(id)
         Debug("Executing delete command: " + commandUrl)
         request = m.CreateRequest("", commandUrl)
         request.PostFromString("_method=DELETE")
-     end if
+    end if
 End Sub
 
 Function mpExecuteCommand(commandPath)
@@ -226,15 +264,3 @@ End Function
 Sub mpLog(msg="", level=3, timeout=0)
     ' Noop, only defined to implement PlexMediaServer "interface"
 End Sub
-
-Sub mpTimeline(item, state, time, isPlayed)
-    ' No timeline support at myPlex yet, so translate to progress and scrobble
-    if state = "playing" then
-        ' Send a progress event
-        m.SetProgress(item.ratingKey, item.mediaContainerIdentifier, time)
-    else if state = "stopped" AND isPlayed then
-        ' Send a scrobble
-        m.Scrobble(item.ratingKey, item.mediaContainerIdentifier)
-    end if
-End Sub
-

@@ -1,14 +1,14 @@
 title=APPTITLE
-version=2.6.8
+version=2.8.0
 major_version=2
-minor_version=6
-build_version=8
+minor_version=8
+build_version=1
 subtitle=The best personal and online content streaming app!
 description=Plex delivers the best video, music and photo streaming media experience that connects you to any online or personal content--including movies, TV shows, videos, music and photos.  Plex for Roku works with myPlex and the your personal Plex Media Server enabling Plex Channels, Social Sharing, and Queueing of content.
-mm_icon_focus_hd=pkg:/images/plex-logo-hd.jpg
-mm_icon_side_hd=pkg:/images/plex-logo-sd.jpg
-mm_icon_focus_sd=pkg:/images/plex-logo-hd.jpg
-mm_icon_side_sd=pkg:/images/plex-logo-sd.jpg
-splash_screen_hd=pkg:/images/Splash_HD.jpg
-splash_screen_sd=pkg:/images/Splash_SD43.jpg
+mm_icon_focus_hd=pkg:/images/plex-logo-hd.png
+mm_icon_side_hd=pkg:/images/plex-logo-sd.png
+mm_icon_focus_sd=pkg:/images/plex-logo-hd.png
+mm_icon_side_sd=pkg:/images/plex-logo-sd.png
+splash_screen_hd=pkg:/images/Splash_HD.png
+splash_screen_sd=pkg:/images/Splash_SD43.png
 

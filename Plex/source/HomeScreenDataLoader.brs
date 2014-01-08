@@ -7,8 +7,7 @@ Function createHomeScreenDataLoader(listener)
     initDataLoader(loader)
     imageDir = GetGlobalAA().Lookup("rf_theme_dir")
 
-    ' TODO(schuyler): This feels like cheating...
-    loader.ScreenID = -1
+    loader.ScreenID = listener.ScreenID
     loader.Listener = listener
     listener.Loader = loader
 
@@ -55,9 +54,7 @@ Function createHomeScreenDataLoader(listener)
     next
 
     ' Kick off myPlex requests if we're signed in.
-    myPlex = GetMyPlexManager()
-    myPlex.CheckAuthentication()
-    if myPlex.IsSignedIn then
+    if MyPlexManager().IsSignedIn then
         loader.CreateMyPlexRequests(false)
     end if
 
@@ -133,10 +130,6 @@ Function createHomeScreenDataLoader(listener)
 
     loader.OnTimerExpired = homeOnTimerExpired
 
-    ' As good a place as any, note that we've started
-    analytics = GetViewController().Analytics
-    analytics.OnStartup(myPlex.IsSignedIn)
-
     return loader
 End Function
 
@@ -195,12 +188,14 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
     if rowkey = invalid or rowkey = row then
         view = RegRead("row_visibility_ondeck", "preferences", "")
         if view <> "hidden" then
-            onDeck = CreateObject("roAssociativeArray")
-            onDeck.server = server
-            onDeck.key = "/library/onDeck"
-            onDeck.connectionUrl = connectionUrl
-            onDeck.requestType = "media"
-            m.AddOrStartRequest(onDeck, m.RowIndexes[row], startRequests)
+            if view <> "owned" or (view = "owned" and server.owned) then 
+                onDeck = CreateObject("roAssociativeArray")
+                onDeck.server = server
+                onDeck.key = "/library/onDeck"
+                onDeck.connectionUrl = connectionUrl
+                onDeck.requestType = "media"
+                m.AddOrStartRequest(onDeck, m.RowIndexes[row], startRequests)
+            end if
         else
             m.Listener.OnDataLoaded(m.RowIndexes[row], [], 0, 0, true)
         end if
@@ -213,12 +208,14 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
     if rowkey = invalid or rowkey = row then
         view = RegRead("row_visibility_recentlyadded", "preferences", "")
         if view <> "hidden" then
-            recents = CreateObject("roAssociativeArray")
-            recents.server = server
-            recents.key = "/library/recentlyAdded"
-            recents.connectionUrl = connectionUrl
-            recents.requestType = "media"
-            m.AddOrStartRequest(recents, m.RowIndexes[row], startRequests)
+            if view <> "owned" or (view = "owned" and server.owned) then 
+                recents = CreateObject("roAssociativeArray")
+                recents.server = server
+                recents.key = "/library/recentlyAdded"
+                recents.connectionUrl = connectionUrl
+                recents.requestType = "media"
+                m.AddOrStartRequest(recents, m.RowIndexes[row], startRequests)
+            end if
         else
             m.Listener.OnDataLoaded(m.RowIndexes[row], [], 0, 0, true)
         end if
@@ -288,7 +285,7 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
 End Sub
 
 Sub homeCreateMyPlexRequests(startRequests As Boolean)
-    myPlex = GetMyPlexManager()
+    myPlex = MyPlexManager()
 
     if NOT myPlex.IsSignedIn then return
 
@@ -306,7 +303,7 @@ Sub homeCreateMyPlexRequests(startRequests As Boolean)
 End Sub
 
 Sub homeCreateAllPlaylistRequests(startRequests As Boolean)
-    if NOT GetMyPlexManager().IsSignedIn then return
+    if NOT MyPlexManager().IsSignedIn then return
 
     m.CreatePlaylistRequests("queue", "All Queued Items", "All queued items, including already watched items", m.RowIndexes["queue"], startRequests)
     m.CreatePlaylistRequests("recommendations", "All Recommended Items", "All recommended items, including already watched items", m.RowIndexes["recommendations"], startRequests)
@@ -322,7 +319,7 @@ Sub homeCreatePlaylistRequests(name, title, description, row, startRequests)
 
     ' Unwatched recommended items
     currentItems = CreateObject("roAssociativeArray")
-    currentItems.server = GetMyPlexManager()
+    currentItems.server = MyPlexManager()
     currentItems.requestType = "playlist"
     currentItems.key = "/pms/playlists/" + name + "/" + view
 
@@ -399,7 +396,7 @@ Sub homeRemoveFromRowIf(row, predicate)
 End Sub
 
 Function homeLoadMoreContent(focusedIndex, extraRows=0)
-    myPlex = GetMyPlexManager()
+    myPlex = MyPlexManager()
     if m.FirstLoad then
         m.FirstLoad = false
         if NOT myPlex.IsSignedIn then
@@ -479,22 +476,15 @@ Function homeLoadMoreContent(focusedIndex, extraRows=0)
                 ' Slightly strange, GDM disabled but no servers configured
                 '
                 ' ljunkie - it happens if someone disconnects from myPlex
-                ' More oddness is due to the fact this will show empty rows
-                ' new Fix is to load the MISC row and hide the others
+                '  -- show a dialog explaining the issue
                 Debug("No servers, no GDM, and no myPlex...")
-                ShowHelpScreen(2)
+                ShowErrorDialog("Please enable ONE of the following" + chr(10) + " * Sign into myPlex " + chr(10) + " * Enable Server Discovery " + chr(10) + " * Add a server manually", "No Servers Found")
                 status.loadStatus = 2
                 m.Listener.OnDataLoaded(loadingRow, status.content, 0, status.content.Count(), true)
             end if
         else
-            ' ljunkie - no valid servers, no GDM and no myPlex - hide the non MISC rows
-            if RegRead("serverList", "servers") = invalid AND NOT myPlex.IsSignedIn then
-                print m.rownames[loadingRow] + " invalid with NO servers -- hide it"
-                m.Listener.Screen.SetListVisible(loadingRow, false)
-            else 
-                status.loadStatus = 2
-                m.Listener.OnDataLoaded(loadingRow, status.content, 0, status.content.Count(), true)
-            end if
+            status.loadStatus = 2
+            m.Listener.OnDataLoaded(loadingRow, status.content, 0, status.content.Count(), true)
         end if
     end if
 
@@ -624,7 +614,6 @@ Sub homeOnUrlEvent(msg, requestContext)
                 '    item.HDPosterURL = item.HDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
                 'end if
 
-                print item.HDPosterURL
                 content.Push(item)
                 countLoaded = countLoaded + 1
             end if
@@ -668,7 +657,7 @@ Sub homeOnUrlEvent(msg, requestContext)
 
                 ' if we fail to set the focus - we should just try and set sections and call it good
                 if GetGlobalAA().Lookup("first_focus_done") = invalid then 
-		    print "failed to find focused item - will focus at first item"
+		    Debug("failed to find focused item - will focus at first item")
                     GetGlobalAA().AddReplace("first_focus_done", true) ' set focus to true - we need to stop trying!
                 end if
 
@@ -788,7 +777,7 @@ Sub homeOnUrlEvent(msg, requestContext)
             server.IsSecondary = (xml@serverClass = "secondary")
             server.SupportsMultiuser = (xml@multiuser = "1")
             if server.AccessToken = invalid AND ServerVersionCompare(xml@version, [0, 9, 7, 15]) then
-                server.AccessToken = GetMyPlexManager().AuthToken
+                server.AccessToken = MyPlexManager().AuthToken
             end if
 
             PutPlexMediaServer(server)
@@ -864,7 +853,7 @@ Sub homeOnUrlEvent(msg, requestContext)
                     newServer.ServerUrl = addr
                 end if
 
-                newServer.AccessToken = firstOf(serverElem@accessToken, GetMyPlexManager().AuthToken)
+                newServer.AccessToken = firstOf(serverElem@accessToken, MyPlexManager().AuthToken)
                 newServer.synced = (serverElem@synced = "1")
 
                 if serverElem@owned = "1" then
@@ -930,13 +919,11 @@ End Function
 
 Sub homeRefreshData()
     ' Update the Now Playing item according to whether or not something is playing
-    audioPlayer = GetViewController().AudioPlayer
     miscContent = m.contentArray[m.RowIndexes["misc"]].content
-
-    if m.nowPlayingItem.CurIndex = invalid AND audioPlayer.ContextScreenID <> invalid then
+    if m.nowPlayingItem.CurIndex = invalid AND AudioPlayer().ContextScreenID <> invalid then
         m.nowPlayingItem.CurIndex = miscContent.Count()
         miscContent.Push(m.nowPlayingItem)
-    else if m.nowPlayingItem.CurIndex <> invalid AND audioPlayer.ContextScreenID = invalid then
+    else if m.nowPlayingItem.CurIndex <> invalid AND AudioPlayer().ContextScreenID = invalid then
         ' ljunkie curIndex could be wrong - we have added other dynamic content to this row
         ' although - this pretty much never happens ( ContextScreenID for audioPlayer being set to invalid )
         for index = 0 to miscContent.count()-1
@@ -1002,7 +989,9 @@ Sub homeRefreshData()
     m.contentArray[m.RowIndexes["recently_added"]].refreshContent = []
     m.contentArray[m.RowIndexes["recently_added"]].loadedServers.Clear()
 
-    for each server in GetOwnedPlexMediaServers()
+    ' this will allow us to refresh all content from all servers ( not just owned )
+    '  for now, this might only be useful to RARflix since OnDeck/RecentlyAdded are enabled for shared users
+    for each server in GetValidPlexMediaServers()
         m.CreateServerRequests(server, true, true)
     next
 
@@ -1013,7 +1002,7 @@ End Sub
 Sub homeOnMyPlexChange()
     Debug("myPlex status changed")
 
-    if GetMyPlexManager().IsSignedIn then
+    if MyPlexManager().IsSignedIn then
         m.CreateMyPlexRequests(true)
     else
         m.RemoveFromRowIf(m.RowIndexes["sections"], IsMyPlexServer)
@@ -1048,9 +1037,9 @@ Sub homeOnTimerExpired(timer)
 
         m.GdmTimer = invalid
 
-        if RegRead("serverList", "servers") = invalid AND NOT GetMyPlexManager().IsSignedIn then
+        if RegRead("serverList", "servers") = invalid AND NOT MyPlexManager().IsSignedIn then
             Debug("No servers and no myPlex, appears to be a first run")
-            ShowHelpScreen()
+            GetViewController().ShowHelpScreen(2)
             status = m.contentArray[m.RowIndexes["misc"]]
             status.loadStatus = 2
             m.Listener.OnDataLoaded(m.RowIndexes["misc"], status.content, 0, status.content.Count(), true)

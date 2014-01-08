@@ -79,7 +79,7 @@ Function photoHandleMessage(msg) As Boolean
                 else 
                     Debug("photoHandleMessage:: springboard Start slideshow with " + tostr(m.context.count()) + " items")
                     Debug("starting at index: " + tostr(m.curindex))
-                    m.ViewController.CreatePhotoPlayer(m.context, m.curIndex)
+                    m.ViewController.CreatePhotoPlayer(m.Context, m.CurIndex, true, m.IsShuffled)
                 end if
             else if buttonCommand = "next" then
                 Debug("photoHandleMessage:: show next photo")
@@ -133,11 +133,11 @@ Function photoDialogHandleButton(command, data) As Boolean
         return true
     else if command = "shuffle" then
         if obj.IsShuffled then
-            obj.Unshuffle(obj.Context)
+            obj.Unshuffle()
             obj.IsShuffled = false
             m.SetButton(command, "Shuffle: Off")
         else
-            obj.Shuffle(obj.Context)
+            obj.Shuffle()
             obj.IsShuffled = true
             m.SetButton(command, "Shuffle: On")
         end if

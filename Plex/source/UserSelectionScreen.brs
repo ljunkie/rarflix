@@ -182,6 +182,9 @@ Function userSelectionHandleMessage(msg) As Boolean
                     m.userSelected = -1 'disable selection
                 else if RegRead("securityPincode","preferences",invalid,m.userSelected) <> invalid then    'pop up PIN screen when user has a password
                     pinScreen = VerifySecurityPin(m.ViewController, RegRead("securityPincode","preferences",invalid,m.userSelected), false, 2)
+                    pinScreen.facade = CreateObject("roGridScreen")
+                    pinScreen.facade.Show()
+
                     m.ViewController.InitializeOtherScreen(pinScreen, ["Access to RARflix"])
                     m.Activate = userSelectionActivate
                     pinScreen.Show()
@@ -222,6 +225,8 @@ sub userSelectUser(userNumber as integer)
     RegSetUserPrefsToCurrentUser()
     initTheme() 're-read rarflix theme
     GetGlobalAA().ViewController.ShowSecurityScreen = false  
+    Debug("User selected -- reinit myPlexManager")
+    MyPlexManager(true)
 end sub
 
 'Sometimes we may need to check if multiUser is "still enabled"

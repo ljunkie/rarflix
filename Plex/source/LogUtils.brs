@@ -153,9 +153,7 @@ Function ProcessLogsRequest() As Boolean
 End Function
 
 Sub loggerEnablePapertrail(minutes=20, pms=invalid)
-    myPlex = GetGlobalAA().Lookup("myplex")
-    aa = GetGlobalAA()
-    if myPlex = invalid OR NOT myPlex.IsSignedIn then return
+    if NOT MyPlexManager().IsSignedIn then return
 
     ' Create the remote syslog socket
 
@@ -182,9 +180,10 @@ Sub loggerEnablePapertrail(minutes=20, pms=invalid)
     ' enabled, the logs will continue to be associated with the original
     ' account.
 
+    aa = GetGlobalAA()
     tag = aa.appName + "_" + aa.appVersionStr + "_" + aa.rokuUniqueID
 
-    m.SyslogHeader = "<135> " + tag + ": [" + myPlex.Username + "] "
+    m.SyslogHeader = "<135> " + tag + ": [" + MyPlexManager().Username + "] "
 
     ' Enable papertrail logging for the PMS, too.
     if pms <> invalid then

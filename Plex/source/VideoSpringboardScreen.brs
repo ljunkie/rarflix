@@ -235,7 +235,24 @@ Sub videoGetMediaDetails(content)
     if m.metadata.ContentType = "movie" AND RegRead("rf_rottentomatoes", "preferences", "enabled") = "enabled" then 
         if m.metadata.tomatoData = invalid then m.metadata.tomatoData = getRottenTomatoesData(m.metadata.RFSearchTitle) 
     end if
+
     m.media = m.metadata.preferredMediaItem
+
+    ' posterStyle: set episodes/clips to 16x9 -- the rest are still default ( auto size )
+    '  this is mainly for the mixed content springBoards ( global onDeck/recentlyAdded )
+    '  also useful for TV Episodes: they use screenshots - so thumbs are mixed 4x3 vs 16x9
+    '   we can utilize the m.media.aspectratio to determine if it's 4x3 or 16x9
+    posterStyle = "default" 
+    if tostr(m.metadata.contentType) = "episode" OR tostr(m.metadata.contentType) = "clip" then
+        posterStyle = "rounded-rect-16x9-generic"
+        ' we cannot assume the thumbnail is 4x3 even is the content seems to be ( I have run into 16x9 thumbs with 4x3 content -- how is the possible? )
+        ' ' only override back to default if we know it's 4x3
+        'if m.media <> invalid and type(m.media.aspectratio) = "roFloat" and m.media.aspectratio > 0 and m.media.aspectratio < 1.5 then
+        '    posterStyle = "default"
+        'end if            
+    end if
+    Debug("set posterstyle " + tostr(posterStyle))
+    m.Screen.SetPosterStyle(posterStyle)
 End Sub
 
 Function videoHandleMessage(msg) As Boolean
@@ -262,7 +279,7 @@ Function videoHandleMessage(msg) As Boolean
 
                 ' shuffle the context if shufflePlay enable - as of now the selected video will always play
                 if m.shuffleplay then 
-                    m.Shuffle(m.context)
+                    m.Shuffle() 'm.Shuffle(m.context)
                     m.metadata = m.context[0]
                 end if
                 
@@ -403,27 +420,25 @@ Function videoDialogHandleButton(command, data) As Boolean
     else if command = "fullGridScreen" then
         screen = m.viewcontroller.screens.peek().parentscreen
         if screen <> invalid then
-
-	    fscreen = m.viewcontroller.screens[0]
-            itype = "Full Grid"
-	    ' Get the Section we are in for the breadcrums - probably an easier way than this?
-	    if type(fscreen) = "roAssociativeArray" and type(fscreen.contentarray) = "roArray" and fscreen.selectedrow <> invalid and fscreen.focusedindex <> invalid then 
-                itype = fscreen.contentarray[fscreen.selectedrow][fscreen.focusedindex].title 
-            end if           
-
+            itype = invalid
             dummyItem = CreateObject("roAssociativeArray")
-            
+           
             ' home screen is special...
-            if m.parentscreen.screenid < 0 then 
-                for each r in screen.loader.rowindexes
-                    if screen.loader.rowindexes[r] = screen.selectedrow then
-                        dummyItem  = m.parentscreen.contentarray[m.parentscreen.selectedrow][m.parentscreen.focusedindex]                        
-                        dummyItem.key = r
-                        itype = "All Sections" 
+            vc = GetViewController()
+            if vc.Home <> invalid AND m.parentscreen.screenid = vc.Home.ScreenID then
+                for each key in screen.loader.rowindexes
+                    if screen.loader.rowindexes[key] = screen.selectedrow then
+                        dummyItem  = m.parentscreen.contentarray[m.parentscreen.selectedrow][m.parentscreen.focusedindex]
+                        dummyItem.key = key
+                        itype = "All Sections" 'breadcrumb
                         exit for
                     end if
                 end for  
             else
+                ' get the section type name we are in for breadcrumb
+                sec_metadata = getSectionType()
+                if sec_metadata.title <> invalid then itype = sec_metadata.title
+
                 dummyItem.server = screen.loader.server
                 dummyItem.sourceurl = screen.loader.sourceurl
                 dummyItem.key = screen.loader.contentarray[screen.selectedrow].key

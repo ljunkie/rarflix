@@ -81,8 +81,8 @@ Function createGridScreenForItem(item, viewController, style, SetDisplayMode = "
 
     ' Don't play theme music on top of grid screens on the older Roku models.
     ' It's not worth the DestroyAndRecreate headache.
-    if item.theme <> invalid AND GetGlobal("rokuVersionArr", [0])[0] >= 4 AND NOT obj.ViewController.AudioPlayer.IsPlaying AND RegRead("theme_music", "preferences", "loop") <> "disabled" then
-        obj.ViewController.AudioPlayer.PlayThemeMusic(item)
+    if item.theme <> invalid AND GetGlobal("rokuVersionArr", [0])[0] >= 4 AND NOT AudioPlayer().IsPlaying AND RegRead("theme_music", "preferences", "loop") <> "disabled" then
+        AudioPlayer().PlayThemeMusic(item)
         obj.Cleanup = baseStopAudioPlayer
     end if
 
@@ -133,27 +133,25 @@ Function showGridScreen() As Integer
     ' This was asked for, however I know people are goint to complain. This will most likely need to be a bit more complicated.
     ' As in, people are not going to want this to be GLOBAL, but set per section/full grid/or even some secific type. 
     ' I.E. don't show on firstCharacter, but show of On Deck
-    print "------------------- Description POP OUT disabled -- sec_metadata -- more info if we need to enable certain section/types --------------------------"
-    if m.ScreenID = -1 then 
+    Debug("------------------- Description POP OUT disabled -- sec_metadata -- more info if we need to enable certain section/types --------------------------")
+    vc = GetViewController()
+    if vc.Home <> invalid AND m.screenid = vc.Home.ScreenID then
         isType = "home"
-        print m
     else 
-        print m
-        sec_metadata = getSectionType(m)
-        print sec_metadata
+        sec_metadata = getSectionType()
         secTypes = ["photo","artist","movie","show"]
         isType = "other"
-        print "curType: " + tostr(sec_metadata.type)
+        Debug("curType: " + tostr(sec_metadata.type))
         for each st in secTypes
             if tostr(sec_metadata.type) = st then isType = st
         end for
-        print "isType: " + tostr(isType)
+        Debug("isType: " + tostr(isType))
     end if
 
     if RegRead("rf_grid_description_"+isType, "preferences", "enabled") <> "enabled" then
         m.screen.SetDescriptionVisible(false)
     end if
-    print "------------------------------------------------------- END ---------------------------------------------------------------------------------------"
+    Debug("------------------------------------------------------- END ---------------------------------------------------------------------------------------")
 
     m.Screen.Show()
     if facade <> invalid then facade.Close()
@@ -236,7 +234,7 @@ Function gridHandleMessage(msg) As Boolean
                         item.description = description
                         item.ExifLoaded = true
                         m.Screen.SetContentListSubset(m.selectedRow, m.contentArray[m.selectedRow], m.focusedIndex, 1)
-                        print item
+                        'print item
                     end if
                 end if
             end if
@@ -320,14 +318,13 @@ Function gridHandleMessage(msg) As Boolean
                 end if
             end if
         else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then ' ljunkie - use * for more options on focused item
-                print "----- * button pressed"
+                Debug("----- * button pressed")
                 context = m.contentArray[m.selectedRow]
                 item = context[m.focusedIndex]
                 
                 itype = item.contenttype
                 if itype = invalid then itype = item.type
 
-                audioplayer = GetViewController().AudioPlayer
                 isMovieTV = (itype = "movie"  or itype = "show" or itype = "episode" or itype = "season" or itype = "series")
                 sn = m.screenname
                 if tostr(itype) <> "invalid" and isMovieTV then 
@@ -338,11 +335,11 @@ Function gridHandleMessage(msg) As Boolean
                     rfVideoMoreButtonFromGrid(obj)
                 else if item <> invalid and tostr(item.contenttype) = "photo" then 
                     photoPlayerShowContextMenu(item,true)
-                else if tostr(item.contenttype) <> "invalid" and m.screenid > 0 then
+                else if tostr(item.contenttype) <> "invalid" and m.screenid > 0 and tostr(m.screenname) <> "Home" then
                     ' show the option to see the FULL grid screen. We might want this just to do directly to it, but what if we add more options later.
                     ' might as well get people used to this.
                     rfDialogGridScreen(m)
-                else if audioplayer.ContextScreenID = invalid then  ' only create this extra screen if audioPlayer doesn't have context
+                else if audioplayer().ContextScreenID = invalid then  ' only create this extra screen if audioPlayer doesn't have context
                     Debug("Info Button (*) not handled for content type: " +  tostr(item.type) + ":" + tostr(item.contenttype))
                     rfDefRemoteOptionButton(m)
                 else
@@ -352,8 +349,7 @@ Function gridHandleMessage(msg) As Boolean
             if msg.GetIndex() = 13 then
                 ' Playing Photos from a grid - we need all items
                 ' sometimes we don't know the item is photo ( appClips )            
-                sec_metadata = getSectionType(m)
-                ' old way -- didnt' work for appClips/subsections of photos if m.item <> invalid and m.item.type = "photo" and m.item.contenttype <> "section" then 
+                sec_metadata = getSectionType()
                 ' TODO fix playing from section -- TODO
                 if tostr(sec_metadata.type) = "photo" and m.item <> invalid and m.item.contenttype <> "section" then
                     Debug("Playing from GRID Screen - get context of ALL items in every row to play")
@@ -387,6 +383,24 @@ End Function
 
 Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count As Integer, finished As Boolean)
     Debug("Loaded " + tostr(count) + " elements in row " + tostr(row) + ", now have " + tostr(data.Count()))
+
+
+    ' ljunkie - exclude photo/music from the NowPlaying row (shared users) for now
+    '  -- further testing is needed to make this work ( it will be a wanted feature )
+    newData = []
+    if data.Count() > 0 then
+        re = CreateObject("roRegex", "/status/sessions", "i")
+        if tostr(data[0]) = "roAssociativeArray" and re.IsMatch(data[0].sourceurl) then 
+            for index = 0 to data.Count() - 1
+                if tostr(data[index].contenttype) = "audio" or tostr(data[index].contenttype) = "photo" then 
+                    Debug("---- skipping audio item in now playing row ( not supported yet ) ")
+                else 
+                    newData.push(data[index])
+                end if
+            end for
+            data = newData
+        end if
+    end if
 
     m.contentArray[row] = data
 

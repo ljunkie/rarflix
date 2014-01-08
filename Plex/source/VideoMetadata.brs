@@ -60,10 +60,24 @@ Function newVideoMetadata(container, item, detailed=false) As Object
     if video.ReleaseDate = invalid then video.ReleaseDate = item@year ' ljunkie - use the Year for an empty ReleaseDate
 
     length = item@duration
+
+    ' ljunkie - for some reason the PMS fails to return a duration sometimes ( flaky )
+    '  example found was for a TV Seasons Children 'library/metadata/252428/children'
+    '  while I was testing the PMS starte to all of a sudden return a valid duration
+    '  then a few minutes later (20) somes items didn't have a duration again... (we only care about library content)
+    if video.isLibraryContent and length = invalid and item@key <> invalid and container.server.serverurl <> invalid then 
+        Debug("--- length (duration) is invalid -- let's try the key directly")
+        newUrl = tostr(container.server.serverurl) + tostr(item@key)
+        if newUrl <> invalid and newUrl <> container.sourceurl then 
+            lcon = createPlexContainerForUrl(container.server, container.server.serverurl, item@key)
+            if lcon <> invalid and lcon.xml <> invalid and type(lcon.xml.Video) = "roXMLList" and lcon.xml.Video.Count() > 0 then length = lcon.xml.Video[0]@duration
+        end if
+    end if
+
     if length <> invalid then
         video.Length = int(val(length)/1000)
         video.RawLength = int(val(length))
-    endif
+    end if
 
     if container.ViewGroup = "Details" OR container.ViewGroup = "InfoList" then
         video.ShortDescriptionLine2 = item@summary
@@ -298,6 +312,9 @@ Sub setVideoBasics(video, container, item)
 
     video.guid = item@guid
     video.url = item@url
+
+    ' RARflixTools -- PosterTranscoder ( watched/progress indicators )
+    PosterIndicators(video)
 End Sub
 
 Function videoParseDetails()
@@ -663,7 +680,17 @@ Function newSeasonMetadata(container, item) As Object
 
     season = createBaseMetadata(container, item, thumb)
 
+    ' testing adding this info -- required if we want to scrobble 
+    ' not sure if this should jus be part of createBaseMetadata
+    season.mediaContainerIdentifier = container.xml@identifier
+    season.ratingKey = item@ratingKey
+    if season.ratingKey = invalid and container.xml@viewGroup = "season" then season.ratingKey = container.xml@key
+    'print season
+
     season.HasDetails = true
+
+    ' RARflixTools -- PosterTranscoder ( watched/progress indicators )
+    PosterIndicators(season)
 
     return season
 End Function
@@ -673,7 +700,6 @@ Function RewriteNodeKey(key)
     primaryServer = GetPrimaryServer()
     if Left(key, Len(nodePrefix)) = nodePrefix AND primaryServer <> invalid then
         key = primaryServer.serverUrl + Mid(key, Len(nodePrefix) + 1)
-        Debug("Rewrote node key to: " + key)
     end if
     return key
 End Function

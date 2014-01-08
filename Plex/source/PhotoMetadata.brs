@@ -124,7 +124,7 @@ function getExifData(metadata,compact = false) as dynamic
     if container <> invalid then
         container.getmetadata()
         ' only create dialog if metadata is available
-        if type(container.metadata) = "roArray" and type(container.metadata[0].media) = "roArray" then 
+        if type(container.metadata) = "roArray" and container.metadata.count() > 0 and type(container.metadata[0].media) = "roArray" and container.metadata[0].media.count() > 0 then 
             MediaInfo = container.metadata[0].media[0]
             desc = ""
             if compact then 

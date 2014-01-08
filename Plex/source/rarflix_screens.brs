@@ -82,7 +82,7 @@ End Function
 
 Function DisplayVideo(content As Object, waitDialog = invalid)
     ' Generic Video Display - no ties to Plex
-    m.ViewController.AudioPlayer.Stop() ' stop and cleanup any audioplayer
+    AudioPlayer().Stop() ' stop and cleanup any audioplayer
 
     p = CreateObject("roMessagePort")
     video = CreateObject("roVideoScreen")

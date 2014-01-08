@@ -61,15 +61,18 @@ Sub Main(args)
 
     ' restore the Audio if we set the global - and delete it. This is probably due to the exit confirmation
     ' this may need some more work. TODO once we have channel exit confirmation
-    if GetGlobalAA().Lookup("restoreAudio") <> invalid then 
-        resetPort = controller.audioPlayer.port
-        resetVC = controller.audioPlayer.viewcontroller
-        controller.audioPlayer = invalid
-        controller.audioPlayer = GetGlobalAA().Lookup("restoreAudio")
-        controller.audioPlayer.viewcontroller = resetVC
-        controller.audioPlayer.port =  resetPort
-        GetGlobalAA().Delete("restoreAudio")
-    end if
+
+    ' TODO -- AudioPlayer has been changed into a singleton.. this needs work now ( never was fully tested )
+    '    if GetGlobalAA().Lookup("restoreAudio") <> invalid then 
+    '        resetPort = audioPlayer().port
+    '        resetVC = audioPlayer().viewcontroller
+    '   * below is incorrect now * 
+    '        controller.audioPlayer = invalid
+    '        controller.audioPlayer = GetGlobalAA().Lookup("restoreAudio")
+    '        controller.audioPlayer.viewcontroller = resetVC
+    '        controller.audioPlayer.port =  resetPort
+    '        GetGlobalAA().Delete("restoreAudio")
+    '    end if
     controller.Show()
 End Sub
 
@@ -195,7 +198,7 @@ function getImageCanvasTheme()
         obj = {
             background : [{Color:"#363636", CompositionMode:"Source"}]    'Set opaque background to keep from flashing    '#363636
             backgroundItems : [ {url:GetGlobalAA().Lookup("rf_theme_dir")+ "Background_HD.jpg"}]
-            logoItems : [ {url:"pkg:/images/logo_final_HD.png", TargetRect:{ x:125,y:10 }} ]
+            logoItems : [ {url:"pkg:/images/logo_final_HD.png", TargetRect:{ x:70,y:10 }} ]
             breadCrumbs : [ {  Text:"", TargetRect:{x:640,y:10,w:520,h:89}  '16 pixel border on bottom of breadcrumb
                                TextAttrs:{Color:colors.colors.titleText, Font:"Medium",HAlign:"Right", VAlign:"Center",Direction:"LeftToRight"} } ]
         }
@@ -203,7 +206,7 @@ function getImageCanvasTheme()
         obj = {
             background : [{Color:"#363636", CompositionMode:"Source"}]    'Set opaque background to keep from flashing    '#363636
             backgroundItems : [ {url:GetGlobalAA().Lookup("rf_theme_dir")+ "Background_SD.jpg"}]
-            logoItems : [ {url:"pkg:/images/logo_final_SD.png", TargetRect:{ x:72,y:10 }} ]
+            logoItems : [ {url:"pkg:/images/logo_final_SD.png", TargetRect:{ x:42,y:10 }} ]
             breadCrumbs : [ {  Text:"", TargetRect:{x:360,y:10,w:260,h:56}  '16 pixel border on bottom of breadcrumb
                               TextAttrs:{Color:colors.colors.titleText, Font:"Medium",HAlign:"Right", VAlign:"Center",Direction:"LeftToRight"} } ]
         }
@@ -236,27 +239,31 @@ Sub initTheme()
     end if
     imageDir = GetGlobalAA().Lookup("rf_theme_dir")
 
-    theme.OverhangOffsetSD_X = "72"
+    theme.OverhangOffsetSD_X = "42"
     theme.OverhangOffsetSD_Y = "10"
+
+    theme.OverhangOffsetHD_X = "70"
+    theme.OverhangOffsetHD_Y = "10" ' plex as this set at 28?
+
+    theme.GridScreenLogoOffsetSD_X = "42"
+    theme.GridScreenLogoOffsetSD_Y = "27"
+
+    theme.GridScreenLogoOffsetHD_X = "70"
+    theme.GridScreenLogoOffsetHD_Y = "10" ' plex as this set at 28?
+
+    theme.OverhangLogoSD  = "pkg:/images/logo_final_SD.png"
     theme.OverhangSliceSD = imageDir + "Background_SD.jpg"
-    theme.OverhangLogoSD  = "pkg:/images/logo_final_SD.png" ' logo is transparent
 
-    theme.OverhangOffsetHD_X = "125"    'these settings are duplicated in getImageCanvasTheme() so keep them in sync with this
-    theme.OverhangOffsetHD_Y = "200"
+    theme.OverhangLogoHD  = "pkg:/images/logo_final_HD.png"
     theme.OverhangSliceHD = imageDir + "Background_HD.jpg"
-    theme.OverhangLogoHD  = "pkg:/images/logo_final_HD.png" ' logo is transparent
 
-    theme.GridScreenLogoOffsetHD_X = "125"
-    theme.GridScreenLogoOffsetHD_Y = "10"
-    theme.GridScreenOverhangSliceHD = imageDir + "Background_HD.jpg"
-    theme.GridScreenLogoHD  = "pkg:/images/logo_final_HD.png" ' logo is transparent
-    theme.GridScreenOverhangHeightHD = "99"
-
-    theme.GridScreenLogoOffsetSD_X = "72"
-    theme.GridScreenLogoOffsetSD_Y = "10"
     theme.GridScreenOverhangSliceSD = imageDir + "Background_SD.jpg"
-    theme.GridScreenLogoSD  = "pkg:/images/logo_final_SD.png" ' logo is transparent
+    theme.GridScreenLogoSD  = "pkg:/images/logo_final_SD.png"
     theme.GridScreenOverhangHeightSD = "66"
+
+    theme.GridScreenOverhangSliceHD = imageDir + "Background_HD.jpg"
+    theme.GridScreenLogoHD  = "pkg:/images/logo_final_HD.png"
+    theme.GridScreenOverhangHeightHD = "124"
 
     'these settings are duplicated in getImageCanvasTheme() so keep them in sync with this
     background = "#" + GetGlobalAA().Lookup("rfBGcolor")

@@ -35,6 +35,7 @@ function ClassReply()
         this.GENERATED   = 1
         this.FROMFILE    = 2
         this.CONCATFILES = 3
+        this.WAITING     = 4
         this.source      = 0
         ' members
         this.buf         = invalid
@@ -43,6 +44,7 @@ function ClassReply()
         this.request     = invalid
         this.id          = 0
         this.files       = invalid
+        this.headers     = invalid
         ' copy-initializable members
         this.start       = 0
         this.length      = 0
@@ -65,7 +67,10 @@ function ClassReply()
         this.genHdr    = reply_generate_header
         this.done      = reply_done
         this.doneHdr   = reply_done_header
+        this.isWaiting = reply_waiting
         this.log       = reply_log
+        this.simpleOK  = reply_simple_ok
+        this.preflight = reply_handle_cors_preflight
         ' html lines
         this.keepAlive = reply_keep_alive
         this.genBy     = reply_generated_by
@@ -89,6 +94,7 @@ end function
 function reply_init(request)
     m.buf = CreateObject("roByteArray")
     m.request = request
+    m.headers = CreateObject("roAssociativeArray")
 end function
 
 function reply_send(sock as Object, bufsize as Integer) as Integer
@@ -180,6 +186,12 @@ function reply_generate_header(close=false as Boolean)
     if code=206 then m.header = m.header + "Content-Range: bytes" + makeRange(m.start,m.length,m.filelength) + WinNL()
     m.header = m.header + "Content-Type: " + m.mimetype + WinNL()
     m.header = m.header + "Accept-Ranges: bytes" + WinNL()
+    if m.request.fields["Origin"] <> invalid then m.header = m.header + "Access-Control-Allow-Origin: *" + WinNL()
+
+    for each name in m.headers
+        m.header = m.header + name + ": " + m.headers[name] + WinNL()
+    next
+
     m.header = m.header + WinNL()
     m.header_length = m.header.len()
 end function
@@ -358,6 +370,10 @@ function reply_process()
         m.header_only = true
     end if
 
+    if method = "OPTIONS" then
+        return m.preflight()
+    end if
+
     ' See if we've registered a handler for this path
     path = UrlUnescape(m.request.uri)
     for each prefix in m.handlers
@@ -379,11 +395,15 @@ function reply_process()
 end function
 
 function reply_done() as Boolean
-    return m.sent=m.length
+    return m.sent=m.length AND NOT m.isWaiting()
 end function
 
 function reply_done_header() as Boolean
     return m.header_sent=m.header_length
+end function
+
+function reply_waiting() as Boolean
+    return m.source = m.WAITING
 end function
 
 function makeRange(start as Integer, length as Integer, total as Integer)
@@ -397,3 +417,29 @@ end function
 sub reply_add_handler(prefix as String, fn as Function)
     m.handlers[prefix] = fn
 end sub
+
+sub reply_simple_ok(body)
+    m.buf.fromasciistring(body)
+    m.length = m.buf.count()
+    if validint(m.http_code) = 0 then m.http_code = 200
+    m.source = m.GENERATED
+    m.genHdr(true)
+end sub
+
+function reply_handle_cors_preflight()
+    ' We'll be super permissive
+    m.headers["Access-Control-Allow-Methods"] = "POST, GET, OPTIONS, HEAD"
+    m.headers["Access-Control-Max-Age"] = "1209600"
+
+    if m.request.fields["Access-Control-Request-Headers"] <> invalid then
+        m.headers["Access-Control-Allow-Headers"] = m.request.fields["Access-Control-Request-Headers"]
+    end if
+
+    m.buf.fromasciistring("")
+    m.length = m.buf.count()
+    m.http_code = 200
+    m.genHdr(true)
+    m.source = m.GENERATED
+
+    return true
+end function
