@@ -233,37 +233,37 @@ Sub initTheme()
     if rfTheme = "black" then 
         GetGlobalAA().AddReplace("rf_theme_dir", "file://pkg:/images/black/")
         GetGlobalAA().AddReplace("rfBGcolor", "000000")
-        theme.OverhangOffsetSD_X = "72"
-        theme.OverhangOffsetSD_Y = "10"
     else 
         GetGlobalAA().AddReplace("rf_theme_dir", "file://pkg:/images/")
         GetGlobalAA().AddReplace("rfBGcolor", "363636")
-        theme.OverhangOffsetSD_X = "42"
-        theme.OverhangOffsetSD_Y = "27"
     end if
     imageDir = GetGlobalAA().Lookup("rf_theme_dir")
+
+    theme.OverhangOffsetSD_X = "42"
+    theme.OverhangOffsetSD_Y = "10"
+
+    theme.OverhangOffsetHD_X = "70"
+    theme.OverhangOffsetHD_Y = "10" ' plex as this set at 28?
+
+    theme.GridScreenLogoOffsetSD_X = "42"
+    theme.GridScreenLogoOffsetSD_Y = "27"
+
+    theme.GridScreenLogoOffsetHD_X = "70"
+    theme.GridScreenLogoOffsetHD_Y = "10" ' plex as this set at 28?
 
     theme.OverhangLogoSD  = "pkg:/images/logo_final_SD.png"
     theme.OverhangSliceSD = imageDir + "Background_SD.jpg"
 
-    theme.OverhangOffsetHD_X = "125"
-    theme.OverhangOffsetHD_Y = "10"
-
     theme.OverhangLogoHD  = "pkg:/images/logo_final_HD.png"
     theme.OverhangSliceHD = imageDir + "Background_HD.jpg"
 
-    theme.GridScreenLogoOffsetHD_X = "70"
-    theme.GridScreenLogoOffsetHD_Y = "28"
+    theme.GridScreenOverhangSliceSD = imageDir + "Background_SD.jpg"
+    theme.GridScreenLogoSD  = "pkg:/images/logo_final_SD.png"
+    theme.GridScreenOverhangHeightSD = "66"
 
     theme.GridScreenOverhangSliceHD = imageDir + "Background_HD.jpg"
     theme.GridScreenLogoHD  = "pkg:/images/logo_final_HD.png"
     theme.GridScreenOverhangHeightHD = "124"
-
-    theme.GridScreenLogoOffsetSD_X = "42"
-    theme.GridScreenLogoOffsetSD_Y = "27"
-    theme.GridScreenOverhangSliceSD = imageDir + "Background_SD.jpg"
-    theme.GridScreenLogoSD  = "pkg:/images/logo_final_SD.png"
-    theme.GridScreenOverhangHeightSD = "66"
 
     'these settings are duplicated in getImageCanvasTheme() so keep them in sync with this
     background = "#" + GetGlobalAA().Lookup("rfBGcolor")
