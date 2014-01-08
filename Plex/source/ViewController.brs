@@ -834,8 +834,10 @@ End Sub
 Sub vcShowReleaseNotes(options = invalid)
     if options <> invalid then 
         header = GetGlobal("appName") + " v" + GetGlobal("appVersionStr")
+	where = "About"
     else 
         header = GetGlobal("appName") + " updated to v" + GetGlobal("appVersionStr")
+	where = "Release Notes"
     end if
     paragraphs = []
     breadcrumbs = invalid
@@ -850,24 +852,46 @@ Sub vcShowReleaseNotes(options = invalid)
 
     if NOT textScreen then 
             paragraphs.Push("Donate @ rarflix.com")
-            paragraphs.Push(spacer + "* Many bug fixes and improvements")
-            paragraphs.Push(spacer + "* Speed improvements: Rotten Tomatoes and Grid")
-            paragraphs.Push(spacer + "* Focus border fits the Posters (better)")
-            paragraphs.Push(spacer + "* Use TV Season poster for Episodes/Seasons on Grid")
-'            paragraphs.Push(spacer + "* Toggle to change Grid Style/Size for Photos Section")
-'            paragraphs.Push(spacer + "* Idle Lock Screen when using PIN codes")
-'            paragraphs.Push(spacer + "* Grid Pop Out can be disabled per library section")
-'            paragraphs.Push(spacer + "* First Movie Trailer will auto play when selected")
-            paragraphs.Push(spacer + "* 3 New TV Rows/Grid options ( re-order rows to use them )")
-            paragraphs.Push(spacer + "* Shuffle Play for Video (experimental)")
-            paragraphs.Push("+ Profiles, Pin Codes, and many more! http://www.rarflix.com")
+            paragraphs.Push(" * Plex Companion (remote/navigation control)")
+            paragraphs.Push(" * Dynamic Watched Status Overlay")
+            paragraphs.Push(spacer+"- check mark for watched items")
+            paragraphs.Push(spacer+"- percentage for partially watched items")
+            paragraphs.Push(" * Mark TV Shows as Watched/Unwatched (remote * key)")
+            paragraphs.Push(spacer+"- Mark an Entire Season or Show")
+            paragraphs.Push(" * bugfixes")
+            paragraphs.Push("+ Profiles, Pin Codes, Trailers, and much more! http://www.rarflix.com")
     else 
         ' We have a scrollable text screen now - we can include all the updates - yay
         us = "_______________"
         paragraphs.Push("                 Donations accepted at http://www.rarflix.com")
         paragraphs.Push("  ")
-        paragraphs.Push(GetGlobal("appName") + " has been updated. You can click down to read about all"+chr(10)+" the changes, or click BACK on the remote to start using " + GetGlobal("appName") + "!" )
+        paragraphs.Push("   " + header + ". Here are the major changes since v3.0.0.")
         paragraphs.Push("  ")
+
+        paragraphs.Push("     * Plex Companion support (remote/navigation control)")
+        paragraphs.Push("      ")
+        paragraphs.Push("     * Dynamic Watched Status Overlay")
+        paragraphs.Push("         - check mark on watched items")
+        paragraphs.Push("         - percentage on partially watched items")
+        paragraphs.Push("      ")
+        paragraphs.Push("     * Mark TV Shows as Watched/Unwatched (remote * key)")
+        paragraphs.Push("         - Mark an Entire Season or Show and not just an episode")
+        paragraphs.Push("      ")
+        paragraphs.Push("     * bugfixes")
+        paragraphs.Push("      ")
+
+        paragraphs.Push("Click down to see all changes since v3.0.0 or click BACK to start using " + GetGlobal("appName") + "!" )
+        paragraphs.Push("  ")
+        paragraphs.Push("  ")
+        paragraphs.Push("  ")
+        paragraphs.Push(us+"v3.0.18 (2014-01-08)"+us)
+        paragraphs.Push("  ")
+        paragraphs.Push(" * hide the Now Playing button when we just started the AudioPlayer")
+        paragraphs.Push(" * Now Playing Audio Screen refresh ( plex companion )")
+        paragraphs.Push(" * fixes display bug when audio loops")
+        paragraphs.Push(" * regression - caused a potential slow down accessing channels (teamcoco)")
+        paragraphs.Push("  ")
+
         paragraphs.Push("  ")
         paragraphs.Push(us+"v3.0.17 (2014-01-04)"+us)
         paragraphs.Push("  ")
@@ -1108,11 +1132,12 @@ Sub vcShowReleaseNotes(options = invalid)
 
     if NOT textScreen then 
         screen = createParagraphScreen(header, paragraphs, m)
-        screen.SetTitle = "Release Notes"
+        screen.SetTitle = where
+        breadcrumbs =  ["",where + " v"+GetGlobal("appVersionStr")]
     else 
         screen = createTextScreen(header + " - www.rarflix.com", invalid , paragraphs, m, true)
         screen.screen.AddButton(1, "Press OK or Back to Continue")
-        breadcrumbs =  ["Release Notes","v"+GetGlobal("appVersionStr")]
+        breadcrumbs =  [where,"v"+GetGlobal("appVersionStr")]
     end if
 
     screen.screenName = "Release Notes"

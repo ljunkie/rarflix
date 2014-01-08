@@ -1,5 +1,15 @@
 #3.1.0 (2014-01-08)
     * merger of RARflixText & RARflix
+    * Plex Companion (remote/navigation control)
+    * Dynamic Watched Status Overlay
+        - check mark for watched items
+        - percentage for partially watched items
+    * Marking TV Shows as Watched/Unwatched (* remote key)
+        - Mark an Entire Season
+        - Mark an Entire Show
+    * bugfixes
+
+#3.0.18-internal (2014-01-08)
     * hide the Now Playing button when we just started the AudioPlayer ( we are technically in the now playing context )
     * Now Playing Audio Screen did not refresh properly when stopping music remotely ( companion controls )
     * fixes bug when audio loops ( tracks do not update properly ) https://github.com/ljunkie/rarflix/issues/158
