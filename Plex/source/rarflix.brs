@@ -793,12 +793,15 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
         else 
            Debug("---- Cast and Crew are not available for " + tostr(obj.metadata.ContentType))
         end if
+
     end if
 
     ' these are on the main details screen -- show them last ( maybe not at all )
     if obj.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
         dialog.SetButton("getTrailers", "Trailer")
     end if
+
+    if supportsTextScreen() and obj.metadata.UMdescription <> invalid and len(obj.metadata.UMdescription) > 10 then dialog.SetButton("RFVideoDescription", "Description")
 
     ' set this to last -- unless someone complains
     if supportedIdentifier then
@@ -982,14 +985,17 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
             end if
         end if
 
+    end if
+
+    if supportsTextScreen() and obj.metadata.UMdescription <> invalid and len(obj.metadata.UMdescription) > 10 then dialog.SetButton("RFVideoDescription", "Description")
+
+    ' set this to last -- unless someone complains
+    if supportedIdentifier then
         if obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "episode" or obj.metadata.ContentType = "show"  then
             if obj.Item.StarRating = invalid then obj.Item.StarRating = 0
             if obj.Item.origStarRating = invalid then obj.Item.origStarRating = 0
             dialog.SetButton("rate", "_rate_")
         end if
-
-        ' should we allow the delete from here?
-
     end if
 
     dialog.SetButton("close", "Back")
@@ -1667,3 +1673,12 @@ function buildPosterIndicatorUrl(baseUrl, thumbUrl, progress, watched) as string
 
     return newThumb
 end function
+
+function supportsTextScreen() as boolean
+    major = GetGlobalAA().Lookup("rokuVersionArr")[0]
+    minor = GetGlobalAA().Lookup("rokuVersionArr")[1]
+    textScreen = false
+    if (major > 4) or (major = 4 and minor > 2) then textScreen = true
+    return textScreen
+end function
+

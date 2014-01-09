@@ -127,6 +127,7 @@ Sub setMetaBasics(meta, container, item)
     ' There is a *massive* performance problem on grid views if the description
     ' isn't truncated.
     meta.Description = truncateString(item@summary, 250, invalid)
+    meta.UMDescription = item@summary ' un-modified summary
     meta.ShortDescriptionLine1 = meta.Title
     meta.ShortDescriptionLine2 = truncateString(item@summary, 250, invalid)
     meta.Type = item@type

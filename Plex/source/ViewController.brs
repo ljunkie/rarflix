@@ -842,11 +842,7 @@ Sub vcShowReleaseNotes(options = invalid)
     paragraphs = []
     breadcrumbs = invalid
 
-    ' roTextScreen was introduced via firmware 4.3+
-    major = GetGlobalAA().Lookup("rokuVersionArr")[0]
-    minor = GetGlobalAA().Lookup("rokuVersionArr")[1]
-    textScreen = false
-    if (major > 4) or (major = 4 and minor > 2) then textScreen = true
+    textScreen = supportsTextScreen()
 
     spacer = chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)
 

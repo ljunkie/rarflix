@@ -488,6 +488,29 @@ Function videoDialogHandleButton(command, data) As Boolean
         if screen <> invalid then  screen.Show()
         dialog.Close()
         closeDialog = true
+    else if command = "RFVideoDescription" then
+
+        ' A TextScreen seems a little too much for this.. a description (should) fit it a dialog all by iteself 
+        ' maybe show the text screen if the len(obj.metadata.UMdescription) > ??
+        'paragraphs = []
+        'paragraphs.Push(obj.metadata.UMdescription)
+        'screen = createTextScreen("Description", invalid , paragraphs, m.ViewController, true)
+        'screen.screen.AddButton(1, "Done")
+        'breadcrumbs =  [obj.metadata.title,"Description"]
+        'screen.screenName = "Video Description"
+        'm.ViewController.InitializeOtherScreen(screen, breadcrumbs)
+        'screen.Show()
+
+        dialog = createBaseDialog()
+        dialog.Title = obj.metadata.title
+        dialog.Text = obj.metadata.UMdescription
+        dialog.Item = m.metadata
+        dialog.SetButton("close", "Close") ' back seems odd because we came from a dialog ( one might get confused )
+        dialog.HandleButton = videoDialogHandleButton
+        dialog.ParentScreen = m
+        dialog.Show(true)
+
+        closeDialog = true
     else if command = "scrobble" then
         obj.metadata.server.Scrobble(obj.metadata.ratingKey, obj.metadata.mediaContainerIdentifier)
         obj.Refresh(true)
