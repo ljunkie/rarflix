@@ -112,7 +112,7 @@ function getCastAndCrew(item as object, key = invalid) as object
         next
     
         for each Producer in castxml.Producer
-            CastCrewList.Push({ name: Producer@tag, id: Producer@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "producer" })
+            CastCrewList.Push({ name: Producer@tag, id: Producer@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Producer" })
         next
     
         for each Writer in castxml.Writer
@@ -174,9 +174,17 @@ Function getPostersForCastCrew(item As Object) As Object
             end if
         end for
 
+
+        ' Lets set the second line to the cast member type
+        ' If the cast member has a Role attribute, then we will
+        ' override the cast member type with the Role
+        ' - sometimes the Role name is also the cast members name ( exclude those )
+	DescriptionLine2 = i.itemtype
+        if i.role <> invalid and i.role <> "" and i.role <> i.name then DescriptionLine2 = i.role
+        
         values = {
             ShortDescriptionLine1:i.name,
-            ShortDescriptionLine2: i.itemtype,
+            ShortDescriptionLine2: DescriptionLine2,
             SDPosterUrl:i.imageSD,
             HDPosterUrl:i.imageHD,
             itemtype: lcase(i.itemtype),
