@@ -156,6 +156,9 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
    if not refreshRequest then
         PutPlexMediaServer(server)
 
+        ' Send a WOL Packet
+        server.sendWOL()
+        
         ' Request server details (ensure we have a machine ID, check transcoding
         ' support, etc.)
         httpRequest = server.CreateRequest("", "/", true, connectionUrl)
