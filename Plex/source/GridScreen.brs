@@ -118,6 +118,12 @@ Function showGridScreen() As Integer
     m.Screen.SetupLists(names.Count())
     m.Screen.SetListNames(names)
 
+    ' set the poster style for each row if we are in "mixed-aspect-ratio"
+    if m.gridStyle = "mixed-aspect-ratio" and m.loader <> invalid and m.loader.MixedAspectRows <> invalid then 
+        listStyles = m.loader.MixedAspectRows
+        m.screen.SetListPosterStyles(listStyles)
+    end if
+
     ' If we already "loaded" an empty row, we need to set the list visibility now
     ' that we've setup the lists.
     for row = 0 to names.Count() - 1
@@ -538,6 +544,10 @@ Sub setGridTheme(style as String)
         app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-movie-sd.png")
         ' the BoB is too short for this screen.. nice going roku
         app.SetThemeAttribute("GridScreenDescriptionImageHD", "pkg:/images/grid/hd-description-background-portrait.png")
+    else if style = "mixed-aspect-ratio" then
+        app.SetThemeAttribute("GridScreenFocusBorderHD", imageDir + "border-mixed-hd.png")
+        ' need to fix this size! TODO - new image (border-mixed-sd.png) needed
+        app.SetThemeAttribute("GridScreenFocusBorderSD", imageDir + "border-movie-sd.png")
     end if
 End Sub
 

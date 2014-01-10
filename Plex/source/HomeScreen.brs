@@ -6,7 +6,9 @@
 Function createHomeScreen(viewController) As Object
     ' At the end of the day, the home screen is just a grid with a custom loader.
     ' So create a regular grid screen and override/extend as necessary.
-    obj = createGridScreen(viewController, "flat-square", "stop")
+'    style = "flat-square"
+    style = "mixed-aspect-ratio"
+    obj = createGridScreen(viewController, style, "stop")
 
     ' ljunkie - adding this comment for others if they think it's a good idea 
     ' to change the DisplayMode sway from "photo-fit" on 7x3 rows

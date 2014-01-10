@@ -37,20 +37,23 @@ Function createHomeScreenDataLoader(listener)
     loader.FirstServer = true
 
     rows = [
-        { title: "Channels", key: "channels" },
-        { title: "Library Sections", key: "sections" },
-        { title: "On Deck", key: "on_deck" },
-        { title: "Now Playing", key: "now_playing" },
-        { title: "Recently Added", key: "recently_added" },
-        { title: "Queue", key: "queue" },
-        { title: "Recommendations", key: "recommendations" },
-        { title: "Shared Library Sections", key: "shared_sections" },
-        { title: "Miscellaneous", key: "misc" }
+        { title: "Channels", key: "channels", aspect: "square" },
+        { title: "Library Sections", key: "sections", aspect: "landscape" },
+        { title: "On Deck", key: "on_deck", aspect: "portrait" },
+        { title: "Now Playing", key: "now_playing", aspect: "portrait" },
+        { title: "Recently Added", key: "recently_added", aspect: "portrait" },
+        { title: "Queue", key: "queue", aspect: "landscape" },
+        { title: "Recommendations", key: "recommendations", aspect: "landscape" },
+        { title: "Shared Library Sections", key: "shared_sections", aspect: "portrait" },
+        { title: "Miscellaneous", key: "misc", aspect: "landscape" }
     ]
     ReorderItemsByKeyPriority(rows, RegRead("home_row_order", "preferences", ""))
 
+    ' Create Rows and include the rows aspect for later 
+    loader.MixedAspectRows = []
     for each row in rows
         loader.RowIndexes[row.key] = loader.CreateRow(row.title)
+        if row.aspect <> invalid then loader.MixedAspectRows.Push(row.aspect)
     next
 
     ' Kick off myPlex requests if we're signed in.
