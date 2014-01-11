@@ -1,3 +1,12 @@
+#3.1.1 (2014-01-11)
+    * screen saver image fixes (initial fix)
+        - images seems to only be saved in a springBoard (preplay screens)
+        - now we save whenever we focus on an image (gridscreen or posters)
+          note: there may be other screens that need to save images.. todo later
+    * focus on last used section when starting - broke due to merger of official channel
+    * add a Description button to the Dialog Pop up to show the non truncated description
+    * include the ROLE of the cast member to the Cast & Crew screen
+
 #3.1.0 (2014-01-08)
     * merger of RARflixText & RARflix
     * Plex Companion (remote/navigation control)
