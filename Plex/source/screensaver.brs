@@ -87,12 +87,35 @@ Sub SaveImagesForScreenSaver(item, sizes)
         token = ""
     end if
 
+    ' ljunkie - override the item size for the screen saver. We don't want too large or too small
+    if item <> invalid then 
+        regW = CreateObject("roRegex", "width=\d+", "i"):regH = CreateObject("roRegex", "height=\d+", "i")
+        hasToken = CreateObject("roRegex", "X-Plex-Token=\w+", "i")
+
+        thumbUrlHD = item.HDPosterURL:thumbUrlSD = item.SDPosterURL
+
+        if thumbUrlHD <> invalid then 
+            thumbUrlHD = regW.Replace(thumbUrlHD, "width=300"):thumbUrlHD = regH.Replace(thumbUrlHD, "height=300")
+            ' RARflix normally includes the PlexToken on any posterUrl - so appending the token shouldn't be required
+            if NOT hasToken.IsMatch(thumbUrlHD) then thumbUrlHD = thumbUrlHD + token
+        end if
+
+        if thumbUrlSD <> invalid then 
+            thumbUrlSD = regH.Replace(thumbUrlSD, "height=300"):thumbUrlSD = regW.Replace(thumbUrlSD, "width=300")
+            ' RARflix normally includes the PlexToken on any posterUrl - so appending the token shouldn't be required
+            if NOT hasToken.IsMatch(thumbUrlSD) then thumbUrlSD = thumbUrlSD + token
+        end if
+
+    end if
+
     if item = invalid then
         WriteFileHelper("tmp:/plex_screensaver", invalid, invalid, invalid)
-    else if GetGlobal("IsHD") then
-        WriteFileHelper("tmp:/plex_screensaver", item.HDPosterURL + token, sizes.hdWidth, sizes.hdHeight)
-    else
-        WriteFileHelper("tmp:/plex_screensaver", item.SDPosterURL + token, sizes.sdWidth, sizes.sdHeight)
+    else if GetGlobal("IsHD") and thumbUrlHD <> invalid then
+        WriteFileHelper("tmp:/plex_screensaver", thumbUrlHD, "300", "300")
+    else if thumbUrlSD <> invalid then 
+        WriteFileHelper("tmp:/plex_screensaver", thumbUrlSD, "300", "300")
+    else 
+        WriteFileHelper("tmp:/plex_screensaver", invalid, invalid, invalid)
     end if
 End Sub
 

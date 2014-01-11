@@ -176,6 +176,15 @@ Function posterHandleMessage(msg) As Boolean
                 m.Screen.SetContentList(status.content)
                 status.lastUpdatedSize = status.content.Count()
             end if
+
+            ' ljunkie - save any focused item for the screen saver
+            item = m.contentArray[m.focusedList].content[m.contentArray[m.focusedList].focusedindex]
+            print item
+            if item <> invalid and item.SDPosterURL <> invalid and item.HDPosterURL <> invalid then
+                SaveImagesForScreenSaver(item, ImageSizes(item.ViewGroup, item.Type))
+            end if
+
+
         else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then ' ljunkie - use * for more options on focused item
             content = m.contentArray[m.focusedList].content[m.contentArray[m.focusedList].focusedindex]
             itype = content.type

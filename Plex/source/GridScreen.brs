@@ -225,7 +225,8 @@ Function gridHandleMessage(msg) As Boolean
             m.selectedRow = msg.GetIndex()
             m.focusedIndex = msg.GetData()
 
-            if m.screenid <> invalid and m.screenid > 0 and m.contentArray <> invalid and type(m.contentArray[m.selectedRow]) = "roArray" then 
+            vc = GetViewController()
+            if vc.Home <> invalid AND m.screenid <> vc.Home.ScreenID and m.contentArray <> invalid and type(m.contentArray[m.selectedRow]) = "roArray" then 
                 item = m.contentArray[m.selectedRow][m.focusedIndex]
        
                 if item <> invalid and tostr(item.type) = "photo" and tostr(item.nodename) <> "Directory" and item.ExifLoaded = invalid then 
@@ -239,7 +240,7 @@ Function gridHandleMessage(msg) As Boolean
                 end if
             end if
  
-            if m.screenid <> invalid and m.screenid < 0 and m.contentArray <> invalid and type(m.contentArray[m.selectedRow]) = "roArray" then 
+            if vc.Home <> invalid AND m.screenid = vc.Home.ScreenID and m.contentArray <> invalid and type(m.contentArray[m.selectedRow]) = "roArray" then 
                 item = m.contentArray[m.selectedRow][m.focusedIndex]
                 if type(item) = "roAssociativeArray" and item.contenttype <> invalid and item.contenttype = "section" then 
                     RegWrite("lastMachineID", item.server.machineID, "userinfo")
@@ -253,6 +254,11 @@ Function gridHandleMessage(msg) As Boolean
                 end if 
             end if
 
+            ' ljunkie - save any focused item for the screen saver
+            print item
+            if item <> invalid and item.SDPosterURL <> invalid and item.HDPosterURL <> invalid then
+                SaveImagesForScreenSaver(item, ImageSizes(item.ViewGroup, item.Type))
+            end if
 
             if m.ignoreNextFocus then
                 m.ignoreNextFocus = false

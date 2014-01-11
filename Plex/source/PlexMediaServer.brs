@@ -196,6 +196,8 @@ Function xmlContent(sourceUrl, key) As Object
 
         xmlResult.xml = xml
         xmlResult.sourceUrl = httpRequest.GetUrl()
+
+        Debug("Finished - Fetching content from server at query URL: " + tostr(httpRequest.GetUrl()))
     endif
     return xmlResult
 End Function
