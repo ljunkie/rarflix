@@ -1,6 +1,6 @@
 #3.1.1 (2014-01-11)
     * screen saver image fixes (initial fix)
-        - images seems to only be saved in a springBoard (preplay screens)
+        - images seem to only be saved in a springBoard (preplay screens)
         - now we save whenever we focus on an image (gridscreen or posters)
           note: there may be other screens that need to save images.. todo later
     * focus on last used section when starting - broke due to merger of official channel
