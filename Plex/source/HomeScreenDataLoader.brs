@@ -44,7 +44,7 @@ Function createHomeScreenDataLoader(listener)
         { title: "Recently Added", key: "recently_added", aspect: "portrait" },
         { title: "Queue", key: "queue", aspect: "landscape" },
         { title: "Recommendations", key: "recommendations", aspect: "landscape" },
-        { title: "Shared Library Sections", key: "shared_sections", aspect: "portrait" },
+        { title: "Shared Library Sections", key: "shared_sections", aspect: "landscape" },
         { title: "Miscellaneous", key: "misc", aspect: "landscape" }
     ]
     ReorderItemsByKeyPriority(rows, RegRead("home_row_order", "preferences", ""))
