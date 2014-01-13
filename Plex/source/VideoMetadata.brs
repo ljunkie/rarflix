@@ -188,7 +188,7 @@ Sub setVideoBasics(video, container, item)
         end if
 
         'ljunkie - exclude episode number to display images on a poster screen
-        if RegRead("rf_episode_episodic_thumbnail", "preferences","disabled") = "enabled" then video.EpisodeNumber = invalid
+        if RegRead("rf_episode_episodic_thumbnail", "preferences","enabled") = "enabled" then video.EpisodeNumber = invalid
 
         parentIndex = firstOf(item@parentIndex, container.xml@parentIndex)
         if parentIndex <> invalid then

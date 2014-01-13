@@ -99,8 +99,11 @@ Sub InitRARflix()
         if GetGlobal("IsHD") = true then RegWrite("rf_grid_style", "flat-portrait", "preferences")
         RegWrite("rf_poster_displaymode", "scale-to-fit", "preferences")
         RegWrite("rf_grid_displaymode", "photo-fit", "preferences")
-        RegWrite("rf_episode_episodic_thumbnail", "enabled", "preferences")
+        'RegWrite("rf_episode_episodic_thumbnail", "enabled", "preferences") - default as of v3.1.2
     end if
+
+    ' v3.1.2 - forces everyone to use images for the episodic view ( TV shows only )
+    if RegRead("rf_episode_episodic_thumbnail", "preferences","enabled") <> "enabled" then RegWrite("rf_episode_episodic_thumbnail", "enabled", "preferences")
 
     ' cleaning up some options -- these *should* not need a toggle anymore
     '   I.E. we changed ways the Official channel works, but don't need to toggle to go back to the Official way

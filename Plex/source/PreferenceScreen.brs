@@ -1911,16 +1911,18 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
         default: "flat-episodic-16x9"
     }
 
-    ' Episodic Poster Screen: show Numbers or Images
-    values = [
-        { title: "Image", EnumValue: "enabled" },
-        { title: "Number", EnumValue: "disabled" }
-    ]
-    obj.Prefs["rf_episode_episodic_thumbnail"] = {
-        values: values,
-        heading: "Show episode preview image or episode number",
-        default: "disabled"
-    }
+' -- forcing the view of images instead of a blank image with a number
+' -- deprecated as of v3.1.2
+'    ' Episodic Poster Screen: show Numbers or Images
+'    values = [
+'        { title: "Image", EnumValue: "enabled" },
+'        { title: "Number", EnumValue: "disabled" }
+'    ]
+'    obj.Prefs["rf_episode_episodic_thumbnail"] = {
+'        values: values,
+'        heading: "Show episode preview image or episode number",
+'        default: "disabled"
+'    }
 
     ' Prefer Grid or Poster view for most?
     rf_poster_grid = [
@@ -2035,7 +2037,8 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
     obj.AddItem({title: "Reorder Rows"}, "section_row_order")
     obj.AddItem({title: "TV Series"}, "use_grid_for_series", obj.GetEnumValue("use_grid_for_series"))
     obj.AddItem({title: "TV Episode Size"}, "rf_episode_episodic_style", obj.GetEnumValue("rf_episode_episodic_style"))
-    obj.AddItem({title: "TV Episode Image"}, "rf_episode_episodic_thumbnail", obj.GetEnumValue("rf_episode_episodic_thumbnail"))
+' deprecated as of v3.1.2
+'    obj.AddItem({title: "TV Episode Image"}, "rf_episode_episodic_thumbnail", obj.GetEnumValue("rf_episode_episodic_thumbnail"))
     obj.AddItem({title: "Movie & Others", ShortDescriptionLine2: "Posters or Grid"}, "rf_poster_grid", obj.GetEnumValue("rf_poster_grid"))
     obj.AddItem({title: "Grid Style/Size", ShortDescriptionLine2: "Size of Grid"}, "rf_grid_style", obj.GetEnumValue("rf_grid_style"))
     obj.AddItem({title: "Grid Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_grid_displaymode", obj.GetEnumValue("rf_grid_displaymode"))
@@ -2058,7 +2061,7 @@ Function prefsSectionDisplayHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "use_grid_for_series" or command = "rf_poster_grid" or command = "rf_grid_style" or command = "rf_grid_displaymode" or command = "rf_poster_displaymode" or command = "rf_fullgrid_hidetext" or command = "rf_episode_episodic_style" or command = "rf_episode_episodic_thumbnail" then 
+            if command = "use_grid_for_series" or command = "rf_poster_grid" or command = "rf_grid_style" or command = "rf_grid_displaymode" or command = "rf_poster_displaymode" or command = "rf_fullgrid_hidetext" or command = "rf_episode_episodic_style" then 
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "rf_grid_description" then
                 screen = createGridDescriptionPrefsScreen(m.ViewController)
