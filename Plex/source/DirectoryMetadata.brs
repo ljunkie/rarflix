@@ -13,7 +13,8 @@ Function newDirectoryMetadata(container, item) As Object
         directory.Description = ""
         if container.xml@grandparentTitle <> invalid then directory.Description = container.xml@grandparentTitle + "/"
         directory.Description = directory.Description + firstof( container.xml@title2, container.xml@parentTitle, "") + "/" + directory.Title
-        directory.Title = "Dir: " + directory.Title
+        ' - removing "Dur:" - photos now have metadata in the descriptions, so it's easier to deciper dir from photo
+        'directory.Title = "Dir: " + directory.Title
     else if directory.ContentType = invalid then
         directory.ContentType = "appClip"
     endif
