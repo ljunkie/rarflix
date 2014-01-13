@@ -238,7 +238,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     ' breadcrumbs for Full Grid.. when we have "1-4 of 565" as a row name --- that is ugly and this is ghetto 
     re = CreateObject("roRegex", "\d+\s*-\s*\d+\s+of\s+\d+", "")
     if type(breadcrumbs) = "roArray" and breadcrumbs.count() > 1 and (re.Ismatch(breadcrumbs[0]) or re.IsMatch(breadcrumbs[1])) then 
-        if type(m.screens) = "roArray" and m.screens.count() > 1 then  ' nested because I'm lame
+        if type(m.screens) = "roArray" and m.screens.count() > 1 and m.screens[1].loader <> invalid and m.screens[1].loader.contentarray <> invalid then  ' nested because I'm lame
             keynames = m.screens[1].loader.contentarray
             if item.contenttype = "appClip" then
                 breadcrumbs[0] = ""
