@@ -87,6 +87,8 @@ Sub SaveImagesForScreenSaver(item, sizes)
         token = ""
     end if
 
+    thumbUrlHD = invalid:thumbUrlSD = invalid
+
     ' ljunkie - override the item size for the screen saver. We don't want too large or too small
     if item <> invalid then 
         regW = CreateObject("roRegex", "width=\d+", "i"):regH = CreateObject("roRegex", "height=\d+", "i")
@@ -108,7 +110,11 @@ Sub SaveImagesForScreenSaver(item, sizes)
 
     end if
 
-    if item = invalid then
+
+    isLocal = CreateObject("roRegex", "file://", "i") ' exclue local images 
+    if item = invalid or item.server = invalid or tostr(item.contenttype) = "section" then
+        WriteFileHelper("tmp:/plex_screensaver", invalid, invalid, invalid)
+    else if thumbUrlHD <> invalid and isLocal.isMatch(thumbUrlHD) then
         WriteFileHelper("tmp:/plex_screensaver", invalid, invalid, invalid)
     else if GetGlobal("IsHD") and thumbUrlHD <> invalid then
         WriteFileHelper("tmp:/plex_screensaver", thumbUrlHD, "300", "300")

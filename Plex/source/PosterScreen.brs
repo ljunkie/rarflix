@@ -179,7 +179,6 @@ Function posterHandleMessage(msg) As Boolean
 
             ' ljunkie - save any focused item for the screen saver
             item = m.contentArray[m.focusedList].content[m.contentArray[m.focusedList].focusedindex]
-            print item
             if item <> invalid and item.SDPosterURL <> invalid and item.HDPosterURL <> invalid then
                 SaveImagesForScreenSaver(item, ImageSizes(item.ViewGroup, item.Type))
             end if
