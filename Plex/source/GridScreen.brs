@@ -222,6 +222,8 @@ Function gridHandleMessage(msg) As Boolean
             ' If the user is getting close to the limit of what we've
             ' preloaded, make sure we kick off another update.
 
+            item = invalid
+
             m.selectedRow = msg.GetIndex()
             m.focusedIndex = msg.GetData()
 
@@ -255,7 +257,6 @@ Function gridHandleMessage(msg) As Boolean
             end if
 
             ' ljunkie - save any focused item for the screen saver
-            print item
             if item <> invalid and item.SDPosterURL <> invalid and item.HDPosterURL <> invalid then
                 SaveImagesForScreenSaver(item, ImageSizes(item.ViewGroup, item.Type))
             end if
