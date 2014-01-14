@@ -35,8 +35,11 @@ Function createFULLGridScreen(item, viewController, style = "flat-movie", SetDis
 
     container = createPlexContainerForUrl(item.server, item.sourceUrl, detailKey)
 
+    ' TODO - this could use some work ( it should be ok right now, but we might want to add in all the logic for all the screen types )
+    ' grid_size = number of rows across
     grid_size = 5
     if style = "flat-square" then grid_size = 7
+    if NOT GetGlobal("IsHD") = true and style = "flat-landscape" then grid_size = 4
     container.SeparateSearchItems = true   
 
     obj.Loader = createFULLgridPaginatedLoader(container, grid_size, grid_size, item)
