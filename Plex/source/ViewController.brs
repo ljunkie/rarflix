@@ -866,6 +866,7 @@ Sub vcShowReleaseNotes(options = invalid)
         paragraphs.Push("  ")
         paragraphs.Push(" * remove 'Dir:' from title")
         paragraphs.Push(" * exclude non library content for screen saver ( icons: search, gear, etc )")
+        paragraphs.Push(" * full grid fix for SD screens ( 4 rows )")
         paragraphs.Push(" * bug fix: two possible crashes when searching")
         paragraphs.Push("  ")
 

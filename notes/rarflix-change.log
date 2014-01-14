@@ -1,6 +1,7 @@
 #3.1.2 (2014-01-13)
     * remove 'Dir:' from title
     * exclude non library content for screen saver ( icons: search, gear, etc )
+    * full grid fix for SD screens ( 4 rows )
     * bug fix: two possible crashes when searching
 
 #3.1.1 (2014-01-11)
