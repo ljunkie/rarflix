@@ -1,3 +1,6 @@
+#3.1.3-DEV (2014-01-13) -- testing -- not available
+    * potential slowdown when using myPlex+local PMS not requiring authentication
+
 #3.1.2 (2014-01-13)
     * remove 'Dir:' from title
     * exclude non library content for screen saver ( icons: search, gear, etc )
