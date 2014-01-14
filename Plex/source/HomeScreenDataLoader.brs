@@ -777,6 +777,9 @@ Sub homeOnUrlEvent(msg, requestContext)
             server.IsSecondary = (xml@serverClass = "secondary")
             server.SupportsMultiuser = (xml@multiuser = "1")
             if server.AccessToken = invalid AND ServerVersionCompare(xml@version, [0, 9, 7, 15]) then
+                ' ljunkie - we shouldn't just assume any token is valid for any PMS.
+                ' we will leave this in tact and just deal with in in the PutPlexMediaServer() sub
+                ' it's possible other areas may use this logic, so we'll verify later
                 server.AccessToken = MyPlexManager().AuthToken
             end if
 

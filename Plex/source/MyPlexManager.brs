@@ -17,6 +17,7 @@ Function MyPlexManager(reinit = false) As Object
 
         obj.CreateRequest = mpCreateRequest
         obj.ValidateToken = mpValidateToken
+        obj.ValidateTokenServers = mpValidateTokenServers
         obj.Disconnect = mpDisconnect
 
         obj.ExtraHeaders = {}
@@ -55,6 +56,9 @@ Function MyPlexManager(reinit = false) As Object
         ' For using the view controller for HTTP requests
         obj.ScreenID = -5
         obj.OnUrlEvent = mpOnUrlEvent
+
+        ' ljunkie - container list what machines are allowed/should use a token
+        obj.ValidMachineIdentifiers = []
 
         ' Singleton
         m.MyPlexManager = obj
@@ -98,6 +102,26 @@ Function mpValidateToken(token, async) As Boolean
     return m.IsSignedIn
 End Function
 
+' ljunkie - set the valid  machineIndentifiers allowed to use the token
+sub mpValidateTokenServers() 
+    if  NOT m.issignedin then return
+
+    req = m.CreateRequest("", "/pms/servers")
+    port = CreateObject("roMessagePort")
+    req.SetPort(port)
+    req.AsyncGetToString()
+    event = wait(10000, port)
+    ResponseCode = invalid
+
+    if type(event) = "roUrlEvent" AND event.GetInt() = 1 AND event.GetResponseCode() = 200 then
+        xml = CreateObject("roXMLElement")
+        xml.Parse(event.GetString())
+        for each serverElem in xml.Server
+            m.ValidMachineIdentifiers.Push(serverElem@machineIdentifier)
+        end for
+    end if
+end sub
+
 Sub mpOnUrlEvent(msg, requestContext)
     if requestContext.requestType = "account" then
         m.ProcessAccountResponse(msg)
@@ -121,6 +145,11 @@ Sub mpProcessAccountResponse(event)
         mgr = AppManager()
         mgr.IsPlexPass = m.IsPlexPass
         mgr.ResetState()
+
+        ' verify what machine identifiers are valid for this token
+        m.ValidateTokenServers()
+
+
     else
         Debug("Failed to validate myPlex token")
         m.IsSignedIn = false
