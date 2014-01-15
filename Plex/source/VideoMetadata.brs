@@ -14,12 +14,28 @@ Function newVideoMetadata(container, item, detailed=false) As Object
             ' Ugh - the PMS doesn't seem to always give the ParentThumb even though it exists. So I guess we will have to query for it. 
             ' at least we only have to query the parentKey which is the specific season, so it should be "quick"
             ' If this causes slowdown, EU can always disable this fieature ( of course they may not know to )
+            '  -- seems more and more places are missing the parentThumb, so we will cache the parentThumb after the first search to speed things up
             if gridthumb = invalid and item@parentKey <> invalid then 
-                Debug("---- Finding Parent thumb for TV Show " + tostr(item@grandparentTitle) + ": " + tostr(item@title) + " -- key:" + tostr(item@parentKey))
-                seaCon = createPlexContainerForUrl(container.server, container.server.serverurl, item@parentKey)
-                if seaCon <> invalid then gridthumb = firstof( seaCon.xml.Directory[0]@Thumb, item@parentThumb)
-                if gridthumb <> item@parentThumb then Debug("---- Forced using Season Thumb " + tostr(gridThumb) + " had to search for it!")
-            end if
+                if container.server.machineid <> invalid then 
+                    cacheKey = "CacheSeasonPoster"+container.server.machineid+item@parentKey
+                else 
+                    cacheKey = invalid
+                end if
+
+                if cacheKey <> invalid and GetGlobalAA().Lookup(cacheKey) <> invalid then 
+                    gridThumb = GetGlobalAA().Lookup(cacheKey)
+                else
+                    Debug("---- Finding Parent thumb for TV Show " + tostr(item@grandparentTitle) + ": " + tostr(item@title) + " -- key:" + tostr(item@parentKey))
+                    seaCon = createPlexContainerForUrl(container.server, container.server.serverurl, item@parentKey)
+                    if seaCon <> invalid then 
+                        gridthumb = firstof( seaCon.xml.Directory[0]@Thumb, item@parentThumb)
+                        ' ONLY look this up once and cache it for the session
+                        GetGlobalAA().AddReplace(cacheKey, gridthumb)
+                    end if
+                end if
+                ' paranoid fallback
+                if gridThumb = invalid then gridThumb = item@grandparentThumb
+           end if
         else 
             gridThumb = item@grandparentThumb  ' use show poster
         end if
@@ -134,24 +150,32 @@ Sub setVideoBasics(video, container, item)
             end if
         end if
 
-        ' hack to try and set the grandparentkey when PMS API doesn't return one
+        ' ljunkie - hack - set the grandparentkey when PMS API doesn't return one
         if video.grandparentKey = invalid and container.xml@key <> invalid then 
             re = CreateObject("roRegex", "/children.*", "i")
             if re.IsMatch(container.sourceurl) then
-                newurl = re.ReplaceAll(container.sourceurl, "")
-                gcontainer = createPlexContainerForUrl(container.server, newurl, "")
-                if container <> invalid then
-                    video.grandparentKey = gcontainer.xml.Directory[0]@parentKey
-                    'obj.metadata.parentIndex = gcontainer.xml.Directory[0]@index
-                    'obj.metadata.ShowTitle = gcontainer.xml.Directory[0]@parentTitle
-                    'print  "---- override - set grandparentKey to parent" + video.grandparentKey
+                ' these calls can be expensive and are usually for the same item -- cache them for the session
+                if container.server.machineid <> invalid then 
+                    cacheKey = "cacheGrandParentKey"+container.server.machineid+video.parentkey
+                else 
+                    cacheKey = invalid
+                end if
+
+                if cacheKey <> invalid and GetGlobalAA().Lookup(cacheKey) <> invalid then 
+                    video.grandparentKey = GetGlobalAA().Lookup(cacheKey)
+                else
+                    newurl = re.ReplaceAll(container.sourceurl, "")
+                    gcontainer = createPlexContainerForUrl(container.server, newurl, "")
+                    if gcontainer <> invalid and gcontainer.xml <> invalid then
+                        video.grandparentKey = gcontainer.xml.Directory[0]@parentKey
+                        GetGlobalAA().AddReplace(cacheKey, video.grandparentKey)
+                     end if
                 end if            
             else if container.xml@parentkey <> invalid then 
                 video.grandparentKey = "/library/metadata/" + tostr(container.xml@parentkey)
             else 
                 video.grandparentKey = "/library/metadata/" + tostr(container.xml@key)
             end if
-            Debug("----- setting grandparent key to " + video.grandparentKey + " " + video.showTitle)
         end if
     end if
 
