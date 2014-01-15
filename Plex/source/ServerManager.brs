@@ -371,6 +371,10 @@ Sub PutPlexMediaServer(server)
             server.RARflixTools = getRARflixTools(server)
         end if
 
+        ' Any auto discovered server is added elsewhere, but let's add myPlex found servers too ( yes it includes GDM servers here too )
+        ' What this fixes: If myPlex is down, "non-GDM" & "remotely shared" servers will still function -- depending if the PMS hasn't changed IP's
+        UpdateServerAddress(server)
+
         servers[server.machineID] = server
         if server.serverUrl <> invalid then SetServerForHost(server.serverUrl + "/", server)
     end if
