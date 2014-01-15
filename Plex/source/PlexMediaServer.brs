@@ -15,11 +15,7 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID, useMyPlexToken=true) As 
     pms.synced = false
     pms.online = false
     pms.local = false
-    if useMyPlexToken then
-        pms.AccessToken = MyPlexManager().AuthToken
-    else
-        pms.AccessToken = invalid
-    end if
+    pms.AccessToken = invalid
     pms.StopVideo = stopTranscode
     pms.StartTranscode = StartTranscodingSession
     pms.PingTranscode = pingTranscode

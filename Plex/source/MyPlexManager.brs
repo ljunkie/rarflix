@@ -11,7 +11,7 @@ Function MyPlexManager(reinit = false) As Object
     if m.MyPlexManager = invalid then
         ' Start by creating a PlexMediaServer since we can't otherwise inherit
         ' anything. Then tweak as appropriate.
-        obj = newPlexMediaServer("https://my.plexapp.com", "myPlex", "myplex", false)
+        obj = newPlexMediaServer("https://my.plexapp.com", "myPlex", "myplex")
 
         AppManager().AddInitializer("myplex")
 

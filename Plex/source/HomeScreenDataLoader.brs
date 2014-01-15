@@ -776,9 +776,6 @@ Sub homeOnUrlEvent(msg, requestContext)
             server.IsAvailable = true
             server.IsSecondary = (xml@serverClass = "secondary")
             server.SupportsMultiuser = (xml@multiuser = "1")
-            if server.AccessToken = invalid AND ServerVersionCompare(xml@version, [0, 9, 7, 15]) then
-                server.AccessToken = MyPlexManager().AuthToken
-            end if
 
             PutPlexMediaServer(server)
 
@@ -845,6 +842,8 @@ Sub homeOnUrlEvent(msg, requestContext)
             addr = firstOf(serverElem@scheme, "http") + "://" + serverElem@host + ":" + serverElem@port
             if existing <> invalid AND (existing.IsAvailable OR existing.ServerUrl = addr) then
                 Debug("Ignoring duplicate shared server: " + tostr(serverElem@machineIdentifier))
+                existing.AccessToken = firstOf(serverElem@accessToken, MyPlexManager().AuthToken)
+                RegWrite(existing.machineID, existing.AccessToken, "server_tokens")
             else
                 if existing = invalid then
                     newServer = newPlexMediaServer(addr, serverElem@name, serverElem@machineIdentifier)
@@ -855,6 +854,7 @@ Sub homeOnUrlEvent(msg, requestContext)
 
                 newServer.AccessToken = firstOf(serverElem@accessToken, MyPlexManager().AuthToken)
                 newServer.synced = (serverElem@synced = "1")
+                RegWrite(newServer.machineID, newServer.AccessToken, "server_tokens")
 
                 if serverElem@owned = "1" then
                     newServer.name = firstOf(serverElem@name, newServer.name)

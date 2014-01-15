@@ -124,6 +124,12 @@ Sub RegWrite(key, val, section=invalid, userNumber=invalid)
     else
         section = RegGetSectionName(section)
     endif
+
+    if val = invalid then
+        RegDelete(key, section)
+        return
+    end if
+
     'print "RegWrite:"+tostr(section)+":"+tostr(key)+":"+tostr(val)+" user("+tostr(userNumber)+")"
     sec = CreateObject("roRegistrySection", section)
     sec.Write(key, val)

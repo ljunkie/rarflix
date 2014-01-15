@@ -60,6 +60,7 @@ Function PlexMediaServers() As Object
         server = newPlexMediaServer(serverInfo.Url, serverInfo.Name, serverInfo.MachineID)
         server.IsConfigured = true
         server.local = true
+        server.AccessToken = RegRead(server.machineID, "server_tokens")
         list.AddTail(server)
     next
 
