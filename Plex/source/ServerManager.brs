@@ -370,15 +370,6 @@ Sub PutPlexMediaServer(server)
             server.RARflixTools = getRARflixTools(server)
         end if
 
-        ' ljunkie - let's verify a token is required/allowed for this server
-        if server.AccessToken <> invalid then
-            validMachines = MyPlexManager().ValidMachineIdentifiers
-            if validMachines <> invalid and validMachines.count() > 0 and NOT inArray(validMachines,server.MachineID) then 
-                Debug("------ removing invalid token from PMS: " + tostr(server.name))
-                server.AccessToken = invalid
-            end if
-        end if
-
         servers[server.machineID] = server
         if server.serverUrl <> invalid then SetServerForHost(server.serverUrl + "/", server)
     end if

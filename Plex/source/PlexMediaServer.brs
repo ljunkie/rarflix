@@ -15,16 +15,10 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID, useMyPlexToken=true) As 
     pms.synced = false
     pms.online = false
     pms.local = false
-    pms.AccessToken = invalid
     if useMyPlexToken then
-        ' Plex Auth Token cannot just be used because it exists
-        ' we need to verify the machinesID we are adding also shows up in the MyPlex server list
-        ' - it's been noticied that sometimes the PMS is slower to respond when
-        '    a token is sent and the PMS doesn't require it ( invalid )
-        validMachines = MyPlexManager().ValidMachineIdentifiers
-        if validMachines <> invalid and validMachines.count() > 0 and inArray(validMachines,machineID) then 
-            pms.AccessToken = MyPlexManager().AuthToken
-        end if
+        pms.AccessToken = MyPlexManager().AuthToken
+    else
+        pms.AccessToken = invalid
     end if
     pms.StopVideo = stopTranscode
     pms.StartTranscode = StartTranscodingSession
