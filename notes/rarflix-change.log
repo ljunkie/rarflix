@@ -1,5 +1,7 @@
-#3.1.3-DEV (2014-01-13) -- testing -- not available
+#3.1.3-DEV (2014-01-15) -- testing -- not available
     * potential slowdown when using myPlex+local PMS not requiring authentication
+    * still function/start when myPlex is down. The last "known" myPlex found server(s) should still work
+    * TV Section grid speedups -- regression caused by TV Season posters
 
 #3.1.2 (2014-01-13)
     * remove 'Dir:' from title
