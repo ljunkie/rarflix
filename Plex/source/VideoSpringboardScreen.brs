@@ -488,6 +488,13 @@ Function videoDialogHandleButton(command, data) As Boolean
         if screen <> invalid then  screen.Show()
         dialog.Close()
         closeDialog = true
+    else if command = "GoToHomeScreen" then
+        ' Close all screens except for HomeScreen
+        '  thanks Schuyler -- logic already existed!
+        context = CreateObject("roAssociativeArray")
+        context.OnAfterClose = CloseScreenUntilHomeVisible
+        context.OnAfterClose()
+        closeDialog = true
     else if command = "RFVideoDescription" then
 
         ' A TextScreen seems a little too much for this.. a description (should) fit it a dialog all by iteself 

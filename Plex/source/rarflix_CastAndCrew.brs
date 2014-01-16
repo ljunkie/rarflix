@@ -69,6 +69,8 @@ Function RFCastAndCrewHandleMessage(msg) As Boolean
             else
                 Debug("Cast name and id are not set for " +  tostr(cast.name) + ":" + tostr(obj.item.metadata.key))
             end if
+        else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then ' ljunkie - use * for more options on focused item
+            rfBasicDialog(m)
         else if msg.isScreenClosed() then
             handled = true
             m.ViewController.PopScreen(obj)

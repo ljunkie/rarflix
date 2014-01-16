@@ -744,6 +744,14 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
     supportedIdentifier = (obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
     isMovieShowEpisode = (obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode")
 
+    ' ljunkie - Home Screen shortcut ( if we are not already on the homescreen )
+    vc = GetViewController()
+    screen = vc.screens.peek()
+    if vc.Home <> invalid AND screen <> invalid and screen.screenid <> vc.Home.ScreenID then 
+        dialog.sepAfter.Push("GoToHomeScreen")
+        dialog.SetButton("GoToHomeScreen", "Home Screen")
+    end if
+
     if isMovieShowEpisode then 
         dialog.SetButton("options", "Playback options")
     end if
@@ -870,14 +878,25 @@ end sub
 sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     ' this should probably just be combined into rfVideoMoreButton  ( there are some caveats though and maybe more to come.. so until this has been finalized )
     dialog = createBaseDialog()
+    buttonSep = invalid
+
+    ' ljunkie - Home Screen shortcut ( if we are not already on the homescreen )
+    vc = GetViewController()
+    screen = vc.screens.peek()
+    if vc.Home <> invalid AND screen <> invalid and screen.screenid <> vc.Home.ScreenID then 
+        buttonSep = "GoToHomeScreen"
+        dialog.SetButton("GoToHomeScreen", "Home Screen")
+    end if
 
     ' TODO full grid screen yo
     if obj.isfullgrid = invalid and obj.disablefullgrid = invalid and type(obj.screen) = "roGridScreen" then 
         fromName = "invalid"
         if type(obj.loader.getnames) = "roFunction" and obj.selectedrow <> invalid then fromName = obj.loader.getnames()[obj.selectedrow]
-        dialog.sepAfter.Push("fullGridScreen")
+        buttonSep = "fullGridScreen"
         dialog.SetButton("fullGridScreen", "Grid View: " + fromName)
     end if
+
+    if buttonSep <> invalid then dialog.sepAfter.Push(buttonSep)
 
     isMovieShowEpisode = (obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode")
 
@@ -1071,6 +1090,17 @@ sub HUDnotify(screen,obj = invalid)
         SendRemoteKey("Down")                  ' show HUD
         screen.Screen.SetContent(content_orig) ' reset HUD to our original content
     end if
+end sub
+
+sub rfBasicDialog(obj) 
+    ' ljunkie - Home Screen shortcut ( if we are not already on the homescreen )
+    '  TODO: rethink using this for rfDefRemoteOptionButton() sub -- we could also add in a button for searching
+    dialog = createBaseDialog()
+    dialog.SetButton("GoToHomeScreen", "Home Screen")
+    dialog.SetButton("close", "Back")
+    dialog.HandleButton = videoDialogHandleButton
+    dialog.ParentScreen = obj
+    dialog.Show()
 end sub
 
 sub rfDefRemoteOptionButton(m) 
