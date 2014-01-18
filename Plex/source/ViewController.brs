@@ -574,6 +574,11 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
 
     ' set the inital focus row if we have set it ( normally due to the sub section row being added - look at the createpaginateddataloader )
     if screen.loader <> invalid and screen.loader.focusrow <> invalid then 
+        ' take into account that people might hide rows (focusrow is 0 index). If the focusrow is > 1
+        ' on 3 row screens, we will want to focus on the second row (1) if we have less than 4 rows 
+        style = GetGlobalAA().Lookup("GlobalGridStyle") ' this is set by Grid Creation
+        is3Row = screen.loader.focusrow > 1 and style <> invalid and (style = "flat-landscape" or style = "flat-square" or style = "flat-16x9" or style = "four-column-flat-landscape")
+        if is3Row and screen.loader.names <> invalid and screen.loader.names.count() < 4 then screen.loader.focusrow = 1
         screen.screen.SetFocusedListItem(screen.loader.focusrow,0)
     end if
 
