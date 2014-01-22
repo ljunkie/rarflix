@@ -135,7 +135,7 @@ Function showGridScreen() As Integer
     ' I.E. don't show on firstCharacter, but show of On Deck
     Debug("------------------- Description POP OUT disabled -- sec_metadata -- more info if we need to enable certain section/types --------------------------")
     vc = GetViewController()
-    if vc.Home <> invalid AND m.screenid = vc.Home.ScreenID then
+    if tostr(m.ScreenName) = "Home" or (vc.Home <> invalid AND m.screenid = vc.Home.ScreenID) then
         isType = "home"
     else 
         sec_metadata = getSectionType()
@@ -145,12 +145,12 @@ Function showGridScreen() As Integer
         for each st in secTypes
             if tostr(sec_metadata.type) = st then isType = st
         end for
-        Debug("isType: " + tostr(isType))
     end if
 
     if RegRead("rf_grid_description_"+isType, "preferences", "enabled") <> "enabled" then
         m.screen.SetDescriptionVisible(false)
     end if
+    Debug("isType: " + tostr(isType))
     Debug("------------------------------------------------------- END ---------------------------------------------------------------------------------------")
 
     m.Screen.Show()
