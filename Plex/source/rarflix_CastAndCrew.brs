@@ -87,11 +87,15 @@ function getCastAndCrew(item as object, key = invalid) as object
     if key = invalid then key = item.metadata.key ' let us override the key, otherwise, use the item.metadata.key
 
     container = createPlexContainerForUrl(item.metadata.server, item.metadata.server.serverUrl, key)        
-    if container.xml.Video[0] <> invalid then 
-        castxml = container.xml.Video[0]
-    else if container.xml.Directory[0] <> invalid  then
-       castxml = container.xml.Directory[0]
+    ' we haven't Parsed anything yet.. the raw XML is available
+    if container <> invalid and container.xml <> invalid and container.xml.Video <> invalid then 
+        if container.xml.Video[0] <> invalid then 
+            castxml = container.xml.Video[0]
+        else if container.xml.Directory[0] <> invalid  then
+            castxml = container.xml.Directory[0]
+        end if
     end if
+    container = invalid
 
     if type(castxml) = "roXMLElement" then 
         default_img = "/:/resources/actor-icon.png"
@@ -137,14 +141,16 @@ Function getPostersForCastCrew(item As Object) As Object
         wkey = "/library/people/"+i.id+"/media"
         ' it would be nice if we could just get a full list of people from ther server, but not available - maybe later TODO
         container = createPlexContainerForUrl(server, server.serverurl, "/search/actor/?query=" + HttpEncode(i.name))
+       ' we haven't Parsed anything yet.. the raw XML is available
+        xml = container.xml
         keys = container.GetKeys()
-
+        container = invalid
         for index = 0 to keys.Count() - 1
             found = false
             if keys[index] = wkey then 
                  found = true
-                 if container.xml.Directory[index]@thumb <> invalid then 
-                    default_img = container.xml.Directory[index]@thumb
+                 if xml.Directory[index]@thumb <> invalid then 
+                    default_img = xml.Directory[index]@thumb
                     i.imageSD = server.TranscodedImage(server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
                     i.imageHD = server.TranscodedImage(server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
                     ' token is now part of TranscodedImage
@@ -161,8 +167,8 @@ Function getPostersForCastCrew(item As Object) As Object
                 names = container.GetNames()
                 if names[index] = i.name then 
                      found = true
-                     if container.xml.Directory[index]@thumb <> invalid then 
-                        default_img = container.xml.Directory[index]@thumb
+                     if xml.Directory[index]@thumb <> invalid then 
+                        default_img = xml.Directory[index]@thumb
                         i.imageSD = server.TranscodedImage(server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
                         i.imageHD = server.TranscodedImage(server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
                         ' token is now part of TranscodedImage
@@ -194,5 +200,6 @@ Function getPostersForCastCrew(item As Object) As Object
         list.Push(values)        
 
     next
+    xml = invalid
     return list
 End Function

@@ -55,10 +55,9 @@ function rfUpdateNowPlayingMetadata(metadata,time = 0 as integer) as object
     keys = container.getkeys()
     found = false
 
-    ' ljunkie - only allow Video for now ( Track/Photo? are now valid, but untested and break )
-    for index = 0 to container.xml.Video.count() - 1      '    for index = 0 to keys.Count() - 1
+    for index = 0 to container.metadata.count() - 1      '    for index = 0 to keys.Count() - 1
         Debug("Searching for key:" + tostr(metadata.key) + " and machineID:" + tostr(metadata.nowPlaying_maid) ) ' verify same machineID to sync (multiple people can be streaming same content)
-        if keys[index] = metadata.key and container.xml.Video[index].Player@machineIdentifier = metadata.nowPlaying_maid then 
+        if keys[index] = metadata.key and container.metadata[index].nowPlaying_maid = metadata.nowPlaying_maid then 
             Debug("----- nowPlaying match: key:" + tostr(metadata.key) + ", machineID:" + tostr(metadata.nowPlaying_maid) + " @ " + tostr(metadata.server.serverurl) + "/status/sessions")
             found = true
             Debug("----- prev offset " + tostr(metadata.viewOffset))
@@ -90,28 +89,19 @@ sub setnowplayingGlobals()
         for each server in GetOwnedPlexMediaServers()
             if server.isavailable and server.supportsmultiuser then ' only query server if available and supportsmultiuser (assuming nowPlaying works with multiuser enabled)
                 container = createPlexContainerForUrl(server, server.serverurl, "/status/sessions")
-                ' ljunkie - for now, we have limited this to Now Playing VIDEO
-                if container <> invalid and container.xml <> invalid and type(container.xml.Video) = "roXMLList" and container.getkeys().count() > 0 then
-                    keys = container.getkeys()
-                    for index = 0 to container.xml.Video.count() - 1 ' for index = 0 to keys.Count() - 1
-                        libraryKey = container.xml.Video[index]@key
-                        ratingKey = container.xml.Video[index]@ratingkey
-                        if ratingKey <> invalid and container.xml.Video.count() > index then 
-                            maid = container.xml.Video[index].Player@machineIdentifier
-                            user = container.xml.Video[index].User@title
-                            ' match metadata for key to now playing item
-                            ' metadata = container.metadata[index]
-                            for i = 0 to container.metadata.count() 
-                                if container.metadata[i].key = libraryKey then 
-                                    metadata = container.metadata[i]
-                                    exit for
-                                end if 
-                            end for 
-                            platform = firstof(container.xml.Video[index].Player@title, container.xml.Video[index].Player@platform, "")
-                            length = invalid
-                            if container.xml.Video[index]@duration <> invalid then 
-                                length = firstof(tostr((container.xml.Video[index]@duration).toint()/1000), 0)
-                            end if
+                if container <> invalid then context = container.GetMetadata()
+
+                if context <> invalid and context.count() > 0 then 
+                    for index = 0 to context.count() - 1 ' for index = 0 to keys.Count() - 1
+                        metadata = context[index]
+                        'libraryKey = metadata.key
+                        ratingKey = metadata.ratingkey
+                        ' ljunkie - for now, we have limited this to Now Playing VIDEO
+                        if ratingKey <> invalid and (tostr(metadata.type) = "episode" or tostr(metadata.type) = "movie") then 
+                            maid = metadata.nowPlaying_maid
+                            user = metadata.nowPlaying_user
+                            platform = firstof(metadata.nowPlaying_platform_title, metadata.nowPlaying_platform, "")
+                            length = firstof(tostr(metadata.Length), 0)
                             if metadata.episodestr <> invalid then 
                                 title = metadata.cleantitle + " - " + metadata.episodestr
                             else

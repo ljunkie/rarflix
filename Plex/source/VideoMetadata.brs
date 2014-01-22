@@ -27,15 +27,17 @@ Function newVideoMetadata(container, item, detailed=false) As Object
                 else
                     Debug("---- Finding Parent thumb for TV Show " + tostr(item@grandparentTitle) + ": " + tostr(item@title) + " -- key:" + tostr(item@parentKey))
                     seaCon = createPlexContainerForUrl(container.server, container.server.serverurl, item@parentKey)
-                    if seaCon <> invalid then 
-                        gridthumb = firstof( seaCon.xml.Directory[0]@Thumb, item@parentThumb)
-                        ' ONLY look this up once and cache it for the session
-                        GetGlobalAA().AddReplace(cacheKey, gridthumb)
+                    if seaCon <> invalid and seaCon.xml <> invalid then itemXml = seaCon.xml.Directory[0]
+                    if itemXml <> invalid then 
+                        gridthumb = firstof( itemXml@Thumb, item@grandparentThumb)
+                    else 
+                        gridthumb = item@grandparentThumb
                     end if
+                    GetGlobalAA().AddReplace(cacheKey, gridthumb)
                 end if
                 ' paranoid fallback
                 if gridThumb = invalid then gridThumb = item@grandparentThumb
-           end if
+            end if
         else 
             gridThumb = item@grandparentThumb  ' use show poster
         end if

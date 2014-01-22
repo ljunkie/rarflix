@@ -168,7 +168,10 @@ Sub setMetaBasics(meta, container, item)
 
     if container.xml@mixedParents = "1" then
         parentTitle = firstOf(item@parentTitle, container.xml@parentTitle, "")
-        if parentTitle <> "" then meta.Title = parentTitle + ": " + meta.Title
+        if parentTitle <> "" then 
+            meta.Title = parentTitle + ": " + meta.Title
+            meta.parentTitle = parentTitle
+        end if
     end if
 
     if item@userRating <> invalid then meta.UserRating =  int(val(item@userRating)*10)

@@ -222,6 +222,7 @@ Function createPopupMenu(item) As Object
         next
     end if
 
+    container = invalid
     return dlg
 End Function
 

@@ -748,7 +748,7 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
     vc = GetViewController()
     screen = vc.screens.peek()
     if vc.Home <> invalid AND screen <> invalid and screen.screenid <> vc.Home.ScreenID then 
-        dialog.sepAfter.Push("GoToHomeScreen")
+        'dialog.sepAfter.Push("GoToHomeScreen") ' don't have room anymore 
         dialog.SetButton("GoToHomeScreen", "Home Screen")
     end if
 
@@ -798,12 +798,14 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
             dialog.SetButton("delete", "Delete permanently")
         end if
 
+        ' cast & crew is already on this screen
         ' cast & crew must be part of the supported identifier 
-        if isMovieShowEpisode or obj.metadata.type = "season" or obj.metadata.ContentType = "series" then
-            dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
-        else 
-           Debug("---- Cast and Crew are not available for " + tostr(obj.metadata.ContentType))
-        end if
+
+        'if isMovieShowEpisode or obj.metadata.type = "season" or obj.metadata.ContentType = "series" then
+        '    dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
+        'else 
+        '   Debug("---- Cast and Crew are not available for " + tostr(obj.metadata.ContentType))
+        'end if
 
     end if
 
@@ -896,7 +898,8 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
         dialog.SetButton("fullGridScreen", "Grid View: " + fromName)
     end if
 
-    if buttonSep <> invalid then dialog.sepAfter.Push(buttonSep)
+    ' no room for this
+    'if buttonSep <> invalid then dialog.sepAfter.Push(buttonSep)
 
     isMovieShowEpisode = (obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode")
 
@@ -935,10 +938,13 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
         re = CreateObject("roRegex", "/children.*", "i")
         obj.metadata.parentKey = re.ReplaceAll(obj.metadata.key, "")
         container = createPlexContainerForUrl(obj.metadata.server, obj.metadata.server.serverUrl, obj.metadata.parentKey)
-        if container <> invalid then
+       ' we haven't Parsed anything yet.. the raw XML is available
+       ' TODO: clean this up and stop using the xml ( parse it -- GetMetaData() )
+        if container <> invalid and container.xml <> invalid then 
             obj.metadata.grandparentKey = container.xml.Directory[0]@parentKey
             obj.metadata.parentIndex = container.xml.Directory[0]@index
             obj.metadata.ShowTitle = container.xml.Directory[0]@parentTitle
+            container = invalid
         end if
     else if (obj.metadata.type = "show") and obj.metadata.grandparentKey = invalid then 
         ' object type is a show -- we have all we need
@@ -1012,6 +1018,7 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     if supportsTextScreen() and obj.metadata.UMdescription <> invalid and len(obj.metadata.UMdescription) > 10 then dialog.SetButton("RFVideoDescription", "Description")
 
     ' set this to last -- unless someone complains
+    ' hide this for now.. unless someone complains :)
     if supportedIdentifier then
         if obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "episode" or obj.metadata.ContentType = "show"  then
             if obj.Item.StarRating = invalid then obj.Item.StarRating = 0

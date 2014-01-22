@@ -206,6 +206,10 @@ Sub containerParseXml()
         end if
     next
 
+    ' ljunkie - from ROKU -- this can be a memmory issue. So after we parse the XML, we invalidate it.
+    m.xml = invalid ' cleanup XML -- it's parsed now
+    RunGarbageCollector()
+
     m.Parsed = true
 End Sub
 
