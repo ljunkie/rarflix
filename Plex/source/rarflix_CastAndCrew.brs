@@ -144,6 +144,7 @@ Function getPostersForCastCrew(item As Object) As Object
        ' we haven't Parsed anything yet.. the raw XML is available
         xml = container.xml
         keys = container.GetKeys()
+        names = container.GetNames()
         container = invalid
         for index = 0 to keys.Count() - 1
             found = false
@@ -164,7 +165,6 @@ Function getPostersForCastCrew(item As Object) As Object
 
             ' this is probably not needed -- but it might be useful for other characters than actors
             if NOT found then
-                names = container.GetNames()
                 if names[index] = i.name then 
                      found = true
                      if xml.Directory[index]@thumb <> invalid then 
