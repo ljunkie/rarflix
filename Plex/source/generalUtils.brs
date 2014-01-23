@@ -28,7 +28,7 @@
 '******************************************************
 
 function RegGetUniqueSections()
-    obj = { myplex:"",preferences:"",servers:"",userinfo:"",server_tokens:""} 'list of prefs that are customized for each user.
+    obj = { myplex:"",preferences:"",servers:"",userinfo:"",server_tokens:"", servers:""} 'list of prefs that are customized for each user.
     return obj  
 end function
 

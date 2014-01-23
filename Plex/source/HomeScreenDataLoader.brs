@@ -978,10 +978,31 @@ Sub homeRefreshData()
     m.CreateAllPlaylistRequests(true)
 
     ' Refresh the sections and channels for all of our owned servers
-    m.contentArray[m.RowIndexes["sections"]].refreshContent = []
-    m.contentArray[m.RowIndexes["sections"]].loadedServers.Clear()
-    m.contentArray[m.RowIndexes["channels"]].refreshContent = []
-    m.contentArray[m.RowIndexes["channels"]].loadedServers.Clear()
+
+    ServersOwned = []
+    ServersShared = []
+    for each server in GetValidPlexMediaServers()
+        if server.owned and server.online then ServersOwned.Push(server.machineid)
+        if NOT server.owned and server.online then ServersShared.Push(server.machineid)
+    end for
+
+    if ServersOwned.Count() > 1 then
+        Debug("skipping reload (ignoring response) of sections & channels due to multiple servers")
+    else 
+        m.contentArray[m.RowIndexes["sections"]].refreshContent = []
+        m.contentArray[m.RowIndexes["sections"]].loadedServers.Clear()
+        m.contentArray[m.RowIndexes["channels"]].refreshContent = []
+        m.contentArray[m.RowIndexes["channels"]].loadedServers.Clear()
+    end if
+
+    if ServersShared.Count() > 1 then
+        Debug("skipping reload (ignoring response) of shared sections due to multiple servers")        
+    else 
+        m.contentArray[m.RowIndexes["shared_sections"]].refreshContent = []
+        m.contentArray[m.RowIndexes["shared_sections"]].loadedServers.Clear()
+    end if
+
+    ' these could be out of order due to multiple PMS's -- however we must refresh these (no great fix for this yet)
     m.contentArray[m.RowIndexes["on_deck"]].refreshContent = []
     m.contentArray[m.RowIndexes["on_deck"]].loadedServers.Clear()
     m.contentArray[m.RowIndexes["now_playing"]].refreshContent = []
