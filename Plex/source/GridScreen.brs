@@ -204,6 +204,23 @@ Function gridHandleMessage(msg) As Boolean
 
             item = context[index]
             if item <> invalid then
+
+                ' user entered a section - remeber the last section to focus when launching the channel again
+                vc = GetViewController()
+                if vc.Home <> invalid AND m.screenid = vc.Home.ScreenID then
+                    'item = m.contentArray[m.selectedRow][m.focusedIndex]
+                    if type(item) = "roAssociativeArray" and item.contenttype <> invalid and item.contenttype = "section" then 
+                        RegWrite("lastMachineID", item.server.machineID, "userinfo")
+                        RegWrite("lastSectionKey", item.key, "userinfo")
+                        'RegWrite("lastMachineID", item.server.machineID)
+                        'RegWrite("lastSectionKey", item.key)
+                        Debug("--------------- remember last focus ------------------------")
+                        Debug("last section used " + item.key)
+                        Debug("server " + item.server.machineID)
+                        Debug("---------------------------------------")
+                    end if 
+                end if
+
                 if item.ContentType = "series" then
                     breadcrumbs = [item.Title]
                 else if item.ContentType = "section" then
@@ -242,19 +259,20 @@ Function gridHandleMessage(msg) As Boolean
                 end if
             end if
  
-            if vc.Home <> invalid AND m.screenid = vc.Home.ScreenID and m.contentArray <> invalid and type(m.contentArray[m.selectedRow]) = "roArray" then 
-                item = m.contentArray[m.selectedRow][m.focusedIndex]
-                if type(item) = "roAssociativeArray" and item.contenttype <> invalid and item.contenttype = "section" then 
-                    RegWrite("lastMachineID", item.server.machineID, "userinfo")
-                    RegWrite("lastSectionKey", item.key, "userinfo")
-                    'RegWrite("lastMachineID", item.server.machineID)
-                    'RegWrite("lastSectionKey", item.key)
-                    Debug("--------------- remember last focus ------------------------")
-                    Debug("last section used " + item.key)
-                    Debug("server " + item.server.machineID)
-                    Debug("---------------------------------------")
-                end if 
-            end if
+            ' deprecated -- we no only remember the last section when a user ENTERS the section instead of focusing the section
+            'if vc.Home <> invalid AND m.screenid = vc.Home.ScreenID and m.contentArray <> invalid and type(m.contentArray[m.selectedRow]) = "roArray" then 
+            '    item = m.contentArray[m.selectedRow][m.focusedIndex]
+            '    if type(item) = "roAssociativeArray" and item.contenttype <> invalid and item.contenttype = "section" then 
+            '        RegWrite("lastMachineID", item.server.machineID, "userinfo")
+            '        RegWrite("lastSectionKey", item.key, "userinfo")
+            '        'RegWrite("lastMachineID", item.server.machineID)
+            '        'RegWrite("lastSectionKey", item.key)
+            '        Debug("--------------- remember last focus ------------------------")
+            '        Debug("last section used " + item.key)
+            '        Debug("server " + item.server.machineID)
+            '        Debug("---------------------------------------")
+            '    end if 
+            'end if
 
             ' ljunkie - save any focused item for the screen saver
             if item <> invalid and item.SDPosterURL <> invalid and item.HDPosterURL <> invalid then
