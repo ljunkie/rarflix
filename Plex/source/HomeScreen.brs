@@ -46,16 +46,11 @@ Sub refreshHomeScreen(changes)
         changes = CreateObject("roAssociativeArray") ' hack for info button from grid screen (mark as watched) -- TODO later and find out why this is a Boolean
         'changes["servers"] = "true"
     end if
+
     ' printAny(5,"1",changes) ' this prints better than printAA
     ' ljunkie Enum Changes - we could just look at changes ( but without _previous_ ) we don't know if this really changed.
-    if changes.DoesExist("rf_hs_clock") and changes.DoesExist("_previous_rf_hs_clock") and changes["rf_hs_clock"] <> changes["_previous_rf_hs_clock"] then
-        if changes["rf_hs_clock"] = "disabled" then
-            m.Screen.SetBreadcrumbEnabled(false)
-        else
-            RRbreadcrumbDate(m)
-        end if
-    end if
-    ' other rarflix changes?
+    ' example of what can be done -- the clock routines have been changed ( so this is deprecated )
+    '    if changes.DoesExist("rf_hs_clock") and changes.DoesExist("_previous_rf_hs_clock") and changes["rf_hs_clock"] <> changes["_previous_rf_hs_clock"] then
     ' end ljunkie
 
     ' If myPlex state changed, we need to update the queue, shared sections,
@@ -99,8 +94,7 @@ End Sub
 
 Sub homeScreenOnTimerExpired(timer)
     if timer.Name = "clock" AND m.ViewController.IsActiveScreen(m) then
-        RRbreadcrumbDate(m.viewcontroller.screens[0])
-        'm.Screen.SetBreadcrumbText("", CurrentTimeAsString())
+        RRHomeScreenBreadcrumbs()
     end if
 
     ' Now Playing and Notify Section (RARflixTest only)
@@ -143,7 +137,7 @@ Sub homeScreenActivate(priorScreen)
     ' set the now playing globals - mainly for notification logic, but we might use for now playing row
     ' if isRFtest() then setnowplayingGlobals() 
     setnowplayingGlobals() ' enabled in v2.8.2
-    RRbreadcrumbDate(m.viewcontroller.screens[0])
+    RRHomeScreenBreadcrumbs()
     'm.Screen.SetBreadcrumbText("", CurrentTimeAsString())
     m.SuperActivate(priorScreen)
 End Sub 

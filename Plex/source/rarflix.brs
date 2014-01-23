@@ -131,6 +131,7 @@ Sub InitRARflix()
     RegRead("rf_searchtitle", "preferences","title")
     RegRead("rf_rowfilter_limit", "preferences","200") ' no toggle yet
     RegRead("rf_hs_clock", "preferences", "enabled")
+    RegRead("rf_hs_date", "preferences", "enabled")
     RegRead("rf_focus_unwatched", "preferences", "enabled")
     RegRead("rf_user_rating_only", "preferences", "user_prefer") ' this will show the original star rating as the users if it exists. seems safe to set at first
     RegRead("rf_up_behavior", "preferences", "exit") ' default is exit screen ( except for home )
@@ -149,6 +150,7 @@ Sub InitRARflix()
     Debug("rf_bcdynamic: " + tostr(RegRead("rf_bcdynamic", "preferences")))
     Debug("rf_dynamic_grid: " + tostr(RegRead("rf_dynamic_grid", "preferences")))
     Debug("rf_hs_clock: " + tostr(RegRead("rf_hs_clock", "preferences")))
+    Debug("rf_hs_date: " + tostr(RegRead("rf_hs_date", "preferences")))
     Debug("rf_rottentomatoes: " + tostr(RegRead("rf_rottentomatoes", "preferences")))
     Debug("rf_rottentomatoes_score: " + tostr(RegRead("rf_rottentomatoes_score", "preferences")))
     Debug("rf_trailers: " + tostr(RegRead("rf_trailers", "preferences")))
@@ -205,7 +207,7 @@ End Function
 Function RRmktime( epoch As Integer, localize = 1 as Integer) As String
     ' we will use home screen clock type to make the time ( if disabled, we will just use 12 hour )
     ' -- another toggle could be useful if someone wants 24hour time and NO clock on the homescreen ( too many toggles though )
-    clockType = RegRead("rf_hs_clock", "preferences")
+    timePref = RegRead("rf_hs_clock", "preferences")
 
     datetime = CreateObject("roDateTime")
     datetime.FromSeconds(epoch)
@@ -221,7 +223,7 @@ Function RRmktime( epoch As Integer, localize = 1 as Integer) As String
     if minutes < 10 then minute = "0" + minutes.ToStr()
 
     hour = hours
-    if toStr(clockType) <> "24hour" then 
+    if toStr(timePref) <> "24hour" then 
         ' 12 hour format
         if hours = 0 then
            hour = 12
@@ -262,32 +264,60 @@ Function RRbitrate( bitrate As Float) As String
     return tostr(speed) + format
 End Function
 
-Function RRbreadcrumbDate(myscreen) As Object
-    screenName = firstOf(myScreen.ScreenName, type(myScreen.Screen))
-    fn = invalid
+sub RRHomeScreenBreadcrumbs(force=false)
+
     ' ONLY display the user if we have MULTI users
+    UserName = invalid
     if NOT GetGlobalAA().ViewController.SkipUserSelection then
-        fn = RegRead("friendlyName", "preferences", invalid, GetGlobalAA().userNum)
-        if fn <> invalid and fn = "" then fn = invalid
+        UserName = RegRead("friendlyName", "preferences", invalid, GetGlobalAA().userNum)
+        if UserName <> invalid and UserName = "" then Username = invalid
     end if 
-    if screenName <> invalid and screenName = "Home" then 
-        myscreen.Screen.SetBreadcrumbEnabled(true)
-        if RegRead("rf_hs_clock", "preferences", "enabled") <> "disabled" then
-            'Debug("update " + screenName + " screen time") 'stop printing this.. it's been tested enough
+
+    vc = GetViewController()
+    if force or (vc.Home <> invalid AND vc.IsActiveScreen(vc.Home)) then
+
+        myscreen = GetViewController().screens.peek()
+        timePref = RegRead("rf_hs_clock", "preferences", "enabled")
+        datePref = RegRead("rf_hs_date", "preferences", "enabled")
+        time_date = (timePref <> "disabled" or datePref <> "disabled")
+        showBreadCrumbs = true
+        if time_date then 
+            breadCrumb1="":breadCrumb2=""
+
             date = CreateObject("roDateTime")
             date.ToLocalTime() ' localizetime
             timeString = RRmktime(date.AsSeconds(),0)
-            dateString = date.AsDateString("short-month-short-weekday")
-            if fn <> invalid then 
-                myscreen.Screen.SetBreadcrumbText(dateString + " " + timeString,fn)
+
+            if datePref = "short-date" then 
+                dateFormat = "short-date"
             else 
-                myscreen.Screen.SetBreadcrumbText(dateString, timeString)
+                dateFormat = "short-month-short-weekday"
             end if
-        else if fn <> invalid then 
-            myscreen.Screen.SetBreadcrumbText(fn,"")
+            dateString = date.AsDateString(dateFormat)
+
+            if datePref <> "disabled" then breadCrumb1 = dateString
+            if timePref <> "disabled" then breadCrumb2 = timeString
+
+            if UserName <> invalid then 
+                breadCrumb1 = breadCrumb1 + " " + breadCrumb2
+                breadCrumb2 = UserName
+            end if
+        else if UserName <> invalid then 
+            breadCrumb1 = UserName:breadCrumb2 = ""
+        else 
+            showBreadCrumbs = false
         end if
+
+        if showBreadCrumbs and breadCrumb1 <> invalid and breadCrumb2 <> invalid then 
+            myscreen.Screen.SetBreadcrumbEnabled(true)
+            myscreen.Screen.SetBreadcrumbText(breadCrumb1, breadCrumb2)
+        else 
+            myscreen.Screen.SetBreadcrumbEnabled(false)
+        end if
+
     end if
-End function
+
+End Sub
 
 Function createRARflixPrefsScreen(viewController) As Object
     obj = createBasePrefsScreen(viewController)
