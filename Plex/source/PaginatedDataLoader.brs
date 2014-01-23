@@ -449,11 +449,6 @@ Sub loaderStartRequest(row, startItem, count)
     else
         Debug("Failed to start request for row " + tostr(row) + ": " + tostr(httpRequest.GetUrl()))
     end if
- 
-    ' we could hack to to always highlate item 1 in row 0.. but this is just weird.     
-    '    if m.listener.selectedrow <> invalid and m.listener.selectedrow = 0 then 
-    '        m.Listener.screen.SetFocusedListItem(0,0)
-    '    end if
 End Sub
 
 Sub loaderOnUrlEvent(msg, requestContext)
