@@ -167,7 +167,7 @@ sub homeCreateFallbackServerRequests()
         if server.accesstoken <> invalid then
             existing = GetPlexMediaServer(server.machineID)
             if existing <> invalid then 
-                Debug("Ignoring duplicate shared server: " + server.machineid)
+                Debug("Ignoring (fallback) duplicate shared server: " + server.machineid)
             else 
 	        Debug("---- trying fall back PMS ( last known server we learned from myPlex )")
                 server.owned = false ' for now we will assume the server is not owned ( just to be safe -- it's wrong.. but at least we fallback ) 
