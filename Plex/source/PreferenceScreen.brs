@@ -1845,6 +1845,18 @@ Function createHomeScreenPrefsScreen(viewController) As Object
         default: "photo-fit"
     }
 
+    ' Home Screen clock
+    rf_hs_clock_prefs = [
+        { title: "12 Hour", EnumValue: "enabled", ShortDescriptionLine2: "Show clock on Home Screen" },
+        { title: "24 Hour", EnumValue: "24hour", ShortDescriptionLine2: "Show clock on Home Screen" },
+        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Show clock on Home Screen" },
+    ]
+    obj.Prefs["rf_hs_clock"] = {
+        values: rf_hs_clock_prefs,
+        heading: "Date and Time",
+        default: "enabled"
+    }
+
     obj.Screen.SetHeader("Change the appearance of the home screen")
     obj.AddItem({title: "Reorder Home Rows", ShortDescriptionLine2: "A restart of the Channel is required"}, "home_row_order")
     obj.AddItem({title: "Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_home_displaymode", obj.GetEnumValue("rf_home_displaymode"))
@@ -1854,6 +1866,7 @@ Function createHomeScreenPrefsScreen(viewController) As Object
     obj.AddItem({title: "Recently Added"}, "row_visibility_recentlyadded", obj.GetEnumValue("row_visibility_recentlyadded"))
     obj.AddItem({title: "Now Playing", ShortDescriptionLine2: "rarflix pref"}, "row_visibility_now_playing", obj.GetEnumValue("row_visibility_now_playing"))
     obj.AddItem({title: "Channels"}, "row_visibility_channels", obj.GetEnumValue("row_visibility_channels"))
+    obj.AddItem({title: "Clock"}, "rf_hs_clock", obj.GetEnumValue("rf_hs_clock"))
     obj.AddItem({title: "Close"}, "close")
 
     return obj
@@ -1869,7 +1882,7 @@ Function prefsHomeHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "playlist_view_queue" OR command = "playlist_view_recommendations" OR command = "row_visibility_ondeck" OR command = "row_visibility_recentlyadded" OR command = "row_visibility_channels" or command = "row_visibility_now_playing" or command = "rf_home_displaymode" then
+            if command = "playlist_view_queue" OR command = "playlist_view_recommendations" OR command = "row_visibility_ondeck" OR command = "row_visibility_recentlyadded" OR command = "row_visibility_channels" or command = "row_visibility_now_playing" or command = "rf_home_displaymode" or command = "rf_hs_clock" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "home_row_order" then
                 m.HandleReorderPreference(command, msg.GetIndex())

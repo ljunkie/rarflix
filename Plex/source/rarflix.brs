@@ -203,39 +203,48 @@ Function GetDurationString( Seconds As Dynamic, emptyHr = 0 As Integer, emptyMin
 End Function
 
 Function RRmktime( epoch As Integer, localize = 1 as Integer) As String
+    ' we will use home screen clock type to make the time ( if disabled, we will just use 12 hour )
+    ' -- another toggle could be useful if someone wants 24hour time and NO clock on the homescreen ( too many toggles though )
+    clockType = RegRead("rf_hs_clock", "preferences")
+
     datetime = CreateObject("roDateTime")
     datetime.FromSeconds(epoch)
-    if localize = 1 then 
-        datetime.ToLocalTime()
-    end if
+    if localize = 1 then datetime.ToLocalTime()
+
     hours = datetime.GetHours()
     minutes = datetime.GetMinutes()
     seconds = datetime.GetSeconds()
-       
-    duration = ""
-    hour = hours
-    If hours = 0 Then
-       hour = 12
-    End If
+  
 
-    If hours > 12 Then
-        hour = hours-12
-    End If
-
-    If hours >= 0 and hours < 12 Then
-        AMPM = "am"
-    else
-        AMPM = "pm"
-    End if
-       
+    ' this works for 12/24 hour formats
     minute = minutes.ToStr()
-    If minutes < 10 Then
-      minute = "0" + minutes.ToStr()
+    if minutes < 10 then minute = "0" + minutes.ToStr()
+
+    hour = hours
+    if toStr(clockType) <> "24hour" then 
+        ' 12 hour format
+        if hours = 0 then
+           hour = 12
+        end If
+
+        if hours > 12 then
+            hour = hours-12
+        end If
+
+        if hours >= 0 and hours < 12 then
+            AMPM = "am"
+        else
+            AMPM = "pm"
+        end if
+
+        result = hour.ToStr() + ":" + minute + AMPM
+    else 
+        ' 24 hour format
+        if hours < 10 then hour = "0" + hours.ToStr()
+        result = hour.ToStr() + ":" + minute
     end if
 
-    result = hour.ToStr() + ":" + minute + AMPM
-
-    Return result
+    return result
 End Function
 
 Function RRbitrate( bitrate As Float) As String
@@ -263,7 +272,7 @@ Function RRbreadcrumbDate(myscreen) As Object
     end if 
     if screenName <> invalid and screenName = "Home" then 
         myscreen.Screen.SetBreadcrumbEnabled(true)
-        if RegRead("rf_hs_clock", "preferences", "enabled") = "enabled" then
+        if RegRead("rf_hs_clock", "preferences", "enabled") <> "disabled" then
             'Debug("update " + screenName + " screen time") 'stop printing this.. it's been tested enough
             date = CreateObject("roDateTime")
             date.ToLocalTime() ' localizetime
@@ -283,17 +292,6 @@ End function
 Function createRARflixPrefsScreen(viewController) As Object
     obj = createBasePrefsScreen(viewController)
     obj.HandleMessage = prefsRARFflixHandleMessage
-
-    ' Home Screen clock
-    rf_hs_clock_prefs = [
-        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Show clock on Home Screen" },
-        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Show clock on Home Screen" },
-    ]
-    obj.Prefs["rf_hs_clock"] = {
-        values: rf_hs_clock_prefs,
-        heading: "Date and Time",
-        default: "enabled"
-    }
 
     rf_theme = [
         { title: "Original", EnumValue: "original", },
@@ -568,7 +566,6 @@ Function createRARflixPrefsScreen(viewController) As Object
     obj.AddItem({title: "TV Season Poster (Grid)", ShortDescriptionLine2: "Season or Show's Poster on Grid"}, "rf_season_poster", obj.GetEnumValue("rf_season_poster"))
     obj.AddItem({title: "TV Episode Poster (Grid)", ShortDescriptionLine2: "Season or Show's Poster on Grid"}, "rf_episode_poster", obj.GetEnumValue("rf_episode_poster"))
     obj.AddItem({title: "Focus on Unwatched", ShortDescriptionLine2: "Default to the first unwatched " + chr(10) + "item (poster screen only)"}, "rf_focus_unwatched", obj.GetEnumValue("rf_focus_unwatched"))
-    obj.AddItem({title: "Clock on Home Screen"}, "rf_hs_clock", obj.GetEnumValue("rf_hs_clock"))
     obj.AddItem({title: "Unwatched Added/Released", ShortDescriptionLine2: "Item limit for unwatched Recently Added &" + chr(10) +"Recently Released rows [movies]"}, "rf_rowfilter_limit", obj.GetEnumValue("rf_rowfilter_limit"))
     obj.AddItem({title: "Star Ratings Override", ShortDescriptionLine2: "Only show or Prefer"+chr(10)+"Star Ratings that you have set"}, "rf_user_rating_only", obj.GetEnumValue("rf_user_rating_only"))
     obj.AddItem({title: "Up Button (row screens)", ShortDescriptionLine2: "What to do when the UP button is " + chr(10) + "pressed on a screen with rows"}, "rf_up_behavior", obj.GetEnumValue("rf_up_behavior"))
