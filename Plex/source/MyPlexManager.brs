@@ -12,6 +12,8 @@ Function MyPlexManager(reinit = false) As Object
         ' Start by creating a PlexMediaServer since we can't otherwise inherit
         ' anything. Then tweak as appropriate.
         obj = newPlexMediaServer("https://my.plexapp.com", "myPlex", "myplex")
+        ' testing for myPlex downtime
+        'obj = newPlexMediaServer("https://myplex.rarforge.com", "myPlex", "myplex")
 
         AppManager().AddInitializer("myplex")
 

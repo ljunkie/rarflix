@@ -25,6 +25,7 @@ Function createHomeScreenDataLoader(listener)
     loader.CreateRow = homeCreateRow
     loader.CreateServerRequests = homeCreateServerRequests
     loader.CreateMyPlexRequests = homeCreateMyPlexRequests
+    loader.CreateFallbackServerRequests = homeCreateFallbackServerRequests
     loader.CreatePlaylistRequests = homeCreatePlaylistRequests
     loader.CreateAllPlaylistRequests = homeCreateAllPlaylistRequests
     loader.RemoveFromRowIf = homeRemoveFromRowIf
@@ -70,8 +71,16 @@ Function createHomeScreenDataLoader(listener)
     configuredServers = PlexMediaServers()
     Debug("Setting up home screen content, server count: " + tostr(configuredServers.Count()))
     for each server in configuredServers
-        loader.CreateServerRequests(server, false, false)
+        ' skip any server that has an accessToken for now ( these are learned through myPlex )
+        ' we will fall back to them if we don't learn them through myPlex ( loader.CreateFallbackServerRequests() )
+        if server.accesstoken = invalid then loader.CreateServerRequests(server, false, false)
     next
+
+    ' if we failed to sign in -- myPlex is down? let's see if we have any known servers we should fall back on
+    if NOT MyPlexManager().IsSignedIn then 
+        Debug("myPlex is not signed in ( or it's down ) -- trying fall back servers")
+        loader.CreateFallbackServerRequests()
+    end if
 
     ' Create a static item for prefs and put it in the Misc row.
     switchUser = CreateObject("roAssociativeArray")
@@ -149,6 +158,26 @@ Function homeCreateRow(name) As Integer
 
     return index
 End Function
+
+sub homeCreateFallbackServerRequests()
+    configuredServers = PlexMediaServers()
+
+    for each server in configuredServers
+        ' we are keying off a server having an access token ( myPlex is currenlty the only way this could happen )
+        if server.accesstoken <> invalid then
+            existing = GetPlexMediaServer(server.machineID)
+            if existing <> invalid then 
+                Debug("Ignoring duplicate shared server: " + server.machineid)
+            else 
+	        Debug("---- trying fall back PMS ( last known server we learned from myPlex )")
+                server.owned = false ' for now we will assume the server is not owned ( just to be safe -- it's wrong.. but at least we fallback ) 
+                m.CreateServerRequests(server, true, false)
+            end if
+        end if
+    end for
+
+end sub
+
 
 Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refreshRequest As Boolean, connectionUrl=invalid, rowkey=invalid)
    imageDir =GetGlobalAA().Lookup("rf_theme_dir")
@@ -878,6 +907,12 @@ Sub homeOnUrlEvent(msg, requestContext)
                 Debug("Added myPlex server: " + tostr(newServer.name))
             end if
         next
+
+        ' now that we checked myPlex -- let's see if we have any saved servers learned through myPlex ( fall back to if down/invalid )
+        ' This is another failsafe as we shouldn't be able to get this far if myPlex is down. This scenerio might happen
+        ' if the servers returned from myPlex do not list any we may have learned previously -- again shouldn't happen
+        m.CreateFallbackServerRequests()
+
     end if
 End Sub
 
