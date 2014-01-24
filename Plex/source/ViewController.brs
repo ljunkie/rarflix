@@ -27,6 +27,7 @@ Function createViewController() As Object
     controller.CreateContextMenu = vcCreateContextMenu
 
     controller.CreatePhotoPlayer = vcCreatePhotoPlayer
+    controller.CreateICphotoPlayer = vcCreateICphotoPlayer
     controller.CreateVideoPlayer = vcCreateVideoPlayer
     controller.CreatePlayerForItem = vcCreatePlayerForItem
     controller.IsVideoPlaying = vcIsVideoPlaying
@@ -691,6 +692,34 @@ Function vcCreatePhotoPlayer(context, contextIndex=invalid, show=true, shuffled=
     return screen
 End Function
 
+
+Function vcCreateICphotoPlayer(context, contextIndex=invalid, show=true, shuffled=false, slideShow=false)
+    if NOT AppManager().IsPlaybackAllowed() then
+        m.ShowPlaybackNotAllowed()
+        return invalid
+    end if
+
+    screen = createICphotoPlayerScreen(context, contextIndex, m, shuffled, slideShow)
+    screen.ScreenName = "Photo Player Image Canvas"
+
+    m.AddBreadcrumbs(screen, invalid)
+    m.UpdateScreenProperties(screen)
+    m.PushScreen(screen)
+
+    screen.next() ' will start image at the CurIndex
+
+    ' activate the slideshow timer ( we might skip this is we press SHOW instead? )
+    if slideShow then 
+        screen.Timer.Active = true
+        screen.Timer.Mark()
+        screen.isPaused = false
+    end if
+
+    if show then screen.Show()
+
+    return screen
+End Function
+
 Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=true)
     if NOT AppManager().IsPlaybackAllowed() then
         m.ShowPlaybackNotAllowed()
@@ -783,7 +812,8 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
             ' verify the container has images - it still could be all directories. 
             ' If directory, skip and create screen for item
             for each item in newContext
-                if item.nodename = "Photo" then return m.CreatePhotoPlayer(newContext, 0)
+'                if item.nodename = "Photo" then return m.CreatePhotoPlayer(newContext, 0)
+                if item.nodename = "Photo" then return m.CreateICPhotoPlayer(newContext, 0, true, false, true)
             end for
         'else if tostr(sec_metadata.type) = "photo" and item.ContentType ="appClip" then 
         '    print "--- trying to play photos (appClip) from a directory"
@@ -801,7 +831,8 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
             return m.CreateScreenForItem(context, 0, invalid)
          end if
     else if item.ContentType = "photo" then '  and (item.nodename = invalid or item.nodename <> "Directory") then 
-        return m.CreatePhotoPlayer(context, contextIndex)
+'        return m.CreatePhotoPlayer(context, contextIndex)
+        return m.CreateICphotoPlayer(context, contextIndex, true, false, true)
     else if item.ContentType = "audio" then
         AudioPlayer().Stop()
         return m.CreateScreenForItem(context, contextIndex, invalid)

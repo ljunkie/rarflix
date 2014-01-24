@@ -394,6 +394,15 @@ Sub audioPlayerShowContextMenu()
         end if 
     end if 
 
+    if type(screen.screen) = "roImageCanvas" and tostr(screen.imagecanvasname) = "slideshow" then 
+        dialog.EnableOverlay = true
+        m.slideshow = screen
+        if type(m.slideshow.CurIndex) = "roInteger" and type(m.slideshow.context) = "roArray" then  ' ljunkie - show the photo title a slide show is in progress
+            dialog.Text = dialog.Text + chr(10) + " Photo: " + tostr(m.slideshow.context[m.slideshow.CurIndex].title)
+            if m.slideshow.isPaused = invalid then m.slideshow.isPaused = false
+        end if 
+    end if
+
     if m.focusedbutton = invalid then m.focusedbutton = 0 
     focusbutton = m.focusedbutton
     append = ""
@@ -470,9 +479,14 @@ Function audioPlayerMenuHandleButton(command, data) As Boolean
     else if command = "pauseAll" then
         obj.focusedbutton = 0 
         ' we only get here if we know we are playing a slideshow too
-        obj.slideshow.screen.Pause()
-        obj.slideshow.isPaused = true
-        obj.slideshow.forceResume = false
+        if type(obj.slideshow.screen) = "roImageCanvas" then 
+            obj.slideshow.Pause()
+            obj.slideshow.forceResume = false
+        else 
+            obj.slideshow.screen.Pause()
+            obj.slideshow.isPaused = true
+            obj.slideshow.forceResume = false
+        end if
         obj.Pause()
     else if command = "resume" then
         obj.focusedbutton = 0 
@@ -480,9 +494,14 @@ Function audioPlayerMenuHandleButton(command, data) As Boolean
     else if command = "resumeAll" then
         obj.focusedbutton = 0
         ' we only get here if we know we are playing a slideshow too
-        obj.slideshow.screen.Resume()
-        obj.slideshow.isPaused = false
-        obj.slideshow.forceResume = false
+        if type(obj.slideshow.screen) = "roImageCanvas" then 
+            obj.slideshow.Resume()
+        else 
+            obj.slideshow.screen.Resume()
+            obj.slideshow.isPaused = false
+            obj.slideshow.forceResume = false
+        end if
+
         if obj.ispaused then 
             obj.Resume()
         else if NOT obj.isplaying then 

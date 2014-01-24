@@ -56,6 +56,8 @@ Sub dialogRefresh()
         overlay = false
     end if
 
+    if m.EnableOverlay = true then overlay = true
+
     m.Screen = CreateObject("roMessageDialog")
     m.Screen.SetMessagePort(m.Port)
     m.Screen.SetMenuTopLeft(true)
@@ -148,6 +150,8 @@ Function dialogHandleMessage(msg) As Boolean
             if type(screen.screen) = "roSlideShow" and screen.isPaused and screen.ForceResume then 
                 screen.screen.Resume()
                 screen.isPaused = false
+            else if type(screen.screen) = "roImageCanvas" and tostr(screen.imagecanvasname) = "slideshow" and screen.isPaused and screen.ForceResume then 
+                screen.Resume()
             end if
         else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then
             'print "closeDialog"
@@ -158,6 +162,8 @@ Function dialogHandleMessage(msg) As Boolean
             if type(screen.screen) = "roSlideShow" and screen.isPaused and screen.ForceResume then 
                 screen.screen.Resume()
                 screen.isPaused = false
+            else if type(screen.screen) = "roImageCanvas" and tostr(screen.imagecanvasname) = "slideshow" and screen.isPaused and screen.ForceResume then 
+                screen.Resume()
             end if
         else if msg.isButtonPressed() then
             command = m.ButtonCommands[msg.getIndex()]
