@@ -1,11 +1,16 @@
-
 '
 ' TODO:
 ' * timer to hide overlay 
 ' * reload slideshow ( after completion )
-' * Photo Display mode -- seems like it's cropping 
 ' * verify shuffle works
 ' * verify remote control works
+
+' TASK:
+' * Photo Display mode -- seems like it's cropping 
+'    X -- cropping fixed 
+'    X -- cached images 
+'    X -- purge cache when needed ( to much or close the screen )
+'    -- center the image ( since we no longer "stretch/crop" )
 
 Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffled=false, slideShow=true)
     obj = CreateObject("roAssociativeArray")
@@ -57,6 +62,9 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     obj.IsPaused = true
     obj.ForceResume = false
 
+    obj.LocalFiles = []
+    obj.LocalFileSize = 0
+
     obj.playbackTimer = createTimer()
     AudioPlayer().focusedbutton = 0
     obj.HandleMessage = ICphotoPlayerHandleMessage
@@ -80,6 +88,9 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     obj.Prev = ICphotoPlayerPrev
     obj.Stop = ICphotoPlayerStop
     obj.OverlayToggle = ICphotoPlayerOverlayToggle
+    obj.SetSlideImage = ICslideshowSetSlideImage
+    obj.getSlideImage = ICslideshowGetImage
+    obj.purgeSlideImages = ICPurgeLocalFiles
 
     obj.IsShuffled = shuffled
     obj.SetShuffle = ICphotoPlayerSetShuffle
@@ -106,10 +117,10 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
     handled = false
 
     if type(msg) = "roImageCanvasEvent" then
-        print "-- ImageCanvasEvent!"
         handled = true
 
         if msg.isScreenClosed() then
+            m.purgeSlideImages() ' cleanup the local cached images
             amountPlayed = m.playbackTimer.GetElapsedSeconds()
             Debug("Sending analytics event, appear to have watched slideshow for " + tostr(amountPlayed) + " seconds")
             AnalyticsTracker().TrackEvent("Playback", firstOf(m.Item.ContentType, "photo"), m.Item.mediaContainerIdentifier, amountPlayed)
@@ -144,14 +155,11 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
                 m.OverlayToggle()
             else if msg.GetIndex() = 4 then 
                 ' left: previous
-                m.OverlayToggle("show",invalid,"previous")
+                'm.OverlayToggle("show",invalid,"previous")
                 m.prev()
             else if msg.GetIndex() = 5 then 
                 ' right: next
-                m.OverlayToggle("show",invalid,"next")
-'                display=[{url:m.context[m.curindex+1].url, targetrect:{x:0,y:0,w:256,h:144}}]
-'                m.screen.setlayer(2,display)      
-'                sleep(500)
+                'm.OverlayToggle("show",invalid,"next")
                 m.next()
             else if msg.GetIndex() = 6 then
                 ' OK: pause or start (photo only)
@@ -230,7 +238,7 @@ sub ICphotoPlayerOverlayToggle(force=invalid,headerText=invalid,overlayText=inva
             m.screen.setlayer(2,display)      
             m.OverlayOn = true
             m.Timer.Mark()
-            sleep(500)
+            'sleep(500)
         end if
 
 end sub
@@ -241,8 +249,14 @@ sub ICphotoPlayerOnTimerExpired(timer)
     end if
 End Sub
 
+sub ICslideshowSetSlideImage()
+    m.GetSlideImage()
+    display=[{url:m.CurFile.localFilePath, targetrect:{x:0,y:0,w:m.CurFile.size.width,h:m.CurFile.size.height}}]
+    m.screen.setlayer(1,display)      
+end sub
+
 sub ICphotoPlayerNext()
-    print "-- next"
+    'print "-- next"
     if m.nextindex <> invalid then 
         i = m.nextindex
     else 
@@ -251,12 +265,12 @@ sub ICphotoPlayerNext()
     if i > m.context.count()-1 then i=0  
     m.curindex = i
 
+    m.SetSlideImage()
+    'display=[{url:m.context[i].url, targetrect:{x:0,y:0,w:1280,h:720}}]
+
     NowPlayingManager().location = "fullScreenPhoto"
     NowPlayingManager().UpdatePlaybackState("photo", m.Context[m.CurIndex], "playing", 0)
 
-    display=[{url:m.context[i].url, targetrect:{x:0,y:0,w:1280,h:720}}]
-   
-    m.screen.setlayer(1,display)      
     m.OverlayToggle("hide")
     m.nextindex = m.curindex+1
     m.Timer.Mark()
@@ -264,16 +278,16 @@ sub ICphotoPlayerNext()
 end sub
 
 sub ICphotoPlayerPrev()
-    print "-- Previous"
+    'print "-- Previous"
     i=m.curindex-1
     if i < 0 then i = m.context.count()-1
     m.curindex=i
 
+    m.SetSlideImage()
+
     NowPlayingManager().location = "fullScreenPhoto"
     NowPlayingManager().UpdatePlaybackState("photo", m.Context[m.CurIndex], "playing", 0)
 
-    display=[{url:m.context[i].url, targetrect:{x:0,y:0,w:1280,h:720}}]
-    m.screen.setlayer(1,display)      
     m.OverlayToggle("hide")
     m.nextindex = m.curindex+1
     m.Timer.Mark()
@@ -317,3 +331,72 @@ Sub ICphotoPlayerSetShuffle(shuffleVal)
 
     NowPlayingManager().timelines["photo"].attrs["shuffle"] = tostr(shuffleVal)
 End Sub
+
+sub ICslideshowGetImage(async=false)
+    item = m.context[m.curindex]
+ 
+    ' location/name of the cached file ( to read or to save )
+    localFilePath = "tmp:/" + item.ratingKey + "_" + item.title + ".jpg"
+
+    print "-- cached files: " + tostr(m.LocalFiles.count())
+    print "   bytes: " + tostr(m.LocalFileSize)
+    print "      MB: " + tostr(int(m.LocalFileSize/1048576))
+
+    ' Purge the local cache if we have more than X images or 10MB used on disk 
+    if m.LocalFiles.count() > 500 or (m.LocalFileSize/1048576) > 10 then m.purgeSlideImages()
+
+    ' return the cached image ( if we have one )
+    if m.LocalFiles.count() > 0 then 
+        for each local in m.LocalFiles 
+            if local.localFilePath = localFilePath then 
+                print "cached file: " + localFilePath + " already cached!"
+                m.CurFile = local ' set it and return
+                return 
+            end if 
+        end for
+    end if
+
+    ' cache the image on disk
+    req = NewHttp(item.url)
+    if async then 
+        ' not tested or used ( don't really see a point for this yet )
+        req.http.AsyncGetToFile(localFilePath)
+    else 
+        req.http.GetToFile(localFilePath)
+        content = {}
+
+        ' get image metadata (width/height)
+        meta = CreateObject("roImageMetadata")
+        meta.SetUrl(localFilePath)
+
+        ' get/set image size on disk
+        ba=CreateObject("roByteArray")
+        ba.ReadFile(localFilePath)
+        numBytes = ba.Count()
+        m.LocalFileSize = int(m.LocalFileSize+numBytes)
+
+        ' set local cache info
+        content.size = meta.GetMetadata()
+        content.localFilePath = localFilePath
+
+        ' container to know what files we have created       
+        m.LocalFiles.Push(content)
+
+        ' current image to display
+        m.CurFile = content
+    end if
+end sub
+
+sub ICPurgeLocalFiles() 
+    ' cleanup our mess -- purge any files we have created during the slideshow
+    if m.LocalFiles.count() > 0 then 
+        print "Purging Local Cache -- Total Files:" + tostr(m.LocalFiles.count())
+        for each local in m.LocalFiles 
+            print "    delete cached file: " + local.localFilePath
+            deletefile(local.localFilePath)
+        end for
+        m.LocalFiles = []   ' container now empty
+        m.LocalFileSize = 0 ' total size used now 0
+        print "    Done. Total Files left:" + tostr(m.LocalFiles.count())
+    end if
+end sub
