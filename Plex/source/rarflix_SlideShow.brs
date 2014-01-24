@@ -377,6 +377,21 @@ sub ICslideshowGetImage(async=false)
 
         ' set local cache info
         content.size = meta.GetMetadata()
+
+        ' verify the height is 720 ( scale to resize )
+        if content.size.height < 720  then 
+            mp = 720/content.size.height
+            content.size.width = int(mp*content.size.width)
+            content.size.height = 720
+        end if
+
+        ' after height scale - veriy the width is < 1280 
+        if content.size.width > 1280 then 
+            mp = 1280/content.size.width
+            content.size.height = int(mp*content.size.height)
+            content.size.width = 1280
+        end if
+
         content.localFilePath = localFilePath
 
         ' container to know what files we have created       
