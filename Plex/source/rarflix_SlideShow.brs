@@ -1,16 +1,24 @@
 '
-' TODO:
-' * timer to hide overlay 
+' Current TASK: 
 ' * reload slideshow ( after completion )
+'
+'
+' TODO:
 ' * verify shuffle works
 ' * verify remote control works
 
-' TASK:
+' DONE: needs more work
+' * prevent screenSaver ( kinda done in a hacky way -- sending the InstandReplay key )
+
+' DONE:
 ' * Photo Display mode -- seems like it's cropping 
 '    X -- cropping fixed 
 '    X -- cached images 
 '    X -- purge cache when needed ( to much or close the screen )
-'    -- center the image ( since we no longer "stretch/crop" )
+'    X -- center the image ( since we no longer "stretch/crop" )
+'    X -- timer to hide overlay
+'    X -- keeps state when EU toggles overlay with remove (up/down) 
+'
 
 Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffled=false, slideShow=true)
     obj = CreateObject("roAssociativeArray")
@@ -59,7 +67,7 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
    
     obj.isSlideShow = slideShow       ' if we came in through the play/slide show vs showing a shingle item
     obj.ImageCanvasName = "slideshow" ' used if we need to know we are in a slideshow screen
-    obj.IsPaused = true
+    obj.IsPaused = NOT(slideshow)
     obj.ForceResume = false
 
     obj.LocalFiles = []
@@ -73,6 +81,7 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     NowPlayingManager().SetControllable("photo", "skipNext", obj.Context.Count() > 1)
 
     screen = createobject("roimagecanvas")
+    obj.canvasrect = screen.GetCanvasRect()
     screen.SetRequireAllImagesToDraw(true)
 
     theme = getImageCanvasTheme()
@@ -81,6 +90,9 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     obj.Screen = screen
 
     obj.doReload = RegRead("slideshow_reload", "preferences", "disabled")
+    obj.overlayEnabled = (RegRead("slideshow_overlay", "preferences", "2500").toInt() <> 0)
+
+    obj.Activate = ICphotoPlayerActivate
 
     obj.Pause = ICphotoPlayerPause
     obj.Resume = ICphotoPlayerResume
@@ -100,6 +112,7 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
         NowPlayingManager().timelines["photo"].attrs["shuffle"] = "0"
     end if
 
+    ' slideshow timer
     if obj.Timer = invalid then
         time = RegRead("slideshow_period", "preferences", "6").toInt()
         obj.Timer = createTimer()
@@ -107,6 +120,17 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
         obj.Timer.SetDuration(time*1000, true)
         obj.Timer.Active = false
         GetViewController().AddTimer(obj.Timer, obj)
+    end if
+
+    ' overlay timer ( used if if disabled -- one can toggle the overlay )
+    if obj.TimerOverlay = invalid then
+        time = RegRead("slideshow_overlay", "preferences", "2500").toInt()
+        print time
+        obj.TimerOverlay = createTimer()
+        obj.TimerOverlay.Name = "overlay"
+        obj.TimerOverlay.SetDuration(time, true)
+        obj.TimerOverlay.Active = false
+        GetViewController().AddTimer(obj.TimerOverlay, obj)
     end if
 
     return obj
@@ -152,7 +176,9 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
                 m.Stop()
             else if msg.GetIndex() = 2 or msg.GetIndex() = 3 then 
                 ' down/up : toggle overlay
+                m.overlayEnabled = NOT(m.overlayEnabled)
                 m.OverlayToggle()
+
             else if msg.GetIndex() = 4 then 
                 ' left: previous
                 'm.OverlayToggle("show",invalid,"previous")
@@ -192,6 +218,12 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
 End Function
 
 sub ICphotoPlayerOverlayToggle(force=invalid,headerText=invalid,overlayText=invalid)
+        if NOT m.overlayEnabled and overlayText = invalid and headerText = invalid then 
+            print "---------- remove overlay"
+            m.screen.clearlayer(2)      
+            m.OverlayOn = false
+            return
+        end if
 
         if force <> invalid 
             if tostr(force) = "hide" then 
@@ -209,9 +241,9 @@ sub ICphotoPlayerOverlayToggle(force=invalid,headerText=invalid,overlayText=inva
             m.OverlayOn = false
         else 
             print "---------- show overlay"
+
             item = m.context[m.curindex]                
-            canvasRect = m.screen.GetCanvasRect()
-            y = int(canvasrect.h*.80)
+            y = int(m.canvasrect.h*.80)
 
             if overlayText = invalid then 
                 overlayText = item.title + "             " + item.textoverlayul + "              " + tostr(m.curindex+1) + " of " + tostr(m.PhotoCount)
@@ -219,39 +251,51 @@ sub ICphotoPlayerOverlayToggle(force=invalid,headerText=invalid,overlayText=inva
 
             if headerText <> invalid then 
                 overlayText = tostr(headerText) + chr(10)+chr(10) + overlayText
-                y = int(canvasrect.h*.75)                    
+                y = int(m.canvasrect.h*.75)                    
             else if m.IsPaused = true then 
                 overlayText = "Paused" + chr(10)+chr(10) + overlayText
-                y = int(canvasrect.h*.75)                    
+                y = int(m.canvasrect.h*.75)                    
             end if
 
             display=[
-                { color: "#A0000000", TargetRect:{x:0,y:y,w:canvasrect.w,h:0} }
+                { color: "#A0000000", TargetRect:{x:0,y:y,w:m.canvasrect.w,h:0} }
                 {
                     Text: overlayText
                     TextAttrs:{Color:"#FFCCCCCC", Font:"Medium",
                     HAlign:"HCenter", VAlign:"VCenter",
                     Direction:"LeftToRight"}
-                    TargetRect:{x:0,y:y,w:canvasrect.w,h:0}
+                    TargetRect:{x:0,y:y,w:m.canvasrect.w,h:0}
                 }
             ]
             m.screen.setlayer(2,display)      
             m.OverlayOn = true
+
             m.Timer.Mark()
+            m.TimerOverlay.Active = true
+            m.TimerOverlay.Mark()
             'sleep(500)
         end if
 
 end sub
 
 sub ICphotoPlayerOnTimerExpired(timer)
+    print timer.Name
+
     if timer.Name = "slideshow" then
+        SendRemoteKey("InstantReplay") ' need to find a better fix to prevent the screenSaver )
         m.Next()
+    end if
+
+    if timer.Name = "overlay" then
+        m.OverlayToggle("hide")
     end if
 End Sub
 
 sub ICslideshowSetSlideImage()
     m.GetSlideImage()
-    display=[{url:m.CurFile.localFilePath, targetrect:{x:0,y:0,w:m.CurFile.size.width,h:m.CurFile.size.height}}]
+    y = int((m.canvasrect.h-m.CurFile.size.height)/2)
+    x = int((m.canvasrect.w-m.CurFile.size.width)/2)
+    display=[{url:m.CurFile.localFilePath, targetrect:{x:x,y:y,w:m.CurFile.size.width,h:m.CurFile.size.height}}]
     m.screen.setlayer(1,display)      
 end sub
 
@@ -271,7 +315,12 @@ sub ICphotoPlayerNext()
     NowPlayingManager().location = "fullScreenPhoto"
     NowPlayingManager().UpdatePlaybackState("photo", m.Context[m.CurIndex], "playing", 0)
 
-    m.OverlayToggle("hide")
+    if NOT m.overlayEnabled then 
+        m.OverlayToggle("hide")
+    else 
+        m.OverlayToggle("show")
+    end if
+
     m.nextindex = m.curindex+1
     m.Timer.Mark()
     GetViewController().ResetIdleTimer()
@@ -288,7 +337,12 @@ sub ICphotoPlayerPrev()
     NowPlayingManager().location = "fullScreenPhoto"
     NowPlayingManager().UpdatePlaybackState("photo", m.Context[m.CurIndex], "playing", 0)
 
-    m.OverlayToggle("hide")
+    if NOT m.overlayEnabled then 
+        m.OverlayToggle("hide")
+    else 
+        m.OverlayToggle("show")
+    end if
+
     m.nextindex = m.curindex+1
     m.Timer.Mark()
     GetViewController().ResetIdleTimer()
@@ -297,7 +351,7 @@ end sub
 sub ICphotoPlayerPause()
    m.IsPaused = true
    m.Timer.Active = false
-   m.OverlayToggle("show")
+   m.OverlayToggle("show","Paused")
    NowPlayingManager().UpdatePlaybackState("photo", m.Context[m.CurIndex], "paused", 0)
 end sub
 
@@ -415,3 +469,10 @@ sub ICPurgeLocalFiles()
         print "    Done. Total Files left:" + tostr(m.LocalFiles.count())
     end if
 end sub
+
+sub ICphotoPlayerActivate(priorScreen) 
+ ' pretty basic for now -- we will resume the slide show if paused and forcResume is set
+ '  note: forceResume is set if slideshow was playing while EU hits the * button ( when we come back, we need/should to resume )
+ if m.isPaused and m.ForceResume then m.Resume()
+end sub
+

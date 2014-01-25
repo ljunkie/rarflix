@@ -146,12 +146,12 @@ Function dialogHandleMessage(msg) As Boolean
             closeScreens = true
             m.ViewController.PopScreen(m)
             ' if we show a dialog in the slideshow screen - we pause, so resume if closed
+            ' - ljunkie -- yea, yea, this should have been done in an Active() routine. 
+            ' TODO: remove this once we deprecate teh roSlideShow screen
             screen = m.ViewController.screens.peek()
             if type(screen.screen) = "roSlideShow" and screen.isPaused and screen.ForceResume then 
                 screen.screen.Resume()
                 screen.isPaused = false
-            else if type(screen.screen) = "roImageCanvas" and tostr(screen.imagecanvasname) = "slideshow" and screen.isPaused and screen.ForceResume then 
-                screen.Resume()
             end if
         else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then
             'print "closeDialog"
@@ -159,11 +159,11 @@ Function dialogHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
             screen = m.ViewController.screens.peek()
             ' if we show a dialog in the slideshow screen - we pause, so resume if closed
+            ' - ljunkie -- yea, yea, this should have been done in an Active() routine. 
+            ' TODO: remove this once we deprecate teh roSlideShow screen
             if type(screen.screen) = "roSlideShow" and screen.isPaused and screen.ForceResume then 
                 screen.screen.Resume()
                 screen.isPaused = false
-            else if type(screen.screen) = "roImageCanvas" and tostr(screen.imagecanvasname) = "slideshow" and screen.isPaused and screen.ForceResume then 
-                screen.Resume()
             end if
         else if msg.isButtonPressed() then
             command = m.ButtonCommands[msg.getIndex()]
