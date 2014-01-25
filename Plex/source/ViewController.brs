@@ -1540,12 +1540,15 @@ Sub vcDestroyGlitchyScreens()
     next
 End Sub
 
-Function vcStartRequest(request, listener, context, body=invalid) As Boolean
+Function vcStartRequest(request, listener, context, body=invalid, toFile=invalid) As Boolean
+    ' ljunkie - added extra option to save request to a file
     request.SetPort(m.GlobalMessagePort)
     context.Listener = listener
     context.Request = request
 
-    if body = invalid then
+    if toFile <> invalid then
+        started = request.AsyncGetToFile(toFile)
+    else if body = invalid then
         started = request.AsyncGetToString()
     else
         started = request.AsyncPostFromString(body)
