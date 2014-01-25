@@ -31,6 +31,7 @@ Function createViewController() As Object
     controller.CreateVideoPlayer = vcCreateVideoPlayer
     controller.CreatePlayerForItem = vcCreatePlayerForItem
     controller.IsVideoPlaying = vcIsVideoPlaying
+    controller.IsSlideShowPlaying = vcIsSlideShowPlaying
 
     controller.ShowFirstRun = vcShowFirstRun
     controller.ShowReleaseNotes = vcShowReleaseNotes
@@ -694,6 +695,9 @@ End Function
 
 
 Function vcCreateICphotoPlayer(context, contextIndex=invalid, show=true, shuffled=false, slideShow=false)
+    ' remote clients default to use the "play" button, so we can't always trust slidshow=true -- verify we have more than one item
+    if ( ( type(context) = "roArray" and context.count() = 1 ) or (type(context) <> "roArray") ) then slideShow=false
+
     if NOT AppManager().IsPlaybackAllowed() then
         m.ShowPlaybackNotAllowed()
         return invalid
@@ -713,6 +717,8 @@ Function vcCreateICphotoPlayer(context, contextIndex=invalid, show=true, shuffle
         screen.Timer.Active = true
         screen.Timer.Mark()
         screen.isPaused = false
+    else 
+        screen.isSlideShow = false
     end if
 
     if show then screen.Show()
@@ -860,6 +866,10 @@ End Function
 
 Function vcIsVideoPlaying() As Boolean
     return type(m.screens.Peek().Screen) = "roVideoScreen"
+End Function
+
+Function vcIsSlideShowPlaying() As Boolean
+    return (type(m.screens.Peek().Screen) = "roImageCanvas" and tostr(m.screens.Peek().imagecanvasname) = "slideshow")
 End Function
 
 Sub vcShowFirstRun()

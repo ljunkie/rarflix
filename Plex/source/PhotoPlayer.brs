@@ -106,16 +106,6 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController, shuffled
     return obj
 End Function
 
-Function PhotoPlayer()
-    ' If the active screen is a slideshow, return it. Otherwise, invalid.
-    screen = GetViewController().screens.Peek()
-    if type(screen.Screen) = "roSlideShow" then
-        return screen
-    else
-        return invalid
-    end if
-End Function
-
 Function photoPlayerHandleMessage(msg) As Boolean
     ' We don't actually need to do much of anything, the slideshow pretty much
     ' runs itself.

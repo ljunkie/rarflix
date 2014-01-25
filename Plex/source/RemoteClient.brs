@@ -101,7 +101,7 @@ Function ProcessPlayMediaRequest() As Boolean
         ' meant for the old video player. So we have to register a callback,
         ' which is always awkward.
 
-        if GetViewController().IsVideoPlaying() then
+        if GetViewController().IsVideoPlaying() or (GetViewController().IsSlideShowPlaying() and children[matchIndex].ContentType = "photo") then
             callback = CreateObject("roAssociativeArray")
             callback.context = children
             callback.contextIndex = matchIndex
@@ -109,15 +109,24 @@ Function ProcessPlayMediaRequest() As Boolean
             callback.OnAfterClose = createPlayerAfterClose
             GetViewController().CloseScreenWithCallback(callback)
         else
+            ' ljunkie - lets pause the slide show ( onces the EU goes back -- it will resume )
+            if GetViewController().IsSlideShowPlaying() then 
+                PhotoPlayer().pause()
+                PhotoPlayer().forceResume = true
+            end if
+
             GetViewController().CreatePlayerForItem(children, matchIndex, seek)
 
             ' If the screensaver is on, which we can't reliably know, then the
             ' video won't start until the user wakes the Roku up. We can do that
             ' for them by sending a harmless keystroke. Down is harmless, as long
             ' as they started a video or slideshow.
-            if GetViewController().IsVideoPlaying() OR children[matchIndex].ContentType = "photo" then
-                req = CreateURLTransferObject("http://127.0.0.1:8060/keypress/Down")
-                req.AsyncPostFromString("")
+            if children[matchIndex].ContentType = "photo" then
+                SendEcpCommand("InstantReplay")
+            else if GetViewController().IsVideoPlaying() then 
+                SendEcpCommand("Down")
+                'req = CreateURLTransferObject("http://127.0.0.1:8060/keypress/Down")
+                'req.AsyncPostFromString("")
             end if
         end if
 
@@ -288,7 +297,7 @@ Function ProcessPlaybackPlayMedia() As Boolean
         ' meant for the old video player. So we have to register a callback,
         ' which is always awkward.
 
-        if GetViewController().IsVideoPlaying() then
+        if GetViewController().IsVideoPlaying() or (GetViewController().IsSlideShowPlaying() and children[matchIndex].ContentType = "photo") then
             callback = CreateObject("roAssociativeArray")
             callback.context = children
             callback.contextIndex = matchIndex
@@ -296,13 +305,24 @@ Function ProcessPlaybackPlayMedia() As Boolean
             callback.OnAfterClose = createPlayerAfterClose
             GetViewController().CloseScreenWithCallback(callback)
         else
+            ' ljunkie - lets pause the slide show ( onces the EU goes back -- it will resume )
+            if GetViewController().IsSlideShowPlaying() then 
+                PhotoPlayer().pause()
+                PhotoPlayer().forceResume = true
+            end if
+
             GetViewController().CreatePlayerForItem(children, matchIndex, offset)
 
             ' If the screensaver is on, which we can't reliably know, then the
             ' video won't start until the user wakes the Roku up. We can do that
             ' for them by sending a harmless keystroke. Down is harmless, as long
             ' as they started a video or slideshow.
-            SendEcpCommand("Down")
+            ' --ljunkie - RARflix uses the down for the HUD ( for now we will send an InstantReplay ) 
+            if children[matchIndex].ContentType = "photo" then 
+                SendEcpCommand("InstantReplay")
+            else 
+                SendEcpCommand("Down")
+            end if
         end if
     else
         SendErrorResponse(m, 400, "unable to find media for key")

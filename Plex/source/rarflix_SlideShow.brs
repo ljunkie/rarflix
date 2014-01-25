@@ -5,7 +5,6 @@
 '
 ' TODO:
 ' * verify shuffle works
-' * verify remote control works
 
 ' DONE: needs more work
 ' * prevent screenSaver ( kinda done in a hacky way -- sending the InstandReplay key )
@@ -18,7 +17,8 @@
 '    X -- center the image ( since we no longer "stretch/crop" )
 '    X -- timer to hide overlay
 '    X -- keeps state when EU toggles overlay with remove (up/down) 
-'
+'    X -- verify remote control works ( fun stuff )
+
 
 Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffled=false, slideShow=true)
     obj = CreateObject("roAssociativeArray")
@@ -28,29 +28,7 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
 
     ' ljunkie - we need to iterate through the items and remove directories -- they don't play nice
     ' note: if we remove directories ( itms ) the contextIndex will be wrong - so fix it!
-    if type(context) = "roArray" then
-        key = context[contextIndex].key
-        newcontext = []
-        for each item in context
-            if item <> invalid and tostr(item.nodename) = "Photo" then 
-                newcontext.Push(item)
-            else 
-                if item <> invalid then Debug("skipping item: " + tostr(item.nodename) + " " + tostr(item.title))
-            end if
-        next
-        
-        ' reset contextIndex (curIndex) if needed -- it may have shifted
-        if context.count() <> newcontext.count() then 
-            contextIndex = 0 ' reset context to zero, unless we find a match
-            for index = 0 to newcontext.count() - 1 
-                if key = newcontext[index].key then 
-                    contextIndex = index
-                    exit for
-                end if
-            end for
-        end if
-        context = newcontext
-    end if
+    context = ICphotoPlayerCleanContext(context,contextIndex)
     ' end cleaning
 
     if type(context) = "roArray" then
@@ -125,7 +103,6 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     ' overlay timer ( used if if disabled -- one can toggle the overlay )
     if obj.TimerOverlay = invalid then
         time = RegRead("slideshow_overlay", "preferences", "2500").toInt()
-        print time
         obj.TimerOverlay = createTimer()
         obj.TimerOverlay.Name = "overlay"
         obj.TimerOverlay.SetDuration(time, true)
@@ -252,9 +229,10 @@ sub ICphotoPlayerOverlayToggle(force=invalid,headerText=invalid,overlayText=inva
             if headerText <> invalid then 
                 overlayText = tostr(headerText) + chr(10)+chr(10) + overlayText
                 y = int(m.canvasrect.h*.75)                    
-            else if m.IsPaused = true then 
-                overlayText = "Paused" + chr(10)+chr(10) + overlayText
-                y = int(m.canvasrect.h*.75)                    
+            ' no longer show paused -- we might be 'showing' one of multiple items
+            'else if m.IsPaused = true then 
+            '    overlayText = "Paused" + chr(10)+chr(10) + overlayText
+            '    y = int(m.canvasrect.h*.75)                    
             end if
 
             display=[
@@ -273,17 +251,17 @@ sub ICphotoPlayerOverlayToggle(force=invalid,headerText=invalid,overlayText=inva
             m.Timer.Mark()
             m.TimerOverlay.Active = true
             m.TimerOverlay.Mark()
-            'sleep(500)
         end if
 
 end sub
 
 sub ICphotoPlayerOnTimerExpired(timer)
-    print timer.Name
 
     if timer.Name = "slideshow" then
-        SendRemoteKey("InstantReplay") ' need to find a better fix to prevent the screenSaver )
-        m.Next()
+        if m.PhotoCount > 1 then 
+            SendRemoteKey("InstantReplay") ' need to find a better fix to prevent the screenSaver
+            m.Next()
+        end if
     end if
 
     if timer.Name = "overlay" then
@@ -293,6 +271,7 @@ End Sub
 
 sub ICslideshowSetSlideImage()
     m.GetSlideImage()
+    m.item = m.context[m.CurIndex]
     y = int((m.canvasrect.h-m.CurFile.size.height)/2)
     x = int((m.canvasrect.w-m.CurFile.size.width)/2)
     display=[{url:m.CurFile.localFilePath, targetrect:{x:x,y:y,w:m.CurFile.size.width,h:m.CurFile.size.height}}]
@@ -300,13 +279,38 @@ sub ICslideshowSetSlideImage()
 end sub
 
 sub ICphotoPlayerNext()
+    if m.PhotoCount = 1 then return 
     'print "-- next"
     if m.nextindex <> invalid then 
         i = m.nextindex
     else 
         i = m.curindex
     end if
-    if i > m.context.count()-1 then i=0  
+
+    ' we are at the end -- reset index and reload context ( if enabled in prefs )
+    if i > m.context.count()-1 then 
+        i=0  
+
+        expireSec = 300 ' only reload every 5 minutes
+        if m.doReload = "enabled" then
+            if m.lastreload <> invalid and getEpoch()-m.lastReload < expireSec then 
+                Debug("---- Skipping Reload " + tostr(getEpoch()-m.lastReload) + " seconds < expire seconds " + tostr(expireSec))
+            else 
+                Debug("---- trying Reload ")
+                m.lastReload = getEpoch()
+                if m.item <> invalid and m.item.server <> invalid and m.item.sourceurl <> invalid then 
+                    obj = createPlexContainerForUrl(m.item.server, m.item.sourceurl, "")
+                    if obj.count() > 0 and obj.count() <> m.context.count() then 
+                        m.context = ICphotoPlayerCleanContext(obj.getmetadata(),0)
+                        m.PhotoCount = m.context.count()
+                        Debug("---- reloading slideshow with new context " + tostr(m.PhotoCount) + " items")
+                    else 
+                        Debug("---- skipping slideshow content reload (no new items)")
+                    end if
+                end if
+            end if
+        end if
+    end if
     m.curindex = i
 
     m.SetSlideImage()
@@ -327,6 +331,7 @@ sub ICphotoPlayerNext()
 end sub
 
 sub ICphotoPlayerPrev()
+    if m.PhotoCount = 1 then return 
     'print "-- Previous"
     i=m.curindex-1
     if i < 0 then i = m.context.count()-1
@@ -349,6 +354,7 @@ sub ICphotoPlayerPrev()
 end sub
 
 sub ICphotoPlayerPause()
+   if m.PhotoCount = 1 then return 
    m.IsPaused = true
    m.Timer.Active = false
    m.OverlayToggle("show","Paused")
@@ -356,6 +362,7 @@ sub ICphotoPlayerPause()
 end sub
 
 sub ICphotoPlayerResume()
+   if m.PhotoCount = 1 then return 
    m.IsPaused = false
    m.Timer.Active = true
    m.OverlayToggle("show","Resumed")
@@ -367,6 +374,7 @@ sub ICphotoPlayerStop()
 end sub
 
 Sub ICphotoPlayerSetShuffle(shuffleVal)
+    if m.PhotoCount = 1 then return 
     newVal = (shuffleVal = 1)
     if newVal = m.IsShuffled then return
 
@@ -476,3 +484,45 @@ sub ICphotoPlayerActivate(priorScreen)
  if m.isPaused and m.ForceResume then m.Resume()
 end sub
 
+
+Function PhotoPlayer()
+    ' If the active screen is a slideshow, return it. Otherwise, invalid.
+    screen = GetViewController().screens.Peek()
+    if type(screen.Screen) = "roSlideShow" then ' to deprecate roSlideShow!
+        return screen
+    else if type(screen.screen) = "roImageCanvas" and tostr(screen.imagecanvasname) = "slideshow" then
+        return screen
+    else
+        return invalid
+    end if
+End Function
+
+
+
+function ICphotoPlayerCleanContext(context,contextIndex)
+    if type(context) = "roArray" then
+        print context.count()
+        key = context[contextIndex].key
+        newcontext = []
+        for each item in context
+            if item <> invalid and tostr(item.nodename) = "Photo" then 
+                newcontext.Push(item)
+            else 
+                if item <> invalid then Debug("skipping item: " + tostr(item.nodename) + " " + tostr(item.title))
+            end if
+        next
+        
+        ' reset contextIndex (curIndex) if needed -- it may have shifted
+        if context.count() <> newcontext.count() then 
+            contextIndex = 0 ' reset context to zero, unless we find a match
+            for index = 0 to newcontext.count() - 1 
+                if key = newcontext[index].key then 
+                    contextIndex = index
+                    exit for
+                end if
+            end for
+        end if
+        context = newcontext
+    end if
+    return context
+end function
