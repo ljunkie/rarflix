@@ -61,7 +61,10 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     NowPlayingManager().SetControllable("photo", "skipNext", obj.Context.Count() > 1)
 
     screen = createobject("roimagecanvas")
+
+    obj.UnderScan = 5 ' percent of understan (2.5 with the slideShow -- but 5% seems right for this)
     obj.canvasrect = screen.GetCanvasRect()
+
     screen.SetRequireAllImagesToDraw(true)
 
     theme = getImageCanvasTheme()
@@ -586,6 +589,10 @@ Sub photoSlideShowOnUrlEvent(msg, requestContext)
             obj.metadata.height = int(mp*obj.metadata.height)
             obj.metadata.width = m.canvasrect.w
         end if
+
+        ' set UnderScan -- TODO(ljunkie) verify this is right fow other TV's
+        obj.metadata.height = int(obj.metadata.height*((100-m.UnderScan)/100))
+        obj.metadata.width = int(obj.metadata.width*((100-m.UnderScan)/100))
 
         ' container to know what file(s) we have created to purge later
         m.LocalFiles.Push(obj)
