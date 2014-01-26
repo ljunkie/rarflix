@@ -409,10 +409,11 @@ Sub ICphotoPlayerSetShuffle(shuffleVal)
         NowPlayingManager().timelines["photo"].attrs["shuffle"] = "0"
     end if
 
-    if m.CurIndex < m.PhotoCount - 1 then
+    ' next photo = currentIndex+1, unless this is a start or end of the slideshow
+    if m.NextIndex <> invalid and m.CurIndex < m.PhotoCount - 1 then
         m.NextIndex = m.CurIndex + 1
     else
-        m.NextIndex = 0
+        m.NextIndex = 0 ' End or Start of slideShow
     end if
 
     NowPlayingManager().timelines["photo"].attrs["shuffle"] = tostr(shuffleVal)
