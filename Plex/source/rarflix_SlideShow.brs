@@ -72,7 +72,6 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     screen.SetMessagePort(obj.Port)
     obj.Screen = screen
 
-    obj.doReload = RegRead("slideshow_reload", "preferences", "disabled")
     obj.overlayEnabled = (RegRead("slideshow_overlay", "preferences", "2500").toInt() <> 0)
 
     obj.Activate = ICphotoPlayerActivate
@@ -84,6 +83,7 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     obj.Stop = ICphotoPlayerStop
     obj.OverlayToggle = ICphotoPlayerOverlayToggle
 
+    obj.reloadSlideContext = ICreloadSlideContext
     obj.ShowSlideImage = ICshowSlideImage
     obj.getSlideImage = ICgetSlideImage
     obj.purgeSlideImages = ICPurgeLocalFiles
@@ -348,29 +348,9 @@ sub ICphotoPlayerNext()
 
     ' we are at the end -- reset index and reload context ( if enabled in prefs )
     if i > m.context.count()-1 then 
-        i=0  
-
-        expireSec = 300 ' only reload every 5 minutes
-        if m.doReload = "enabled" then
-            if m.lastreload <> invalid and getEpoch()-m.lastReload < expireSec then 
-                Debug("---- Skipping Reload " + tostr(getEpoch()-m.lastReload) + " seconds < expire seconds " + tostr(expireSec))
-            else 
-                Debug("---- trying Reload ")
-                m.lastReload = getEpoch()
-                if m.item <> invalid and m.item.server <> invalid and m.item.sourceurl <> invalid then 
-                    obj = createPlexContainerForUrl(m.item.server, m.item.sourceurl, "")
-                    if obj.count() > 0 and obj.count() <> m.context.count() then 
-                        cleanContext = ICphotoPlayerCleanContext(obj.getmetadata(),0)
-                        m.context = cleanContext.context
-                        m.PhotoCount = m.context.count()
-                        Debug("---- reloading slideshow with new context " + tostr(m.PhotoCount) + " items")
-                    else 
-                        Debug("---- skipping slideshow content reload (no new items)")
-                    end if
-                end if
-            end if
-        end if
+        i=0:m.reloadSlideContext()
     end if
+
     m.curindex = i
 
     m.GetSlideImage()
@@ -739,3 +719,33 @@ Sub photoPlayerShowContextMenu(obj,force_show = false)
 
 End Sub
 
+sub ICreloadSlideContext()
+    expireSec = 300 ' only reload every 5 minutes
+    if RegRead("slideshow_reload", "preferences", "disabled") <> "disabled" then 
+        if m.lastreload <> invalid and getEpoch()-m.lastReload < expireSec then 
+            Debug("---- Skipping Reload " + tostr(getEpoch()-m.lastReload) + " seconds < expire seconds " + tostr(expireSec))
+        else 
+            Debug("---- trying to Reload SlideShow context")
+            m.lastReload = getEpoch()
+            if m.item <> invalid and m.item.server <> invalid and m.item.sourceurl <> invalid then 
+                obj = createPlexContainerForUrl(m.item.server, "", m.item.sourceurl) ' sourceurl for key arg -- will use the unadulterated url
+                newCount = obj.count():curCount = m.context.count()
+                Debug("    Cur Items: " + tostr(curCount)):Debug("    New Items: " + tostr(newCount))
+                if newCount > 0 and newCount <> curCount then 
+                    cleanContext = ICphotoPlayerCleanContext(obj.getmetadata(),0)
+                    cleanCount = cleanContext.context.count()
+                    Debug("    New (cleaned) Items: " + tostr(cleanCount))
+                    if cleanCount > 0 and cleanCount <> curCount then 
+                        m.context = cleanContext.context
+                        m.PhotoCount = cleanCount
+                        Debug("---- reloading slideshow with new context " + tostr(m.PhotoCount) + " items")
+                    else 
+                       Debug("---- slideshow content reload (no new items)")                            
+                    end if
+                else 
+                    Debug("---- slideshow content reload (no new items)")
+                end if
+            end if
+        end if
+    end if
+end sub
