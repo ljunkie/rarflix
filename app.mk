@@ -91,7 +91,7 @@ $(APPNAME): $(APPDEPS)
 	@if [ -d $(SOURCEREL)/$(APPNAME) ]; \
 	then \
 		(zip -0 -r "$(ZIPREL)/Plex.zip" . -i \*.png $(ZIP_EXCLUDE)); \
-		(zip -9 -r "$(ZIPREL)/Plex.zip" . -x \*~ -x \*.png -x Makefile $(ZIP_EXCLUDE)); \
+		(zip -9 -r "$(ZIPREL)/Plex.zip" . -x \*~ -x \*.disabled -x \*.png -x Makefile $(ZIP_EXCLUDE)); \
 	else \
 		echo "Source for $(APPNAME) not found at $(SOURCEREL)/$(APPNAME)"; \
 	fi
