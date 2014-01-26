@@ -19,7 +19,10 @@
 
 
 Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffled=false, slideShow=true)
-    print "createing SlideShow at index" + tostr(contextIndex)
+    Debug("creating ImageCanvas Photo Player at index" + tostr(contextIndex))
+    Debug("    Shuffled: " + tostr(Shuffled))
+    Debug("   SlideShow: " + tostr(slideShow))
+
     obj = CreateObject("roAssociativeArray")
     initBaseScreen(obj, viewController)
 
@@ -219,7 +222,7 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
             else if msg.GetIndex() = 7 then 
                ' InstantReplay: use to keep the slideshow from being idle ( screensaver hack )
             else 
-                print "button pressed (not handled)" + tostr(msg.GetIndex())
+                Debug("button pressed (not handled)" + tostr(msg.GetIndex()))
             end if
 
         end if
@@ -395,11 +398,11 @@ Sub ICphotoPlayerSetShuffle(shuffleVal)
 
     m.IsShuffled = newVal
     if m.IsShuffled then
-        print "shuffle array!"
+        Debug("shuffle context")
         m.CurIndex = ShuffleArray(m.Context, m.CurIndex)
         NowPlayingManager().timelines["photo"].attrs["shuffle"] = "1"
     else
-        print "UNshuffle array!"
+        Debug("Un-shuffle context")
         m.CurIndex = UnshuffleArray(m.Context, m.CurIndex)
         NowPlayingManager().timelines["photo"].attrs["shuffle"] = "0"
     end if
