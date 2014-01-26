@@ -211,6 +211,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
     ' dummy items so that the counts show up correctly on grid screens. It
     ' should generally provide a smoother loading experience. This is the
     ' metadata that will be used for pending items.
+    print "set blank loading item!"
     loader.LoadingItem = {
         title: "Loading..."
     }

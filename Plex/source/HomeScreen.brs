@@ -8,6 +8,16 @@ Function createHomeScreen(viewController) As Object
     ' So create a regular grid screen and override/extend as necessary.
     obj = createGridScreen(viewController, "flat-square", "stop")
 
+
+    di=createobject("rodeviceinfo")
+    ' only use custom loading image on the black theme - conserve space
+    if mid(di.getversion(),3,1).toint() > 3 and RegRead("rf_theme", "preferences", "black") = "black" then
+        imageDir = GetGlobalAA().Lookup("rf_theme_dir")
+        SDPosterURL = imageDir + "black-loading-poster.png"
+        HDPosterURL = imageDir + "black-loading-poster.png"
+        obj.screen.setloadingposter(SDPosterURL,HDPosterURL)
+    end if
+
     ' ljunkie - adding this comment for others if they think it's a good idea 
     ' to change the DisplayMode sway from "photo-fit" on 7x3 rows
     ' If we don't know exactly what we're displaying, photo-fit looks the

@@ -30,8 +30,13 @@ Function createGridScreen(viewController, style=RegRead("rf_grid_style", "prefer
     ' only use custom loading image on the black theme - conserve space
     if mid(di.getversion(),3,1).toint() > 3 and RegRead("rf_theme", "preferences", "black") = "black" then
         imageDir = GetGlobalAA().Lookup("rf_theme_dir")
-        SDPosterURL = imageDir + "LoadingPoster.png"
-        HDPosterURL = imageDir + "LoadingPoster.png"
+        if style = "flat-16X9" or style = "flat-landscape" then
+            SDPosterURL = imageDir + "sd-loading-landscape.jpg"
+            HDPosterURL = imageDir + "hd-loading-landscape.jpg"
+        else 
+            SDPosterURL = imageDir + "sd-loading-poster.jpg"
+            HDPosterURL = imageDir + "hd-loading-poster.jpg"
+        end if
         grid.setloadingposter(SDPosterURL,HDPosterURL)
     end if
 
