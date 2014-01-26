@@ -348,6 +348,14 @@ Sub photoPlayerShowContextMenu(obj,force_show = false)
             if obj.mediainfo.originallyAvailableAt <> invalid then dialog.text = dialog.text + "          date: "  + tostr(obj.mediainfo.originallyAvailableAt) + chr(10)
         
         
+            if m.isShuffled then 
+                dialog.SetButton("shufflePhoto", "Unshuffle Photos")
+                variable = variable +1
+            else 
+                dialog.SetButton("shufflePhoto", "Shuffle Photos")
+                variable = variable +1
+            end if
+
             dialog.SetButton("close", "Close")
             dialog.EnableOverlay = true
             dialog.ParentScreen = m

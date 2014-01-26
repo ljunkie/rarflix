@@ -411,6 +411,15 @@ Sub audioPlayerShowContextMenu()
     if m.slideshow <> invalid
         append = " Audio"
         variable = 0 ' variable buttongs.. we might have to +1 our focusedButton - logic will break if we add more buttons, so keep note of that
+
+        if m.slideshow.isShuffled then 
+            dialog.SetButton("shufflePhoto", "Unshuffle Photos")
+            variable = variable +1
+        else 
+            dialog.SetButton("shufflePhoto", "Shuffle Photos")
+            variable = variable +1
+        end if
+
         if m.slideshow.isPaused or m.isPaused then
             dialog.SetButton("resumeAll", "Resume All")
             variable = variable +1
