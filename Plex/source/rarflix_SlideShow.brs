@@ -132,7 +132,6 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
 
             m.ViewController.PopScreen(m)
         else if msg.isRemoteKeyPressed() then
-            ' print "button pressed" + tostr(msg.GetIndex())
             'assigned
             '  0: KeyBack :: close
             '  4: KeyLeft :: prev
@@ -148,7 +147,7 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
             ' unassigned
             ' 8: KeyRev :: 
             ' 9: KeyFwd :: 
-            ' 7: replay:: 
+            ' 7: InstatReplay:: 
 
             if msg.GetIndex() = 0 then 
                 ' back: close
@@ -188,6 +187,16 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
                 m.forceResume = NOT(m.isPaused)
                 m.Pause()
                 photoPlayerShowContextMenu(obj)
+            else if msg.GetIndex() = 8 then 
+               ' rwd: previous track if audio is playing
+               if AudioPlayer().IsPlaying then AudioPlayer().Prev()
+            else if msg.GetIndex() = 9 then 
+               ' fwd: next track if audio is playing
+               if AudioPlayer().IsPlaying then AudioPlayer().Next()
+            else if msg.GetIndex() = 7 then 
+               ' InstantReplay: use to keep the slideshow from being idle ( screensaver hack )
+            else 
+                print "button pressed (not handled)" + tostr(msg.GetIndex())
             end if
 
         end if
