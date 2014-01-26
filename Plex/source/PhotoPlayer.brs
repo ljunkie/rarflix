@@ -171,7 +171,7 @@ Function photoPlayerHandleMessage(msg) As Boolean
                 m.forceResume = NOT (m.isPaused)
                 m.screen.Pause()
                 m.isPaused = true
-                photoPlayerShowContextMenu(obj)
+                photoShowContextMenu(obj)
             else if msg.GetIndex() = 3 then
 
                 if GetGlobalAA().Lookup("slideshow_overlay") = false then

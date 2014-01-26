@@ -359,7 +359,7 @@ Function gridHandleMessage(msg) As Boolean
                     obj.Item = item
                     rfVideoMoreButtonFromGrid(obj)
                 else if item <> invalid and tostr(item.contenttype) = "photo" then 
-                    photoPlayerShowContextMenu(item,true)
+                    photoShowContextMenu(item,true)
                 else if tostr(item.contenttype) <> "invalid" and m.screenid > 0 and tostr(m.screenname) <> "Home" then
                     ' show the option to see the FULL grid screen. We might want this just to do directly to it, but what if we add more options later.
                     ' might as well get people used to this.
