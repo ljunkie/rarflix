@@ -19,6 +19,7 @@
 
 
 Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffled=false, slideShow=true)
+    print "createing SlideShow at index" + tostr(contextIndex)
     obj = CreateObject("roAssociativeArray")
     initBaseScreen(obj, viewController)
 
@@ -27,7 +28,9 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
 
     ' ljunkie - we need to iterate through the items and remove directories -- they don't play nice
     ' note: if we remove directories ( itms ) the contextIndex will be wrong - so fix it!
-    context = ICphotoPlayerCleanContext(context,contextIndex)
+    cleanContext = ICphotoPlayerCleanContext(context,contextIndex)
+    context = cleanContext.context
+    contextIndex = cleanContext.contextIndex
     ' end cleaning
 
     if type(context) = "roArray" then
@@ -337,7 +340,8 @@ sub ICphotoPlayerNext()
                 if m.item <> invalid and m.item.server <> invalid and m.item.sourceurl <> invalid then 
                     obj = createPlexContainerForUrl(m.item.server, m.item.sourceurl, "")
                     if obj.count() > 0 and obj.count() <> m.context.count() then 
-                        m.context = ICphotoPlayerCleanContext(obj.getmetadata(),0)
+                        cleanContext = ICphotoPlayerCleanContext(obj.getmetadata(),0)
+                        m.context = cleanContext.context
                         m.PhotoCount = m.context.count()
                         Debug("---- reloading slideshow with new context " + tostr(m.PhotoCount) + " items")
                     else 
@@ -478,6 +482,10 @@ Function PhotoPlayer()
 End Function
 
 function ICphotoPlayerCleanContext(context,contextIndex)
+    ' should attache this function to the 
+    cleaned = {}
+    cleaned.context = context
+    cleaned.contextIndex = contextIndex
     if type(context) = "roArray" then
         key = context[contextIndex].key
         newcontext = []
@@ -494,15 +502,15 @@ function ICphotoPlayerCleanContext(context,contextIndex)
             contextIndex = 0 ' reset context to zero, unless we find a match
             for index = 0 to newcontext.count() - 1 
                 if key = newcontext[index].key then 
-                    contextIndex = index
+                    cleaned.contextIndex = index
                     exit for
                 end if
             end for
         end if
-        context = newcontext
+        cleaned.context = newcontext
     end if
 
-    return context
+    return cleaned
 
 end function
 
