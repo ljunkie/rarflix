@@ -25,9 +25,10 @@ Sub photoSetupButtons()
 
     m.AddButton("Slideshow", "ICslideshow")
     m.AddButton("Slideshow Shuffled", "ICslideshowShuffled")
-    m.AddButton("Show (new)", "ICshow")
-    m.AddButton("Show (old)", "show")
-'    m.AddButton("Slideshow", "slideshow")
+    m.AddButton("Show", "ICshow")
+    ' removed PhotoPlayer.brs -- old one is archived PhotoPlayer.brs.disabled
+    '    m.AddButton("Show (old)", "show")
+    '    m.AddButton("Slideshow (old)", "slideshow")
     m.AddButton("Next Photo", "next")
     m.AddButton("Previous Photo", "prev")
 
@@ -71,20 +72,21 @@ Function photoHandleMessage(msg) As Boolean
             handled = true
             buttonCommand = m.buttonCommands[str(msg.getIndex())]
             Debug("Button command: " + tostr(buttonCommand))
-            if buttonCommand = "show" then
-                Debug("photoHandleMessage:: Show photo fullscreen")
-                m.ViewController.CreatePhotoPlayer(m.Item)
-            else if buttonCommand = "slideshow" then
-                ' Playing Photos from springBoard in a FULL grid context
-                GetContextFromFullGrid(m,m.focusedIndex) 
-		if m.context.count() = 0 then
-                    ShowErrorDialog("Sorry! We were unable to load your photos.","Warning")
-                else 
-                    Debug("photoHandleMessage:: springboard Start slideshow with " + tostr(m.context.count()) + " items")
-                    Debug("starting at index: " + tostr(m.curindex))
-                    m.ViewController.CreatePhotoPlayer(m.Context, m.CurIndex, true, m.IsShuffled)
-                end if
-            else if buttonCommand = "ICslideshow" or buttonCommand = "ICshow" or buttonCommand = "ICslideshowShuffled" then
+            ' deprecated old commands
+            'if buttonCommand = "show" then
+            '    Debug("photoHandleMessage:: Show photo fullscreen")
+            '    m.ViewController.CreatePhotoPlayer(m.Item)
+            'else if buttonCommand = "slideshow" then
+            '    ' Playing Photos from springBoard in a FULL grid context
+            '    GetContextFromFullGrid(m,m.focusedIndex) 
+	    '    if m.context.count() = 0 then
+            '        ShowErrorDialog("Sorry! We were unable to load your photos.","Warning")
+            '    else 
+            '        Debug("photoHandleMessage:: springboard Start slideshow with " + tostr(m.context.count()) + " items")
+            '        Debug("starting at index: " + tostr(m.curindex))
+            '        m.ViewController.CreatePhotoPlayer(m.Context, m.CurIndex, true, m.IsShuffled)
+            '    end if
+            if buttonCommand = "ICslideshow" or buttonCommand = "ICshow" or buttonCommand = "ICslideshowShuffled" then
                 ' Playing Photos from springBoard in a FULL grid context
                 m.IsShuffled = (buttonCommand = "ICslideshowShuffled")
                 GetContextFromFullGrid(m,m.focusedIndex) 

@@ -94,13 +94,15 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     obj.showContextMenu = photoShowContextMenu
     obj.setImageFailureInfo()
 
-    obj.IsShuffled = shuffled
     obj.SetShuffle = ICphotoPlayerSetShuffle
     if shuffled then
+        obj.SetShuffle(1)
+        'obj.CurIndex = ShuffleArray(obj.Context, obj.CurIndex)
         NowPlayingManager().timelines["photo"].attrs["shuffle"] = "1"
     else
         NowPlayingManager().timelines["photo"].attrs["shuffle"] = "0"
     end if
+    obj.IsShuffled = shuffled
 
     ' slideshow timer
     if obj.Timer = invalid then
