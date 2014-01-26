@@ -570,7 +570,17 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     m.UpdateScreenProperties(screen)
     m.PushScreen(screen)
 
-    if show then screen.Show()
+    if show then 
+        screen.Show()
+    else if contentType = "audio" then 
+        ' I am not sure if this would break other screens -- so we will only handle Audio for now
+        ' It doesn't look like anyone calls this with the fourth variable show=true)
+        ' -- this will start music in the background
+        Debug("start audio in the background -- removing the screen")
+        m.PopScreen(screen)
+        screen = invalid
+        return screen
+    end if
 
     if screen.hasWaitdialog <> invalid then screen.hasWaitdialog.close()
 
@@ -841,7 +851,7 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
         return m.CreateICphotoPlayer(context, contextIndex, true, false, true)
     else if item.ContentType = "audio" then
         AudioPlayer().Stop()
-        return m.CreateScreenForItem(context, contextIndex, invalid)
+        return m.CreateScreenForItem(context, contextIndex, invalid, NOT(GetViewController().IsSlideShowPlaying()))
     else if item.ContentType = "movie" OR item.ContentType = "episode" OR item.ContentType = "clip" then
         directplay = RegRead("directplay", "preferences", "0").toint()
         return m.CreateVideoPlayer(item, seekValue, directplay)

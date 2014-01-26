@@ -110,7 +110,8 @@ Function ProcessPlayMediaRequest() As Boolean
             GetViewController().CloseScreenWithCallback(callback)
         else
             ' ljunkie - lets pause the slide show ( onces the EU goes back -- it will resume )
-            if GetViewController().IsSlideShowPlaying() then 
+            ' exclude audio request -- audio we play in the background, so we can skip pausing
+            if (GetViewController().IsSlideShowPlaying() and children[matchIndex].ContentType <> "audio") then
                 PhotoPlayer().pause()
                 PhotoPlayer().forceResume = true
             end if
@@ -306,7 +307,8 @@ Function ProcessPlaybackPlayMedia() As Boolean
             GetViewController().CloseScreenWithCallback(callback)
         else
             ' ljunkie - lets pause the slide show ( onces the EU goes back -- it will resume )
-            if GetViewController().IsSlideShowPlaying() then 
+            ' exclude audio request -- audio we play in the background, so we can skip pausing
+            if (GetViewController().IsSlideShowPlaying() and children[matchIndex].ContentType <> "audio") then
                 PhotoPlayer().pause()
                 PhotoPlayer().forceResume = true
             end if
