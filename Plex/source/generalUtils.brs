@@ -583,12 +583,16 @@ Function IIf(Condition, Result1, Result2) As Dynamic
 end Function
 
 Sub SwapArray(arr, i, j, setOrigIndex=false)
-    if i <> j then
-        if setOrigIndex then
-            if arr[i].OrigIndex = invalid then arr[i].OrigIndex = i
-            if arr[j].OrigIndex = invalid then arr[j].OrigIndex = j
-        end if
+    ' ljunkie -- sometimes the orignal and random number can be the same
+    ' we should still set the OrigIndex to be able to unShuffleArray later
+    ' note: moved out of the "i <> j" if statement
+    if setOrigIndex then
+        if arr[i].OrigIndex = invalid then arr[i].OrigIndex = i
+        if arr[j].OrigIndex = invalid then arr[j].OrigIndex = j
+    end if
 
+    ' if Orignal and Random are different, swap items place in array
+    if i <> j then
         temp = arr[i]
         arr[i] = arr[j]
         arr[j] = temp
