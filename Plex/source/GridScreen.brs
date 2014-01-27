@@ -262,13 +262,16 @@ Function gridHandleMessage(msg) As Boolean
             if vc.Home <> invalid AND m.screenid <> vc.Home.ScreenID and m.contentArray <> invalid and type(m.contentArray[m.selectedRow]) = "roArray" then 
                 item = m.contentArray[m.selectedRow][m.focusedIndex]
        
-                if item <> invalid and tostr(item.type) = "photo" and tostr(item.nodename) <> "Directory" and item.ExifLoaded = invalid then 
-                    description = getExifData(item,true)
+                if item <> invalid and tostr(item.type) = "photo" and tostr(item.nodename) <> "Directory" then
+                    description = getExifData(item,true) ' this resues the items metadata mediainfo if already loaded
                     if description <> invalid then
-                        item.description = description
-                        item.ExifLoaded = true
+                        ' remove 0 stars from description ( or replace with userrating )
+                        if item.userrating <> invalid then item.starrating = item.userrating
+                        if item.starrating <> invalid and item.starrating = 0 then item.starrating = invalid
+
+                        print item
+                        item.description = description:item.GridDescription = description
                         m.Screen.SetContentListSubset(m.selectedRow, m.contentArray[m.selectedRow], m.focusedIndex, 1)
-                        'print item
                     end if
                 end if
             end if

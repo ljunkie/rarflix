@@ -288,6 +288,15 @@ Sub loaderRefreshData()
             isFullGrid = (m.listener.isfullgrid = true)
             supportedIdentifier = (item.mediaContainerIdentifier = "com.plexapp.plugins.library" OR item.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
 
+            ' skip FullGrid reload if the item is a photo or music item
+            if isFullGrid then 
+                 if contentType = "photo" or contentType = "album" or contentType = "artist" or contentType = "track" then 
+                    Debug("----- skip FULL grid reload -- contentType doesn't require it (yet) " + tostr(contentType))
+                    return
+                 end if
+            end if
+
+
             if item <> invalid and type(item.refresh) = "roFunction" then 
                 wkey = m.listener.contentarray[sel_row][sel_item].key
                 Debug("---- Refreshing metadata for item " + tostr(wkey) + " contentType: " + contentType)
@@ -358,6 +367,8 @@ Sub loaderRefreshData()
                         end if
 
                         ' skip FullGrid reload if the item is a photo or music item
+                        ' we do this check earlier, but later on depending on PMS features, we might have to remove it and 
+                        ' try to reload the specific item. This is were we can do this
                         if isFullGrid then 
                              if contentType = "photo" or contentType = "album" or contentType = "artist" or contentType = "track" then 
                                 Debug("----- skip FULL grid reload -- contentType doesn't require it (yet)" + tostr(contentType))
@@ -427,6 +438,12 @@ Sub loaderRefreshData()
                                         else
                                             Debug("---- refreshing item " + tostr(wkey) + " in row " + tostr(row))
                                             status.content[index] = context[0]
+                                            if contentType = "photo" and item.GridDescription <> invalid then 
+                                                ' we probably don't need to use the reloaded item, but why not
+                                                status.content[index].MediaInfo = item.MediaInfo
+                                                status.content[index].Description = item.GridDescription
+                                                status.content[index].GridDescription = item.GridDescription
+                                            end if
                                             m.listener.Screen.SetContentListSubset(row, status.content, index , 1)
                                         end if 
                                     end if

@@ -8,6 +8,7 @@ Function createPhotoSpringboardScreen(context, index, viewController) As Object
     obj.screen.SetDisplayMode("photo-fit") 
     obj.screen.SetPosterStyle("rounded-rect-16x9-generic") ' makes more sense for photos (opt2: rounded-square-generic)
     obj.SetupButtons = photoSetupButtons
+    obj.MoreButton = photoSprintBoardMoreButton
     obj.GetMediaDetails = photoGetMediaDetails
 
     obj.superHandleMessage = obj.HandleMessage
@@ -19,35 +20,43 @@ End Function
 Sub photoSetupButtons()
     m.ClearButtons()
 
-   if m.metadata.starrating = invalid then 'ljunkie - don't show starts if invalid
-        m.Screen.SetStaticRatingEnabled(false)
-   end if
+    'if m.metadata.starrating = invalid then 'ljunkie - don't show stars if invalid
+    ' it's a bit redundant -- we already show the rating as a button ( so hide them )
+    m.Screen.SetStaticRatingEnabled(false)
+    'end if
 
-    m.AddButton("Slideshow", "ICslideshow")
-    m.AddButton("Slideshow Shuffled", "ICslideshowShuffled")
+    print "woooo hoooo setup buttongs"
+    print m
+    if m.IsShuffled then 
+        m.AddButton("Slideshow Shuffled", "ICslideshow")
+    else 
+        m.AddButton("Slideshow", "ICslideshow")
+    end if 
+    ' m.AddButton("Slideshow Shuffled", "ICslideshowShuffled")-- it's handled by the more/* button ( toggle slideshow )
     m.AddButton("Show", "ICshow")
-    ' removed PhotoPlayer.brs -- old one is archived PhotoPlayer.brs.disabled
-    '    m.AddButton("Show (old)", "show")
-    '    m.AddButton("Slideshow (old)", "slideshow")
     m.AddButton("Next Photo", "next")
     m.AddButton("Previous Photo", "prev")
 
-    if m.metadata.UserRating = invalid then
-        m.metadata.UserRating = 0
-    endif
+    print m.metadata
+    if m.metadata.UserRating = invalid then m.metadata.UserRating = 0
     if m.metadata.StarRating = invalid then
-        m.metadata.StarRating = 0
+        if m.metadata.UserRating <> invalid and m.metadata.UserRating > 0 then 
+            m.metadata.StarRating = m.metadata.UserRating
+        else 
+            m.metadata.StarRating = 0
+        end if
     endif
+
     if m.metadata.origStarRating = invalid then
         m.metadata.origStarRating = 0
     endif
 
-    ' When delete is present, put delete and rate in a separate dialog.
-    if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
-        m.AddButton("More...", "more")
-    else
-        m.AddRatingButton(m.metadata.UserRating, m.metadata.origStarRating, "ratePhoto")
-    end if
+    m.AddRatingButton(m.metadata.UserRating, m.metadata.origStarRating, "ratePhoto")
+    ' When delete is present, put delete and rate in a separate dialog. -- nah, we still have enough room
+    '    if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
+    m.AddButton("More...", "more")
+    '    else
+
 End Sub
 
 Sub photoGetMediaDetails(content)
@@ -56,6 +65,7 @@ Sub photoGetMediaDetails(content)
         description = getExifData(content,false)
         if description <> invalid then
             content.description = description
+            content.SBdescription = description
             content.ExifSBloaded = true ' make sure we don't load it again
         end if
     end if
@@ -68,7 +78,9 @@ Function photoHandleMessage(msg) As Boolean
     handled = false
 
     if type(msg) = "roSpringboardScreenEvent" then
-        if msg.isButtonPressed() then
+        if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then
+            m.MoreButton()
+        else if msg.isButtonPressed() then
             handled = true
             buttonCommand = m.buttonCommands[str(msg.getIndex())]
             Debug("Button command: " + tostr(buttonCommand))
@@ -88,7 +100,7 @@ Function photoHandleMessage(msg) As Boolean
             '    end if
             if buttonCommand = "ICslideshow" or buttonCommand = "ICshow" or buttonCommand = "ICslideshowShuffled" then
                 ' Playing Photos from springBoard in a FULL grid context
-                m.IsShuffled = (buttonCommand = "ICslideshowShuffled")
+                m.IsShuffled = (buttonCommand = "ICslideshowShuffled" or m.IsShuffled = 1)
                 GetContextFromFullGrid(m,m.focusedIndex) 
 		if m.context.count() = 0 then
                     ShowErrorDialog("Sorry! We were unable to load your photos.","Warning")
@@ -112,6 +124,17 @@ Function photoHandleMessage(msg) As Boolean
                 end if
                 m.Item.server.Rate(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier,rateValue%.ToStr())
             else if buttonCommand = "more" then
+                m.MoreButton()
+            else
+                handled = false
+            end if
+        end if
+    end if
+
+    return handled OR m.superHandleMessage(msg)
+End Function
+
+sub photoSprintBoardMoreButton()
                 dialog = createBaseDialog()
                 dialog.Title = ""
                 dialog.Text = ""
@@ -129,14 +152,7 @@ Function photoHandleMessage(msg) As Boolean
                 dialog.HandleButton = photoDialogHandleButton
                 dialog.ParentScreen = m
                 dialog.Show()
-            else
-                handled = false
-            end if
-        end if
-    end if
-
-    return handled OR m.superHandleMessage(msg)
-End Function
+end sub
 
 Function photoDialogHandleButton(command, data) As Boolean
     ' We're evaluated in the context of the dialog, but we want to be in
@@ -158,6 +174,7 @@ Function photoDialogHandleButton(command, data) As Boolean
             m.SetButton(command, "Shuffle: On")
         end if
         m.Refresh()
+        obj.Refresh()
     else if command = "rate" then
         Debug("photoHandleMessage:: Rate audio for key " + tostr(obj.metadata.ratingKey))
         rateValue% = (data /10)
@@ -165,6 +182,7 @@ Function photoDialogHandleButton(command, data) As Boolean
         if obj.metadata.ratingKey <> invalid then
             obj.Item.server.Rate(obj.metadata.ratingKey, obj.metadata.mediaContainerIdentifier, rateValue%.ToStr())
         end if
+        obj.Refresh()
     else if command = "close" then
         return true
     end if

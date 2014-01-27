@@ -120,42 +120,48 @@ Function ParsePhotoMedia(photoItem) As Object
 End Function
 
 function getExifData(metadata,compact = false) as dynamic
-    container = createPlexContainerForUrl(metadata.server, metadata.server.serverUrl, metadata.key)
-    if container <> invalid then
-        container.getmetadata()
-        ' only create dialog if metadata is available
-        if type(container.metadata) = "roArray" and container.metadata.count() > 0 and type(container.metadata[0].media) = "roArray" and container.metadata[0].media.count() > 0 then 
-            MediaInfo = container.metadata[0].media[0]
-            desc = ""
-            if compact then 
-                if mediainfo.make <> invalid then desc = mediainfo.make + ": "
-                if mediainfo.model <> invalid then desc = desc + mediainfo.model + "   "
-                if mediainfo.lens <> invalid then desc = desc + "lens:" + mediainfo.lens + "   "
-                if mediainfo.aperture <> invalid then desc = desc + "aperture:" + mediainfo.aperture + "   "
-                if mediainfo.exposure <> invalid then desc = desc + "exposure:" + mediainfo.exposure + "   "
-                if mediainfo.aspectratio <> invalid then desc = desc + "aspect:" + mediainfo.aspectratio + "   "
-                if mediainfo.iso <> invalid then desc = desc + "iso:" + mediainfo.iso + "   "
-                if mediainfo.width <> invalid and mediainfo.height <> invalid then desc = desc + "size:" + tostr(mediainfo.width) + " x " + tostr(mediainfo.height) + "   "
-                'if mediainfo.container <> invalid then desc = desc + "format:" + mediainfo.container + "   "
-                if mediainfo.originallyAvailableAt <> invalid then desc = desc + "date:" + tostr(mediainfo.originallyAvailableAt)
-            else 
-                if mediainfo.make <> invalid then desc = mediainfo.make + ": "
-                if mediainfo.model <> invalid then desc = desc + mediainfo.model + "    "
-                if mediainfo.lens <> invalid then desc = desc + "lens: " + mediainfo.lens
-                if len(desc) < 50 then desc = desc + string(20," ") + "." ' hack to not make the line strech.. wtf roku
-                desc = desc + chr(10)
-                if mediainfo.aperture <> invalid then desc = desc + "aperture: " + mediainfo.aperture + "    "
-                if mediainfo.exposure <> invalid then desc = desc + "exposure: " + mediainfo.exposure + "    "
-                if mediainfo.aspectratio <> invalid then desc = desc + "aspect: " + mediainfo.aspectratio + "    "
-                if mediainfo.iso <> invalid then desc = desc + "iso: " + mediainfo.iso
-                desc = desc + chr(10)
-                if mediainfo.width <> invalid and mediainfo.height <> invalid then desc = desc + "size: " + tostr(mediainfo.width) + " x " + tostr(mediainfo.height) + "    "
-                if mediainfo.container <> invalid then desc = desc + "format: " + mediainfo.container + "    "
-                if mediainfo.originallyAvailableAt <> invalid then desc = desc + "date: " + tostr(mediainfo.originallyAvailableAt)
+    if metadata.MediaInfo = invalid then 
+        container = createPlexContainerForUrl(metadata.server, metadata.server.serverUrl, metadata.key)
+        if container <> invalid then
+            container.getmetadata()
+            ' only create dialog if metadata is available
+            if type(container.metadata) = "roArray" and container.metadata.count() > 0 and type(container.metadata[0].media) = "roArray" and container.metadata[0].media.count() > 0 then 
+                metadata.MediaInfo = container.metadata[0].media[0]
             end if
-
-            if desc <> "" then return desc
         end if
     end if
+
+    if metadata.MediaInfo <> invalid then  
+        MediaInfo = metadata.MediaInfo:desc = ""
+        if compact then 
+            if mediainfo.make <> invalid then desc = mediainfo.make + ": "
+            if mediainfo.model <> invalid then desc = desc + mediainfo.model + "   "
+            if mediainfo.lens <> invalid then desc = desc + "lens:" + mediainfo.lens + "   "
+            if mediainfo.aperture <> invalid then desc = desc + "aperture:" + mediainfo.aperture + "   "
+            if mediainfo.exposure <> invalid then desc = desc + "exposure:" + mediainfo.exposure + "   "
+            if mediainfo.aspectratio <> invalid then desc = desc + "aspect:" + mediainfo.aspectratio + "   "
+            if mediainfo.iso <> invalid then desc = desc + "iso:" + mediainfo.iso + "   "
+            if mediainfo.width <> invalid and mediainfo.height <> invalid then desc = desc + "size:" + tostr(mediainfo.width) + " x " + tostr(mediainfo.height) + "   "
+            'if mediainfo.container <> invalid then desc = desc + "format:" + mediainfo.container + "   "
+            if mediainfo.originallyAvailableAt <> invalid then desc = desc + "date:" + tostr(mediainfo.originallyAvailableAt)
+        else 
+            if mediainfo.make <> invalid then desc = mediainfo.make + ": "
+            if mediainfo.model <> invalid then desc = desc + mediainfo.model + "    "
+            if mediainfo.lens <> invalid then desc = desc + "lens: " + mediainfo.lens
+            if len(desc) < 50 then desc = desc + string(20," ") + "." ' hack to not make the line strech.. wtf roku
+            desc = desc + chr(10)
+            if mediainfo.aperture <> invalid then desc = desc + "aperture: " + mediainfo.aperture + "    "
+            if mediainfo.exposure <> invalid then desc = desc + "exposure: " + mediainfo.exposure + "    "
+            if mediainfo.aspectratio <> invalid then desc = desc + "aspect: " + mediainfo.aspectratio + "    "
+            if mediainfo.iso <> invalid then desc = desc + "iso: " + mediainfo.iso
+            desc = desc + chr(10)
+            if mediainfo.width <> invalid and mediainfo.height <> invalid then desc = desc + "size: " + tostr(mediainfo.width) + " x " + tostr(mediainfo.height) + "    "
+            if mediainfo.container <> invalid then desc = desc + "format: " + mediainfo.container + "    "
+            if mediainfo.originallyAvailableAt <> invalid then desc = desc + "date: " + tostr(mediainfo.originallyAvailableAt)
+        end if
+
+        if desc <> "" then return desc
+    end if
+
     return invalid
 end function

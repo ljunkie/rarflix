@@ -637,7 +637,7 @@ sub ICsetImageFailureInfo(failureReason=invalid)
 end sub
 
 ' this can be called independently while passing the object 
-Sub photoShowContextMenu(obj = invalid,force_show = false)
+sub photoShowContextMenu(obj = invalid,force_show = false)
     if obj <> invalid then
         Debug("context menu using passed object")
     else if type(m.context) = "roArray" and m.CurIndex <> invalid then 
@@ -662,45 +662,50 @@ Sub photoShowContextMenu(obj = invalid,force_show = false)
         return
     end if
 
-    container = createPlexContainerForUrl(obj.server, obj.server.serverUrl, obj.key)
-    if container <> invalid then
-        container.getmetadata()
-        ' only create dialog if metadata is available
-        if type(container.metadata) = "roArray" and type(container.metadata[0].media) = "roArray" then 
-            obj.MediaInfo = container.metadata[0].media[0]
-            dialog = createBaseDialog()
-            dialog.Title = "Image: " + obj.title
-            dialog.text = ""
-            ' NOTHING lines up in a dialog.. lovely        
-            if obj.mediainfo.make <> invalid then dialog.text = dialog.text                  + "    camera: " + tostr(obj.mediainfo.make) + chr(10)
-            if obj.mediainfo.model <> invalid then dialog.text = dialog.text                 + "      model: " + tostr(obj.mediainfo.model) + chr(10)
-            if obj.mediainfo.lens <> invalid then dialog.text = dialog.text                  + "          lens: " + tostr(obj.mediainfo.lens) + chr(10)
-            if obj.mediainfo.aperture <> invalid then dialog.text = dialog.text              + "  aperture: " + tostr(obj.mediainfo.aperture) + chr(10)
-            if obj.mediainfo.exposure <> invalid then dialog.text = dialog.text              + " exposure: " + tostr(obj.mediainfo.exposure) + chr(10)
-            if obj.mediainfo.iso <> invalid then dialog.text = dialog.text                   + "             iso: " + tostr(obj.mediainfo.iso) + chr(10)
-            if obj.mediainfo.width <> invalid and obj.mediainfo.height <> invalid then dialog.text = dialog.text + "           size: " + tostr(obj.mediainfo.width) + " x " + tostr(obj.mediainfo.height) + chr(10)
-            if obj.mediainfo.aspectratio <> invalid then dialog.text = dialog.text           + "      aspect: " + tostr(obj.mediainfo.aspectratio) + chr(10)
-            if obj.mediainfo.container <> invalid then dialog.text = dialog.text             + "          type: " + tostr(obj.mediainfo.container) + chr(10)
-            if obj.mediainfo.originallyAvailableAt <> invalid then dialog.text = dialog.text + "          date: "  + tostr(obj.mediainfo.originallyAvailableAt) + chr(10)
-        
-        
-            if GetViewController().IsSlideShowPlaying() then
-                if m.isShuffled then 
-                    dialog.SetButton("UnshufflePhoto", "Unshuffle Photos")
-                else 
-                    dialog.SetButton("shufflePhoto", "Shuffle Photos")
-                end if
+    if obj.MediaInfo = invalid then 
+        container = createPlexContainerForUrl(obj.server, obj.server.serverUrl, obj.key)
+        if container <> invalid then
+            container.getmetadata()
+            ' only create dialog if metadata is available
+            if type(container.metadata) = "roArray" and type(container.metadata[0].media) = "roArray" then 
+                obj.MediaInfo = container.metadata[0].media[0]
             end if
-
-            dialog.SetButton("close", "Close")
-            dialog.HandleButton = photoContextMenuHandleButton
-            dialog.EnableOverlay = true
-            dialog.ParentScreen = m
-            dialog.Show()
+        end if 
+    end if 
+    
+    if obj.MediaInfo <> invalid then 
+        dialog = createBaseDialog()
+        dialog.Title = "Image: " + obj.title
+        dialog.text = ""
+        ' NOTHING lines up in a dialog.. lovely        
+        if obj.mediainfo.make <> invalid then dialog.text = dialog.text                  + "    camera: " + tostr(obj.mediainfo.make) + chr(10)
+        if obj.mediainfo.model <> invalid then dialog.text = dialog.text                 + "      model: " + tostr(obj.mediainfo.model) + chr(10)
+        if obj.mediainfo.lens <> invalid then dialog.text = dialog.text                  + "          lens: " + tostr(obj.mediainfo.lens) + chr(10)
+        if obj.mediainfo.aperture <> invalid then dialog.text = dialog.text              + "  aperture: " + tostr(obj.mediainfo.aperture) + chr(10)
+        if obj.mediainfo.exposure <> invalid then dialog.text = dialog.text              + " exposure: " + tostr(obj.mediainfo.exposure) + chr(10)
+        if obj.mediainfo.iso <> invalid then dialog.text = dialog.text                   + "             iso: " + tostr(obj.mediainfo.iso) + chr(10)
+        if obj.mediainfo.width <> invalid and obj.mediainfo.height <> invalid then dialog.text = dialog.text + "           size: " + tostr(obj.mediainfo.width) + " x " + tostr(obj.mediainfo.height) + chr(10)
+        if obj.mediainfo.aspectratio <> invalid then dialog.text = dialog.text           + "      aspect: " + tostr(obj.mediainfo.aspectratio) + chr(10)
+        if obj.mediainfo.container <> invalid then dialog.text = dialog.text             + "          type: " + tostr(obj.mediainfo.container) + chr(10)
+        if obj.mediainfo.originallyAvailableAt <> invalid then dialog.text = dialog.text + "          date: "  + tostr(obj.mediainfo.originallyAvailableAt) + chr(10)
+        
+        
+        if GetViewController().IsSlideShowPlaying() then
+            if m.isShuffled then 
+                dialog.SetButton("UnshufflePhoto", "Unshuffle Photos")
+            else 
+                dialog.SetButton("shufflePhoto", "Shuffle Photos")
+            end if
         end if
+
+        dialog.SetButton("close", "Close")
+        dialog.HandleButton = photoContextMenuHandleButton
+        dialog.EnableOverlay = true
+        dialog.ParentScreen = m
+        dialog.Show()
     end if
 
-End Sub
+End sub
 
 sub ICreloadSlideContext()
     expireSec = 300 ' only reload every 5 minutes
