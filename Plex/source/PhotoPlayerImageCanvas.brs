@@ -26,6 +26,13 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     obj = CreateObject("roAssociativeArray")
     initBaseScreen(obj, viewController)
 
+    di=createobject("rodeviceinfo")
+    if mid(di.getversion(),3,1).toint() > 3 then 
+        obj.isLegacy = false
+    else
+        obj.isLegacy = true
+    end if
+
     obj.OnTimerExpired = ICphotoPlayerOnTimerExpired
     obj.OnUrlEvent = photoSlideShowOnUrlEvent
 
@@ -184,8 +191,13 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
             else if msg.GetIndex() = 2 or msg.GetIndex() = 3 then 
                 ' down/up : toggle overlay
                 ' - if someone manually toggles the overlay -- remember state for this slideshow (overlayEnabled) 
-                m.overlayEnabled = not(m.OverlayOn)
-                m.OverlayToggle()
+                ' - Legacy devices require the up button to exit the screen (no back button)
+                if m.isLegacy and msg.GetIndex() = 2 then 
+                    m.Stop()
+                else 
+                    m.overlayEnabled = not(m.OverlayOn)
+                    m.OverlayToggle()
+                end if                 
             else if msg.GetIndex() = 4 then 
                 ' left: previous
                 'm.OverlayToggle("show",invalid,"previous")
@@ -195,12 +207,21 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
                 'm.OverlayToggle("show",invalid,"next")
                 m.next()
             else if msg.GetIndex() = 6 then
-                ' OK: pause or start (photo only)
-                if m.IsPaused then 
-                    m.resume()
-                else 
-                    m.pause()
-                end if
+                di=createobject("rodeviceinfo")
+                if NOT m.isLegacy then 
+                    ' OK: pause or start (photo only)
+                    if m.IsPaused then 
+                        m.resume()
+                    else 
+                        m.pause()
+                    end if
+                 else 
+                    ' pretend this is the info key for legacy devices (they don't have an * key)
+                    ' show context menu
+                    m.forceResume = NOT(m.isPaused)
+                    m.Pause()
+                    m.ShowContextMenu()
+                 end if
             else if msg.GetIndex() = 13 then
                 ' PlayPause: pause or start (photo/music)
                 if m.IsPaused then 
