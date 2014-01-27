@@ -284,9 +284,13 @@ Sub loaderRefreshData()
     if type(m.listener.contentarray) = "roArray" and m.listener.contentarray.count() >= sel_row then
         if type(m.listener.contentarray[sel_row]) = "roArray" and m.listener.contentarray[sel_row].count() >= sel_item then
             item = m.listener.contentarray[sel_row][sel_item]
+            contentType = tostr(item.contenttype)
+            isFullGrid = (m.listener.isfullgrid = true)
+            supportedIdentifier = (item.mediaContainerIdentifier = "com.plexapp.plugins.library" OR item.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
+
             if item <> invalid and type(item.refresh) = "roFunction" then 
                 wkey = m.listener.contentarray[sel_row][sel_item].key
-                Debug("---- Refreshing metadata for item " + tostr(wkey))
+                Debug("---- Refreshing metadata for item " + tostr(wkey) + " contentType: " + contentType)
                 if RegRead("rf_grid_dynamic", "preferences", "full") <> "full" then item.Refresh() ' refresh for pref of partial reload
 
                 ' iterate through loaded rows and update focused item or fully reload row if focused item index differs from PMS api
@@ -297,7 +301,7 @@ Sub loaderRefreshData()
                         ' this can be toggled to skip full reload ( rf_grid_dynamic: [full|partial] )
                         doFullReload = false    ' will reload focused row (+/- MinMaxRow, invalidate the rest)
                         forceFullReload = false ' will always reload the row - no questions
-                       
+
                         ' for now, we will only ever FULLY reload a row if the key is in the regex below
                         ' TODO: depending on how these new changes work, we might want to open this up to all ( since we have a expire time )
                         ' this is only when someone stacks a screen on top of the grid. Grids will always reload when they are re-created.
@@ -319,9 +323,10 @@ Sub loaderRefreshData()
                         end if
 
                         ' Override FULL reload (set to false) if we have recently reloaded
+
                         if lastReload <> invalid and type(lastReload) = "roInteger" then 
                             diff = epoch-lastReload
-                            if diff < expireSec then 
+                            if diff < expireSec and NOT isFullGrid then 
                                 doFullReload = false
                                 Debug("---- Skipping Full Reload: " + tostr(diff) + " seconds < expire seconds " + tostr(expireSec))
                                 ' we might think about updating the last epoch here too.. if someone keeps entering/exiting the grid
@@ -335,17 +340,47 @@ Sub loaderRefreshData()
                         forceFull = CreateObject("roRegex", "ondeck", "i") ' for now, onDeck is special. We will always reload it
                         if forceFull.isMatch(status.key) then forceFullReload = true
 
-                        ' MinMaxRow: rows above and below focused row to be fully reloaded ( if doFullReload|forceFullReload )
-                        MinMaxRow = 1
-                        if m.listener.isfullgrid = true then 
-                            forceFullReload = true ' full grid always get a reload ( it's quick )
-                            MinMaxRow = 10 ' load up to 20 rows ( up/down )
+                        ' rows above and below focused row to be fully reloaded ( if doFullReload )
+                        MinMaxRow = 1 ' default to 1 up/down from the focused row
+
+                        if isFullGrid
+                            ' the full grid kinda sucks, if items are removed/added then 
+                            '  all rows will have to be updated at some point. We cannot
+                            '  reload every row every time ( huge performace impact )
+                            doFullReload = true 
+                            MinMaxRow = 2 ' load up to 2 rows ( up/down ) -- invalidate the others
                         end if
 
-                        ' Either the timer expired or we are forcing a full reload
+
+                        if NOT supportedIdentifier then 
+                            Debug("----- skip FULL grid reload -- not a supported identifier " + tostr(supportedIdentifier))
+                            doFullReload = false:forceFullReload = false
+                        end if
+
+                        ' skip FullGrid reload if the item is a photo or music item
+                        if isFullGrid then 
+                             if contentType = "photo" or contentType = "album" or contentType = "artist" or contentType = "track" then 
+                                Debug("----- skip FULL grid reload -- contentType doesn't require it (yet)" + tostr(contentType))
+                                doFullReload = false:forceFullReload = false
+                             end if
+                        end if
+
+                        ' Either the last reload expired or we are forcing a full reload ( ondeck/fullgrid )
                         if doFullReload or forceFullReload then 
-                            ' only reload the row NOW if it's in view or 1 up/down ( otherwise, set it as invalid and we will get to it if it's focused later )
-                            doLoad = (m.listener.selectedRow = row or m.listener.selectedRow = row-MinMaxRow or m.listener.selectedRow = row+MinMaxRow)
+                            ' always load the focused row
+                            doLoad = (m.listener.selectedRow = row)
+
+                            ' other rows (not in focus) let's check if we want to fully reload it
+                            '      reload: if the row = focusedRow -+ minMaxRows 
+                            '  invalidate: any other row ( it will reload when in view again )
+                            if NOT doLoad and MinMaxRow > 0 then 
+                                if m.listener.selectedRow < MinMaxRow then minMaxRow = minMaxRow*2
+                                for index = 1 to MinMaxRow
+                                    doLoad = (m.listener.selectedRow+index = row or m.listener.selectedRow-index = row)
+                                    if doLoad then exit for
+                                end for
+                            end if 
+
                             if doLoad or forceFullReload then
                                 Debug("----- Full Reload NOW: " + tostr(row) + " key:" + tostr(status.key) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
                                 m.StartRequest(row, 0, m.pagesize)
@@ -357,7 +392,7 @@ Sub loaderRefreshData()
                         ' Skipping a FULL row reload, but refreshing the ITEM. 
                         ' If the item key has changed, full reload is in full effect again ( unless partial pref selected )
                         else
-                            Debug("----- skipping full reload (verify pending) - row: " + tostr(row) + " key:" + tostr(status.key) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
+                            Debug("----- skipping full reload (verify pending item) - row: " + tostr(row) + " key:" + tostr(status.key) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
                              
                             ' Query the focused items source url/container key and reload it
                             ' if the item is not longer the same after we query for it, it was removed (watched): remove and update row
@@ -374,13 +409,13 @@ Sub loaderRefreshData()
                                         ' remove said paremeters so we can query for Start=Index and Size=1 ( for the specific item )
                                         re=CreateObject("roRegex", "[&\?]X-Plex-Container-Start=\d+|[&\?]X-Plex-Container-Size=\d+", "i")
                                         newKey = status.key
-                                        newKey = re.ReplaceAll(newkey, "")    
+                                        newKey = re.ReplaceAll(newkey, "")
                                         joinKey = "?"
                                         if Instr(1, newKey, "?") > 0 then joinKey = "&"
                                         newkey = newKey + joinKey + "X-Plex-Container-Start="+tostr(index)+"&X-Plex-Container-Size=1"
                                         container = createPlexContainerForUrl(m.listener.loader.server, m.listener.loader.sourceurl, newKey)
                                         context = container.getmetadata()
-    
+
                                         ' Remove the item from the row if the origina/new keys are different ( removed, usually marked as watched )
                                         ' change: we cannot assume the item is just watched and remove it. It's possible new content was added (offsets change)=We will have to reload
                                         if context[0] = invalid or status.content[index].key <> context[0].key
@@ -388,7 +423,7 @@ Sub loaderRefreshData()
                                             status.content.Delete(index) ' delete right away - for a quick update, then reload
                                             if status.content.Count() > 0 then m.listener.Screen.SetContentList(row, status.content)
                                             m.StartRequest(row, 0, m.pagesize)
-                                        ' Update the item in the row if the original/new key are the same ( same item )
+                                            ' Update the item in the row if the original/new key are the same ( same item )
                                         else
                                             Debug("---- refreshing item " + tostr(wkey) + " in row " + tostr(row))
                                             status.content[index] = context[0]
@@ -404,31 +439,8 @@ Sub loaderRefreshData()
             end if
         end if
     end if
-    ' TO REMOVE - kept for testing/code notes
-    ' newer - but old way of doing updates. This would normally try and load the entire focus row all over again. It will also invalidate other rows
-    ' which in turn would reload the entire row when focused again. This has major penalties, however it did make sure we always had the most current
-    ' data in the rows. A trade off for speed has deprecated this.
-    '
-    ' ljunkie - normally this would re-load all the rows if they have already been loaded. This will cause serious 
-    ' slow downs if one loads many rows, stacks a new screen on grid, then returns to said grid. We should only 
-    ' reload the focused row, and invalidate the load status of the existing. The invalidated rows on the screen
-    ' will reload when selected again. 
-    '        doLoad = (m.listener.selectedRow = row) ' only reload the current row, invalidate the others (that are fully loaded)
-    '                                                ' we might want to reload m.listener.selectedRow+1 too.. we will see
-    '        'print "------------- checking row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus)
-    '
-    '            if doLoad then
-    '                Debug("----- skipping - loading row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
-    '                'Debug("----- loading row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
-    '                'm.StartRequest(row, 0, m.pageSize)
-    '            else 
-    '                Debug("----- skipping - invalidate row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
-    '                'Debug("----- invalidate row: " + tostr(row) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
-    '                'status.loadStatus = 0 ' set to reload on focus
-    '                'status.countloaded = 0 ' set to reload on focus
-    '            end if
-    '        end if
-    '    next
+ 
+    ' UGH -- TODO the above nesting is crazy
 End Sub
 
 Sub loaderStartRequest(row, startItem, count)

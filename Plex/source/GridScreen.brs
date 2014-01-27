@@ -172,17 +172,19 @@ Function showGridScreen() As Integer
     ' ljunkie - Modify the default load count when one opens a grid screen (for FULL grid)
     ' for now, we will load 20 rows in the full grid ( only 5 items in a row.. so it seems to play nicely )
     if m.isFullGrid <> invalid and m.isFullGrid = true then 
-        ' even though we load 20 rows, if one open an item from a row we will load the rest
-        ' it will allow left/right buttons to work for all and gives the ability to play a slideshow from full grid
-        maxRow = 20 ' in the FULL grid, loading 20 rows seems like an ok number. Might be able to raise this.
+        maxRow = 20 ' in the FULL grid, loading 20 rows seems like an ok number ( keep low, otherwise the initial loading will be slow )
         if maxRow > names.Count() then maxRow=names.Count()
         Debug("---- Loading FULL grid - load row 0 to row " + tostr(maxRow))
 
         ' 10 second timer -- it will keep loading up to 20 rows every 10 seconds until complete
         timer = createTimer()
         timer.Name = "fullGridLoader"
+        timer.LoadRows = 20 ' number of rows to load
+        timer.StopRows = 50 ' number or rows to stop loading
+        timer.StartRows = 0 ' number of first loaded row ( used for reactiving timer later )
         timer.SetDuration(1000*10, true)
         timer.active = true
+        m.FullGridTimer = timer
         m.ViewController.AddTimer(timer, m)
 
     else if maxRow > 10 then 
@@ -320,11 +322,17 @@ Function gridHandleMessage(msg) As Boolean
 
                     ' if the current row is not loaded.. maybe user held down the the button. We should force a load
                     forceLoad = (m.loader.contentArray[m.selectedRow].loadStatus <> 2) 
+                    if forceLoad then 
+                        Debug("Activate FullGridTimer again!")
+                        m.FullGridTimer.StartRows = rfloaded
+                        m.FullGridTimer.active = true
+                        m.FullGridTimer.Mark()
+                    end if
 
                     ' load the extra rows
-                    if m.selectedRow > rfloaded-10 or forceLoad then 
+                    if m.selectedRow > rfloaded-4 or forceLoad then 
                         skipFullGrid = true
-                        Debug("----- Row selected " + tostr(m.selectedRow) + "is greater than current load count OR current row is not loaded. Load 20 up and down (from current row)")
+                        Debug("----- Row selected " + tostr(m.selectedRow) + " is greater than current load count OR current row is not loaded. Load 20 up and down (from current row)")
                         m.Loader.LoadMoreContent(m.selectedRow, 0) ' load focused row right away
                         for index = 0 to 20 
                             row_up = m.selectedRow-index ' includes current row
@@ -660,7 +668,7 @@ Sub gridOnTimerExpired(timer)
         m.Activate(invalid)
     end if
 
-    ' keep loading fullGrid rows every timer pop until complete
+    ' keep loading fullGrid rows ever timer pop until complete
     if timer.Name = "fullGridLoader" AND m.ViewController.IsActiveScreen(m) then
     
         rfloaded = 0 ' container for total loaded rows
@@ -671,14 +679,26 @@ Sub gridOnTimerExpired(timer)
         Debug("  total rows: " + tostr(m.loader.contentArray.Count()))
         Debug("total loaded: " + tostr(rfloaded))
  
-        if rfloaded > m.loader.contentArray.Count()-1 then
+        rowsToLoad = timer.LoadRows
+
+        if rowsToLoad+rfloaded > timer.startrows+timer.stoprows then rowsToLoad = timer.startrows+timer.stoprows-rfloaded
+
+        if timer.startrows+timer.stoprows < rfloaded then 
+            Debug("Loaded enough rows for now -- Deactivate timer " + tostr(timer.name))
+            timer.Active = false
+            return
+        else if rfloaded >= m.loader.contentArray.Count()-1 then
             Debug("All Rows Loaded -- Deactivate timer " + tostr(timer.name))
             timer.Active = false
+            return 
+        else
+            if rowsToLoad+rfloaded > m.loader.contentArray.Count() then rowsToLoad = m.loader.contentArray.Count()-rfloaded 
+            Debug("Loading an additional " + tostr(rowsToLoad) + " rows")
         end if
 
         ' load the extra rows
-        if rfloaded < m.loader.contentArray.Count() then 
-            for index = 0 to 20 
+        if rowsToLoad > 0 and rfloaded < m.loader.contentArray.Count() then 
+            for index = 0 to rowsToLoad
                 row_down = index+rfloaded
                 if row_down < m.loader.contentArray.Count() then m.Loader.LoadMoreContent(row_down, 0)
             next
