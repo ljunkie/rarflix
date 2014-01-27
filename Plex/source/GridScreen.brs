@@ -37,6 +37,8 @@ Function createGridScreen(viewController, style=RegRead("rf_grid_style", "prefer
             SDPosterURL = imageDir + "sd-loading-poster.jpg"
             HDPosterURL = imageDir + "hd-loading-poster.jpg"
         end if
+        SDPosterURL = imageDir + "black-loading-poster.png"
+        HDPosterURL = imageDir + "black-loading-poster.png"
         grid.setloadingposter(SDPosterURL,HDPosterURL)
     end if
 

@@ -560,6 +560,9 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         end if
     end if
 
+    ' an invalid screen could happen if someone clicks on a "loading" item -- return invalid
+    if screen = invalid then return invalid
+
     if screenName = invalid then
         screenName = type(screen.Screen) + " " + firstOf(contentType, "unknown")
     end if
