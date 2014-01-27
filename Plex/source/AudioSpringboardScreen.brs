@@ -112,6 +112,8 @@ Sub audioSetupButtons()
     if AudioPlayer().ContextScreenID <> m.ScreenID then 
         m.AddButton("go to now playing", "showNowPlaying")
     end if
+
+    m.AddButton("More...", "more")
 End Sub
 
 Sub audioGetMediaDetails(content)
