@@ -211,7 +211,6 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
     ' dummy items so that the counts show up correctly on grid screens. It
     ' should generally provide a smoother loading experience. This is the
     ' metadata that will be used for pending items.
-    print "set blank loading item!"
     loader.LoadingItem = {
         title: "Loading..."
     }
@@ -528,8 +527,12 @@ Sub loaderOnUrlEvent(msg, requestContext)
             ' but it's usually just wasted cycles at a time when we care about
             ' the app feeling responsive. So make the first and last item use
             ' our dummy metadata and everything in between will be blank.
-            status.content.Push(m.LoadingItem)
-            status.content[totalSize - 1] = m.LoadingItem
+            '  ljunkie -- it's not really the cpu instensive to push it
+            for index = 0 to totalSize
+                status.content.Push(m.LoadingItem)
+            end for
+            'status.content.Push(m.LoadingItem)
+            'status.content[totalSize - 1] = m.LoadingItem
         end if
 
         if status.loadStatus <> 2 then
