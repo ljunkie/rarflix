@@ -21,6 +21,8 @@ Function AudioPlayer()
         obj.HandleMessage = audioPlayerHandleMessage
         obj.Cleanup = audioPlayerCleanup
 
+        obj.StopKeepState = audioPlayerStopKeepState
+
         obj.Play = audioPlayerPlay
         obj.Pause = audioPlayerPause
         obj.Resume = audioPlayerResume
@@ -119,7 +121,16 @@ Function audioPlayerHandleMessage(msg) As Boolean
             m.IgnoreTimelines = false
             m.IsPlaying = true
             m.IsPaused = false
-            m.playbackOffset = 0
+            ' ljunkie -- set AudioPlayer().ResumeOffset = intMS 
+            '  before calling AudioPlayer().Play() to start at an offset
+            if m.ResumeOffset <> invalid then 
+                m.playbackOffset = int(m.ResumeOffset/1000)
+                m.player.Seek(m.ResumeOffset)
+                m.ResumeOffset = invalid
+            else 
+                m.playbackOffset = 0
+            end if
+
             m.playbackTimer.Mark()
             GetViewController().DestroyGlitchyScreens()
 
@@ -623,4 +634,22 @@ Sub audioPlayerSetShuffle(shuffleVal)
     m.player.SetNext(newIndex)
 
     NowPlayingManager().timelines["music"].attrs["shuffle"] = tostr(shuffleVal)
+End Sub
+
+' used when someone plays a Video on top of an Audio/Slideshow
+' this way we can resume audio when the video is closed 
+' ( PhotoPlayerImageCanvas.brs has the same routine )
+Sub audioPlayerStopKeepState()
+    if m.Context <> invalid then
+        if m.IsPlaying and m.PlayIndex <> invalid then 
+            m.ResumeOffset = int(1000*m.GetPlaybackProgress())
+            m.ForceResume = true
+            m.player.SetNext(m.PlayIndex)
+        end if
+        m.player.Stop()
+        m.IsPlaying = false
+        m.IsPaused = false
+        NowPlayingManager().location = "navigation"
+        NowPlayingManager().UpdatePlaybackState("music", invalid, "stopped", 0)
+    end if
 End Sub

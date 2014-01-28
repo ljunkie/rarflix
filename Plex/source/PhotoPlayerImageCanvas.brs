@@ -93,6 +93,8 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
 
     obj.Activate = ICphotoPlayerActivate
 
+    obj.StopKeepState = ICphotoStopKeepState
+
     obj.Pause = ICphotoPlayerPause
     obj.Resume = ICphotoPlayerResume
     obj.Next = ICphotoPlayerNext
@@ -552,7 +554,13 @@ sub ICphotoPlayerActivate(priorScreen)
     ' pretty basic for now -- we will resume the slide show if paused and forcResume is set
     '  note: forceResume is set if slideshow was playing while EU hits the * button ( when we come back, we need/should to resume )
     m.nonIdle(true)
-    if m.isPaused and m.ForceResume then m.Resume()
+    if m.isPaused and m.ForceResume then 
+        m.Resume():m.ForceResume = false
+        if AudioPlayer().forceResume = true then 
+            ' either starts at the resumeOffset or beginning of track
+            AudioPlayer().Play():AudioPlayer().forceResume = false
+        end if
+    end if
 end sub
 
 Function PhotoPlayer()
@@ -794,3 +802,13 @@ sub ICreloadSlideContext()
     Debug("Running Garbage Collector")
     RunGarbageCollector()
 end sub
+
+sub ICphotoStopKeepState()
+    PhotoPlayer().purgeSlideImages() ' cleanup the local cached images
+    m.IsPaused = true
+    m.Timer.Active = false
+    m.OverlayToggle("show","Paused")
+    NowPlayingManager().location = "navigation"
+    NowPlayingManager().UpdatePlaybackState("photo", invalid, "stopped", 0)
+end sub
+

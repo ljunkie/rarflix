@@ -746,7 +746,16 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
     end if
 
     ' Stop any background audio first
-    AudioPlayer().Stop()
+    ' ljunkie - we will now stop audio/photos -- but keep the state in the background
+    ' this will allow us to resume ( only possible through remote control )
+    if GetViewController().IsSlideShowPlaying() and PhotoPlayer() <> invalid then 
+        ' for now this only applies to slideshows
+        ' we could extend resume audio to other screens.. TODO(ljunkie) another day
+        PhotoPlayer().StopKeepState()
+        AudioPlayer().StopKeepState() ' always exists
+    else 
+        AudioPlayer().stop()
+    end if
 
     ' Make sure we have full details before trying to play.
     metadata.ParseDetails()
