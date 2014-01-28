@@ -1,3 +1,6 @@
+#3.1.4-internal (2014-?-?) -- testing -- not available
+     * many changes (TODO) list them all when done
+
 #3.1.3-DEV (2014-01-15) -- testing -- not available
     * potential slowdown when using myPlex+local PMS not requiring authentication
     * still function/start when myPlex is down. The last "known" myPlex found server(s) should still work

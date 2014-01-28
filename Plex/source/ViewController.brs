@@ -920,6 +920,13 @@ Sub vcShowReleaseNotes(options = invalid)
         us = "_______________"
         paragraphs.Push("                 Donations accepted at http://www.rarflix.com")
         paragraphs.Push("  ")
+        paragraphs.Push(us+"v3.1.4-internal (2014-01-28)"+us)
+        paragraphs.Push("  ")
+        paragraphs.Push(" * Slide Show completely rewritten (testing)")
+        paragraphs.Push(" * many other fixes/addition -- explain when released (TODO)")
+        paragraphs.Push("  ")
+
+        paragraphs.Push("  ")
         paragraphs.Push(us+"v3.1.3-DEV (2014-01-15)"+us)
         paragraphs.Push("  ")
         paragraphs.Push(" * potential slowdown when using myPlex+local PMS not requiring authentication")
