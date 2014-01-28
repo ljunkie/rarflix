@@ -103,14 +103,12 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     obj.setImageFailureInfo()
 
     obj.SetShuffle = ICphotoPlayerSetShuffle
+    obj.IsShuffled = shuffled
     if shuffled then
-        obj.SetShuffle(1)
-        'obj.CurIndex = ShuffleArray(obj.Context, obj.CurIndex)
         NowPlayingManager().timelines["photo"].attrs["shuffle"] = "1"
     else
         NowPlayingManager().timelines["photo"].attrs["shuffle"] = "0"
     end if
-    obj.IsShuffled = shuffled
 
     ' slideshow timer
     if obj.Timer = invalid then
@@ -368,9 +366,16 @@ sub ICshowSlideImage()
     NowPlayingManager().location = "fullScreenPhoto"
     NowPlayingManager().UpdatePlaybackState("photo", m.Context[m.CurIndex], "playing", 0)
 
+    ' to toggle or not to toggle..
+    if m.FirstSlide = invalid then 
+        m.FirstSlide = true
+    else 
+        m.FirstSlide = false
+    end if
+
     if NOT m.overlayEnabled then 
         m.OverlayToggle("hide")
-    else 
+    else if m.isSlideShow or NOT m.FirstSlide then
         m.OverlayToggle("show")
     end if
 

@@ -100,11 +100,13 @@ Function photoHandleMessage(msg) As Boolean
             '    end if
             if buttonCommand = "ICslideshow" or buttonCommand = "ICshow" or buttonCommand = "ICslideshowShuffled" then
                 ' Playing Photos from springBoard in a FULL grid context
-                m.IsShuffled = (buttonCommand = "ICslideshowShuffled" or m.IsShuffled = 1)
-                GetContextFromFullGrid(m,m.focusedIndex) 
+                GetContextFromFullGrid(m,m.item.origindex) 
 		if m.context.count() = 0 then
                     ShowErrorDialog("Sorry! We were unable to load your photos.","Warning")
                 else 
+                    m.IsShuffled = (buttonCommand = "ICslideshowShuffled" or m.IsShuffled = 1)
+                    ' shuffle and reset curIndex 
+                    if m.IsShuffled then m.curindex = ShuffleArray(m.Context, m.curindex)
                     Debug("photoHandleMessage:: springboard Start slideshow with " + tostr(m.context.count()) + " items")
                     Debug("starting at index: " + tostr(m.curindex))
                     m.ViewController.CreateICphotoPlayer(m.Context, m.CurIndex, true, m.IsShuffled, NOT(buttonCommand = "ICshow"))
