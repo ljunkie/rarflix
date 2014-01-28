@@ -196,7 +196,7 @@ function getImageCanvasTheme()
                 }}
     if GetGlobal("IsHD") = true then
         obj = {
-            background : [{Color:"#363636", CompositionMode:"Source"}]    'Set opaque background to keep from flashing    '#363636
+            background : [{Color:"#000000", CompositionMode:"Source"}]    'Set opaque background to keep from flashing    '#363636
             backgroundItems : [ {url:GetGlobalAA().Lookup("rf_theme_dir")+ "Background_HD.jpg"}]
             logoItems : [ {url:"pkg:/images/logo_final_HD.png", TargetRect:{ x:70,y:10 }} ]
             breadCrumbs : [ {  Text:"", TargetRect:{x:640,y:10,w:520,h:89}  '16 pixel border on bottom of breadcrumb
@@ -204,7 +204,7 @@ function getImageCanvasTheme()
         }
     else
         obj = {
-            background : [{Color:"#363636", CompositionMode:"Source"}]    'Set opaque background to keep from flashing    '#363636
+            background : [{Color:"#000000", CompositionMode:"Source"}]    'Set opaque background to keep from flashing    '#363636
             backgroundItems : [ {url:GetGlobalAA().Lookup("rf_theme_dir")+ "Background_SD.jpg"}]
             logoItems : [ {url:"pkg:/images/logo_final_SD.png", TargetRect:{ x:42,y:10 }} ]
             breadCrumbs : [ {  Text:"", TargetRect:{x:360,y:10,w:260,h:56}  '16 pixel border on bottom of breadcrumb
