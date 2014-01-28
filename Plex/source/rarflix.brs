@@ -1211,35 +1211,6 @@ function getAllRowsContext(screen,context,index) as object
     return obj
 end function
 
-function getFullGridCurIndex(vc,index,default = 2) as object
-    'print " ------------------ full grid index = " + tostr(index)
-
-    screen = invalid
-    screens = GetViewController().screens
-
-    ' find the full grid screen - backtrack
-    if type(screens) = "roArray" and screens.count() > 1 then 
-        for sindex = screens.count()-1 to 1 step -1
-            'print "checking if screen #" + tostr(sindex) + "is the fullGrid"
-            if type(screens[sindex].screen) = "roGridScreen" and screens[sindex].isfullgrid <> invalid and screens[sindex].isfullgrid then
-                'print "screen #" + tostr(sindex) + "is the fullGrid"
-                screen = screens[sindex]
-                exit for 
-            end if
-        next
-    end if
-
-    if screen <> invalid and type(screen.screen) = "roGridScreen" then
-        srow = screen.selectedrow
-        sitem = screen.focusedindex+1
-        rsize = screen.contentarray[0].count()
-        Debug("selected row:" + tostr(srow) + " focusedindex:" + tostr(sitem) + " rowsize:" + tostr(rsize))
-        index = (srow*rsize)+sitem-1 ' index is zero based (minus 1)
-    end if
-    Debug(" ------------------  new grid index = " + tostr(index))
-    return index
-end function
-
 Function ShallowCopy(array As Dynamic, depth = 0 As Integer) As Dynamic
     If Type(array) = "roArray" Then
         copy = []

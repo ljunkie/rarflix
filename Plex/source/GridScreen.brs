@@ -402,9 +402,9 @@ Function gridHandleMessage(msg) As Boolean
                 ' TODO fix playing from section -- TODO
                 if tostr(sec_metadata.type) = "photo" and m.item <> invalid and m.item.contenttype <> "section" then
                     Debug("Playing from GRID Screen - get context of ALL items in every row to play")
-                    obj = CreateObject("roAssociativeArray")
+                    'obj = CreateObject("roAssociativeArray") ' TODO(ljunkie) remove this once we know this isn't broken. Logic seemed wrong previously
+                    obj = m
                     obj.metadata = m.loader
-                    obj.screen = m
                     GetContextFromFullGrid(obj,m.focusedIndex) 
                     Debug("photoHandleMessage:: Start slideshow with " + tostr(obj.context.count()) + " items")
                     Debug("starting at index: " + tostr(obj.curindex))

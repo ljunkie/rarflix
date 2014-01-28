@@ -155,6 +155,13 @@ end function
 
 
 sub GetContextFromFullGrid(this,curindex = invalid) 
+        ' stop realoding the full context ( but we still might need to reset the CurIndex )
+        if this.FullContext = true then 
+           ' if we are still in the full grid, we will have to caculate the index again ( rows are only 5 items -- curIndex is always 0-5 )
+           if this.isFullGrid = true then this.CurIndex = getFullGridCurIndex(this,CurIndex,1) ' when we load the full context, we need to fix the curindex
+           return
+        end if
+
         if this.metadata.sourceurl = invalid then return
 
         if curindex = invalid then curindex = this.curindex
@@ -194,3 +201,33 @@ sub GetContextFromFullGrid(this,curindex = invalid)
         this.FullContext = true
         if dialog <> invalid then dialog.Close()
 end sub
+
+function getFullGridCurIndex(vc,index,default = 2) as object
+    'print " ------------------ full grid index = " + tostr(index)
+
+    screen = invalid
+    screens = GetViewController().screens
+
+    ' find the full grid screen - backtrack
+    if type(screens) = "roArray" and screens.count() > 1 then 
+        for sindex = screens.count()-1 to 1 step -1
+            'print "checking if screen #" + tostr(sindex) + "is the fullGrid"
+            if type(screens[sindex].screen) = "roGridScreen" and screens[sindex].isfullgrid <> invalid and screens[sindex].isfullgrid then
+                'print "screen #" + tostr(sindex) + "is the fullGrid"
+                screen = screens[sindex]
+                exit for 
+            end if
+        next
+    end if
+
+    if screen <> invalid and type(screen.screen) = "roGridScreen" then
+        srow = screen.selectedrow
+        sitem = screen.focusedindex+1
+        rsize = screen.contentarray[0].count()
+        Debug("selected row:" + tostr(srow) + " focusedindex:" + tostr(sitem) + " rowsize:" + tostr(rsize))
+        index = (srow*rsize)+sitem-1 ' index is zero based (minus 1)
+    end if
+    Debug(" ------------------  new grid index = " + tostr(index))
+    return index
+end function
+
