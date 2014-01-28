@@ -59,6 +59,7 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     obj.ImageCanvasName = "slideshow" ' used if we need to know we are in a slideshow screen
     obj.IsPaused = NOT(slideshow)
     obj.ForceResume = false
+    obj.OverlayOn = false
 
     obj.LocalFiles = []
     obj.LocalFileSize = 0
@@ -280,22 +281,31 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
         else 
             'print "---------- show overlay"
             item = m.context[m.curindex]
-            y = int(m.canvasrect.h*.85)
 
-            ' need to verify this on SD
-            overscan = 15 
-            LeftRightStart = 250
-            failureHeight = int(m.canvasrect.w*.05)
+            overlayPaddingTop = 15 ' works for both SD/HD
+            if GetGlobal("IsHD") = true then
+                overlayY = int(m.canvasrect.h*.85)
+                overlayPaddingLR = 250
+                failureHeight = int(m.canvasrect.h*.10)
+            else 
+                overlayY = int(m.canvasrect.h*.80)
+                overlayPaddingLR = 150
+                failureHeight = int(m.canvasrect.h*.15)
+            end if
 
             overlayTopRight = tostr(m.curindex+1) + " of " + tostr(m.PhotoCount)
             overlayTopLeft = item.TextOverlayUL
             overlayCenter = item.title
+            overlayErrorBG = "#70FF0000"
+            overlayErrorText = "#FFFFFFFF"
+            overlayBG = "#90000000"
+            overlayText = "#FFCCCCCC"
 
             display = [ 
-                { color: "#90000000", TargetRect:{x:0,y:y,w:m.canvasrect.w,h:0} },
-                {Text: overlayTopLeft, TextAttrs:{Color:"#FFCCCCCC", Font:"Small", HAlign:"Left", VAlign:"Top",  Direction:"LeftToRight"}, TargetRect:{x:LeftRightStart,y:y+overscan,w:m.canvasrect.w,h:0} }, 
-                {Text: overlayTopRight, TextAttrs:{Color:"#FFCCCCCC", Font:"Small", HAlign:"Right", VAlign:"Top",  Direction:"LeftToRight"}, TargetRect:{x:int(LeftRightStart*-1),y:y+overscan,w:m.canvasrect.w,h:0} }, 
-                {Text: overlayCenter, TextAttrs:{Color:"#FFCCCCCC", Font:"Small", HAlign:"HCenter", VAlign:"VCenter",  Direction:"LeftToRight"}, TargetRect:{x:0,y:y,w:m.canvasrect.w,h:0} }]
+                { color: overlayBG, TargetRect:{x:0,y:overlayY,w:m.canvasrect.w,h:0} },
+                {Text: overlayTopLeft, TextAttrs:{Color:overlayText, Font:"Small", HAlign:"Left", VAlign:"Top",  Direction:"LeftToRight"}, TargetRect:{x:overlayPaddingLR,y:overlayY+overlayPaddingTop,w:m.canvasrect.w,h:0} }, 
+                {Text: overlayTopRight, TextAttrs:{Color:overlayText, Font:"Small", HAlign:"Right", VAlign:"Top",  Direction:"LeftToRight"}, TargetRect:{x:int(overlayPaddingLR*-1),y:overlayY+overlayPaddingTop,w:m.canvasrect.w,h:0} }, 
+                {Text: overlayCenter, TextAttrs:{Color:overlayText, Font:"Small", HAlign:"HCenter", VAlign:"VCenter",  Direction:"LeftToRight"}, TargetRect:{x:0,y:overlayY,w:m.canvasrect.w,h:0} }]
             
             ' if Paused or HeaderText sent, include it in the bottom overlay Top Middle
             if (m.IsPaused = true and m.isSlideShow) or headerText <> invalid then 
@@ -304,7 +314,7 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
                 else 
                     overlayHeader = "Paused"
                 end if
-                display.Push( {Text: overlayHeader, TextAttrs:{Color:"#FFCCCCCC", Font:"Small", HAlign:"HCenter", VAlign:"Top",  Direction:"LeftToRight"}, TargetRect:{x:0,y:y+overscan,w:m.canvasrect.w,h:0} } )
+                display.Push( {Text: overlayHeader, TextAttrs:{Color:overlayText, Font:"Small", HAlign:"HCenter", VAlign:"Top",  Direction:"LeftToRight"}, TargetRect:{x:0,y:overlayY+overlayPaddingTop,w:m.canvasrect.w,h:0} } )
             end if
 
             ' show a red overlay on the top with the last failure and count 
@@ -317,14 +327,15 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
                     failCountText = failCountText + " failures"
                 end if
                 overlayFail = failCountText + " : " + tostr(m.ImageFailureReason)
-                display.Push({ color: "#60FF0000", TargetRect:{x:0,y:0,w:m.canvasrect.w,h:failureHeight}})
-                display.Push({Text: overlayFail, TextAttrs:{Color:"#FFFFFFFF", Font:"Small", HAlign:"HCenter", VAlign:"VCenter",  Direction:"LeftToRight"}, TargetRect:{x:0,y:overscan,w:m.canvasrect.w,h:failureHeight} })
+                display.Push({ color: OverlayErrorBG, TargetRect:{x:0,y:0,w:m.canvasrect.w,h:failureHeight}})
+                display.Push({Text: overlayFail, TextAttrs:{Color:overlayErrorText, Font:"Small", HAlign:"HCenter", VAlign:"VCenter",  Direction:"LeftToRight"}, TargetRect:{x:0,y:overlayPaddingTop,w:m.canvasrect.w,h:failureHeight} })
             end if
 
             ' show the overlay
             m.screen.setlayer(2,display)
             m.OverlayOn = true
 
+            ' activate and mark the slideshow & overlay timers
             m.Timer.Mark()
             m.TimerOverlay.Active = true
             m.TimerOverlay.Mark()
