@@ -1,7 +1,9 @@
 ' Current TASK: 
 '
-' TODO:
-' * verify shuffle works
+' TODO: 
+' * change dialogs to image canvas overlay
+' * possible to show music info in overlay -- or another overlay?
+'
 
 ' DONE: needs more work
 ' * prevent screenSaver ( kinda done in a hacky way -- sending the InstandReplay key )
@@ -16,6 +18,7 @@
 '    X -- keeps state when EU toggles overlay with remove (up/down) 
 '    X -- verify remote control works ( fun stuff )
 '    X -- reload slideshow ( after completion )
+'    X -- verify shuffle works
 
 
 Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffled=false, slideShow=true)
@@ -35,6 +38,7 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
 
     obj.OnTimerExpired = ICphotoPlayerOnTimerExpired
     obj.OnUrlEvent = photoSlideShowOnUrlEvent
+    obj.nonIdle = ICnonIdle
 
     ' ljunkie - we need to iterate through the items and remove directories -- they don't play nice
     ' note: if we remove directories ( itms ) the contextIndex will be wrong - so fix it!
@@ -65,6 +69,8 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     obj.LocalFileSize = 0
 
     obj.playbackTimer = createTimer()
+    obj.idleTimer = createTimer()
+
     AudioPlayer().focusedbutton = 0
     obj.HandleMessage = ICphotoPlayerHandleMessage
 
@@ -78,8 +84,8 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
 
     screen.SetRequireAllImagesToDraw(false)
 
-    theme = getImageCanvasTheme()
-    screen.SetLayer(0, theme["background"])
+    obj.theme = getImageCanvasTheme()
+    screen.SetLayer(0, obj.theme["background"])
     screen.SetMessagePort(obj.Port)
     obj.Screen = screen
 
@@ -136,7 +142,6 @@ End Function
 
 Function photoContextMenuHandleButton(command, data) As Boolean
     handled = false
-
     obj = m.ParentScreen
 
     if command = "shufflePhoto" then
@@ -241,11 +246,14 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
             else if msg.GetIndex() = 9 then 
                ' fwd: next track if audio is playing
                if AudioPlayer().IsPlaying then AudioPlayer().Next()
-            else if msg.GetIndex() = 7 then 
-               ' InstantReplay: use to keep the slideshow from being idle ( screensaver hack )
+            else if msg.GetIndex() = 120 then 
+               return handled
+               ' keyboard press(x): used to keep the slideshow from being idle ( screensaver hack )
             else 
-                Debug("button pressed (not handled)" + tostr(msg.GetIndex()))
+                Debug("button pressed (not handled) code:" + tostr(msg.GetIndex()))
             end if
+
+            m.nonIdle(true) ' reset the idle Time -- no need to send key
 
         end if
     end if
@@ -361,6 +369,10 @@ sub ICshowSlideImage()
     y = int((m.canvasrect.h-m.CurFile.metadata.height)/2)
     x = int((m.canvasrect.w-m.CurFile.metadata.width)/2)
     display=[{url:m.CurFile.localFilePath, targetrect:{x:x,y:y,w:m.CurFile.metadata.width,h:m.CurFile.metadata.height}}]
+    m.screen.AllowUpdates(false)
+    m.screen.Clear()
+
+    m.screen.SetLayer(0, m.theme["background"])
     m.screen.setlayer(1,display)
 
     NowPlayingManager().location = "fullScreenPhoto"
@@ -379,10 +391,28 @@ sub ICshowSlideImage()
         m.OverlayToggle("show")
     end if
 
+    m.screen.show()
+    m.screen.AllowUpdates(true)
     m.nextindex = m.curindex+1
     m.Timer.Mark()
-    GetViewController().ResetIdleTimer()
-    SendRemoteKey("InstantReplay") ' need to find a better fix to prevent the screenSaver
+    GetViewController().ResetIdleTimer() ' lockscreen
+    m.nonIdle() ' inhibit screensaver
+end sub
+
+sub ICnonIdle(reset=false)
+   ' we don't know what the user has set the screen saver idle time too
+   ' we do know 5 minutes is the lowest setting, so set this number lower
+   ' than 300 ( perferably no higher than 240 to be safe )
+    maxIdle = 240
+    if reset then 
+        Debug("idle time reset (forced)")
+        m.idleTimer.mark()
+    else if m.idleTimer.GetElapsedSeconds() > maxIdle then 
+        Debug("idle time reset (popped)")
+        m.idleTimer.mark()
+        SendRemoteKey("Lit_x") ' sending keyboard command (x) -- stop idle
+    end if
+    Debug("IDLE TIME " + tostr(m.idleTimer.GetElapsedSeconds()))
 end sub
 
 sub ICphotoPlayerNext()
@@ -521,6 +551,7 @@ end sub
 sub ICphotoPlayerActivate(priorScreen) 
     ' pretty basic for now -- we will resume the slide show if paused and forcResume is set
     '  note: forceResume is set if slideshow was playing while EU hits the * button ( when we come back, we need/should to resume )
+    m.nonIdle(true)
     if m.isPaused and m.ForceResume then m.Resume()
 end sub
 
