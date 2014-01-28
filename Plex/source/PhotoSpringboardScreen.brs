@@ -25,19 +25,16 @@ Sub photoSetupButtons()
     m.Screen.SetStaticRatingEnabled(false)
     'end if
 
-    print "woooo hoooo setup buttongs"
-    print m
     if m.IsShuffled then 
-        m.AddButton("Slideshow Shuffled", "ICslideshow")
+        m.AddButton("Slideshow Shuffled", "slideshow")
     else 
-        m.AddButton("Slideshow", "ICslideshow")
+        m.AddButton("Slideshow", "slideshow")
     end if 
-    ' m.AddButton("Slideshow Shuffled", "ICslideshowShuffled")-- it's handled by the more/* button ( toggle slideshow )
-    m.AddButton("Show", "ICshow")
+    ' m.AddButton("Slideshow Shuffled", "slideshowShuffled")-- it's handled by the more/* button ( toggle slideshow )
+    m.AddButton("Show", "show")
     m.AddButton("Next Photo", "next")
     m.AddButton("Previous Photo", "prev")
 
-    print m.metadata
     if m.metadata.UserRating = invalid then m.metadata.UserRating = 0
     if m.metadata.StarRating = invalid then
         if m.metadata.UserRating <> invalid and m.metadata.UserRating > 0 then 
@@ -84,32 +81,18 @@ Function photoHandleMessage(msg) As Boolean
             handled = true
             buttonCommand = m.buttonCommands[str(msg.getIndex())]
             Debug("Button command: " + tostr(buttonCommand))
-            ' deprecated old commands
-            'if buttonCommand = "show" then
-            '    Debug("photoHandleMessage:: Show photo fullscreen")
-            '    m.ViewController.CreatePhotoPlayer(m.Item)
-            'else if buttonCommand = "slideshow" then
-            '    ' Playing Photos from springBoard in a FULL grid context
-            '    GetContextFromFullGrid(m,m.focusedIndex) 
-	    '    if m.context.count() = 0 then
-            '        ShowErrorDialog("Sorry! We were unable to load your photos.","Warning")
-            '    else 
-            '        Debug("photoHandleMessage:: springboard Start slideshow with " + tostr(m.context.count()) + " items")
-            '        Debug("starting at index: " + tostr(m.curindex))
-            '        m.ViewController.CreatePhotoPlayer(m.Context, m.CurIndex, true, m.IsShuffled)
-            '    end if
-            if buttonCommand = "ICslideshow" or buttonCommand = "ICshow" or buttonCommand = "ICslideshowShuffled" then
+            if buttonCommand = "slideshow" or buttonCommand = "show" or buttonCommand = "slideshowShuffled" then
                 ' Playing Photos from springBoard in a FULL grid context
                 GetContextFromFullGrid(m,m.item.origindex) 
 		if m.context.count() = 0 then
                     ShowErrorDialog("Sorry! We were unable to load your photos.","Warning")
                 else 
-                    m.IsShuffled = (buttonCommand = "ICslideshowShuffled" or m.IsShuffled = 1)
+                    m.IsShuffled = (buttonCommand = "slideshowShuffled" or m.IsShuffled = 1)
                     ' shuffle and reset curIndex 
                     if m.IsShuffled then m.curindex = ShuffleArray(m.Context, m.curindex)
                     Debug("photoHandleMessage:: springboard Start slideshow with " + tostr(m.context.count()) + " items")
                     Debug("starting at index: " + tostr(m.curindex))
-                    m.ViewController.CreateICphotoPlayer(m.Context, m.CurIndex, true, m.IsShuffled, NOT(buttonCommand = "ICshow"))
+                    m.ViewController.CreateICphotoPlayer(m.Context, m.CurIndex, true, m.IsShuffled, NOT(buttonCommand = "show"))
                 end if
             else if buttonCommand = "next" then
                 Debug("photoHandleMessage:: show next photo")
@@ -137,23 +120,23 @@ Function photoHandleMessage(msg) As Boolean
 End Function
 
 sub photoSprintBoardMoreButton()
-                dialog = createBaseDialog()
-                dialog.Title = ""
-                dialog.Text = ""
-                dialog.Item = m.metadata
-                if m.IsShuffled then
-                    dialog.SetButton("shuffle", "Shuffle: On")
-                else
-                    dialog.SetButton("shuffle", "Shuffle: Off")
-                end if
-                dialog.SetButton("rate", "_rate_")
-                if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
-                    dialog.SetButton("delete", "Delete permanently")
-                end if
-                dialog.SetButton("close", "Back")
-                dialog.HandleButton = photoDialogHandleButton
-                dialog.ParentScreen = m
-                dialog.Show()
+    dialog = createBaseDialog()
+    dialog.Title = ""
+    dialog.Text = ""
+    dialog.Item = m.metadata
+    if m.IsShuffled then
+        dialog.SetButton("shuffle", "Shuffle: On")
+    else
+        dialog.SetButton("shuffle", "Shuffle: Off")
+    end if
+    dialog.SetButton("rate", "_rate_")
+    if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
+        dialog.SetButton("delete", "Delete permanently")
+    end if
+    dialog.SetButton("close", "Back")
+    dialog.HandleButton = photoDialogHandleButton
+    dialog.ParentScreen = m
+    dialog.Show()
 end sub
 
 Function photoDialogHandleButton(command, data) As Boolean
