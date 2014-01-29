@@ -131,6 +131,7 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     ' overlay timer ( used if if disabled -- one can toggle the overlay )
     if obj.TimerOverlay = invalid then
         time = RegRead("slideshow_overlay", "preferences", "2500").toInt()
+        if time = 0 then time = 2500
         obj.TimerOverlay = createTimer()
         obj.TimerOverlay.Name = "overlay"
         obj.TimerOverlay.SetDuration(time, true)
@@ -233,7 +234,7 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
                 if m.IsPaused then 
                     if audioplayer().IsPaused then Audioplayer().Resume()
                     m.resume()
-                else 
+               else 
                     if AudioPlayer().IsPlaying then AudioPlayer().Pause()
                     m.pause()
                 end if
@@ -265,6 +266,7 @@ End Function
 
 sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=invalid)
         if tostr(option) <> "forceShow" and NOT m.overlayEnabled and overlayText = invalid and headerText = invalid then 
+            'print "overlay not enabled -- hiding it"
             m.screen.clearlayer(2)
             m.OverlayOn = false
             m.TimerOverlay.Active = false
