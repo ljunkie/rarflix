@@ -199,12 +199,14 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
                 ' down/up : toggle overlay
                 ' - if someone manually toggles the overlay -- remember state for this slideshow (overlayEnabled) 
                 ' - Legacy devices require the up button to exit the screen (no back button)
-                if m.isLegacy and msg.GetIndex() = 2 then 
-                    m.Stop()
-                else 
-                    m.overlayEnabled = not(m.OverlayOn)
-                    m.OverlayToggle()
-                end if                 
+                ' UPDATE: some people use old remotes.. no back button, so we will have to close on up
+                m.Stop()
+                'if m.isLegacy and msg.GetIndex() = 2 then 
+                '    m.Stop()
+                'else 
+                '    m.overlayEnabled = not(m.OverlayOn)
+                '    m.OverlayToggle()
+                'end if                 
             else if msg.GetIndex() = 4 then 
                 ' left: previous
                 'm.OverlayToggle("show",invalid,"previous")
