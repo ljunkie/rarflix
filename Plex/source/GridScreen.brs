@@ -209,14 +209,14 @@ Function gridHandleMessage(msg) As Boolean
         if msg.isListItemSelected() then
             context = m.contentArray[msg.GetIndex()]
             index = msg.GetData()
-
             ' TODO(schuyler): How many levels of breadcrumbs do we want to
             ' include here. For example, if I'm in a TV section and select
             ' a series from Recently Viewed Shows, should the breadcrumbs
             ' on the next screen be "Section - Show Name" or "Recently
             ' Viewed Shows - Show Name"?
+            item = invalid
+            if context <> invalid then item = context[index]
 
-            item = context[index]
             if item <> invalid then
 
                 ' user entered a section - remeber the last section to focus when launching the channel again
