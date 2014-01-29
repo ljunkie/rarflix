@@ -33,20 +33,28 @@ Function createFULLGridScreen(item, viewController, style = "flat-movie", SetDis
         end for 
     end if
 
-    '    container = createPlexContainerForUrl(item.server, item.sourceUrl, detailKey)
-    ' this would be a lot easier if I just added the header for X-Plex-Container-Start=0&X-Plex-Container-Size=1
-    f = "?":if instr(1, detailKey, "?") > 0 then f = "&"
-    newSourceUrl = item.sourceurl + "/" + detailKey
-    newConUrl = newSourceUrl + f + "X-Plex-Container-Start=0&X-Plex-Container-Size=0" ' this is mainly only to get the size
-    container = createPlexContainerForUrl(item.server, invalid, newConUrl)
-    container.sourceurl = newSourceurl
+    'container = createPlexContainerForUrl(item.server, item.sourceUrl, detailKey)
+    ' ljunkie - i should probably wrap this up into a better sub/function to be used later
+    '  just need a quick way to create a plexContainer request with 0 results returned ( to be quick )
+    httpRequest = item.server.CreateRequest(item.sourceUrl, detailKey)
+    httpRequest.AddHeader("X-Plex-Container-Start", "0")
+    httpRequest.AddHeader("X-Plex-Container-Size", "0")
+    Debug("Fetching content from server at query URL: " + tostr(httpRequest.GetUrl()))
+    response = GetToStringWithTimeout(httpRequest, 60)
+    xml=CreateObject("roXMLElement")
+    if not xml.Parse(response) then Debug("Can't parse feed: " + tostr(response))
+    Debug("Finished - Fetching content from server at query URL: " + tostr(httpRequest.GetUrl()))
+    Debug("Total Items: " + tostr(xml@totalsize) + " size returned: " + tostr(xml@size))
+    container = {}
+    container.totalsize = xml@totalsize
+    container.sourceurl = httpRequest.GetUrl()
+    container.server = item.server
 
     ' TODO - this could use some work ( it should be ok right now, but we might want to add in all the logic for all the screen types )
     ' grid_size = number of rows across
     grid_size = 5
     if style = "flat-square" then grid_size = 7
     if NOT GetGlobal("IsHD") = true and style = "flat-landscape" then grid_size = 4
-    container.SeparateSearchItems = true   
 
     obj.Loader = createFULLgridPaginatedLoader(container, grid_size, grid_size, item)
     obj.Loader.Listener = obj
@@ -61,13 +69,13 @@ End Function
 
 
 Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, item = invalid as dynamic)
-    size = container.xml@totalSize
 
     loader = CreateObject("roAssociativeArray")
     initDataLoader(loader)
 
     loader.server = container.server
     loader.sourceUrl = container.sourceUrl
+    totalsize = container.totalsize
     loader.initialLoadSize = initialLoadSize
     loader.pageSize = pageSize
     loader.contentArray = []
@@ -86,11 +94,11 @@ Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, ite
     '    end if
     ' end testing
     'stop
-    if size <> invalid then 
-        for index = 0 to size.toInt() - 1 step increment
+    if totalsize <> invalid then 
+        for index = 0 to totalsize.toInt() - 1 step increment
             num_to = index+increment
-            if num_to > size.toInt() then num_to = size.toInt()
-            name = tostr(index+1) + "-" + tostr(num_to) + " of " + size
+            if num_to > totalsize.toInt() then num_to = totalsize.toInt()
+            name = tostr(index+1) + "-" + tostr(num_to) + " of " + totalsize
             f = "?"
             if instr(1, loader.sourceurl, "?") > 0 then f = "&"
             keys.Push(loader.sourceurl + f + "X-Plex-Container-Start="+tostr(index)+"&X-Plex-Container-Size="+tostr(increment))
