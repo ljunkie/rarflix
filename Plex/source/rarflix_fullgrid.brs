@@ -33,7 +33,13 @@ Function createFULLGridScreen(item, viewController, style = "flat-movie", SetDis
         end for 
     end if
 
-    container = createPlexContainerForUrl(item.server, item.sourceUrl, detailKey)
+    '    container = createPlexContainerForUrl(item.server, item.sourceUrl, detailKey)
+    ' this would be a lot easier if I just added the header for X-Plex-Container-Start=0&X-Plex-Container-Size=1
+    f = "?":if instr(1, detailKey, "?") > 0 then f = "&"
+    newSourceUrl = item.sourceurl + "/" + detailKey
+    newConUrl = newSourceUrl + f + "X-Plex-Container-Start=0&X-Plex-Container-Size=0" ' this is mainly only to get the size
+    container = createPlexContainerForUrl(item.server, invalid, newConUrl)
+    container.sourceurl = newSourceurl
 
     ' TODO - this could use some work ( it should be ok right now, but we might want to add in all the logic for all the screen types )
     ' grid_size = number of rows across
@@ -55,19 +61,17 @@ End Function
 
 
 Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, item = invalid as dynamic)
+    size = container.xml@totalSize
 
     loader = CreateObject("roAssociativeArray")
     initDataLoader(loader)
 
     loader.server = container.server
     loader.sourceUrl = container.sourceUrl
-
     loader.initialLoadSize = initialLoadSize
     loader.pageSize = pageSize
-
     loader.contentArray = []
 
-    size = container.xml@size
     keys = []
     loader.names = []
     increment=pagesize
@@ -81,12 +85,12 @@ Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, ite
     '         loader.names.Push("Sub Sections")
     '    end if
     ' end testing
-
+    'stop
     if size <> invalid then 
         for index = 0 to size.toInt() - 1 step increment
             num_to = index+increment
-            if num_to > (container.xml@size).toInt() then num_to = (container.xml@size).toInt()
-            name = tostr(index+1) + "-" + tostr(num_to) + " of " + container.xml@size
+            if num_to > size.toInt() then num_to = size.toInt()
+            name = tostr(index+1) + "-" + tostr(num_to) + " of " + size
             f = "?"
             if instr(1, loader.sourceurl, "?") > 0 then f = "&"
             keys.Push(loader.sourceurl + f + "X-Plex-Container-Start="+tostr(index)+"&X-Plex-Container-Size="+tostr(increment))
@@ -161,6 +165,8 @@ sub GetContextFromFullGrid(this,curindex = invalid)
            if this.isFullGrid = true then this.CurIndex = getFullGridCurIndex(this,CurIndex,1) ' when we load the full context, we need to fix the curindex
            return
         end if
+
+        Debug("------context from full grid")
 
         if this.metadata.sourceurl = invalid then return
 
