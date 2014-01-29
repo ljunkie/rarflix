@@ -53,6 +53,7 @@ Function newPhotoMetadata(container, item, detailed=true) As Object
     end if
 
     ' Transcode if necessary
+    '  ljunkie -- also append the server token if required
     if photo.media.Count() > 0 then
         format = UCase(firstOf(photo.media[0].container, "JPEG"))
         transcode = false
@@ -73,7 +74,11 @@ Function newPhotoMetadata(container, item, detailed=true) As Object
         end if
 
         if transcode then
+            ' TranscodedImage adds the token when needed
             photo.Url = photo.server.TranscodedImage("", photo.Url, size.w.toStr(), size.h.toStr())
+        else if photo.server.AccessToken <> invalid 
+            ' add the token if not transcoded
+            photo.Url = photo.Url + "?X-Plex-Token=" + photo.server.AccessToken
         end if
     end if
 
