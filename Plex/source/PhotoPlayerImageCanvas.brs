@@ -67,6 +67,7 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
 
     obj.LocalFiles = []
     obj.LocalFileSize = 0
+    obj.CachedMetadata = 0
 
     obj.playbackTimer = createTimer()
     obj.idleTimer = createTimer()
@@ -107,6 +108,7 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     obj.ShowSlideImage = ICshowSlideImage
     obj.getSlideImage = ICgetSlideImage
     obj.purgeSlideImages = ICPurgeLocalFiles
+    obj.purgeMetadata = ICPurgeMetadata
     obj.setImageFailureInfo = ICsetImageFailureInfo
     obj.showContextMenu = photoShowContextMenu
     obj.setImageFailureInfo()
@@ -168,6 +170,7 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
 
         if msg.isScreenClosed() then
             m.purgeSlideImages() ' cleanup the local cached images
+            m.purgeMetadata() ' cleanup the retrieved metadata during the slide show ( maybe just set invalid )
             amountPlayed = m.playbackTimer.GetElapsedSeconds()
             Debug("Sending analytics event, appear to have watched slideshow for " + tostr(amountPlayed) + " seconds")
             AnalyticsTracker().TrackEvent("Playback", firstOf(m.Item.ContentType, "photo"), m.Item.mediaContainerIdentifier, amountPlayed)
@@ -497,7 +500,11 @@ Sub ICphotoPlayerSetShuffle(shuffleVal)
 End Sub
 
 function ICgetSlideImage()
+    ' purge expired metadata records -- this must be before any other calls
+    if m.CachedMetadata > 5 then m.PurgeMetadata()
+
     item = m.context[m.curindex]
+    orig = item
 
     if item.url = invalid then  
         container = createPlexContainerForUrl(item.server, invalid, item.key)
@@ -508,6 +515,8 @@ function ICgetSlideImage()
                 ' * OrigIndex might exist if shuffled
                 if m.context[m.curindex].OrigIndex <> invalid then item.OrigIndex = m.context[m.curindex].OrigIndex
                 m.context[m.curindex] = item
+                m.context[m.curindex].orig = orig
+                m.CachedMetadata = m.CachedMetadata+1
             end if
         end if
     end if
@@ -546,6 +555,20 @@ function ICgetSlideImage()
     GetViewController().StartRequest(request, m, context, invalid, localFilePath)
     return false ' false means we wait for response
 end function
+
+sub ICPurgeMetadata()
+    ' this resets the metadata to the lightweight original
+    Debug("Purging Full Metadata from " + tostr(m.context.count()) + " items")
+    count = 0
+    for index = 0 to m.context.count()-1
+        if m.context[index].orig <> invalid then 
+            count = count+1
+            m.context[index] = m.context[index].orig
+        end if
+    next
+    m.CachedMetadata = 0
+    Debug("Purged " + tostr(count) + " items")
+end sub
 
 sub ICPurgeLocalFiles() 
     ' cleanup our mess -- purge any files we have created during the slideshow
