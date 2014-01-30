@@ -410,7 +410,7 @@ Function gridHandleMessage(msg) As Boolean
                 end if
                 Debug("gridHandleMessage:: CreatePlayerForItem with " + tostr(obj.context.count()) + " total items")
                 Debug("Playing item directly from grid: index" + tostr(obj.curindex))
-                m.ViewController.CreatePlayerForItem(obj.context, obj.curindex)
+                m.ViewController.CreatePlayerForItem(obj.context, obj.curindex, invalid, obj.sourceReloadURL)
             end if
         else if msg.isScreenClosed() then
             if m.recreating then

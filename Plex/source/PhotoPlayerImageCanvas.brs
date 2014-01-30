@@ -778,36 +778,55 @@ sub photoShowContextMenu(obj = invalid,force_show = false, forceExif = false)
 End sub
 
 sub ICreloadSlideContext()
-    expireSec = 300 ' only reload every 5 minutes
     if RegRead("slideshow_reload", "preferences", "disabled") <> "disabled" then 
+
+        expireSec = 300 ' only reload every 5 minutes max ( stops delay from clicking back/forth between last and 1st image )
         if m.lastreload <> invalid and getEpoch()-m.lastReload < expireSec then 
-            Debug("---- Skipping Reload " + tostr(getEpoch()-m.lastReload) + " seconds < expire seconds " + tostr(expireSec))
-        else 
-            Debug("---- trying to Reload SlideShow context")
-            m.lastReload = getEpoch()
-            if m.item <> invalid and m.item.server <> invalid and m.item.sourceurl <> invalid then 
-                obj = createPlexContainerForUrl(m.item.server, "", m.item.sourceurl) ' sourceurl for key arg -- will use the unadulterated url
-                newCount = obj.count():curCount = m.context.count()
-                Debug("    Cur Items: " + tostr(curCount)):Debug("    New Items: " + tostr(newCount))
-                if newCount > 0 and newCount <> curCount then 
-                    cleanContext = ICphotoPlayerCleanContext(obj.getmetadata(),0)
-                    cleanCount = cleanContext.context.count()
-                    Debug("    New (cleaned) Items: " + tostr(cleanCount))
-                    if cleanCount > 0 and cleanCount <> curCount then 
-                        m.context = cleanContext.context
-                        m.PhotoCount = cleanCount
-                        Debug("---- reloading slideshow with new context " + tostr(m.PhotoCount) + " items")
-                    else 
-                       Debug("---- slideshow content reload (no new items)")                            
+            Debug("Skipping Reload " + tostr(getEpoch()-m.lastReload) + " seconds < expire seconds " + tostr(expireSec))
+            return
+        end if
+
+        Debug("slideshow completing loop, checking for new content")
+        m.lastReload = getEpoch()
+        if m.item <> invalid and m.item.server <> invalid and (m.item.sourceurl <> invalid or m.sourceReloadURL <> invalid) then 
+            obj = {}:dummyItem = {}
+            dummyItem.server = m.item.server
+            ' we really should only be reloading from the sourceReloadURL ( m.item.sourcurl is now most likely the specific item.. no good )
+            ' TODO(ljunkie) we could also speed this up by creating a container with headers to return 0 items, just size and verify 
+            dummyItem.sourceUrl = firstof(m.sourceReloadURL,m.item.sourceurl)
+            if dummyItem.sourceUrl = invalid then Debug("no valid url to reload"):return
+            PhotoMetadataLazy(obj, dummyItem, true)
+
+            ' set to true to test the reload function 
+            ' otherwise it will only reset context if newCount <> curCount
+            forceReloadTest = false 
+
+            newCount = obj.context.count():curCount = m.context.count()
+            Debug("Cur Items: " + tostr(curCount)):Debug("New Items: " + tostr(newCount))
+            ' we might want to return if newCount = 1 --- if someone sets the sourceReloadURL incorrectly, we might use a direct item hit (wrong)
+            if forceReloadTest or (newCount > 0 and newCount <> curCount) then 
+                cleanContext = ICphotoPlayerCleanContext(obj.context,0)
+                cleanCount = cleanContext.context.count()
+                Debug("New (cleaned) Items: " + tostr(cleanCount)) 
+                if forceReloadTest or (cleanCount > 0 and cleanCount <> curCount) then 
+                    m.context = cleanContext.context
+                    m.PhotoCount = cleanCount
+                    Debug("reloading slideshow with new context " + tostr(m.PhotoCount) + " items")
+                    if m.isShuffled then 
+                        Debug("slideshow was shuffled - we need to reshuffle due to new context")
+                        ShuffleArray(m.Context, m.CurIndex)
+                        Debug("shuffle done")
                     end if
-                else 
-                    Debug("---- slideshow content reload (no new items)")
+                    Debug("Running Garbage Collector")
+                    RunGarbageCollector()
+                    return
                 end if
             end if
         end if
+
+        Debug("did not reload slideshow content (no new items)")
     end if
-    Debug("Running Garbage Collector")
-    RunGarbageCollector()
+
 end sub
 
 sub ICphotoStopKeepState()
@@ -819,98 +838,90 @@ sub ICphotoStopKeepState()
     NowPlayingManager().UpdatePlaybackState("photo", invalid, "stopped", 0)
 end sub
 
-
 ' we need a quicker, more memory effecient way to load images. We don't need all the metadata as we do normally
 ' by default (quick) we will only set the library key and some other necessities 
 ' NOTE: quick=false sould really not be used.. defeats the purpose -- but nice for testing
-sub GetPhotoContextFromFullGrid(this,curindex = invalid, quick=true) 
+sub GetPhotoContextFromFullGrid(obj,curindex = invalid, lazy=true) 
     Debug("----- get Photo Context from Full Grid")
-    Debug("----- Quick Mode: " + tostr(quick) )
+    Debug("----- lazy Mode: " + tostr(lazy) )
     if NOT fromFullGrid() then Debug("NOT from a full grid.. nothing to see here"):return
 
     ' full context already loaded -- but we still might need to reset the CurIndex
-    if this.FullContext = true then 
-       Debug("All context is already loaded! total: " + tostr(this.context.count()))
+    if obj.FullContext = true then 
+       Debug("All context is already loaded! total: " + tostr(obj.context.count()))
        ' if we are still in the full grid, we will have to caculate the index again ( rows are only 5 items -- curIndex is always 0-5 )
-       if this.isFullGrid = true then this.CurIndex = getFullGridCurIndex(this,CurIndex,1)
+       if obj.isFullGrid = true then obj.CurIndex = getFullGridCurIndex(obj,CurIndex,1)
        return
     end if
 
-    if this.metadata.sourceurl = invalid then return
-    if curindex = invalid then curindex = this.curindex
+    if obj.metadata.sourceurl = invalid then return
+    if curindex = invalid then curindex = obj.curindex
 
     ' strip any limits imposed by the full grid - we need it all ( not start or container size)
     r  = CreateObject("roRegex", "[?&]X-Plex-Container-Start=\d+\&X-Plex-Container-Size\=.*", "")
-    sourceUrl = this.metadata.sourceurl
+    sourceUrl = obj.metadata.sourceurl
     if r.IsMatch(sourceUrl) then  
         Debug("--------------------------- OLD " + tostr(sourceUrl))
         sourceUrl = r.replace(sourceUrl,"")
         Debug("--------------------------- NEW " + tostr(sourceUrl))
     end if
 
-    ' UPDATE: the below is not applicable for photos (yay)
-    ' man I really created a nightmare adding the new unwatched rows for movies.. 
-    ' the source URL may have ?type=etc.. to filter
-    ' the hack I have in PlexMediaServer.brs FullUrl() requires 'filter' to be prepended to the key
-    '        key = ""
-    '        rkey  = CreateObject("roRegex", "(.*)(\?.*)","")
-    '        new_key = rkey.match(newurl)
-    '        if new_key.count() > 2 and new_key[1] <> invalid and new_key[2] <> invalid then 
-    '          newurl = new_key[1]
-    '          key = "filter" + new_key[2]
-    '        end if
-    '        ' end Hack for special filtered calls
-    '    Debug("--------------------------- NEW " + tostr(newurl) + " key " + tostr(key))
-    '    obj = createPlexContainerForUrl(this.metadata.server, newurl, key)
+    ' no quickly load the required metadata (lazy)
+    dummyItem = {}
+    dummyItem.server = obj.metadata.server
+    dummyItem.sourceUrl = sourceUrl
+    PhotoMetadataLazy(obj, dummyItem, lazy)
+end sub
 
-    ' If this container has an error message, show it now
-    ' TODO(ljunkie) test this
-    obj = createPlexContainerForUrl(this.metadata.server, invalid, sourceUrl)
+sub PhotoMetadataLazy(obj, dummyItem, lazy = true)
+    ' sourceUrl can be a fullUrl or key
+    container = createPlexContainerForUrl(dummyItem.server, invalid, dummyItem.sourceUrl)
+    obj.sourceReloadURL = container.sourceurl ' lazy loading .. we need this for later to reload the slideshow
 
-    if isnonemptystr(obj.xml@header) AND isnonemptystr(obj.xml@message) then
+    if isnonemptystr(container.xml@header) AND isnonemptystr(container.xml@message) then
         ShowErrorDialog("Sorry! We were unable to load your photos.","Warning"):return
     end if
     
     ' parse the xml into objects
-    nodes = obj.xml.GetChildElements()
+    nodes = container.xml.GetChildElements()
     for each n in nodes
-        nodeType = firstOf(n.GetName(), n@type, obj.ViewGroup) ' n.GetName() should never fail
+        nodeType = firstOf(n.GetName(), n@type, container.ViewGroup) ' n.GetName() should never fail
 
         if nodeType = "Photo" then
             ' only load the required data -- keep the memory footprint small
-            if quick then 
+            if lazy then 
                 metadata = {}
-                metadata.server = this.metadata.server
+                metadata.server = dummyItem.server
                 metadata.key = n@key
                 metadata.nodename = "Photo"
                 metadata.ContentType = "photo"
                 metadata.Type = "photo"
             else 
-                metadata = newPhotoMetadata(obj, n)
+                metadata = newPhotoMetadata(container, n)
             end if
         else if nodeType = "Directory"
             ' ljunkie -- slideShow doesn't work with directories, but other screens do
             ' for now we will just create the metadata the normal way. If someone has
             ' thousands of directories too, we might have memory issues and have to 
             ' re-work this like we do above for photos
-            metadata = newDirectoryMetadata(obj, n)
+            metadata = newDirectoryMetadata(container, n)
         end if
 
         ' CUSTOM thumbs? -- not for photos
         ' PosterIndicators(metadata) -- nah, watched status not implemented for photos and probably never should be shown if it is
 
         ' only push valid metadata - we only expect Photo and Directories
-        if metadata <> invalid and metadata.key <> invalid then obj.metadata.Push(metadata)
+        if metadata <> invalid and metadata.key <> invalid then container.metadata.Push(metadata)
         metadata = invalid
     next
 
-    this.context = obj.metadata
-    this.CurIndex = getFullGridCurIndex(this,CurIndex,1) ' when we load the full context, we need to fix the curindex
-    this.FullContext = true
+    obj.context = container.metadata
+    obj.CurIndex = getFullGridCurIndex(obj,dummyItem.CurIndex,1) ' when we load the full context, we need to fix the curindex
+    obj.FullContext = true
 
     ' cleanup
     nodes = invalid
     metadata = invalid 
-    obj = invalid
+    container = invalid
     RunGarbageCollector()
 end sub

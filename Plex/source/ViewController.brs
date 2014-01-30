@@ -707,7 +707,15 @@ Function vcCreatePhotoPlayer(context, contextIndex=invalid, show=true, shuffled=
 End Function
 
 
-Function vcCreateICphotoPlayer(context, contextIndex=invalid, show=true, shuffled=false, slideShow=false)
+Function vcCreateICphotoPlayer(obj, contextIndex=invalid, show=true, shuffled=false, slideShow=false)
+    sourceReloadURL = invalid
+    if type(obj) = "roArray" then 
+         context = obj
+    else 
+         context = obj.context
+         sourceReloadUrl = obj.sourceReloadURL
+    end if 
+
     ' remote clients default to use the "play" button, so we can't always trust slidshow=true -- verify we have more than one item
     if ( ( type(context) = "roArray" and context.count() = 1 ) or (type(context) <> "roArray") ) then slideShow=false
 
@@ -718,6 +726,7 @@ Function vcCreateICphotoPlayer(context, contextIndex=invalid, show=true, shuffle
 
     screen = createICphotoPlayerScreen(context, contextIndex, m, shuffled, slideShow)
     screen.ScreenName = "Photo Player Image Canvas"
+    if sourceReloadUrl <> invalid then screen.sourceReloadUrl = sourceReloadUrl
 
     m.AddBreadcrumbs(screen, invalid)
     m.UpdateScreenProperties(screen)
@@ -825,7 +834,7 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
     return screen
 End Function
 
-Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
+Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid, sourceReloadUrl = invalid)
     item = context[contextIndex]
 
     ' ljunkie - check if we are viewing a directory. We can direct play certain items ( play all sort of thing )
@@ -836,16 +845,18 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
         if item.ContentType = "photo" then 
             Debug("--- trying to play photos from a directory")
 
-            container = createPlexContainerForUrl(item.server, item.server.serverurl, item.key)
-            newContext = container.getmetadata()
-            ' verify the container has images - it still could be all directories. 
-            ' If directory, skip and create screen for item
-            for each item in newContext
-                if item.nodename = "Photo" then 
-                    Debug("vcCreatePlayerForItem:: CreateICPhotoPlayer with " + tostr(newContext.count()) + " total items")
-                    return m.CreateICPhotoPlayer(newContext, 0, true, false, true)
-                end if
-            end for
+            obj = {}:dummyItem = {}
+            dummyItem.server = item.server
+            dummyItem.sourceUrl = item.key
+            PhotoMetadataLazy(obj, dummyItem, true)
+            if obj.context <> invalid and obj.context.count() > 0 then 
+                for each item in obj.context
+                    if item.nodename = "Photo" then 
+                        Debug("vcCreatePlayerForItem:: CreateICPhotoPlayer with " + tostr(obj.context.count()) + " total items")
+                        return m.CreateICPhotoPlayer(obj, 0, true, false, true)
+                    end if
+                end for
+            end if
         else if item.ContentType = "album" then
             Debug("--- trying to play an album from a directory")
             container = createPlexContainerForUrl(item.server, item.server.serverurl, item.key)
@@ -854,7 +865,10 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
             return m.CreateScreenForItem(context, 0, invalid)
          end if
     else if item.ContentType = "photo" then '  and (item.nodename = invalid or item.nodename <> "Directory") then 
-        return m.CreateICphotoPlayer(context, contextIndex, true, false, true)
+        obj = {}
+        obj.context = context
+        if sourceReloadURL <> invalid then obj.sourceReloadUrl = sourceReloadUrl
+        return m.CreateICphotoPlayer(obj, contextIndex, true, false, true)
     else if item.ContentType = "audio" then
         AudioPlayer().Stop()
         return m.CreateScreenForItem(context, contextIndex, invalid, NOT(GetViewController().IsSlideShowPlaying()))
