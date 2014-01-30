@@ -195,18 +195,15 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
             if msg.GetIndex() = 0 then 
                 ' back: close
                 m.Stop()
-            else if msg.GetIndex() = 2 or msg.GetIndex() = 3 then 
+            else if msg.GetIndex() = 2 then
                 ' down/up : toggle overlay
                 ' - if someone manually toggles the overlay -- remember state for this slideshow (overlayEnabled) 
                 ' - Legacy devices require the up button to exit the screen (no back button)
                 ' UPDATE: some people use old remotes.. no back button, so we will have to close on up
                 m.Stop()
-                'if m.isLegacy and msg.GetIndex() = 2 then 
-                '    m.Stop()
-                'else 
-                '    m.overlayEnabled = not(m.OverlayOn)
-                '    m.OverlayToggle()
-                'end if                 
+            else if msg.GetIndex() = 3 then 
+                m.overlayEnabled = not(m.OverlayOn)
+                m.OverlayToggle()
             else if msg.GetIndex() = 4 then 
                 ' left: previous
                 'm.OverlayToggle("show",invalid,"previous")
@@ -500,7 +497,20 @@ End Sub
 
 function ICgetSlideImage()
     item = m.context[m.curindex]
- 
+
+    if item.url = invalid then  
+        container = createPlexContainerForUrl(item.server, invalid, item.key)
+        if container <> invalid then 
+            item = container.getmetadata()[0]
+            if item <> invalid then 
+                ' anything we need to set before we reset the item
+                ' * OrigIndex might exist if shuffled
+                if m.context[m.curindex].OrigIndex <> invalid then item.OrigIndex = m.context[m.curindex].OrigIndex
+                m.context[m.curindex] = item
+            end if
+        end if
+    end if
+
     ' location/name of the cached file ( to read or to save )
     localFilePath = "tmp:/" + item.ratingKey + "_" + item.title + ".jpg"
 
@@ -704,7 +714,7 @@ sub ICsetImageFailureInfo(failureReason=invalid)
 end sub
 
 ' this can be called independently while passing the object 
-sub photoShowContextMenu(obj = invalid,force_show = false)
+sub photoShowContextMenu(obj = invalid,force_show = false, forceExif = false)
     if obj <> invalid then
         Debug("context menu using passed object")
     else if type(m.context) = "roArray" and m.CurIndex <> invalid then 
@@ -729,17 +739,9 @@ sub photoShowContextMenu(obj = invalid,force_show = false)
         return
     end if
 
-    if obj.MediaInfo = invalid then 
-        container = createPlexContainerForUrl(obj.server, obj.server.serverUrl, obj.key)
-        if container <> invalid then
-            container.getmetadata()
-            ' only create dialog if metadata is available
-            if type(container.metadata) = "roArray" and type(container.metadata[0].media) = "roArray" then 
-                obj.MediaInfo = container.metadata[0].media[0]
-            end if
-        end if 
-    end if 
-    
+    getExifData(obj,false,true)
+
+    ' TODO(ljunkie) it's ugly! -- convert this to an image canvas 
     if obj.MediaInfo <> invalid then 
         dialog = createBaseDialog()
         dialog.Title = "Image: " + obj.title
@@ -816,3 +818,98 @@ sub ICphotoStopKeepState()
     NowPlayingManager().UpdatePlaybackState("photo", invalid, "stopped", 0)
 end sub
 
+
+' we need a quicker, more memory effecient way to load images. We don't need all the metadata as we do normally
+' by default (quick) we will only set the library key and some other necessities 
+' NOTE: quick=false sould really not be used.. defeats the purpose -- but nice for testing
+sub GetPhotoContextFromFullGrid(this,curindex = invalid, quick=true) 
+    Debug("----- get Photo Context from Full Grid")
+    Debug("----- Quick Mode: " + tostr(quick) )
+    if NOT fromFullGrid() then Debug("NOT from a full grid.. nothing to see here"):return
+
+    ' full context already loaded -- but we still might need to reset the CurIndex
+    if this.FullContext = true then 
+       Debug("All context is already loaded! total: " + tostr(this.context.count()))
+       ' if we are still in the full grid, we will have to caculate the index again ( rows are only 5 items -- curIndex is always 0-5 )
+       if this.isFullGrid = true then this.CurIndex = getFullGridCurIndex(this,CurIndex,1)
+       return
+    end if
+
+    if this.metadata.sourceurl = invalid then return
+    if curindex = invalid then curindex = this.curindex
+
+    ' strip any limits imposed by the full grid - we need it all ( not start or container size)
+    r  = CreateObject("roRegex", "[?&]X-Plex-Container-Start=\d+\&X-Plex-Container-Size\=.*", "")
+    sourceUrl = this.metadata.sourceurl
+    if r.IsMatch(sourceUrl) then  
+        Debug("--------------------------- OLD " + tostr(sourceUrl))
+        sourceUrl = r.replace(sourceUrl,"")
+        Debug("--------------------------- NEW " + tostr(sourceUrl))
+    end if
+
+    ' UPDATE: the below is not applicable for photos (yay)
+    ' man I really created a nightmare adding the new unwatched rows for movies.. 
+    ' the source URL may have ?type=etc.. to filter
+    ' the hack I have in PlexMediaServer.brs FullUrl() requires 'filter' to be prepended to the key
+    '        key = ""
+    '        rkey  = CreateObject("roRegex", "(.*)(\?.*)","")
+    '        new_key = rkey.match(newurl)
+    '        if new_key.count() > 2 and new_key[1] <> invalid and new_key[2] <> invalid then 
+    '          newurl = new_key[1]
+    '          key = "filter" + new_key[2]
+    '        end if
+    '        ' end Hack for special filtered calls
+    '    Debug("--------------------------- NEW " + tostr(newurl) + " key " + tostr(key))
+    '    obj = createPlexContainerForUrl(this.metadata.server, newurl, key)
+
+    ' If this container has an error message, show it now
+    ' TODO(ljunkie) test this
+    obj = createPlexContainerForUrl(this.metadata.server, invalid, sourceUrl)
+
+    if isnonemptystr(obj.xml@header) AND isnonemptystr(obj.xml@message) then
+        ShowErrorDialog("Sorry! We were unable to load your photos.","Warning"):return
+    end if
+    
+    ' parse the xml into objects
+    nodes = obj.xml.GetChildElements()
+    for each n in nodes
+        nodeType = firstOf(n.GetName(), n@type, obj.ViewGroup) ' n.GetName() should never fail
+
+        if nodeType = "Photo" then
+            ' only load the required data -- keep the memory footprint small
+            if quick then 
+                metadata = {}
+                metadata.server = this.metadata.server
+                metadata.key = n@key
+                metadata.nodename = "Photo"
+                metadata.ContentType = "photo"
+                metadata.Type = "photo"
+            else 
+                metadata = newPhotoMetadata(obj, n)
+            end if
+        else if nodeType = "Directory"
+            ' ljunkie -- slideShow doesn't work with directories, but other screens do
+            ' for now we will just create the metadata the normal way. If someone has
+            ' thousands of directories too, we might have memory issues and have to 
+            ' re-work this like we do above for photos
+            metadata = newDirectoryMetadata(obj, n)
+        end if
+
+        ' CUSTOM thumbs? -- not for photos
+        ' PosterIndicators(metadata) -- nah, watched status not implemented for photos and probably never should be shown if it is
+
+        ' only push valid metadata - we only expect Photo and Directories
+        if metadata <> invalid and metadata.key <> invalid then obj.metadata.Push(metadata)
+        metadata = invalid
+    next
+
+    this.context = obj.metadata
+    this.CurIndex = getFullGridCurIndex(this,CurIndex,1) ' when we load the full context, we need to fix the curindex
+    this.FullContext = true
+
+    ' cleanup
+    nodes = invalid
+    metadata = invalid 
+    obj = invalid
+    RunGarbageCollector()
+end sub

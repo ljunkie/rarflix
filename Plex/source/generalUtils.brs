@@ -586,6 +586,7 @@ Sub SwapArray(arr, i, j, setOrigIndex=false)
     ' ljunkie -- sometimes the orignal and random number can be the same
     ' we should still set the OrigIndex to be able to unShuffleArray later
     ' note: moved out of the "i <> j" if statement
+
     if setOrigIndex then
         if arr[i].OrigIndex = invalid then arr[i].OrigIndex = i
         if arr[j].OrigIndex = invalid then arr[j].OrigIndex = j
@@ -615,11 +616,19 @@ End Function
 Function UnshuffleArray(arr, focusedIndex)
     item = arr[focusedIndex]
 
+    sanity=0:buffer=500000 ' ljunkie -- keeping from an infinite loop ( buffer is large, but we should be able to handle it )
     i = 0
     while i < arr.Count()
         if arr[i].OrigIndex = invalid then return 0
         SwapArray(arr, i, arr[i].OrigIndex)
         if i = arr[i].OrigIndex then i = i + 1
+        ' the above line can be really bad if the origIndex is set on ALL the items, yet is the same (shouldn't happen.. but you know...)
+        ' infinite loop killer
+        sanity = sanity + 1
+        if sanity > arr.Count()+buffer then 
+           Debug("!! exiting UnshuffleArray -- something is really wrong! " + " processed " + tostr(sanity) + " of a total " + tostr(arr.count()) + "total items!")
+           return firstOf(item.OrigIndex, 0)
+        end if
     end while
 
     return firstOf(item.OrigIndex, 0)

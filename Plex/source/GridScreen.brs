@@ -263,13 +263,12 @@ Function gridHandleMessage(msg) As Boolean
                 item = m.contentArray[m.selectedRow][m.focusedIndex]
        
                 if item <> invalid and tostr(item.type) = "photo" and tostr(item.nodename) <> "Directory" then
-                    description = getExifData(item,true) ' this resues the items metadata mediainfo if already loaded
+'                    description = getExifData(item,true) ' this resues the items metadata mediainfo if already loaded
+                    description = getExifDesc(item,true) ' this resues the items metadata mediainfo if already loaded
                     if description <> invalid then
                         ' remove 0 stars from description ( or replace with userrating )
                         if item.userrating <> invalid then item.starrating = item.userrating
                         if item.starrating <> invalid and item.starrating = 0 then item.starrating = invalid
-
-                        print item
                         item.description = description:item.GridDescription = description
                         m.Screen.SetContentListSubset(m.selectedRow, m.contentArray[m.selectedRow], m.focusedIndex, 1)
                     end if
@@ -383,7 +382,7 @@ Function gridHandleMessage(msg) As Boolean
                     obj.Item = item
                     rfVideoMoreButtonFromGrid(obj)
                 else if item <> invalid and tostr(item.contenttype) = "photo" then 
-                    photoShowContextMenu(item,true)
+                    photoShowContextMenu(item,true,true)
                 else if tostr(item.contenttype) <> "invalid" and m.screenid > 0 and tostr(m.screenname) <> "Home" then
                     ' show the option to see the FULL grid screen. We might want this just to do directly to it, but what if we add more options later.
                     ' might as well get people used to this.
@@ -396,25 +395,21 @@ Function gridHandleMessage(msg) As Boolean
                 end if 
         else if msg.isRemoteKeyPressed() then
             if msg.GetIndex() = 13 then
-                ' Playing Photos from a grid - we need all items
-                ' sometimes we don't know the item is photo ( appClips )            
-                sec_metadata = getSectionType()
-                ' TODO fix playing from section -- TODO
-                if tostr(sec_metadata.type) = "photo" and m.item <> invalid and m.item.contenttype <> "section" then
-                    Debug("Playing from GRID Screen - get context of ALL items in every row to play")
-                    'obj = CreateObject("roAssociativeArray") ' TODO(ljunkie) remove this once we know this isn't broken. Logic seemed wrong previously
+                sec_metadata = getSectionType() ' sometimes we don't know the item is photo ( appClips )
+                'if tostr(sec_metadata.type) = "photo" and m.item <> invalid and m.item.contenttype <> "section" then
+                if fromFullGrid() and tostr(sec_metadata.type) = "photo" then
+                    ' Playing Photos from a grid - we need all items
+                    Debug("Playing from Full Grid Screen (lazy load all items to play)")
                     obj = m
                     obj.metadata = m.loader
-                    GetContextFromFullGrid(obj,m.focusedIndex) 
-                    Debug("photoHandleMessage:: Start slideshow with " + tostr(obj.context.count()) + " items")
-                    Debug("starting at index: " + tostr(obj.curindex))
+                    GetPhotoContextFromFullGrid(obj,m.focusedIndex)  ' quick way to load content 
                 else 
                     obj = CreateObject("roAssociativeArray")
                     obj.context = m.contentArray[m.selectedRow]
                     obj.curindex = m.focusedIndex
                 end if
+                Debug("gridHandleMessage:: CreatePlayerForItem with " + tostr(obj.context.count()) + " total items")
                 Debug("Playing item directly from grid: index" + tostr(obj.curindex))
-                Debug("total items: " + tostr(obj.context.count()))
                 m.ViewController.CreatePlayerForItem(obj.context, obj.curindex)
             end if
         else if msg.isScreenClosed() then

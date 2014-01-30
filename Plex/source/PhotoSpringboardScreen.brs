@@ -5,6 +5,9 @@ End Function
 Function createPhotoSpringboardScreen(context, index, viewController) As Object
     obj = createBaseSpringboardScreen(context, index, viewController, itemIsPhoto)
 
+    obj.GoToNextItem = sbPhotoGoToNextItem
+    obj.GoToPrevItem = sbPhotoGoToPrevItem
+
     obj.screen.SetDisplayMode("photo-fit") 
     obj.screen.SetPosterStyle("rounded-rect-16x9-generic") ' makes more sense for photos (opt2: rounded-square-generic)
     obj.SetupButtons = photoSetupButtons
@@ -16,6 +19,107 @@ Function createPhotoSpringboardScreen(context, index, viewController) As Object
 
     return obj
 End Function
+
+' duplicated sbGoToNextItem() with extra logic to lazy load
+function sbPhotoGoToNextItem() as Boolean
+    if NOT m.AllowLeftRight then return false
+
+    if fromFullGrid() and m.FullContext = invalid then GetPhotoContextFromFullGrid(m,invalid)
+    '    if m.item.nodename = "Photo" then 
+    '        GetPhotoContextFromFullGrid(m,invalid)
+    '    end if
+    'end if
+
+    Debug("----- sbPhotoGoToNextItem(): we have " + tostr(m.Context.Count()) + " items total")
+
+    maxIndex = m.Context.Count() - 1
+    index = m.CurIndex
+    newIndex = index
+
+    if index < maxIndex then
+        newIndex = index + 1
+    else if m.WrapLeftRight then
+        newIndex = 0
+    end if
+
+    if index <> newIndex then
+        m.CurIndex = newIndex
+
+        m.Item = m.Context[newIndex]
+        ' m.item.url is expected, if not we need to load this
+        if m.item.url = invalid then  
+            Debug("----lazy load item" + tostr(m.item.key))
+            container = createPlexContainerForUrl(m.item.server, invalid, m.item.key)
+            if container <> invalid then 
+                item = container.getmetadata()[0]
+                if item <> invalid then 
+                    ' anything we need to set before we reset the item
+                    ' * OrigIndex might exist if shuffled
+                    if m.item.OrigIndex <> invalid then item.OrigIndex = m.item.OrigIndex
+
+                    m.item = item
+                    m.Context[newIndex] = item
+                end if
+            end if
+        end if
+
+        m.Refresh()
+        return true
+    end if
+
+    return false
+End Function
+
+' duplicated sbGoToPrevItem() with extra logic to lazy load
+function sbPhotoGoToPrevItem() as Boolean
+    if NOT m.AllowLeftRight then return false
+
+    if fromFullGrid() and m.FullContext = invalid then GetPhotoContextFromFullGrid(m,invalid)
+    '    if m.item.nodename = "Photo" then 
+    '        GetPhotoContextFromFullGrid(m,invalid)
+    '    end if
+    'end if
+
+    Debug("----- sbPhotoGoToPrevItem(): we have " + tostr(m.Context.Count()) + " items total")
+
+    maxIndex = m.Context.Count() - 1
+    index = m.CurIndex
+    newIndex = index
+
+    if index > 0 then
+        newIndex = index - 1
+    else if m.WrapLeftRight then
+        newIndex = maxIndex
+    end if
+
+    if index <> newIndex then
+        m.CurIndex = newIndex
+
+        m.Item = m.Context[newIndex]
+        ' m.item.url is expected, if not we need to load this
+        if m.item.url = invalid then  
+            Debug("----lazy load item" + tostr(m.item.key))
+            container = createPlexContainerForUrl(m.item.server, invalid, m.item.key)
+            if container <> invalid then 
+                item = container.getmetadata()[0]
+                if item <> invalid then 
+                    ' anything we need to set before we reset the item
+                    ' * OrigIndex might exist if shuffled
+                    if m.item.OrigIndex <> invalid then item.OrigIndex = m.item.OrigIndex
+
+                    m.item = item
+                    m.Context[newIndex] = item
+                end if
+            end if
+        end if
+
+        m.Refresh()
+        return true
+    end if
+
+    return false
+End Function
+
 
 Sub photoSetupButtons()
     m.ClearButtons()
@@ -30,7 +134,6 @@ Sub photoSetupButtons()
     else 
         m.AddButton("Slideshow", "slideshow")
     end if 
-    ' m.AddButton("Slideshow Shuffled", "slideshowShuffled")-- it's handled by the more/* button ( toggle slideshow )
     m.AddButton("Show", "show")
     m.AddButton("Next Photo", "next")
     m.AddButton("Previous Photo", "prev")
@@ -57,18 +160,13 @@ Sub photoSetupButtons()
 End Sub
 
 Sub photoGetMediaDetails(content)
-    ' ljunkie - refresh exif for descriptions ( we lazy load this on the grid )
-    if content.ExifSBloaded = invalid then
-        description = getExifData(content,false)
-        if description <> invalid then
-            content.description = description
-            content.SBdescription = description
-            content.ExifSBloaded = true ' make sure we don't load it again
-        end if
+    description = getExifDesc(content,false,true)
+    if description <> invalid then
+        content.description = description
+        content.SBdescription = description
     end if
 
     m.metadata = content
-    m.media = invalid
 End Sub
 
 Function photoHandleMessage(msg) As Boolean
@@ -81,15 +179,14 @@ Function photoHandleMessage(msg) As Boolean
             handled = true
             buttonCommand = m.buttonCommands[str(msg.getIndex())]
             Debug("Button command: " + tostr(buttonCommand))
-            if buttonCommand = "slideshow" or buttonCommand = "show" or buttonCommand = "slideshowShuffled" then
+            if buttonCommand = "slideshow" or buttonCommand = "show"  then
                 ' Playing Photos from springBoard in a FULL grid context
-                GetContextFromFullGrid(m,m.item.origindex) 
+                ' GetContextFromFullGrid(m,m.item.origindex) 
+                GetPhotoContextFromFullGrid(m,m.item.origindex) 
 		if m.context.count() = 0 then
                     ShowErrorDialog("Sorry! We were unable to load your photos.","Warning")
                 else 
-                    m.IsShuffled = (buttonCommand = "slideshowShuffled" or m.IsShuffled = 1)
-                    ' shuffle and reset curIndex 
-                    if m.IsShuffled then m.curindex = ShuffleArray(m.Context, m.curindex)
+                    m.IsShuffled = (m.IsShuffled = 1)
                     Debug("photoHandleMessage:: springboard Start slideshow with " + tostr(m.context.count()) + " items")
                     Debug("starting at index: " + tostr(m.curindex))
                     m.ViewController.CreateICphotoPlayer(m.Context, m.CurIndex, true, m.IsShuffled, NOT(buttonCommand = "show"))
@@ -149,6 +246,9 @@ Function photoDialogHandleButton(command, data) As Boolean
         obj.closeOnActivate = true
         return true
     else if command = "shuffle" then
+        Debug("load the context before we shuffle items!")
+        GetPhotoContextFromFullGrid(obj,obj.item.origindex) 
+
         if obj.IsShuffled then
             obj.Unshuffle()
             obj.IsShuffled = false

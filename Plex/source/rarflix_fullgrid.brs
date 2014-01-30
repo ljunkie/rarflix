@@ -142,29 +142,22 @@ Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, ite
 End Function
 
 
-function fromFullGrid(vc) as boolean
-    Debug("---- checking if we came from a full grid view")
-    ' TODO: clean this logic up
+    ' find the full grid screen - backtrack
 
-    if type(vc.screens) = "roArray" then
-        screens = vc.screens
-        minus = 1
-    else if type(vc.viewcontroller) = "roAssociativeArray" then
-        screens = vc.viewcontroller.screens
-        minus = 2
+function fromFullGrid(vc=invalid) as boolean
+    screens = GetViewController().screens
+    if type(screens) = "roArray" and screens.count() > 1 then 
+        for sindex = screens.count()-1 to 1 step -1
+            'print "checking if screen #" + tostr(sindex) + "is the fullGrid"
+            if type(screens[sindex].screen) = "roGridScreen" and screens[sindex].isfullgrid <> invalid and screens[sindex].isfullgrid then
+                return true
+                ' screen = screens[sindex]
+                exit for 
+            end if
+        next
     end if
-
-    if type(screens) = "roArray" and screens.count() > 0 then
-        prev_screen = screens[screens.count()-minus]
-        if prev_screen.isfullgrid <> invalid then
-            Debug("---- previous screen was a FULL grid")
-            return true
-        end if
-    end if
-
     return false
 end function
-
 
 sub GetContextFromFullGrid(this,curindex = invalid) 
         ' stop realoding the full context ( but we still might need to reset the CurIndex )

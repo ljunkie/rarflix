@@ -457,7 +457,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         return invalid
     else if viewGroup = "secondary" then
         ' these are subsections of a main section ( secondary )
-        Debug("---- Creating secondary grid " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
+        Debug("---- Creating secondary " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
         ' ljunkie TODO review this code
         sec_metadata = getSectionType()
         if poster_grid = "grid" then 
@@ -835,22 +835,17 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
     if item.nodename <> invalid and item.nodename = "Directory" then
         if item.ContentType = "photo" then 
             Debug("--- trying to play photos from a directory")
+
             container = createPlexContainerForUrl(item.server, item.server.serverurl, item.key)
             newContext = container.getmetadata()
             ' verify the container has images - it still could be all directories. 
             ' If directory, skip and create screen for item
             for each item in newContext
-'                if item.nodename = "Photo" then return m.CreatePhotoPlayer(newContext, 0)
-                if item.nodename = "Photo" then return m.CreateICPhotoPlayer(newContext, 0, true, false, true)
+                if item.nodename = "Photo" then 
+                    Debug("vcCreatePlayerForItem:: CreateICPhotoPlayer with " + tostr(newContext.count()) + " total items")
+                    return m.CreateICPhotoPlayer(newContext, 0, true, false, true)
+                end if
             end for
-        'else if tostr(sec_metadata.type) = "photo" and item.ContentType ="appClip" then 
-        '    print "--- trying to play photos (appClip) from a directory"
-        '    container = createPlexContainerForUrl(item.server, item.sourceurl, item.key)
-        '    context = container.getmetadata()
-        '    ' we can have sub dirs.. we only direct play if we have a photo ( only checking the first item )
-        '    if type(context) = "roArray" and context.count() > 0 and context[0].nodename = "Photo" then 
-        '        return m.CreatePhotoPlayer(context, 0)
-        '    end if
         else if item.ContentType = "album" then
             Debug("--- trying to play an album from a directory")
             container = createPlexContainerForUrl(item.server, item.server.serverurl, item.key)
@@ -859,7 +854,6 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
             return m.CreateScreenForItem(context, 0, invalid)
          end if
     else if item.ContentType = "photo" then '  and (item.nodename = invalid or item.nodename <> "Directory") then 
-'        return m.CreatePhotoPlayer(context, contextIndex)
         return m.CreateICphotoPlayer(context, contextIndex, true, false, true)
     else if item.ContentType = "audio" then
         AudioPlayer().Stop()

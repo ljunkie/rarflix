@@ -124,21 +124,35 @@ Function ParsePhotoMedia(photoItem) As Object
     return mediaArray
 End Function
 
-function getExifData(metadata,compact = false) as dynamic
-    if metadata.MediaInfo = invalid then 
+function getExifData(metadata, compact = false, forceExif=false) as dynamic
+    ' sometimes this info is less than if we query the item directly -- but it speeds things up 10 fold
+    if metadata.MediaInfo = invalid and NOT forceExif then 
+        if metadata.media <> invalid and metadata.media[0] <> invalid then metadata.MediaInfo = metadata.media[0] 
+    end if
+
+    ' get the exif directly from the item key 
+    '  1) if it's still invalid 
+    '  2) forcExif is set and we havnen't directly queried for it yet (metadata.MediaInfo.Loaded)
+    if metadata.MediaInfo = invalid or (metadata.MediaInfo.loaded = invalid and forceExif) then 
         container = createPlexContainerForUrl(metadata.server, metadata.server.serverUrl, metadata.key)
         if container <> invalid then
             container.getmetadata()
-            ' only create dialog if metadata is available
             if type(container.metadata) = "roArray" and container.metadata.count() > 0 and type(container.metadata[0].media) = "roArray" and container.metadata[0].media.count() > 0 then 
                 metadata.MediaInfo = container.metadata[0].media[0]
+                metadata.MediaInfo.Loaded = true
             end if
         end if
     end if
+end function
+
+function getExifDesc(metadata, compact = false, forceExif=false)
+    getExifData(metadata, compact, forceExif)
 
     if metadata.MediaInfo <> invalid then  
-        MediaInfo = metadata.MediaInfo:desc = ""
+        MediaInfo = metadata.MediaInfo
+        desc = ""
         if compact then 
+            ' compact -- for the description popup
             if mediainfo.make <> invalid then desc = mediainfo.make + ": "
             if mediainfo.model <> invalid then desc = desc + mediainfo.model + "   "
             if mediainfo.lens <> invalid then desc = desc + "lens:" + mediainfo.lens + "   "
@@ -147,9 +161,9 @@ function getExifData(metadata,compact = false) as dynamic
             if mediainfo.aspectratio <> invalid then desc = desc + "aspect:" + mediainfo.aspectratio + "   "
             if mediainfo.iso <> invalid then desc = desc + "iso:" + mediainfo.iso + "   "
             if mediainfo.width <> invalid and mediainfo.height <> invalid then desc = desc + "size:" + tostr(mediainfo.width) + " x " + tostr(mediainfo.height) + "   "
-            'if mediainfo.container <> invalid then desc = desc + "format:" + mediainfo.container + "   "
             if mediainfo.originallyAvailableAt <> invalid then desc = desc + "date:" + tostr(mediainfo.originallyAvailableAt)
         else 
+            ' non compact -- for the springboard
             if mediainfo.make <> invalid then desc = mediainfo.make + ": "
             if mediainfo.model <> invalid then desc = desc + mediainfo.model + "    "
             if mediainfo.lens <> invalid then desc = desc + "lens: " + mediainfo.lens
