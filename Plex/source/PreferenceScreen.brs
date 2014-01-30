@@ -515,6 +515,18 @@ Function createSlideshowPrefsScreen(viewController) As Object
         default: "2500"
     }
 
+    ' overscan/underscan correction
+    values = [
+        { title: "TV", EnumValue: "5" }
+        { title: "Monitor", EnumValue: "0" },
+    ]
+    obj.Prefs["slideshow_underscan"] = {
+        values: values,
+        heading: "Display Type Correction",
+        default: "5"
+    }
+
+
     ' reload slideshow after every full run
     values = [
         { title: "Disabled", EnumValue: "disabled",  ShortDescriptionLine2: "Do not check for new Photos",  },
@@ -559,11 +571,13 @@ Function createSlideshowPrefsScreen(viewController) As Object
     obj.Screen.SetHeader("Slideshow display preferences")
 
     obj.AddItem({title: "Speed"}, "slideshow_period", obj.GetEnumValue("slideshow_period"))
-    obj.AddItem({title: "Text Overlay"}, "slideshow_overlay", obj.GetEnumValue("slideshow_overlay"))
+    obj.AddItem({title: "Text Overlay", ShortDescriptionLine2: "Overlay info on the photo"}, "slideshow_overlay", obj.GetEnumValue("slideshow_overlay"))
+    obj.AddItem({title: "Display Type",ShortDescriptionLine2: "Connected Display Type"}, "slideshow_underscan", obj.GetEnumValue("slideshow_underscan"))
     obj.AddItem({title: "Reload",ShortDescriptionLine2: "check for new images after every completion"}, "slideshow_reload", obj.GetEnumValue("slideshow_reload"))
     obj.AddItem({title: "Grid Style/Size",ShortDescriptionLine2: "Grid Display Mode"}, "rf_photos_grid_style", obj.GetEnumValue("rf_photos_grid_style"))
-    obj.AddItem({title: "Photo Display Mode",ShortDescriptionLine2: "How should photos 'fit' the screen"}, "slideshow_displaymode", obj.GetEnumValue("slideshow_displaymode"))
     obj.AddItem({title: "Icons Display Mode",ShortDescriptionLine2: "How should thumbnails 'fit' the screen"}, "photoicon_displaymode", obj.GetEnumValue("photoicon_displaymode"))
+    ' not an option anymore ( will have to rewrite this manually for an roImageCanvas )
+    '    obj.AddItem({title: "Photo Display Mode",ShortDescriptionLine2: "How should photos 'fit' the screen"}, "slideshow_displaymode", obj.GetEnumValue("slideshow_displaymode"))
     obj.AddItem({title: "Close"}, "close")
 
     return obj
@@ -579,7 +593,7 @@ Function prefsSlideshowHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "slideshow_period" OR command = "slideshow_overlay" or command = "slideshow_reload" or command = "slideshow_displaymode" or command = "photoicon_displaymode" or command = "rf_photos_grid_style" then
+            if command = "slideshow_period" OR command = "slideshow_overlay" or command = "slideshow_reload" or command = "slideshow_displaymode" or command = "slideshow_underscan" or command = "photoicon_displaymode" or command = "rf_photos_grid_style" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "close" then
                 m.Screen.Close()

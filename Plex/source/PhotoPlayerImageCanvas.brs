@@ -79,7 +79,8 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
 
     screen = createobject("roimagecanvas")
 
-    obj.UnderScan = 5 ' percent of understan (2.5 with the slideShow -- but 5% seems right for this)
+    ' percent of understan (2.5 with the slideShow -- but 5% seems right for this)
+    obj.UnderScan = RegRead("slideshow_underscan", "preferences", "5").toInt() 
     obj.canvasrect = screen.GetCanvasRect()
 
     screen.SetRequireAllImagesToDraw(false)
