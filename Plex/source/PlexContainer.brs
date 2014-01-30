@@ -149,33 +149,33 @@ Sub containerParseXml()
               if remusic.isMatch(tostr(metadata.HDPosterURL)) then rfHasThumb = invalid
             end if
                   
+            PrintDebug = false
             if rfHasThumb = invalid or re.isMatch(rfHasThumb) then 
                 thumb_text = firstof(metadata.umtitle, metadata.title)
                 if thumb_text <> invalid AND metadata.server <> invalid then
-                    Debug( "-------------------------------------------")
-                    Debug("---- using custom thumb from rarflix cloudfrount service with title:" + firstof(metadata.umtitle, metadata.title))
-                    Debug("---- viewGroup:" + tostr(metadata.ViewGroup) + " nodeType:" + tostr(nodeType))
-                    Debug("---- Original:" + tostr(metadata.HDPosterURL))
-                    rfCDNthumb(metadata,thumb_text,nodetype)
-                    Debug( "-------------------------------------------")
-                else 
+                    if PrintDebug then 
+                        Debug( "-------------------------------------------")
+                        Debug("---- using custom thumb from rarflix cloudfrount service with title:" + firstof(metadata.umtitle, metadata.title))
+                        Debug("---- viewGroup:" + tostr(metadata.ViewGroup) + " nodeType:" + tostr(nodeType))
+                        Debug("---- Original:" + tostr(metadata.HDPosterURL))
+                    end if
+                    rfCDNthumb(metadata,thumb_text,nodetype,PrintDebug)
+                else if PrintDebug then  
                     Debug( "-------------------------------------------")
                     Debug("---- NOT using custom thumb due to the below? we have skipped it due to the data below")
                     Debug("---- viewGroup:" + tostr(metadata.ViewGroup) + " nodeType:" + tostr(nodeType))
                     Debug("---- Original:" + tostr(metadata.HDPosterURL))
                     Debug( "-------------------------------------------")
                 end if
-            ' for debugging
-            'else 
-            '    isLocal = CreateObject("roRegex", "127.0.0.1", "") ' TODO: any other than actor_con? these are default template.. ignore them
-            '    if NOT isLocal.isMatch(rfHasThumb) then 
-            '        Debug( "-------------------------------------------")
-            '        Debug("---- NOT using custom thumb for valid image")
-            '        Debug("---- viewGroup:" + tostr(metadata.ViewGroup) + " nodeType:" + tostr(nodeType))
-            '        Debug("---- Original:" + tostr(metadata.HDPosterURL))
-            '        Debug( "-------------------------------------------")
-            '    end if
-            'end if
+            else if PrintDebug then 
+                isLocal = CreateObject("roRegex", "127.0.0.1", "") ' TODO: any other than actor_con? these are default template.. ignore them
+                if NOT isLocal.isMatch(rfHasThumb) then 
+                    Debug( "-------------------------------------------")
+                    Debug("---- NOT using custom thumb for valid image")
+                    Debug("---- viewGroup:" + tostr(metadata.ViewGroup) + " nodeType:" + tostr(nodeType))
+                    Debug("---- Original:" + tostr(metadata.HDPosterURL))
+                    Debug( "-------------------------------------------")
+                end if
             end if
         end if
         ' END custom poster/thumbs

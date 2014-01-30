@@ -1237,16 +1237,16 @@ Function ShallowCopy(array As Dynamic, depth = 0 As Integer) As Dynamic
     Return invalid
 End Function
 
-sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
+sub rfCDNthumb(metadata,thumb_text,nodetype = invalid, PrintDebug = false)
     if RegRead("rf_custom_thumbs", "preferences","enabled") = "enabled" then
         remyplex = CreateObject("roRegex", "my.plexapp.com", "i")        
         remyplexMD = CreateObject("roRegex", "library/metadata/\d+", "i")        
         if remyplex.IsMatch(metadata.server.serverurl) then 
 	    if metadata.HDPosterURL <> invalid and remyplexMD.isMatch(metadata.HDPosterURL) then 
-                Debug("Skipping custom thumb -- this is cloud sync")
+                if PrintDebug then Debug("Skipping custom thumb -- this is cloud sync")
                 return
             end if
-            Debug("overriding cloudsync thumb" + tostr(metadata.HDPosterURL))
+            if PrintDebug then Debug("overriding cloudsync thumb" + tostr(metadata.HDPosterURL))
         end if
 
 
@@ -1292,7 +1292,7 @@ sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
 '        NewThumb = NewThumb + "/size/" + tostr(hdWidth) + "x" + tostr(hdHeight) ' things seem to play nice this way with the my image processor
         NewThumb = NewThumb + "/size/" + tostr(Width) + "x" + tostr(Height)
         NewThumb = NewThumb + "/fg/" + RegRead("rf_img_overlay", "preferences","999999")
-        Debug("----   newraw:" + tostr(NewThumb))
+        if PrintDebug then Debug("----   newraw:" + tostr(NewThumb))
         ' we still want to transcode the size to the specific roku standard
         ' however I am not sure the my.plexapp.com server will transcode properly yet
         if remyplex.IsMatch(metadata.server.serverurl) then 
@@ -1302,14 +1302,19 @@ sub rfCDNthumb(metadata,thumb_text,nodetype = invalid)
             metadata.SDPosterURL = metadata.server.TranscodedImage(metadata.server.serverurl, NewThumb, sizes.sdWidth, sizes.sdHeight) 
             metadata.HDPosterURL = metadata.server.TranscodedImage(metadata.server.serverurl, NewThumb, sizes.hdWidth, sizes.hdHeight)
         end if
-        Debug("----      new:" + tostr(metadata.HDPosterURL))
+
+        if PrintDebug then 
+            Debug("----      new:" + tostr(metadata.HDPosterURL))
+            Debug( "-------------------------------------------")
+        end if
+
     end if
 end sub
 
 ' ljunkie - crazy sauce right? this is a way to figure out what section we are in 
 ' -- better way -- just use the vc.Home object !
 function getSectionType() as object
-    Debug("---- checking if we can figure out the section we are in")
+    Debug("checking if we can figure out the section we are in")
     metadata = CreateObject("roAssociativeArray")
 
     screen = GetViewController().Home
@@ -1319,6 +1324,7 @@ function getSectionType() as object
         index = screen.focusedindex
         if type(screen.loader.contentarray[row].content) = "roArray" and screen.loader.contentarray[row].content.count() > 0 then 
                    metadata = screen.loader.contentarray[row].content[index]
+                   Debug("type: " + tostr(metadata.type) +"; contenttype: " + tostr(metadata.contenttype) + "; viewgroup: " + tostr(metadata.viewgroup) + "; nodename: " + tostr(metadata.nodename))
         end if
     end if
 
