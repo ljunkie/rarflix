@@ -230,7 +230,7 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
                     ' show context menu
                     m.forceResume = NOT(m.isPaused)
                     m.Pause()
-                    m.ShowContextMenu()
+                    m.ShowContextMenu(invalid,false,false)
                  end if
             else if msg.GetIndex() = 13 then
                 ' PlayPause: pause or start (photo/music)
@@ -245,7 +245,7 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
                 ' * : dialog -- we should make this an imageCanvas now too ( it's prettier )
                 m.forceResume = NOT(m.isPaused)
                 m.Pause()
-                m.ShowContextMenu()
+                m.ShowContextMenu(invalid,false,false)
             else if msg.GetIndex() = 8 then 
                ' rwd: previous track if audio is playing
                if AudioPlayer().IsPlaying then AudioPlayer().Prev()
@@ -371,6 +371,7 @@ sub ICphotoPlayerOnTimerExpired(timer)
 End Sub
 
 sub ICshowSlideImage()
+    Debug("showing the slide image now")
     if m.ImageFailure = true then m.setImageFailureInfo() ' reset any failures
     m.item = m.context[m.CurIndex]
     y = int((m.canvasrect.h-m.CurFile.metadata.height)/2)
@@ -499,30 +500,47 @@ Sub ICphotoPlayerSetShuffle(shuffleVal)
     NowPlayingManager().timelines["photo"].attrs["shuffle"] = tostr(shuffleVal)
 End Sub
 
-function ICgetSlideImage()
+function ICgetSlideImage(bufferNext=false)
     ' purge expired metadata records -- this must be before any other calls
-    if m.CachedMetadata > 5 then m.PurgeMetadata()
+    if m.CachedMetadata > 1000 then m.PurgeMetadata()
 
-    item = m.context[m.curindex]
-    orig = item
+    ' by default we cache locally and show the curIndex. If this is a bufferNext, then
+    ' we will retrieve curIndex+1 or 0 and cache only. 
+    itemIndex = m.curindex
+    if bufferNext then 
+        bufferIndex = itemIndex+1
+        if bufferIndex > m.context.count()-1 then bufferIndex = 0
+        itemIndex = bufferIndex
+    end if 
+
+    item = m.context[itemIndex]
 
     if item.url = invalid then  
         container = createPlexContainerForUrl(item.server, invalid, item.key)
         if container <> invalid then 
+            orig = item
             item = container.getmetadata()[0]
             if item <> invalid then 
                 ' anything we need to set before we reset the item
                 ' * OrigIndex might exist if shuffled
-                if m.context[m.curindex].OrigIndex <> invalid then item.OrigIndex = m.context[m.curindex].OrigIndex
-                m.context[m.curindex] = item
-                m.context[m.curindex].orig = orig
+                if m.context[itemIndex].OrigIndex <> invalid then item.OrigIndex = m.context[itemIndex].OrigIndex
+                m.context[itemIndex] = item
+                m.context[itemIndex].orig = orig
                 m.CachedMetadata = m.CachedMetadata+1
             end if
         end if
     end if
 
     ' location/name of the cached file ( to read or to save )
-    localFilePath = "tmp:/" + item.ratingKey + "_" + item.title + ".jpg"
+    if item <> invalid and item.ratingKey <> invalid and item.title <> invalid then 
+        localFilePath = "tmp:/" + item.ratingKey + "_" + item.title + ".jpg"
+    else 
+        Debug("skipping getSlideImage -- item context not loaded yet (server response failure or removed item?)")
+        ' maybe the context has changed on us? someone removed photos during a slideshow... or?
+        ' reload the slide context.. safe to run multiple times as there is a expiration time
+        m.reloadSlideContext()
+        return false
+    end if 
 
     Debug("-- cached files: " + tostr(m.LocalFiles.count()))
     Debug("   bytes: " + tostr(m.LocalFileSize))
@@ -535,9 +553,19 @@ function ICgetSlideImage()
     if m.LocalFiles.count() > 0 then 
         for each local in m.LocalFiles 
             if local.localFilePath = localFilePath then 
+                ' stop processing if this was a request for the next image (buffer)
+                if BufferNext then
+                    Debug(tostr(localFilePath) + " is already cached (next image buffer)")
+                    return false ' ignore the rest if we loaded the next images (bufferNext)
+                end if
+                ' continue on and show the image
                 Debug("using cached file: " + tostr(localFilePath))
                 m.CurFile = local ' set it and return
                 m.ShowSlideImage()
+
+                ' buffer the next image now
+                if NOT BufferNext then m.GetSlideImage(true)
+
                 return true
                 'return true ' do not wait for urlEvent -- it's cached!
             end if 
@@ -551,8 +579,17 @@ function ICgetSlideImage()
     context = CreateObject("roAssociativeArray")
     context.requestType = "slideshow"
     context.localFilePath = localFilePath
-    Debug("Get Slide Show Image" + item.url + " save to " + localFilePath)
+    context.bufferNext = bufferNext
+
+    if bufferNext then 
+        Debug("Get Slide Show Image (next image buffer): " + item.url + " save to " + localFilePath)
+    else 
+        Debug("Get Slide Show Image (current image): " + item.url + " save to " + localFilePath)
+    end if
     GetViewController().StartRequest(request, m, context, invalid, localFilePath)
+
+    if NOT BufferNext then m.GetSlideImage(true)
+
     return false ' false means we wait for response
 end function
 
@@ -706,9 +743,14 @@ Sub photoSlideShowOnUrlEvent(msg, requestContext)
         m.LocalFiles.Push(obj)
 
         ' current image to display
-        m.CurFile = obj
-
-        m.ShowSlideImage()
+        ' skip if it is a bufferNext request ( we preload the next image )
+        if NOT requestContext.bufferNext then 
+            Debug(tostr(obj.localFilePath) + " saved to cache (current)")
+            m.CurFile = obj
+            m.ShowSlideImage()
+        else 
+            Debug(tostr(obj.localFilePath) + " saved to cache (next image buffer)")
+        end if
     else 
         ' urlEventFailure - nothing to see here
         failureReason = msg.GetFailureReason()
@@ -738,7 +780,7 @@ sub ICsetImageFailureInfo(failureReason=invalid)
 end sub
 
 ' this can be called independently while passing the object 
-sub photoShowContextMenu(obj = invalid,force_show = false, forceExif = false)
+sub photoShowContextMenu(obj = invalid,force_show = false, forceExif = true)
     if obj <> invalid then
         Debug("context menu using passed object")
     else if type(m.context) = "roArray" and m.CurIndex <> invalid then 
@@ -763,7 +805,7 @@ sub photoShowContextMenu(obj = invalid,force_show = false, forceExif = false)
         return
     end if
 
-    getExifData(obj,false,true)
+    getExifData(obj,false,forceExif)
 
     ' TODO(ljunkie) it's ugly! -- convert this to an image canvas 
     if obj.MediaInfo <> invalid then 
