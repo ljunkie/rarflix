@@ -126,14 +126,16 @@ End Function
 
 function getExifData(metadata, compact = false, forceExif=false) as dynamic
     ' sometimes this info is less than if we query the item directly -- but it speeds things up 10 fold
+    Debug("checking for current exif data")
     if metadata.MediaInfo = invalid and NOT forceExif then 
         if metadata.media <> invalid and metadata.media[0] <> invalid then metadata.MediaInfo = metadata.media[0] 
     end if
 
     ' get the exif directly from the item key 
     '  1) if it's still invalid 
-    '  2) forcExif is set and we havnen't directly queried for it yet (metadata.MediaInfo.Loaded)
+    '  2) forcExif is set and we havent't directly queried for it yet (metadata.MediaInfo.Loaded)
     if metadata.MediaInfo = invalid or (metadata.MediaInfo.loaded = invalid and forceExif) then 
+        Debug("starting request for exif data")
         container = createPlexContainerForUrl(metadata.server, metadata.server.serverUrl, metadata.key)
         if container <> invalid then
             container.getmetadata()
