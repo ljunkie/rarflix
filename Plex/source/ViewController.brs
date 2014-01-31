@@ -708,6 +708,10 @@ End Function
 
 
 Function vcCreateICphotoPlayer(obj, contextIndex=invalid, show=true, shuffled=false, slideShow=false)
+    ' verify we have all the conext loaded -- possible we create this from a normal row
+    PhotoPlayerCheckLoaded(obj,contextIndex)        
+
+    dialog=ShowPleaseWait("Starting Photo Player... Please wait...","")
     sourceReloadURL = invalid
     if type(obj) = "roArray" then 
          context = obj
@@ -727,12 +731,11 @@ Function vcCreateICphotoPlayer(obj, contextIndex=invalid, show=true, shuffled=fa
     screen = createICphotoPlayerScreen(context, contextIndex, m, shuffled, slideShow)
     screen.ScreenName = "Photo Player Image Canvas"
     if sourceReloadUrl <> invalid then screen.sourceReloadUrl = sourceReloadUrl
+    Debug("vcCreateICphotoPlayer:: source reload url = " + tostr(sourceReloadUrl))
 
     m.AddBreadcrumbs(screen, invalid)
     m.UpdateScreenProperties(screen)
     m.PushScreen(screen)
-
-    screen.next() ' will start image at the CurIndex
 
     ' activate the slideshow timer ( we might skip this is we press SHOW instead? )
     if slideShow then 
@@ -744,6 +747,8 @@ Function vcCreateICphotoPlayer(obj, contextIndex=invalid, show=true, shuffled=fa
     end if
 
     if show then screen.Show()
+
+    if dialog <> invalid then dialog.close()
 
     return screen
 End Function
@@ -848,6 +853,7 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid, sourceR
             obj = {}:dummyItem = {}
             dummyItem.server = item.server
             dummyItem.sourceUrl = item.key
+            dummyItem.showWait = true
             PhotoMetadataLazy(obj, dummyItem, true)
             if obj.context <> invalid and obj.context.count() > 0 then 
                 for each item in obj.context
@@ -865,9 +871,7 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid, sourceR
             return m.CreateScreenForItem(context, 0, invalid)
          end if
     else if item.ContentType = "photo" then '  and (item.nodename = invalid or item.nodename <> "Directory") then 
-        obj = {}
-        obj.context = context
-        if sourceReloadURL <> invalid then obj.sourceReloadUrl = sourceReloadUrl
+        obj = {}:obj.context = context
         return m.CreateICphotoPlayer(obj, contextIndex, true, false, true)
     else if item.ContentType = "audio" then
         AudioPlayer().Stop()

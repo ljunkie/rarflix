@@ -3,8 +3,12 @@ Function itemIsPhoto(item) As Boolean
 End Function
 
 Function createPhotoSpringboardScreen(context, index, viewController) As Object
-    obj = createBaseSpringboardScreen(context, index, viewController, itemIsPhoto)
+    ' verify we have all the context loaded
+    newObj = {}:newObj.context = context
+    PhotoPlayerCheckLoaded(newObj,index)
 
+    obj = createBaseSpringboardScreen(newObj.context, index, viewController, itemIsPhoto)
+ 
     obj.GoToNextItem = sbPhotoGoToNextItem
     obj.GoToPrevItem = sbPhotoGoToPrevItem
 

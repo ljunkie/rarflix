@@ -142,6 +142,8 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
         GetViewController().AddTimer(obj.TimerOverlay, obj)
     end if
 
+    obj.GetSlideImage(true,true) ' buffer/set the first image
+
     return obj
 
 End Function
@@ -500,7 +502,7 @@ Sub ICphotoPlayerSetShuffle(shuffleVal)
     NowPlayingManager().timelines["photo"].attrs["shuffle"] = tostr(shuffleVal)
 End Sub
 
-function ICgetSlideImage(bufferNext=false)
+function ICgetSlideImage(bufferNext=false,firstImage=false)
     ' purge expired metadata records -- this must be before any other calls
     if m.CachedMetadata > 1000 then m.PurgeMetadata()
 
@@ -508,9 +510,13 @@ function ICgetSlideImage(bufferNext=false)
     ' we will retrieve curIndex+1 or 0 and cache only. 
     itemIndex = m.curindex
     if bufferNext then 
-        bufferIndex = itemIndex+1
-        if bufferIndex > m.context.count()-1 then bufferIndex = 0
-        itemIndex = bufferIndex
+        ' normally we load the next image when bufferNext is set
+        ' if firstImage, then we buffer the current image
+        if NOT firstImage then 
+            bufferIndex = itemIndex+1
+            if bufferIndex > m.context.count()-1 then bufferIndex = 0
+            itemIndex = bufferIndex
+        end if
     end if 
 
     item = m.context[itemIndex]
@@ -589,15 +595,16 @@ function ICgetSlideImage(bufferNext=false)
     context.requestType = "slideshow"
     context.localFilePath = localFilePath
     context.bufferNext = bufferNext
+    context.firstImage = firstImage
 
-    if bufferNext then 
+    if bufferNext and NOT firstImage then 
         Debug("Get Slide Show Image (next image buffer): " + item.url + " save to " + localFilePath)
     else 
         Debug("Get Slide Show Image (current image): " + item.url + " save to " + localFilePath)
     end if
     GetViewController().StartRequest(request, m, context, invalid, localFilePath)
 
-    if NOT BufferNext then m.GetSlideImage(true)
+    if NOT BufferNext or FirstImage then m.GetSlideImage(true)
 
     return false ' false means we wait for response
 end function
@@ -752,8 +759,8 @@ Sub photoSlideShowOnUrlEvent(msg, requestContext)
         m.LocalFiles.Push(obj)
 
         ' current image to display
-        ' skip if it is a bufferNext request ( we preload the next image )
-        if NOT requestContext.bufferNext then 
+        ' skip if it is a bufferNext and NOT firstImage request ( we preload the next image )
+        if NOT requestContext.bufferNext or requestContext.firstImage then 
             Debug(tostr(obj.localFilePath) + " saved to cache (current)")
             m.CurFile = obj
             m.ShowSlideImage()
@@ -928,6 +935,8 @@ sub GetPhotoContextFromFullGrid(obj,curindex = invalid, lazy=true)
        return
     end if
 
+    dialog=ShowPleaseWait("Loading Items... Please wait...","")
+
     if obj.metadata.sourceurl = invalid then return
     if curindex = invalid then curindex = obj.curindex
 
@@ -944,16 +953,33 @@ sub GetPhotoContextFromFullGrid(obj,curindex = invalid, lazy=true)
     dummyItem = {}
     dummyItem.server = obj.metadata.server
     dummyItem.sourceUrl = sourceUrl
+    dummyItem.hasWaitDialog = dialog
     PhotoMetadataLazy(obj, dummyItem, lazy)
+
+    ' this should be closed in the PhotoMetadataLazy section
+    if dummyItem.hasWaitDialog <> invalid then dummyItem.hasWaitDialog.close()
 end sub
 
 sub PhotoMetadataLazy(obj, dummyItem, lazy = true)
-    ' sourceUrl can be a fullUrl or key
+
+    if dummyItem.showWait = true and dummyItem.hasWaitDialog = invalid then 
+        dummyItem.hasWaitDialog=ShowPleaseWait("Loading Items... Please wait...","")
+    end if
+
+    ' verify we have enough info to continue ( server and sourceurl )
+    if dummyItem.server = invalid or dummyItem.sourceUrl = invalid then 
+         ShowErrorDialog("Sorry! We were unable to load your photos.","Warning"):return
+    end if
+
+    dummyItem.sourceUrl = rfStripAPILimits(dummyItem.sourceUrl)
+
     container = createPlexContainerForUrl(dummyItem.server, invalid, dummyItem.sourceUrl)
     obj.sourceReloadURL = container.sourceurl ' lazy loading .. we need this for later to reload the slideshow
+    Debug("PhotoMetadataLazy:: source reload url = " + tostr(obj.sourceReloadURL))
 
+    ' verify we have some results from the api to process
     if isnonemptystr(container.xml@header) AND isnonemptystr(container.xml@message) then
-        ShowErrorDialog("Sorry! We were unable to load your photos.","Warning"):return
+        ShowErrorDialog("Sorry! We were unable to process your photos.","Warning"):return
     end if
     
     ' parse the xml into objects
@@ -968,6 +994,8 @@ sub PhotoMetadataLazy(obj, dummyItem, lazy = true)
                 metadata.server = dummyItem.server
                 metadata.key = n@key
                 metadata.nodename = "Photo"
+                'metadata.title = n@title
+                'metadata.sourceurl = container.sourceurl
                 metadata.ContentType = "photo"
                 metadata.Type = "photo"
             else 
@@ -998,4 +1026,27 @@ sub PhotoMetadataLazy(obj, dummyItem, lazy = true)
     metadata = invalid 
     container = invalid
     RunGarbageCollector()
+
+    if dummyItem.hasWaitDialog <> invalid then dummyItem.hasWaitDialog.close()
+end sub
+
+' Depending on where we come from, we may not have all the context loaded yet
+' we will need to lazy load the rest
+sub PhotoPlayerCheckLoaded(obj,index = 0)
+    Debug("verifying the required metadata is loaded")
+    if obj.context[obj.context.count()-1].key = invalid then
+        item = obj.context[index]
+        Debug("context is not fully loaded yet.. loading now.. be patient for large libraries")
+        dummyItem = {}
+        dummyItem.server = obj.context[index].server
+        if type(obj.context) = "roAssociativeArray" and obj.context.sourceReloadURL <> invalid then 
+            dummyItem.sourceUrl = obj.sourceReloadUrl
+        else 
+            dummyItem.sourceUrl = obj.context[index].sourceurl
+        end if
+        dummyItem.showWait = true
+        PhotoMetadataLazy(obj, dummyItem, true)
+        ' reset the initial item if it was already loaded ( usually the case )
+        if item.key <> invalid then obj.context[index] = item
+    end if
 end sub
