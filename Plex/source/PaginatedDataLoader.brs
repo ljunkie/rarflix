@@ -225,7 +225,8 @@ End Function
 '* rows are already loaded.
 '*
 Function loaderLoadMoreContent(focusedIndex, extraRows=0)
-    'Debug("----- loaderMoreContent called: " + tostr(m.names[focusedIndex]))
+    Debug("loaderMoreContent:: " + tostr(m.names[focusedIndex]))
+
     status = invalid
     extraRowsAlreadyLoaded = true
     for i = 0 to extraRows
@@ -260,6 +261,18 @@ Function loaderLoadMoreContent(focusedIndex, extraRows=0)
         count = m.initialLoadSize
     else
         count = m.pageSize
+    end if
+
+    ' ljunkie - this halt the paginated data loader if we have stacked a new screen on top
+    ' this should speed up things like the springboard when entering all movies or any rows with thousands of items
+    ' we will continue to load items if we don't have many... otherwise stop for rows with thousands of items   
+    screen = GetViewController().screens.peek()
+    if screen.loader = invalid or screen.loader.screenid <> m.screenid then
+        total = status.content.Count()
+        if total-startItem > 500 then 
+            Debug("loaderLoadMoreContent:: halting loading the rest until we re-enter the screen ( more than 500 left to load )")
+            return true  
+        end if
     end if
 
     status.loadStatus = 1
