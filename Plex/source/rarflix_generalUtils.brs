@@ -37,3 +37,13 @@ Function Quote()
     q$ = Chr(34)
     return q$
 End Function
+
+function rfStripAPILimits(url)
+    r  = CreateObject("roRegex", "[?&]X-Plex-Container-Start=\d+\&X-Plex-Container-Size\=.*", "")
+    if r.IsMatch(url) then 
+        Debug("--------------------------- OLD " + tostr(url))
+        url = r.replace(url,"")
+        Debug("--------------------------- NEW " + tostr(url))
+    end if
+    return url
+end function

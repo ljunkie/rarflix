@@ -172,16 +172,20 @@ sub GetContextFromFullGrid(this,curindex = invalid)
         if this.metadata.sourceurl = invalid then return
 
         if curindex = invalid then curindex = this.curindex
-        'dialog=ShowPleaseWait("Please wait","")
+
         ' strip any limits - we need it all ( now start or container size)
-        r  = CreateObject("roRegex", "[?&]X-Plex-Container-Start=\d+\&X-Plex-Container-Size\=.*", "")
-        newurl = this.metadata.sourceurl
-        Debug("--------------------------- OLD " + tostr(newurl))
-        if r.IsMatch(newurl) then  newurl = r.replace(newurl,"")
+        newurl = rfStripAPILimits(this.metadata.sourceurl)
+
+        'r  = CreateObject("roRegex", "[?&]X-Plex-Container-Start=\d+\&X-Plex-Container-Size\=.*", "")
+        'newurl = this.metadata.sourceurl
+        'Debug("--------------------------- OLD " + tostr(newurl))
+        'if r.IsMatch(newurl) then  newurl = r.replace(newurl,"")
 
         ' man I really created a nightmare adding the new unwatched rows for movies.. 
         ' the source URL may have ?type=etc.. to filter
         ' the hack I have in PlexMediaServer.brs FullUrl() requires 'filter' to be prepended to the key
+        ' TODO(ljunkie) clean this up -- find out were "filter" is used and instead ONLY use the key 
+        ' field of createPlexContainerForUrl()
         key = ""
         rkey  = CreateObject("roRegex", "(.*)(\?.*)","")
         new_key = rkey.match(newurl)
