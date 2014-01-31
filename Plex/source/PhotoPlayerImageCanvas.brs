@@ -559,15 +559,24 @@ function ICgetSlideImage(bufferNext=false)
                     return false ' ignore the rest if we loaded the next images (bufferNext)
                 end if
                 ' continue on and show the image
-                Debug("using cached file: " + tostr(localFilePath))
-                m.CurFile = local ' set it and return
-                m.ShowSlideImage()
 
-                ' buffer the next image now
-                if NOT BufferNext then m.GetSlideImage(true)
+                ba=CreateObject("roByteArray")
+                ba.ReadFile(localFilePath)
+                if ba.Count() > 0 then 
+                    Debug("using cached file: " + tostr(localFilePath))
 
-                return true
-                'return true ' do not wait for urlEvent -- it's cached!
+                    m.CurFile = local ' set it and return
+                    m.ShowSlideImage()
+        
+                    ' buffer the next image now ( current image cached was successful, it's ok to load another now )
+                    if NOT BufferNext then m.GetSlideImage(true)
+
+                    'return true ' do not wait for urlEvent -- it's cached!
+                    return true
+                else 
+                    Debug("loading cache file failed: " + tostr(localFilePath) +  " requesting now")
+                end if 
+
             end if 
         end for
     end if
@@ -700,9 +709,9 @@ Sub photoSlideShowOnUrlEvent(msg, requestContext)
         if obj.metadata.width = 0 or obj.metadata.height = 0 then 
             Debug("Failed to write image -- consider purging local cache (maybe full?)")
             m.setImageFailureInfo("failed to save image")
-            ' show the failure on the 1st and every 5th try ( mainly we want to show this on the 1st try if it's the initial start )
+            ' show the failure on the every 5th consecutive failure
             showFailureInfo = m.ImageFailureCount/5
-            if int(showFailureInfo) = showFailureInfo or m.ImageFailureCount = 1 then m.OverlayToggle("forceShow")
+            if int(showFailureInfo) = showFailureInfo then m.OverlayToggle("forceShow")
             m.purgeSlideImages() ' cleanup the local cached images
             return
         end if
