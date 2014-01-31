@@ -225,8 +225,6 @@ End Function
 '* rows are already loaded.
 '*
 Function loaderLoadMoreContent(focusedIndex, extraRows=0)
-    Debug("loaderMoreContent:: " + tostr(m.names[focusedIndex]))
-
     status = invalid
     extraRowsAlreadyLoaded = true
     for i = 0 to extraRows
@@ -270,7 +268,8 @@ Function loaderLoadMoreContent(focusedIndex, extraRows=0)
     if screen.loader = invalid or screen.loader.screenid <> m.screenid then
         total = status.content.Count()
         if total-startItem > 500 then 
-            Debug("loaderLoadMoreContent:: halting loading the rest until we re-enter the screen ( more than 500 left to load )")
+            Debug("loaderLoadMoreContent:: " + tostr(m.names[loadingRow]))
+            Debug("loaderLoadMoreContent:: halt loading the rest until we re-enter the screen ( more than 500 left to load )")
             return true  
         end if
     end if
