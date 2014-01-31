@@ -112,7 +112,7 @@ Sub homeScreenOnTimerExpired(timer)
 
         setnowplayingGlobals() ' set the now playing globals - mainly for notification logic, but we might use for now playing row
         notify = getNowPlayingNotifications()
-        screen = m.viewcontroller.screens.peek()
+        screen = GetViewController().screens.peek()
 
         ' hack to clean up screens - probably better elsewhere or to figure out why we have invalid screens
         if type(screen.screen) = invalid then 
@@ -120,8 +120,9 @@ Sub homeScreenOnTimerExpired(timer)
             m.viewcontroller.popscreen(screen)
         end if 
 
-        if m.ViewController.IsActiveScreen(m) then ' HOME screen ( we don't notify, it has a row for this )
-            m.loader.NowPlayingChange() ' refresh now playing row -- it will only update if available to eu
+        if m.ViewController.IsActiveScreen(m) then
+            ' refresh now playing row -- it will only update if available to eu
+            m.loader.NowPlayingChange()
         else if type(screen.screen) = "roSpringboardScreen" and screen.metadata <> invalid and screen.metadata.nowplaying_user <> invalid  then 
             ' SB screen, we should update it (assuming so since we have the metadata ) - TODO we should verify the screen type/name
             rf_updateNowPlayingSB(screen)
@@ -129,6 +130,10 @@ Sub homeScreenOnTimerExpired(timer)
      
         ' Notification routine
         if notify <> invalid then ' we only get here if we have enabled notifications and we HAVE a notification
+            ' slideshows do not get notifications (yet)
+            ' TODO(ljunkie) add preference to allow notifitions in a slide show. We *should* to use an roImageCanvas to be less intrusive
+            if GetViewController().IsSlideShowPlaying() then return
+
             if type(screen) = "roAssociativeArray" then
                 if type(screen.screen) = "roVideoScreen" and RegRead("rf_notify","preferences","enabled") <> "nonvideo" then ' Video Screen - VideoPlayer (playing a video)
                     HUDnotify(screen,notify)

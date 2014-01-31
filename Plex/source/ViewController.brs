@@ -903,6 +903,7 @@ Function vcIsVideoPlaying() As Boolean
 End Function
 
 Function vcIsSlideShowPlaying() As Boolean
+    ' to be clear -- this returns true if on is in a PhotoPlayer (single photo/multi photo/paused/stopped/etc -- naming sucks, sorry )
     return (type(m.screens.Peek().Screen) = "roImageCanvas" and tostr(m.screens.Peek().imagecanvasname) = "slideshow")
 End Function
 
