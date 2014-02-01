@@ -97,13 +97,14 @@ Function newTrackMetadata(container, item, detailed=true) As Object
         track.AlbumYear = container.xml@parentYear
     end if
 
+    ' ljunkie - let eu prefer to show the track artist (fall back to already set track.artist)
     displayArtist = RegRead("rf_music_artist", "preferences", "track")
     if displayArtist = "track" then     
-        track.Artist = firstOf(item@originalTitle, container.xml@title1)
+        track.Artist = firstOf(item@originalTitle, container.xml@title1, track.Artist)
     else if displayArtist = "various" then     
         r = CreateObject("roRegex", "various|invalid", "i") ' section too - those are not special
         if r.IsMatch(tostr(track.Artist)) then 
-            track.Artist = firstOf(item@originalTitle, container.xml@title1)
+            track.Artist = firstOf(item@originalTitle, container.xml@title1, track.Artist)
         end if
     end if
 
