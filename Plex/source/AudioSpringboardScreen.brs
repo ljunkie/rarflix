@@ -374,16 +374,16 @@ sub rfCreateAudioSBdialog(m)
     else
         dialog.SetButton("shuffle", "Shuffle: Off")
     end if
-    if player.ContextScreenID = m.ScreenID then
-        if player.Repeat = 2 then
-            dialog.SetButton("loop", "Loop: On")
-        else
-            dialog.SetButton("loop", "Loop: Off")
-        end if
+
+    if player.Repeat = 2 then
+        dialog.SetButton("loop", "Loop: On")
     else
-        dialog.SetButton("show", "Go to Now Playing")
+        dialog.SetButton("loop", "Loop: Off")
     end if
-     dialog.SetButton("rate", "_rate_")
+
+    if player.ContextScreenID = m.ScreenID then dialog.SetButton("show", "Go to Now Playing")
+
+    dialog.SetButton("rate", "_rate_")
     if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
         dialog.SetButton("delete", "Delete permanently")
     end if
