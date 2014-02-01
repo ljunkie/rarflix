@@ -94,9 +94,9 @@ sub setnowplayingGlobals()
                 if context <> invalid and context.count() > 0 then 
                     for index = 0 to context.count() - 1 ' for index = 0 to keys.Count() - 1
                         metadata = context[index]
-                        'libraryKey = metadata.key
                         ratingKey = metadata.ratingkey
                         ' ljunkie - for now, we have limited this to Now Playing VIDEO
+                        ' it can work for music [track] -- but it's way to chatty 
                         if ratingKey <> invalid and (tostr(metadata.type) = "episode" or tostr(metadata.type) = "movie") then 
                             maid = metadata.nowPlaying_maid
                             user = metadata.nowPlaying_user
@@ -107,7 +107,12 @@ sub setnowplayingGlobals()
                             else
                                 title = metadata.cleantitle
                             end if
-                            if this_maid <> maid then np.Push({maid: maid, title: title, user: user, key: ratingKey, platform: platform, length: length, item: metadata})
+                            ' let's wait until the EU starts playing.. sometimes people get in buffer/play loops
+                            if tostr(metadata.nowplaying_state) = "buffering" then 
+                                print "not showing buffering state" + user
+                            else if this_maid <> maid then 
+                                np.Push({maid: maid, title: title, user: user, key: ratingKey, platform: platform, length: length, item: metadata})
+                            end if
                         end if
                     end for
                  end if

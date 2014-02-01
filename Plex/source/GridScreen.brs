@@ -436,8 +436,16 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
         re = CreateObject("roRegex", "/status/sessions", "i")
         if tostr(data[0]) = "roAssociativeArray" and re.IsMatch(data[0].sourceurl) then 
             for index = 0 to data.Count() - 1
-                if tostr(data[index].contenttype) = "audio" or tostr(data[index].contenttype) = "photo" then 
+                ' skip any locally playing context ( unique to this roku maid )
+                ' -- we are not ready content other than movies and episodes ( should included home movies too )
+                if GetGlobalAA().Lookup("rokuUniqueID") = data[index].nowplaying_maid then 
+                    Debug("---- skipping this roku's now playing item")
+                else if tostr(data[index].contenttype) = "audio" then 
                     Debug("---- skipping audio item in now playing row ( not supported yet ) ")
+                else if tostr(data[index].contenttype) = "photo" then 
+                    Debug("---- skipping photo item in now playing row ( not supported yet ) ")
+                else if tostr(data[index].contenttype) <> "movie" and  tostr(data[index].contenttype) <> "episode" then 
+                    Debug("---- skipping " +  tostr(data[index].contenttype) + " in now playing row ( not supported yet ) ")
                 else 
                     newData.push(data[index])
                 end if
