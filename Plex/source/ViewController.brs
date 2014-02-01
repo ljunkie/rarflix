@@ -709,9 +709,10 @@ End Function
 
 Function vcCreateICphotoPlayer(obj, contextIndex=invalid, show=true, shuffled=false, slideShow=false)
     ' verify we have all the conext loaded -- possible we create this from a normal row
+    dialog=ShowPleaseWait("Starting Photo Player... Please wait...","")
+ 
     PhotoPlayerCheckLoaded(obj,contextIndex)        
 
-    dialog=ShowPleaseWait("Starting Photo Player... Please wait...","")
     sourceReloadURL = invalid
     if type(obj) = "roArray" then 
          context = obj

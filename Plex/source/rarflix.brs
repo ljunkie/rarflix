@@ -735,7 +735,51 @@ Function createHideRowsPrefsScreen(viewController) As Object
     return obj
 End Function
 
+
+function ShowPleaseWaitIC(title As dynamic, text As dynamic) As Object
+    if not isstr(title) title = "Please Wait"
+    if not isstr(text) text = ""
+
+    vc = GetViewController()
+
+    obj = CreateObject("roAssociativeArray")
+    initBaseScreen(obj, vc)
+
+    screen = createobject("roimagecanvas")
+    screen.SetRequireAllImagesToDraw(false)
+    screen.SetMessagePort(obj.Port)
+
+    obj.theme = getImageCanvasTheme()
+    obj.canvasrect = screen.GetCanvasRect()
+
+    w = obj.canvasrect.w/2
+    h = obj.canvasrect.h/4
+    ' center the image by the w/h
+    x = int(obj.canvasrect.w/2)-(w/2)
+    y = int(obj.canvasrect.h/2)-(h/2)
+
+    display = [ { color: "#90000000", TargetRect:{x:int(x),y:int(y),w:int(w),h:int(h)} }]
+    screen.setlayer(0,display)
+
+    display = [{Text: title + chr(10) + text, TextAttrs:{Color:"#FFFFFFFF", Font:"Small", HAlign:"HCenter", VAlign:"VCenter",  Direction:"LeftToRight"}, TargetRect:{x:0,y:0,w:obj.canvasrect.w,h:0} },]
+    screen.setlayer(1,display)
+
+    obj.Screen = screen
+    obj.ScreenName = "ImageCanvas::Please Wait"
+    vc.AddBreadcrumbs(obj, invalid)
+    vc.UpdateScreenProperties(obj)
+    vc.PushScreen(obj)
+
+    obj.screen.show()
+
+    obj.close = function(): GetViewController().popscreen(m) : end function
+
+    return obj
+
+end function
+
 Function ShowPleaseWait(title As dynamic, text As dynamic) As Object
+    Debug("ShowPleaseWait:: created")
     if not isstr(title) title = ""
     if not isstr(text) text = ""
 
@@ -755,6 +799,7 @@ Function ShowPleaseWait(title As dynamic, text As dynamic) As Object
     dialog.SetMessagePort(port)
     dialog.SetTitle(title)
     dialog.ShowBusyAnimation()
+'    dialog.EnableOverlay(true)
     dialog.Show()
     return dialog
 End Function
