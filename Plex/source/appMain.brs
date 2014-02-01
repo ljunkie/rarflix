@@ -85,6 +85,13 @@ Sub initGlobals()
     build = Mid(version, 8, 5).toInt()
     versionStr = major.toStr() + "." + minor.toStr() + " build " + build.toStr()
 
+    ' ljunkie - set legacy if device is on old firmware
+    if major > 3 then
+        GetGlobalAA().AddReplace("rokuLegacy", false)
+    else
+        GetGlobalAA().AddReplace("rokuLegacy", true)
+    end if
+
     GetGlobalAA().AddReplace("rokuVersionStr", versionStr)
     GetGlobalAA().AddReplace("rokuVersionArr", [major, minor, build])
 

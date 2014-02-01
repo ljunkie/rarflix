@@ -29,11 +29,11 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     obj = CreateObject("roAssociativeArray")
     initBaseScreen(obj, viewController)
 
-    di=createobject("rodeviceinfo")
-    if mid(di.getversion(),3,1).toint() > 3 then 
-        obj.isLegacy = false
-    else
-        obj.isLegacy = true
+    ' we do some thing different if one is using a legacy remote ( no back button or info(*) button )
+    if RegRead("legacy_remote", "preferences","0") <> "0" then 
+        obj.isLegacyRemote = true
+    else 
+        obj.isLegacyRemote = false
     end if
 
     obj.OnTimerExpired = ICphotoPlayerOnTimerExpired
@@ -206,7 +206,12 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
                 ' - if someone manually toggles the overlay -- remember state for this slideshow (overlayEnabled) 
                 ' - Legacy devices require the up button to exit the screen (no back button)
                 ' UPDATE: some people use old remotes.. no back button, so we will have to close on up
-                m.Stop()
+                if NOT m.isLegacyRemote then 
+                    m.overlayEnabled = not(m.OverlayOn)
+                    m.OverlayToggle()
+                else 
+                    m.Stop()
+                end if
             else if msg.GetIndex() = 3 then 
                 m.overlayEnabled = not(m.OverlayOn)
                 m.OverlayToggle()
@@ -219,8 +224,8 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
                 'm.OverlayToggle("show",invalid,"next")
                 m.next()
             else if msg.GetIndex() = 6 then
-                di=createobject("rodeviceinfo")
-                if NOT m.isLegacy then 
+                ' we may do something different based on physical remote 
+                if NOT m.isLegacyRemote then 
                     ' OK: pause or start (photo only)
                     if m.IsPaused then 
                         m.resume()
@@ -228,12 +233,12 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
                         m.pause()
                     end if
                  else 
-                    ' pretend this is the info key for legacy devices (they don't have an * key)
+                    ' this will be the info key for legacy remote (they don't have an * key)
                     ' show context menu
                     m.forceResume = NOT(m.isPaused)
                     m.Pause()
                     m.ShowContextMenu(invalid,false,false)
-                 end if
+                end if
             else if msg.GetIndex() = 13 then
                 ' PlayPause: pause or start (photo/music)
                 if m.IsPaused then 

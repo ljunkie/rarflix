@@ -102,6 +102,16 @@ Sub InitRARflix()
         'RegWrite("rf_episode_episodic_thumbnail", "enabled", "preferences") - default as of v3.1.2
     end if
 
+    ' set remote pref to legacy is device is legacy ( only on the first run -- users can override this )
+    RegDelete("legacy_remote", "preferences")
+    if RegRead("legacy_remote", "preferences") = invalid then 
+        if GetGlobal("rokuLegacy") = true then 
+            RegWrite("legacy_remote", "1", "preferences")
+        else 
+            RegWrite("legacy_remote", "0", "preferences")
+        end if
+    end if
+
     ' v3.1.2 - forces everyone to use images for the episodic view ( TV shows only )
     if RegRead("rf_episode_episodic_thumbnail", "preferences","enabled") <> "enabled" then RegWrite("rf_episode_episodic_thumbnail", "enabled", "preferences")
 

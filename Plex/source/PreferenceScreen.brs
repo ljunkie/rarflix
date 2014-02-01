@@ -1023,6 +1023,17 @@ Function createAdvancedPrefsScreen(viewController) As Object
         default: "0"
     }
 
+    ' legacy remote with no back button
+    legacy_remote = [
+        { title: "No", enumvalue: "0", ShortDescriptionLine2: "Remote includes a Back Button" },
+        { title: "Yes", EnumValue: "1", ShortDescriptionLine2: "Remote has no Back Button" },
+    ]
+    obj.Prefs["legacy_remote"] = {
+        values: legacy_remote,
+        heading: "Are you using a remote without a physical Back Button?",
+        default: "0"
+    }
+
 
     ' Continuous+shuffle play
     shuffle_play = [
@@ -1080,6 +1091,7 @@ Function createAdvancedPrefsScreen(viewController) As Object
     obj.AddItem({title: "Transcoder"}, "transcoder_version", obj.GetEnumValue("transcoder_version"))
     obj.AddItem({title: "Continuous Play"}, "continuous_play", obj.GetEnumValue("continuous_play"))
     obj.AddItem({title: "Shuffle Play"}, "shuffle_play", obj.GetEnumValue("shuffle_play"))
+    obj.AddItem({title: "Legacy Remote"}, "legacy_remote", obj.GetEnumValue("legacy_remote"))
     obj.AddItem({title: "H.264"}, "level", obj.GetEnumValue("level"))
 
     if GetGlobal("legacy1080p") then
