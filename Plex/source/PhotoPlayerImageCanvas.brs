@@ -67,6 +67,7 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
 
     obj.LocalFiles = []
     obj.LocalFileSize = 0
+    obj.lastUserRequest = 0
     obj.CachedMetadata = 0
 
     obj.playbackTimer = createTimer()
@@ -218,10 +219,12 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
             else if msg.GetIndex() = 4 then 
                 ' left: previous
                 'm.OverlayToggle("show",invalid,"previous")
+                m.userRequest = getEpoch()
                 m.prev()
             else if msg.GetIndex() = 5 then 
                 ' right: next
                 'm.OverlayToggle("show",invalid,"next")
+                m.userRequest = getEpoch()
                 m.next()
             else if msg.GetIndex() = 6 then
                 ' we may do something different based on physical remote 
@@ -300,7 +303,7 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
             m.TimerOverlay.Active = false
         else 
             'print "---------- show overlay"
-            item = m.context[m.curindex]
+            item = m.item ' use the item we are actually viewing ( not the curIndex as that could have failed )
 
             overlayPaddingTop = 15 ' works for both SD/HD
             if GetGlobal("IsHD") = true then
@@ -313,6 +316,9 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
                 failureHeight = int(m.canvasrect.h*.15)
             end if
 
+            ' count of the image being display
+            ' note: if the image failed to show, we will still be showing the previous image and overlay 
+            ' info will be accurate. The count will show what we *should* be on though
             overlayTopRight = tostr(m.curindex+1) + " of " + tostr(m.PhotoCount)
             overlayTopLeft = item.TextOverlayUL
             overlayCenter = item.title
@@ -367,11 +373,13 @@ sub ICphotoPlayerOnTimerExpired(timer)
 
     if timer.Name = "slideshow" then
         if m.PhotoCount > 1 then 
+            Debug("ICphotoPlayerOnTimerExpired:: slideshow popped")
             m.Next()
         end if
     end if
 
     if timer.Name = "overlay" then
+        Debug("ICphotoPlayerOnTimerExpired:: overlay popped")
         m.OverlayToggle("hide")
     end if
 
@@ -381,6 +389,7 @@ sub ICshowSlideImage()
     Debug("showing the slide image now")
     if m.ImageFailure = true then m.setImageFailureInfo() ' reset any failures
     m.item = m.context[m.CurIndex]
+
     y = int((m.canvasrect.h-m.CurFile.metadata.height)/2)
     x = int((m.canvasrect.w-m.CurFile.metadata.width)/2)
     display=[{url:m.CurFile.localFilePath, targetrect:{x:x,y:y,w:m.CurFile.metadata.width,h:m.CurFile.metadata.height}}]
@@ -408,7 +417,6 @@ sub ICshowSlideImage()
 
     m.screen.show()
     m.screen.AllowUpdates(true)
-    m.nextindex = m.curindex+1
     m.Timer.Mark()
     GetViewController().ResetIdleTimer() ' lockscreen
     m.nonIdle() ' inhibit screensaver
@@ -432,32 +440,88 @@ end sub
 
 sub ICphotoPlayerNext()
     if m.PhotoCount = 1 then return 
-    'print "-- next"
+
+    ' allow the user to quickly press next button without requesting image
+    ' this could be more fancy -- try and display the image right when they stop (timers) 
+    ' but this seems to work good enough
+    doRequest = true
+    if m.userRequest <> invalid then 
+        diff = int(m.userRequest-m.lastUserRequest)
+        if diff = 0 then 
+            doRequest = false
+            Debug("Next request less than a second apart -- deferring http request")
+        end if 
+        m.lastUserRequest = m.userRequest
+        m.userRequest = invalid
+    end if
+
+    ' cancel any pending request as we are trying to view the next image 
+    Debug("ICphotoPlayerNext:: cancel any pending requests and start fresh on screenID: " + tostr(m.screenID))
+    GetViewController().CancelRequests(m.ScreenID)
+
+    Debug("ICphotoPlayerNext:: viewing:" + tostr(m.curIndex))
+
+    ' calculate the next index to view
     if m.nextindex <> invalid then 
         i = m.nextindex
     else 
-        i = m.curindex
+        i = m.curindex+1
+        m.nextindex = i
     end if
 
-    ' we are at the end -- reset index and reload context ( if enabled in prefs )
+    ' reset index to 0 if we are at the end 
+    ' reload context if enabled in prefs
     if i > m.context.count()-1 then 
         i=0:m.reloadSlideContext()
     end if
 
     m.curindex = i
 
-    m.GetSlideImage()
+    ' request/set in the image ( http or cached )
+    if doRequest then 
+        Debug("ICphotoPlayerNext:: requesting:" + tostr(m.curIndex))
+        m.GetSlideImage()
+    end if
 
+    ' increment the next index even if we are unsuccessful at retrieving the image
+    ' this will allow us to move past failures ( we will show an error after too many failures )
+    m.nextindex = i+1
+    Debug("ICphotoPlayerNext:: next:" + tostr(m.nextIndex))
 end sub
 
 sub ICphotoPlayerPrev()
     if m.PhotoCount = 1 then return 
-    'print "-- Previous"
+
+    ' allow the user to quickly press next button without requesting image
+    doRequest = true
+    if m.userRequest <> invalid then 
+        diff = int(m.userRequest-m.lastUserRequest)
+        if diff = 0 then 
+            doRequest = false
+            Debug("Next request less than a second apart -- deferring http request")
+        end if 
+        m.lastUserRequest = m.userRequest
+        m.userRequest = invalid
+    end if
+
+    ' cancel any pending request as we are trying to view the previous image 
+    Debug("ICphotoPlayerPrev:: cancel any pending requests and start fresh on screenID: " + tostr(m.screenID))
+    GetViewController().CancelRequests(m.ScreenID)
+
+    Debug("ICphotoPlayerNext:: viewing:" + tostr(m.curIndex))
+
+    ' calculate the previous index to view
     i=m.curindex-1
     if i < 0 then i = m.context.count()-1
-    m.curindex=i
 
+    m.curindex=i
+    Debug("ICphotoPlayerNext:: requesting:" + tostr(m.curIndex))
+
+    ' request/set in the image ( http or cached )
     m.GetSlideImage()
+
+    m.nextindex = i+1
+    Debug("ICphotoPlayerNext:: next:" + tostr(m.nextIndex))
 end sub
 
 sub ICphotoPlayerPause()
@@ -789,9 +853,14 @@ sub ICsetImageFailureInfo(failureReason=invalid)
         m.ImageFailureReason = failureReason
         m.ImageFailureCount = int(m.ImageFailureCount+1)
         Debug("    fail Count: " + tostr(m.ImageFailureCount))
-        ' only show the failure on every 5th try ( it's ok if it fails once in a while without someone noticing )
-        showFailureInfo = m.ImageFailureCount/5
-        if int(showFailureInfo) = showFailureInfo then m.OverlayToggle("show")
+        ' show (force the overlay) on the every 100th failure OR on a failure on start
+        if m.LocalFiles.count() = 0 then 
+            showFailureInfo = 1
+        else 
+            showFailureInfo = m.ImageFailureCount/100
+        end if
+
+        if int(showFailureInfo) = showFailureInfo then m.OverlayToggle("forceShow")
     else 
         ' reset any image failures
         m.ImageFailure = false
@@ -805,7 +874,12 @@ sub photoShowContextMenu(obj = invalid,force_show = false, forceExif = true)
     if obj <> invalid then
         Debug("context menu using passed object")
     else if type(m.context) = "roArray" and m.CurIndex <> invalid then 
-        obj = m.context[m.CurIndex]
+        ' try and use the actually item being show -- otherwise fall back to the curIndex
+        if m.item <> invalid then 
+            obj = m.item
+        else 
+            obj = m.context[m.CurIndex]
+        end if
     end if
 
     if obj = invalid then return
