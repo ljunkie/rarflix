@@ -573,7 +573,7 @@ End Sub
 
 function ICgetSlideImage(bufferNext=false,firstImage=false)
     ' purge expired metadata records -- this must be before any other calls
-    if m.CachedMetadata > 1000 then m.PurgeMetadata()
+    if m.CachedMetadata > 500 then m.PurgeMetadata()
 
     ' by default we cache locally and show the curIndex. If this is a bufferNext, then
     ' we will retrieve curIndex+1 or 0 and cache only. 
@@ -622,7 +622,7 @@ function ICgetSlideImage(bufferNext=false,firstImage=false)
     Debug("      MB: " + tostr(int(m.LocalFileSize/1048576)))
 
     ' Purge the local cache if we have more than X images or 10MB used on disk 
-    if m.LocalFiles.count() > 500 or (m.LocalFileSize/1048576) > 10 then m.purgeSlideImages()
+    if m.LocalFiles.count() > 500 or (m.LocalFileSize/1048576) > 5 then m.purgeSlideImages()
 
     ' return the cached image ( if we have one )
     if m.LocalFiles.count() > 0 then 
