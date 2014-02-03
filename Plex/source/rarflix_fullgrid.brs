@@ -106,7 +106,7 @@ Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, ite
             f = "?"
             if instr(1, loader.sourceurl, "?") > 0 then f = "&"
             ' this will limit the grid to 5k items. TODO(ljunkie) we may have to load more?
-            if index < 1000 then 
+            if index < 5000 then 
                 keys.Push(loader.sourceurl + f + "X-Plex-Container-Start="+tostr(index)+"&X-Plex-Container-Size="+tostr(increment))
                 loader.names.Push(name)
             else 
