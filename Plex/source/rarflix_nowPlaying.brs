@@ -213,25 +213,25 @@ function percentComplete(viewOffset as dynamic, Length as dynamic, round=false a
 end function
 
 ' This needs some work - rough draft - should add link to view videoDetial screen from here
-Sub ShowNotifyDialog(obj As dynamic, notifyIndex = 0, isNowPlaying = false) 
+Sub ShowNotifyDialog(obj As dynamic, curIndex = 0, isNowPlaying = false) 
     if m.viewcontroller.IsLocked <> invalid and m.viewcontroller.IsLocked then return
     Debug("showing Dialog notifications ")
     ' isNowPlaying is special - if true, we will show all the NowPlaying items when a user selectes to show the notification (allows this dialog to be used for other notifications)
 
     if type(obj) = "roArray" then
-        notify = obj[notifyIndex]
+        item = obj[curIndex]
     else
-        notify = obj
+        item = obj
         obj = []
-        obj.push(notify)
+        obj.push(item)
     end if
 
     dialog = createBaseDialog()
-    dialog.Title = notify.title
-    dialog.Text = notify.text
-    dialog.Item = notify
-    dialog.idx = notifyIndex
-    dialog.obj = obj
+    dialog.Title = item.title
+    dialog.Text = item.text
+    dialog.Item = item
+    dialog.index = curIndex
+    dialog.context = obj
     dialog.isNowPlaying = isNowPlaying
 
     dialog.HandleButton = notifyDialogHandleButton
@@ -251,10 +251,7 @@ End Sub
 Function notifyDialogHandleButton(buttoncommand, index) As Boolean
     close_dialog = false
    
-    dialog = m.viewcontroller.screens.peek()
-
-    notify = dialog.obj[dialog.idx]
-    total = dialog.obj.Count() -1
+    total = m.context.Count() -1
 
     refresh = false
     focusbutton = 0
@@ -262,18 +259,18 @@ Function notifyDialogHandleButton(buttoncommand, index) As Boolean
         close_dialog = true
 
         items = []
-        itemsIndex = dialog.idx
-        if dialog.isNowPlaying then
+        itemsIndex = m.index
+        if m.isNowPlaying then
             Debug("showing all the now playing items with this item focused in a springBoard screen")
             nowPlaying = GetGlobalAA().rf_nowPlaying
             for index = 0 to nowPlaying.Count() - 1
-                if dialog.obj[dialog.idx].key = nowPlaying[index].key then
+                if m.context[m.index].key = nowPlaying[index].key then
                     itemsIndex = index
                 end if
                 items.Push(nowPlaying[index].item)
             next
         else 
-            for each i in dialog.obj 
+            for each i in m.context 
                 items.Push(i.item)
             next
         end if
@@ -283,22 +280,20 @@ Function notifyDialogHandleButton(buttoncommand, index) As Boolean
             ShowErrorDialog("No one is watching anything","Now Playing")
         end if 
     else if buttonCommand = "fwd" then
-        dialog.idx = dialog.idx + 1
-        if dialog.idx > dialog.obj.Count() - 1 then dialog.idx = 0
-        notify = dialog.obj[dialog.idx]
-        dialog.title = notify.title
-	dialog.text = notify.text
-	dialog.notify = notify
+        m.index = m.index + 1
+        if m.index > m.context.Count() - 1 then m.index = 0
+        item = m.context[m.index]
+        m.title = item.title
+	m.text = item.text
         refresh = true
     else if buttonCommand = "rev" then
-        dialog.idx = dialog.idx - 1
-        if dialog.idx < 0 then dialog.idx = dialog.obj.Count() - 1
-        notify = dialog.obj[dialog.idx]
-        dialog.title = notify.title
-	dialog.text = notify.text
-	dialog.notify = notify
+        m.index = m.index - 1
+        if m.index < 0 then m.index = m.context.Count() - 1
+        item = m.context[m.index]
+        m.title = item.title
+	m.text = item.text
         refresh = true
-        if dialog.idx > 0 then 
+        if m.index > 0 then 
             focusbutton = 1
         end if
     else if buttonCommand = "close" then
@@ -306,23 +301,23 @@ Function notifyDialogHandleButton(buttoncommand, index) As Boolean
     end if
 
     if refresh then 
-        dialog.FocusedButton = focusbutton
-        dialog.buttons = []
-        if dialog.idx < total then 
-            dialog.SetButton("fwd", "Next")
+        m.FocusedButton = focusbutton
+        m.buttons = []
+        if m.index < total then 
+            m.SetButton("fwd", "Next")
         else 
-            dialog.text = dialog.text + chr(10) ' for overlay 
+            m.text = m.text + chr(10) ' for overlay 
         end if
-        if dialog.idx > 0 then
-            dialog.SetButton("rev", "Previous")
+        if m.index > 0 then
+            m.SetButton("rev", "Previous")
         else 
-            dialog.text = dialog.text + chr(10) ' for overlay 
+            m.text = m.text + chr(10) ' for overlay 
         end if
-        dialog.text = truncateString(dialog.text,200)
-        dialog.SetButton("show", "Show Now Playing")
-        dialog.SetButton("close", "Close")
+        m.text = truncateString(m.text,200)
+        m.SetButton("show", "Show Now Playing")
+        m.SetButton("close", "Close")
 
-        dialog.Refresh()
+        m.Refresh()
     end if
 
     return close_dialog
