@@ -34,21 +34,8 @@ Function createFULLGridScreen(item, viewController, style = "flat-movie", SetDis
     end if
 
     'container = createPlexContainerForUrl(item.server, item.sourceUrl, detailKey)
-    ' ljunkie - i should probably wrap this up into a better sub/function to be used later
     '  just need a quick way to create a plexContainer request with 0 results returned ( to be quick )
-    httpRequest = item.server.CreateRequest(item.sourceUrl, detailKey)
-    httpRequest.AddHeader("X-Plex-Container-Start", "0")
-    httpRequest.AddHeader("X-Plex-Container-Size", "0")
-    Debug("Fetching content from server at query URL: " + tostr(httpRequest.GetUrl()))
-    response = GetToStringWithTimeout(httpRequest, 60)
-    xml=CreateObject("roXMLElement")
-    if not xml.Parse(response) then Debug("Can't parse feed: " + tostr(response))
-    Debug("Finished - Fetching content from server at query URL: " + tostr(httpRequest.GetUrl()))
-    Debug("Total Items: " + tostr(xml@totalsize) + " size returned: " + tostr(xml@size))
-    container = {}
-    container.totalsize = xml@totalsize
-    container.sourceurl = httpRequest.GetUrl()
-    container.server = item.server
+    container = createPlexContainerForUrlSizeOnly(item.server, item.sourceUrl ,detailKey)    
 
     ' TODO - this could use some work ( it should be ok right now, but we might want to add in all the logic for all the screen types )
     ' grid_size = number of rows across
@@ -67,6 +54,23 @@ Function createFULLGridScreen(item, viewController, style = "flat-movie", SetDis
     return obj
 End Function
 
+function createPlexContainerForUrlSizeOnly(server, sourceUrl, detailKey) 
+    Debug("createPlexContainerForUrlSizeOnly:: determine size of xml results")
+    httpRequest = server.CreateRequest(sourceurl, detailKey)
+    httpRequest.AddHeader("X-Plex-Container-Start", "0")
+    httpRequest.AddHeader("X-Plex-Container-Size", "0")
+    Debug("Fetching content from server at query URL: " + tostr(httpRequest.GetUrl()))
+    response = GetToStringWithTimeout(httpRequest, 60)
+    xml=CreateObject("roXMLElement")
+    if not xml.Parse(response) then Debug("Can't parse feed: " + tostr(response))
+    Debug("Finished - Fetching content from server at query URL: " + tostr(httpRequest.GetUrl()))
+    Debug("Total Items: " + tostr(xml@totalsize) + " size returned: " + tostr(xml@size))
+    container = {}
+    container.totalsize = xml@totalsize
+    container.sourceurl = httpRequest.GetUrl()
+    container.server = server
+    return container
+end function
 
 Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, item = invalid as dynamic)
 

@@ -1040,6 +1040,9 @@ sub GetPhotoContextFromFullGrid(obj,curindex = invalid, lazy=true)
 end sub
 
 sub PhotoMetadataLazy(obj, dummyItem, lazy = true)
+    ' this will only load a minial set of metadata per item
+    ' break api calls to 1k item chunks ( Roku has issues parsing large XML result sets )
+    chunks = 5000
 
     if dummyItem.showWait = true and dummyItem.hasWaitDialog = invalid then 
         dummyItem.hasWaitDialog=ShowPleaseWait("Loading Items... Please wait...","")
@@ -1047,56 +1050,80 @@ sub PhotoMetadataLazy(obj, dummyItem, lazy = true)
 
     ' verify we have enough info to continue ( server and sourceurl )
     if dummyItem.server = invalid or dummyItem.sourceUrl = invalid then 
-         ShowErrorDialog("Sorry! We were unable to load your photos.","Warning"):return
+         ShowErrorDialog("Sorry! We were unable to load your photos [1].","Warning"):return
     end if
 
     dummyItem.sourceUrl = rfStripAPILimits(dummyItem.sourceUrl)
 
-    container = createPlexContainerForUrl(dummyItem.server, invalid, dummyItem.sourceUrl)
-    obj.sourceReloadURL = container.sourceurl ' lazy loading .. we need this for later to reload the slideshow
-    Debug("PhotoMetadataLazy:: source reload url = " + tostr(obj.sourceReloadURL))
+    ' lazy loading .. we need this for later to reload the slideshow
+    Debug("PhotoMetadataLazy:: source reload url = " + tostr(dummyItem.sourceUrl))
+    obj.sourceReloadURL = dummyItem.sourceUrl 
+
+    ' we might have to figure out the total size before we know to split
+    container = createPlexContainerForUrlSizeOnly(dummyItem.server, invalid , dummyItem.sourceUrl)    
 
     ' verify we have some results from the api to process
-    if isnonemptystr(container.xml@header) AND isnonemptystr(container.xml@message) then
-        ShowErrorDialog("Sorry! We were unable to process your photos.","Warning"):return
+    if container = invalid or container.totalsize = invalid or container.totalsize.toint() < 1 then 
+         ShowErrorDialog("Sorry! We were unable to load your photos [2].","Warning"):return
     end if
-    
-    ' parse the xml into objects
-    nodes = container.xml.GetChildElements()
-    for each n in nodes
-        nodeType = firstOf(n.GetName(), n@type, container.ViewGroup) ' n.GetName() should never fail
 
-        if nodeType = "Photo" then
-            ' only load the required data -- keep the memory footprint small
-            if lazy then 
-                metadata = {}
-                metadata.server = dummyItem.server
-                metadata.key = n@key
-                metadata.nodename = "Photo"
-                'metadata.title = n@title
-                'metadata.sourceurl = container.sourceurl
-                metadata.ContentType = "photo"
-                metadata.Type = "photo"
-            else 
-                metadata = newPhotoMetadata(container, n)
-            end if
-        else if nodeType = "Directory"
-            ' ljunkie -- slideShow doesn't work with directories, but other screens do
-            ' for now we will just create the metadata the normal way. If someone has
-            ' thousands of directories too, we might have memory issues and have to 
-            ' re-work this like we do above for photos
-            metadata = newDirectoryMetadata(container, n)
+    ' OLD: container = createPlexContainerForUrl(dummyItem.server, invalid, dummyItem.sourceUrl)
+    ' break each request into 1000 max items per request ( or whatever we set chunks too )
+    results = []
+    for index = 0 to container.totalsize.toInt()-1 step chunks
+
+        newurl = rfStripAPILimits(dummyItem.sourceUrl)
+        f = "?"
+        if instr(1, newurl, "?") > 0 then f = "&"
+        newurl = newurl + f + "X-Plex-Container-Start="+tostr(index)+"&X-Plex-Container-Size="+tostr(chunks)
+        container = createPlexContainerForUrl(dummyItem.server, invalid, newurl)
+
+        ' verify we have some results from the api to process
+        if isnonemptystr(container.xml@header) AND isnonemptystr(container.xml@message) then
+            'ShowErrorDialog("Sorry! We were unable to process your photos.","Warning"):return
+        else     
+            ' parse the xml into objects
+            nodes = container.xml.GetChildElements()
+            for each n in nodes
+                nodeType = firstOf(n.GetName(), n@type, container.ViewGroup) ' n.GetName() should never fail
+
+                if nodeType = "Photo" then
+                    ' only load the required data -- keep the memory footprint small
+                    if lazy then 
+                        metadata = {}
+                        metadata.server = dummyItem.server
+                        metadata.key = n@key
+                        metadata.nodename = "Photo"
+                        metadata.ContentType = "photo"
+                        metadata.Type = "photo"
+                    else 
+                        metadata = newPhotoMetadata(container, n)
+                    end if
+                else if nodeType = "Directory"
+                    ' ljunkie -- slideShow doesn't work with directories, but other screens do
+                    ' for now we will just create the metadata the normal way. If someone has
+                    ' thousands of directories too, we might have memory issues and have to 
+                    ' re-work this like we do above for photos
+                    metadata = newDirectoryMetadata(container, n)
+                end if
+
+                ' CUSTOM thumbs? -- not for photos
+                ' PosterIndicators(metadata) -- nah, watched status not implemented for photos and probably never should be shown if it is
+
+                ' only push valid metadata - we only expect Photo and Directories
+                if metadata <> invalid and metadata.key <> invalid then results.Push(metadata)
+                metadata = invalid
+            next
         end if
 
-        ' CUSTOM thumbs? -- not for photos
-        ' PosterIndicators(metadata) -- nah, watched status not implemented for photos and probably never should be shown if it is
+    end for
 
-        ' only push valid metadata - we only expect Photo and Directories
-        if metadata <> invalid and metadata.key <> invalid then container.metadata.Push(metadata)
-        metadata = invalid
-    next
+    ' verify we have some results 
+    if results.count() = 0 then 
+        ShowErrorDialog("Sorry! We were unable to process your photos.","Warning"):return
+    end if
 
-    obj.context = container.metadata
+    obj.context = results:results = invalid
     obj.CurIndex = getFullGridCurIndex(obj,dummyItem.CurIndex,1) ' when we load the full context, we need to fix the curindex
     obj.FullContext = true
 
