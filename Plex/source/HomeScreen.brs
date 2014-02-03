@@ -27,6 +27,9 @@ Function createHomeScreen(viewController) As Object
     displaymode_home = RegRead("rf_home_displaymode", "preferences", "photo-fit")
     obj.Screen.SetDisplayMode(displaymode_home)
 
+    obj.createNowPlayingRequest = homeCreateNowPlayingRequest
+    obj.OnUrlEvent = homeScreenOnUrlEvent
+
     obj.Loader = createHomeScreenDataLoader(obj)
 
     obj.Refresh = refreshHomeScreen
@@ -107,10 +110,10 @@ Sub homeScreenOnTimerExpired(timer)
         RRHomeScreenBreadcrumbs()
     end if
 
-    ' Now Playing and Notify Section (RARflixTest only)
-    if timer.Name = "nowplaying" then     ' and isRFtest() then ( enabled on main channel in v2.8.2 )
+    ' Now Playing and Notify Section
+    if timer.Name = "nowplaying" then
 
-        setnowplayingGlobals() ' set the now playing globals - mainly for notification logic, but we might use for now playing row
+        m.createNowPlayingRequest() ' set the now playing globals - mainly for notification logic, but we might use for now playing row
         notify = getNowPlayingNotifications()
         screen = GetViewController().screens.peek()
 
@@ -150,11 +153,17 @@ End Sub
 Sub homeScreenActivate(priorScreen)
     ' on activation - we should run a fiew things
     ' set the now playing globals - mainly for notification logic, but we might use for now playing row
-    ' if isRFtest() then setnowplayingGlobals() 
-    setnowplayingGlobals() ' enabled in v2.8.2
+    m.createNowPlayingRequest()
     RRHomeScreenBreadcrumbs()
     'm.Screen.SetBreadcrumbText("", CurrentTimeAsString())
     m.SuperActivate(priorScreen)
 End Sub 
 
+Sub homeScreenOnUrlEvent(msg, requestContext)
 
+    ' nowplaying_sessions requests
+    if requestContext <> invalid and tostr(requestContext.name) = "nowplaying_sessions" then 
+        setNowPlayingGlobals(msg, requestContext)
+    end if
+
+End Sub

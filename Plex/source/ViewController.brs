@@ -143,8 +143,9 @@ Function vcCreateHomeScreen()
     screen = createHomeScreen(m)
     screen.ScreenName = "Home"
     m.InitializeOtherScreen(screen, invalid)
-    screen.Show()
     RRHomeScreenBreadcrumbs(true)
+    screen.createNowPlayingRequest()
+    screen.Show()
     'start timer for detecting idle time when the home screen is created.
     m.CreateIdleTimer()
     return screen

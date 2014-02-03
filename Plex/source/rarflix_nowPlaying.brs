@@ -51,6 +51,7 @@ sub rf_updateNowPlayingSB(screen)
 end sub
 
 function rfUpdateNowPlayingMetadata(metadata,time = 0 as integer) as object
+    ' used mainly on a springboard
     container = createPlexContainerForUrl(metadata.server, metadata.server.serverurl, "/status/sessions")
     keys = container.getkeys()
     found = false
@@ -80,79 +81,59 @@ function rfUpdateNowPlayingMetadata(metadata,time = 0 as integer) as object
     return metadata
 end function
 
-sub setnowplayingGlobals() 
-    ' only set nowplaying globals if notifications are enabled (row loader will always call the plexcontainerforurl)
-    ' TODO: this will need some work for Video, Audio, Photo...
+sub homeCreateNowPlayingRequest() 
+    ' only set nowplaying globals if notifications are enabled
+    ' this has nothing to do with the home screen now playing rows ( separate requests )
+    ' TODO: this will need some work for Audio, Photo ( probably never -- way to chatty )
     if RegRead("rf_notify","preferences","enabled") <> "disabled" then
-        np = []
-        this_maid = GetGlobalAA().Lookup("rokuUniqueID")
         for each server in GetOwnedPlexMediaServers()
-            if server.isavailable and server.supportsmultiuser then ' only query server if available and supportsmultiuser (assuming nowPlaying works with multiuser enabled)
-                container = createPlexContainerForUrl(server, server.serverurl, "/status/sessions")
-                if container <> invalid then context = container.GetMetadata()
-
-                if context <> invalid and context.count() > 0 then 
-                    for index = 0 to context.count() - 1 ' for index = 0 to keys.Count() - 1
-                        metadata = context[index]
-                        ratingKey = metadata.ratingkey
-                        ' ljunkie - for now, we have limited this to Now Playing VIDEO
-                        ' it can work for music [track] -- but it's way to chatty 
-                        if ratingKey <> invalid and (tostr(metadata.type) = "episode" or tostr(metadata.type) = "movie") then 
-                            maid = metadata.nowPlaying_maid
-                            user = metadata.nowPlaying_user
-                            platform = firstof(metadata.nowPlaying_platform_title, metadata.nowPlaying_platform, "")
-                            length = firstof(tostr(metadata.Length), 0)
-                            if metadata.episodestr <> invalid then 
-                                title = metadata.cleantitle + " - " + metadata.episodestr
-                            else
-                                title = metadata.cleantitle
-                            end if
-                            ' let's wait until the EU starts playing.. sometimes people get in buffer/play loops
-                            if tostr(metadata.nowplaying_state) = "buffering" then 
-                                print "not showing buffering state" + user
-                            else if this_maid <> maid then 
-                                np.Push({maid: maid, title: title, user: user, key: ratingKey, platform: platform, length: length, item: metadata})
-                            end if
-                        end if
-                    end for
-                 end if
+            ' only query server if available and supportsmultiuser (assuming nowPlaying works with multiuser enabled)
+            if server.isavailable and server.supportsmultiuser then
+                httpRequest = server.CreateRequest("", "/status/sessions" )
+                context = CreateObject("roAssociativeArray")
+                context.server = server
+                context.name = "nowplaying_sessions"
+                ' converted to a non blocking request
+                GetViewController().StartRequest(httpRequest, m, context)
+                Debug("Kicked off request for now playing sessions on " + tostr(server.name))
             end if
         end for
-        GetGlobalAA().rf_nowPlaying = [] 
-        GetGlobalAA().AddReplace("rf_nowPlaying", np)
     end if
 end sub
 
 function getNowPlayingNotifications() as object
     if RegRead("rf_notify","preferences","enabled") = "disabled" then return invalid
 
-    notify = []
-    np = GetGlobalAA().rf_nowPlaying
-    found = []
+    notify = []:found = []
+    nowPlaying_servers = GetGlobalAA().rf_nowPlaying_servers
 
     ' iterate through now playing content and set the first unnotified object ( we will grab any others on the next run )
     ' we might want to combined then..
-    if type(np) = "roArray" and np.count() > 0 then
-        for each i in np
-             nkey = i.maid + "_" + i.key ' this is in case the same machine can play two video.. PMS doesn't allow it ( so overkill )
-             if RegRead(nkey, "rf_notified","false") <> "true" then 
-                i.type = "start"
-                i.title = i.item.title
-                i.text = i.item.description
-                if RegRead("rf_notify_np_type","preferences","all") <> "stop"  then 
-                    notify.Push(i) ' set return object
-                else 
-                    Debug("skipping start notification due to prefs")
-                end if
-                RegWrite(nkey, "true", "rf_notified") 
-		' TODO - this global should really be an AA
-                GetGlobalAA().AddReplace(nkey + "_user", i.user)
-                GetGlobalAA().AddReplace(nkey + "_title", i.item.CleanTitle)
-                GetGlobalAA().AddReplace(nkey + "_length", i.length) 
+    if type(nowPlaying_servers) = "roAssociativeArray" then 
+        for each machineIdentifier in nowPlaying_servers 
+            if nowPlaying_servers[machineIdentifier] <> invalid and nowPlaying_servers[machineIdentifier].count() > 0 then
+                for each i in nowPlaying_servers[machineIdentifier]
+                     nkey = i.maid + "_" + i.key ' this is in case the same machine can play two video.. PMS doesn't allow it ( so overkill )
+                     if RegRead(nkey, "rf_notified","false") <> "true" then 
+                        i.type = "start"
+                        i.title = i.item.title
+                        i.text = i.item.description
+                        if RegRead("rf_notify_np_type","preferences","all") <> "stop"  then 
+                            notify.Push(i) ' set return object
+                        else 
+                            Debug("skipping start notification due to prefs")
+                        end if
+                        RegWrite(nkey, "true", "rf_notified") 
+        		' TODO - this global should really be an AA
+                        GetGlobalAA().AddReplace(nkey + "_user", i.user)
+                        GetGlobalAA().AddReplace(nkey + "_title", i.item.CleanTitle)
+                        GetGlobalAA().AddReplace(nkey + "_length", i.length) 
+                    end if
+                    GetGlobalAA().AddReplace(nkey + "_viewOffset", i.item.viewOffset)
+                    found.Push(nkey) ' save all now playing for the next checks
+                next
             end if
-            GetGlobalAA().AddReplace(nkey + "_viewOffset", i.item.viewOffset)
-            found.Push(nkey) ' save all now playing for the next checks
-        next
+        end for
     end if
 
     ' Check to verify all seen players are still playing.. otherwise we want to unset (maybe notify at some point) to be able to notify again
@@ -189,7 +170,7 @@ function getNowPlayingNotifications() as object
                 GetGlobalAA().Delete(maid + "_viewOffset")
                 Debug("---- removing " + tostr(maid) + " from 'rf_notified' -- video playback stopped")
             else
-                Debug("----- " + tostr(maid) + " is found (currently playing)")
+                Debug("----- " + tostr(maid) + " already notified")
             end if
         next
     end if    
@@ -262,18 +243,21 @@ Function notifyDialogHandleButton(buttoncommand, index) As Boolean
         itemsIndex = m.index
         if m.isNowPlaying then
             Debug("showing all the now playing items with this item focused in a springBoard screen")
-            nowPlaying = GetGlobalAA().rf_nowPlaying
-            for index = 0 to nowPlaying.Count() - 1
-                if m.context[m.index].key = nowPlaying[index].key then
-                    itemsIndex = index
+            nowPlaying_servers = GetGlobalAA().rf_nowPlaying_servers
+            for each machineIdentifier in nowPlaying_servers 
+                if nowPlaying_servers[machineIdentifier] <> invalid and nowPlaying_servers[machineIdentifier].count() > 0 then
+                    for each np_item in nowPlaying_servers[machineIdentifier]
+                        if m.context[m.index].key = np_item.item.key then itemsIndex = items.count() ' zero index
+                        items.Push(np_item.item)
+                    end for
                 end if
-                items.Push(nowPlaying[index].item)
-            next
+            end for
         else 
             for each i in m.context 
                 items.Push(i.item)
             next
         end if
+
         if items.count() > 0 then 
             m.ViewController.CreateScreenForItem(items, itemsIndex, invalid)
         else 
@@ -322,3 +306,63 @@ Function notifyDialogHandleButton(buttoncommand, index) As Boolean
 
     return close_dialog
 End Function
+
+sub setNowPlayingGlobals(msg, requestContext)
+        url = tostr(requestContext.Request.GetUrl())
+
+        np_servers = GetGlobalAA().rf_nowPlaying_servers
+        if np_servers = invalid then np_servers = {}
+
+        ' container for now playing content ( resets to empty if nothing playing or a failure )
+        np = []
+
+        if msg.GetResponseCode() = 200 then 
+            Debug("Got a " + tostr(msg.GetResponseCode()) + " response from " + url)
+
+            headers = msg.GetResponseHeaders()
+            xml = CreateObject("roXMLElement")
+            xml.Parse(msg.GetString())
+            response = CreateObject("roAssociativeArray")
+            response.xml = xml
+            response.server = requestContext.server
+            response.sourceUrl = requestContext.Request.GetUrl()
+            container = createPlexContainerForXml(response)
+            context = container.GetMetadata()
+            this_maid = GetGlobalAA().Lookup("rokuUniqueID")
+
+            if context <> invalid and context.count() > 0 then 
+                for index = 0 to context.count()-1
+                    metadata = context[index]
+                    ratingKey = metadata.ratingkey
+                    ' ljunkie - for now, we have limited this to Now Playing VIDEO
+                    ' it can work for music [track] -- but it's way to chatty 
+                    if ratingKey <> invalid and (tostr(metadata.type) = "episode" or tostr(metadata.type) = "movie") then 
+                        maid = metadata.nowPlaying_maid
+                        user = metadata.nowPlaying_user
+                        platform = firstof(metadata.nowPlaying_platform_title, metadata.nowPlaying_platform, "")
+                        length = firstof(tostr(metadata.Length), 0)
+                        if metadata.episodestr <> invalid then 
+                            title = metadata.cleantitle + " - " + metadata.episodestr
+                        else
+                            title = metadata.cleantitle
+                        end if
+                        ' let's wait until the EU starts playing.. sometimes people get in buffer/play loops
+                        if tostr(metadata.nowplaying_state) = "buffering" then 
+                            print "not showing buffering state" + user
+                        else if this_maid <> maid then 
+                            'print title + "is playing from " + requestContext.server.name
+                            np.Push({maid: maid, title: title, user: user, key: ratingKey, platform: platform, length: length, item: metadata})
+                        end if
+                    end if
+                end for
+            end if
+        else 
+            ' urlEventFailure - nothing to see here
+            failureReason = msg.GetFailureReason()
+            Debug("Got a " + tostr(msg.GetResponseCode()) + " response from " + url + " - " + tostr(failureReason))
+        end if
+
+        ' set now playing content ( no results/failure is ok -- resets server back to zero results )
+        np_servers[requestContext.server.machineid] = np
+        GetGlobalAA().AddReplace("rf_nowPlaying_servers", np_servers)
+end sub
