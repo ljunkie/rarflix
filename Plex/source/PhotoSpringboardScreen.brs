@@ -250,8 +250,15 @@ Function photoDialogHandleButton(command, data) As Boolean
         obj.closeOnActivate = true
         return true
     else if command = "shuffle" then
-        Debug("load the context before we shuffle items!")
+        Debug("checking if we need to load context before we shuffle items!")
         GetPhotoContextFromFullGrid(obj,obj.item.origindex) 
+
+        ' show a shuffling dialog if item count > 1k
+        if obj.context.count() > 1000 then 
+            text = "shuffling"
+            if obj.IsShuffled then text = "unshuffling"
+            dialog=ShowPleaseWait(text + " items... please wait...","")
+        end if
 
         if obj.IsShuffled then
             obj.Unshuffle()
@@ -262,6 +269,13 @@ Function photoDialogHandleButton(command, data) As Boolean
             obj.IsShuffled = true
             m.SetButton(command, "Shuffle: On")
         end if
+
+        ' shuffling can be quick on newer devices, so intead of a < 1 sec blip, let's show the shuffling items for at least a second
+        if dialog <> invalid then 
+             sleep(1000) 
+             dialog.close()
+        end if
+
         m.Refresh()
         obj.Refresh()
     else if command = "rate" then
