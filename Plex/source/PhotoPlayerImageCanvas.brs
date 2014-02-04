@@ -39,6 +39,7 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     obj.OnTimerExpired = ICphotoPlayerOnTimerExpired
     obj.OnUrlEvent = photoSlideShowOnUrlEvent
     obj.nonIdle = ICnonIdle
+    obj.Refresh = PhotoPlayerRefresh
 
     ' ljunkie - we need to iterate through the items and remove directories -- they don't play nice
     ' note: if we remove directories ( itms ) the contextIndex will be wrong - so fix it!
@@ -67,7 +68,6 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
 
     obj.LocalFiles = []
     obj.LocalFileSize = 0
-    obj.lastUserRequest = 0
     obj.CachedMetadata = 0
 
     obj.playbackTimer = createTimer()
@@ -89,6 +89,11 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
 
     obj.theme = getImageCanvasTheme()
     screen.SetLayer(0, obj.theme["background"])
+
+    ' this layer will only be visable if the first image fails ( otherwise it will be replaced with the image )
+    display = {Text: "loading image....", TextAttrs:{Color:"#A0FFFFFF", Font:"Small", HAlign:"HCenter", VAlign:"VCenter",  Direction:"LeftToRight"}, TargetRect:{x:0,y:0,w:int(obj.canvasrect.w),h:0} }
+    screen.SetLayer(1, display)
+
     screen.SetMessagePort(obj.Port)
     obj.Screen = screen
 
@@ -143,25 +148,36 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
         GetViewController().AddTimer(obj.TimerOverlay, obj)
     end if
 
-    obj.GetSlideImage(true,true) ' buffer/set the first image
+    obj.GetSlideImage(false,true) 'bufferNext=false/firstImage=true
 
     return obj
 
 End Function
 
 Function photoContextMenuHandleButton(command, data) As Boolean
-    handled = false
+    handled = true
     obj = m.ParentScreen
 
-    if command = "shufflePhoto" then
-        m.parentScreen.SetShuffle(1)
-    else if command = "UnshufflePhoto" then
-        m.parentScreen.SetShuffle(0)
+    if command = "shuffle" then 
+ 
+        if obj.IsShuffled then 
+            obj.SetShuffle(0)
+            m.SetButton(command, "Shuffle: Off")
+        else 
+            obj.SetShuffle(1)
+            m.SetButton(command, "Shuffle: On")
+        end if
+     
+        ' buttons swapped, refresh dialog/slideshow screens
+        m.Refresh()
+        obj.Refresh()
+
+        ' keep dialog open
+        handled = false
     end if
 
-    ' For now, close the dialog after any button press instead of trying to
-    ' refresh the buttons based on the new state.
-    return true
+    ' close the dialog 
+    return handled
 end function
 
 
@@ -218,13 +234,11 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
                 m.OverlayToggle()
             else if msg.GetIndex() = 4 then 
                 ' left: previous
-                'm.OverlayToggle("show",invalid,"previous")
-                m.userRequest = getEpoch()
+                m.userRequest = true
                 m.prev()
             else if msg.GetIndex() = 5 then 
                 ' right: next
-                'm.OverlayToggle("show",invalid,"next")
-                m.userRequest = getEpoch()
+                m.userRequest = true
                 m.next()
             else if msg.GetIndex() = 6 then
                 ' we may do something different based on physical remote 
@@ -439,25 +453,17 @@ sub ICnonIdle(reset=false)
 end sub
 
 sub ICphotoPlayerNext()
+    Debug("ICphotoPlayerNext:: next called")
+
     if m.PhotoCount = 1 then return 
 
-    ' allow the user to quickly press next button without requesting image
-    ' this could be more fancy -- try and display the image right when they stop (timers) 
-    ' but this seems to work good enough
-    doRequest = true
+    ' allow the user to quickly press next button
     if m.userRequest <> invalid then 
-        diff = int(m.userRequest-m.lastUserRequest)
-        if diff = 0 then 
-            doRequest = false
-            Debug("Next request less than a second apart -- deferring http request")
-        end if 
-        m.lastUserRequest = m.userRequest
+        ' cancel any pending request as we are trying to view the next image 
+        Debug("ICphotoPlayerNext:: cancel any pending requests and start fresh on screenID: " + tostr(m.screenID))
+        GetViewController().CancelRequests(m.ScreenID)
         m.userRequest = invalid
     end if
-
-    ' cancel any pending request as we are trying to view the next image 
-    Debug("ICphotoPlayerNext:: cancel any pending requests and start fresh on screenID: " + tostr(m.screenID))
-    GetViewController().CancelRequests(m.ScreenID)
 
     Debug("ICphotoPlayerNext:: viewing:" + tostr(m.curIndex))
 
@@ -477,11 +483,7 @@ sub ICphotoPlayerNext()
 
     m.curindex = i
 
-    ' request/set in the image ( http or cached )
-    if doRequest then 
-        Debug("ICphotoPlayerNext:: requesting:" + tostr(m.curIndex))
-        m.GetSlideImage()
-    end if
+    m.GetSlideImage()
 
     ' increment the next index even if we are unsuccessful at retrieving the image
     ' this will allow us to move past failures ( we will show an error after too many failures )
@@ -490,38 +492,30 @@ sub ICphotoPlayerNext()
 end sub
 
 sub ICphotoPlayerPrev()
+    Debug("ICphotoPlayerPrev:: previous called")
     if m.PhotoCount = 1 then return 
 
     ' allow the user to quickly press next button without requesting image
-    doRequest = true
     if m.userRequest <> invalid then 
-        diff = int(m.userRequest-m.lastUserRequest)
-        if diff = 0 then 
-            doRequest = false
-            Debug("Next request less than a second apart -- deferring http request")
-        end if 
-        m.lastUserRequest = m.userRequest
+        ' cancel any pending request as we are trying to view the previous image 
+        Debug("ICphotoPlayerPrev:: cancel any pending requests and start fresh on screenID: " + tostr(m.screenID))
+        GetViewController().CancelRequests(m.ScreenID)
         m.userRequest = invalid
     end if
 
-    ' cancel any pending request as we are trying to view the previous image 
-    Debug("ICphotoPlayerPrev:: cancel any pending requests and start fresh on screenID: " + tostr(m.screenID))
-    GetViewController().CancelRequests(m.ScreenID)
-
-    Debug("ICphotoPlayerNext:: viewing:" + tostr(m.curIndex))
+    Debug("ICphotoPlayerPrev:: viewing:" + tostr(m.curIndex))
 
     ' calculate the previous index to view
     i=m.curindex-1
     if i < 0 then i = m.context.count()-1
 
     m.curindex=i
-    Debug("ICphotoPlayerNext:: requesting:" + tostr(m.curIndex))
 
     ' request/set in the image ( http or cached )
     m.GetSlideImage()
 
     m.nextindex = i+1
-    Debug("ICphotoPlayerNext:: next:" + tostr(m.nextIndex))
+    Debug("ICphotoPlayerPrev:: next:" + tostr(m.nextIndex))
 end sub
 
 sub ICphotoPlayerPause()
@@ -571,7 +565,8 @@ Sub ICphotoPlayerSetShuffle(shuffleVal)
     NowPlayingManager().timelines["photo"].attrs["shuffle"] = tostr(shuffleVal)
 End Sub
 
-function ICgetSlideImage(bufferNext=false,firstImage=false)
+function ICgetSlideImage(bufferNext=false,firstImage=false, FromMetadataRequest = false)
+
     ' purge expired metadata records -- this must be before any other calls
     if m.CachedMetadata > 500 then m.PurgeMetadata()
 
@@ -581,7 +576,7 @@ function ICgetSlideImage(bufferNext=false,firstImage=false)
     if bufferNext then 
         ' normally we load the next image when bufferNext is set
         ' if firstImage, then we buffer the current image
-        if NOT firstImage then 
+        if firstImage <> invalid and NOT firstImage then 
             bufferIndex = itemIndex+1
             if bufferIndex > m.context.count()-1 then bufferIndex = 0
             itemIndex = bufferIndex
@@ -590,20 +585,25 @@ function ICgetSlideImage(bufferNext=false,firstImage=false)
 
     item = m.context[itemIndex]
 
-    if item.url = invalid then  
-        container = createPlexContainerForUrl(item.server, invalid, item.key)
-        if container <> invalid then 
-            orig = item
-            item = container.getmetadata()[0]
-            if item <> invalid then 
-                ' anything we need to set before we reset the item
-                ' * OrigIndex might exist if shuffled
-                if m.context[itemIndex].OrigIndex <> invalid then item.OrigIndex = m.context[itemIndex].OrigIndex
-                m.context[itemIndex] = item
-                m.context[itemIndex].orig = orig
-                m.CachedMetadata = m.CachedMetadata+1
-            end if
+    ' send a request for the metadata/url and return
+    ' we must have this infor before we can request/save/show the image
+    if item.url = invalid and FromMetadataRequest = false then  
+        request = item.server.CreateRequest("", item.key )
+        context = CreateObject("roAssociativeArray")
+        context.requestType = "slideshowMetadata"
+        context.bufferNext = bufferNext
+        context.ItemIndex = itemIndex
+        context.firstImage = firstImage
+        context.server = item.server
+    
+        GetViewController().StartRequest(request, m, context)
+
+        if m.IsPaused = false and NOT bufferNext  then 
+            Debug("Deactivate slideshow Timer.. had to request metadata for image ( before downloading )")
+            m.Timer.Active = false
         end if
+        return false
+
     end if
 
     ' location/name of the cached file ( to read or to save )
@@ -661,7 +661,7 @@ function ICgetSlideImage(bufferNext=false,firstImage=false)
     request.EnableEncodings(true)
     request.SetUrl(item.url)
     context = CreateObject("roAssociativeArray")
-    context.requestType = "slideshow"
+    context.requestType = "slideshowImage"
     context.localFilePath = localFilePath
     context.bufferNext = bufferNext
     context.firstImage = firstImage
@@ -673,7 +673,10 @@ function ICgetSlideImage(bufferNext=false,firstImage=false)
     end if
     GetViewController().StartRequest(request, m, context, invalid, localFilePath)
 
-    if NOT BufferNext or FirstImage then m.GetSlideImage(true)
+    if NOT BufferNext then 
+        Debug("GetSlideImage:: starting GetSlideImage again as a next buffer request")
+        m.GetSlideImage(true)
+    end if
 
     return false ' false means we wait for response
 end function
@@ -683,9 +686,9 @@ sub ICPurgeMetadata()
     Debug("Purging Full Metadata from " + tostr(m.context.count()) + " items")
     count = 0
     for index = 0 to m.context.count()-1
-        if m.context[index].orig <> invalid then 
+        if m.context[index].origItem <> invalid then 
             count = count+1
-            m.context[index] = m.context[index].orig
+            m.context[index] = m.context[index].origItem
         end if
     next
     m.CachedMetadata = 0
@@ -703,9 +706,14 @@ sub ICPurgeLocalFiles()
         m.LocalFiles = []   ' container now empty
         m.LocalFileSize = 0 ' total size used now 0
         Debug("    Done. Total Files left:" + tostr(m.LocalFiles.count()))
+        print ListDir("tmp:/")
     else 
         Debug("Purge files called -- no files to purge")
     end if
+
+    Debug("screen PurgeCachedImages() called")
+    m.screen.PurgeCachedImages()
+
     Debug("Running Garbage Collector")
     RunGarbageCollector()
 end sub
@@ -770,79 +778,129 @@ end function
 
 Sub photoSlideShowOnUrlEvent(msg, requestContext)
 
- if msg.GetResponseCode() = 200 then 
-        headers = msg.GetResponseHeaders()
-        obj = CreateObject("roAssociativeArray")
-
-        obj.localFilePath = requestContext.localFilePath
-
-        ' get image metadata (width/height)
-        ImageMeta = CreateObject("roImageMetadata")
-        ImageMeta.SetUrl(obj.localFilePath)
-        obj.metadata = ImageMeta.GetMetadata()
-
-        ' verify we have a valid image -- show over and return if invalid
-        if obj.metadata.width = 0 or obj.metadata.height = 0 then 
-            Debug("Failed to write image -- consider purging local cache (maybe full?)")
-            m.setImageFailureInfo("failed to save image")
-            ' show the failure on the every 5th consecutive failure
-            showFailureInfo = m.ImageFailureCount/5
-            if int(showFailureInfo) = showFailureInfo then m.OverlayToggle("forceShow")
-            m.purgeSlideImages() ' cleanup the local cached images
-            return
-        end if
-
-        ' get size of image from headers -- fall back to reading from tmp
-        numBytes = 0
-        if headers["Content-Length"] <> invalid then
-            numBytes = headers["Content-Length"].toInt()
-            Debug("Header Response - bytes:" + tostr(numbytes))
-        else 
-            ba=CreateObject("roByteArray")
-            ba.ReadFile(obj.localFilePath)
-            numBytes = ba.Count()
-            Debug("Fall back to reading localfile for size - bytes" + tostr(numbytes))
-        end if
-
-        m.LocalFileSize = int(m.LocalFileSize+numBytes) ' we will fall back to image count if we fail to get bytes for cleanup
-
-        ' verify the height = canvas height ( scale to resize ) -- works for HD/SD
-        if obj.metadata.height < m.canvasrect.h then 
-            mp = m.canvasrect.h/obj.metadata.height
-            obj.metadata.width = int(mp*obj.metadata.width)
-            obj.metadata.height = m.canvasrect.h
-        end if
-
-        ' after height scale - veriy the width is < canvas width
-        if obj.metadata.width > m.canvasrect.w then 
-            mp = m.canvasrect.w/obj.metadata.width
-            obj.metadata.height = int(mp*obj.metadata.height)
-            obj.metadata.width = m.canvasrect.w
-        end if
-
-        ' set UnderScan -- TODO(ljunkie) verify this is right fow other TV's
-        obj.metadata.height = int(obj.metadata.height*((100-m.UnderScan)/100))
-        obj.metadata.width = int(obj.metadata.width*((100-m.UnderScan)/100))
-
-        ' container to know what file(s) we have created to purge later
-        m.LocalFiles.Push(obj)
-
-        ' current image to display
-        ' skip if it is a bufferNext and NOT firstImage request ( we preload the next image )
-        if NOT requestContext.bufferNext or requestContext.firstImage then 
-            Debug(tostr(obj.localFilePath) + " saved to cache (current)")
-            m.CurFile = obj
-            m.ShowSlideImage()
-        else 
-            Debug(tostr(obj.localFilePath) + " saved to cache (next image buffer)")
-        end if
-    else 
-        ' urlEventFailure - nothing to see here
-        failureReason = msg.GetFailureReason()
+    ' metadata request: set the metadata for the response and try GetSlideImage again 
+    '  will save/show image, save image if next buffer, or re-request metadata on failure
+    if requestContext.requestType = "slideshowMetadata" then 
         url = tostr(requestContext.Request.GetUrl())
-        Debug("Got a " + tostr(msg.GetResponseCode()) + " response from " + url + " - " + tostr(failureReason))
-        m.setImageFailureInfo(failureReason)
-    end if
+
+        if msg.GetResponseCode() = 200 then 
+            Debug("Got a " + tostr(msg.GetResponseCode()) + " response from " + url)
+
+            origItem = m.context[requestContext.ItemIndex]
+            xml = CreateObject("roXMLElement")
+            xml.Parse(msg.GetString())
+            response = CreateObject("roAssociativeArray")
+            response.xml = xml
+            response.server = requestContext.server
+            response.sourceUrl = requestContext.Request.GetUrl()
+            container = createPlexContainerForXml(response)
+            item = container.getmetadata()[0]
+
+            if item <> invalid and item.url <> invalid then 
+                ' anything we need to set before we reset the item
+                ' * OrigIndex might exist if shuffled
+                if m.context[requestContext.ItemIndex].OrigIndex <> invalid then item.OrigIndex = m.context[requestContext.ItemIndex].OrigIndex
+                m.context[requestContext.ItemIndex] = item
+                m.context[requestContext.ItemIndex].origItem = origItem
+                m.CachedMetadata = m.CachedMetadata+1
+            end if
+        else 
+            ' urlEventFailure - nothing to see here
+            failureReason = msg.GetFailureReason()
+            Debug("Got a " + tostr(msg.GetResponseCode()) + " response from " + url + " - " + tostr(failureReason))
+            m.setImageFailureInfo(failureReason)
+        end if  
+
+        ' Success or Failure: send the GetSlideImage again ( either we will re-request metadata OR show the image)
+        ' - also pass a third variable to NOT request the metadta again if this as a next image buffer request (possible loop)
+
+        if m.IsPaused = false then  
+            Debug("Re-activate slideshow Timer.. metadata request completed")
+            m.Timer.Mark()
+            m.Timer.Active = true
+        end if
+
+        Debug("photoSlideShowOnUrlEvent:: GetSlideImage called")
+	m.GetSlideImage(requestContext.bufferNext, false, true)
+
+    else if requestContext.requestType = "slideshowImage" then 
+
+        ' Image Request Response: save and show image
+        if msg.GetResponseCode() = 200 then 
+            headers = msg.GetResponseHeaders()
+            obj = CreateObject("roAssociativeArray")
+    
+            obj.localFilePath = requestContext.localFilePath
+    
+            ' get image metadata (width/height)
+            ImageMeta = CreateObject("roImageMetadata")
+            ImageMeta.SetUrl(obj.localFilePath)
+            obj.metadata = ImageMeta.GetMetadata()
+    
+            ' verify we have a valid image -- show over and return if invalid
+            if obj.metadata.width = 0 or obj.metadata.height = 0 then 
+                Debug("Failed to write image -- consider purging local cache (maybe full?)")
+                m.setImageFailureInfo("failed to save image")
+                ' show the failure on the every 5th consecutive failure
+                showFailureInfo = m.ImageFailureCount/5
+                if int(showFailureInfo) = showFailureInfo then m.OverlayToggle("forceShow")
+                m.purgeSlideImages() ' cleanup the local cached images
+                return
+            end if
+    
+            ' get size of image from headers -- fall back to reading from tmp
+            numBytes = 0
+            if headers["Content-Length"] <> invalid then
+                numBytes = headers["Content-Length"].toInt()
+                Debug("Header Response - bytes:" + tostr(numbytes))
+            else 
+                ba=CreateObject("roByteArray")
+                ba.ReadFile(obj.localFilePath)
+                numBytes = ba.Count()
+                Debug("Fall back to reading localfile for size - bytes" + tostr(numbytes))
+            end if
+    
+            m.LocalFileSize = int(m.LocalFileSize+numBytes) ' we will fall back to image count if we fail to get bytes for cleanup
+    
+            ' verify the height = canvas height ( scale to resize ) -- works for HD/SD
+            if obj.metadata.height < m.canvasrect.h then 
+                mp = m.canvasrect.h/obj.metadata.height
+                obj.metadata.width = int(mp*obj.metadata.width)
+                obj.metadata.height = m.canvasrect.h
+            end if
+    
+            ' after height scale - veriy the width is < canvas width
+            if obj.metadata.width > m.canvasrect.w then 
+                mp = m.canvasrect.w/obj.metadata.width
+                obj.metadata.height = int(mp*obj.metadata.height)
+                obj.metadata.width = m.canvasrect.w
+            end if
+    
+            ' set UnderScan -- TODO(ljunkie) verify this is right fow other TV's
+            obj.metadata.height = int(obj.metadata.height*((100-m.UnderScan)/100))
+            obj.metadata.width = int(obj.metadata.width*((100-m.UnderScan)/100))
+    
+            ' container to know what file(s) we have created to purge later
+            m.LocalFiles.Push(obj)
+    
+            ' current image to display
+            ' skip if it is a bufferNext and NOT firstImage request ( we preload the next image )
+            if NOT requestContext.bufferNext or requestContext.firstImage then 
+                Debug(tostr(obj.localFilePath) + " saved to cache (current)")
+                m.CurFile = obj
+                m.ShowSlideImage()
+            else 
+                Debug(tostr(obj.localFilePath) + " saved to cache (next image buffer)")
+            end if
+        else 
+            ' urlEventFailure - nothing to see here
+            failureReason = msg.GetFailureReason()
+            url = tostr(requestContext.Request.GetUrl())
+            Debug("Got a " + tostr(msg.GetResponseCode()) + " response from " + url + " - " + tostr(failureReason))
+            m.setImageFailureInfo(failureReason)
+        end if
+    end if ' End request image
+
 
 End Sub
 
@@ -921,10 +979,10 @@ sub photoShowContextMenu(obj = invalid,force_show = false, forceExif = true)
         
         
         if GetViewController().IsSlideShowPlaying() then
-            if m.isShuffled then 
-                dialog.SetButton("UnshufflePhoto", "Unshuffle Photos")
-            else 
-                dialog.SetButton("shufflePhoto", "Shuffle Photos")
+            if m.IsShuffled then
+                dialog.SetButton("shuffle", "Shuffle: On")
+            else
+                dialog.SetButton("shuffle", "Shuffle: Off")
             end if
         end if
 
@@ -1155,4 +1213,9 @@ sub PhotoPlayerCheckLoaded(obj,index = 0)
         ' reset the initial item if it was already loaded ( usually the case )
         if item.key <> invalid then obj.context[index] = item
     end if
+end sub
+
+sub PhotoPlayerRefresh() 
+    ' show the current status in the overlay on refresh
+    m.OverlayToggle("forceShow")
 end sub

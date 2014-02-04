@@ -748,6 +748,7 @@ Function vcCreateICphotoPlayer(obj, contextIndex=invalid, show=true, shuffled=fa
         screen.isSlideShow = false
     end if
 
+    ' do not wait for the image to download ( user should see a response we are playing the slideshow )
     if show then screen.Show()
 
     if dialog <> invalid then dialog.close()

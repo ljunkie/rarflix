@@ -423,11 +423,12 @@ Sub audioPlayerShowContextMenu()
         append = " Audio"
         variable = 0 ' variable buttongs.. we might have to +1 our focusedButton - logic will break if we add more buttons, so keep note of that
 
+        ' shuffle for slideshow needs to be unique ( music will have a shuffle button too )
         if m.slideshow.isShuffled then 
-            dialog.SetButton("UnshufflePhoto", "Unshuffle Photos")
+            dialog.SetButton("shufflePhoto", "Photo Shuffle: On")
             variable = variable +1
         else 
-            dialog.SetButton("shufflePhoto", "Shuffle Photos")
+            dialog.SetButton("shufflePhoto", "Photo Shuffle: Off")
             variable = variable +1
         end if
 
@@ -542,11 +543,21 @@ Function audioPlayerMenuHandleButton(command, data) As Boolean
     else if command = "close" then
         obj.focusedbutton = 0 
         return true
-
     else if command = "shufflePhoto" then
-        obj.slideshow.SetShuffle(1)
-    else if command = "UnshufflePhoto" then
-        obj.slideshow.SetShuffle(0)
+        if obj.slideshow.IsShuffled then 
+            obj.slideshow.SetShuffle(0)
+            m.SetButton(command, "Photo Shuffle: Off")
+        else 
+            obj.slideshow.SetShuffle(1)
+            m.SetButton(command, "Photo Shuffle: On")
+        end if
+
+        ' refresh buttons and slideshow overlay
+        m.Refresh()
+        obj.slideshow.Refresh()
+
+        ' keep dialog open
+        return false
     end if
 
     ' For now, close the dialog after any button press instead of trying to
