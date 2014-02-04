@@ -37,11 +37,20 @@ Function createFULLGridScreen(item, viewController, style = "flat-movie", SetDis
     '  just need a quick way to create a plexContainer request with 0 results returned ( to be quick )
     container = createPlexContainerForUrlSizeOnly(item.server, item.sourceUrl ,detailKey)    
 
-    ' TODO - this could use some work ( it should be ok right now, but we might want to add in all the logic for all the screen types )
-    ' grid_size = number of rows across
-    grid_size = 5
-    if style = "flat-square" then grid_size = 7
-    if NOT GetGlobal("IsHD") = true and style = "flat-landscape" then grid_size = 4
+    ' grid posters per row ( this should cover all of them as of 2013-03-04)
+    grid_size = 5 ' default HD/SD=5
+    if style = "flat-square" then 
+        ' HD=7, SD=6
+        grid_size = 7
+        if NOT GetGlobal("IsHD") = true then grid_size = 6
+    else if style = "flat-landscape" or style = "flat-16x9" or style = "mixed-aspect-ratio" then 
+        ' HD=5, SD=4
+        grid_size = 5
+        if NOT GetGlobal("IsHD") = true then grid_size = 4
+    else if style = "two-row-flat-landscape-custom" or style = "four-column-flat-landscape" then 
+        ' HD/SD = 4
+        grid_size = 4
+    end if
 
     obj.Loader = createFULLgridPaginatedLoader(container, grid_size, grid_size, item)
     obj.Loader.Listener = obj
