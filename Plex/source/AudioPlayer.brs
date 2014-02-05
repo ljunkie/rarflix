@@ -421,7 +421,17 @@ Sub audioPlayerShowContextMenu()
     ' slide shows get more buttons
     if m.slideshow <> invalid
         append = " Audio"
-        variable = 0 ' variable buttongs.. we might have to +1 our focusedButton - logic will break if we add more buttons, so keep note of that
+        ' variable buttons.. we might have to +1 our focusedButton 
+        ' - logic will break if we add more buttons, so keep note of that
+        variable = 0 
+        if (m.slideshow.isPaused and NOT m.slideshow.forceresume = true) or m.isPaused then
+            dialog.SetButton("resumeAll", "Resume All")
+            variable = variable +1
+        end if
+        if NOT m.slideshow.isPaused or m.isPlaying then 
+            dialog.SetButton("pauseAll", "Pause All")
+            variable = variable +1
+        end if
 
         ' shuffle for slideshow needs to be unique ( music will have a shuffle button too )
         if m.slideshow.isShuffled then 
@@ -432,15 +442,6 @@ Sub audioPlayerShowContextMenu()
             variable = variable +1
         end if
 
-        if m.slideshow.isPaused or m.isPaused then
-            dialog.SetButton("resumeAll", "Resume All")
-            variable = variable +1
-        end if
-        if NOT m.slideshow.isPaused or m.isPlaying then 
-            dialog.SetButton("pauseAll", "Pause All")
-            variable = variable +1
-        end if
-        if variable = 2 then focusbutton = focusbutton + 1
     end if
 
     if m.IsPlaying then
