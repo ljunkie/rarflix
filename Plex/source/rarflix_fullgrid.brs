@@ -64,12 +64,13 @@ Function createFULLGridScreen(item, viewController, style = "flat-movie", SetDis
 End Function
 
 function createPlexContainerForUrlSizeOnly(server, sourceUrl, detailKey) 
-    Debug("createPlexContainerForUrlSizeOnly:: determine size of xml results")
+    Debug("createPlexContainerForUrlSizeOnly:: determine size of xml results -- X-Plex-Container-Size=0")
     httpRequest = server.CreateRequest(sourceurl, detailKey)
     httpRequest.AddHeader("X-Plex-Container-Start", "0")
     httpRequest.AddHeader("X-Plex-Container-Size", "0")
     Debug("Fetching content from server at query URL: " + tostr(httpRequest.GetUrl()))
-    response = GetToStringWithTimeout(httpRequest, 60)
+    ' used to be 60 seconds, but upped to 90 -- I still think this is too high. If the server isn't responding with to a request of 0 items, something must be wrong. 
+    response = GetToStringWithTimeout(httpRequest, 90)
     xml=CreateObject("roXMLElement")
     if not xml.Parse(response) then Debug("Can't parse feed: " + tostr(response))
     Debug("Finished - Fetching content from server at query URL: " + tostr(httpRequest.GetUrl()))
