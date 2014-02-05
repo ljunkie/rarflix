@@ -809,7 +809,7 @@ Function ShowPleaseWait(title As dynamic, text As dynamic) As Object
     dialog.SetMessagePort(port)
     dialog.SetTitle(title)
     dialog.ShowBusyAnimation()
-'    dialog.EnableOverlay(true)
+    dialog.EnableOverlay(true) ' required for image canvas
     dialog.Show()
     return dialog
 End Function
