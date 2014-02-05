@@ -118,8 +118,6 @@ Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, ite
             if index < 5000 then 
                 keys.Push(loader.sourceurl + f + "X-Plex-Container-Start="+tostr(index)+"&X-Plex-Container-Size="+tostr(increment))
                 loader.names.Push(name)
-            else 
-               print "to many rows -- skipping " + tostr(name)
             end if
         next
 
