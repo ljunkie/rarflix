@@ -855,7 +855,7 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid, sourceR
     'sec_metadata = getSectionType() -- todo later - we can play appClips if they are in the photosection, but other adverse effects happen
     if item.nodename <> invalid and item.nodename = "Directory" then
         if item.ContentType = "photo" then 
-            Debug("--- trying to play photos from a directory")
+            Debug("vcCreatePlayerForItem:: trying to play photo from a directory")
 
             obj = {}:dummyItem = {}
             dummyItem.server = item.server
@@ -871,14 +871,17 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid, sourceR
                 end for
             end if
         else if item.ContentType = "album" then
-            Debug("--- trying to play an album from a directory")
+            Debug("vcCreatePlayerForItem:: trying to play album from a directory")
             container = createPlexContainerForUrl(item.server, item.server.serverurl, item.key)
             context = container.getmetadata()
             AudioPlayer().Stop()
             return m.CreateScreenForItem(context, 0, invalid)
          end if
     else if item.ContentType = "photo" then '  and (item.nodename = invalid or item.nodename <> "Directory") then 
-        obj = {}:obj.context = context
+        Debug("vcCreatePlayerForItem:: creating photo player")
+        obj = {}
+        obj.context = context
+        obj.sourceReloadUrl = sourceReloadUrl
         return m.CreateICphotoPlayer(obj, contextIndex, true, false, true)
     else if item.ContentType = "audio" then
         AudioPlayer().Stop()

@@ -1054,7 +1054,10 @@ sub ICreloadSlideContext(forced=false)
 
             newCount = obj.context.count():curCount = m.context.count()
             Debug("Cur Items: " + tostr(curCount)):Debug("New Items: " + tostr(newCount))
-            ' we might want to return if newCount = 1 --- if someone sets the sourceReloadURL incorrectly, we might use a direct item hit (wrong)
+
+            ' return if newCount = 1 -- possible sourceReloadURL/item.sourceurl is set to the specific item key
+            if newCount = 1 then Debug("not reloading with 1 item -- we probably queried the direct item"):return
+
             if forceReloadTest or (newCount > 0 and newCount <> curCount) then 
                 cleanContext = ICphotoPlayerCleanContext(obj.context,0)
                 cleanCount = cleanContext.context.count()
@@ -1062,7 +1065,7 @@ sub ICreloadSlideContext(forced=false)
                 if forceReloadTest or (cleanCount > 0 and cleanCount <> curCount) then 
                     m.context = cleanContext.context
                     Debug("reloading slideshow with new context " + tostr(m.context.count()) + " items")
-                    if m.isShuffled then 
+                    if m.isShuffled and m.Context.count() > 1 then 
                         Debug("slideshow was shuffled - we need to reshuffle due to new context")
                         ShuffleArray(m.Context, m.CurIndex)
                         Debug("shuffle done")
