@@ -1007,6 +1007,10 @@ sub ICreloadSlideContext()
         Debug("slideshow completing loop, checking for new content")
         m.lastReload = getEpoch()
         if m.item <> invalid and m.item.server <> invalid and (m.item.sourceurl <> invalid or m.sourceReloadURL <> invalid) then 
+            Debug("purge any cache before attempting to reload context")
+            m.purgeSlideImages() ' cleanup the local cached images
+            m.purgeMetadata() ' cleanup the retrieved metadata during the slide show ( maybe just set invalid )
+
             obj = {}:dummyItem = {}
             dummyItem.server = m.item.server
             ' we really should only be reloading from the sourceReloadURL ( m.item.sourcurl is now most likely the specific item.. no good )
