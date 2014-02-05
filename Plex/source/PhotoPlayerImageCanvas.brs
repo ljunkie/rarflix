@@ -51,13 +51,11 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     if type(context) = "roArray" then
         obj.item = context[contextIndex]
         obj.CurIndex = contextIndex
-        obj.PhotoCount = context.count()
         obj.context = context
     else 
         ' this actually shouldn't be possible as we always pass the full context
         obj.context = [context]
         obj.CurIndex = 0
-        obj.PhotoCount = 1
     end if
    
     obj.isSlideShow = slideShow       ' if we came in through the play/slide show vs showing a shingle item
@@ -148,7 +146,7 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
         GetViewController().AddTimer(obj.TimerOverlay, obj)
     end if
 
-    obj.GetSlideImage(false,true) 'bufferNext=false/firstImage=true
+    obj.GetSlideImage() 'Get first image!
 
     return obj
 
@@ -232,14 +230,22 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
             else if msg.GetIndex() = 3 then 
                 m.overlayEnabled = not(m.OverlayOn)
                 m.OverlayToggle()
-            else if msg.GetIndex() = 4 then 
-                ' left: previous
+            else if msg.GetIndex() = 4 or msg.GetIndex() = 5 then 
+                ' we do not load the Full Context to just display one image
+                ' - however lets allow EU to browse full context 
+                if NOT m.isSlideShow and NOT m.FullContext = true then 
+                    GetPhotoContextFromFullGrid(m,m.item.origindex) 
+                end if 
+
                 m.userRequest = true
-                m.prev()
-            else if msg.GetIndex() = 5 then 
-                ' right: next
-                m.userRequest = true
-                m.next()
+
+                if msg.GetIndex() = 4 then 
+                    ' left: previous
+                    m.prev()
+                else if msg.GetIndex() = 5 then 
+                    ' right: next
+                    m.next()
+                end if
             else if msg.GetIndex() = 6 then
                 ' we may do something different based on physical remote 
                 if NOT m.isLegacyRemote then 
@@ -333,7 +339,7 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
             ' count of the image being display
             ' note: if the image failed to show, we will still be showing the previous image and overlay 
             ' info will be accurate. The count will show what we *should* be on though
-            overlayTopRight = tostr(m.curindex+1) + " of " + tostr(m.PhotoCount)
+            overlayTopRight = tostr(m.curindex+1) + " of " + tostr(m.context.count())
             overlayTopLeft = item.TextOverlayUL
             overlayCenter = item.title
             overlayErrorBG = "#70FF0000"
@@ -386,7 +392,7 @@ end sub
 sub ICphotoPlayerOnTimerExpired(timer)
 
     if timer.Name = "slideshow" then
-        if m.PhotoCount > 1 then 
+        if m.context.count() > 1 then 
             Debug("ICphotoPlayerOnTimerExpired:: slideshow popped")
             m.Next()
         end if
@@ -455,7 +461,7 @@ end sub
 sub ICphotoPlayerNext()
     Debug("ICphotoPlayerNext:: next called")
 
-    if m.PhotoCount = 1 then return 
+    if m.context.count() = 1 then return 
 
     ' allow the user to quickly press next button
     if m.userRequest <> invalid then 
@@ -478,6 +484,7 @@ sub ICphotoPlayerNext()
     ' reset index to 0 if we are at the end 
     ' reload context if enabled in prefs
     if i > m.context.count()-1 then 
+        Debug("ICphotoPlayerNext:: end of loop, calling reloadSlideContext() and restarting loop [not exiting]")
         i=0:m.reloadSlideContext()
     end if
 
@@ -493,7 +500,7 @@ end sub
 
 sub ICphotoPlayerPrev()
     Debug("ICphotoPlayerPrev:: previous called")
-    if m.PhotoCount = 1 then return 
+    if m.context.count() = 1 then return 
 
     ' allow the user to quickly press next button without requesting image
     if m.userRequest <> invalid then 
@@ -519,7 +526,7 @@ sub ICphotoPlayerPrev()
 end sub
 
 sub ICphotoPlayerPause()
-    if m.PhotoCount = 1 then return 
+    if m.context.count() = 1 then return 
     m.IsPaused = true
     m.Timer.Active = false
     m.OverlayToggle("show","Paused")
@@ -527,9 +534,9 @@ sub ICphotoPlayerPause()
 end sub
 
 sub ICphotoPlayerResume()
-    if m.PhotoCount = 1 then return 
+    if m.context.count() = 1 then return 
     m.IsPaused = false
-    m.isSlideShow = true ' EU can start a slideshow from a single show ( if PhotoCount > 1 )
+    m.isSlideShow = true
     m.Timer.Active = true
     m.OverlayToggle("show","Resumed")
     NowPlayingManager().UpdatePlaybackState("photo", m.Context[m.CurIndex], "playing", 0)
@@ -540,7 +547,7 @@ sub ICphotoPlayerStop()
 end sub
 
 Sub ICphotoPlayerSetShuffle(shuffleVal)
-    if m.PhotoCount = 1 then return 
+    if m.context.count() = 1 then return 
     newVal = (shuffleVal = 1)
     if newVal = m.IsShuffled then return
 
@@ -556,7 +563,7 @@ Sub ICphotoPlayerSetShuffle(shuffleVal)
     end if
 
     ' next photo = currentIndex+1, unless this is a start or end of the slideshow
-    if m.NextIndex <> invalid and m.CurIndex < m.PhotoCount - 1 then
+    if m.NextIndex <> invalid and m.CurIndex < m.context.count() - 1 then
         m.NextIndex = m.CurIndex + 1
     else
         m.NextIndex = 0 ' End or Start of slideShow
@@ -565,7 +572,11 @@ Sub ICphotoPlayerSetShuffle(shuffleVal)
     NowPlayingManager().timelines["photo"].attrs["shuffle"] = tostr(shuffleVal)
 End Sub
 
-function ICgetSlideImage(bufferNext=false,firstImage=false, FromMetadataRequest = false)
+function ICgetSlideImage(bufferNext=false, FromMetadataRequest = false)
+    if bufferNext =true and m.context.count() = 1 then 
+        Debug("cancelling bufferNext request -- context only contains 1 image")
+        return false
+    end if
 
     ' purge expired metadata records -- this must be before any other calls
     if m.CachedMetadata > 500 then m.PurgeMetadata()
@@ -575,12 +586,9 @@ function ICgetSlideImage(bufferNext=false,firstImage=false, FromMetadataRequest 
     itemIndex = m.curindex
     if bufferNext then 
         ' normally we load the next image when bufferNext is set
-        ' if firstImage, then we buffer the current image
-        if firstImage <> invalid and NOT firstImage then 
-            bufferIndex = itemIndex+1
-            if bufferIndex > m.context.count()-1 then bufferIndex = 0
-            itemIndex = bufferIndex
-        end if
+        bufferIndex = itemIndex+1
+        if bufferIndex > m.context.count()-1 then bufferIndex = 0
+        itemIndex = bufferIndex
     end if 
 
     item = m.context[itemIndex]
@@ -593,7 +601,6 @@ function ICgetSlideImage(bufferNext=false,firstImage=false, FromMetadataRequest 
         context.requestType = "slideshowMetadata"
         context.bufferNext = bufferNext
         context.ItemIndex = itemIndex
-        context.firstImage = firstImage
         context.server = item.server
     
         GetViewController().StartRequest(request, m, context)
@@ -610,16 +617,18 @@ function ICgetSlideImage(bufferNext=false,firstImage=false, FromMetadataRequest 
     if item <> invalid and item.ratingKey <> invalid and item.title <> invalid then 
         localFilePath = "tmp:/" + item.ratingKey + "_" + item.title + ".jpg"
     else 
-        Debug("skipping getSlideImage -- item context not loaded yet (server response failure or removed item?)")
+        Debug("getSlideImage:: item missing required metadata -- skipping -- [server response failure or removed item?]")
+        Debug("getSlideImage:: reloading context due to failure")
         ' maybe the context has changed on us? someone removed photos during a slideshow... or?
         ' reload the slide context.. safe to run multiple times as there is a expiration time
-        m.reloadSlideContext()
+        m.reloadSlideContext(true)
         return false
     end if 
 
     Debug("-- cached files: " + tostr(m.LocalFiles.count()))
     Debug("   bytes: " + tostr(m.LocalFileSize))
     Debug("      MB: " + tostr(int(m.LocalFileSize/1048576)))
+    Debug("-- cached metadata: " + tostr(m.CachedMetadata))
 
     ' Purge the local cache if we have more than X images or 10MB used on disk 
     if m.LocalFiles.count() > 500 or (m.LocalFileSize/1048576) > 5 then m.purgeSlideImages()
@@ -664,9 +673,8 @@ function ICgetSlideImage(bufferNext=false,firstImage=false, FromMetadataRequest 
     context.requestType = "slideshowImage"
     context.localFilePath = localFilePath
     context.bufferNext = bufferNext
-    context.firstImage = firstImage
 
-    if bufferNext and NOT firstImage then 
+    if bufferNext then 
         Debug("Get Slide Show Image (next image buffer): " + item.url + " save to " + localFilePath)
     else 
         Debug("Get Slide Show Image (current image): " + item.url + " save to " + localFilePath)
@@ -821,7 +829,7 @@ Sub photoSlideShowOnUrlEvent(msg, requestContext)
         end if
 
         Debug("photoSlideShowOnUrlEvent:: GetSlideImage called")
-	m.GetSlideImage(requestContext.bufferNext, false, true)
+	m.GetSlideImage(requestContext.bufferNext, true)
 
     else if requestContext.requestType = "slideshowImage" then 
 
@@ -884,8 +892,8 @@ Sub photoSlideShowOnUrlEvent(msg, requestContext)
             m.LocalFiles.Push(obj)
     
             ' current image to display
-            ' skip if it is a bufferNext and NOT firstImage request ( we preload the next image )
-            if NOT requestContext.bufferNext or requestContext.firstImage then 
+            ' skip if it is a bufferNext ( we preload the next image )
+            if NOT requestContext.bufferNext then 
                 Debug(tostr(obj.localFilePath) + " saved to cache (current)")
                 m.CurFile = obj
                 m.ShowSlideImage()
@@ -911,9 +919,9 @@ sub ICsetImageFailureInfo(failureReason=invalid)
         m.ImageFailureReason = failureReason
         m.ImageFailureCount = int(m.ImageFailureCount+1)
         Debug("    fail Count: " + tostr(m.ImageFailureCount))
-        ' show (force the overlay) on the every 100th failure OR on a failure on start
+        ' show (force the overlay) on the every 100th failure if we have files ( or every 5th if we don't )
         if m.LocalFiles.count() = 0 then 
-            showFailureInfo = 1
+            showFailureInfo = m.ImageFailureCount/5
         else 
             showFailureInfo = m.ImageFailureCount/100
         end if
@@ -995,16 +1003,23 @@ sub photoShowContextMenu(obj = invalid,force_show = false, forceExif = true)
 
 End sub
 
-sub ICreloadSlideContext()
-    if RegRead("slideshow_reload", "preferences", "disabled") <> "disabled" then 
+sub ICreloadSlideContext(forced=false)
+    if RegRead("slideshow_reload", "preferences", "disabled") <> "disabled" or forced = true then 
 
-        expireSec = 300 ' only reload every 5 minutes max ( stops delay from clicking back/forth between last and 1st image )
+        ' only reload every 5 minutes max  -- stops delay from clicking back/forth 
+        ' between last and 1st image. forced=true does NOT override this
+        expireSec = 300 
         if m.lastreload <> invalid and getEpoch()-m.lastReload < expireSec then 
             Debug("Skipping Reload " + tostr(getEpoch()-m.lastReload) + " seconds < expire seconds " + tostr(expireSec))
             return
         end if
 
-        Debug("slideshow completing loop, checking for new content")
+        if forced = true then 
+            Debug("ICreloadSlideContext:: checking for new content (forced)")
+        else 
+            Debug("ICreloadSlideContext:: checking for new content")
+        end if
+
         m.lastReload = getEpoch()
         if m.item <> invalid and m.item.server <> invalid and (m.item.sourceurl <> invalid or m.sourceReloadURL <> invalid) then 
             Debug("purge any cache before attempting to reload context")
@@ -1016,6 +1031,7 @@ sub ICreloadSlideContext()
             ' we really should only be reloading from the sourceReloadURL ( m.item.sourcurl is now most likely the specific item.. no good )
             ' TODO(ljunkie) we could also speed this up by creating a container with headers to return 0 items, just size and verify 
             dummyItem.sourceUrl = firstof(m.sourceReloadURL,m.item.sourceurl)
+            dummyItem.hideErrors = true ' do not show warning about loading errors
             if dummyItem.sourceUrl = invalid then Debug("no valid url to reload"):return
             PhotoMetadataLazy(obj, dummyItem, true)
 
@@ -1032,8 +1048,7 @@ sub ICreloadSlideContext()
                 Debug("New (cleaned) Items: " + tostr(cleanCount)) 
                 if forceReloadTest or (cleanCount > 0 and cleanCount <> curCount) then 
                     m.context = cleanContext.context
-                    m.PhotoCount = cleanCount
-                    Debug("reloading slideshow with new context " + tostr(m.PhotoCount) + " items")
+                    Debug("reloading slideshow with new context " + tostr(m.context.count()) + " items")
                     if m.isShuffled then 
                         Debug("slideshow was shuffled - we need to reshuffle due to new context")
                         ShuffleArray(m.Context, m.CurIndex)
@@ -1078,21 +1093,22 @@ sub GetPhotoContextFromFullGrid(obj,curindex = invalid, lazy=true)
 
     dialog=ShowPleaseWait("Loading Items... Please wait...","")
 
-    if obj.metadata.sourceurl = invalid then return
+    if obj.metadata <> invalid and obj.metadata.sourceurl <> invalid then 
+        sourceUrl = obj.metadata.sourceurl
+        server = obj.metadata.server
+    else if obj.item <> invalid and obj.item.sourceurl <> invalid then 
+        sourceUrl = obj.item.sourceurl
+        server = obj.item.server
+    end if
+    if sourceUrl = invalid or server = invalid then return
     if curindex = invalid then curindex = obj.curindex
 
     ' strip any limits imposed by the full grid - we need it all ( not start or container size)
-    r  = CreateObject("roRegex", "[?&]X-Plex-Container-Start=\d+\&X-Plex-Container-Size\=.*", "")
-    sourceUrl = obj.metadata.sourceurl
-    if r.IsMatch(sourceUrl) then  
-        Debug("--------------------------- OLD " + tostr(sourceUrl))
-        sourceUrl = r.replace(sourceUrl,"")
-        Debug("--------------------------- NEW " + tostr(sourceUrl))
-    end if
+    sourceUrl = rfStripAPILimits(sourceUrl)
 
     ' no quickly load the required metadata (lazy)
     dummyItem = {}
-    dummyItem.server = obj.metadata.server
+    dummyItem.server = server
     dummyItem.sourceUrl = sourceUrl
     dummyItem.hasWaitDialog = dialog
     PhotoMetadataLazy(obj, dummyItem, lazy)
@@ -1106,13 +1122,21 @@ sub PhotoMetadataLazy(obj, dummyItem, lazy = true)
     ' break api calls to 1k item chunks ( Roku has issues parsing large XML result sets )
     chunks = 5000
 
+    ' set some variables if invalid: we might be passing an empty object to fill ( we expect some results )
+    if obj.context = invalid then obj.context = []
+    if obj.CurIndex = invalid then obj.CurIndex = 0
+
     if dummyItem.showWait = true and dummyItem.hasWaitDialog = invalid then 
         dummyItem.hasWaitDialog=ShowPleaseWait("Loading Items... Please wait...","")
     end if
 
     ' verify we have enough info to continue ( server and sourceurl )
     if dummyItem.server = invalid or dummyItem.sourceUrl = invalid then 
-         ShowErrorDialog("Sorry! We were unable to load your photos [1].","Warning"):return
+        if NOT dummyItem.hideErrors = true then
+            ShowErrorDialog("Sorry! We were unable to load your photos [1].","Warning")
+        end if
+        if dummyItem.hasWaitDialog <> invalid then dummyItem.hasWaitDialog.close()
+        return 
     end if
 
     dummyItem.sourceUrl = rfStripAPILimits(dummyItem.sourceUrl)
@@ -1126,7 +1150,11 @@ sub PhotoMetadataLazy(obj, dummyItem, lazy = true)
 
     ' verify we have some results from the api to process
     if container = invalid or container.totalsize = invalid or container.totalsize.toint() < 1 then 
-         ShowErrorDialog("Sorry! We were unable to load your photos [2].","Warning"):return
+        if NOT dummyItem.hideErrors = true then
+            ShowErrorDialog("Sorry! We were unable to load your photos [2].","Warning")
+        end if
+        if dummyItem.hasWaitDialog <> invalid then dummyItem.hasWaitDialog.close()
+        return 
     end if
 
     ' OLD: container = createPlexContainerForUrl(dummyItem.server, invalid, dummyItem.sourceUrl)
@@ -1142,7 +1170,7 @@ sub PhotoMetadataLazy(obj, dummyItem, lazy = true)
 
         ' verify we have some results from the api to process
         if isnonemptystr(container.xml@header) AND isnonemptystr(container.xml@message) then
-            'ShowErrorDialog("Sorry! We were unable to process your photos.","Warning"):return
+            Debug("skipping results for item: " + tostr(index) + " - " + tostr(index+chunks) + "  reason: no results from " + tostr(newurl))
         else     
             ' parse the xml into objects
             nodes = container.xml.GetChildElements()
@@ -1182,7 +1210,11 @@ sub PhotoMetadataLazy(obj, dummyItem, lazy = true)
 
     ' verify we have some results 
     if results.count() = 0 then 
-        ShowErrorDialog("Sorry! We were unable to process your photos.","Warning"):return
+        if NOT dummyItem.hideErrors = true then
+            ShowErrorDialog("Sorry! We were unable to process your photos [3].","Warning")
+        end if
+        if dummyItem.hasWaitDialog <> invalid then dummyItem.hasWaitDialog.close()
+        return 
     end if
 
     obj.context = results:results = invalid

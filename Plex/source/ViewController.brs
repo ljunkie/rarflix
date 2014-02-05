@@ -710,8 +710,10 @@ End Function
 
 Function vcCreateICphotoPlayer(obj, contextIndex=invalid, show=true, shuffled=false, slideShow=false)
     ' verify we have all the conext loaded -- possible we create this from a normal row
-    dialog=ShowPleaseWait("Starting Photo Player... Please wait...","")
- 
+    dialog = invalid
+    if slideShow and obj.context.count() > 100 then 
+        dialog=ShowPleaseWait("Starting Photo Player... Please wait...","")
+    end if
     PhotoPlayerCheckLoaded(obj,contextIndex)        
 
     sourceReloadURL = invalid
@@ -732,6 +734,8 @@ Function vcCreateICphotoPlayer(obj, contextIndex=invalid, show=true, shuffled=fa
 
     screen = createICphotoPlayerScreen(context, contextIndex, m, shuffled, slideShow)
     screen.ScreenName = "Photo Player Image Canvas"
+    screen.FullContext = obj.FullContext
+
     if sourceReloadUrl <> invalid then screen.sourceReloadUrl = sourceReloadUrl
     Debug("vcCreateICphotoPlayer:: source reload url = " + tostr(sourceReloadUrl))
 

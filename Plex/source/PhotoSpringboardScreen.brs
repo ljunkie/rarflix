@@ -185,8 +185,8 @@ Function photoHandleMessage(msg) As Boolean
             Debug("Button command: " + tostr(buttonCommand))
             if buttonCommand = "slideshow" or buttonCommand = "show"  then
                 ' Playing Photos from springBoard in a FULL grid context
-                ' GetContextFromFullGrid(m,m.item.origindex) 
-                GetPhotoContextFromFullGrid(m,m.item.origindex) 
+                if buttonCommand = "slideshow" then GetPhotoContextFromFullGrid(m,m.item.origindex) 
+                ' for now we will skip loading the full context when we "SHOW" an image -- need to load though on the "next" request
 		if m.context.count() = 0 then
                     ShowErrorDialog("Sorry! We were unable to load your photos.","Warning")
                 else 
