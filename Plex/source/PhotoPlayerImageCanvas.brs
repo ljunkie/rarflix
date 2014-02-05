@@ -618,6 +618,7 @@ function ICgetSlideImage(bufferNext=false, FromMetadataRequest = false)
         localFilePath = "tmp:/" + item.ratingKey + "_" + item.title + ".jpg"
     else 
         Debug("getSlideImage:: item missing required metadata -- skipping -- [server response failure or removed item?]")
+        if item <> invalid then print item
         Debug("getSlideImage:: reloading context due to failure")
         ' maybe the context has changed on us? someone removed photos during a slideshow... or?
         ' reload the slide context.. safe to run multiple times as there is a expiration time
@@ -811,6 +812,18 @@ Sub photoSlideShowOnUrlEvent(msg, requestContext)
                 m.context[requestContext.ItemIndex] = item
                 m.context[requestContext.ItemIndex].origItem = origItem
                 m.CachedMetadata = m.CachedMetadata+1
+            else 
+                Debug("could not set context from metadata -- getmetadata() failed?")
+                print "------------- msg response string -------------------"
+                print msg.GetString()
+                print "------------- msg response string -------------------"
+                if item <> invalid then 
+                    print "item context invalid from getmetadata() -- missing url key?"
+                    print item
+                else 
+                    print "item context invalid from getmetadata() -- showing container"
+                    print container
+                end if
             end if
         else 
             ' urlEventFailure - nothing to see here
