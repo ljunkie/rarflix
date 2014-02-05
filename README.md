@@ -1,4 +1,4 @@
-# RARflix v3.1.12 (2014-02-05) -- Internal ALPHA release
+# RARflix v3.1.13 (2014-02-05) -- Internal ALPHA release
 Changes: https://github.com/ljunkie/rarflix/blob/test/notes/rarflix-change.log
 
 ### Modified Plex for Roku
