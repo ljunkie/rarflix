@@ -47,3 +47,25 @@ function rfStripAPILimits(url)
     end if
     return url
 end function
+
+function hasPendingRequest(context=invalid) as boolean
+    ' expects context to contain server/key ( ignores all others )
+    ' return true if we already have a pending request for the key on a specific server
+    if context = invalid then return false
+    if context.server = invalid or context.key = invalid then return false
+
+    pendingRequests = GetViewController().pendingrequests
+    if pendingRequests <> invalid then
+        for each id in pendingRequests
+            if pendingRequests[id] <> invalid and tostr(pendingRequests[id].key) = context.key then 
+                if pendingRequests[id].server.machineidentifier = context.server.machinentifier then 
+                      Debug("we already have a request pending for key: " + tostr(context.key) + " on server " + tostr(context.server.name) )
+                      return true
+                end if
+            end if 
+        end for 
+    end if
+
+    return false
+end function
+

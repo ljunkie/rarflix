@@ -674,9 +674,16 @@ Sub gridOnTimerExpired(timer)
         m.Activate(invalid)
     end if
 
-    ' keep loading fullGrid rows ever timer pop until complete
+    ' keep loading fullGrid rows every timer pop until complete ( complete=timer.StopRows )
     if timer.Name = "fullGridLoader" AND m.ViewController.IsActiveScreen(m) then
-    
+
+        ' do not load additional rows if we still have pending requests
+        pendingRows = (m.Loader.GetPendingRequestCount() > 0)
+        if pendingRows then 
+            Debug("waiting for pending rows to complete before we fire off additional requests. Pending: " + tostr(m.Loader.GetPendingRequestCount()) )
+            return
+        end if
+
         rfloaded = 0 ' container for total loaded rows
         for each lrow in  m.loader.contentArray
             if lrow.loadStatus = 2 then rfloaded = rfloaded+1

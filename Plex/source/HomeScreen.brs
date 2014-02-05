@@ -162,7 +162,7 @@ End Sub
 Sub homeScreenOnUrlEvent(msg, requestContext)
 
     ' nowplaying_sessions requests
-    if requestContext <> invalid and tostr(requestContext.name) = "nowplaying_sessions" then 
+    if requestContext <> invalid and tostr(requestContext.key) = "nowplaying_sessions" then 
         setNowPlayingGlobals(msg, requestContext)
     end if
 

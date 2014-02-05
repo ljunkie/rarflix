@@ -301,6 +301,11 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
                     nowPlaying.key = "/status/sessions"
                     nowPlaying.connectionUrl = connectionUrl
                     nowPlaying.requestType = "media"
+
+                    ' skip request if still pending. Might want to add this to others, 
+                    ' but this is the only one for now that has a timer ( auto reloads )
+                    if hasPendingRequest(nowPlaying) then return
+
                     m.AddOrStartRequest(nowPlaying, m.RowIndexes[row], startRequests)
                 else
                     m.Listener.OnDataLoaded(m.RowIndexes[row], [], 0, 0, true)

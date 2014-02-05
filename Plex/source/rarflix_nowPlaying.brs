@@ -89,11 +89,15 @@ sub homeCreateNowPlayingRequest()
         for each server in GetOwnedPlexMediaServers()
             ' only query server if available and supportsmultiuser (assuming nowPlaying works with multiuser enabled)
             if server.isavailable and server.supportsmultiuser then
-                httpRequest = server.CreateRequest("", "/status/sessions" )
                 context = CreateObject("roAssociativeArray")
                 context.server = server
-                context.name = "nowplaying_sessions"
+                context.key = "nowplaying_sessions"
+
+                ' skip request if still pending
+                if hasPendingRequest(context) then return
+
                 ' converted to a non blocking request
+                httpRequest = server.CreateRequest("", "/status/sessions" )
                 GetViewController().StartRequest(httpRequest, m, context)
                 Debug("Kicked off request for now playing sessions on " + tostr(server.name))
             end if
@@ -350,7 +354,6 @@ sub setNowPlayingGlobals(msg, requestContext)
                         if tostr(metadata.nowplaying_state) = "buffering" then 
                             print "not showing buffering state" + user
                         else if this_maid <> maid then 
-                            'print title + "is playing from " + requestContext.server.name
                             np.Push({maid: maid, title: title, user: user, key: ratingKey, platform: platform, length: length, item: metadata})
                         end if
                     end if
