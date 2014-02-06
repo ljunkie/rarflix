@@ -263,7 +263,6 @@ Function gridHandleMessage(msg) As Boolean
                 item = m.contentArray[m.selectedRow][m.focusedIndex]
        
                 if item <> invalid and tostr(item.type) = "photo" and tostr(item.nodename) <> "Directory" then
-'                    description = getExifData(item,true) ' this resues the items metadata mediainfo if already loaded
                     description = getExifDesc(item,true) ' this resues the items metadata mediainfo if already loaded
                     if description <> invalid then
                         ' remove 0 stars from description ( or replace with userrating )
@@ -275,21 +274,6 @@ Function gridHandleMessage(msg) As Boolean
                 end if
             end if
  
-            ' deprecated -- we no only remember the last section when a user ENTERS the section instead of focusing the section
-            'if vc.Home <> invalid AND m.screenid = vc.Home.ScreenID and m.contentArray <> invalid and type(m.contentArray[m.selectedRow]) = "roArray" then 
-            '    item = m.contentArray[m.selectedRow][m.focusedIndex]
-            '    if type(item) = "roAssociativeArray" and item.contenttype <> invalid and item.contenttype = "section" then 
-            '        RegWrite("lastMachineID", item.server.machineID, "userinfo")
-            '        RegWrite("lastSectionKey", item.key, "userinfo")
-            '        'RegWrite("lastMachineID", item.server.machineID)
-            '        'RegWrite("lastSectionKey", item.key)
-            '        Debug("--------------- remember last focus ------------------------")
-            '        Debug("last section used " + item.key)
-            '        Debug("server " + item.server.machineID)
-            '        Debug("---------------------------------------")
-            '    end if 
-            'end if
-
             ' ljunkie - save any focused item for the screen saver
             if item <> invalid and item.SDPosterURL <> invalid and item.HDPosterURL <> invalid then
                 SaveImagesForScreenSaver(item, ImageSizes(item.ViewGroup, item.Type))
