@@ -95,7 +95,8 @@ Function searchLoadMoreContent(focusedRow, extraRows=0) As Boolean
             m.Listener.OnDataLoaded(i, content, 0, content.Count(), true)
         next
 
-        for each server in GetOwnedPlexMediaServers()
+        ' for each server in GetOwnedPlexMediaServers()
+        for each server in GetValidPlexMediaServers()
             if m.cast = invalid then 
                 m.StartRequest(server, "/search", "Root")
             else 
