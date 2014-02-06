@@ -745,6 +745,7 @@ Function vcCreateICphotoPlayer(obj, contextIndex=invalid, show=true, shuffled=fa
 
     ' activate the slideshow timer ( we might skip this is we press SHOW instead? )
     if slideShow then 
+        Debug("activating slideshow timer")         
         screen.Timer.Active = true
         screen.Timer.Mark()
         screen.isPaused = false

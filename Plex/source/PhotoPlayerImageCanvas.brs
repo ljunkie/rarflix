@@ -578,9 +578,6 @@ function ICgetSlideImage(bufferNext=false, FromMetadataRequest = false)
         return false
     end if
 
-    ' purge expired metadata records -- this must be before any other calls
-    if m.CachedMetadata > 500 then m.PurgeMetadata()
-
     ' by default we cache locally and show the curIndex. If this is a bufferNext, then
     ' we will retrieve curIndex+1 or 0 and cache only. 
     itemIndex = m.curindex
@@ -590,8 +587,10 @@ function ICgetSlideImage(bufferNext=false, FromMetadataRequest = false)
         if bufferIndex > m.context.count()-1 then bufferIndex = 0
         itemIndex = bufferIndex
     end if 
-
     item = m.context[itemIndex]
+
+    ' purge expired metadata records (retain the index we are using)
+    if m.CachedMetadata > 500 then m.PurgeMetadata(itemIndex)
 
     ' send a request for the metadata/url and return
     ' we must have this infor before we can request/save/show the image
@@ -605,24 +604,30 @@ function ICgetSlideImage(bufferNext=false, FromMetadataRequest = false)
     
         GetViewController().StartRequest(request, m, context)
 
-        if m.IsPaused = false and NOT bufferNext  then 
-            Debug("Deactivate slideshow Timer.. had to request metadata for image ( before downloading )")
+        if m.IsPaused = false and NOT bufferNext and m.Timer.Active = true  then 
+            Debug("Deactivate slideshow timer.. had to request metadata for image ( before downloading )")
             m.Timer.Active = false
         end if
-        return false
 
+        return false
     end if
 
     ' location/name of the cached file ( to read or to save )
     if item <> invalid and item.ratingKey <> invalid and item.title <> invalid then 
         localFilePath = "tmp:/" + item.ratingKey + "_" + item.title + ".jpg"
     else 
-        Debug("getSlideImage:: item missing required metadata -- skipping -- [server response failure or removed item?]")
-        if item <> invalid then print item
-        Debug("getSlideImage:: reloading context due to failure")
-        ' maybe the context has changed on us? someone removed photos during a slideshow... or?
-        ' reload the slide context.. safe to run multiple times as there is a expiration time
-        m.reloadSlideContext(true)
+        ' ignore if the item is missing context if it's the next image we were trying to save
+        ' it will be requested once more when it's up (next). 
+        if bufferNext = true and FromMetadataRequest = true then  
+            Debug("getSlideImage:: item missing required metadata -- bufferNext request -- ignoring")
+        else 
+            Debug("getSlideImage:: item missing required metadata -- skipping -- [server response failure or removed item?]")
+            if item <> invalid then print item
+            Debug("getSlideImage:: reloading context due to failure")
+            ' maybe the context has changed on us? someone removed photos during a slideshow... or?
+            ' reload the slide context.. safe to run multiple times as there is a expiration time
+            m.reloadSlideContext(true)
+        end if
         return false
     end if 
 
@@ -690,17 +695,23 @@ function ICgetSlideImage(bufferNext=false, FromMetadataRequest = false)
     return false ' false means we wait for response
 end function
 
-sub ICPurgeMetadata()
+sub ICPurgeMetadata(retainIndex=invalid)
     ' this resets the metadata to the lightweight original
     Debug("Purging Full Metadata from " + tostr(m.context.count()) + " items")
     count = 0
+    retain = 0
     for index = 0 to m.context.count()-1
         if m.context[index].origItem <> invalid then 
-            count = count+1
-            m.context[index] = m.context[index].origItem
+            if retainIndex <> invalid and retainIndex = index then 
+                retain = retain+1
+                Debug("retaining item at Index " + tostr(index))
+            else 
+                count = count+1
+                m.context[index] = m.context[index].origItem
+            end if
         end if
     next
-    m.CachedMetadata = 0
+    m.CachedMetadata = retain
     Debug("Purged " + tostr(count) + " items")
 end sub
 
@@ -812,6 +823,9 @@ Sub photoSlideShowOnUrlEvent(msg, requestContext)
                 m.context[requestContext.ItemIndex] = item
                 m.context[requestContext.ItemIndex].origItem = origItem
                 m.CachedMetadata = m.CachedMetadata+1
+                ' testing in new port -- use to just blindly call this on failure or not
+                Debug("photoSlideShowOnUrlEvent:: GetSlideImage called")
+                m.GetSlideImage(requestContext.bufferNext, true)
             else 
                 Debug("could not set context from metadata -- getmetadata() failed?")
                 print "------------- msg response string -------------------"
@@ -832,17 +846,17 @@ Sub photoSlideShowOnUrlEvent(msg, requestContext)
             m.setImageFailureInfo(failureReason)
         end if  
 
-        ' Success or Failure: send the GetSlideImage again ( either we will re-request metadata OR show the image)
-        ' - also pass a third variable to NOT request the metadta again if this as a next image buffer request (possible loop)
-
-        if m.IsPaused = false then  
-            Debug("Re-activate slideshow Timer.. metadata request completed")
+        if m.IsPaused = false and m.Timer.Active = false then  
+            Debug("Reactivate slideshow timer.. metadata request completed")
             m.Timer.Mark()
             m.Timer.Active = true
         end if
 
-        Debug("photoSlideShowOnUrlEvent:: GetSlideImage called")
-	m.GetSlideImage(requestContext.bufferNext, true)
+' Moved up -- will only call on success -- testing -- to remove at a later date after verified 
+'        ' Success or Failure: send the GetSlideImage again ( either we will re-request metadata OR show the image)
+'        ' - also pass a second variable to NOT request the metadata again (possible loop)
+'        Debug("photoSlideShowOnUrlEvent:: GetSlideImage called")
+'        m.GetSlideImage(requestContext.bufferNext, true)
 
     else if requestContext.requestType = "slideshowImage" then 
 
