@@ -567,6 +567,13 @@ end sub
 
 sub ICphotoPlayerResume()
     if m.context.count() = 1 then return 
+
+    ' we do not load the Full Context to just display one image
+    ' - however let us allow EU to browse full context if requested
+    if NOT m.isSlideShow and NOT m.FullContext = true then 
+        GetPhotoContextFromFullGrid(m,m.item.origindex) 
+    end if 
+
     m.IsPaused = false
     m.isSlideShow = true
     m.Timer.Active = true
