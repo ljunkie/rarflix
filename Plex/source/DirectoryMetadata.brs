@@ -1,5 +1,18 @@
 ' ljunkie - directory key from XML is parsed here - this is where RokuPlex get's is RowList
 Function newDirectoryMetadata(container, item) As Object
+
+    ' ljunkie - parse */filters call. Keep the metadata basic and lightweight
+    ' as we store this in the global cache per server/section
+    if tostr(item@type) = "filter" then
+        obj = {}
+        obj.filter = item@filter
+        obj.filterType = item@filterType
+        obj.type = item@type
+        obj.key = item@key
+        obj.title = item@title
+        return obj
+    end if
+
     directory = createBaseMetadata(container, item)
 
     directory.ContentType = item@type

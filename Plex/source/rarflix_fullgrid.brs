@@ -110,6 +110,10 @@ Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, ite
     'stop
     if totalsize <> invalid then 
         for index = 0 to totalsize.toInt() - 1 step increment
+
+            ' verify we are using the filter URL
+            'filterURL(loader.sourceurl)
+
             num_to = index+increment
             if num_to > totalsize.toInt() then num_to = totalsize.toInt()
             name = tostr(index+1) + "-" + tostr(num_to) + " of " + totalsize

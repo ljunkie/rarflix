@@ -164,6 +164,10 @@ End Function
 
 Function pmsCreateRequest(sourceUrl, key, appendToken=true, connectionUrl=invalid) As Object
     url = FullUrl(firstOf(connectionUrl, m.serverUrl), sourceUrl, key)
+
+    ' ljunkie - attempt to convert older API library call to a new filtered call that support paging
+    url = convertToFilter(m,url)
+
     req = CreateURLTransferObject(url)
     AddAccountHeaders(req, m.AccessToken)
     req.AddHeader("X-Plex-Client-Capabilities", Capabilities())
