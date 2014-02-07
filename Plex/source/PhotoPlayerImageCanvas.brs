@@ -445,8 +445,8 @@ end sub
 sub ICnonIdle(reset=false)
    ' we don't know what the user has set the screen saver idle time too
    ' we do know 5 minutes is the lowest setting, so set this number lower
-   ' than 300 ( perferably no higher than 240 to be safe )
-    maxIdle = 240
+   ' than 300 ( perferably no higher than 240 to be safe ) -- testing with 120
+    maxIdle = 120
     if reset then 
         Debug("idle time reset (forced)")
         m.idleTimer.mark()
