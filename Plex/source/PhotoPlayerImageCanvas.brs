@@ -1,33 +1,20 @@
-' Current TASK: 
-'
-' TODO: 
-' * change dialogs to image canvas overlay
-' * possible to show music info in overlay -- or another overlay?
-'
-
-' DONE: needs more work
-' * prevent screenSaver ( kinda done in a hacky way -- sending the InstandReplay key )
-
-' DONE:
-' * Photo Display mode -- seems like it's cropping 
-'    X -- cropping fixed 
-'    X -- cached images 
-'    X -- purge cache when needed ( to much or close the screen )
-'    X -- center the image ( since we no longer "stretch/crop" )
-'    X -- timer to hide overlay
-'    X -- keeps state when EU toggles overlay with remove (up/down) 
-'    X -- verify remote control works ( fun stuff )
-'    X -- reload slideshow ( after completion )
-'    X -- verify shuffle works
-
+'*
+'* Alpha Release of a slideshow written in an roImageCanvas
+'*
 
 Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffled=false, slideShow=true)
-    Debug("creating ImageCanvas Photo Player at index" + tostr(contextIndex))
+    Debug("creating ImageCanvas Photo Player at index: " + tostr(contextIndex))
     Debug("    Shuffled: " + tostr(Shuffled))
     Debug("   SlideShow: " + tostr(slideShow))
 
     obj = CreateObject("roAssociativeArray")
     initBaseScreen(obj, viewController)
+    obj.HandleMessage = ICphotoPlayerHandleMessage
+    obj.Activate = ICphotoPlayerActivate
+    obj.OnTimerExpired = ICphotoPlayerOnTimerExpired
+    obj.OnUrlEvent = photoSlideShowOnUrlEvent
+    obj.nonIdle = ICnonIdle
+    obj.Refresh = PhotoPlayerRefresh
 
     ' we do some thing different if one is using a legacy remote ( no back button or info(*) button )
     if RegRead("legacy_remote", "preferences","0") <> "0" then 
@@ -36,13 +23,8 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
         obj.isLegacyRemote = false
     end if
 
-    obj.OnTimerExpired = ICphotoPlayerOnTimerExpired
-    obj.OnUrlEvent = photoSlideShowOnUrlEvent
-    obj.nonIdle = ICnonIdle
-    obj.Refresh = PhotoPlayerRefresh
-
     ' ljunkie - we need to iterate through the items and remove directories -- they don't play nice
-    ' note: if we remove directories ( itms ) the contextIndex will be wrong - so fix it!
+    ' note: if we remove directories (items) the contextIndex will be wrong - so fix it!
     cleanContext = ICphotoPlayerCleanContext(context,contextIndex)
     context = cleanContext.context
     contextIndex = cleanContext.contextIndex
@@ -53,17 +35,23 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
         obj.CurIndex = contextIndex
         obj.context = context
     else 
-        ' this actually shouldn't be possible as we always pass the full context
+        ' this actually shouldn't be possible as we always (try) pass the full context
+        ' when we "show" a single image, we pass the full context so one can click
+        ' fwd/rwd to move forward/back -- "show" button will pass slideShow=false
         obj.context = [context]
         obj.CurIndex = 0
     end if
+
+    NowPlayingManager().SetControllable("photo", "skipPrevious", obj.Context.Count() > 1)
+    NowPlayingManager().SetControllable("photo", "skipNext", obj.Context.Count() > 1)
    
-    obj.isSlideShow = slideShow       ' if we came in through the play/slide show vs showing a shingle item
+    obj.isSlideShow = slideShow       ' if we came in through the play/slideshow vs showing a single item
     obj.ImageCanvasName = "slideshow" ' used if we need to know we are in a slideshow screen
     obj.IsPaused = NOT(slideshow)
     obj.ForceResume = false
     obj.OverlayOn = false
 
+    ' containers used for info about the file/metadata cache
     obj.LocalFiles = []
     obj.LocalFileSize = 0
     obj.CachedMetadata = 0
@@ -72,42 +60,50 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     obj.idleTimer = createTimer()
 
     AudioPlayer().focusedbutton = 0
-    obj.HandleMessage = ICphotoPlayerHandleMessage
-
-    NowPlayingManager().SetControllable("photo", "skipPrevious", obj.Context.Count() > 1)
-    NowPlayingManager().SetControllable("photo", "skipNext", obj.Context.Count() > 1)
 
     screen = createobject("roimagecanvas")
+    screen.SetMessagePort(obj.Port)
+    screen.SetRequireAllImagesToDraw(false)
+    screen.setLayer(0, {Color:"#000000", CompositionMode:"Source"})
 
-    ' percent of understan (2.5 with the slideShow -- but 5% seems right for this)
-    obj.UnderScan = RegRead("slideshow_underscan", "preferences", "5").toInt() 
     obj.canvasrect = screen.GetCanvasRect()
 
-    screen.SetRequireAllImagesToDraw(false)
-
-    obj.theme = getImageCanvasTheme()
-    screen.SetLayer(0, obj.theme["background"])
-
-    ' this layer will only be visable if the first image fails ( otherwise it will be replaced with the image )
-    display = {Text: "loading image....", TextAttrs:{Color:"#A0FFFFFF", Font:"Small", HAlign:"HCenter", VAlign:"VCenter",  Direction:"LeftToRight"}, TargetRect:{x:0,y:0,w:int(obj.canvasrect.w),h:0} }
+    ' TODO(ljunkie) only show this if first image and continuing images fail. 
+    ' As of now, it will flash before the first image downloads
+    display = {
+        Text: "loading image....", 
+        TextAttrs: {
+            Color:"#A0FFFFFF", 
+            Font:"Small", 
+            HAlign:"HCenter", 
+            VAlign:"VCenter",  
+            Direction:"LeftToRight"
+        }, 
+        TargetRect: { 
+            x:0,
+            y:0,
+            w:int(obj.canvasrect.w),
+            h:0
+        } 
+    }
     screen.SetLayer(1, display)
-
-    screen.SetMessagePort(obj.Port)
     obj.Screen = screen
 
+    ' percent of underscan (2.5 with the slideShow -- but 5% seems right for this)
+    ' toggle is available for users in slideshow prefs ( TV or Monitor )
+    obj.UnderScan = RegRead("slideshow_underscan", "preferences", "5").toInt() 
     obj.overlayEnabled = (RegRead("slideshow_overlay", "preferences", "2500").toInt() <> 0)
 
-    obj.Activate = ICphotoPlayerActivate
 
-    obj.StopKeepState = ICphotoStopKeepState
-
+    ' standardized actions
     obj.Pause = ICphotoPlayerPause
     obj.Resume = ICphotoPlayerResume
     obj.Next = ICphotoPlayerNext
     obj.Prev = ICphotoPlayerPrev
     obj.Stop = ICphotoPlayerStop
-    obj.OverlayToggle = ICphotoPlayerOverlayToggle
 
+    obj.OverlayToggle = ICphotoPlayerOverlayToggle
+    obj.StopKeepState = ICphotoStopKeepState
     obj.reloadSlideContext = ICreloadSlideContext
     obj.ShowSlideImage = ICshowSlideImage
     obj.getSlideImage = ICgetSlideImage
@@ -117,6 +113,7 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     obj.showContextMenu = photoShowContextMenu
     obj.setImageFailureInfo()
 
+    ' standard shuffle options
     obj.SetShuffle = ICphotoPlayerSetShuffle
     obj.IsShuffled = shuffled
     if shuffled then
@@ -135,7 +132,7 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
         GetViewController().AddTimer(obj.Timer, obj)
     end if
 
-    ' overlay timer ( used if if disabled -- one can toggle the overlay )
+    ' overlay timer
     if obj.TimerOverlay = invalid then
         time = RegRead("slideshow_overlay", "preferences", "2500").toInt()
         if time = 0 then time = 2500
@@ -186,11 +183,14 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
         handled = true
 
         if msg.isScreenClosed() then
-            m.purgeSlideImages() ' cleanup the local cached images
-            m.purgeMetadata() ' cleanup the retrieved metadata during the slide show ( maybe just set invalid )
+            ' cleanup the local cached images
+            m.purgeSlideImages()
+            m.purgeMetadata()
+
             amountPlayed = m.playbackTimer.GetElapsedSeconds()
             Debug("Sending analytics event, appear to have watched slideshow for " + tostr(amountPlayed) + " seconds")
             AnalyticsTracker().TrackEvent("Playback", firstOf(m.Item.ContentType, "photo"), m.Item.mediaContainerIdentifier, amountPlayed)
+
             NowPlayingManager().location = "navigation"
             NowPlayingManager().UpdatePlaybackState("photo", invalid, "stopped", 0)
 
@@ -209,9 +209,9 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
             '  3: KeyDown :: overlay toggle
             
             ' unassigned
-            ' 8: KeyRev :: 
+            ' 8: KeyRwd :: 
             ' 9: KeyFwd :: 
-            ' 7: InstatReplay:: 
+            ' 7: InstantReplay:: 
 
             if msg.GetIndex() = 0 then 
                 ' back: close
@@ -232,7 +232,7 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
                 m.OverlayToggle()
             else if msg.GetIndex() = 4 or msg.GetIndex() = 5 then 
                 ' we do not load the Full Context to just display one image
-                ' - however lets allow EU to browse full context 
+                ' - however let us allow EU to browse full context if requested 
                 if NOT m.isSlideShow and NOT m.FullContext = true then 
                     GetPhotoContextFromFullGrid(m,m.item.origindex) 
                 end if 
@@ -347,11 +347,27 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
             overlayBG = "#90000000"
             overlayText = "#FFCCCCCC"
 
-            display = [ 
-                { color: overlayBG, TargetRect:{x:0,y:overlayY,w:m.canvasrect.w,h:0} },
-                {Text: overlayTopLeft, TextAttrs:{Color:overlayText, Font:"Small", HAlign:"Left", VAlign:"Top",  Direction:"LeftToRight"}, TargetRect:{x:overlayPaddingLR,y:overlayY+overlayPaddingTop,w:m.canvasrect.w,h:0} }, 
-                {Text: overlayTopRight, TextAttrs:{Color:overlayText, Font:"Small", HAlign:"Right", VAlign:"Top",  Direction:"LeftToRight"}, TargetRect:{x:int(overlayPaddingLR*-1),y:overlayY+overlayPaddingTop,w:m.canvasrect.w,h:0} }, 
-                {Text: overlayCenter, TextAttrs:{Color:overlayText, Font:"Small", HAlign:"HCenter", VAlign:"VCenter",  Direction:"LeftToRight"}, TargetRect:{x:0,y:overlayY,w:m.canvasrect.w,h:0} }]
+            display = [
+                { 
+                    color: overlayBG, 
+                    TargetRect: { x:0, y:overlayY, w:m.canvasrect.w, h:0 }
+                },
+                {
+                    Text: overlayTopLeft, 
+                    TextAttrs: {Color:overlayText, Font:"Small", HAlign:"Left", VAlign:"Top",  Direction:"LeftToRight"}, 
+                    TargetRect: {x:overlayPaddingLR,y:overlayY+overlayPaddingTop,w:m.canvasrect.w,h:0} 
+                }, 
+                {
+                    Text: overlayTopRight, 
+                    TextAttrs: {Color:overlayText, Font:"Small", HAlign:"Right", VAlign:"Top",  Direction:"LeftToRight"}, 
+                    TargetRect: {x:int(overlayPaddingLR*-1),y:overlayY+overlayPaddingTop,w:m.canvasrect.w,h:0} 
+                }, 
+                {
+                    Text: overlayCenter, 
+                    TextAttrs: {Color:overlayText, Font:"Small", HAlign:"HCenter", VAlign:"VCenter",  Direction:"LeftToRight"}, 
+                    TargetRect: {x:0,y:overlayY,w:m.canvasrect.w,h:0} 
+                }
+            ]
             
             ' if Paused or HeaderText sent, include it in the bottom overlay Top Middle
             if (m.IsPaused = true and m.isSlideShow) or headerText <> invalid then 
@@ -360,12 +376,16 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
                 else 
                     overlayHeader = "Paused"
                 end if
-                display.Push( {Text: overlayHeader, TextAttrs:{Color:overlayText, Font:"Small", HAlign:"HCenter", VAlign:"Top",  Direction:"LeftToRight"}, TargetRect:{x:0,y:overlayY+overlayPaddingTop,w:m.canvasrect.w,h:0} } )
+                display.Push( {
+                    Text: overlayHeader, 
+                    TextAttrs:{Color:overlayText, Font:"Small", HAlign:"HCenter", VAlign:"Top",  Direction:"LeftToRight"}, 
+                    TargetRect:{x:0,y:overlayY+overlayPaddingTop,w:m.canvasrect.w,h:0} 
+                } )
             end if
 
             ' show a red overlay on the top with the last failure and count 
             if m.ImageFailure = true and m.ImageFailureReason <> invalid and m.isSlideShow then 
-                ' show the EU failure info -- will help support issues if slideShows are not working as expected
+                ' show the EU failure info -- will help support issues if slideShow are not working as expected
                 failCountText = tostr(m.ImageFailureCount)
                 if m.ImageFailureCount = 1 then 
                     failCountText = failCountText + " failure"
@@ -373,8 +393,15 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
                     failCountText = failCountText + " failures"
                 end if
                 overlayFail = failCountText + " : " + tostr(m.ImageFailureReason)
-                display.Push({ color: OverlayErrorBG, TargetRect:{x:0,y:0,w:m.canvasrect.w,h:failureHeight}})
-                display.Push({Text: overlayFail, TextAttrs:{Color:overlayErrorText, Font:"Small", HAlign:"HCenter", VAlign:"VCenter",  Direction:"LeftToRight"}, TargetRect:{x:0,y:overlayPaddingTop,w:m.canvasrect.w,h:failureHeight} })
+                display.Push({ 
+                    color: OverlayErrorBG, 
+                    TargetRect:{x:0,y:0,w:m.canvasrect.w,h:failureHeight}
+                })
+                display.Push({
+                    Text: overlayFail, 
+                    TextAttrs:{Color:overlayErrorText, Font:"Small", HAlign:"HCenter", VAlign:"VCenter",  Direction:"LeftToRight"}, 
+                    TargetRect:{x:0,y:overlayPaddingTop,w:m.canvasrect.w,h:failureHeight} 
+                })
             end if
 
             ' show the overlay
@@ -406,17 +433,22 @@ sub ICphotoPlayerOnTimerExpired(timer)
 End Sub
 
 sub ICshowSlideImage()
-    Debug("showing the slide image now")
+    Debug("Displaying the image now")
     if m.ImageFailure = true then m.setImageFailureInfo() ' reset any failures
     m.item = m.context[m.CurIndex]
 
     y = int((m.canvasrect.h-m.CurFile.metadata.height)/2)
     x = int((m.canvasrect.w-m.CurFile.metadata.width)/2)
-    display=[{url:m.CurFile.localFilePath, targetrect:{x:x,y:y,w:m.CurFile.metadata.width,h:m.CurFile.metadata.height}}]
     m.screen.AllowUpdates(false)
     m.screen.Clear()
 
-    m.screen.SetLayer(0, m.theme["background"])
+    m.screen.setLayer(0, {Color:"#000000", CompositionMode:"Source"})
+    display=[{
+        url:m.CurFile.localFilePath, 
+        targetrect:{x:x,y:y,w:m.CurFile.metadata.width,h:m.CurFile.metadata.height}
+    }]
+    'TODO(ljunkie) -- testing purge Cached Images before setting layer
+    m.screen.PurgeCachedImages()
     m.screen.setlayer(1,display)
 
     NowPlayingManager().location = "fullScreenPhoto"
@@ -445,7 +477,7 @@ end sub
 sub ICnonIdle(reset=false)
    ' we don't know what the user has set the screen saver idle time too
    ' we do know 5 minutes is the lowest setting, so set this number lower
-   ' than 300 ( perferably no higher than 240 to be safe ) -- testing with 120
+   ' than 300 ( preferably no higher than 240 to be safe ) -- testing with 120
     maxIdle = 120
     if reset then 
         Debug("idle time reset (forced)")
@@ -455,7 +487,7 @@ sub ICnonIdle(reset=false)
         m.idleTimer.mark()
         SendRemoteKey("Lit_x") ' sending keyboard command (x) -- stop idle
     end if
-    Debug("IDLE TIME " + tostr(m.idleTimer.GetElapsedSeconds()))
+    Debug("idle time: " + tostr(m.idleTimer.GetElapsedSeconds()))
 end sub
 
 sub ICphotoPlayerNext()
@@ -592,8 +624,8 @@ function ICgetSlideImage(bufferNext=false, FromMetadataRequest = false)
     ' purge expired metadata records (retain the index we are using)
     if m.CachedMetadata > 500 then m.PurgeMetadata(itemIndex)
 
-    ' send a request for the metadata/url and return
-    ' we must have this infor before we can request/save/show the image
+    ' send a request for the metadata/url and return 
+    ' we must have this info before we can request/save/show the image
     if item.url = invalid and FromMetadataRequest = false then  
         request = item.server.CreateRequest("", item.key )
         context = CreateObject("roAssociativeArray")
@@ -661,7 +693,7 @@ function ICgetSlideImage(bufferNext=false, FromMetadataRequest = false)
                     ' buffer the next image now ( current image cached was successful, it's ok to load another now )
                     if NOT BufferNext then m.GetSlideImage(true)
 
-                    'return true ' do not wait for urlEvent -- it's cached!
+                    ' do not wait for urlEvent -- it's cached!
                     return true
                 else 
                     Debug("loading cache file failed: " + tostr(localFilePath) +  " requesting now")
@@ -734,12 +766,12 @@ sub ICPurgeLocalFiles()
     Debug("screen PurgeCachedImages() called")
     m.screen.PurgeCachedImages()
 
-    Debug("Running Garbage Collector")
-    RunGarbageCollector()
+    'Debug("Running Garbage Collector")
+    'RunGarbageCollector()
 end sub
 
 sub ICphotoPlayerActivate(priorScreen) 
-    ' pretty basic for now -- we will resume the slide show if paused and forcResume is set
+    ' pretty basic for now -- we will resume the slide show if paused and forceResume is set
     '  note: forceResume is set if slideshow was playing while EU hits the * button ( when we come back, we need/should to resume )
     m.nonIdle(true)
     if m.isPaused and m.ForceResume then 
@@ -904,14 +936,14 @@ Sub photoSlideShowOnUrlEvent(msg, requestContext)
                 obj.metadata.height = m.canvasrect.h
             end if
     
-            ' after height scale - veriy the width is < canvas width
+            ' after height scale - verify the width is < canvas width
             if obj.metadata.width > m.canvasrect.w then 
                 mp = m.canvasrect.w/obj.metadata.width
                 obj.metadata.height = int(mp*obj.metadata.height)
                 obj.metadata.width = m.canvasrect.w
             end if
     
-            ' set UnderScan -- TODO(ljunkie) verify this is right fow other TV's
+            ' set UnderScan -- TODO(ljunkie) verify this is right for other TV's
             obj.metadata.height = int(obj.metadata.height*((100-m.UnderScan)/100))
             obj.metadata.width = int(obj.metadata.width*((100-m.UnderScan)/100))
     
@@ -996,6 +1028,8 @@ sub photoShowContextMenu(obj = invalid,force_show = false, forceExif = true)
     getExifData(obj,false,forceExif)
 
     ' TODO(ljunkie) it's ugly! -- convert this to an image canvas 
+    ' I was hoping to convert this to an image canvas, but the roGridScreen
+    ' doesn't work with an ImageCanvas as an overlay... verified by Roku
     if obj.MediaInfo <> invalid then 
         dialog = createBaseDialog()
         dialog.Title = "Image: " + obj.title
@@ -1011,7 +1045,6 @@ sub photoShowContextMenu(obj = invalid,force_show = false, forceExif = true)
         if obj.mediainfo.aspectratio <> invalid then dialog.text = dialog.text           + "      aspect: " + tostr(obj.mediainfo.aspectratio) + chr(10)
         if obj.mediainfo.container <> invalid then dialog.text = dialog.text             + "          type: " + tostr(obj.mediainfo.container) + chr(10)
         if obj.mediainfo.originallyAvailableAt <> invalid then dialog.text = dialog.text + "          date: "  + tostr(obj.mediainfo.originallyAvailableAt) + chr(10)
-        
         
         if GetViewController().IsSlideShowPlaying() then
             if m.IsShuffled then
@@ -1055,15 +1088,17 @@ sub ICreloadSlideContext(forced=false)
 
             obj = {}:dummyItem = {}
             dummyItem.server = m.item.server
-            ' we really should only be reloading from the sourceReloadURL ( m.item.sourcurl is now most likely the specific item.. no good )
-            ' TODO(ljunkie) we could also speed this up by creating a container with headers to return 0 items, just size and verify 
+            ' we really should only be reloading from the sourceReloadURL
+            ' m.item.sourcurl is now most likely the specific item.. we will skip if only 1 result
+            ' TODO(ljunkie) we could also speed this up by using createPlexContainerForUrlSizeOnly()  
+            ' to verify the total size ( won't be perfect - response could contain dirs )
             dummyItem.sourceUrl = firstof(m.sourceReloadURL,m.item.sourceurl)
             dummyItem.hideErrors = true ' do not show warning about loading errors
             if dummyItem.sourceUrl = invalid then Debug("no valid url to reload"):return
             PhotoMetadataLazy(obj, dummyItem, true)
 
             ' set to true to test the reload function 
-            ' otherwise it will only reset context if newCount <> curCount
+            ' only used for debugging -- we can remove this at a later date
             forceReloadTest = false 
 
             newCount = obj.context.count():curCount = m.context.count()
@@ -1084,8 +1119,8 @@ sub ICreloadSlideContext(forced=false)
                         ShuffleArray(m.Context, m.CurIndex)
                         Debug("shuffle done")
                     end if
-                    Debug("Running Garbage Collector")
-                    RunGarbageCollector()
+                    'Debug("Running Garbage Collector")
+                    'RunGarbageCollector()
                     return
                 end if
             end if
@@ -1105,9 +1140,9 @@ sub ICphotoStopKeepState()
     NowPlayingManager().UpdatePlaybackState("photo", invalid, "stopped", 0)
 end sub
 
-' we need a quicker, more memory effecient way to load images. We don't need all the metadata as we do normally
-' by default (quick) we will only set the library key and some other necessities 
-' NOTE: quick=false sould really not be used.. defeats the purpose -- but nice for testing
+' we need a quicker, more memory efficient way to load images. We don't need all the metadata as we do normally
+' by default (lazy=true) we will only set the library key and some other necessities 
+' NOTE: lazy=false should not be used.. defeats the purpose -- but nice for testing
 sub GetPhotoContextFromFullGrid(obj,curindex = invalid, lazy=true) 
     Debug("----- get Photo Context from Full Grid")
     Debug("----- lazy Mode: " + tostr(lazy) )
@@ -1116,7 +1151,8 @@ sub GetPhotoContextFromFullGrid(obj,curindex = invalid, lazy=true)
     ' full context already loaded -- but we still might need to reset the CurIndex
     if obj.FullContext = true then 
        Debug("All context is already loaded! total: " + tostr(obj.context.count()))
-       ' if we are still in the full grid, we will have to caculate the index again ( rows are only 5 items -- curIndex is always 0-5 )
+       ' if we are still in the full grid, we will have to calculate the index again 
+       '  rows are only 5 items -- curIndex is always 0-5
        if obj.isFullGrid = true then obj.CurIndex = getFullGridCurIndex(obj,CurIndex,1)
        return
     end if
@@ -1148,7 +1184,7 @@ sub GetPhotoContextFromFullGrid(obj,curindex = invalid, lazy=true)
 end sub
 
 sub PhotoMetadataLazy(obj, dummyItem, lazy = true)
-    ' this will only load a minial set of metadata per item
+    ' this will only load a minimal set of metadata per item
     ' break api calls to 1k item chunks ( Roku has issues parsing large XML result sets )
     chunks = 5000
 
@@ -1227,9 +1263,6 @@ sub PhotoMetadataLazy(obj, dummyItem, lazy = true)
                     metadata = newDirectoryMetadata(container, n)
                 end if
 
-                ' CUSTOM thumbs? -- not for photos
-                ' PosterIndicators(metadata) -- nah, watched status not implemented for photos and probably never should be shown if it is
-
                 ' only push valid metadata - we only expect Photo and Directories
                 if metadata <> invalid and metadata.key <> invalid then results.Push(metadata)
                 metadata = invalid
@@ -1255,7 +1288,7 @@ sub PhotoMetadataLazy(obj, dummyItem, lazy = true)
     nodes = invalid
     metadata = invalid 
     container = invalid
-    RunGarbageCollector()
+    'RunGarbageCollector()
 
     if dummyItem.hasWaitDialog <> invalid then dummyItem.hasWaitDialog.close()
 end sub
