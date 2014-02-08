@@ -143,6 +143,21 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
         GetViewController().AddTimer(obj.TimerOverlay, obj)
     end if
 
+    ' We have had some times where the slideshow process seems to hang causing a screen saver 
+    ' to kick in. One can exit the screen saver, but the slideshow never starts again. It seems
+    ' more like a Roku bug because one cannot even click the HOME button or CTRL-C to exit or 
+    ' crash the app. It just stays locked indefinitely until the Roku reboots! This timer will
+    ' will just print a status every 30 seconds as a type of health check. 
+    if obj.TimerHealth = invalid then
+        time = 30*1000
+        obj.TimerHealth = createTimer()
+        obj.TimerHealth.Name = "HealthCheck"
+        obj.TimerHealth.SetDuration(time, true)
+        obj.TimerHealth.Active = true
+        obj.TimerHealth.Mark()
+        GetViewController().AddTimer(obj.TimerHealth, obj)
+    end if
+
     obj.GetSlideImage() 'Get first image!
 
     return obj
@@ -417,6 +432,11 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
 end sub
 
 sub ICphotoPlayerOnTimerExpired(timer)
+
+    if timer.Name = "HealthCheck" then
+        amountPlayed = m.playbackTimer.GetElapsedSeconds()
+        Debug("HealthCheck:: ping! slideshow running for " + tostr(amountPlayed) + " seconds")
+    end if
 
     if timer.Name = "slideshow" then
         if m.context.count() > 1 then 
