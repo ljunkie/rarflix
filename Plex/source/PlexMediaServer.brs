@@ -991,6 +991,18 @@ Sub pmsSendWOL()
         a.SetAddress ( splitResult[1] )
         host = a.GetHostName()
         
+        ' Broadcasting to 255.255.255.255 only works on some Rokus, but we
+        ' can't reliably determine the broadcast address for our current
+        ' interface. Try assuming a /24 network, and then fall back to the
+        ' host name if that doesn't work - incase it's a remote WOL packet
+
+        subnetRegex = CreateObject("roRegex", "((\d+)\.(\d+)\.(\d+)\.)(\d+)", "")
+        match = subnetRegex.Match(host)
+        if match.Count() > 0 then
+            host = match[1] + "255"
+            Debug("Using WOL broadcast address " + host)
+        end if
+            
         ' Get our secure on pass
         pass = GetServerData ( m.machineID, "WOLPass" )
 
@@ -1012,12 +1024,14 @@ Sub pmsSendWOL()
         udp = CreateObject("roDatagramSocket")
         packet = CreateObject("roByteArray")
         udp.setMessagePort(port)
+        udp.setBroadcast(true)
       
         addr.setHostname(host)
         addr.setPort(9)
         udp.setSendToAddress(addr)
         
         packet.fromhexstring(header)
+        udp.notifyReadable(true)
         sent = udp.send(packet,0,108)
         Debug ( "Sent Magic Packet of " + tostr(sent) + " bytes to " + host )
         udp.close()
