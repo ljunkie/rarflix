@@ -435,7 +435,20 @@ sub ICphotoPlayerOnTimerExpired(timer)
 
     if timer.Name = "HealthCheck" then
         amountPlayed = m.playbackTimer.GetElapsedSeconds()
-        Debug("HealthCheck:: ping! slideshow running for " + tostr(amountPlayed) + " seconds")
+        Debug("HealthCheck:: PING! slideshow running for " + tostr(amountPlayed) + " seconds")
+        Debug("HealthCheck:: idle time: " + tostr(m.idleTimer.GetElapsedSeconds()) + " seconds")
+
+        ' Check to see if the slideshow is paused but should be active. The timer could have been deactivated 
+        ' to complete a task (urlTransfer). We should cancel any pending requests as we would have reactivated
+        ' when we received a completed transfer (failure or success) but somehow didn't
+        if m.IsPaused = false and m.Timer.Active = false then  
+            Debug("HealthCheck:: cancel any pending requests and start fresh on screenID: " + tostr(m.screenID))
+            GetViewController().CancelRequests(m.ScreenID)
+            Debug("HealthCheck:: Reactivate slideshow timer")
+            m.Timer.Mark()
+            m.Timer.Active = true
+        end if
+
     end if
 
     if timer.Name = "slideshow" then
@@ -495,9 +508,15 @@ sub ICshowSlideImage()
 end sub
 
 sub ICnonIdle(reset=false)
-   ' we don't know what the user has set the screen saver idle time too
-   ' we do know 5 minutes is the lowest setting, so set this number lower
-   ' than 300 ( preferably no higher than 240 to be safe ) -- testing with 120
+   ' NOTE: calling this will will reset the idle time inhibiting the screen saver, by 
+   ' sending a remote request: keyboard request for letter x -- should be ok
+   ' *DO NOT* call this unless you know the slideshow is working
+   '
+   ' reset=true: only used when we know user clicked a button -- causing a non-idle event
+   '
+   ' INFO: we don't know what the user has set the screen saver idle time too we do know 
+   ' 5 minutes is the lowest setting, so set this number lower than 300, preferably no 
+   ' higher than 200 to be safe
     maxIdle = 120
     if reset then 
         Debug("idle time reset (forced)")
@@ -507,7 +526,7 @@ sub ICnonIdle(reset=false)
         m.idleTimer.mark()
         SendRemoteKey("Lit_x") ' sending keyboard command (x) -- stop idle
     end if
-    Debug("idle time: " + tostr(m.idleTimer.GetElapsedSeconds()))
+    Debug("ICnonIdle:: idle time: " + tostr(m.idleTimer.GetElapsedSeconds()) + " seconds")
 end sub
 
 sub ICphotoPlayerNext()
@@ -663,9 +682,13 @@ function ICgetSlideImage(bufferNext=false, FromMetadataRequest = false)
     
         GetViewController().StartRequest(request, m, context)
 
+        ' Stop the slideshow timer if we are trying to show the current image. We do not want to keep 
+        ' making requests if we are still waiting on a response. This will reactivate when we recieve 
+        ' a response OR during the health check in case the response was "lost"
         if m.IsPaused = false and NOT bufferNext and m.Timer.Active = true  then 
             Debug("Deactivate slideshow timer.. had to request metadata for image ( before downloading )")
             m.Timer.Active = false
+            m.TimerHealth.Mark() ' mark Health Timer (failsafe reactivation)
         end if
 
         return false
@@ -905,17 +928,13 @@ Sub photoSlideShowOnUrlEvent(msg, requestContext)
             m.setImageFailureInfo(failureReason)
         end if  
 
+        ' If we recieved an response (failure or success) enable the slideshow again. It will move on to the next image
+        ' depending on the response. 
         if m.IsPaused = false and m.Timer.Active = false then  
             Debug("Reactivate slideshow timer.. metadata request completed")
             m.Timer.Mark()
             m.Timer.Active = true
         end if
-
-' Moved up -- will only call on success -- testing -- to remove at a later date after verified 
-'        ' Success or Failure: send the GetSlideImage again ( either we will re-request metadata OR show the image)
-'        ' - also pass a second variable to NOT request the metadata again (possible loop)
-'        Debug("photoSlideShowOnUrlEvent:: GetSlideImage called")
-'        m.GetSlideImage(requestContext.bufferNext, true)
 
     else if requestContext.requestType = "slideshowImage" then 
 
