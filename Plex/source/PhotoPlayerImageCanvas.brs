@@ -466,9 +466,11 @@ sub ICphotoPlayerOnTimerExpired(timer)
 End Sub
 
 sub ICshowSlideImage()
-    Debug("Displaying the image now")
+    Debug("ICshowSlideImage:: Displaying the image now")
     if m.ImageFailure = true then m.setImageFailureInfo() ' reset any failures
+
     m.item = m.context[m.CurIndex]
+    SaveImagesForScreenSaver(m.item, ImageSizes(m.item.ViewGroup, m.item.Type))
 
     y = int((m.canvasrect.h-m.CurFile.metadata.height)/2)
     x = int((m.canvasrect.w-m.CurFile.metadata.width)/2)
