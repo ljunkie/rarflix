@@ -1234,7 +1234,7 @@ end sub
 sub PhotoMetadataLazy(obj, dummyItem, lazy = true)
     ' this will only load a minimal set of metadata per item
     ' break api calls to 1k item chunks ( Roku has issues parsing large XML result sets )
-    chunks = 5000
+    chunks = 3000
 
     ' set some variables if invalid: we might be passing an empty object to fill ( we expect some results )
     if obj.context = invalid then obj.context = []
