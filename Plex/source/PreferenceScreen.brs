@@ -1406,7 +1406,7 @@ Function createManageServersScreen(viewController) As Object
     obj.listOffset = obj.contentArray.Count()
     obj.RefreshServerList(obj.listOffset)
 
-    obj.RefreshOnActivate = false
+    obj.RefreshOnActivate = true
 
     return obj
 End Function
@@ -1437,7 +1437,7 @@ Function prefsServersHandleMessage(msg) As Boolean
                 RemoveAllServers()
                 ClearPlexMediaServers()
                 m.RefreshServerList(m.listOffset)
-            else if  command = "edit" then
+            else if command = "edit" then
                 screen = createEditServerScreen(m.ViewController,GetServerFromIndex(msg.GetIndex() - m.listOffset),m,m.listOffset)
                 m.ViewController.InitializeOtherScreen(screen, ["Edit Server"])
                 screen.Show()          
@@ -1460,7 +1460,9 @@ End Sub
 
 Sub prefsServersActivate(priorScreen)
     if m.RefreshOnActivate then
-        m.RefreshOnActivate = false
+        ' ljunkie - why would we stop this action? If someone continues to
+        ' add/remove/update, we still want to refresh
+        ' -- removed -- m.RefreshOnActivate = false
         m.RefreshServerList(m.listOffset)
     end if
 End Sub
@@ -1484,10 +1486,14 @@ End Sub
 
 '*** Edit Server screen ***
 sub refreshEditServerScreen(p)  'A copy of ljunkie's ingenius hack to update the screen after changing settings.  Wish i figured this out sooner!
- screen = createEditServerScreen(m.ViewController,GetServerFromMachineID(m.server.MachineID),m.ParentScreen,m.listOffset) 'Get a new pointer for our new screen
- m.ViewController.InitializeOtherScreen(screen, ["Edit Server"])
- if m.FocusedListItem <> invalid then screen.screen.SetFocusedListItem(m.FocusedListItem)
- screen.Show()            
+ server = GetPlexMediaServer(m.server.MachineID)
+ ' ljunkie - we may have removed the server -- verify it exists before we create the edit screen again
+ if server <> invalid 
+     screen = createEditServerScreen(m.ViewController,GetServerFromMachineID(m.server.MachineID),m.ParentScreen,m.listOffset) 'Get a new pointer for our new screen
+     m.ViewController.InitializeOtherScreen(screen, ["Edit Server"])
+     if m.FocusedListItem <> invalid then screen.screen.SetFocusedListItem(m.FocusedListItem)
+     screen.Show()            
+ end if
  m.ViewController.popscreen(m)
 end sub
   
@@ -1577,7 +1583,7 @@ End Function
 Function prefsRemoveServerHandleDialogButton(command, data) As Boolean
     obj = m.ParentScreen    ' We're evaluated in the context of the dialog, but we want to pull from the parent.
     if command = "remove" then
-        RemoveServer(obj.server.MachineID)
+        RemoveServer(obj.server)
         obj.contentArray.Delete(m.index)
         obj.Screen.RemoveContent(m.index)
     end if

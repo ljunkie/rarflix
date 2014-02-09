@@ -5,7 +5,7 @@ Function ParseRegistryServerList() As Object
     list = []
     servers = RegRead("serverList", "servers")
     Debug("Registry Server list string: " + tostr(servers))
-    
+
     ' strTokenize has an interesting quirk where empty strings aren't
     ' returned. That's nice when separating the servers, but if a server
     ' doesn't have a name we don't want the machine ID to become the name.
@@ -71,12 +71,12 @@ Function RemoveAllServers()
     RegDelete("serverList", "servers")
 End Function
 
-Function RemoveServer(machineIDToRemove)
-    Debug("Removing server with name: " + tostr(serverToRemove.Name))
+Function RemoveServer(serverToRemove)
+    Debug("Removing server with name: " + tostr(serverToRemove.name) + " machineId: " + tostr(serverToRemove.MachineID))
     servers = ParseRegistryServerList()
     RemoveAllServers()
     for each serverInfo in servers
-        if machineIDToRemove <> serverInfo.MachineID then
+        if serverToRemove.machineID <> serverInfo.MachineID then
             AddServer(serverInfo.Name, serverInfo.Url, serverInfo.MachineID)
         else
             Debug("Not adding server back to list: " + serverInfo.Name)
@@ -317,6 +317,7 @@ Function EditSecureOnPass(pass,obj) As Boolean
 
     return true   
 End Function
+
 
 Function InitServerData (machineID=invalid)
     if GetGlobalAA().serverData = invalid then

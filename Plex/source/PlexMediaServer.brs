@@ -976,17 +976,18 @@ Sub pmsOnUrlEvent(msg, requestContext)
     ' Don't care about the response for any of our requests.
 End Sub
 
-Sub pmsSendWOL()
+Sub pmsSendWOL(connectionUrl = invalid)
     if m.machineID <> invalid then
-        mac = GetServerData ( m.machineID, "Mac" )
-        
-        if mac = invalid then
-            return
-        end if
+        mac = GetServerData(m.machineID, "Mac")
+
+        if mac = invalid then return
+
+        ' use the specified connectionURl (we might be sending a requests to all IP's, not just the primary/first)
+        if connectionUrl = invalid then connectionUrl = m.serverUrl
         
         ' Grab our Host from URL using Regex and Address functions
         r = CreateObject("roRegex", "//", "") 'Get right of http://
-        splitResult = r.Split(m.serverUrl)
+        splitResult = r.Split(connectionUrl)
         a = CreateObject("roSocketAddress")
         a.SetAddress ( splitResult[1] )
         host = a.GetHostName()
@@ -1000,11 +1001,11 @@ Sub pmsSendWOL()
         match = subnetRegex.Match(host)
         if match.Count() > 0 then
             host = match[1] + "255"
-            Debug("Using WOL broadcast address " + host)
+            Debug("Using WOL broadcast address " + tostr(host))
         end if
             
         ' Get our secure on pass
-        pass = GetServerData ( m.machineID, "WOLPass" )
+        pass = GetServerData(m.machineID, "WOLPass")
 
         if ( type(pass) <> "String" ) or ( type(pass) <> "roString" ) or ( pass.ifstringops.Len() <> 12 ) then
             pass = "ffffffffffff"
@@ -1017,7 +1018,7 @@ Sub pmsSendWOL()
         
         'Append our SecureOn password
         header = header + pass
-        Debug ( header )
+        Debug (tostr(header))
         
         port = CreateObject("roMessagePort")
         addr = CreateObject("roSocketAddress")
