@@ -279,18 +279,18 @@ Function EditMacAddress(address,obj) As Boolean
     Debug("Editing mac for " + machineID + " as: " + address)
 
     ' Check they got it right
-    r = CreateObject("roRegex", "^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$", "i")
-    if r.IsMatch(address) = false then
-       return false
-    end if
+    r = CreateObject("roRegex", "^([0-9A-Fa-f]{12})$", "i")
+    ' removed the need for colons ( it's annoying to enter them in and we strip them anyways )
+    'r = CreateObject("roRegex", "^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$", "i")
+    if r.IsMatch(address) = false then return false
       
+    ' ljunkie - deprecated colons
     ' Get rid of colons, and make it lowercase
-    r = CreateObject("roRegex", ":", "")
-    address = r.ReplaceAll(address, "")
+    ' r = CreateObject("roRegex", ":", "")
+    ' address = r.ReplaceAll(address, "")
     address = LCase(address)    
     
     Debug("Stripped address to: " + address)
-
     
     ' To mantain backwards compatibility, we store MAC address in a seperate 'serverData' JSON array in the registry.
     ' Not sure why the devs didnt think to use JSON in the first place...
@@ -300,7 +300,7 @@ Function EditMacAddress(address,obj) As Boolean
 End Function
 
 Function EditSecureOnPass(pass,obj) As Boolean
-     machineID = obj.MachineID
+    machineID = obj.MachineID
     Debug("Editing WOL Pass for " + machineID + " as: " + pass)
 
     ' Check they got it right

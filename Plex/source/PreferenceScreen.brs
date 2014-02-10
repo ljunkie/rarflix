@@ -1508,7 +1508,7 @@ Function createEditServerScreen(viewController, server, parentScreen, listOffset
     obj.AddItem({title: "Edit address",ShortDescriptionLine2: "The address at which this server is located"}, "url", obj.server.Url )
     obj.AddItem({title: "Edit WOL MAC address",ShortDescriptionLine1:"Wake-on-LAN MAC address",ShortDescriptionLine2: "Activates remote server wake up"}, "mac", GetServerData(obj.server.MachineID,"Mac") )
     WOLPass = GetServerData(obj.server.MachineID,"WOLPass")
-    if ( type(WOLPass) <> "String" ) or ( type(WOLPass) <> "roString" ) or ( WOLPass.ifstringops.Len() <> 12 ) then
+    if WOLPass = invalid or Len(WOLPass) <> 12 then
         obj.AddItem({title: "Edit WOL SecureOn Password",ShortDescriptionLine1: "12-Digit hexadecimal password ",ShortDescriptionLine2: "for a Wake-on-LAN request"}, "WOLPass" )
     else
         obj.AddItem({title: "Edit WOL SecureOn Password",ShortDescriptionLine1: "12-Digit hexadecimal password ",ShortDescriptionLine2: "for a Wake-on-LAN request"}, "WOLPass", "************" )
@@ -1534,7 +1534,6 @@ Function prefsEditServerHandleMessage(msg) As Boolean
             m.FocusedListItem = msg.GetIndex()
             if command = "url" then
                 screen = m.ViewController.CreateTextInputScreen("Enter Host Name or IP without http:// or :32400", ["Edit Server address"], false)
-                'screen.Screen.SetText(m.server.url)  <- Should resanitize this into a hostname/ip format
                 screen.Screen.SetMaxLength(80)
                 screen.ValidateText = AddUnnamedServer
                 screen.Show()
@@ -1543,23 +1542,20 @@ Function prefsEditServerHandleMessage(msg) As Boolean
                 initialText = GetServerData(m.server.MachineID,"WOLPass")
                 if initialText = invalid then initialText = ""
                 screen = m.ViewController.CreateTextInputScreen("12-digit hexadecimal password for WOL.  Leave blank if unsure.", ["Edit SecureOn Password"], false, initialText, true )
-                'screen.Screen.SetText(m.server.mac)  <- Should add back the colons before doing this
-                screen.Screen.SetMaxLength(17)
+                screen.Screen.SetMaxLength(12)
                 screen.MachineID = m.server.MachineID
                 screen.Listener = m
                 screen.Listener.OnUserInput = EditSecureOnPass
                 screen.Show()
             else if command = "mac" then
                 m.currentIndex = msg.GetIndex()
-                screen = m.ViewController.CreateTextInputScreen("Enter MAC address in the format of xx:xx:xx:xx:xx:xx", ["Edit MAC address"], false)
-                'screen.Screen.SetText(m.server.mac)  <- Should add back the colons before doing this
-                screen.Screen.SetMaxLength(17)
+                screen = m.ViewController.CreateTextInputScreen("Enter MAC address. 12 Alphanumber characters [no colons]", ["Edit MAC address"], false, GetServerData(m.server.MachineID,"Mac"))
+                screen.Screen.SetMaxLength(12)
                 screen.MachineID = m.server.MachineID
                 screen.Listener = m
                 screen.Listener.OnUserInput = EditMacAddress
                 screen.Show()
             else if command = "remove" then
-                'm.HandleEnumPreference(command, msg.GetIndex())
                 dialog = createBaseDialog()    
                 dialog.Title = "Confirm Remove"
                 dialog.Text = "Are you sure you want to remove this server?"
