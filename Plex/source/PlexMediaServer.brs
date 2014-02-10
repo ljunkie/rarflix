@@ -976,36 +976,29 @@ Sub pmsOnUrlEvent(msg, requestContext)
     ' Don't care about the response for any of our requests.
 End Sub
 
-Sub pmsSendWOL(connectionUrl = invalid)
+Sub pmsSendWOL()
     if m.machineID <> invalid then
         mac = GetServerData(m.machineID, "Mac")
 
         if mac = invalid then return
 
-        ' use the specified connectionURl (we might be sending a requests to all IP's, not just the primary/first)
-        if connectionUrl = invalid then connectionUrl = m.serverUrl
-        
-        ' Grab our Host from URL using Regex and Address functions
-        r = CreateObject("roRegex", "//", "") 'Get right of http://
-        splitResult = r.Split(connectionUrl)
-        a = CreateObject("roSocketAddress")
-        a.SetAddress ( splitResult[1] )
-        host = a.GetHostName()
-        
         ' Broadcasting to 255.255.255.255 only works on some Rokus, but we
         ' can't reliably determine the broadcast address for our current
-        ' interface. Try assuming a /24 network, and then fall back to the
-        ' host name if that doesn't work - incase it's a remote WOL packet
+        ' interface. Try assuming a /24 network - we may need a toggle to 
+        ' override the broadcast address
 
-        ' TODO(ljunkie) - any reason we actually care about using the PMS ip subnet? Shouldn't we just use the 
-        ' broadcast domain of the connected Roku interfaces? We might just need to use the roDeviceInfo
-
+        ip = invalid
         subnetRegex = CreateObject("roRegex", "((\d+)\.(\d+)\.(\d+)\.)(\d+)", "")
-        match = subnetRegex.Match(host)
-        if match.Count() > 0 then
-            host = match[1] + "255"
-            Debug("Using WOL broadcast address " + tostr(host))
+        addr = GetFirstIPAddress()
+        if addr <> invalid then
+            match = subnetRegex.Match(addr)
+            if match.Count() > 0 then
+                ip = match[1] + "255"
+                Debug("Using broadcast address " + ip)
+            end if
         end if
+
+        if ip = invalid then return
             
         ' Get our secure on pass
         pass = GetServerData(m.machineID, "WOLPass")
@@ -1027,25 +1020,28 @@ Sub pmsSendWOL(connectionUrl = invalid)
         udp.setMessagePort(port)
         udp.setBroadcast(true)
       
-        addr.setHostname(host)
+        addr.setHostname(ip)
         addr.setPort(9)
         udp.setSendToAddress(addr)
         
         packet.fromhexstring(header)
         udp.notifyReadable(true)
         sent = udp.send(packet,0,108)
-        Debug ("pmsSendWOL:: Sent Magic Packet of " + tostr(sent) + " bytes to " + host )
+        Debug ("pmsSendWOL:: Sent Magic Packet of " + tostr(sent) + " bytes to " + ip )
         udp.close()
         
-        ' ljunkie - changed to send wakeup packet multiple times to same PMS with possibility of having multiple IP's (local myPlex)
-        WOLcounterKey = "WOLCounter" + tostr(host)
+        ' only send the broadcast 5 times per requested mac address
+        WOLcounterKey = "WOLCounter" + tostr(mac)
         if GetGlobalAA().lookup(WOLcounterKey) = invalid then GetGlobalAA().AddReplace(WOLcounterKey, 0)
         GetGlobalAA()[WOLcounterKey] = GetGlobalAA().[WOLcounterKey]  + 1
 
         ' TODO(ljunkie) find a better way to do this instead of delaying the startup. 
-        'This delays the startup of the rest of the client by 500ms.  Maybe make this better, but it allows the HTTP request to reach successfully
-        'We should find a way to skip WOL altogether if the server is turned on already
+        '
+        ' Talidan - This delays the startup of the rest of the client by 500ms.  Maybe make this better, but it allows the HTTP request to reach successfully
+        ' We should find a way to skip WOL altogether if the server is turned on already. 
+        ' ljunkie - It get a little more complicate when people use myPlex+local servers. I don't see an issue with a little delay if someone decied to use the 
+        ' WOL feature
         Sleep(100) 
-        if GetGlobalAA()[WOLcounterKey] < 6 then m.sendWOL(connectionUrl)
+        if GetGlobalAA()[WOLcounterKey] < 6 then m.sendWOL()
     end if
 End Sub
