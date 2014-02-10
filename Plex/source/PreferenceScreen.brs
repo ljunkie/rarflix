@@ -1486,19 +1486,18 @@ End Sub
 
 '*** Edit Server screen ***
 sub refreshEditServerScreen(p)  'A copy of ljunkie's ingenius hack to update the screen after changing settings.  Wish i figured this out sooner!
- server = GetPlexMediaServer(m.server.MachineID)
- ' ljunkie - we may have removed the server -- verify it exists before we create the edit screen again
- if server <> invalid 
-     screen = createEditServerScreen(m.ViewController,GetServerFromMachineID(m.server.MachineID),m.ParentScreen,m.listOffset) 'Get a new pointer for our new screen
-     m.ViewController.InitializeOtherScreen(screen, ["Edit Server"])
-     if m.FocusedListItem <> invalid then screen.screen.SetFocusedListItem(m.FocusedListItem)
-     screen.Show()            
- end if
- m.ViewController.popscreen(m)
+    server = GetPlexMediaServer(m.server.MachineID)
+    ' ljunkie - we may have removed the server -- verify it exists before we create the edit screen again
+    if server <> invalid 
+        screen = createEditServerScreen(m.ViewController,GetServerFromMachineID(m.server.MachineID),m.ParentScreen,m.listOffset) 'Get a new pointer for our new screen
+        m.ViewController.InitializeOtherScreen(screen, ["Edit Server"])
+        if m.FocusedListItem <> invalid then screen.screen.SetFocusedListItem(m.FocusedListItem)
+        screen.Show()            
+    end if
+    m.ViewController.popscreen(m)
 end sub
   
 Function createEditServerScreen(viewController, server, parentScreen, listOffset) As Object
-    'TraceFunction("createEditServerScreen", viewController, server)
     obj = createBasePrefsScreen(viewController)
     obj.Activate = refreshEditServerScreen
     obj.HandleMessage = prefsEditServerHandleMessage

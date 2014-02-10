@@ -997,6 +997,9 @@ Sub pmsSendWOL(connectionUrl = invalid)
         ' interface. Try assuming a /24 network, and then fall back to the
         ' host name if that doesn't work - incase it's a remote WOL packet
 
+        ' TODO(ljunkie) - any reason we actually care about using the PMS ip subnet? Shouldn't we just use the 
+        ' broadcast domain of the connected Roku interfaces? We might just need to use the roDeviceInfo
+
         subnetRegex = CreateObject("roRegex", "((\d+)\.(\d+)\.(\d+)\.)(\d+)", "")
         match = subnetRegex.Match(host)
         if match.Count() > 0 then
@@ -1006,10 +1009,7 @@ Sub pmsSendWOL(connectionUrl = invalid)
             
         ' Get our secure on pass
         pass = GetServerData(m.machineID, "WOLPass")
-
-        if ( type(pass) <> "String" ) or ( type(pass) <> "roString" ) or ( pass.ifstringops.Len() <> 12 ) then
-            pass = "ffffffffffff"
-        end if
+        if pass = invalid or Len(pass) <> 12 then pass = "ffffffffffff"
                
         header = "ffffffffffff"
         For k=1 To 16
@@ -1018,7 +1018,7 @@ Sub pmsSendWOL(connectionUrl = invalid)
         
         'Append our SecureOn password
         header = header + pass
-        Debug (tostr(header))
+        Debug ("pmsSendWOL:: header " + tostr(header))
         
         port = CreateObject("roMessagePort")
         addr = CreateObject("roSocketAddress")
@@ -1034,18 +1034,18 @@ Sub pmsSendWOL(connectionUrl = invalid)
         packet.fromhexstring(header)
         udp.notifyReadable(true)
         sent = udp.send(packet,0,108)
-        Debug ( "Sent Magic Packet of " + tostr(sent) + " bytes to " + host )
+        Debug ("pmsSendWOL:: Sent Magic Packet of " + tostr(sent) + " bytes to " + host )
         udp.close()
         
-        if GetGlobalAA().WOLCounter = invalid then
-            GetGlobalAA().WOLCounter  = 0
-        end if
-        GetGlobalAA().WOLCounter = GetGlobalAA().WOLCounter  + 1
+        ' ljunkie - changed to send wakeup packet multiple times to same PMS with possibility of having multiple IP's (local myPlex)
+        WOLcounterKey = "WOLCounter" + tostr(host)
+        if GetGlobalAA().lookup(WOLcounterKey) = invalid then GetGlobalAA().AddReplace(WOLcounterKey, 0)
+        GetGlobalAA()[WOLcounterKey] = GetGlobalAA().[WOLcounterKey]  + 1
+
+        ' TODO(ljunkie) find a better way to do this instead of delaying the startup. 
         'This delays the startup of the rest of the client by 500ms.  Maybe make this better, but it allows the HTTP request to reach successfully
         'We should find a way to skip WOL altogether if the server is turned on already
         Sleep(100) 
-        if GetGlobalAA().WOLCounter  < 6 then
-            m.sendWOL()
-        end if
+        if GetGlobalAA()[WOLcounterKey] < 6 then m.sendWOL(connectionUrl)
     end if
 End Sub
