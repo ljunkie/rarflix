@@ -258,10 +258,12 @@ Function gridHandleMessage(msg) As Boolean
             m.selectedRow = msg.GetIndex()
             m.focusedIndex = msg.GetData()
 
-            vc = GetViewController()
-            if vc.Home <> invalid AND m.screenid <> vc.Home.ScreenID and m.contentArray <> invalid and type(m.contentArray[m.selectedRow]) = "roArray" then 
+            if m.contentArray <> invalid and type(m.contentArray[m.selectedRow]) = "roArray" then 
                 item = m.contentArray[m.selectedRow][m.focusedIndex]
-       
+            end if
+
+            vc = GetViewController()
+            if vc.Home <> invalid AND m.screenid <> vc.Home.ScreenID then 
                 if item <> invalid and tostr(item.type) = "photo" and tostr(item.nodename) <> "Directory" then
                     description = getExifDesc(item,true) ' this resues the items metadata mediainfo if already loaded
                     if description <> invalid then
