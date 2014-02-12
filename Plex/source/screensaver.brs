@@ -81,10 +81,9 @@ Sub SaveImagesForScreenSaver(item, sizes)
     ' adding it to roImageCanvas requests as a header is (oddly) tricky,
     ' so just add it to the URL.
 
-    if item <> invalid AND item.server <> invalid AND item.server.AccessToken <> invalid AND Left(item.HDPosterURL, 4) = "http" then
-        token = "&X-Plex-Token=" + item.server.AccessToken
-    else
-        token = ""
+    token = ""
+    if item <> invalid AND item.server <> invalid AND item.server.AccessToken <> invalid then
+        if item.HDPosterURL <> invalid and Left(item.HDPosterURL, 4) = "http" then token = "&X-Plex-Token=" + item.server.AccessToken
     end if
 
     thumbUrlHD = invalid:thumbUrlSD = invalid
