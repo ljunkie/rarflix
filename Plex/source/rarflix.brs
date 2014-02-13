@@ -826,6 +826,13 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
     supportedIdentifier = (obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
     isMovieShowEpisode = (obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode")
 
+    ' New Full Grid sorting options -- TODO(ljunkie) - can these be extended into the normal rows?
+    ' obj.disablefullgrid = invalid needed?
+    if obj.isfullgrid = true and type(obj.screen) = "roGridScreen" then 
+        sort = getSortingOption(invalid,obj.loader.sourceurl)
+        dialog.SetButton("SectionSorting", "Sorting: " + sort.item.title)
+    end if
+
     ' ljunkie - Home Screen shortcut ( if we are not already on the homescreen )
     vc = GetViewController()
     screen = vc.screens.peek()
@@ -963,6 +970,18 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     ' this should probably just be combined into rfVideoMoreButton  ( there are some caveats though and maybe more to come.. so until this has been finalized )
     dialog = createBaseDialog()
     buttonSep = invalid
+
+    ' New Full Grid sorting options -- TODO(ljunkie) - can these be extended into the normal rows?
+    ' obj.disablefullgrid = invalid needed?
+    if obj.isfullgrid = true and type(obj.screen) = "roGridScreen" then 
+        re = CreateObject("roRegex", "/all|/firstCharacter", "i")
+        if obj.loader <> invalid and obj.loader.sourceurl <> invalid and re.IsMatch(obj.loader.sourceurl) then
+            sort = getSortingOption(invalid,obj.loader.sourceurl)
+            dialog.SetButton("SectionSorting", "Sorting: " + sort.item.title)
+        else 
+            dialog.SetButton("SectionSortingDisabled", "Sorting: Section Specific")
+        end if
+    end if
 
     ' ljunkie - Home Screen shortcut ( if we are not already on the homescreen )
     vc = GetViewController()
@@ -1185,6 +1204,14 @@ sub rfBasicDialog(obj)
     ' ljunkie - Home Screen shortcut ( if we are not already on the homescreen )
     '  TODO: rethink using this for rfDefRemoteOptionButton() sub -- we could also add in a button for searching
     dialog = createBaseDialog()
+
+    ' New Full Grid sorting options -- TODO(ljunkie) - can these be extended into the normal rows?
+    ' obj.disablefullgrid = invalid needed?
+    if obj.isfullgrid = true and type(obj.screen) = "roGridScreen" then 
+        sort = getSortingOption(invalid,obj.loader.sourceurl)
+        dialog.SetButton("SectionSorting", "Sorting: " + sort.item.title)
+    end if
+
     dialog.SetButton("GoToHomeScreen", "Home Screen")
     dialog.SetButton("close", "Back")
     dialog.HandleButton = videoDialogHandleButton
@@ -1780,4 +1807,3 @@ function supportsTextScreen() as boolean
     if (major > 4) or (major = 4 and minor > 2) then textScreen = true
     return textScreen
 end function
-

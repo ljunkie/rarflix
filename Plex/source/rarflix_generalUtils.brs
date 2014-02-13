@@ -82,10 +82,24 @@ function convertToFilter(server,url)
     if instr(1, url, "/filters") > 0 then return url
     if instr(1, url, "/sorts"  ) > 0 then return url
 
-    ' return original if already a new filter call
-    if instr(1, url, "/all") > 0 then return url
-
     newurl = url
+
+    ' these already support paging and or filters correctly
+    re = CreateObject("roRegex", "/all|/firstCharacter", "i")
+    if re.IsMatch(newurl) then 
+        ' see if we need to set the default sort option (or override)
+        ' TODO(ljunkie) wrap this into a sub/function
+        if instr(1, newurl, "sort=") = 0 then 
+            f = "?"
+            if instr(1, newurl, "?") > 0 then f = "&"
+            sort = getSortingOption()
+            newurl = newurl + f + "sort=" + sort.item.key
+            Debug(" new SORT URL: " + tostr(newurl))
+        end if
+
+        return newurl
+    end if
+
 
     ' determine the valid filters we can use -- not all older calls have an exact filtered call
 
@@ -121,6 +135,10 @@ function convertToFilter(server,url)
 
     found = false
     for each filter in validFilters
+
+        ' special caveats
+        ' * TV Show : /library/sections/#/unwatchedLeaves should be /library/sections/#/unwatched
+        if filter.filter = "unwatchedLeaves" then filter.key = sectionKey + "/unwatched"
 
         ' integer and string filters
         ' Example:
@@ -164,8 +182,62 @@ function convertToFilter(server,url)
         Debug("converted older API request to New API filter")
         Debug(" orig URL: " + tostr(url))
         Debug(" new  URL: " + tostr(newurl))
+
+        ' see if we need to set the default sort option (or override)
+        if instr(1, newurl, "sort=") = 0 then 
+            f = "?"
+            if instr(1, newurl, "?") > 0 then f = "&"
+            sort = getSortingOption()
+            newurl = newurl + f + "sort=" + sort.item.key
+            Debug(" new SORT URL: " + tostr(newurl))
+        end if
+
     end if
 
     return newurl
 
+end function
+
+function getSortingOption(GetNext = invalid,sourceUrl=invalid)
+    ' TODO(ljunkie) customer based on section ( different sorting options )
+
+    ' try to determine the current sort if already in the url
+    sortKey = invalid
+    if sourceUrl <> invalid then 
+        re = CreateObject("roRegex", "sort=([^\&\?]+)", "i")
+        match = re.Match(sourceurl)
+        if match[0] <> invalid then sortKey = match[1]
+    end if
+
+    obj = {}
+    options = []
+    options.Push({ title: "Title", key: "titleSort:asc"})
+    options.Push({ title: "Date Added", key: "addedAt:desc"})
+    options.Push({ title: "Date Released", key: "originallyAvailableAt:desc"})
+    options.Push({ title: "Rating", key: "rating:desc"})
+    obj.contentArray = options
+    obj.curIndex = 0
+
+    defaultSort = RegRead("section_sort", "preferences","titleSort:asc")
+
+    if sortKey = invalid then sortKey = GetGlobalAA().lookup("section_sort")
+    if sortkey = invalid then sortKey = defaultSort
+
+    for index = 0 to options.count()-1
+        if options[index].key = sortKey then 
+            obj.curIndex = index
+        end if
+    end for
+
+    if GetNext <> invalid
+        obj.curIndex = obj.curIndex+1
+        if obj.curIndex > options.count()-1 then obj.curIndex = 0
+
+        GetGlobalAA().AddReplace("section_sort",options[obj.curIndex].key)
+    end if
+
+    obj.item = obj.contentArray[obj.curIndex]
+
+    ' return the default sort option if the required critera hasn't been matched
+    return obj
 end function

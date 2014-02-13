@@ -373,7 +373,7 @@ Sub loaderRefreshData()
                         end if
 
 
-                        if NOT supportedIdentifier then 
+                        if NOT supportedIdentifier and m.sortingForceReload = invalid then 
                             Debug("----- skip FULL grid reload -- not a supported identifier " + tostr(supportedIdentifier))
                             doFullReload = false:forceFullReload = false
                         end if
@@ -468,6 +468,8 @@ Sub loaderRefreshData()
             end if
         end if
     end if
+
+    if m.sortingForceReload <> invalid then m.sortingForceReload = invalid
  
     ' UGH -- TODO the above nesting is crazy
 End Sub

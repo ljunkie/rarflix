@@ -495,6 +495,51 @@ Function videoDialogHandleButton(command, data) As Boolean
         context.OnAfterClose = CloseScreenUntilHomeVisible
         context.OnAfterClose()
         closeDialog = true
+    else if command = "SectionSorting" then
+        sort = getSortingOption(1)
+        m.SetButton(command, "Sorting: " + sort.item.title)
+
+        sortKey = sort.item.key
+        if sortKey = invalid or obj = invalid or obj.loader = invalid or obj.loader.sourceurl = invalid then return true
+
+        sourceurl = obj.loader.sourceurl
+        if sourceurl <> invalid then 
+            re = CreateObject("roRegex", "(sort=[^\&\?]+)", "i")
+            if re.IsMatch(sourceurl) then 
+                sourceurl = re.ReplaceAll(sourceurl, "sort="+sortKey)
+            else 
+                f = "?"
+                if instr(1, sourceurl, "?") > 0 then f = "&"    
+                sourceurl = sourceurl + f + "sort="+sortKey
+            end if
+            obj.loader.sourceurl = sourceurl
+            obj.loader.sortingForceReload = true
+            if obj.loader.listener <> invalid and obj.loader.listener.loader <> invalid then 
+                obj.loader.listener.loader.sourceurl = sourceurl
+            end if
+        end if
+    
+        contentArray =  obj.loader.contentArray
+        if contentArray <> invalid and contentArray.count() > 0 then 
+            for index = 0 to contentArray.count()-1
+                if contentArray[index].key <> invalid then 
+                    print contentArray[index].key
+                    re = CreateObject("roRegex", "(sort=[^\&\?]+)", "i")
+                    if re.IsMatch(contentArray[index].key) then
+                        contentArray[index].key = re.ReplaceAll(contentArray[index].key, "sort="+sortKey)
+                    else 
+                        f = "?"
+                        if instr(1, contentArray[index].key, "?") > 0 then f = "&"    
+                        contentArray[index].key = contentArray[index].key + f + "sort="+sortKey
+                    end if
+                     print contentArray[index].key
+                 end if
+            end for
+        end if
+
+        obj.Refresh(true)
+        m.Refresh()
+         
     else if command = "RFVideoDescription" then
 
         ' A TextScreen seems a little too much for this.. a description (should) fit it a dialog all by iteself 

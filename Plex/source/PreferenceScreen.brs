@@ -529,8 +529,8 @@ Function createSlideshowPrefsScreen(viewController) As Object
 
     ' reload slideshow after every full run
     values = [
-        { title: "Disabled", EnumValue: "disabled",  ShortDescriptionLine2: "Do not check for new Photos",  },
-        { title: "Enabled", EnumValue: "enabled",  ShortDescriptionLine2: "Check for new Photos" },
+        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Do not check for new Photos", },
+        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Check for new Photos" },
     ]
     obj.Prefs["slideshow_reload"] = {
         values: values,
@@ -2083,6 +2083,18 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
 '    }
 
     ' Prefer Grid or Poster view for most?
+
+    values = [
+        { title: "Title", EnumValue: "titleSort:asc",  ShortDescriptionLine2: "Sort by Title",  },
+        { title: "Date Added", EnumValue: "addedAt:desc",  ShortDescriptionLine2: "sort by Date Added" },
+        { title: "Date Released/Taken", EnumValue: "originallyAvailableAt:desc",  ShortDescriptionLine2: "sort by Date Released/Taken" },
+    ]
+    obj.Prefs["section_sort"] = {
+        values: values,
+        heading: "Sort Items (when not specifically sorted)",
+        default: "titleSort:asc"
+    }
+
     rf_poster_grid = [
         { title: "Grid", EnumValue: "grid", ShortDescriptionLine2: "Prefer FULL grid when viewing items"  },
         { title: "Poster", EnumValue: "poster", ShortDescriptionLine2: "Prefer Poster (one row) when viewing items"  },
@@ -2192,6 +2204,7 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
 
     obj.Screen.SetHeader("Change the appearance of your sections")
 
+    obj.AddItem({title: "Sorting",ShortDescriptionLine2: "Sorting of Content"}, "section_sort", obj.GetEnumValue("section_sort"))
     obj.AddItem({title: "Reorder Rows"}, "section_row_order")
     obj.AddItem({title: "TV Series"}, "use_grid_for_series", obj.GetEnumValue("use_grid_for_series"))
     obj.AddItem({title: "TV Episode Size"}, "rf_episode_episodic_style", obj.GetEnumValue("rf_episode_episodic_style"))
@@ -2219,7 +2232,7 @@ Function prefsSectionDisplayHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "use_grid_for_series" or command = "rf_poster_grid" or command = "rf_grid_style" or command = "rf_grid_displaymode" or command = "rf_poster_displaymode" or command = "rf_fullgrid_hidetext" or command = "rf_episode_episodic_style" then 
+            if command = "use_grid_for_series" or command = "rf_poster_grid" or command = "rf_grid_style" or command = "rf_grid_displaymode" or command = "rf_poster_displaymode" or command = "rf_fullgrid_hidetext" or command = "rf_episode_episodic_style" or command = "section_sort" then 
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "rf_grid_description" then
                 screen = createGridDescriptionPrefsScreen(m.ViewController)
