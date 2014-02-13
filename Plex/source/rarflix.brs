@@ -826,12 +826,7 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
     supportedIdentifier = (obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
     isMovieShowEpisode = (obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode")
 
-    ' New Full Grid sorting options -- TODO(ljunkie) - can these be extended into the normal rows?
-    ' obj.disablefullgrid = invalid needed?
-    if obj.isfullgrid = true and type(obj.screen) = "roGridScreen" then 
-        sort = getSortingOption(invalid,obj.loader.sourceurl)
-        dialog.SetButton("SectionSorting", "Sorting: " + sort.item.title)
-    end if
+    dialogSetSortingButton(dialog,obj) 
 
     ' ljunkie - Home Screen shortcut ( if we are not already on the homescreen )
     vc = GetViewController()
@@ -971,17 +966,7 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     dialog = createBaseDialog()
     buttonSep = invalid
 
-    ' New Full Grid sorting options -- TODO(ljunkie) - can these be extended into the normal rows?
-    ' obj.disablefullgrid = invalid needed?
-    if obj.isfullgrid = true and type(obj.screen) = "roGridScreen" then 
-        re = CreateObject("roRegex", "/all|/firstCharacter", "i")
-        if obj.loader <> invalid and obj.loader.sourceurl <> invalid and re.IsMatch(obj.loader.sourceurl) then
-            sort = getSortingOption(invalid,obj.loader.sourceurl)
-            dialog.SetButton("SectionSorting", "Sorting: " + sort.item.title)
-        else 
-            dialog.SetButton("SectionSortingDisabled", "Sorting: Section Specific")
-        end if
-    end if
+    dialogSetSortingButton(dialog,obj) 
 
     ' ljunkie - Home Screen shortcut ( if we are not already on the homescreen )
     vc = GetViewController()
@@ -1205,12 +1190,7 @@ sub rfBasicDialog(obj)
     '  TODO: rethink using this for rfDefRemoteOptionButton() sub -- we could also add in a button for searching
     dialog = createBaseDialog()
 
-    ' New Full Grid sorting options -- TODO(ljunkie) - can these be extended into the normal rows?
-    ' obj.disablefullgrid = invalid needed?
-    if obj.isfullgrid = true and type(obj.screen) = "roGridScreen" then 
-        sort = getSortingOption(invalid,obj.loader.sourceurl)
-        dialog.SetButton("SectionSorting", "Sorting: " + sort.item.title)
-    end if
+    dialogSetSortingButton(dialog,obj) 
 
     dialog.SetButton("GoToHomeScreen", "Home Screen")
     dialog.SetButton("close", "Back")
@@ -1226,7 +1206,7 @@ sub rfDefRemoteOptionButton(m)
 
     sec_metadata = getSectionType()
     notAllowed = CreateObject("roRegex", "artist|music|album", "") 
-    if  NOT notAllowed.isMatch(tostr(sec_metadata.type)) then 
+    if NOT notAllowed.isMatch(tostr(sec_metadata.type)) then 
         new = CreateObject("roAssociativeArray")
         new.sourceUrl = ""
         'new.ContentType = "prefs"
@@ -1238,7 +1218,23 @@ sub rfDefRemoteOptionButton(m)
         breadcrumbs = ["Miscellaneous","Search"]
         m.ViewController.CreateScreenForItem(new, invalid, breadcrumbs)
         Debug("Showing default serach screen - remote option button pressed ")
-     else
+    else if m.isfullgrid <> invalid and type(m.screen) = "roGridScreen" then 
+        dialog = createBaseDialog()
+        fromName = "invalid"
+        if type(m.loader.getnames) = "roFunction" and m.selectedrow <> invalid then fromName = m.loader.getnames()[m.selectedrow]
+
+        dialogSetSortingButton(dialog,m) 
+
+        dialog.Text = ""
+        dialog.Title = "Options"
+
+        if player.ContextScreenID <> invalid then dialog.setButton("gotoMusicNowPlaying","go to now playing [music]")
+
+        dialog.SetButton("close", "Back")
+        dialog.HandleButton = videoDialogHandleButton
+        dialog.ParentScreen = m
+        dialog.Show()
+     else 
         Debug("Default dialog not allowed in this section")
      end if 
 end sub
@@ -1256,6 +1252,9 @@ sub rfDialogGridScreen(obj as Object)
         dialog = createBaseDialog()
         fromName = "invalid"
         if type(obj.loader.getnames) = "roFunction" and obj.selectedrow <> invalid then fromName = obj.loader.getnames()[obj.selectedrow]
+
+        dialogSetSortingButton(dialog,obj) 
+
         dialog.sepAfter.Push("fullGridScreen")
         dialog.SetButton("fullGridScreen", "Grid View: " + fromName) 'and type(obj.screen) = "roGridScreen" 
         dialog.Text = ""

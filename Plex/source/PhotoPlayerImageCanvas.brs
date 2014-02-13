@@ -184,6 +184,9 @@ Function photoContextMenuHandleButton(command, data) As Boolean
 
         ' keep dialog open
         handled = false
+    else if command = "SectionSorting" then
+        gridSortSection(m,obj,command)
+        handled = false
     end if
 
     ' close the dialog 
@@ -1043,11 +1046,13 @@ sub ICsetImageFailureInfo(failureReason=invalid)
 end sub
 
 ' this can be called independently while passing the object 
-sub photoShowContextMenu(obj = invalid,force_show = false, forceExif = true)
-    if obj <> invalid then
-        Debug("context menu using passed object")
+sub photoShowContextMenu(screen = invalid,force_show = false, forceExif = true)
+    if screen <> invalid then
+        Debug("context menu using passed object from previous screen")
+        obj = screen.item
     else if type(m.context) = "roArray" and m.CurIndex <> invalid then 
         ' try and use the actually item being show -- otherwise fall back to the curIndex
+        screen = m ' m is the screen in this context, but we sometimes pass the screen (above)
         if m.item <> invalid then 
             obj = m.item
         else 
@@ -1102,10 +1107,12 @@ sub photoShowContextMenu(obj = invalid,force_show = false, forceExif = true)
             end if
         end if
 
+        dialogSetSortingButton(dialog,screen) 
+
         dialog.SetButton("close", "Close")
         dialog.HandleButton = photoContextMenuHandleButton
         dialog.EnableOverlay = true
-        dialog.ParentScreen = m
+        dialog.ParentScreen = screen
         dialog.Show()
     end if
 

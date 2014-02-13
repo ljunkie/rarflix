@@ -301,7 +301,7 @@ Sub loaderRefreshData()
             supportedIdentifier = (item.mediaContainerIdentifier = "com.plexapp.plugins.library" OR item.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
 
             ' skip FullGrid reload if the item is a photo or music item
-            if isFullGrid then 
+            if isFullGrid and m.sortingForceReload = invalid then 
                  if contentType = "photo" or contentType = "album" or contentType = "artist" or contentType = "track" then 
                     Debug("----- skip FULL grid reload -- contentType doesn't require it (yet) " + tostr(contentType))
                     return
@@ -381,9 +381,9 @@ Sub loaderRefreshData()
                         ' skip FullGrid reload if the item is a photo or music item
                         ' we do this check earlier, but later on depending on PMS features, we might have to remove it and 
                         ' try to reload the specific item. This is were we can do this
-                        if isFullGrid then 
+                        if isFullGrid and m.sortingForceReload = invalid then 
                              if contentType = "photo" or contentType = "album" or contentType = "artist" or contentType = "track" then 
-                                Debug("----- skip FULL grid reload -- contentType doesn't require it (yet)" + tostr(contentType))
+                                Debug("----- skip FULL grid reload -- contentType doesn't require it (yet) " + tostr(contentType))
                                 doFullReload = false:forceFullReload = false
                              end if
                         end if

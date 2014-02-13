@@ -463,6 +463,10 @@ Sub audioPlayerShowContextMenu()
     end if
 
     dialog.SetButton("show", "Go to Now Playing")
+
+    screen = GetViewController().screens.peek()
+    dialogSetSortingButton(dialog,screen) 
+
     dialog.SetButton("close", "Close")
 
     ' ljunkie - focus to last set button ( logic needs clean up now that set set the dialog.FocusedButton after)
@@ -485,6 +489,8 @@ Sub audioPlayerShowContextMenu()
     dialog.HandleButton = audioPlayerMenuHandleButton
     dialog.SetFocusButton = dialogSetFocusButton
     dialog.ParentScreen = m
+    ' ljunkie - sometimes we need to use the actually parent screen and not the audioPlayer singleton
+    dialog.RealParentScreen = GetViewController().screens.peek()
     dialog.Show()
 End Sub
 
@@ -558,6 +564,10 @@ Function audioPlayerMenuHandleButton(command, data) As Boolean
         obj.slideshow.Refresh()
 
         ' keep dialog open
+        return false
+    else if command = "SectionSorting" then
+        m.StickyButton(command) ' when refreshing buttons, stay focused on this one
+        gridSortSection(m,m.RealParentScreen,command)
         return false
     end if
 

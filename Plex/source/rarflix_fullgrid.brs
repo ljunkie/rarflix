@@ -263,3 +263,63 @@ function getFullGridCurIndex(vc,index,default = 2) as object
     return index
 end function
 
+' re-sort a full grid screen from a dialog
+sub gridSortSection(dialog,grid,command)
+    sort = getSortingOption(1)
+
+    sortKey = sort.item.key
+    if sortKey = invalid or grid = invalid or grid.loader = invalid or grid.loader.sourceurl = invalid then 
+        Debug("gridSortSection:: invalid sortKey invalid or grid screen missing loader?")
+        return
+    end if
+
+    dialog.SetButton(command, "Sorting: " + sort.item.title)
+
+    sourceurl = grid.loader.sourceurl
+    if sourceurl <> invalid then 
+        re = CreateObject("roRegex", "(sort=[^\&\?]+)", "i")
+        if re.IsMatch(sourceurl) then 
+            sourceurl = re.ReplaceAll(sourceurl, "sort="+sortKey)
+        else 
+            f = "?"
+            if instr(1, sourceurl, "?") > 0 then f = "&"    
+            sourceurl = sourceurl + f + "sort="+sortKey
+        end if
+        grid.loader.sourceurl = sourceurl
+        grid.loader.sortingForceReload = true
+        if grid.loader.listener <> invalid and grid.loader.listener.loader <> invalid then 
+            grid.loader.listener.loader.sourceurl = sourceurl
+        end if
+    end if
+
+    contentArray =  grid.loader.contentArray
+    if contentArray <> invalid and contentArray.count() > 0 then 
+        for index = 0 to contentArray.count()-1
+            if contentArray[index].key <> invalid then 
+                re = CreateObject("roRegex", "(sort=[^\&\?]+)", "i")
+                if re.IsMatch(contentArray[index].key) then
+                    contentArray[index].key = re.ReplaceAll(contentArray[index].key, "sort="+sortKey)
+                else 
+                    f = "?"
+                    if instr(1, contentArray[index].key, "?") > 0 then f = "&"    
+                    contentArray[index].key = contentArray[index].key + f + "sort="+sortKey
+                end if
+             end if
+        end for
+    end if
+
+    dialog.Refresh()
+end sub
+
+' TODO(ljunkie) - can these be extended into the normal rows?
+sub dialogSetSortingButton(dialog,obj) 
+    if obj.isfullgrid = true and type(obj.screen) = "roGridScreen" then 
+        re = CreateObject("roRegex", "/all|/firstCharacter", "i")
+        if obj.loader <> invalid and obj.loader.sourceurl <> invalid and re.IsMatch(obj.loader.sourceurl) then
+            sort = getSortingOption(invalid,obj.loader.sourceurl)
+            dialog.SetButton("SectionSorting", "Sorting: " + sort.item.title)
+        else 
+            dialog.SetButton("SectionSortingDisabled", "Sorting: not available")
+        end if
+    end if
+end sub

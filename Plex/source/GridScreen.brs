@@ -363,12 +363,15 @@ Function gridHandleMessage(msg) As Boolean
                 sn = m.screenname
                 if tostr(itype) <> "invalid" and isMovieTV then 
                     ' need to full screen here
-                    obj = m.viewcontroller.screens.peek()
+                    obj = GetViewController().screens.peek()
                     obj.metadata = item
                     obj.Item = item
                     rfVideoMoreButtonFromGrid(obj)
                 else if item <> invalid and tostr(item.contenttype) = "photo" then 
-                    photoShowContextMenu(item,true,true)
+                    ' need to full screen here
+                    obj = GetViewController().screens.peek()
+                    obj.Item = item
+                    photoShowContextMenu(obj,true,true)
                 else if tostr(item.contenttype) <> "invalid" and m.screenid > 0 and tostr(m.screenname) <> "Home" then
                     ' show the option to see the FULL grid screen. We might want this just to do directly to it, but what if we add more options later.
                     ' might as well get people used to this.
