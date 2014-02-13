@@ -1,5 +1,17 @@
-' ljunkie - directory key from XML is parsed here - this is where RokuPlex get's is RowList
 Function newDirectoryMetadata(container, item) As Object
+
+    ' ljunkie - parse /library/sections/#/sorts api call. Keep the metadata basic and lightweight
+    ' is there a better way to know this is a sorts call? 
+    if container <> invalid and container.sourceurl <> invalid and instr(1,container.sourceurl,"/sorts") > 0 then 
+        re = CreateObject("roRegex", "/sorts$", "i") ' overly paranoid
+        if re.IsMatch(container.sourceurl) then 
+            obj = {}
+            obj.key = item@key
+            obj.title = item@title
+            obj.default = item@default
+            return obj
+        end if
+    end if
 
     ' ljunkie - parse */filters call. Keep the metadata basic and lightweight
     ' as we store this in the global cache per server/section
