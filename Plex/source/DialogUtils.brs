@@ -10,6 +10,7 @@ Function createBaseDialog() As Object
     obj.HandleMessage = dialogHandleMessage
     obj.Refresh = dialogRefresh
     obj.SetButton = dialogSetButton
+    obj.StickyButton = dialogStickyButton
 
     ' Properties that can be set by the caller/subclass
     obj.Facade = invalid
@@ -257,4 +258,13 @@ Function dialogSetFocusButton(index) As Boolean
     obj = m.ParentScreen
     obj.FocusedButton = index
 end function
+
+' set the focused button from the command id (command)
+sub dialogStickyButton(command)
+   for index = 0 to m.buttons.count()-1 
+        if m.buttons[index][command] <> invalid then 
+            m.focusedbutton = index
+        end if
+    end for
+end sub
 
