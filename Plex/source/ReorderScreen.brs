@@ -34,6 +34,14 @@ Function createReorderScreen(items, viewController)
         obj.contentArray.Push(item)
     end for
 
+    ' ljunkie - add a close button. Required for legacy remotes to exit a list
+    ' screen. Extra logic added below so we don't swap the close buttons (last)
+    item = {}
+    item.title = "Close"
+    item.key = "close_reorder" ' something unique
+    item.ignore = true         ' to ignore OnUserIput() on close
+    obj.contentArray.Push(item)
+
     obj.FocusedIndex = 0
     obj.Selected = false
 
@@ -72,21 +80,46 @@ Function reorderHandleMessage(msg) As Boolean
                 first = true
                 value = ""
                 for each item in m.contentArray
-                    if first then
-                        first = false
+                    if item.ignore = true then 
+                        Debug("ignore passing value " + tostr(item.title) + " to m.Listener.OnUserInput()")
                     else
-                        value = value + ","
+                        if first then
+                            first = false
+                        else
+                            value = value + ","
+                        end if
+                        value = value + item.key
                     end if
-                    value = value + item.key
                 next
                 m.Listener.OnUserInput(value, m)
             end if
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
+            ' last options is a close button
+            if msg.GetIndex() >= m.contentarray.count()-1 then 
+                m.Screen.Close()
+                return true
+            end if
+
             m.Selected = not m.Selected
             Debug("Selected item, now " + tostr(m.Selected))
             m.FocusedIndex = msg.GetIndex()
         else if msg.isListItemFocused() then
+            ' last options is a close button ( unfocus - we will NOT swap )
+            if msg.GetIndex() >= m.contentarray.count()-1 and m.Selected then 
+               Debug("ignore selection -- last item (close)")
+               m.Selected = false
+               m.WasSelected = true
+            end if
+             
+            ' restore selection/focusedIndex if we were selected, focused over close and then clicked up 
+            if m.WasSelected = true and msg.GetIndex() < m.contentarray.count()-1 then 
+                Debug("restore selection (last state selected)")
+                m.FocusedIndex = msg.GetIndex()
+                m.Selected = true
+                m.WasSelected = invalid
+            end if 
+
             if m.Selected then
                 m.Swap(m.FocusedIndex, msg.GetIndex())
             end if
