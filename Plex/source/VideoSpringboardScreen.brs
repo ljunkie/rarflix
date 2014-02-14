@@ -289,6 +289,11 @@ Function videoHandleMessage(msg) As Boolean
 
                 ' Refresh play data after playing.
                 m.refreshOnActivate = true
+            else if buttonCommand = "putOnDeck" then
+                if m.item <> invalid and m.item.server <> invalid then 
+                    m.item.server.putOnDeck(m.item)
+                end if
+                m.Refresh(true)
             else if buttonCommand = "scrobble" then
                 m.Item.server.Scrobble(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier)
                 ' Refresh play data after scrobbling
@@ -298,8 +303,8 @@ Function videoHandleMessage(msg) As Boolean
                 ' Refresh play data after unscrobbling
                 m.Refresh(true)
             else if buttonCommand = "delete" then
-	        key = m.metadata.id
-		if tostr(key) = "invalid"
+    	        key = m.metadata.id
+	        	if tostr(key) = "invalid"
                   key = m.metadata.key
                 end if
                 m.Item.server.Delete(key)
@@ -351,7 +356,7 @@ Function videoHandleMessage(msg) As Boolean
                 dummyItem.year = year
                 dummyItem.searchTitle = tostr(m.metadata.RFSearchTitle)
                 m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
-                closeDialog = true
+                handled = true
             else if buttonCommand = "tomatoes" then
                 dialog = createBaseDialog()
                 dialog.Title = "Rotten Tomatoes Review"
@@ -381,6 +386,7 @@ Function videoHandleMessage(msg) As Boolean
                 screen = RFcreateCastAndCrewScreen(m)
                 if screen <> invalid then  screen.Show()
                 dialog.Close()
+                handled = true
             else if buttonCommand = "showFromEpisode" then
                 breadcrumbs = ["All Seasons",m.metadata.showtitle]
                 dummyItem = CreateObject("roAssociativeArray")
@@ -388,7 +394,7 @@ Function videoHandleMessage(msg) As Boolean
                 dummyItem.key = m.metadata.grandparentKey + "/children"
                 dummyItem.server = m.metadata.server
                 m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
-                closeDialog = true
+                handled = true
             else if buttonCommand = "seasonFromEpisode" then
                 breadcrumbs = [m.metadata.showtitle, "Season " + m.metadata.parentindex]
                 dummyItem = CreateObject("roAssociativeArray")
@@ -396,7 +402,7 @@ Function videoHandleMessage(msg) As Boolean
                 dummyItem.key = m.metadata.parentKey + "/children"
                 dummyItem.server = m.metadata.server
                 m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
-                closeDialog = true
+                handled = true
             else
                 handled = false
             end if
@@ -520,6 +526,12 @@ Function videoDialogHandleButton(command, data) As Boolean
         dialog.ParentScreen = m
         dialog.Show(true)
 
+        closeDialog = true
+    else if command = "putOnDeck" then
+        if obj.item <> invalid and obj.item.server <> invalid then 
+            obj.item.server.putOnDeck(m.item)
+        end if
+        obj.Refresh(true)
         closeDialog = true
     else if command = "scrobble" then
         obj.metadata.server.Scrobble(obj.metadata.ratingKey, obj.metadata.mediaContainerIdentifier)

@@ -41,6 +41,7 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID, useMyPlexToken=true) As 
     pms.AddDirectPlayInfo = pmsAddDirectPlayInfo
     pms.Log = pmsLog
     pms.SendWOL = pmsSendWOL
+    pms.putOnDeck = pmsPutOnDeck
 
     ' RARflix Tools
     '  - maybe more to come, but I'd prefer these part of the PMS
@@ -91,6 +92,18 @@ Function issuePostCommand(commandPath)
     request = m.CreateRequest("", commandUrl)
     request.PostFromString("")
 End Function
+
+Sub pmsPutOnDeck(item)
+    if item = invalid then return
+    ' use the existing view offset ( this should already be onDeck, but possible onDeck weeks expired)
+    if item.viewOffset <> invalid AND val(item.viewOffset) > 0 then
+        time = item.viewOffset
+    else 
+        time = 10*1000
+    end if
+
+    m.Timeline(item, "stopped", time)
+end sub
 
 Sub pmsTimeline(item, state, time)
     itemsEqual = (item <> invalid AND m.lastTimelineItem <> invalid AND item.ratingKey = m.lastTimelineItem.ratingKey)

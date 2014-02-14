@@ -854,19 +854,24 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
         ' this might be a TV season/All Seasons
         print obj.metadata
         if tostr(obj.metadata.type) = "season" or tostr(obj.metadata.viewgroup) = "season" then
-           print obj.metadata.type
-	   print obj.metadata.viewedLeafCount
-	   print obj.metadata.leafCount
+            print obj.metadata.type
+    	    print obj.metadata.viewedLeafCount
+    	    print obj.metadata.leafCount
 
-           if val(obj.metadata.viewedLeafCount) = val(obj.metadata.leafCount) then
+            if val(obj.metadata.viewedLeafCount) = val(obj.metadata.leafCount) then
                 dialog.SetButton("unscrobble", "Mark as unwatched")
-           else if val(obj.metadata.viewedLeafCount) > 0 then
+            else if val(obj.metadata.viewedLeafCount) > 0 then
                 dialog.SetButton("unscrobble", "Mark as unwatched")
                 dialog.SetButton("scrobble", "Mark as watched")
-           else if val(obj.metadata.leafCount) > 0 then
+            else if val(obj.metadata.leafCount) > 0 then
                 dialog.SetButton("scrobble", "Mark as watched")
-           end if
+            end if
         else 
+
+            if obj.metadata.sourceurl = invalid or instr(1, obj.metadata.sourceurl, "onDeck") = 0 then 
+                dialog.SetButton("putOnDeck", "Put On Deck")
+            end if
+
             if obj.metadata.viewOffset <> invalid AND val(obj.metadata.viewOffset) > 0 then ' partially watched
                 dialog.SetButton("unscrobble", "Mark as unwatched")
                 dialog.SetButton("scrobble", "Mark as watched")
@@ -1074,19 +1079,22 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     if supportedIdentifier then
         print obj.metadata
         if tostr(obj.metadata.type) = "season" or tostr(obj.metadata.viewgroup) = "season" then
-           print obj.metadata.type
-	   print obj.metadata.viewedLeafCount
-	   print obj.metadata.leafCount
+            print obj.metadata.type
+    	    print obj.metadata.viewedLeafCount
+	        print obj.metadata.leafCount
 
-           if val(obj.metadata.viewedLeafCount) = val(obj.metadata.leafCount) then
+            if val(obj.metadata.viewedLeafCount) = val(obj.metadata.leafCount) then
                 dialog.SetButton("unscrobble", "Mark as unwatched")
-           else if val(obj.metadata.viewedLeafCount) > 0 then
+            else if val(obj.metadata.viewedLeafCount) > 0 then
                 dialog.SetButton("unscrobble", "Mark as unwatched")
                 dialog.SetButton("scrobble", "Mark as watched")
-           else if val(obj.metadata.leafCount) > 0 then
+            else if val(obj.metadata.leafCount) > 0 then
                 dialog.SetButton("scrobble", "Mark as watched")
-           end if
+            end if
         else 
+            if obj.metadata.sourceurl = invalid or instr(1, obj.metadata.sourceurl, "onDeck") = 0 then 
+                dialog.SetButton("putOnDeck", "Put On Deck")
+            end if
             if obj.metadata.viewOffset <> invalid AND val(obj.metadata.viewOffset) > 0 then ' partially watched
                 dialog.SetButton("unscrobble", "Mark as unwatched")
                 dialog.SetButton("scrobble", "Mark as watched")
@@ -1098,7 +1106,6 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
                 ' no need to show unwatched 
             end if
         end if
-
     end if
 
     if supportsTextScreen() and obj.metadata.UMdescription <> invalid and len(obj.metadata.UMdescription) > 10 then dialog.SetButton("RFVideoDescription", "Description")

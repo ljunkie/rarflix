@@ -298,7 +298,15 @@ Sub loaderRefreshData()
             item = m.listener.contentarray[sel_row][sel_item]
             contentType = tostr(item.contenttype)
             isFullGrid = (m.listener.isfullgrid = true)
+
             supportedIdentifier = (item.mediaContainerIdentifier = "com.plexapp.plugins.library" OR item.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
+            ' it's possible we are returning from a full grid. The focus item will not be supported ( special row )
+            if NOT supportedIdentifier and NOT isFullGrid then 
+                Debug("trying the listener item -- could be coming from a full grid")
+                if m.listener.item <> invalid then 
+                    supportedIdentifier = (m.listener.item.mediaContainerIdentifier = "com.plexapp.plugins.library" OR m.listener.item.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
+                end if
+            end if
 
             ' skip FullGrid reload if the item is a photo or music item
             if isFullGrid and m.sortingForceReload = invalid then 
