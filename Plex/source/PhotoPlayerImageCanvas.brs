@@ -13,8 +13,14 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     obj.Activate = ICphotoPlayerActivate
     obj.OnTimerExpired = ICphotoPlayerOnTimerExpired
     obj.OnUrlEvent = photoSlideShowOnUrlEvent
-    obj.nonIdle = ICnonIdle
     obj.Refresh = PhotoPlayerRefresh
+
+    obj.maxIdle = 10    ' number of seconds to send a remote key to keep the slideshow non idle
+    m.lastImageEpoch = 0 ' we haven't displayed an image yet (set to integer)
+
+    ' slideshow perfs TODO(ljunkie) - add some inline options
+    obj.slideshowPeriod = RegRead("slideshow_period", "preferences", "6").toInt()
+    obj.slideshow_overlay = RegRead("slideshow_overlay", "preferences", "2500").toInt()
 
     ' we do some thing different if one is using a legacy remote ( no back button or info(*) button )
     if RegRead("legacy_remote", "preferences","0") <> "0" then 
@@ -124,7 +130,7 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
 
     ' slideshow timer
     if obj.Timer = invalid then
-        time = RegRead("slideshow_period", "preferences", "6").toInt()
+        time = obj.slideshowPeriod
         obj.Timer = createTimer()
         obj.Timer.Name = "slideshow"
         obj.Timer.SetDuration(time*1000, true)
@@ -134,7 +140,7 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
 
     ' overlay timer
     if obj.TimerOverlay = invalid then
-        time = RegRead("slideshow_overlay", "preferences", "2500").toInt()
+        time = obj.slideshow_overlay
         if time = 0 then time = 2500
         obj.TimerOverlay = createTimer()
         obj.TimerOverlay.Name = "overlay"
@@ -308,7 +314,7 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
                 Debug("button pressed (not handled) code:" + tostr(msg.GetIndex()))
             end if
 
-            m.nonIdle(true) ' reset the idle Time -- no need to send key
+            m.idleTimer.mark() ' reset the idleTimer ( button pressed )
 
         end if
     end if
@@ -439,16 +445,16 @@ sub ICphotoPlayerOnTimerExpired(timer)
 
     if timer.Name = "HealthCheck" then
         amountPlayed = m.playbackTimer.GetElapsedSeconds()
-        Debug("HealthCheck:: PING! slideshow running for " + tostr(amountPlayed) + " seconds")
-        Debug("HealthCheck:: idle time: " + tostr(m.idleTimer.GetElapsedSeconds()) + " seconds")
+        Debug("++HealthCheck:: PING! slideshow running for " + tostr(amountPlayed) + " seconds")
+        Debug("++HealthCheck:: idle time: " + tostr(m.idleTimer.GetElapsedSeconds()) + " seconds")
 
         ' Check to see if the slideshow is paused but should be active. The timer could have been deactivated 
         ' to complete a task (urlTransfer). We should cancel any pending requests as we would have reactivated
         ' when we received a completed transfer (failure or success) but somehow didn't
         if m.IsPaused = false and m.Timer.Active = false then  
-            Debug("HealthCheck:: cancel any pending requests and start fresh on screenID: " + tostr(m.screenID))
+            Debug("++HealthCheck:: cancel any pending requests and start fresh on screenID: " + tostr(m.screenID))
             GetViewController().CancelRequests(m.ScreenID)
-            Debug("HealthCheck:: Reactivate slideshow timer")
+            Debug("++HealthCheck:: Reactivate slideshow timer")
             m.Timer.Mark()
             m.Timer.Active = true
         end if
@@ -458,7 +464,29 @@ sub ICphotoPlayerOnTimerExpired(timer)
     if timer.Name = "slideshow" then
         if m.context.count() > 1 then 
             Debug("ICphotoPlayerOnTimerExpired:: slideshow popped")
-            m.Next()
+ 
+            ' check if we are over the IDLE time (keep the Roku NON idle if slideshow is playing)
+            if m.idleTimer.GetElapsedSeconds() > m.maxIdle then 
+                epochCheck = getEpoch()-(m.slideshowPeriod+30) 
+                imageIsCurrent = m.lastImageEpoch-epochCheck
+
+                Debug("idle time popped: idle for " + tostr(m.idleTimer.GetElapsedSeconds()) + " seconds. Check if we need to reset what roku thinks is idle!")
+
+                ' check if the last image is current. If not, we don't want to force a next button to reset the idle timer
+                if imageIsCurrent > 0 then
+                    Debug("resetting idle time (will send a remote 'right' key to continue)")
+                    Debug("last Successful Display: " + getLogDate(m.lastImageEpoch))
+                    SendRemoteKey("right") ' this will reset the idle time (default with a keypress)
+                else 
+                    Debug("NOT resetting idle time: the slideshow hasn't displayed an image recently enough")
+                    Debug(" last successful display: " + getLogDate(m.lastImageEpoch))
+                    Debug("    needed to be current: " + getLogDate(epochCheck))
+                    m.Next()
+                end if
+            else 
+                m.Next()
+            end if
+
         end if
     end if
 
@@ -510,29 +538,9 @@ sub ICshowSlideImage()
     m.screen.AllowUpdates(true)
     m.Timer.Mark()
     GetViewController().ResetIdleTimer() ' lockscreen
-    m.nonIdle() ' inhibit screensaver
-end sub
 
-sub ICnonIdle(reset=false)
-   ' NOTE: calling this will will reset the idle time inhibiting the screen saver, by 
-   ' sending a remote request: keyboard request for letter x -- should be ok
-   ' *DO NOT* call this unless you know the slideshow is working
-   '
-   ' reset=true: only used when we know user clicked a button -- causing a non-idle event
-   '
-   ' INFO: we don't know what the user has set the screen saver idle time too we do know 
-   ' 5 minutes is the lowest setting, so set this number lower than 300, preferably no 
-   ' higher than 200 to be safe
-    maxIdle = 120
-    if reset then 
-        Debug("idle time reset (forced)")
-        m.idleTimer.mark()
-    else if m.idleTimer.GetElapsedSeconds() > maxIdle then 
-        Debug("idle time reset (popped)")
-        m.idleTimer.mark()
-        SendRemoteKey("Lit_x") ' sending keyboard command (x) -- stop idle
-    end if
-    Debug("ICnonIdle:: idle time: " + tostr(m.idleTimer.GetElapsedSeconds()) + " seconds")
+    ' mark the last known epoch when an image was successfully displayed
+    m.lastImageEpoch = getEpoch()
 end sub
 
 sub ICphotoPlayerNext()
@@ -829,7 +837,7 @@ end sub
 sub ICphotoPlayerActivate(priorScreen) 
     ' pretty basic for now -- we will resume the slide show if paused and forceResume is set
     '  note: forceResume is set if slideshow was playing while EU hits the * button ( when we come back, we need/should to resume )
-    m.nonIdle(true)
+    m.idleTimer.mark() ' rest the idleTimer ( button pressed )
     if m.isPaused and m.ForceResume then 
         m.Resume():m.ForceResume = false
         if AudioPlayer().forceResume = true then 

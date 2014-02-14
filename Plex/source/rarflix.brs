@@ -1426,13 +1426,20 @@ function getEpoch() as integer
         return datetime.AsSeconds()
 end function 
 
-function getLogDate() as string
+function getLogDate(epoch=invalid) as string
         datetime = CreateObject( "roDateTime" )
+
+        ' convert epoch if given - otherwise use the current time
+        if epoch <> invalid then 
+            datetime.FromSeconds(epoch)
+        end if
+
         datetime.ToLocalTime()
+
         date = datetime.AsDateString("short-date")
 
         hours = datetime.GetHours()
-	if hours < 10 then 
+    	if hours < 10 then 
             hours = "0" + tostr(hours)
         else 
             hours = tostr(hours)
