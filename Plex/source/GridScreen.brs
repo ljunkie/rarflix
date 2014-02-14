@@ -698,13 +698,24 @@ Sub gridOnTimerExpired(timer)
             Debug("Loading an additional " + tostr(rowsToLoad) + " rows")
         end if
 
-        ' load the extra rows
+        ' load the extra rows ( deactivate if we don't actually fire off any requests )
+        sentRequest = false
         if rowsToLoad > 0 and rfloaded < m.loader.contentArray.Count() then 
             for index = 0 to rowsToLoad
                 row_down = index+rfloaded
-                if row_down < m.loader.contentArray.Count() then m.Loader.LoadMoreContent(row_down, 0)
+                if row_down < m.loader.contentArray.Count() then 
+                    m.Loader.LoadMoreContent(row_down, 0)
+                    sentRequest = true
+                end if
             next
         end if
+
+        if NOT sentRequest then
+            Debug("Loaded enough rows -- Deactivate timer [2] " + tostr(timer.name))
+            timer.Active = false
+            return 
+        end if
+
     end if
 
 End Sub
