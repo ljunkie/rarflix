@@ -1218,12 +1218,12 @@ sub rfDefRemoteOptionButton(m)
         breadcrumbs = ["Miscellaneous","Search"]
         m.ViewController.CreateScreenForItem(new, invalid, breadcrumbs)
         Debug("Showing default serach screen - remote option button pressed ")
-    else if m.isfullgrid <> invalid and type(m.screen) = "roGridScreen" then 
+    else if m.isfullgrid = true and type(m.screen) = "roGridScreen" then 
         dialog = createBaseDialog()
-        fromName = "invalid"
-        if type(m.loader.getnames) = "roFunction" and m.selectedrow <> invalid then fromName = m.loader.getnames()[m.selectedrow]
 
         dialogSetSortingButton(dialog,m) 
+
+        dialog.SetButton("GoToHomeScreen", "Home Screen")
 
         dialog.Text = ""
         dialog.Title = "Options"
@@ -1245,7 +1245,7 @@ sub rfDialogGridScreen(obj as Object)
     if player.IsPlaying or player.IsPaused then return
 
     if type(obj.item) = "roAssociativeArray" and tostr(obj.item.contenttype) = "section" and NOT tostr(obj.item.nodename) = "Directory" or obj.selectedrow = 0 then ' row 0 is reserved for the fullGrid shortcuts
-        'print obj.item
+        print obj.item
         rfDefRemoteOptionButton(obj) 
     ' for now the only option is grid view so we will verify we are in a roGridScreen. It we add more buttons, the type check below is for fullGridScreen
     else if obj.isfullgrid = invalid and obj.disablefullgrid = invalid and type(obj.screen) = "roGridScreen" then 
@@ -1254,6 +1254,8 @@ sub rfDialogGridScreen(obj as Object)
         if type(obj.loader.getnames) = "roFunction" and obj.selectedrow <> invalid then fromName = obj.loader.getnames()[obj.selectedrow]
 
         dialogSetSortingButton(dialog,obj) 
+
+        dialog.SetButton("GoToHomeScreen", "Home Screen")
 
         dialog.sepAfter.Push("fullGridScreen")
         dialog.SetButton("fullGridScreen", "Grid View: " + fromName) 'and type(obj.screen) = "roGridScreen" 

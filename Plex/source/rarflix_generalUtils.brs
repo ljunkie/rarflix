@@ -92,7 +92,7 @@ function convertToFilter(server,url)
         if instr(1, newurl, "sort=") = 0 then 
             f = "?"
             if instr(1, newurl, "?") > 0 then f = "&"
-            sort = getSortingOption()
+            sort = getSortingOption(server,newurl)
             newurl = newurl + f + "sort=" + sort.item.key
             Debug(" new SORT URL: " + tostr(newurl))
         end if
@@ -187,7 +187,7 @@ function convertToFilter(server,url)
         if instr(1, newurl, "sort=") = 0 then 
             f = "?"
             if instr(1, newurl, "?") > 0 then f = "&"
-            sort = getSortingOption()
+            sort = getSortingOption(server,newurl)
             newurl = newurl + f + "sort=" + sort.item.key
             Debug(" new SORT URL: " + tostr(newurl))
         end if
@@ -198,46 +198,13 @@ function convertToFilter(server,url)
 
 end function
 
-function getSortingOption(GetNext = invalid,sourceUrl=invalid)
-    ' TODO(ljunkie) customer based on section ( different sorting options )
+function getBaseSectionKey(sourceUrl = invalid)
+    if sourceUrl = invalid then return invalid
 
-    ' try to determine the current sort if already in the url
-    sortKey = invalid
-    if sourceUrl <> invalid then 
-        re = CreateObject("roRegex", "sort=([^\&\?]+)", "i")
-        match = re.Match(sourceurl)
-        if match[0] <> invalid then sortKey = match[1]
-    end if
+    sectionKey = invalid
+    r = CreateObject("roRegex", "(/library/sections/\d+)", "")
+    wanted = r.Match(sourceUrl)
+    if wanted[0] <> invalid then sectionKey = wanted[1]
 
-    obj = {}
-    options = []
-    options.Push({ title: "Title", key: "titleSort:asc"})
-    options.Push({ title: "Date Added", key: "addedAt:desc"})
-    options.Push({ title: "Date Released", key: "originallyAvailableAt:desc"})
-    options.Push({ title: "Rating", key: "rating:desc"})
-    obj.contentArray = options
-    obj.curIndex = 0
-
-    defaultSort = RegRead("section_sort", "preferences","titleSort:asc")
-
-    if sortKey = invalid then sortKey = GetGlobalAA().lookup("section_sort")
-    if sortkey = invalid then sortKey = defaultSort
-
-    for index = 0 to options.count()-1
-        if options[index].key = sortKey then 
-            obj.curIndex = index
-        end if
-    end for
-
-    if GetNext <> invalid
-        obj.curIndex = obj.curIndex+1
-        if obj.curIndex > options.count()-1 then obj.curIndex = 0
-
-        GetGlobalAA().AddReplace("section_sort",options[obj.curIndex].key)
-    end if
-
-    obj.item = obj.contentArray[obj.curIndex]
-
-    ' return the default sort option if the required critera hasn't been matched
-    return obj
+    return sectionKey
 end function

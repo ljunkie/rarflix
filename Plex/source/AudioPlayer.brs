@@ -566,8 +566,8 @@ Function audioPlayerMenuHandleButton(command, data) As Boolean
         ' keep dialog open
         return false
     else if command = "SectionSorting" then
-        m.StickyButton(command) ' when refreshing buttons, stay focused on this one
-        gridSortSection(m,m.RealParentScreen,command)
+        dialog = createGridSortingDialog(m,m.RealParentScreen)
+        if dialog <> invalid then dialog.Show(true)
         return false
     end if
 

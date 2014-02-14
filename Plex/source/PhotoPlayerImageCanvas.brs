@@ -185,7 +185,8 @@ Function photoContextMenuHandleButton(command, data) As Boolean
         ' keep dialog open
         handled = false
     else if command = "SectionSorting" then
-        gridSortSection(m,obj,command)
+        dialog = createGridSortingDialog(m,obj)
+        if dialog <> invalid then dialog.Show(true)
         handled = false
     end if
 

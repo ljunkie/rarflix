@@ -496,7 +496,8 @@ Function videoDialogHandleButton(command, data) As Boolean
         context.OnAfterClose()
         closeDialog = true
     else if command = "SectionSorting" then
-        gridSortSection(m,obj,command)
+        dialog = createGridSortingDialog(m,obj)
+        if dialog <> invalid then dialog.Show(true)
     else if command = "RFVideoDescription" then
 
         ' A TextScreen seems a little too much for this.. a description (should) fit it a dialog all by iteself 
