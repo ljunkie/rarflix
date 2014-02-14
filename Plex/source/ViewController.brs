@@ -953,7 +953,7 @@ Sub vcShowReleaseNotes(options = invalid)
         us = "_______________"
         paragraphs.Push("                 Donations accepted at http://www.rarflix.com")
         paragraphs.Push("  ")
-        paragraphs.Push(us+"v3.1.18-internal (2014-02-10)"+us)
+        paragraphs.Push(us+"v3.1.19-internal (2014-02-14)"+us)
         paragraphs.Push("  ")
         paragraphs.Push(" * slide show completely rewritten (testing)")
         paragraphs.Push(" * lazy load photo sections on the grid")
