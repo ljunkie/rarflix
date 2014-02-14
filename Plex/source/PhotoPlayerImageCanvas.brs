@@ -476,7 +476,7 @@ sub ICphotoPlayerOnTimerExpired(timer)
                 if imageIsCurrent > 0 then
                     Debug("resetting idle time (will send a remote 'right' key to continue)")
                     Debug("last Successful Display: " + getLogDate(m.lastImageEpoch))
-                    SendRemoteKey("right") ' this will reset the idle time (default with a keypress)
+                    SendEcpCommand("Right")
                 else 
                     Debug("NOT resetting idle time: the slideshow hasn't displayed an image recently enough")
                     Debug(" last successful display: " + getLogDate(m.lastImageEpoch))

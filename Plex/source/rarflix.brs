@@ -1160,13 +1160,8 @@ end function
 
 ' Hack to show the HUD
 Sub SendRemoteKey(key)
-    di = CreateObject("roDeviceInfo")
-    ipaddrs = di.GetIPAddrs()
-    if ipaddrs.eth0 <> invalid then ipaddr = ipaddrs.eth0
-    if ipaddrs.eth1 <> invalid then ipaddr = ipaddrs.eth1
-    'print "ipaddr: ";ipaddr
-    sleep(200)
-    url = "http://"+ipaddr+":8060/keypress/" + key
+    'deprecated in favor of SendEcpCommand()
+    url = "http://127.0.0.1:8060/keypress/" + key
     Debug("sending key " + tostr(key) + " " + tostr(url))
     xfer = CreateObject("roUrlTransfer")
     xfer.SetUrl(url)
@@ -1187,7 +1182,7 @@ sub HUDnotify(screen,obj = invalid)
             content.releasedate = content.releasedate + chr(10) + i.title + chr(10)  'chr(10) for spacing between notifications (works with 1 too)
         next
         screen.Screen.SetContent(content)      ' set new content for notification 
-        SendRemoteKey("Down")                  ' show HUD
+        SendEcpCommand("Down")
         screen.Screen.SetContent(content_orig) ' reset HUD to our original content
     end if
 end sub
