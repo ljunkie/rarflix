@@ -667,7 +667,6 @@ Function createHideRowsPrefsScreen(viewController) As Object
         { title: "Recently Released", key: "newest" },
         { title: "Unwatched", key: "unwatched" },
         { title: "[movie] Recently Added (uw)", key: "all?type=1&unwatched=1&sort=addedAt:desc" }, 'movie/film for now
-        { title: "[movie] Recently Released (uw)", key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc" }, 'movie/film for now
         { title: "[movie] Recently Released (uw)", key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc" }, 
         { title: "[tv] Recently Added Season", key: "recentlyAdded?stack=1" }, 
         { title: "[tv] Recently Aired (uw)", key: "all?timelineState=1&type=4&unwatched=1&sort=originallyAvailableAt:desc" }, 
