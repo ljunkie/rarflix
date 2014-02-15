@@ -1,3 +1,105 @@
+#3.1.21-DEV (2014-02-14) Public Release
+
+    NOTE: this includes all major changes from v3.1.0-final to v3.1.21-dev
+
+    * RARflix will work when myPlex is down ( one can enter and use the channel )
+        - add myPlex found servers to the server registry
+        - Always use myPlex servers if it's up (reachable)
+        - fall back to the last known server(s) we learned through myPlex
+            - if myPlex servers are down/unreachable or return invalid info
+            - if the internet connection is offline ( same as myPlex being unreachable )
+
+    * Full Grid inline Sorting [WIP]
+        - use all sorting options per section type
+        - save sorting type per section during the session
+        - works for all sections and their specific sort options
+        - default sort options : Preferences / Section Display / Sorting
+            - Title or Date Added ( these are supported in all sections )
+            - You can choose a more specific sort option in a full grid
+
+    * WOL (Wake on LAN) -- h/t @Talidan
+        - via preferences / Plex Media Server / Edit Server
+        NOTE: sometimes requests for the home screen info are sent before the server wakes. If you are missing rows, exit and re-enter the channel. This will hopefully be fixed soon.
+
+
+    * Put On Deck - use the info (*) key to see the option [WIP]
+        - how? sends a timeline (watched progress) to the PMS stating the item has been viewed for 10 seconds (minimum to put onDeck)
+        - if the item is already in progress, it will use the existing offset (not 10 seconds)
+        - works for movies
+        - works for TV episodes (should be known only one episode per show can actually be on deck)
+
+    * Clock/Date Options
+        - 12 and 24 hour clock
+        - add Date option to Home Screen ( toggle and format options - independent of the clock/time )
+
+    * Add a "Description" button to the dialog pop up to show the non truncated description. 
+
+    * Include the ROLE of the cast member(s) if one exists ( Cast & Crew )
+
+    * global search: will now search shared servers ( only searched local/owned servers previously )
+
+    * Complete rewrite of the Slide Show - moved from roSlideShow to roImageCanvas (can handle an arbitrary amount of items now) [WIP]
+        - rewrote the loading of photo metadata (quicker and less memory use)
+        - PhotoPlayer (slideshow) will lazy load metadata and image content
+        - one can click next/previous while when 'showing' a single photo
+        - skip songs with fwd/rwd buttons when music is playing
+        - inline shuffle (info button)
+        - go to Now Playing (info button)
+        - hold down right/left to skip many photos at a time
+        - legacy remotes can use the OK button to bring up the dialog
+        - Underscan/Overscan slideshow options in Preferences (Monitor or TV)
+        - resume audio in a slideshow when playing a video over the top (remote control)
+        - start audio in the background (remote control)
+        - reload slideshow after complete ( if set in prefs ) allow every 300 seconds
+        - should fully function Plex Companion (remote client control)
+        - toggle overlay with down button (keeps state during slideshow)
+        - auto resume on re-activation (from Dialog and Now Playing screens)
+        - lots and lots more! At least 100+ hours put into this..  but this is pretty boring info isn't it!
+
+    NOTE: all previous functionality should exist including more, except for how the images scale on the screen. Since this slideshow has been written from the ground up, I don't' have access to Roku scaling features ( photo-fit, scale-to-fit, scale-to-fill, etc). As of now, all images will be "Scaled to Fit". This means NO cropping and not stretching. It will enlarge the scale the image to fit, I.E. enlarge or reduce in size to fit the screen. I have it on my list to look into a smart fit algorithm so we can maybe stretch images up to a certain percent to fit the screen, but that's for another day. 
+
+    * shortcut for the Home Screen -- from a dialog (remote * key)
+
+    * Various Speed Improvements for the UI
+        * converted older API calls to new API calls that supports pagination properly (pretty big gain for large libraries)
+        * skip API requests if we already have an identical pending request
+        * full grid lazy loading (background timer)
+        * now playing api calls are no longer blocking ( had potential to delay UI response until completed)
+        * pause loading the parents grid items when we enter a new screen
+        * huge speed up for TV section, if TV Season Posters pref is enabled [default]
+        * fix possible slow downs when using multiple PMS servers with and without AuthTokens
+            - only use AuthToken for valid machineID - h/t Schuyler
+
+    ############ Misc. fixes -- not to exciting
+
+    * focus on last used section when starting - broke due to merger of official channel
+        - changed logic to remember last used (actual entered section) vs just focusing on the library section
+
+    * Now Playing home screen row: some updates to allow audio in the now playing row (needs more work before it can be enabled)
+
+    * legacy remotes: add a close button to the Reorder Screens
+
+    * do not reload sections/shared sections or channels when there are multiple servers (stop random ordering of sections/content)
+
+    * Home Screen BoB (popout) toggle broken in v3.1.0
+
+    * some possible memory cleanup (Roku mentioned XML leaks)
+
+    * set screensaver background (canvas) black
+
+    * full grid items per row: items are now dynamically set for HD/SD screens per style
+
+    * possible crash when entering more screens from a search a search
+    * TV Episodic view force images ( blank images with digits no longer supported )
+    * Remove 'Dir:' from photo BoB
+
+    * screen saver image fixes (initial fix)
+        - images seems to only be saved in a springBoard (preplay screens)
+        - now we save whenever we focus on an image (gridscreen or posters)
+        - screensaver did not save images from the Home Screen (pre 3.1.2)
+
+    * other misc Fixes/Crashes/Changes not worth detailing
+
 #3.1.4-internal - 3.1.7-internal (2014-02-01) -- still testing -- not available
      * many changes (TODO) list them all when done
 
