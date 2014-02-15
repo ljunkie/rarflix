@@ -559,7 +559,7 @@ Function createSlideshowPrefsScreen(viewController) As Object
     ' Prefer Grid or Poster view for most?
     rf_photos_grid_style = [
         { title: "Portrait", EnumValue: "flat-movie", ShortDescriptionLine2: "Grid 5x2"  },
-        { title: "Landscape 16x9", EnumValue: "flat-16X9", ShortDescriptionLine2: "Grid 5x3"  },
+        { title: "Landscape 16x9", EnumValue: "flat-16x9", ShortDescriptionLine2: "Grid 5x3"  },
         { title: "Landscape", EnumValue: "flat-landscape", ShortDescriptionLine2: "Grid 5x3"  },
     ]
     obj.Prefs["rf_photos_grid_style"] = {

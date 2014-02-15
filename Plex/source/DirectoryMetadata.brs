@@ -44,6 +44,17 @@ Function newDirectoryMetadata(container, item) As Object
         directory.ContentType = "appClip"
     endif
 
+    ' TODO(ljunkie) - verify TV shows -- do they need this fix too?
+    if directory.ContentType = "movie" or directory.ContentType = "show" then
+        directory.scanner = item@scanner
+        directory.agent = item@agent
+        ' hard code setting as homevideos for later. Image sizes differ along with features allowed ( trailers, cast & crew, etc )
+        if item@uuid <> invalid and item@scanner <> invalid and item@scanner = "Plex Video Files Scanner"  then 
+            GetGlobalAA().AddReplace("lsHomeVideos_"+item@uuid, true)
+            directory.isHomeVideos = true
+        end if
+     end if
+
     directory.MachineID = item@machineIdentifier
     directory.Owned = item@owned
 

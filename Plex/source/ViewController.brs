@@ -363,7 +363,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         end if
 
         if useGrid then
-            screen = createGridScreenForItem(item, m, "flat-16X9") ' we want 16x9 for series ( maybe flat-landscape when available )
+            screen = createGridScreenForItem(item, m, "flat-16x9") ' we want 16x9 for series ( maybe flat-landscape when available )
             screenName = "Series Grid"
             if screen.loader.focusrow <> invalid then screen.loader.focusrow = 1 ' override this so we can hide the sub sections ( flat-16x9 is 5x3 )
         else
@@ -410,7 +410,6 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screenName = "Section: " + tostr(item.type)
         if tostr(item.type) = "artist" then 
             Debug("---- override photo-fit/flat-square for section with content of " + tostr(item.type))
-            'screen = createGridScreenForItem(item, m, "flat-square","photo-fit") ' might need to change back to defaults ( grid_style -- to fit the standard )
             screen = createGridScreenForItem(item, m, "flat-landscape", "photo-fit")
             if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 5x3 )
         else if tostr(item.type) = "photo" then 
@@ -420,10 +419,15 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             screen = createGridScreenForItem(item, m, grid_style_photos ,displayMode)
             if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 7x3 )
         else 
+'            if item.isHomeVideos = true then grid_style = "flat-landscape"
+            if item.isHomeVideos = true then grid_style = "flat-16x9"
             screen = createGridScreenForItem(item, m, grid_style, displaymode_grid)
+            if grid_style = "flat-16x9" or grid_style = "flat-16x9" then 
+                screen.loader.focusrow = 2 ' hide header row ( 7x3 )
+            end if
         end if
     else if contentType = "playlists" then
-        screen = createGridScreenForItem(item, m, "flat-16X9") ' not really sure where this is ( maybe the myPlex queue )
+        screen = createGridScreenForItem(item, m, "flat-16x9") ' not really sure where this is ( maybe the myPlex queue )
         screenName = "Playlist Grid"
         if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( flat-16x9 is 5x3 )
     else if contentType = "photo" then

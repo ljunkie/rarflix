@@ -3,12 +3,6 @@ Function createVideoSpringboardScreen(context, index, viewController) As Object
 
     'obj.screen.UseStableFocus(true) ' ljunkie - set this globally instead BaseSpringboardScreen.brs:createBaseSpringboardScreen
 
-    ' Our item's content-type affects the poster dimensions here, so treat
-    ' clips as episodes.
-    if obj.Item.ContentType = "clip" then
-        obj.Item.ContentType = "episode"
-    end if
-
     obj.SetupButtons = videoSetupButtons
     obj.GetMediaDetails = videoGetMediaDetails
     obj.superHandleMessage = obj.HandleMessage
@@ -39,6 +33,7 @@ Sub videoSetupButtons()
     versionArr = GetGlobal("rokuVersionArr", [0])
 
     isMovieShowEpisode = (m.metadata.ContentType = "movie" or m.metadata.ContentType = "show" or m.metadata.ContentType = "episode")
+    isHomeVideos = (m.metadata.isHomeVideos = true)
 
    'ljunkie - don't show stars if invalid
     if m.metadata.starrating = invalid then m.Screen.SetStaticRatingEnabled(false)
@@ -54,13 +49,13 @@ Sub videoSetupButtons()
     Debug("Can direct play = " + tostr(videoCanDirectPlay(m.media)))
 
     ' Trailers! (TODO) enable this for TV shows ( youtube is still useful? )
-    if m.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
+    if NOT isHomeVideos and m.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
          m.AddButton("Trailer", "getTrailers")
     end if
 
     ' hide cast and crew to show ratings instead ( firmware 3.x and less only allow for 5 buttons )
     if versionArr[0] >= 4 then 
-        if isMovieShowEpisode and m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then m.AddButton("Cast & Crew","RFCastAndCrewList")
+        if NOT isHomeVideos and isMovieShowEpisode and m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then m.AddButton("Cast & Crew","RFCastAndCrewList")
     end if
 
     supportedIdentifier = (m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
@@ -106,7 +101,7 @@ Sub videoSetupButtons()
     end if
 
     ' Rotten Tomatoes ratings, if enabled
-    if m.metadata.ContentType = "movie" AND RegRead("rf_rottentomatoes", "preferences", "enabled") = "enabled" then 
+    if NOT isHomeVideos and m.metadata.ContentType = "movie" AND RegRead("rf_rottentomatoes", "preferences", "enabled") = "enabled" then 
         tomatoData = m.metadata.tomatoData
         rating_string = "Not Found"
         append_string = "on Rotten Tomatoes"
@@ -243,7 +238,7 @@ Sub videoGetMediaDetails(content)
     '  also useful for TV Episodes: they use screenshots - so thumbs are mixed 4x3 vs 16x9
     '   we can utilize the m.media.aspectratio to determine if it's 4x3 or 16x9
     posterStyle = "default" 
-    if tostr(m.metadata.contentType) = "episode" OR tostr(m.metadata.contentType) = "clip" then
+    if tostr(m.metadata.contentType) = "episode" OR tostr(m.metadata.contentType) = "clip" or m.metadata.isHomeVideos = true then
         posterStyle = "rounded-rect-16x9-generic"
         ' we cannot assume the thumbnail is 4x3 even is the content seems to be ( I have run into 16x9 thumbs with 4x3 content -- how is the possible? )
         ' ' only override back to default if we know it's 4x3

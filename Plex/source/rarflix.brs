@@ -825,6 +825,7 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
 
     supportedIdentifier = (obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR obj.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
     isMovieShowEpisode = (obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode")
+    isHomeVideos = (obj.metadata.isHomeVideos = true)
 
     dialogSetSortingButton(dialog,obj) 
 
@@ -899,7 +900,7 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
     end if
 
     ' these are on the main details screen -- show them last ( maybe not at all )
-    if obj.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
+    if NOT isHomeVideos and obj.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
         dialog.SetButton("getTrailers", "Trailer")
     end if
 
@@ -993,6 +994,7 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     'if buttonSep <> invalid then dialog.sepAfter.Push(buttonSep)
 
     isMovieShowEpisode = (obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode")
+    isHomeVideos = (obj.metadata.isHomeVideos = true)
 
     if isMovieShowEpisode then 
         dialog.SetButton("options", "Playback options")
@@ -1062,13 +1064,13 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     end if
 
     ' Trailers link - RR (last now that we include it on the main screen .. well before delete - people my be used to delete being second to last)
-    if obj.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
+    if NOT isHomeVideos and obj.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
         dialog.SetButton("getTrailers", "Trailer")
     end if
 
     ' cast & crew - must be part of the supported identifier  ( v2.8.2 - changed: a season from global recently added on the homescreen is not a "supported identifier" but is still valid )
     isMovieShowEpisode = (obj.metadata.type = "season" or obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode" or obj.metadata.ContentType = "series")
-    if isMovieShowEpisode then 
+    if NOT isHomeVideos and isMovieShowEpisode then 
         dialog.SetButton("RFCastAndCrewList", "Cast & Crew")
     else
         Debug(" Cast and Crew are not available for " + tostr(obj.metadata.ContentType))
@@ -1372,7 +1374,7 @@ sub rfCDNthumb(metadata,thumb_text,nodetype = invalid, PrintDebug = false)
         rarflix_cdn = "http://d1gah69i16tuow.cloudfront.net"
         ' rarflix_cdn = "http://ec2-b.rarflix.com"
         ' new format -- no longer need to update apache 'CK\d\d\d\d\d\d\d\d'
-        cachekey = "CK20130001" ' 2013-12-13 ( changed font size / wrap / etc ) ' previous fcfab14d40e6685f5918a2d32332a98f
+        cachekey = "CK20140001" ' 2013-12-13 ( handle an image < 300px height after resizing -- centering text > 3 lines )
         NewThumb = rarflix_cdn + "/" + cachekey + "/key/" + URLEncode(thumb_text) ' this will be a autogenerate poster (transparent)
 '        NewThumb = NewThumb + "/size/" + tostr(hdWidth) + "x" + tostr(hdHeight) ' things seem to play nice this way with the my image processor
         NewThumb = NewThumb + "/size/" + tostr(Width) + "x" + tostr(Height)

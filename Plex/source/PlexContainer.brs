@@ -195,6 +195,12 @@ Sub containerParseXml()
 
         PosterIndicators(metadata)
 
+        ' ljunkie - check if HomeVideo. This will be used to limit or change options since HomeVideos don't work with certain features.
+        ' I.E. cast & crew, trailers. The thumbnail size will also be landscape instead of a poster
+        if m.xml@librarySectionUUID <> invalid then 
+            metadata.isHomeVideos = GetGlobalAA().lookup("lsHomeVideos_"+m.xml@librarySectionUUID)
+        end if
+
         if metadata.search = true AND m.SeparateSearchItems then
             m.search.Push(metadata)
         else if metadata.setting = true then
