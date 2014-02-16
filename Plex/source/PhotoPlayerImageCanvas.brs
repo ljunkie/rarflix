@@ -1163,7 +1163,7 @@ sub ICreloadSlideContext(forced=false)
 
             ' set to true to test the reload function 
             ' only used for debugging -- we can remove this at a later date
-            forceReloadTest = false 
+            forceReloadTest = false
 
             newCount = obj.context.count():curCount = m.context.count()
             Debug("Cur Items: " + tostr(curCount)):Debug("New Items: " + tostr(newCount))
@@ -1177,6 +1177,7 @@ sub ICreloadSlideContext(forced=false)
                 Debug("New (cleaned) Items: " + tostr(cleanCount)) 
                 if forceReloadTest or (cleanCount > 0 and cleanCount <> curCount) then 
                     m.context = cleanContext.context
+                    if m.CurIndex > m.Context.count()-1 then m.CurIndex = 0
                     Debug("reloading slideshow with new context " + tostr(m.context.count()) + " items")
                     if m.isShuffled and m.Context.count() > 1 then 
                         Debug("slideshow was shuffled - we need to reshuffle due to new context")
