@@ -420,7 +420,6 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             screen = createGridScreenForItem(item, m, grid_style_photos ,displayMode)
             if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 7x3 )
         else 
-'            if item.isHomeVideos = true then grid_style = "flat-landscape"
             if item.isHomeVideos = true then grid_style = "flat-16x9"
             screen = createGridScreenForItem(item, m, grid_style, displaymode_grid)
             if grid_style = "flat-16x9" or grid_style = "flat-16x9" then 
@@ -464,7 +463,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     else if viewGroup = "secondary" then
         ' these are subsections of a main section ( secondary )
         Debug("---- Creating secondary " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
-        ' ljunkie TODO review this code
+
         sec_metadata = getSectionType()
         if poster_grid = "grid" then 
             DisplayMode = displaymode_grid
@@ -477,9 +476,12 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
                 displayMode = RegRead("photoicon_displaymode", "preferences", "photo-fit") ' Use Display Mode for Photos
                 Debug("---- override " + tostr(displayMode) + "/" + tostr(grid_style_photos) + "for section with content of " + tostr(item.type))
                 focusrow = 1 ' lets fill the screen ( 5x3 )
+            else if sec_metadata.isHomeVideos = true then 
+                grid_style = "flat-16x9"
             end if
+
             screen = createFULLGridScreen(item, m, grid_style, DisplayMode)
-	    screen.loader.focusrow = focusrow ' lets fill the screen ( 5x3 )
+    	    screen.loader.focusrow = focusrow ' lets fill the screen ( 5x3 )
         else 
             posterStyle = "arced-portrait"
             if tostr(sec_metadata.type) = "photo" then posterStyle = "arced-landscape"
