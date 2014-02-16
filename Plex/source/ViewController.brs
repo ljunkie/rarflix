@@ -51,6 +51,7 @@ Function createViewController() As Object
     controller.CloseScreen = vcCloseScreen
 
     controller.Show = vcShow
+    controller.Control= vcControl
     controller.OnInitialized = vcOnInitialized
     controller.UpdateScreenProperties = vcUpdateScreenProperties
     controller.AddBreadcrumbs = vcAddBreadcrumbs
@@ -1251,97 +1252,7 @@ End Sub
 Sub vcShow()
     AppManager().ClearInitializer("viewcontroller")
 
-    timeout = 0
-    lastmin = -1 'container to update every minute
-    while ( m.screens.Count() > 0 OR NOT AppManager().IsInitialized() ) and GetGlobalAA().ProfileExit = invalid
-
-        m.WebServer.prewait()
-        msg = wait(timeout, m.GlobalMessagePort)
-
-        if msg <> invalid then
-            ' Printing debug information about every message may be overkill
-            ' regardless, but note that URL events don't play by the same rules,
-            ' and there's no ifEvent interface to check for. Sigh.
-            'if GetInterface(msg, "ifUrlEvent") = invalid AND GetInterface(msg, "ifSocketEvent") = invalid then
-                'Debug("Processing " + type(msg) + " (top of stack " + type(m.screens.Peek().Screen) + "): " + tostr(msg.GetType()) + ", " + tostr(msg.GetIndex()) + ", " + tostr(msg.GetMessage()))
-            'end if
-            'if type(msg) <> "roUrlEvent" AND type(msg) <> "roSocketEvent" then
-            '    Debug("Processing " + type(msg) + " (top of stack " + type(m.screens.Peek().Screen) + "): ")
-            'end if
-            for i = m.screens.Count() - 1 to 0 step -1
-                if m.screens[i].HandleMessage(msg) = true then
-                    m.ResetIdleTimer()
-                    exit for
-                end if                    
-            end for
-
-            ' Process URL events. Look up the request context and call a
-            ' function on the listener.
-            if type(msg) = "roUrlEvent" AND msg.GetInt() = 1 then
-                id = msg.GetSourceIdentity().tostr()
-                requestContext = m.PendingRequests[id]
-                if requestContext <> invalid then
-                    m.PendingRequests.Delete(id)
-                    if requestContext.Listener <> invalid then
-                        requestContext.Listener.OnUrlEvent(msg, requestContext)
-                    end if
-                    requestContext = invalid
-                end if
-            else if type(msg) = "roSocketEvent" then
-                listener = m.SocketListeners[msg.getSocketID().tostr()]
-                if listener <> invalid then
-                    listener.OnSocketEvent(msg)
-                    listener = invalid
-                else
-                    ' Assume it was for the web server (it won't hurt if it wasn't)
-                    m.WebServer.postwait()
-                end if
-            else if type(msg) = "roAudioPlayerEvent" then
-                if AudioPlayer().HandleMessage(msg) = true and RegRead("locktime_music", "preferences","enabled") <> "enabled" then
-                    m.ResetIdleTimer() ' reset timer if music lock is disabled. I.E. when song changes timer will be reset
-                end if
-            else if type(msg) = "roSystemLogEvent" then
-                msgInfo = msg.GetInfo()
-                if msgInfo.LogType = "bandwidth.minute" then
-                    GetGlobalAA().AddReplace("bandwidth", msgInfo.Bandwidth)
-                end if
-            else if type(msg) = "roChannelStoreEvent" then
-                AppManager().HandleChannelStoreEvent(msg)
-            else if msg.isRemoteKeyPressed() and msg.GetIndex() = 10 then
-                ' do not allow global option key while screen is locked
-                if m.IsLocked <> invalid or NOT m.IsLocked then m.CreateContextMenu()
-            end if
-        end if
-
-        ' Check for any expired timers
-        timeout = 0
-        for each timerID in m.Timers
-            timer = m.Timers[timerID]
-            if timer.IsExpired() then
-                timer.Listener.OnTimerExpired(timer)
-            end if
-
-            ' Make sure we set a timeout on the wait so we'll catch the next timer
-            remaining = timer.RemainingMillis()
-            if remaining > 0 AND (timeout = 0 OR remaining < timeout) then
-                timeout = remaining
-            end if
-        next
-        
-        'check for idle timeout
-        if m.timerIdleTime <> invalid then 'and (msg.isRemoteKeyPressed() or msg.isButtonInfo()) then 
-            ' if for some reason one wants to disable timer during music, we'll handle it - we can handle paused if needed later [AudioPlayer().ispaused]
-            if RegRead("locktime_music", "preferences","enabled") <> "enabled" and (AudioPlayer().isplaying) then 
-                m.ResetIdleTimer()                
-            else 
-	        ' print "IDLE TIME Check: "; int(m.timerIdleTime.RemainingMillis()/int(1000))
-                if m.timerIdleTime.IsExpired()=true then  'timer expired will only return true once
-                    m.createLockScreen()    
-                end if 
-            end if
-        end if
-                 
-    end while
+    m.Control()
 
     ' Clean up some references on the way out
     AnalyticsTracker().Cleanup()
@@ -1701,3 +1612,151 @@ End Sub
 Sub createScreenForItemCallback()
     GetViewController().CreateScreenForItem(m.Item, invalid, [firstOf(m.Heading, "")])
 End Sub
+
+
+sub vcControl() 
+    timeout = 0
+
+    while ( m.screens.Count() > 0 OR NOT AppManager().IsInitialized() ) and GetGlobalAA().ProfileExit = invalid
+
+        m.WebServer.prewait()
+        msg = wait(timeout, m.GlobalMessagePort)
+
+        if msg <> invalid then
+            ' Printing debug information about every message may be overkill
+            ' regardless, but note that URL events don't play by the same rules,
+            ' and there's no ifEvent interface to check for. Sigh.
+            'if GetInterface(msg, "ifUrlEvent") = invalid AND GetInterface(msg, "ifSocketEvent") = invalid then
+                'Debug("Processing " + type(msg) + " (top of stack " + type(m.screens.Peek().Screen) + "): " + tostr(msg.GetType()) + ", " + tostr(msg.GetIndex()) + ", " + tostr(msg.GetMessage()))
+            'end if
+            'if type(msg) <> "roUrlEvent" AND type(msg) <> "roSocketEvent" then
+            '    Debug("Processing " + type(msg) + " (top of stack " + type(m.screens.Peek().Screen) + "): ")
+            'end if
+            for i = m.screens.Count() - 1 to 0 step -1
+                if m.screens[i].HandleMessage(msg) = true then
+                    m.ResetIdleTimer()
+                    exit for
+                end if                    
+            end for
+
+            ' Process URL events. Look up the request context and call a
+            ' function on the listener.
+            if type(msg) = "roUrlEvent" AND msg.GetInt() = 1 then
+                id = msg.GetSourceIdentity().tostr()
+                requestContext = m.PendingRequests[id]
+                if requestContext <> invalid then
+                    m.PendingRequests.Delete(id)
+                    if requestContext.Listener <> invalid then
+                        requestContext.Listener.OnUrlEvent(msg, requestContext)
+                    end if
+                    requestContext = invalid
+                end if
+            else if type(msg) = "roSocketEvent" then
+                listener = m.SocketListeners[msg.getSocketID().tostr()]
+                if listener <> invalid then
+                    listener.OnSocketEvent(msg)
+                    listener = invalid
+                else
+                    ' Assume it was for the web server (it won't hurt if it wasn't)
+                    m.WebServer.postwait()
+                end if
+            else if type(msg) = "roAudioPlayerEvent" then
+                if AudioPlayer().HandleMessage(msg) = true and RegRead("locktime_music", "preferences","enabled") <> "enabled" then
+                    m.ResetIdleTimer() ' reset timer if music lock is disabled. I.E. when song changes timer will be reset
+                end if
+            else if type(msg) = "roSystemLogEvent" then
+                msgInfo = msg.GetInfo()
+                if msgInfo.LogType = "bandwidth.minute" then
+                    GetGlobalAA().AddReplace("bandwidth", msgInfo.Bandwidth)
+                end if
+            else if type(msg) = "roChannelStoreEvent" then
+                AppManager().HandleChannelStoreEvent(msg)
+            else if msg.isRemoteKeyPressed() and msg.GetIndex() = 10 then
+                ' do not allow global option key while screen is locked
+                if m.IsLocked <> invalid or NOT m.IsLocked then m.CreateContextMenu()
+            end if
+        end if
+
+        ' Check for any expired timers
+        timeout = 0
+        for each timerID in m.Timers
+            timer = m.Timers[timerID]
+            if timer.IsExpired() then
+                timer.Listener.OnTimerExpired(timer)
+            end if
+
+            ' Make sure we set a timeout on the wait so we'll catch the next timer
+            remaining = timer.RemainingMillis()
+            if remaining > 0 AND (timeout = 0 OR remaining < timeout) then
+                timeout = remaining
+            end if
+        next
+        
+        'check for idle timeout
+        if m.timerIdleTime <> invalid then 'and (msg.isRemoteKeyPressed() or msg.isButtonInfo()) then 
+            ' if for some reason one wants to disable timer during music, we'll handle it - we can handle paused if needed later [AudioPlayer().ispaused]
+            if RegRead("locktime_music", "preferences","enabled") <> "enabled" and (AudioPlayer().isplaying) then 
+                m.ResetIdleTimer()                
+            else 
+	        ' print "IDLE TIME Check: "; int(m.timerIdleTime.RemainingMillis()/int(1000))
+                if m.timerIdleTime.IsExpired()=true then  'timer expired will only return true once
+                    m.createLockScreen()    
+                end if 
+            end if
+        end if
+                 
+    end while
+
+    ' Exit confirmation?
+    Debug("user has been requested to exit the channel")
+    if RegRead("exit_confirmation", "preferences","enabled") <> "enabled" then 
+        Debug("confirmation disabled")
+        return
+    end if
+    Debug("confirmation enabled - creating a confirmation dialog")
+
+    port = CreateObject("roMessagePort")
+    dialog = CreateObject("roMessageDialog")
+    dialog.SetMessagePort(port) 
+    dialog.SetTitle("Are you sure you want to exit RARflix?")
+
+    dialog.AddButton(1, "Yes")
+    dialog.AddButton(2, "No")
+    dialog.EnableBackButton(true)
+    dialog.Show()
+
+    closeChannel = true
+
+    ' for now this will be a blocking request. The control has been stopped, so the 
+    ' channel is not listening anymore more onHandle events. 
+    ' pretty basic while loop - button index 2 will cancel the close/exit
+    while True
+        dlgMsg = wait(0, dialog.GetMessagePort())
+        if type(dlgMsg) = "roMessageDialogEvent"
+            if dlgMsg.isButtonPressed()
+                if dlgMsg.GetIndex() = 2
+                    closeChannel = false
+                end if
+                exit while
+            else if dlgMsg.isScreenClosed()
+                exit while
+            end if
+        end if
+    end while 
+    dialog.Close()
+
+
+    ' user chose not to exit, we need to set the profileExit invalid, recreate the 
+    ' homescreen, refresh the homescreen and start control again
+    if NOT closeChannel then 
+       Debug("user canceled exiting the channel - re-creating the homescreen now")
+       GetGlobalAA().ProfileExit = invalid
+       m.Home = m.CreateHomeScreen()
+       m.Home.loader.refreshdata()
+       m.Control()
+    end if
+
+    Debug("user confirmed exiting the channel - re-creating the homescreen now")
+
+end sub
+

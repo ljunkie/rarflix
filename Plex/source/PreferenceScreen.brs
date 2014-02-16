@@ -1000,6 +1000,17 @@ Function createAdvancedPrefsScreen(viewController) As Object
 
     obj.HandleMessage = prefsAdvancedHandleMessage
 
+    ' Exit Confirmation
+    values = [
+        { title: "Enabled", EnumValue: "enabled",  },
+        { title: "Disabled", EnumValue: "disabled" }
+    ]
+    obj.Prefs["exit_confirmation"] = {
+        values: values,
+        heading: "Prompt for confirmation when exiting RARflix",
+        default: "enabled"
+    }
+
     ' Transcoder version. We'll default to the "universal" transcoder, but
     ' there's also a server version check.
     transcoder_version = [
@@ -1088,6 +1099,7 @@ Function createAdvancedPrefsScreen(viewController) As Object
 
     obj.Screen.SetHeader("Advanced preferences don't usually need to be changed")
 
+    obj.AddItem({title: "Confirm Exit", shortDescriptionLine2: "prompt before exiting RARflix"}, "exit_confirmation", obj.GetEnumValue("exit_confirmation"))
     obj.AddItem({title: "Transcoder"}, "transcoder_version", obj.GetEnumValue("transcoder_version"))
     obj.AddItem({title: "Continuous Play"}, "continuous_play", obj.GetEnumValue("continuous_play"))
     obj.AddItem({title: "Shuffle Play"}, "shuffle_play", obj.GetEnumValue("shuffle_play"))
