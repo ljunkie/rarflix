@@ -48,69 +48,45 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
     ' End Hide Rows
 
     ' ljunkie - CUSTOM new rows (movies only for now) -- allow new rows based on allows PLEX filters
-    subsec_extras = []
+    '
+    ' 2014-02-16 - music section: firstCharacter
+    '              newItems roAssocArray now holds the extra rows - should be easier to add more later or modify all at once
+    newItems = []
+    size_limit = RegRead("rf_rowfilter_limit", "preferences","200") 'gobal size limit Toggle for filter rows
+
+    if type(item) = "roAssociativeArray" and item.contenttype = "section" and item.type = "artist" then 
+        newItems.push({key: "firstCharacter", title: "First Letter", key_copy: "all"})
+        newItems.push({key: "recentlyViewed", title: "Recently Viewed", key_copy: "all"})
+    end if
 
     if type(item) = "roAssociativeArray" and item.contenttype = "section" and item.type = "show" then 
-        size_limit = RegRead("rf_rowfilter_limit", "preferences","200") 'gobal size limit Toggle for filter rows
-       
-        ' unwatched recently Added season
-        new_key = "recentlyAdded?stack=1"
-        if RegRead("rf_hide_"+new_key, "preferences", "show") = "show" then 
-            keys.Push(new_key)
-            new_name = "Recently Added Seasons"
-            loader.names.Push(new_name)
-            subsec_extras.Push({ key: new_key, name: new_name, key_copy: "all" })
-        end if
-
-        ' unwatched recently Aired EPISODES
-        new_key = "all?timelineState=1&type=4&unwatched=1&sort=originallyAvailableAt:desc"
-        if RegRead("rf_hide_"+new_key, "preferences", "show") = "show" then 
-            new_key = new_key + "&X-Plex-Container-Start=0&X-Plex-Container-Size=" + size_limit
-            keys.Push(new_key)
-            new_name = "Unwatched Recently Aired"
-            loader.names.Push(new_name)
-            subsec_extras.Push({ key: new_key, name: new_name, key_copy: "all" })
-        end if
-
-        ' unwatched recently Aired EPISODES
-        new_key = "all?timelineState=1&type=4&unwatched=1&sort=addedAt:desc"
-        if RegRead("rf_hide_"+new_key, "preferences", "show") = "show" then 
-            new_key = new_key + "&X-Plex-Container-Start=0&X-Plex-Container-Size=" + size_limit
-            keys.Push(new_key)
-            new_name = "Unwatched Recently Added"
-            loader.names.Push(new_name)
-            subsec_extras.Push({ key: new_key, name: new_name, key_copy: "all" })
-        end if
-
+        newItems.push({key: "recentlyAdded?stack=1", title: "Recently Added Seasons", key_copy: "all"})
+        newItems.push({key: "all?timelineState=1&type=4&unwatched=1&sort=originallyAvailableAt:desc", title: "Unwatched Recently Aired", key_copy: "all"})
+        newItems.push({key: "all?timelineState=1&type=4&unwatched=1&sort=addedAt:desc", title: "Unwatched Recently Added", key_copy: "all", size: size_limit})
     end if
 
     if type(item) = "roAssociativeArray" and item.contenttype = "section" and item.type = "movie" then 
-        size_limit = RegRead("rf_rowfilter_limit", "preferences","200") 'gobal size limit Toggle for filter rows
+        newItems.push({key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc", title: "Unwatched Recently Released", key_copy: "all", size: size_limit})
+        newItems.push({key: "all?type=1&unwatched=1&sort=addedAt:desc", title: "Unwatched Recently Added", key_copy: "all", size: size_limit})
+    end if
 
-        ' unwatched recently released
-        new_key = "all?type=1&unwatched=1&sort=originallyAvailableAt:desc"
-        if RegRead("rf_hide_"+new_key, "preferences", "show") = "show" then 
-            new_key = new_key + "&X-Plex-Container-Start=0&X-Plex-Container-Size=" + size_limit
-            keys.Push(new_key)
-            new_name = "Unwatched Recently Released"
-            loader.names.Push(new_name)
-            subsec_extras.Push({ key: new_key, name: new_name, key_copy: "all" })
-        end if
-
-        ' unwatched recently Added
-        new_key = "all?type=1&unwatched=1&sort=addedAt:desc"
-        if RegRead("rf_hide_"+new_key, "preferences", "show") = "show" then 
-            new_key = new_key + "&X-Plex-Container-Start=0&X-Plex-Container-Size=" + size_limit
-            keys.Push(new_key)
-            new_name = "Unwatched Recently Added"
-            loader.names.Push(new_name)
-            subsec_extras.Push({ key: new_key, name: new_name, key_copy: "all" })
-        end if
-
+    subsec_extras = []
+    if newItems.count() > 0 then 
+        for each newItem in newItems            
+            if RegRead("rf_hide_"+newItem.key, "preferences", "show") = "show" then 
+                new_key = newItem.key
+                if newItem.size <> invalid then 
+                    new_key = new_key + "&X-Plex-Container-Start=0&X-Plex-Container-Size=" + size_limit
+                end if
+                keys.Push(new_key)
+                loader.names.Push(newItem.title)
+                subsec_extras.Push({ key: new_key, name: newItem.title, key_copy: newItem.key_copy })
+            end if
+        end for
     end if
 
     ' we will have to add the custom rows to the subsections too ( quick filter row (0) for the full grid )
-    if subsec_extras.count() > 0 and type(subsecItems) = "roArray" and subsecItems.count() > 0 then
+    if subsec_extras.count() > 0 and subsecItems.count() > 0 then
         template = invalid
         for each sec in subsec_extras
             for index = 0 to subsecItems.Count() - 1
