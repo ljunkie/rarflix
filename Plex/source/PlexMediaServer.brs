@@ -989,8 +989,10 @@ Sub pmsOnUrlEvent(msg, requestContext)
     ' Don't care about the response for any of our requests.
 End Sub
 
-Sub pmsSendWOL()
+Sub pmsSendWOL(screen=invalid)
     if m.machineID <> invalid then
+        numReqToSend = 5
+
         mac = GetServerData(m.machineID, "Mac")
 
         if mac = invalid then return
@@ -1012,7 +1014,19 @@ Sub pmsSendWOL()
         end if
 
         if ip = invalid then return
-            
+
+        ' only send the broadcast 5 (numReqToSend) times per requested mac address
+        WOLcounterKey = "WOLCounter" + tostr(mac)
+        if GetGlobalAA().lookup(WOLcounterKey) = invalid then GetGlobalAA().AddReplace(WOLcounterKey, 0)
+        GetGlobalAA()[WOLcounterKey] = GetGlobalAA().[WOLcounterKey]  + 1
+
+        ' return if we have already send enough requests
+        if GetGlobalAA()[WOLcounterKey] > numReqToSend then 
+            Debug(tostr(GetGlobalAA()[WOLcounterKey]) + " WOL requests have already been sent")
+            GetGlobalAA().AddReplace(WOLcounterKey, 0)
+            return
+        end if
+
         ' Get our secure on pass
         pass = GetServerData(m.machineID, "WOLPass")
         if pass = invalid or Len(pass) <> 12 then pass = "ffffffffffff"
@@ -1043,18 +1057,21 @@ Sub pmsSendWOL()
         Debug ("pmsSendWOL:: Sent Magic Packet of " + tostr(sent) + " bytes to " + ip )
         udp.close()
         
-        ' only send the broadcast 5 times per requested mac address
-        WOLcounterKey = "WOLCounter" + tostr(mac)
-        if GetGlobalAA().lookup(WOLcounterKey) = invalid then GetGlobalAA().AddReplace(WOLcounterKey, 0)
-        GetGlobalAA()[WOLcounterKey] = GetGlobalAA().[WOLcounterKey]  + 1
+        ' no more need for sleeping 'Sleep(100) -- timer will take care re-requesting the data
+        if GetGlobalAA()[WOLcounterKey] <= numReqToSend then m.sendWOL(screen)
 
-        ' TODO(ljunkie) find a better way to do this instead of delaying the startup. 
-        '
-        ' Talidan - This delays the startup of the rest of the client by 500ms.  Maybe make this better, but it allows the HTTP request to reach successfully
-        ' We should find a way to skip WOL altogether if the server is turned on already. 
-        ' ljunkie - It get a little more complicate when people use myPlex+local servers. I don't see an issue with a little delay if someone decied to use the 
-        ' WOL feature
-        Sleep(100) 
-        if GetGlobalAA()[WOLcounterKey] < 6 then m.sendWOL()
+        ' add timer to create requests again (only if we made this request from the Home Screen)
+        if screen <> invalid and screen.screenname = "Home" then 
+            if screen.WOLtimer = invalid then 
+                Debug("Created WOLtimer to refresh home screen data")
+                screen.WOLtimer = createTimer()
+                screen.WOLtimer.Name = "WOLsent"
+                screen.WOLtimer.SetDuration(3*1000, false) ' 3 second time ( we will try 3 times )
+                GetViewController().AddTimer(screen.WOLtimer, screen) 
+            end if
+            ' mark the request - we send multiple, so reset timer
+            screen.WOLtimer.mark()
+        end if
+
     end if
 End Sub

@@ -186,7 +186,7 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
         PutPlexMediaServer(server)
 
         'Send a WOL Packet
-        server.sendWOL()
+        server.sendWOL(m.listener)
 
         ' Request server details (ensure we have a machine ID, check transcoding
         ' support, etc.)

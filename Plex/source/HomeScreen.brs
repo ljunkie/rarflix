@@ -30,6 +30,11 @@ Function createHomeScreen(viewController) As Object
     obj.createNowPlayingRequest = homeCreateNowPlayingRequest
     obj.OnUrlEvent = homeScreenOnUrlEvent
 
+    ' this is set after we create the home screen, but it will be useful to have 
+    ' before it's finally set - I.E. in the createHomeScreenDataLoader() sending
+    ' WOL requests
+    obj.ScreenName = "Home"
+
     obj.Loader = createHomeScreenDataLoader(obj)
 
     obj.Refresh = refreshHomeScreen
@@ -106,6 +111,37 @@ Sub refreshHomeScreen(changes)
 End Sub
 
 Sub homeScreenOnTimerExpired(timer)
+
+    ' if WOL packets were sent, we should reload the homescreen ( send the request again )
+    if timer.Name = "WOLsent" then
+        Debug("WOL packets were sent -- createServerRequests & myPlex to refresh ( only for servers with WOL macs )")
+        for each server in GetValidPlexMediaServers()
+            ' skip requests for any non WOL related servers
+            if GetServerData(server.machineID, "Mac") <> invalid then 
+                ' it's possible the WOL server we are trying to reach is learned through myPlex
+                ' since we don't know all the IP's assigned, we need to re-request the myPlex 
+                ' TODO(ljunkie) verify if we should be using fallBack servers too if we are 
+                ' not signed into myPlex or internets down -- CreateFallbackServerRequests()
+                if MyPlexManager().IsSignedIn then
+                    m.loader.CreateMyPlexRequests(false)
+                end if
+                m.loader.CreateServerRequests(server, false, false)
+            end if 
+        next
+
+        ' recurring or not, we will make it active until we complete X requests
+        timer.active = true
+        if timer.count = invalid then timer.count = 0
+        timer.count = timer.count+1
+        timer.mark()
+
+        ' deactivate after third attempt ( 3 x 3 = 9 seconds after all inital WOL requests )
+        if timer.count > 2 then 
+            timer.active = false
+        end if
+
+    end if
+
     if timer.Name = "clock" AND m.ViewController.IsActiveScreen(m) then
         RRHomeScreenBreadcrumbs()
     end if
