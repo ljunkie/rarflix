@@ -957,7 +957,7 @@ Sub vcShowReleaseNotes(options = invalid)
         us = "_______________"
         paragraphs.Push("                 Donations accepted at http://www.rarflix.com")
         paragraphs.Push("  ")
-        paragraphs.Push(us+"v3.1.22-DEV (2014-02-15)"+us)
+        paragraphs.Push(us+"v3.1.23-DEV (2014-02-15)"+us)
         paragraphs.Push("  ")
         paragraphs.Push(" * If you are using this, then you know what has changed.")
         paragraphs.Push("   For more info, view the RARflix thread on the Forums.")
