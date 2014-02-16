@@ -282,7 +282,11 @@ Function EditMacAddress(address,obj) As Boolean
     r = CreateObject("roRegex", "^([0-9A-Fa-f]{12})$", "i")
     ' removed the need for colons ( it's annoying to enter them in and we strip them anyways )
     'r = CreateObject("roRegex", "^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$", "i")
-    if r.IsMatch(address) = false then return false
+    if r.IsMatch(address) = false then
+        Debug("mac address invalid: " + tostr(address) + " discarding/deleting the record")
+        DeleteServerData ( machineID, "Mac")
+        return false
+    end if
       
     ' ljunkie - deprecated colons
     ' Get rid of colons, and make it lowercase
@@ -346,6 +350,14 @@ End Function
 Function SetServerData ( machineID, dataName, value ) As Boolean
     InitServerData(machineID)
     GetGlobalAA().serverData[machineID][dataName] = value
+    RegWrite("serverList", rdJSONBuilder(GetGlobalAA().serverData), "serverData")
+    return true
+End Function
+
+Function DeleteServerData ( machineID, dataName ) As Boolean
+    InitServerData(machineID)
+    data = GetGlobalAA().serverData[machineID]
+    data.delete(dataName)
     RegWrite("serverList", rdJSONBuilder(GetGlobalAA().serverData), "serverData")
     return true
 End Function
