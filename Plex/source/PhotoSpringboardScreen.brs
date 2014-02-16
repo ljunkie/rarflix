@@ -254,6 +254,7 @@ Function photoDialogHandleButton(command, data) As Boolean
         GetPhotoContextFromFullGrid(obj,obj.item.origindex) 
 
         ' show a shuffling dialog if item count > 1k
+        dialog = invalid
         if obj.context.count() > 1000 then 
             text = "shuffling"
             if obj.IsShuffled then text = "unshuffling"
