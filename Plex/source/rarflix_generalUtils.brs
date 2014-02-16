@@ -208,3 +208,29 @@ function getBaseSectionKey(sourceUrl = invalid)
 
     return sectionKey
 end function
+
+function getNextEpisode(item) 
+    if item = invalid or item.server = invalid then return invalid
+
+    episodesKey = item.parentkey + "/children"
+    if item.grandparentkey <> invalid then episodesKey = item.grandparentkey+ "/allLeaves"
+    if episodesKey = invalid then return invalid
+
+    metadata = invalid
+    container = createPlexContainerForUrl(item.server, "", episodesKey)
+    ' DO NOT use getMetadata() to iterate through the context. This can be slow and we don't need all the 
+    ' metadata, just the next item after we match the current
+    if container <> invalid and container.xml <> invalid and container.xml.Video <> invalid then 
+        for index = 0 to container.xml.Video.count()-1 
+            if container.xml.Video[index]@ratingKey = item.ratingKey then 
+                ' Current Item found - check if the next item is valid
+                nextIndex = index+1
+                if container.xml.Video[nextIndex] <> invalid then 
+                    metadata = newVideoMetadata(container, container.xml.Video[nextIndex], true)
+                end if
+           end if
+        end for
+    end if 
+
+    return metadata
+end function

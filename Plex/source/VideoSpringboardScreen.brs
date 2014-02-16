@@ -628,10 +628,46 @@ Sub videoActivate(priorScreen)
 
     if m.refreshOnActivate then
         if (m.ContinuousPlay or m.ShufflePlay) AND (priorScreen.isPlayed = true OR priorScreen.playbackError = true) then
+            m.Refresh(true) ' refresh the watched item (watched status/overlay) before moving on
             m.GotoNextItem()
             directPlayOptions = m.PlayButtonStates[m.PlayButtonState]
             Debug("Playing video with Direct Play options set to: " + directPlayOptions.label)
             m.ViewController.CreateVideoPlayer(m.metadata, 0, directPlayOptions.value)
+        else if RegRead("advanceToNextItem", "preferences", "enabled") = "enabled" AND (priorScreen.isPlayed = true) then
+            ' just advance screen to the next item
+            ' TV Show logic added: the next item is not always the next episode depending on the context we are in ( On Deck, Recently Added, etc)
+            '  we will check if the next item is the same parent/grandparent key. If true, next item is fine otherwise we need to determine if there
+            '  is a more valid item to use. It will replace the existing items context with the next item if found, otherwise.. move to the next.
+
+            if m.item <> invalid and tostr(m.item.type) = "episode" then 
+                if m.context <> invalid and m.context[m.curindex+1] <> invalid then 
+                    nextParentKey = m.context[m.curindex+1].parentKey
+                    nextGrandParentKey = m.context[m.curindex+1].grandparentKey
+
+                    ' grandParentKey should exist (I add it in RARflix if missing) -- the PMS API doesn't always include it. This is why I check both.
+                    if (m.item.parentkey = nextParentKey) or (m.item.grandparentkey = nextGrandParentKey) then 
+                        Debug("next item has the same Parent or Grandparent") ' we can just use goToNextItem
+                    else
+                        ' mixed content row? Let's try and find the next episode -- replace this item with 
+                        ' the next episode ( so we don't replace any other context )
+                        Debug("next item doesn't have the same Parent or Grandparent -- checking if we can find the next episode")
+
+                        metadata = getNextEpisode(m.item) 
+                        if metadata <> invalid then 
+                            Debug("-- found the next episode -- replacing this Item with the next episode and refreshing")
+                            m.item = metadata
+                            m.context[m.curindex] = m.item
+                            m.Refresh(true)
+                            return
+                        end if
+                    end if
+
+                end if
+            end if
+
+            ' default -- just go to next item
+            m.Refresh(true) ' refresh the watched item (watched status/overlay) before moving on
+            m.GotoNextItem()
         else
             m.Refresh(true)
         end if
