@@ -826,15 +826,17 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
     isMovieShowEpisode = (obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode")
     isHomeVideos = (obj.metadata.isHomeVideos = true)
 
-    dialogSetSortingButton(dialog,obj) 
 
     ' ljunkie - Home Screen shortcut ( if we are not already on the homescreen )
+    ' always first button
     vc = GetViewController()
     screen = vc.screens.peek()
     if vc.Home <> invalid AND screen <> invalid and screen.screenid <> vc.Home.ScreenID then 
         'dialog.sepAfter.Push("GoToHomeScreen") ' don't have room anymore 
         dialog.SetButton("GoToHomeScreen", "Home Screen")
     end if
+
+    dialogSetSortingButton(dialog,obj) 
 
     if isMovieShowEpisode then 
         dialog.SetButton("options", "Playback options")
@@ -971,15 +973,16 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     dialog = createBaseDialog()
     buttonSep = invalid
 
-    dialogSetSortingButton(dialog,obj) 
-
     ' ljunkie - Home Screen shortcut ( if we are not already on the homescreen )
+    ' always first button
     vc = GetViewController()
     screen = vc.screens.peek()
     if vc.Home <> invalid AND screen <> invalid and screen.screenid <> vc.Home.ScreenID then 
         buttonSep = "GoToHomeScreen"
         dialog.SetButton("GoToHomeScreen", "Home Screen")
     end if
+
+    dialogSetSortingButton(dialog,obj) 
 
     ' TODO full grid screen yo
     if obj.isfullgrid = invalid and obj.disablefullgrid = invalid and type(obj.screen) = "roGridScreen" then 
@@ -1193,9 +1196,10 @@ sub rfBasicDialog(obj)
     '  TODO: rethink using this for rfDefRemoteOptionButton() sub -- we could also add in a button for searching
     dialog = createBaseDialog()
 
-    dialogSetSortingButton(dialog,obj) 
-
+    ' always first button
     dialog.SetButton("GoToHomeScreen", "Home Screen")
+
+    dialogSetSortingButton(dialog,obj) 
     dialog.SetButton("close", "Back")
     dialog.HandleButton = videoDialogHandleButton
     dialog.ParentScreen = obj
@@ -1223,16 +1227,14 @@ sub rfDefRemoteOptionButton(m)
         Debug("Showing default serach screen - remote option button pressed ")
     else if m.isfullgrid = true and type(m.screen) = "roGridScreen" then 
         dialog = createBaseDialog()
-
-        dialogSetSortingButton(dialog,m) 
-
-        dialog.SetButton("GoToHomeScreen", "Home Screen")
-
         dialog.Text = ""
         dialog.Title = "Options"
 
-        if player.ContextScreenID <> invalid then dialog.setButton("gotoMusicNowPlaying","go to now playing [music]")
+        'always first button
+        dialog.SetButton("GoToHomeScreen", "Home Screen")
 
+        dialogSetSortingButton(dialog,m) 
+        if player.ContextScreenID <> invalid then dialog.setButton("gotoMusicNowPlaying","go to now playing [music]")
         dialog.SetButton("close", "Back")
         dialog.HandleButton = videoDialogHandleButton
         dialog.ParentScreen = m
@@ -1253,20 +1255,18 @@ sub rfDialogGridScreen(obj as Object)
     ' for now the only option is grid view so we will verify we are in a roGridScreen. It we add more buttons, the type check below is for fullGridScreen
     else if obj.isfullgrid = invalid and obj.disablefullgrid = invalid and type(obj.screen) = "roGridScreen" then 
         dialog = createBaseDialog()
+        dialog.Text = ""
+        dialog.Title = "Options"
         fromName = "invalid"
         if type(obj.loader.getnames) = "roFunction" and obj.selectedrow <> invalid then fromName = obj.loader.getnames()[obj.selectedrow]
 
-        dialogSetSortingButton(dialog,obj) 
-
+        ' always first button
         dialog.SetButton("GoToHomeScreen", "Home Screen")
 
+        dialogSetSortingButton(dialog,obj) 
         dialog.sepAfter.Push("fullGridScreen")
         dialog.SetButton("fullGridScreen", "Grid View: " + fromName) 'and type(obj.screen) = "roGridScreen" 
-        dialog.Text = ""
-        dialog.Title = "Options"
-
         if player.ContextScreenID <> invalid then dialog.setButton("gotoMusicNowPlaying","go to now playing [music]")
-
         dialog.SetButton("close", "Back")
         dialog.HandleButton = videoDialogHandleButton
         dialog.ParentScreen = obj
