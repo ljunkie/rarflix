@@ -1017,12 +1017,12 @@ Sub photoSlideShowOnUrlEvent(msg, requestContext)
             ImageMeta.SetUrl(obj.localFilePath)
             obj.metadata = ImageMeta.GetMetadata()
     
-            ' verify we have a valid image -- show over and return if invalid
+            ' verify we have a valid image -- show overlay and return if invalid
             if obj.metadata.width = 0 or obj.metadata.height = 0 then 
                 Debug("Failed to write image -- consider purging local cache (maybe full?)")
                 m.setImageFailureInfo("failed to save image")
-                ' show the failure on the every 5th consecutive failure
-                showFailureInfo = m.ImageFailureCount/5
+                ' show the failure on the every 20th consecutive failure
+                showFailureInfo = m.ImageFailureCount/20
                 if int(showFailureInfo) = showFailureInfo then m.OverlayToggle("forceShow")
                 m.purgeSlideImages() ' cleanup the local cached images
                 return
@@ -1091,9 +1091,9 @@ sub ICsetImageFailureInfo(failureReason=invalid)
         m.ImageFailureReason = failureReason
         m.ImageFailureCount = int(m.ImageFailureCount+1)
         Debug("    fail Count: " + tostr(m.ImageFailureCount))
-        ' show (force the overlay) on the every 100th failure if we have files ( or every 5th if we don't )
+        ' show (force the overlay) on the every 100th failure if we have files ( or every 11th if we don't )
         if m.LocalFiles.count() = 0 then 
-            showFailureInfo = m.ImageFailureCount/5
+            showFailureInfo = m.ImageFailureCount/11
         else 
             showFailureInfo = m.ImageFailureCount/100
         end if
