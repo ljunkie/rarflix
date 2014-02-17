@@ -943,6 +943,11 @@ Sub photoSlideShowOnUrlEvent(msg, requestContext)
     if requestContext.requestType = "slideshowMetadata" then 
         url = tostr(requestContext.Request.GetUrl())
 
+        if requestContext.ItemIndex <> invalid and requestContext.ItemIndex > m.context.count()-1 then 
+            Debug("requested index is > than context -- ignoring request")
+            return
+        end if
+
         if msg.GetResponseCode() = 200 then 
             Debug("Got a " + tostr(msg.GetResponseCode()) + " response from " + url)
 
@@ -1240,6 +1245,9 @@ sub ICreloadSlideContext(forced=false)
                     return
                 end if
             end if
+
+            Debug("cancel any pending requests before reloading slideshow on screenID: " + tostr(m.screenID))
+            GetViewController().CancelRequests(m.ScreenID)
 
             PhotoMetadataLazy(obj, dummyItem, true)
 
