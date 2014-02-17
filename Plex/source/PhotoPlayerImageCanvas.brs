@@ -32,6 +32,7 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     ' ljunkie - we need to iterate through the items and remove directories -- they don't play nice
     ' note: if we remove directories (items) the contextIndex will be wrong - so fix it!
     cleanContext = ICphotoPlayerCleanContext(context,contextIndex)
+    obj.originalCount = context.count()
     context = cleanContext.context
     contextIndex = cleanContext.contextIndex
     ' end cleaning
@@ -575,12 +576,13 @@ sub ICphotoPlayerNext()
 
     m.curindex = i
 
+    Debug("ICphotoPlayerNext:: Requesting:" + tostr(m.curIndex))
     m.GetSlideImage()
 
     ' increment the next index even if we are unsuccessful at retrieving the image
     ' this will allow us to move past failures ( we will show an error after too many failures )
     m.nextindex = i+1
-    Debug("ICphotoPlayerNext:: next:" + tostr(m.nextIndex))
+    Debug("ICphotoPlayerNext:: Incrementing nextIndex to:" + tostr(m.nextIndex))
 end sub
 
 sub ICphotoPlayerPrev()
@@ -612,6 +614,8 @@ end sub
 
 sub ICphotoPlayerPause()
     if m.context.count() = 1 then return 
+    Debug("slideshow paused")
+
     m.IsPaused = true
     m.Timer.Active = false
     m.OverlayToggle("show","Paused")
@@ -620,6 +624,7 @@ end sub
 
 sub ICphotoPlayerResume()
     if m.context.count() = 1 then return 
+    Debug("slideshow resumed")
 
     ' we do not load the Full Context to just display one image
     ' - however let us allow EU to browse full context if requested
@@ -635,6 +640,7 @@ sub ICphotoPlayerResume()
 end sub
 
 sub ICphotoPlayerStop()
+    Debug("slideshow stopped - exited")
     m.Screen.Close()
 end sub
 
@@ -664,22 +670,32 @@ Sub ICphotoPlayerSetShuffle(shuffleVal)
     NowPlayingManager().timelines["photo"].attrs["shuffle"] = tostr(shuffleVal)
 End Sub
 
-function ICgetSlideImage(bufferNext=false, FromMetadataRequest = false)
-    if bufferNext =true and m.context.count() = 1 then 
+function ICgetSlideImage(bufferNext=false, FromMetadataRequest = false, requestedIndex = invalid)
+
+    if bufferNext = true and m.context.count() = 1 then 
         Debug("cancelling bufferNext request -- context only contains 1 image")
         return false
     end if
 
     ' by default we cache locally and show the curIndex. If this is a bufferNext, then
-    ' we will retrieve curIndex+1 or 0 and cache only. 
-    itemIndex = m.curindex
-    if bufferNext then 
-        ' normally we load the next image when bufferNext is set
-        bufferIndex = itemIndex+1
-        if bufferIndex > m.context.count()-1 then bufferIndex = 0
-        itemIndex = bufferIndex
-    end if 
+    ' we will retrieve curIndex+1 or 0 and cache only. Also allow the index to be passed
+    ' as this will save a headache from onUrlEvents
+    if requestedIndex <> invalid then 
+        itemIndex = requestedIndex
+        Debug("ICgetSlideImage:: requestedIndex: " + tostr(requestedIndex))
+    else
+        itemIndex = m.curindex
+        if bufferNext then 
+            ' normally we load the next image when bufferNext is set
+            bufferIndex = itemIndex+1
+            if bufferIndex > m.context.count()-1 then bufferIndex = 0
+            itemIndex = bufferIndex
+        end if 
+    end if
     item = m.context[itemIndex]
+    if item = invalid then return false
+
+    Debug("ICgetSlideImage:: working on index: " + tostr(itemIndex) + " key: " + tostr(item.key))
 
     ' purge expired metadata records (retain the index we are using)
     if m.CachedMetadata > 500 then m.PurgeMetadata(itemIndex)
@@ -687,6 +703,12 @@ function ICgetSlideImage(bufferNext=false, FromMetadataRequest = false)
     ' send a request for the metadata/url and return 
     ' we must have this info before we can request/save/show the image
     if item.url = invalid and FromMetadataRequest = false then  
+        ' make sure we don't have any old pending requests to view an image -- buffered request are fine
+        if NOT bufferNext then 
+            Debug("ICgetSlideImage:: cancel any pending requests and start fresh on screenID: " + tostr(m.screenID))
+            GetViewController().CancelRequests(m.ScreenID)
+        end if
+
         request = item.server.CreateRequest("", item.key )
         context = CreateObject("roAssociativeArray")
         context.requestType = "slideshowMetadata"
@@ -750,6 +772,11 @@ function ICgetSlideImage(bufferNext=false, FromMetadataRequest = false)
                 ba.ReadFile(localFilePath)
                 if ba.Count() > 0 then 
                     Debug("using cached file: " + tostr(localFilePath))
+
+                    ' reset the index/NextIndex based off of the image we are actually showing
+                    ' it's possible getSlideImage is called with a requestedIndex
+                    m.curIndex = itemIndex
+                    m.nextIndex = m.curIndex+1
 
                     m.CurFile = local ' set it and return
                     m.ShowSlideImage()
@@ -921,7 +948,13 @@ Sub photoSlideShowOnUrlEvent(msg, requestContext)
                 m.CachedMetadata = m.CachedMetadata+1
                 ' testing in new port -- use to just blindly call this on failure or not
                 Debug("photoSlideShowOnUrlEvent:: GetSlideImage called")
-                m.GetSlideImage(requestContext.bufferNext, true)
+
+                ' we shall only call getSlideimage again if the requested index is the current index to save and 
+                ' show the image, otherwise we can also call it if this is a buffere request
+                ' -- we shouldn't have non buffered and curindex <> requested as we now cancel requests, but just to be safe.
+                if (m.CurIndex = requestContext.ItemIndex and NOT requestContext.bufferNext) or requestContext.bufferNext = true then 
+                    m.GetSlideImage(requestContext.bufferNext, true, requestContext.ItemIndex)
+                end if
             else 
                 Debug("could not set context from metadata -- getmetadata() failed?")
                 print "------------- msg response string -------------------"
@@ -934,6 +967,9 @@ Sub photoSlideShowOnUrlEvent(msg, requestContext)
                     print "item context invalid from getmetadata() -- showing container"
                     print container
                 end if
+
+                failureReason = "failed to download image"
+                m.setImageFailureInfo(failureReason)
             end if
         else 
             ' urlEventFailure - nothing to see here
@@ -1159,11 +1195,36 @@ sub ICreloadSlideContext(forced=false)
             dummyItem.sourceUrl = firstof(m.sourceReloadURL,m.item.sourceurl)
             dummyItem.hideErrors = true ' do not show warning about loading errors
             if dummyItem.sourceUrl = invalid then Debug("no valid url to reload"):return
-            PhotoMetadataLazy(obj, dummyItem, true)
 
             ' set to true to test the reload function 
             ' only used for debugging -- we can remove this at a later date
             forceReloadTest = false
+
+            ' do a quick check to verify the new result has more or less items than existing (and more than 1)
+            ' this logic can be cleaned up, but I prefer to see the logs for now
+            if NOT forceReloadTest
+                container = createPlexContainerForUrlSizeOnly(dummyItem.server, invalid , dummyItem.sourceUrl)    
+                if container <> invalid and container.totalsize <> invalid or container.totalsize.toint() > 1 then 
+                    if m.originalCount <> invalid then 
+                        if container.totalsize.toint() <> m.originalCount then 
+                            Debug("container items <> existing [originalCount]: continue with reload")
+                        else 
+                            Debug("new count same as existing [originalCount]: skip reloading")
+                            return
+                        end if
+                    else if container.totalsize.toint() <> m.context.count() then 
+                        Debug("container items <> existing: continue with reload")
+                    else 
+                        Debug("new count same as existing: skip reloading")
+                        return
+                    end if
+                else 
+                    Debug("invalid results from request: skip reloading")
+                    return
+                end if
+            end if
+
+            PhotoMetadataLazy(obj, dummyItem, true)
 
             newCount = obj.context.count():curCount = m.context.count()
             Debug("Cur Items: " + tostr(curCount)):Debug("New Items: " + tostr(newCount))
@@ -1176,16 +1237,15 @@ sub ICreloadSlideContext(forced=false)
                 cleanCount = cleanContext.context.count()
                 Debug("New (cleaned) Items: " + tostr(cleanCount)) 
                 if forceReloadTest or (cleanCount > 0 and cleanCount <> curCount) then 
+                    m.originalCount = obj.context.count()
                     m.context = cleanContext.context
                     if m.CurIndex > m.Context.count()-1 then m.CurIndex = 0
-                    Debug("reloading slideshow with new context " + tostr(m.context.count()) + " items")
+                    Debug("reloading slideshow with new context " + tostr(m.context.count()) + " items, original:" + tostr(m.originalCount))
                     if m.isShuffled and m.Context.count() > 1 then 
                         Debug("slideshow was shuffled - we need to reshuffle due to new context")
                         ShuffleArray(m.Context, m.CurIndex)
                         Debug("shuffle done")
                     end if
-                    'Debug("Running Garbage Collector")
-                    'RunGarbageCollector()
                     return
                 end if
             end if
