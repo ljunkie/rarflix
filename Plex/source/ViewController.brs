@@ -1724,7 +1724,7 @@ sub vcControl()
 
     dialog.AddButton(1, "Yes")
     dialog.AddButton(2, "No")
-    dialog.EnableBackButton(true)
+    dialog.EnableBackButton(false)
     dialog.Show()
 
     closeChannel = false
