@@ -1727,7 +1727,7 @@ sub vcControl()
     dialog.EnableBackButton(true)
     dialog.Show()
 
-    closeChannel = true
+    closeChannel = false
 
     ' for now this will be a blocking request. The control has been stopped, so the 
     ' channel is not listening anymore more onHandle events. 
@@ -1736,8 +1736,8 @@ sub vcControl()
         dlgMsg = wait(0, dialog.GetMessagePort())
         if type(dlgMsg) = "roMessageDialogEvent"
             if dlgMsg.isButtonPressed()
-                if dlgMsg.GetIndex() = 2
-                    closeChannel = false
+                if dlgMsg.GetIndex() = 1
+                    closeChannel = true
                 end if
                 exit while
             else if dlgMsg.isScreenClosed()
