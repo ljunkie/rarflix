@@ -718,6 +718,23 @@ function ICgetSlideImage(bufferNext=false, FromMetadataRequest = false, requeste
     
         GetViewController().StartRequest(request, m, context)
 
+        ' if this is a bufferNext request -- piggy back an addition 10 requests
+        if bufferNext then 
+            for index = 1 to 9
+                extraIndex = itemIndex+index
+                extraItem = m.context[extraIndex]
+                if extraItem = invalid or extraItem.key = invalid then return false
+                Debug("ICgetSlideImage:: buffering additional requests - index: " + tostr(extraIndex) + " key: " + tostr(extraItem.key))
+                request = item.server.CreateRequest("", extraItem.key )
+                context = CreateObject("roAssociativeArray")
+                context.requestType = "slideshowMetadata"
+                context.bufferNext = true
+                context.ItemIndex = extraIndex
+                context.server = extraItem.server
+                GetViewController().StartRequest(request, m, context)
+            end for
+        end if
+
         ' Stop the slideshow timer if we are trying to show the current image. We do not want to keep 
         ' making requests if we are still waiting on a response. This will reactivate when we recieve 
         ' a response OR during the health check in case the response was "lost"
