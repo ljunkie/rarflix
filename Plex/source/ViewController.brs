@@ -908,7 +908,6 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid, sourceR
         facade = CreateObject("roGridScreen")
         facade.Show()
         preplay.facade = facade
-        preplay.refreshOnActivate = true
         directplay = RegRead("directplay", "preferences", "0").toint()
         return m.CreateVideoPlayer(item, seekValue, directplay, true, preplay)
     end if

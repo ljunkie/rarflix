@@ -345,8 +345,12 @@ Function videoPlayerHandleMessage(msg) As Boolean
                 m.isPlayed = false
                 m.Show()
             else
+                ' we cannot set refreshOnActivate earlier due to dialog prompt to resume video
+                if m.preplayscreen <> invalid then m.preplayscreen.refreshOnActivate = true
+
                 m.ViewController.PopScreen(m)
-                ' if we started from a grid, we might have a facad screen to close
+
+                ' close preplay facade screen (due to playing directly from the grid)
                 if m.preplayscreen <> invalid and m.preplayscreen.facade <> invalid then m.preplayscreen.facade.close()
             end if
         else if msg.isPlaybackPosition() then
