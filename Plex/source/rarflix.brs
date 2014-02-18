@@ -998,9 +998,10 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     isMovieShowEpisode = (obj.metadata.ContentType = "movie" or obj.metadata.ContentType = "show" or obj.metadata.ContentType = "episode")
     isHomeVideos = (obj.metadata.isHomeVideos = true)
 
-    if isMovieShowEpisode then 
-        dialog.SetButton("options", "Playback options")
-    end if
+' this is not supported from the grid
+'    if isMovieShowEpisode then 
+'       dialog.SetButton("options", "Playback options")
+'    end if
 
     if (obj.metadata.type = "season") then 
         dialog.Title = firstof(obj.metadata.title, obj.metadata.umtitle, obj.metadata.title)
