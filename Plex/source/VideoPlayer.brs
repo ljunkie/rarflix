@@ -7,6 +7,7 @@ Function createVideoPlayerScreen(metadata, seekValue, directPlayOptions, viewCon
     initBaseScreen(obj, viewController)
 
     obj.Item = metadata
+    obj.parentScreen = viewController.screens.peek()
 
     obj.Show = videoPlayerShow
     obj.HandleMessage = videoPlayerHandleMessage
@@ -100,6 +101,37 @@ Sub videoPlayerShow()
         m.playbackTimer.Mark()
         m.Screen.Show()
         NowPlayingManager().location = "fullScreenVideo"
+
+        'ljunkie - the video is playing now -- it's save to run some background tasks 
+
+        ' if advanceToNextItem is enabled: determine what the next episode is and set it for the videoSpringBoard
+        '  more info: the next item is not always the next episode depending on the context we are in ( On Deck, Recently Added, etc)
+        '  this will check if the next item has the same parent/grandparent key. If false, we will find the nextItem based on the 
+        '  grandparent key ( grandparent key used so we can find the next seasons show if needed )
+        if RegRead("advanceToNextItem", "preferences", "enabled") = "enabled" then 
+            if m.item <> invalid and tostr(m.item.type) = "episode" and m.parentScreen <> invalid then 
+                if m.parentScreen.context <> invalid and m.parentScreen.curindex <> invalid and m.parentScreen.context[m.parentScreen.curindex+1] <> invalid then 
+                    nextParentKey = m.parentScreen.context[m.parentScreen.curindex+1].parentKey
+                    nextGrandParentKey = m.parentScreen.context[m.parentScreen.curindex+1].grandparentKey
+
+                    ' grandParentKey should exist (I add it in RARflix if missing) -- the PMS API doesn't always include it. 
+                    ' This is why I check both, not trusting I always add the grandparentKey
+                    if (m.item.parentkey = nextParentKey) or (m.item.grandparentkey = nextGrandParentKey) then 
+                        Debug("next item has the same Parent/Grandparent - no need to find the next episode")
+                    else
+                        Debug("next item doesn't have the same Parent or Grandparent -- checking if we can find the next episode")
+                        metadata = getNextEpisode(m.item) 
+                        if metadata <> invalid then 
+                            Debug("-- found the next episode -- replacing this Item with the next episode and refreshing")
+                            m.NextEpisode = metadata ' videospringboard will use this on activation - priorscreen.NextEpisode
+                        end if
+                    end if
+
+                end if
+            end if
+        end if
+        ' end advanceToNextItem
+
     else
         m.ViewController.PopScreen(m)
         NowPlayingManager().location = "navigation"
@@ -314,6 +346,8 @@ Function videoPlayerHandleMessage(msg) As Boolean
                 m.Show()
             else
                 m.ViewController.PopScreen(m)
+                ' if we started from a grid, we might have a facad screen to close
+                if m.preplayscreen <> invalid and m.preplayscreen.facade <> invalid then m.preplayscreen.facade.close()
             end if
         else if msg.isPlaybackPosition() then
             if m.bufferingTimer <> invalid then

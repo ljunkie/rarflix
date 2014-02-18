@@ -768,7 +768,7 @@ Function vcCreateICphotoPlayer(obj, contextIndex=invalid, show=true, shuffled=fa
     return screen
 End Function
 
-Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=true)
+Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=true, preplayScreen = invalid)
     if NOT AppManager().IsPlaybackAllowed() then
         m.ShowPlaybackNotAllowed()
         return invalid
@@ -844,6 +844,7 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
 
     screen = createVideoPlayerScreen(metadata, seekValue, directPlayOptions, m)
     screen.ScreenName = "Video Player"
+    screen.preplayScreen = preplayScreen
 
     m.AddBreadcrumbs(screen, invalid)
     m.UpdateScreenProperties(screen)
@@ -895,8 +896,15 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid, sourceR
         AudioPlayer().Stop()
         return m.CreateScreenForItem(context, contextIndex, invalid, NOT(GetViewController().IsSlideShowPlaying()))
     else if item.ContentType = "movie" OR item.ContentType = "episode" OR item.ContentType = "clip" then
+        ' create a preplay screen before we start to play -- this will allow us to advance to the next video in line 
+        ' and allow continuous or continuous+shuffle play to work directly from the grid
+        preplay = m.CreateScreenForItem(context, contextIndex, invalid, false)
+        facade = CreateObject("roGridScreen")
+        facade.Show()
+        preplay.facade = facade
+        preplay.refreshOnActivate = true
         directplay = RegRead("directplay", "preferences", "0").toint()
-        return m.CreateVideoPlayer(item, seekValue, directplay)
+        return m.CreateVideoPlayer(item, seekValue, directplay, true, preplay)
     end if
 
     ' if we can't play - then create an screen item for the context
