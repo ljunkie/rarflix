@@ -51,8 +51,10 @@ end function
 function hasPendingRequest(context=invalid) as boolean
     ' expects context to contain server/key ( ignores all others )
     ' return true if we already have a pending request for the key on a specific server
-    if context = invalid then return false
-    if context.server = invalid or context.key = invalid then return false
+    pending = false
+
+    if context = invalid then return pending
+    if context.server = invalid or context.key = invalid then return pending
 
     pendingRequests = GetViewController().pendingrequests
     if pendingRequests <> invalid then
@@ -60,13 +62,19 @@ function hasPendingRequest(context=invalid) as boolean
             if pendingRequests[id] <> invalid and tostr(pendingRequests[id].key) = context.key then 
                 if pendingRequests[id].server.machineidentifier = context.server.machinentifier then 
                       Debug("we already have a request pending for key: " + tostr(context.key) + " on server " + tostr(context.server.name) )
-                      return true
+                      ' it's possible we used a different connectionUrl.. verify that is the same too!
+                      ' it's ok if connectionurl is invalid -- either different or still the same
+                      if pendingRequests[id].connectionurl <> context.connectionurl
+                          Debug("different connectionUrl specified -- continue")
+                      else 
+                          pending = true
+                      end if
                 end if
             end if 
         end for 
     end if
 
-    return false
+    return pending
 end function
 
 ' quick hack to convert a slow API call into a fast one 
