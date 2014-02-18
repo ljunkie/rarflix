@@ -16,7 +16,7 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     obj.Refresh = PhotoPlayerRefresh
 
     obj.maxIdle = 120    ' number of seconds to send a remote key to keep the slideshow non idle
-    m.lastImageEpoch = 0 ' we haven't displayed an image yet (set to integer)
+    obj.lastImageEpoch = 0 ' we haven't displayed an image yet (set to integer)
 
     ' slideshow perfs TODO(ljunkie) - add some inline options
     obj.slideshowPeriod = RegRead("slideshow_period", "preferences", "6").toInt()
