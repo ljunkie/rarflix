@@ -201,6 +201,8 @@ End Function
 '* rows are already loaded.
 '*
 Function loaderLoadMoreContent(focusedIndex, extraRows=0)
+    if focusedIndex < 0 then return true
+
     status = invalid
     extraRowsAlreadyLoaded = true
     for i = 0 to extraRows
