@@ -831,7 +831,13 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
                 end if
             end if
 
-            if dlg.Result = invalid or dlg.Result = "invalid" then return invalid
+            if dlg.Result = invalid or dlg.Result = "invalid" then 
+                if preplayscreen <> invalid then 
+                    preplayScreen.screen.close()
+                    if preplayscreen.facade <> invalid then preplayscreen.facade.close()
+                end if
+                return invalid
+            end if
             if dlg.Result = "resume" and metadata.viewOffset <> invalid then
                 seekValue = int(val(metadata.viewOffset))
             else
