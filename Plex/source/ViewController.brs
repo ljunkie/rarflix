@@ -1583,7 +1583,6 @@ End Sub
 
 sub vcResetGenIdleTimer()
     if m.genIdleTime <> invalid then
-        print m.genIdleTime.RemainingSeconds()
         ' try to resend WOL packets if the roku idle
         homescreen = GetViewController().home
         if homescreen <> invalid and homescreen.WOLtimer <> invalid then 
