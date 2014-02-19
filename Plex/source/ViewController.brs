@@ -905,10 +905,18 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid, sourceR
     else if item.ContentType = "movie" OR item.ContentType = "episode" OR item.ContentType = "clip" then
         ' create a preplay screen before we start to play -- this will allow us to advance to the next video in line 
         ' and allow continuous or continuous+shuffle play to work directly from the grid
-        preplay = m.CreateScreenForItem(context, contextIndex, invalid, false)
-        facade = CreateObject("roGridScreen")
-        facade.Show()
-        preplay.facade = facade
+        preplay = invalid
+        isLibraryContent = (item.isLibraryContent = true)
+        if NOT isLibraryContent then 
+            Debug("item is not library content -- disabling showing preplay after watching")
+            print m.item
+        else 
+            preplay = m.CreateScreenForItem(context, contextIndex, invalid, false)
+            facade = CreateObject("roGridScreen")
+            facade.Show()
+            preplay.facade = facade
+        end if
+
         directplay = RegRead("directplay", "preferences", "0").toint()
         return m.CreateVideoPlayer(item, seekValue, directplay, true, preplay)
     end if

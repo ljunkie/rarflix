@@ -628,13 +628,6 @@ Sub videoActivate(priorScreen)
 
     if m.refreshOnActivate then
         advancedToNext = (RegRead("advanceToNextItem", "preferences", "enabled") = "enabled")
-        isLibraryContent = (m.Item.isLibraryContent = true)
-
-        if NOT isLibraryContent then 
-            Debug("item is not library content -- setting advancedToNext=false")
-            print m.item
-            advancedToNext = false
-        end if
 
         ' shuffleplay will override advanceToNext ( this might be weird, but if someone actually selected shuffle play, they'd probably expect it to shuffle)
         if m.ShufflePlay then advancedToNext = false
