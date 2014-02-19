@@ -95,6 +95,7 @@ Function createViewController() As Object
     
     controller.CreateUserSelectionScreen = vcCreateUserSelectionScreen
     controller.ResetIdleTimer = vcResetIdleTimer
+    controller.ResetGenIdleTimer = vcResetGenIdleTimer
     controller.CreateLockScreen = vcCreateLockScreen
     controller.CreateIdleTimer = vcCreateIdleTimer
 
@@ -1572,13 +1573,33 @@ Sub vcAddSocketListener(socket, listener)
 End Sub
 
 Sub vcResetIdleTimer(fcnName="" as string)
-    if m.timerIdleTime <> invalid then 'and (msg.isRemoteKeyPressed() or msg.isButtonInfo()) then 
-        'print "IDLE TIME: Reset() :"; fcnName 
+    if m.timerIdleTime <> invalid then
         m.timerIdleTime.Mark()
-    else 
-        'print "IDLE TIME: invalid timerIdleTime :"; fcnName
-    endif
+    end if
+
+    ' piggy back idle reset ( general idle time )
+    m.resetGenIdleTimer()
 End Sub
+
+sub vcResetGenIdleTimer()
+    if m.genIdleTime <> invalid then
+        print m.genIdleTime.RemainingSeconds()
+        ' try to resend WOL packets if the roku idle
+        homescreen = GetViewController().home
+        if homescreen <> invalid and homescreen.WOLtimer <> invalid then 
+            if homescreen.WOLtimer <> invalid and m.genIdleTime.RemainingSeconds() = 0 then 
+                Debug("roku was idle -- need to set WOL packets and refresh")
+                homescreen.WOLtimer.Name = "WOLsent"
+                homescreen.WOLtimer.count = invalid
+                homescreen.WOLtimer.keepAlive = false
+                homescreen.WOLtimer.SetDuration(3*1000, false) ' 3 second time ( we will try 3 times )
+            end if
+        end if
+
+        ' default action
+        m.genIdleTime.Mark()
+    end if
+end sub
 
 Sub vcCreateIdleTimer()
     m.timerIdleTime = invalid
@@ -1590,6 +1611,12 @@ Sub vcCreateIdleTimer()
             m.ResetIdleTimer()
         end if 
     end if
+
+    ' could use useful for some thing ( curretly used for WOL keepalives )
+    ' 15 minutes is when we consider the channel idle
+    m.genIdleTime = createTimer()
+    m.genIdleTime.SetDuration(15*60*1000,true)
+    m.ResetGenIdleTimer()
 End Sub
 
 

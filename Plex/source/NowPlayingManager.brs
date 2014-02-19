@@ -182,6 +182,9 @@ Sub nowPlayingSendTimelineToAll()
 End Sub
 
 Sub nowPlayingUpdatePlaybackState(timelineType, item, state, time)
+    ' reset the general IDLE timer
+    GetViewController().resetGenIdleTimer()
+
     timeline = m.timelines[timelineType]
     timeline.state = state
     timeline.item = item

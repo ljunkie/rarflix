@@ -114,13 +114,25 @@ Sub homeScreenOnTimerExpired(timer)
 
     ' if WOL packets were sent, we should reload the homescreen ( send the request again )
     if timer.Name = "WOLsent" then
-        Debug("WOL packets were sent -- createServerRequests & myPlex to refresh ( only for servers with WOL macs )")
+
+        if timer.keepAlive = invalid then 
+            Debug("WOL packets were sent -- create Server & myPlex request to refresh/load data ( only for servers with WOL macs )")
+        end if
+     
         for each server in GetValidPlexMediaServers()
-            if server.online then 
-               Debug("WOL " + tostr(server.name) + " is already online")
-            else 
-                ' skip requests for any non WOL related servers
-                if GetServerData(server.machineID, "Mac") <> invalid then 
+            ' skip requests for any non WOL related servers
+            if GetServerData(server.machineID, "Mac") <> invalid then 
+                ' send keepAlive requests if the timer has been completed and converted
+                if timer.keepAlive = true then 
+                    if GetViewController().genIdleTime <> invalid and GetViewController().genIdleTime.RemainingSeconds() = 0 then 
+                        Debug("roku is idle: NOT sending keepalive WOL packets to " + server.name)
+                    else 
+                        Debug("keepalive WOL packets being sent to " + server.name)
+                        server.SendWOL()
+                    end if
+                else if server.online and timer.keepAlive = invalid then 
+                    Debug("WOL " + tostr(server.name) + " is already online")
+                else 
                     ' it's possible the WOL server we are trying to reach is learned through myPlex
                     ' since we don't know all the IP's assigned, we need to re-request the myPlex 
                     ' TODO(ljunkie) verify if we should be using fallBack servers too if we are 
@@ -141,7 +153,10 @@ Sub homeScreenOnTimerExpired(timer)
 
         ' deactivate after third attempt ( 3 x 3 = 9 seconds after all inital WOL requests )
         if timer.count > 2 then 
-            timer.active = false
+            ' convert wolTimer to a keepAlive timer ( 5 minutes )
+            timer.keepalive = true
+            timer.SetDuration(5*60*1000, false) ' reset timer to 5 minutes - send a WOL request
+            timer.mark()
         end if
 
     end if
