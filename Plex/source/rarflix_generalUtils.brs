@@ -223,9 +223,10 @@ function getBaseSectionKey(sourceUrl = invalid)
     return sectionKey
 end function
 
-function getNextEpisode(item) 
+function getNextEpisode(item,details=false) 
     if item = invalid or item.server = invalid then return invalid
 
+    Debug("getNextEpisode:: for: " + tostr(item.title))
     episodesKey = item.parentkey + "/children"
     if item.grandparentkey <> invalid then episodesKey = item.grandparentkey+ "/allLeaves"
     if episodesKey = invalid then return invalid
@@ -240,11 +241,14 @@ function getNextEpisode(item)
                 ' Current Item found - check if the next item is valid
                 nextIndex = index+1
                 if container.xml.Video[nextIndex] <> invalid then 
-                    metadata = newVideoMetadata(container, container.xml.Video[nextIndex], true)
+                    metadata = newVideoMetadata(container, container.xml.Video[nextIndex], details)
+                    Debug("getNextEpisode:: found: " + tostr(metadata.title))
                 end if
            end if
         end for
     end if 
+
+    if metadata = invalid then Debug("getNextEpisode:: not found")
 
     return metadata
 end function

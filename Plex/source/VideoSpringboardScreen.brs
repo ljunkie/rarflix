@@ -628,6 +628,13 @@ Sub videoActivate(priorScreen)
 
     if m.refreshOnActivate then
         advancedToNext = (RegRead("advanceToNextItem", "preferences", "enabled") = "enabled")
+        isLibraryContent = (m.Item.isLibraryContent = true)
+
+        if NOT isLibraryContent then 
+            Debug("item is not library content -- setting advancedToNext=false")
+            print m.item
+            advancedToNext = false
+        end if
 
         ' shuffleplay will override advanceToNext ( this might be weird, but if someone actually selected shuffle play, they'd probably expect it to shuffle)
         if m.ShufflePlay then advancedToNext = false
@@ -645,20 +652,22 @@ Sub videoActivate(priorScreen)
 
             if priorScreen.NextEpisode <> invalid then 
                ' we need to replace the current item with the next episode
-                Debug("-- found the next episode -- replacing this Item with the next episode and refreshing")
                 m.item = priorScreen.NextEpisode
                 m.context[m.curindex] = m.item
-                m.Refresh(true) ' refresh this items - get media details before we move on
+                Debug("-- next Item specififed - replace and refresh details: " + tostr(m.item.title))
+                m.Refresh(false) ' refresh this items - get media details before we move on
             else 
                ' just advance to the next item
+                Debug("-- advanceToNext generic")
                 m.Refresh(false) ' no need to get video details/media
                 m.GotoNextItem()
+                Debug("-- advanceToNext generic - replace and refresh details: " + tostr(m.item.title))
             end if
 
             ' start play if m.ContinuousPlay
             if m.ContinuousPlay then 
                 directPlayOptions = m.PlayButtonStates[m.PlayButtonState]
-                Debug("Playing video with Direct Play options set to: " + directPlayOptions.label)
+                Debug("[ContinuousPlay] Playing video with Direct Play options set to: " + directPlayOptions.label)
                 m.ViewController.CreateVideoPlayer(m.metadata, 0, directPlayOptions.value)
             end if
 
