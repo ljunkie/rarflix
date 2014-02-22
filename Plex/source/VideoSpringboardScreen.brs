@@ -642,10 +642,29 @@ Sub videoActivate(priorScreen)
         else if advancedToNext AND (priorScreen.isPlayed = true) then
             ' advancedToNextItem will change the video on the springboard (preplay) to the next up
             '  - if m.ContinuousPlay is set, it will start playing the episode
-            m.item = priorScreen.NextEpisode
-            m.context[m.curindex] = m.item
-            Debug("-- next Item specififed - replace and refresh details: " + tostr(m.item.title))
-            m.Refresh(false) ' refresh this items - get media details before we move on
+           
+            m.Refresh(true) ' refresh this item (watched status/overlay)
+
+            ' check if next episode in context is already set - or set it
+            if m.context[m.curindex+1] <> invalid and m.context[m.curindex+1].key = priorScreen.NextEpisode.key then 
+                Debug("[AutoEpisodeAdvance] next item in context is already the nextEpisode: " + tostr(priorScreen.NextEpisode.title))
+                m.GotoNextItem()
+            else
+                ' ljunkie - instead of replacing the watched item with the next episode, we will 
+                ' insert the nextEpisode and use GoToNextItem()
+                newContext = []
+                for each newItem in m.context
+                    newContext.push(newItem)
+                    if newItem.key = m.item.key then 
+                        newContext.push(priorScreen.NextEpisode)
+                        Debug("[AutoEpisodeAdvance] nextEpisode is specified - add to the existing context: " + tostr(priorScreen.NextEpisode.title))
+                    end if
+                end for
+                m.context = newContext
+                m.GotoNextItem()
+                'm.item = priorScreen.NextEpisode
+                'm.context[m.curindex] = m.item
+            end if
 
             ' start play if m.ContinuousPlay
             if m.ContinuousPlay then 
@@ -653,7 +672,6 @@ Sub videoActivate(priorScreen)
                 Debug("[ContinuousPlay] Playing video with Direct Play options set to: " + directPlayOptions.label)
                 m.ViewController.CreateVideoPlayer(m.metadata, 0, directPlayOptions.value)
             end if
-
         else
             m.Refresh(true)
         end if

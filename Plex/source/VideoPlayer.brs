@@ -131,11 +131,8 @@ Sub videoPlayerShow()
                 ' ljunkie (2014-02-19) context doesn't matter anymore -- we need to query the grandparentKey because this might be the last episode of a season
                 ' try to find the next episode -- will use the first episode of the next season too, does NOT loop
                 metadata = getNextEpisode(m.item) 
-                if metadata <> invalid then 
-                    Debug("-- found the next episode -- replacing this Item with the next episode and refreshing")
-                    m.NextEpisode = metadata ' videospringboard will use this on activation - priorscreen.NextEpisode
-                end if
-
+                ' videospringboard will use this on activation - priorscreen.NextEpisode
+                if metadata <> invalid then m.NextEpisode = metadata 
             end if
         end if
         ' end advanceToNextItem
