@@ -421,7 +421,12 @@ Sub loaderRefreshData()
                                         newKey = re.ReplaceAll(newkey, "")
                                         joinKey = "?"
                                         if Instr(1, newKey, "?") > 0 then joinKey = "&"
-                                        newkey = newKey + joinKey + "X-Plex-Container-Start="+tostr(index)+"&X-Plex-Container-Size=1"
+                                        startOffset = index
+                                        ' startOffset will be (selectedRow*itemsInRow)+focusedIndex in a full grid screen
+                                        if m.listener.isfullgrid = true then 
+                                            startOffset = (m.listener.selectedrow*status.content.count())+m.listener.focusedindex
+                                        end if
+                                        newkey = newKey + joinKey + "X-Plex-Container-Start="+tostr(startOffset)+"&X-Plex-Container-Size=1"
                                         container = createPlexContainerForUrl(m.listener.loader.server, m.listener.loader.sourceurl, newKey)
                                         context = container.getmetadata()
 
