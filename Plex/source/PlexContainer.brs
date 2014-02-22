@@ -197,7 +197,10 @@ Sub containerParseXml()
 
         ' ljunkie - check if HomeVideo. This will be used to limit or change options since HomeVideos don't work with certain features.
         ' I.E. cast & crew, trailers. The thumbnail size will also be landscape instead of a poster
-        if m.xml@librarySectionUUID <> invalid then 
+        ' check specific item for librarySectionUUID or fall back to contents librarySectionUUID
+        if n@librarySectionUUID <> invalid then 
+            metadata.isHomeVideos = GetGlobalAA().lookup("lsHomeVideos_"+n@librarySectionUUID)
+        else if m.xml@librarySectionUUID <> invalid then 
             metadata.isHomeVideos = GetGlobalAA().lookup("lsHomeVideos_"+m.xml@librarySectionUUID)
         end if
 
