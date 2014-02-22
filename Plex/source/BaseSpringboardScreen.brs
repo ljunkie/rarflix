@@ -204,7 +204,7 @@ Function sbGotoNextItem() As Boolean
     if NOT m.AllowLeftRight then return false
 
     ' load all contents (once) if we are coming from a full grid
-    if fromFullGrid() and m.FullContext = invalid then GetContextFromFullGrid(m)
+    if fromFullGrid(true) and m.FullContext = invalid then GetContextFromFullGrid(m)
 
     Debug("----- GoToNextItem: we have " + tostr(m.Context.Count()) + " items total")
 
@@ -232,7 +232,7 @@ Function sbGotoPrevItem() As Boolean
     if NOT m.AllowLeftRight then return false
 
     ' load all contents (once) if we are coming from a full grid
-    if fromFullGrid() and m.FullContext = invalid then GetContextFromFullGrid(m)
+    if fromFullGrid(true) and m.FullContext = invalid then GetContextFromFullGrid(m)
 
     maxIndex = m.Context.Count() - 1
     index = m.CurIndex

@@ -267,7 +267,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
                         exit for
                     end if
                 end for
-                if fromFullGrid(m) then
+                if fromFullGrid() then
                      ' special for music - mayb more later
                      if tostr(key) = "albums" and item.album <> invalid then 
                          breadcrumbs[0] = UcaseFirst(item.artist)                     
@@ -371,7 +371,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         else
             screen = createPosterScreen(item, m, "arced-portrait")
             screenName = "Series Poster"
-            if fromFullGrid(m) and (item.umtitle <> invalid or item.title <> invalid) then 
+            if fromFullGrid() and (item.umtitle <> invalid or item.title <> invalid) then 
                 breadcrumbs[0] = "All Seasons"
                 breadcrumbs[1] = firstof(item.umtitle,item.title)
             end if

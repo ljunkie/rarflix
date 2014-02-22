@@ -270,7 +270,7 @@ Function videoHandleMessage(msg) As Boolean
                 ' ljunkie - continuous/shuffle play - load the content required now
 
                 ' special: get all context if we came from a FullGrid and ContinuousPlay/ShufflePlay are enabled
-                if m.ContinuousPlay or m.shuffleplay and m.FullContext = invalid and fromFullGrid(m) then GetContextFromFullGrid(m)
+                if m.ContinuousPlay or m.shuffleplay and m.FullContext = invalid and fromFullGrid() then GetContextFromFullGrid(m)
 
                 ' shuffle the context if shufflePlay enable - as of now the selected video will always play
                 if m.shuffleplay then 

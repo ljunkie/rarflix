@@ -165,18 +165,31 @@ End Function
 
     ' find the full grid screen - backtrack
 
-function fromFullGrid(vc=invalid) as boolean
+function fromFullGrid(parentOnly=false) as boolean
+
     screens = GetViewController().screens
     if type(screens) = "roArray" and screens.count() > 1 then 
+        ' only true if the parent is a full grid screen
+        if parentOnly then 
+            pscreen = screens[screens.count()-2]
+            if pscreen <> invalid and pscreen.screen <> invalid and type(pscreen.screen) = "roGridScreen" and pscreen.isfullgrid = true then
+                return true
+            else 
+               Debug("parent screen is NOT a full grid")
+               return false
+            end if
+        end if
+
+        ' just verifying if we are from a full grid - doesn't have to be the exact parent
         for sindex = screens.count()-1 to 1 step -1
             'print "checking if screen #" + tostr(sindex) + "is the fullGrid"
-            if type(screens[sindex].screen) = "roGridScreen" and screens[sindex].isfullgrid <> invalid and screens[sindex].isfullgrid then
+            if type(screens[sindex].screen) = "roGridScreen" and screens[sindex].isfullgrid = true then
                 return true
-                ' screen = screens[sindex]
                 exit for 
             end if
         next
     end if
+
     return false
 end function
 
