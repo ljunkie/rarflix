@@ -627,12 +627,12 @@ Sub videoActivate(priorScreen)
     end if
 
     if m.refreshOnActivate then
-        advancedToNext = (RegRead("advanceToNextItem", "preferences", "enabled") = "enabled")
+        advancedToNext = (RegRead("advanceToNextItem", "preferences", "enabled") = "enabled" and priorScreen.NextEpisode <> invalid)
 
         ' shuffleplay will override advanceToNext ( this might be weird, but if someone actually selected shuffle play, they'd probably expect it to shuffle)
         if m.ShufflePlay then advancedToNext = false
 
-        ' advancedToNext is special ( so skip this context if enabled )
+        ' ContinuousPlay/ShufflePlay - go to next and play ( excluding advancedToNext content )
         if NOT advancedToNext and (m.ContinuousPlay or m.ShufflePlay) AND (priorScreen.isPlayed = true OR priorScreen.playbackError = true) then
             m.Refresh(true) ' refresh the watched item (watched status/overlay) before moving on
             m.GotoNextItem()
@@ -642,20 +642,10 @@ Sub videoActivate(priorScreen)
         else if advancedToNext AND (priorScreen.isPlayed = true) then
             ' advancedToNextItem will change the video on the springboard (preplay) to the next up
             '  - if m.ContinuousPlay is set, it will start playing the episode
-
-            if priorScreen.NextEpisode <> invalid then 
-               ' we need to replace the current item with the next episode
-                m.item = priorScreen.NextEpisode
-                m.context[m.curindex] = m.item
-                Debug("-- next Item specififed - replace and refresh details: " + tostr(m.item.title))
-                m.Refresh(false) ' refresh this items - get media details before we move on
-            else 
-               ' just advance to the next item
-                Debug("-- advanceToNext generic")
-                m.Refresh(false) ' no need to get video details/media
-                m.GotoNextItem()
-                Debug("-- advanceToNext generic - replace and refresh details: " + tostr(m.item.title))
-            end if
+            m.item = priorScreen.NextEpisode
+            m.context[m.curindex] = m.item
+            Debug("-- next Item specififed - replace and refresh details: " + tostr(m.item.title))
+            m.Refresh(false) ' refresh this items - get media details before we move on
 
             ' start play if m.ContinuousPlay
             if m.ContinuousPlay then 

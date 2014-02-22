@@ -903,14 +903,13 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid, sourceR
         AudioPlayer().Stop()
         return m.CreateScreenForItem(context, contextIndex, invalid, NOT(GetViewController().IsSlideShowPlaying()))
     else if item.ContentType = "movie" OR item.ContentType = "episode" OR item.ContentType = "clip" then
-        ' create a preplay screen before we start to play -- this will allow us to advance to the next video in line 
-        ' and allow continuous or continuous+shuffle play to work directly from the grid
+        ' create a preplay screen before we start to play - but only for the following (any of them):
+        ' 1) continuous play/shuffle play is enabled
+        ' 2) is episode and advanceToNextItem is enabled
         preplay = invalid
-        isLibraryContent = (item.isLibraryContent = true)
-        if NOT isLibraryContent then 
-            Debug("item is not library content -- disabling showing preplay after watching")
-            print m.item
-        else 
+        continuousORshuffle = ( RegRead("continuous_play", "preferences") = "1" or RegRead("shuffle_play", "preferences") = "1" )
+        episodeAdvance = ( item.ContentType = "episode" and RegRead("advanceToNextItem", "preferences", "enabled") = "enabled" ) 
+        if episodeAdvance or continuousORshuffle then
             preplay = m.CreateScreenForItem(context, contextIndex, invalid, false)
             facade = CreateObject("roGridScreen")
             facade.Show()

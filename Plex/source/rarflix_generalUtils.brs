@@ -228,6 +228,8 @@ function getNextEpisode(item,details=false)
 
     Debug("getNextEpisode:: for: " + tostr(item.title))
     episodesKey = item.parentkey + "/children"
+    'TODO(ljunkie) we should never use parentKey. It's a fallback now, but using parent key only yields
+    ' a specific seasons episodes. 
     if item.grandparentkey <> invalid then episodesKey = item.grandparentkey+ "/allLeaves"
     if episodesKey = invalid then return invalid
 

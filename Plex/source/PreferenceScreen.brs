@@ -1018,7 +1018,7 @@ Function createAdvancedPrefsScreen(viewController) As Object
     ]
     obj.Prefs["advanceToNextItem"] = {
         values: values,
-        heading: "Display the video up next after watching",
+        heading: "Display the next available TV episode after watching",
         default: "enabled"
     }
 
@@ -1111,7 +1111,7 @@ Function createAdvancedPrefsScreen(viewController) As Object
     obj.Screen.SetHeader("Advanced preferences don't usually need to be changed")
 
     obj.AddItem({title: "Confirm Exit", shortDescriptionLine2: "prompt before exiting RARflix"}, "exit_confirmation", obj.GetEnumValue("exit_confirmation"))
-    obj.AddItem({title: "Advance to Next", shortDescriptionLine2: "display next up after watching"}, "advanceToNextItem", obj.GetEnumValue("advanceToNextItem"))
+    obj.AddItem({title: "Auto Episode Advance", shortDescriptionLine2: "show episode next up after watching"}, "advanceToNextItem", obj.GetEnumValue("advanceToNextItem"))
     obj.AddItem({title: "Transcoder"}, "transcoder_version", obj.GetEnumValue("transcoder_version"))
     obj.AddItem({title: "Continuous Play"}, "continuous_play", obj.GetEnumValue("continuous_play"))
     obj.AddItem({title: "Shuffle Play"}, "shuffle_play", obj.GetEnumValue("shuffle_play"))
