@@ -24,6 +24,7 @@ Function createVideoSpringboardScreen(context, index, viewController) As Object
 
     obj.ContinuousPlay = (RegRead("continuous_play", "preferences") = "1")
     obj.ShufflePlay = (RegRead("shuffle_play", "preferences") = "1")
+    obj.continuousContextPlay = (RegRead("continuous_context_play", "preferences") = "1") 'not a global option (yet)
 
     return obj
 End Function
@@ -41,6 +42,8 @@ Sub videoSetupButtons()
     playLabel = m.PlayButtonStates[m.PlayButtonState].label
     if m.ShufflePlay then
         playLabel = "Shuffle+Continuous " + playLabel
+    else if m.continuousContextPlay then
+        playLabel = "Continuous [context] " + playLabel
     else if m.ContinuousPlay then
          playLabel = "Continuous " + playLabel
     end if
@@ -270,7 +273,7 @@ Function videoHandleMessage(msg) As Boolean
                 ' ljunkie - continuous/shuffle play - load the content required now
 
                 ' special: get all context if we came from a FullGrid and ContinuousPlay/ShufflePlay are enabled
-                if m.ContinuousPlay or m.shuffleplay and m.FullContext = invalid and fromFullGrid(true) then GetContextFromFullGrid(m)
+                if (m.ContinuousPlay or m.shuffleplay or m.continuousContextPlay) and m.FullContext = invalid and fromFullGrid(true) then GetContextFromFullGrid(m)
 
                 ' shuffle the context if shufflePlay enable - as of now the selected video will always play
                 if m.shuffleplay then 
@@ -305,7 +308,7 @@ Function videoHandleMessage(msg) As Boolean
                 m.Item.server.Delete(key)
                 m.Screen.Close()
             else if buttonCommand = "options" then
-                screen = createVideoOptionsScreen(m.metadata, m.ViewController, m.ContinuousPlay, m.ShufflePlay)
+                screen = createVideoOptionsScreen(m.metadata, m.ViewController, m.ContinuousPlay, m.ShufflePlay, m.continuousContextPlay)
                 m.ViewController.InitializeOtherScreen(screen, ["Video Playback Options"])
                 screen.Show()
                 m.checkChangesOnActivate = true
@@ -537,7 +540,7 @@ Function videoDialogHandleButton(command, data) As Boolean
         obj.Refresh(true)
         closeDialog = true
     else if Command = "options" then
-        screen = createVideoOptionsScreen(obj.metadata, obj.ViewController, obj.ContinuousPlay, obj.ShufflePlay)
+        screen = createVideoOptionsScreen(obj.metadata, obj.ViewController, obj.ContinuousPlay, obj.ShufflePlay, obj.continuousContextPlay)
         obj.ViewController.InitializeOtherScreen(screen, ["Video Playback Options"])
         screen.Show()
         obj.checkChangesOnActivate = true
@@ -598,16 +601,11 @@ Sub videoActivate(priorScreen)
             m.Item.server.UpdateStreamSelection("subtitle", m.media.preferredPart.id, priorScreen.Changes["subtitles"])
         end if
 
-        if priorScreen.Changes.DoesExist("continuous_play") then
+        if priorScreen.Changes.DoesExist("playBack_type") then
+            m.ShufflePlay = (priorScreen.Changes["playBack_type"] = "shuffle_play")
+            m.ContinuousPlay = (priorScreen.Changes["playBack_type"] = "continuous_play")
+            m.continuousContextPlay = (priorScreen.Changes["playBack_type"] = "continuous_context_play")
             priorScreen.Changes["playback"] = tostr(m.PlayButtonState)
-            m.ContinuousPlay = (priorScreen.Changes["continuous_play"] = "1")
-            'priorScreen.Changes.Delete("continuous_play")
-        end if
-
-        if priorScreen.Changes.DoesExist("shuffle_play") then
-            priorScreen.Changes["playback"] = tostr(m.PlayButtonState)
-            m.ShufflePlay = (priorScreen.Changes["shuffle_play"] = "1")
-            'priorScreen.Changes.Delete("shuffle_play")
         end if
 
         if priorScreen.Changes.DoesExist("media") then
@@ -629,11 +627,11 @@ Sub videoActivate(priorScreen)
     if m.refreshOnActivate then
         advancedToNext = (RegRead("advanceToNextItem", "preferences", "enabled") = "enabled" and priorScreen.NextEpisode <> invalid)
 
-        ' shuffleplay will override advanceToNext ( this might be weird, but if someone actually selected shuffle play, they'd probably expect it to shuffle)
-        if m.ShufflePlay then advancedToNext = false
+        ' shuffleplay/continuousContextPlay overrides advanceToNext ( these DO NOT try and use the next available episode )
+        if m.ShufflePlay or m.continuousContextPlay then advancedToNext = false
 
         ' ContinuousPlay/ShufflePlay - go to next and play ( excluding advancedToNext content )
-        if NOT advancedToNext and (m.ContinuousPlay or m.ShufflePlay) AND (priorScreen.isPlayed = true OR priorScreen.playbackError = true) then
+        if NOT advancedToNext and (m.ContinuousPlay or m.ShufflePlay or m.continuousContextPlay) AND (priorScreen.isPlayed = true OR priorScreen.playbackError = true) then
             m.Refresh(true) ' refresh the watched item (watched status/overlay) before moving on
             m.GotoNextItem()
             directPlayOptions = m.PlayButtonStates[m.PlayButtonState]
@@ -662,8 +660,6 @@ Sub videoActivate(priorScreen)
                 end for
                 m.context = newContext
                 m.GotoNextItem()
-                'm.item = priorScreen.NextEpisode
-                'm.context[m.curindex] = m.item
             end if
 
             ' start play if m.ContinuousPlay

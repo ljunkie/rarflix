@@ -1611,7 +1611,7 @@ End Function
 
 '*** Video Playback Options ***
 
-Function createVideoOptionsScreen(item, viewController, continuousPlay, shufflePlay) As Object
+Function createVideoOptionsScreen(item, viewController, continuousPlay, shufflePlay, continuousContextPlay) As Object
     obj = createBasePrefsScreen(viewController)
 
     obj.Item = item
@@ -1727,38 +1727,32 @@ Function createVideoOptionsScreen(item, viewController, continuousPlay, shuffleP
         }
     end if
 
-    ' Continuous play
-    if continuousPlay = true then
-        defaultContinuous = "1"
-    else
-        defaultContinuous = "0"
+    ' TODO(ljunkie) better name for "this context" ( same as continuous play unless the item is an episode - it will say in the same context instead of finding the next episode )
+    ' plaback type all rolled into one option. They conflict with eachother, so it doesn't make sense to have them separate.
+    defaultPlayBack = "default"
+    if continuousContextPlay = true then
+        defaultplayBack = "continuous_context_play"
+    else if shufflePlay = true then
+        defaultplayBack = "shuffle_play"
+    else if continuousPlay = true then
+        defaultplayBack = "continuous_play"
     end if
-    continuous_play = [
-        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Experimental" },
-        { title: "Disabled", EnumValue: "0" }
-    ]
-    obj.Prefs["continuous_play"] = {
-        values: continuous_play,
-        label: "Continuous Play"
-        heading: "Automatically start playing the next video",
-        default: defaultContinuous
-    }
 
-    ' Continuous play
-    if shufflePlay = true then
-        defaultShuffle = "1"
-    else
-        defaultShuffle = "0"
+    advancedToNext = (RegRead("advanceToNextItem", "preferences", "enabled") = "enabled")
+    playBack_types = [{ title: "Default",    EnumValue: "default", ShortDescriptionLine2: "Single Video Playback" }]
+    if advancedToNext then 
+        playBack_types.Push({ title: "Continuous", EnumValue: "continuous_play", ShortDescriptionLine2: "Automatically play the next video" + chr(10) + "* Next available Episode if applicable" })
+        playBack_types.Push({ title: "Continuous [this context]", EnumValue: "continuous_context_play", ShortDescriptionLine2: "Automatically play the next video" + chr(10) + " * Use the existing context "})
+    else 
+        ' if one hasn't enable advancedToNext - then we don't need two Continuous options ( continuous will function the original way ) + it has a different desctiption
+        playBack_types.Push({ title: "Continuous", EnumValue: "continuous_play", ShortDescriptionLine2: "Automatically play the next video" + chr(10) + " * Use the existing context " })
     end if
-    Shuffle_play = [
-        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Very Experimental" },
-        { title: "Disabled", EnumValue: "0" }
-    ]
-    obj.Prefs["Shuffle_play"] = {
-        values: Shuffle_play,
-        label: "Shuffle Play"
-        heading: "Shuffle+Automatically start playing the next video",
-        default: defaultShuffle
+    playBack_types.Push({ title: "Shuffle", EnumValue: "shuffle_play", ShortDescriptionLine2: "Shuffle+Automatically play the next video" + chr(10) + " * Use the existing context " })
+    obj.Prefs["playBack_type"] = {
+        values: playBack_types,
+        label: "Playback",
+        heading: "Playback: default, play continuous, play shuffle or play this context continuous",
+        default: defaultplayBack
     }
 
     ' Media selection
@@ -1799,11 +1793,21 @@ Function createVideoOptionsScreen(item, viewController, continuousPlay, shuffleP
 
     obj.Screen.SetHeader("Video playback options")
 
-    possiblePrefs = ["playback", "quality", "audio", "subtitles", "media", "continuous_play","shuffle_play"]
+    possiblePrefs = ["playback", "playBack_type", "quality", "audio", "subtitles", "media"]
     for each key in possiblePrefs
         pref = obj.Prefs[key]
+        if pref <> invalid and pref.values <> invalid then 
+            for index = 0 to pref.values.count()-1
+               if pref.values[index].ShortDescriptionLine2 <> invalid and  pref.values[index].enumvalue = pref.default then 
+                   pref.ShortDescriptionLine2 = pref.values[index].ShortDescriptionLine2
+                   exit for
+               end if
+            end for
+        end if
+
+
         if pref <> invalid then
-            obj.AddItem({title: pref.label}, key)
+            obj.AddItem({title: pref.label, ShortDescriptionLine2: pref.ShortDescriptionLine2}, key)
             obj.AppendValue(invalid, obj.GetEnumValue(key))
         end if
     next
@@ -1830,9 +1834,27 @@ Function videoOptionsHandleMessage(msg) As Boolean
                 pref = m.Prefs[command]
                 m.currentIndex = msg.GetIndex()
                 m.currentEnumKey = command
-                screen = m.ViewController.CreateEnumInputScreen(pref.values, pref.default, pref.heading, [pref.label], false)
-                screen.Listener = m
-                screen.Show()
+
+                if command = "playBack_type" then 
+                    ' ljunkie - toggle playback types (iterate)
+                    for index = 0 to pref.values.count()
+                        if pref.values[index].enumvalue = pref.default then
+                            index = index+1
+                            exit for
+                        end if
+                    end for
+                    if index > pref.values.count()-1 then index = 0
+
+                    m.Changes.AddReplace(command, pref.values[index].enumvalue)
+                    m.Prefs[command].default = pref.values[index].enumvalue
+                    ' might want to make this an options for AppendValue?
+                    'm.contentarray[m.currentIndex].ShortDescriptionLine2 = pref.values[index].ShortDescriptionLine2
+                    m.AppendValue(m.currentIndex, pref.values[index].title, pref.values[index].ShortDescriptionLine2)
+                else 
+                    screen = m.ViewController.CreateEnumInputScreen(pref.values, pref.default, pref.heading, [pref.label], false)
+                    screen.Listener = m
+                    screen.Show()
+                end if
             end if
         end if
     end if
