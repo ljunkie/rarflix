@@ -509,8 +509,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             return invalid
         end if
     else if item.key = "switchuser" then
-        screen = m.Screens.Peek()
-        if screen <> invalid then screen.screen.close()
+        GetViewController().ExitToUserSelection()
         return invalid
     else if item.key = "/channels/all" then
         ' Special case for all channels to force it into a special grid view
