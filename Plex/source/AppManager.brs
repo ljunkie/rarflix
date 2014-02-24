@@ -66,6 +66,8 @@ Function managerIsInitialized() As Boolean
 End Function
 
 Function managerIsPlaybackAllowed() As Boolean
+    ' RARflix is always playable!
+    return true
     ' If we've never noted a playback attempt before, write it to the registry
     ' now. It will serve as the start of the trial period.
 
