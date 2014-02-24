@@ -1295,56 +1295,20 @@ Sub vcShow()
     Appmanager().Initializers = {}
     GetGlobalAA().Delete("ProfileExit")
 
-    ' ljunkie - extra cleanup for the user switching    
-    GetGlobalAA().Delete("myplex")
-    GetGlobalAA().Delete("globals")
-    GetGlobalAA().Delete("primaryserver")
-    GetGlobalAA().Delete("validated_servers")
-    GetGlobalAA().Delete("registrycache")
-    GetGlobalAA().Delete("first_focus_done")
 
      'Exit Confirmation TODO - for not we will show the user selection screen if enabled
     if m.RFisMultiUser then 
         Debug("Exit channel - show user selection")
         m = invalid
+        ' ljunkie - extra cleanup for the user switching    
+        GetGlobalAA().clear()
         'GetGlobalAA().AddReplace("restoreAudio", restoreAudio)
         Main(invalid)   'TODO: This needs to be changed as it's recursive and starts building up the stack.
         return
     else
         Debug("Finished global message loop")
-        end 'exit application? - why do it this way instead of letting main finish?
-'        controller = invalid
-'        port = CreateObject("roMessagePort")
-'        dialog = CreateObject("roMessageDialog")
-'        dialog.SetMessagePort(port)
-'    
-'        dialog.SetTitle("Exit RARflix?")
-'        dialog.SetText("")
-'        dialog.AddButton(0, "No")
-'        dialog.AddButton(1, "Yes")
-'        dialog.Show()
-'    
-'        while true
-'            dlgMsg = wait(0, dialog.GetMessagePort())
-'            if type(dlgMsg) = "roMessageDialogEvent"
-'                if dlgMsg.isScreenClosed()
-'                    end ' exit channel
-'                    return
-'                else if dlgMsg.isButtonPressed()
-'                    if dlgMsg.GetIndex() = 1 then end 
-'                    if dlgMsg.GetIndex() = 0 then 
-'                        m = invalid
-'                        dialog.close()
-'                        GetGlobalAA().AddReplace("restoreAudio", restoreAudio)
-'                        GetGlobalAA().AddReplace("restoreAudio", restoreAudio)
-'                        Main(invalid)
-'                    end if
-'                    return
-'                end if
-'            end if
-'        end while
     end if
-'
+
     return
 End Sub
 
