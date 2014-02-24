@@ -70,7 +70,7 @@ Function managerIsPlaybackAllowed() As Boolean
     ' now. It will serve as the start of the trial period.
 
     if m.firstPlaybackTimestamp = invalid then
-        RegWrite("first_playback_timestamp", "misc", tostr(Now().AsSeconds()))
+        RegWrite("first_playback_timestamp", tostr(Now().AsSeconds()) , "misc")
     end if
 
     return m.State <> "Limited"
