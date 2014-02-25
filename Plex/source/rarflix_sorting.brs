@@ -295,7 +295,9 @@ sub dialogSetSortingButton(dialog,obj)
         re = CreateObject("roRegex", "/all|/firstCharacter", "i")
         if obj.loader <> invalid and obj.loader.sourceurl <> invalid and re.IsMatch(obj.loader.sourceurl) then
             sort = getSortingOption(obj.loader.server,obj.loader.sourceurl)
-            dialog.SetButton("SectionSorting", "Sorting: " + sort.item.title)
+            if sort <> invalid and sort.item <> invalid and sort.item.title <> invalid then 
+                dialog.SetButton("SectionSorting", "Sorting: " + sort.item.title)
+            end if
         else 
             ' TODO(ljunkie) - think about removing this -- waste of screen space
             ' however one my be wondering why the sorting option isn't showing up.
@@ -309,7 +311,7 @@ function createGridSortingDialog(screen,obj)
     dialog.Title = "Sorting Options"
 
     sort = getSortingOption(obj.loader.server,obj.loader.sourceurl)
-    if sort = invalid or sort.contentarray = invalid or sort.contentarray.count() = 0 then return invalid
+    if sort = invalid or sort.item = invalid or sort.contentarray = invalid or sort.contentarray.count() = 0 then return invalid
     if sort.buttons = invalid or sort.buttons.count() = 0 then return invalid
 
     dialog.Text = "Selection: " + tostr(sort.item.title)

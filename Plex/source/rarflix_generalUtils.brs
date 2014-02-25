@@ -102,7 +102,7 @@ function convertToFilter(server,url)
             if instr(1, newurl, "?") > 0 then f = "&"
             sort = getSortingOption(server,newurl)
             ' exclude the default
-            if sort.item.key <> "titleSort:asc" then 
+            if sort <> invalid and sort.item <> invalid and sort.item.key <> "titleSort:asc" then 
                 newurl = newurl + f + "sort=" + sort.item.key
                 Debug(" new SORT URL: " + tostr(newurl))
             end if
@@ -200,7 +200,7 @@ function convertToFilter(server,url)
             if instr(1, newurl, "?") > 0 then f = "&"
             ' exclude the default
             sort = getSortingOption(server,newurl)
-            if sort.item.key <> "titleSort:asc" then 
+            if sort <> invalid and sort.item <> invalid and sort.item.key <> "titleSort:asc" then 
                 newurl = newurl + f + "sort=" + sort.item.key
                 Debug(" new SORT URL: " + tostr(newurl))
             end if
