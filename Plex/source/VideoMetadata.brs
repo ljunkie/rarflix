@@ -116,7 +116,7 @@ Sub setVideoBasics(video, container, item)
     video.viewCount = item@viewCount
     video.Watched = video.viewCount <> invalid AND val(video.viewCount) > 0
 
-    video.ShortDescriptionLine1 = firstOf(item@title, item@name)
+    video.ShortDescriptionLine1 = firstOf(item@title, item@name, "")
 
 
     'grandparentKey -- for episode - RR
@@ -225,7 +225,7 @@ Sub setVideoBasics(video, container, item)
             video.EpisodeStr = seasonStr + " " + episodeStr
             video.OrigReleaseDate = video.ReleaseDate
             'video.ReleaseDate = video.EpisodeStr ' why would i have done this.. bad
-            video.TitleSeason = firstOf(item@title, item@name) + " - " + video.EpisodeStr
+            video.TitleSeason = firstOf(item@title, item@name, "") + " - " + video.EpisodeStr
         end if
     else if video.ContentType = "clip" then
         video.ReleaseDate = firstOf(video.ReleaseDate, item@subtitle)

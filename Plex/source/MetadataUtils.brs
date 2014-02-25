@@ -122,7 +122,7 @@ End Sub
 
 
 Sub setMetaBasics(meta, container, item)
-    meta.Title = firstOf(item@title, item@name)
+    meta.Title = firstOf(item@title, item@name, "")
 
     ' There is a *massive* performance problem on grid views if the description
     ' isn't truncated.

@@ -28,8 +28,8 @@ Function newArtistMetadata(container, item, detailed=true) As Object
         next
     end if
 
-    if artist.Title = invalid then
-        artist.Title = item@artist
+    if artist.Title = "" then
+        artist.Title = firstOf(item@artist, "")
         artist.ShortDescriptionLine1 = artist.Title
     end if
 
