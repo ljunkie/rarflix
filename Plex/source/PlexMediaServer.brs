@@ -96,10 +96,11 @@ End Function
 Sub pmsPutOnDeck(item)
     if item = invalid then return
     ' use the existing view offset ( this should already be onDeck, but possible onDeck weeks expired)
-    if item.viewOffset <> invalid AND val(item.viewOffset) > 0 then
+    minTime = 61*1000
+    if item.viewOffset <> invalid AND val(item.viewOffset) > minTime then
         time = item.viewOffset
     else 
-        time = 10*1000
+        time = minTime
     end if
 
     m.Timeline(item, "stopped", time)
