@@ -21,6 +21,9 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     ' slideshow perfs TODO(ljunkie) - add some inline options
     obj.slideshowPeriod = RegRead("slideshow_period", "preferences", "6").toInt()
     obj.slideshow_overlay = RegRead("slideshow_overlay", "preferences", "2500").toInt()
+    obj.overlay_photo = NOT(RegRead("slideshow_photo_overlay", "preferences", "enabled") = "disabled")
+    obj.overlay_audio = NOT(RegRead("slideshow_audio_overlay", "preferences", "enabled") = "disabled")
+    obj.overlay_error = (RegRead("slideshow_error_overlay", "preferences", "disabled") = "enabled")
 
     ' we do some thing different if one is using a legacy remote ( no back button or info(*) button )
     if RegRead("legacy_remote", "preferences","0") <> "0" then 
@@ -99,7 +102,7 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     ' percent of underscan (2.5 with the slideShow -- but 5% seems right for this)
     ' toggle is available for users in slideshow prefs ( TV or Monitor )
     obj.UnderScan = RegRead("slideshow_underscan", "preferences", "5").toInt() 
-    obj.overlayEnabled = (RegRead("slideshow_overlay", "preferences", "2500").toInt() <> 0)
+    obj.overlayEnabled = (RegRead("slideshow_photo_overlay", "preferences", "enabled") = "enabled" or RegRead("slideshow_audio_overlay", "preferences", "enabled")  = "enabled")
 
 
     ' standardized actions
@@ -249,13 +252,13 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
                 ' UPDATE: some people use old remotes.. no back button, so we will have to close on up
                 if NOT m.isLegacyRemote then 
                     m.overlayEnabled = not(m.OverlayOn)
-                    m.OverlayToggle()
+                    m.OverlayToggle("forceToggle")
                 else 
                     m.Stop()
                 end if
             else if msg.GetIndex() = 3 then 
                 m.overlayEnabled = not(m.OverlayOn)
-                m.OverlayToggle()
+                m.OverlayToggle("forceToggle")
             else if msg.GetIndex() = 4 or msg.GetIndex() = 5 then 
                 ' we do not load the Full Context to just display one image
                 ' - however let us allow EU to browse full context if requested 
@@ -324,7 +327,9 @@ Function ICphotoPlayerHandleMessage(msg) As Boolean
 End Function
 
 sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=invalid)
-        if tostr(option) <> "forceShow" and NOT m.overlayEnabled and overlayText = invalid and headerText = invalid then 
+        if NOT m.overlay_photo and NOT m.overlay_audio then return
+        m.overlay_audio_tempDisable = invalid
+        if (tostr(option) <> "forceShow" and tostr(option) <> "refresh" and tostr(option) <> "forceToggle" ) and NOT m.overlayEnabled and overlayText = invalid and headerText = invalid then 
             'print "overlay not enabled -- hiding it"
             m.screen.clearlayer(2)
             m.OverlayOn = false
@@ -332,14 +337,40 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
             return
         end if
 
+        ' Overlay Arguments - forced actions - default/nomatch = show
         if option <> invalid 
             if tostr(option) = "hide" then 
                 m.OverlayOn = true
+            else if tostr(option) = "refresh" then 
+                ' refresh will only show overlay if currently onscreen
+                m.OverlayOn = (m.OverlayOn = false) ' reverse logic
+            else if tostr(option) = "forceToggle" then 
+                ' Use Default Actions - used to bypass logic
             else 
                 m.OverlayOn = false
             end if
         else
             m.OverlayOn = (m.OverlayOn = true)
+        end if
+
+        ' Audio ONLY Overlay: entire overlay toggle
+        '  * only on track change or manual request (remote up/down)
+        if NOT m.overlay_photo and m.overlay_audio then 
+            if tostr(option) = "forceToggle" then 
+                ' Use Default Actions - used to bypass logic
+            else if tostr(option) = "forceShow" then 
+                m.OverlayOn = false
+            else 
+                m.OverlayOn = true
+            end if
+        end if
+
+        ' Audio Overlay: do not show audio overlay every photo change - only affects audo overlay - photo overlay still shown
+        '  * only on track change or manual request (remote up/down)
+        if m.overlay_photo and m.overlay_audio then 
+            if (tostr(option) <> "forceToggle" and tostr(option) <> "forceShow") then 
+                m.overlay_audio_tempDisable = true
+            end if
         end if
 
         if m.OverlayOn then 
@@ -352,15 +383,24 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
             item = m.item ' use the item we are actually viewing ( not the curIndex as that could have failed )
 
             overlayPaddingTop = 15 ' works for both SD/HD
+            AudioOverlay = {}
             if GetGlobal("IsHD") = true then
                 overlayY = int(m.canvasrect.h*.85)
                 overlayPaddingLR = 250
                 failureHeight = int(m.canvasrect.h*.10)
+                AudioOverlay.ih = 75
+                AudioOverlay.iw = 75
+                AudioOverlay.h = 100
             else 
                 overlayY = int(m.canvasrect.h*.80)
                 overlayPaddingLR = 150
                 failureHeight = int(m.canvasrect.h*.15)
+                AudioOverlay.ih = 50
+                AudioOverlay.iw = 50
+                AudioOverlay.h = 75
             end if
+            AudioOverlay.y = int(AudioOverlay.h-AudioOverlay.ih)
+            AudioOverlay.x = overlayPaddingLR
 
             ' count of the image being display
             ' note: if the image failed to show, we will still be showing the previous image and overlay 
@@ -373,45 +413,49 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
             overlayBG = "#90000000"
             overlayText = "#FFCCCCCC"
 
-            display = [
-                { 
-                    color: overlayBG, 
-                    TargetRect: { x:0, y:overlayY, w:m.canvasrect.w, h:0 }
-                },
-                {
-                    Text: overlayTopLeft, 
-                    TextAttrs: {Color:overlayText, Font:"Small", HAlign:"Left", VAlign:"Top",  Direction:"LeftToRight"}, 
-                    TargetRect: {x:overlayPaddingLR,y:overlayY+overlayPaddingTop,w:m.canvasrect.w,h:0} 
-                }, 
-                {
-                    Text: overlayTopRight, 
-                    TextAttrs: {Color:overlayText, Font:"Small", HAlign:"Right", VAlign:"Top",  Direction:"LeftToRight"}, 
-                    TargetRect: {x:int(overlayPaddingLR*-1),y:overlayY+overlayPaddingTop,w:m.canvasrect.w,h:0} 
-                }, 
-                {
-                    Text: overlayCenter, 
-                    TextAttrs: {Color:overlayText, Font:"Small", HAlign:"HCenter", VAlign:"VCenter",  Direction:"LeftToRight"}, 
-                    TargetRect: {x:0,y:overlayY,w:m.canvasrect.w,h:0} 
-                }
-            ]
+            display = []
+            if m.overlay_photo then 
+                display = [
+                    { 
+                        color: overlayBG, 
+                        TargetRect: { x:0, y:overlayY, w:m.canvasrect.w, h:0 }
+                    },
+                    {
+                        Text: overlayTopLeft, 
+                        TextAttrs: {Color:overlayText, Font:"Small", HAlign:"Left", VAlign:"Top",  Direction:"LeftToRight"}, 
+                        TargetRect: {x:overlayPaddingLR,y:overlayY+overlayPaddingTop,w:m.canvasrect.w,h:0} 
+                    }, 
+                    {
+                        Text: overlayTopRight, 
+                        TextAttrs: {Color:overlayText, Font:"Small", HAlign:"Right", VAlign:"Top",  Direction:"LeftToRight"}, 
+                        TargetRect: {x:int(overlayPaddingLR*-1),y:overlayY+overlayPaddingTop,w:m.canvasrect.w,h:0} 
+                    }, 
+                    {
+                        Text: overlayCenter, 
+                        TextAttrs: {Color:overlayText, Font:"Small", HAlign:"HCenter", VAlign:"VCenter",  Direction:"LeftToRight"}, 
+                        TargetRect: {x:0,y:overlayY,w:m.canvasrect.w,h:0} 
+                    }
+                ]
             
-            ' if Paused or HeaderText sent, include it in the bottom overlay Top Middle
-            if (m.IsPaused = true and m.isSlideShow) or headerText <> invalid then 
-                if headerText <> invalid then 
-                    overlayHeader = tostr(headerText)
-                else 
-                    overlayHeader = "Paused"
+                ' if Paused or HeaderText sent, include it in the bottom overlay Top Middle
+                if (m.IsPaused = true and m.isSlideShow) or headerText <> invalid then 
+                    if headerText <> invalid then 
+                        overlayHeader = tostr(headerText)
+                    else 
+                        overlayHeader = "Paused"
+                    end if
+                    display.Push( {
+                        Text: overlayHeader, 
+                        TextAttrs:{Color:overlayText, Font:"Small", HAlign:"HCenter", VAlign:"Top",  Direction:"LeftToRight"}, 
+                        TargetRect:{x:0,y:overlayY+overlayPaddingTop,w:m.canvasrect.w,h:0} 
+                    } )
                 end if
-                display.Push( {
-                    Text: overlayHeader, 
-                    TextAttrs:{Color:overlayText, Font:"Small", HAlign:"HCenter", VAlign:"Top",  Direction:"LeftToRight"}, 
-                    TargetRect:{x:0,y:overlayY+overlayPaddingTop,w:m.canvasrect.w,h:0} 
-                } )
             end if
 
             ' show a red overlay on the top with the last failure and count 
-            if m.ImageFailure = true and m.ImageFailureReason <> invalid and m.isSlideShow then 
+            if m.overlay_error and m.ImageFailure = true and m.ImageFailureReason <> invalid and m.isSlideShow then 
                 ' show the EU failure info -- will help support issues if slideShow are not working as expected
+
                 failCountText = tostr(m.ImageFailureCount)
                 if m.ImageFailureCount = 1 then 
                     failCountText = failCountText + " failure"
@@ -428,7 +472,36 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
                     TextAttrs:{Color:overlayErrorText, Font:"Small", HAlign:"HCenter", VAlign:"VCenter",  Direction:"LeftToRight"}, 
                     TargetRect:{x:0,y:overlayPaddingTop,w:m.canvasrect.w,h:failureHeight} 
                 })
+
+            ' error overlay takes priority over music if enabled and has errors
+            else if m.overlay_audio and m.overlay_audio_tempDisable = invalid then 
+                player = AudioPlayer()
+                if player <> invalid and (player.isplaying = true or player.ispaused = true) and player.PlayIndex <> invalid and player.Context <> invalid then 
+                    item = player.Context[player.PlayIndex] 
+                    trackCount = tostr(int(player.PlayIndex+1))+" of "+tostr(player.Context.count())
+
+                    FirstLine  = "  Track: " + firstof(item.Title,"Unknown")
+                    SecondLine = "  Artist: " + firstof(item.Artist,"Unknown")
+                    ThirdLine  = "Album: " + firstof(item.Album,"Unknown") + " " + firstof(item.releasedate,"")
+
+                    timeInfo = GetDurationString(player.playbacktimer.GetElapsedSeconds(),0,1,1)
+                    if item.length <> invalid then timeInfo = timeInfo + " of " + GetDurationString(item.length,0,1,1)
+
+                    display.Push({color: OverlayBG, TargetRect:{x:0,y:0,w:m.canvasrect.w,h:AudioOverlay.h} })
+
+                    display.Push({Text: FirstLine,TextAttrs:{Color:overlayText, Font:"Small", HAlign:"Left", VAlign:"Top",  Direction:"LeftToRight"}, TargetRect:{x:int(audioOverlay.x+audioOverlay.h),y:audioOverlay.y,w:m.canvasrect.w,h:audioOverlay.h} })
+                    display.Push({Text: SecondLine,TextAttrs:{Color:overlayText, Font:"Small", HAlign:"Left", VAlign:"Top",  Direction:"LeftToRight"}, TargetRect:{x:int(audioOverlay.x+audioOverlay.h),y:int(audioOverlay.y*2),w:m.canvasrect.w,h:audioOverlay.h} })
+                    display.Push({Text: ThirdLine,TextAttrs:{Color:overlayText, Font:"Small", HAlign:"Left", VAlign:"Top",  Direction:"LeftToRight"}, TargetRect:{x:int(audioOverlay.x+audioOverlay.h),y:int(audioOverlay.y*3),w:m.canvasrect.w,h:audioOverlay.h} })
+
+                    display.Push({Text: trackCount,TextAttrs: {Color:overlayText, Font:"Small", HAlign:"Right", VAlign:"Top",  Direction:"LeftToRight"},TargetRect: {x:int(overlayPaddingLR*-1),y:audioOverlay.y,w:m.canvasrect.w,h:audioOverlay.h} })
+                    display.Push({Text: timeInfo,TextAttrs: {Color:overlayText, Font:"Small", HAlign:"Right", VAlign:"Top",  Direction:"LeftToRight"},TargetRect: {x:int(overlayPaddingLR*-1),y:(audioOverlay.y*3),w:m.canvasrect.w,h:audioOverlay.h} })
+                    ' top of text is a little hight than the top of the image (-5)
+                    display.Push({url: item.hdposterurl, targetrect:{x:audioOverlay.x,y:audioOverlay.y-5,w:AudioOverlay.iw,h:AudioOverlay.ih} })
+                end if
             end if
+
+            ' reset on every call - but not harm done resetting now
+            if m.overlay_audio_tempDisable = true then m.overlay_audio_tempDisable = invalid
 
             ' show the overlay
             m.screen.setlayer(2,display)
@@ -531,6 +604,8 @@ sub ICshowSlideImage()
 
     if NOT m.overlayEnabled then 
         m.OverlayToggle("hide")
+    else if m.isSlideShow and m.FirstSlide then
+        m.OverlayToggle("forceShow")
     else if m.isSlideShow or NOT m.FirstSlide then
         m.OverlayToggle("show")
     end if

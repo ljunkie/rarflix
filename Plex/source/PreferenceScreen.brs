@@ -492,9 +492,9 @@ Function createSlideshowPrefsScreen(viewController) As Object
 
     ' Photo duration
     values = [
-        { title: "Slow", EnumValue: "10" },
-        { title: "Normal", EnumValue: "6" },
-        { title: "Fast", EnumValue: "3" }
+        { title: "Slow (10 sec)", EnumValue: "10" },
+        { title: "Normal (6 sec)", EnumValue: "6" },
+        { title: "Fast (3 sec)", EnumValue: "3" }
     ]
     obj.Prefs["slideshow_period"] = {
         values: values,
@@ -504,15 +504,42 @@ Function createSlideshowPrefsScreen(viewController) As Object
 
     ' Overlay duration
     values = [
-        { title: "None", EnumValue: "0" }
-        { title: "Slow", EnumValue: "10000" },
-        { title: "Normal", EnumValue: "2500" },
-        { title: "Fast", EnumValue: "1000" }
+        { title: "Slow (10 sec)", EnumValue: "10000" },
+        { title: "Normal (2.5 sec)", EnumValue: "2500" },
+        { title: "Fast (1.5 sec)", EnumValue: "1500" }
     ]
     obj.Prefs["slideshow_overlay"] = {
         values: values,
         heading: "Text overlay duration",
         default: "2500"
+    }
+
+    ' Overlay Shared Values
+    values = [
+        { title: "Manual", EnumValue: "manual", ShortDescriptionLine2: "Only show Overlay with remote buttons",  }
+        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Automatically show Overlay on change",  }
+        { title: "Disabled", EnumValue: "disabled",ShortDescriptionLine2: "Never show the overlay",}
+    ]
+
+    ' Photo Info Overlay
+    obj.Prefs["slideshow_photo_overlay"] = {
+        values: values,
+        heading: "Display Photo Info on the Overlay",
+        default: "enabled"
+    }
+
+    ' Audio Info Overlay
+    obj.Prefs["slideshow_audio_overlay"] = {
+        values: values,
+        heading: "Display Audio Info on the Overlay",
+        default: "enabled"
+    }
+
+    ' Error/Debug Info Overlay
+    obj.Prefs["slideshow_error_overlay"] = {
+        values: values,
+        heading: "Enable Debug Overlay",
+        default: "disabled"
     }
 
     ' overscan/underscan correction
@@ -571,11 +598,14 @@ Function createSlideshowPrefsScreen(viewController) As Object
     obj.Screen.SetHeader("Slideshow display preferences")
 
     obj.AddItem({title: "Speed"}, "slideshow_period", obj.GetEnumValue("slideshow_period"))
-    obj.AddItem({title: "Text Overlay", ShortDescriptionLine2: "Overlay info on the photo"}, "slideshow_overlay", obj.GetEnumValue("slideshow_overlay"))
+    obj.AddItem({title: "Overlay Speed"}, "slideshow_overlay", obj.GetEnumValue("slideshow_overlay"))
+    obj.AddItem({title: "Photo Overlay", ShortDescriptionLine2: "Photo Info overlay on the photo"}, "slideshow_photo_overlay", obj.GetEnumValue("slideshow_photo_overlay"))
+    obj.AddItem({title: "Audio Overlay", ShortDescriptionLine2: "Audio Info overlay on the photo"}, "slideshow_audio_overlay", obj.GetEnumValue("slideshow_audio_overlay"))
     obj.AddItem({title: "Display Type",ShortDescriptionLine2: "Connected Display Type"}, "slideshow_underscan", obj.GetEnumValue("slideshow_underscan"))
     obj.AddItem({title: "Reload",ShortDescriptionLine2: "check for new images after every completion"}, "slideshow_reload", obj.GetEnumValue("slideshow_reload"))
     obj.AddItem({title: "Grid Style/Size",ShortDescriptionLine2: "Grid Display Mode"}, "rf_photos_grid_style", obj.GetEnumValue("rf_photos_grid_style"))
     obj.AddItem({title: "Icons Display Mode",ShortDescriptionLine2: "How should thumbnails 'fit' the screen"}, "photoicon_displaymode", obj.GetEnumValue("photoicon_displaymode"))
+    obj.AddItem({title: "Debug Info", ShortDescriptionLine2: "Show Debug info if there are errors"}, "slideshow_error_overlay", obj.GetEnumValue("slideshow_error_overlay"))
     ' not an option anymore ( will have to rewrite this manually for an roImageCanvas )
     '    obj.AddItem({title: "Photo Display Mode",ShortDescriptionLine2: "How should photos 'fit' the screen"}, "slideshow_displaymode", obj.GetEnumValue("slideshow_displaymode"))
     obj.AddItem({title: "Close"}, "close")
@@ -593,7 +623,7 @@ Function prefsSlideshowHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "slideshow_period" OR command = "slideshow_overlay" or command = "slideshow_reload" or command = "slideshow_displaymode" or command = "slideshow_underscan" or command = "photoicon_displaymode" or command = "rf_photos_grid_style" then
+            if command = "slideshow_period" OR command = "slideshow_overlay" or command = "slideshow_reload" or command = "slideshow_displaymode" or command = "slideshow_underscan" or command = "photoicon_displaymode" or command = "rf_photos_grid_style" or command = "slideshow_audio_overlay" or command = "slideshow_photo_overlay" or command = "slideshow_error_overlay" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "close" then
                 m.Screen.Close()

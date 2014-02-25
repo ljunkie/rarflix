@@ -153,6 +153,8 @@ Function audioPlayerHandleMessage(msg) As Boolean
                 m.IsPlaying = true
                 m.IsPaused = false
                 UpdateButtons = true
+                ' refresh the slideshow overlay on music changes ( if applicable)
+                if GetViewController().IsSlideShowPlaying() and PhotoPlayer() <> invalid and PhotoPlayer().overlay_audio then PhotoPlayer().OverlayToggle("forceShow")
             end if
         else if msg.isFullResult() then
             Debug("Playback of entire audio list finished")
