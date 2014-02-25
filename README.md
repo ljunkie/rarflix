@@ -1,4 +1,4 @@
-# RARflix v3.1.35 (2014-02-24) -- DEV release
+# RARflix v3.1.36 (2014-02-25) -- DEV release
 Changes: https://github.com/ljunkie/rarflix/blob/test/notes/rarflix-change.log
 
 ### Modified Plex for Roku
