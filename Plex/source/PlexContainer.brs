@@ -180,19 +180,6 @@ Sub containerParseXml()
         end if
         ' END custom poster/thumbs
 
-        ' ROKU is not working with SSL ( some cloud sync thumbs ) -- 
-        ' reset the thumb url from https://my.plexapp.com:443/sync/ to http://plex-cloudsync.s3.amazonaws.com/sync/
-        remyplex = CreateObject("roRegex", "my.plexapp.com", "i")        
-        if metadata.server <> invalid and metadata.server.serverurl <> invalid and remyplex.IsMatch(metadata.server.serverurl) then 
-            re = CreateObject("roRegex", "https://my.plexapp.com:443/sync/", "")
-            if metadata.hdposterurl <> invalid then metadata.hdposterurl = re.replace(metadata.hdposterurl,"http://plex-cloudsync.s3.amazonaws.com/sync/")
-            if metadata.sdposterurl <> invalid then metadata.sdposterurl = re.replace(metadata.sdposterurl,"http://plex-cloudsync.s3.amazonaws.com/sync/")
-            if metadata.sdgridthumb <> invalid then metadata.sdgridthumb = re.replace(metadata.sdgridthumb,"http://plex-cloudsync.s3.amazonaws.com/sync/")
-            if metadata.hdgridthumb <> invalid then metadata.hdgridthumb = re.replace(metadata.hdgridthumb,"http://plex-cloudsync.s3.amazonaws.com/sync/")
-            if metadata.hddetailthumb <> invalid then metadata.hddetailthumb = re.replace(metadata.hddetailthumb,"http://plex-cloudsync.s3.amazonaws.com/sync/")
-            if metadata.sddetailthumb <> invalid then metadata.sddetailthumb = re.replace(metadata.sddetailthumb,"http://plex-cloudsync.s3.amazonaws.com/sync/")
-        end if
-
         PosterIndicators(metadata)
 
         ' ljunkie - check if HomeVideo. This will be used to limit or change options since HomeVideos don't work with certain features.

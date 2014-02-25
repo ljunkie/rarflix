@@ -1326,7 +1326,7 @@ End Function
 
 sub rfCDNthumb(metadata,thumb_text,nodetype = invalid, PrintDebug = false)
     if RegRead("rf_custom_thumbs", "preferences","enabled") = "enabled" then
-        remyplex = CreateObject("roRegex", "my.plexapp.com", "i")        
+        remyplex = CreateObject("roRegex", "my.plexapp.com|plex.tv", "i")        
         remyplexMD = CreateObject("roRegex", "library/metadata/\d+", "i")        
         if remyplex.IsMatch(metadata.server.serverurl) then 
 	    if metadata.HDPosterURL <> invalid and remyplexMD.isMatch(metadata.HDPosterURL) then 

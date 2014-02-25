@@ -259,7 +259,7 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
 
         ' ljunkie - my.plexapp.com is now a valid server ( cloud sync ) 
         ' some things are not allowed - for one is the /status/sessions ( now playing )
-        re = CreateObject("roRegex", "my.plexapp.com", "i")        
+        re = CreateObject("roRegex", "my.plexapp.com|plex.tv", "i")        
         if NOT re.IsMatch(server.serverurl) then 
 
             ' Request recently used channels

@@ -66,8 +66,7 @@ End Function
 function createPlexContainerForUrlSizeOnly(server, sourceUrl, detailKey) 
     Debug("createPlexContainerForUrlSizeOnly:: determine size of xml results -- X-Plex-Container-Size=0")
     httpRequest = server.CreateRequest(sourceurl, detailKey)
-    httpRequest.AddHeader("X-Plex-Container-Start", "0")
-    httpRequest.AddHeader("X-Plex-Container-Size", "0")
+    remyplex = CreateObject("roRegex", "my.plexapp.com|plex.tv", "i")        
     Debug("Fetching content from server at query URL: " + tostr(httpRequest.GetUrl()))
     ' used to be 60 seconds, but upped to 90 -- I still think this is too high. If the server isn't responding with to a request of 0 items, something must be wrong. 
     response = GetToStringWithTimeout(httpRequest, 90)
@@ -76,7 +75,12 @@ function createPlexContainerForUrlSizeOnly(server, sourceUrl, detailKey)
     Debug("Finished - Fetching content from server at query URL: " + tostr(httpRequest.GetUrl()))
     Debug("Total Items: " + tostr(xml@totalsize) + " size returned: " + tostr(xml@size))
     container = {}
-    container.totalsize = xml@totalsize
+    ' cloudsync doesn't contain a totalsize (yet)
+    if xml@totalsize <> invalid then 
+        container.totalsize = xml@totalsize
+    else 
+        container.totalsize = xml@size
+    end if
     container.sourceurl = httpRequest.GetUrl()
     container.server = server
     return container

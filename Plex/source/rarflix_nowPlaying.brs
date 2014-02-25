@@ -6,7 +6,7 @@ Sub rf_homeNowPlayingChange()
     m.contentArray[m.RowIndexes[rowkey]].refreshContent = []
     m.contentArray[m.RowIndexes[rowkey]].loadedServers.Clear()
 
-    re = CreateObject("roRegex", "my.plexapp.com", "i")        
+    re = CreateObject("roRegex", "my.plexapp.com|plex.tv", "i")        
     for each server in GetOwnedPlexMediaServers()
         if re.IsMatch(server.serverurl) then 
             Debug("Skipping now playing session check on 'cloud sync' server: " + server.serverurl)
