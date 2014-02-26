@@ -241,6 +241,8 @@ End Function
 
 Function ProcessPlaybackPlayMedia() As Boolean
     if NOT ValidateRemoteControlRequest(m) then return true
+    Debug("Processing PlaybackPlayMedia request")
+
     ProcessCommandID(m.request)
 
     machineID = m.request.query["machineIdentifier"]
