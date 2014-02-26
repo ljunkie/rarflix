@@ -1,16 +1,31 @@
 
 
 Function createAudioSpringboardScreen(context, index, viewController) As Dynamic
-    'ljunkie - check if we are trying to play new music on an already existing springboard ( audiospringboard has focus ) -- remote control play
-    ' by using the "obj" we can reuse most logic below when replacing
+    'ljunkie - added some extra logic to allow loading music in the background
+    ' 1) load/start the new context if the current screen is a audio springboard (instead of stacking new screen)
+    ' 2) load/start the new context in the background if a slideshow is playing
+    ' 3) not implemented - always load music in the background from remote?
+    '
+    ' * by using the "obj" we can reuse most logic below when replacing instead of creating a new screen
+    '   Examples: items not playable and how to start content
     obj = GetViewController().screens.peek()
     player = AudioPlayer()
     replacePlayer = false
-    if player.contextscreenid <> invalid and obj <> invalid and player.contextscreenid = obj.screenid then 
+    if (GetViewController().IsSlideShowPlaying()) or (player.contextscreenid <> invalid and obj <> invalid and player.contextscreenid = obj.screenid) then 
         replacePlayer = true
-        Debug("audio player is in focus -- reset audio player with new context")
+
         ' stop any audio first ( this should be done already )
         if player.IsPlaying then player.stop()
+
+        ' slideshow is special -- load the audio in the background 
+        ' * setcontext previous as it could be the first load -- DO NOT start playing yet
+        if GetViewController().IsSlideShowPlaying() then 
+            Debug("slideshow is playing -- load the new audio context in the background")
+            obj = player
+            obj.SetContext(context, index, obj, false)
+        else 
+            Debug("audio player is in focus -- reset audio player with new context")
+        end if
         obj.context = context
         obj.curindex = index
     else
