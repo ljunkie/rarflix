@@ -1,18 +1,34 @@
 
 
 Function createAudioSpringboardScreen(context, index, viewController) As Dynamic
-    obj = createBaseSpringboardScreen(context, index, viewController)
+    'ljunkie - check if we are trying to play new music on an already existing springboard ( audiospringboard has focus ) -- remote control play
+    ' by using the "obj" we can reuse most logic below when replacing
+    obj = GetViewController().screens.peek()
+    player = AudioPlayer()
+    replacePlayer = false
+    if player.contextscreenid <> invalid and obj <> invalid and player.contextscreenid = obj.screenid then 
+        replacePlayer = true
+        Debug("audio player is in focus -- reset audio player with new context")
+        ' stop any audio first ( this should be done already )
+        if player.IsPlaying then player.stop()
+        obj.context = context
+        obj.curindex = index
+    else
+        obj = createBaseSpringboardScreen(context, index, viewController)
+    end if
 
-    obj.SetupButtons = audioSetupButtons
-    obj.GetMediaDetails = audioGetMediaDetails
-    obj.superHandleMessage = obj.HandleMessage
-    obj.HandleMessage = audioHandleMessage
-    obj.OnTimerExpired = audioOnTimerExpired
+    if replacePlayer = false then 
+        obj.SetupButtons = audioSetupButtons
+        obj.GetMediaDetails = audioGetMediaDetails
+        obj.superHandleMessage = obj.HandleMessage
+        obj.HandleMessage = audioHandleMessage
+        obj.OnTimerExpired = audioOnTimerExpired
 
-    obj.Screen.SetDescriptionStyle("audio")
-    obj.Screen.SetStaticRatingEnabled(false)
-    obj.Screen.AllowNavRewind(true)
-    obj.Screen.AllowNavFastForward(true)
+        obj.Screen.SetDescriptionStyle("audio")
+        obj.Screen.SetStaticRatingEnabled(false)
+        obj.Screen.AllowNavRewind(true)
+        obj.Screen.AllowNavFastForward(true)
+    end if
 
     ' If there isn't a single playable item in the list then the Roku has
     ' been observed to die a horrible death.
@@ -35,13 +51,15 @@ Function createAudioSpringboardScreen(context, index, viewController) As Dynamic
         return invalid
     end if
 
-    obj.callbackTimer = createTimer()
-    obj.callbackTimer.Active = false
-    obj.callbackTimer.SetDuration(1000, true)
-    viewController.AddTimer(obj.callbackTimer, obj)
-
+    if replacePlayer = false then 
+        obj.callbackTimer = createTimer()
+        obj.callbackTimer.Active = false
+        obj.callbackTimer.SetDuration(1000, true)
+        viewController.AddTimer(obj.callbackTimer, obj)
+        player = AudioPlayer()
+    end if
+   
     ' Start playback when screen is opened if there's nothing playing
-    player = AudioPlayer()
     if NOT player.IsPlaying then
         obj.Playstate = 2
         player.SetContext(obj.Context, obj.CurIndex, obj, true)
@@ -58,7 +76,11 @@ Function createAudioSpringboardScreen(context, index, viewController) As Dynamic
         NowPlayingManager().location = "fullScreenMusic"
     end if
 
-    return obj
+    if replacePlayer = true then 
+        return invalid
+    else 
+        return obj
+    end if
 End Function
 
 Sub audioSetupButtons()
