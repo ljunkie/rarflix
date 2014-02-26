@@ -403,7 +403,7 @@ sub rfCreateAudioSBdialog(m)
         dialog.SetButton("loop", "Loop: Off")
     end if
 
-    if player.ContextScreenID = m.ScreenID then dialog.SetButton("show", "Go to Now Playing")
+    if player.ContextScreenID <> m.ScreenID then dialog.SetButton("show", "Go to Now Playing")
 
     dialog.SetButton("rate", "_rate_")
     if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
