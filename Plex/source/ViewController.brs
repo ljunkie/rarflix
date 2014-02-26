@@ -899,9 +899,11 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid, sourceR
         obj.sourceReloadUrl = sourceReloadUrl
         return m.CreateICphotoPlayer(obj, contextIndex, true, false, true)
     else if item.ContentType = "audio" then
+        Debug("vcCreatePlayerForItem:: creating audio player")
         AudioPlayer().Stop()
         return m.CreateScreenForItem(context, contextIndex, invalid, NOT(GetViewController().IsSlideShowPlaying()))
     else if item.ContentType = "movie" OR item.ContentType = "episode" OR item.ContentType = "clip" then
+        Debug("vcCreatePlayerForItem:: creating player for ContentType: " + tostr(item.ContentType))
         ' create a preplay screen before we start to play - but only for the following (any of them):
         ' 1) continuous play/shuffle play is enabled
         ' 2) is episode and advanceToNextItem is enabled
