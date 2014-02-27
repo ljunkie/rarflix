@@ -568,8 +568,8 @@ Function createSlideshowPrefsScreen(viewController) As Object
     }
 
     display_modes = [
-        { title: "Photo", EnumValue: "photo-fit", ShortDescriptionLine2: "roku cropping method" },
-        { title: "Fit", EnumValue: "scale-to-fit", ShortDescriptionLine2: "scale to fit"  },
+        { title: "Fit", EnumValue: "scale-to-fit", ShortDescriptionLine2: "scale to fit [no crop]"  },
+        { title: "Smart", EnumValue: "photo-fit", ShortDescriptionLine2: "smart scale+zoom to fit" },
         { title: "Fill", EnumValue: "scale-to-fill", ShortDescriptionLine2: "stretch to fill" },
         { title: "Zoom", EnumValue: "zoom-to-fill", ShortDescriptionLine2: "zoom to fill" },
     ]
@@ -603,13 +603,12 @@ Function createSlideshowPrefsScreen(viewController) As Object
     obj.AddItem({title: "Overlay Speed"}, "slideshow_overlay", obj.GetEnumValue("slideshow_overlay"))
     obj.AddItem({title: "Photo Overlay", ShortDescriptionLine2: "Photo Info overlay on the photo"}, "slideshow_photo_overlay", obj.GetEnumValue("slideshow_photo_overlay"))
     obj.AddItem({title: "Audio Overlay", ShortDescriptionLine2: "Audio Info overlay on the photo"}, "slideshow_audio_overlay", obj.GetEnumValue("slideshow_audio_overlay"))
+    obj.AddItem({title: "Display Mode",ShortDescriptionLine2: "How should photos 'fit' the screen"}, "slideshow_displaymode", obj.GetEnumValue("slideshow_displaymode"))
     obj.AddItem({title: "Display Type",ShortDescriptionLine2: "Connected Display Type"}, "slideshow_underscan", obj.GetEnumValue("slideshow_underscan"))
     obj.AddItem({title: "Reload",ShortDescriptionLine2: "check for new images after every completion"}, "slideshow_reload", obj.GetEnumValue("slideshow_reload"))
     obj.AddItem({title: "Grid Style/Size",ShortDescriptionLine2: "Grid Display Mode"}, "rf_photos_grid_style", obj.GetEnumValue("rf_photos_grid_style"))
     obj.AddItem({title: "Icons Display Mode",ShortDescriptionLine2: "How should thumbnails 'fit' the screen"}, "photoicon_displaymode", obj.GetEnumValue("photoicon_displaymode"))
     obj.AddItem({title: "Debug Info", ShortDescriptionLine2: "Show Debug info if there are errors"}, "slideshow_error_overlay", obj.GetEnumValue("slideshow_error_overlay"))
-    ' not an option anymore ( will have to rewrite this manually for an roImageCanvas )
-    '    obj.AddItem({title: "Photo Display Mode",ShortDescriptionLine2: "How should photos 'fit' the screen"}, "slideshow_displaymode", obj.GetEnumValue("slideshow_displaymode"))
     obj.AddItem({title: "Close"}, "close")
 
     return obj

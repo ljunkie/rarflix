@@ -586,7 +586,7 @@ sub ICshowSlideImage()
     m.screen.setLayer(0, {Color:"#000000", CompositionMode:"Source"})
     display=[{
         url:m.CurFile.localFilePath, 
-        targetrect:{x:x,y:y,w:m.CurFile.metadata.width,h:m.CurFile.metadata.height}
+        targetrect:{x:x,y:y,w:int(m.CurFile.metadata.width),h:int(m.CurFile.metadata.height)}
     }]
     'TODO(ljunkie) -- testing purge Cached Images before setting layer
     m.screen.PurgeCachedImages()
@@ -1121,21 +1121,10 @@ Sub photoSlideShowOnUrlEvent(msg, requestContext)
             end if
     
             m.LocalFileSize = int(m.LocalFileSize+numBytes) ' we will fall back to image count if we fail to get bytes for cleanup
-    
-            ' verify the height = canvas height ( scale to resize ) -- works for HD/SD
-            if obj.metadata.height < m.canvasrect.h then 
-                mp = m.canvasrect.h/obj.metadata.height
-                obj.metadata.width = int(mp*obj.metadata.width)
-                obj.metadata.height = m.canvasrect.h
-            end if
-    
-            ' after height scale - verify the width is < canvas width
-            if obj.metadata.width > m.canvasrect.w then 
-                mp = m.canvasrect.w/obj.metadata.width
-                obj.metadata.height = int(mp*obj.metadata.height)
-                obj.metadata.width = m.canvasrect.w
-            end if
-    
+
+            ' Custom Display Modes - scale-to-fit, scale-to-fill, photo-fit, zoom-to-fill (tried to match Roku options)
+            scalePhoto(obj.metadata,m.canvasrect,RegRead("slideshow_displaymode", "preferences", "scale-to-fit"))
+
             ' set UnderScan -- TODO(ljunkie) verify this is right for other TV's
             obj.metadata.height = int(obj.metadata.height*((100-m.UnderScan)/100))
             obj.metadata.width = int(obj.metadata.width*((100-m.UnderScan)/100))
@@ -1542,4 +1531,71 @@ end sub
 sub PhotoPlayerRefresh() 
     ' show the current status in the overlay on refresh
     m.OverlayToggle("forceShow")
+end sub
+
+' Custom Display Modes - scale-to-fit, scale-to-fill, photo-fit, zoom-to-fill (tried to match Roku options)    
+sub scalePhoto(obj,canvas,displayMode=invalid)
+    if obj = invalid or canvas = invalid then return
+    if obj.width = invalid or obj.height = invalid or canvas.w = invalid or canvas.h = invalid then return
+    if displayMode = invalid then mode = RegRead("slideshow_displaymode", "preferences", "scale-to-fit")
+
+    ' debug info 
+    d_out = {}:d_out.th = obj.height:d_out.tw = obj.width:d_out.ch = canvas.h:d_out.cw = canvas.w
+
+    if displayMode = "scale-to-fill" then 
+        ' Basic - stretch the image (who would want this?) -- it's HORRIBLE for a portrait photo
+        obj.width = canvas.w
+        obj.height = canvas.h
+    else if displayMode = "photo-fit" then 
+        ' Step1: scale-to-fit -- multiplier=canvasSize[h|w]/realSize[h|w] (choose smaller)
+        mph = canvas.h/obj.height
+        mpw = canvas.w/obj.width
+        if mph < mpw then 
+            mp = mph
+        else 
+            mp = mpw
+        end if
+        obj.width = int(mp*obj.width)
+        obj.height = int(mp*obj.height)
+
+        ' Step2: scale up to 30% (zoom)
+        mph = 1-(obj.height/canvas.h)
+        mpw = 1-(obj.width/canvas.w)
+        if mpw > mph then 
+            mp = mpw
+        else 
+            mp = mph
+        end if
+
+        if mp > 0 and mp < .31 then 
+            obj.height = obj.height/(1-mp)
+            obj.width = obj.width/(1-mp)
+        end if
+
+     else if displayMode = "zoom-to-fill" then 
+        ' zoom-to-fill -- multiplier=canvasSize[h|w]/realSize[h|w] (choose larger)
+        mph = canvas.h/obj.height
+        mpw = canvas.w/obj.width
+        if mph > mpw then 
+            mp = mph
+        else 
+            mp = mpw
+        end if
+        obj.width = int(mp*obj.width)
+        obj.height = int(mp*obj.height)
+    else 
+        ' scale-to-fit -- multiplier=canvasSize[h|w]/realSize[h|w] (choose smaller)
+        mph = canvas.h/obj.height
+        mpw = canvas.w/obj.width
+        if mph < mpw then 
+            mp = mph
+        else 
+            mp = mpw
+        end if
+        obj.width = int(mp*obj.width)
+        obj.height = int(mp*obj.height)
+    end if
+
+    Debug("displayMode: " + tostr(displayMode) + ", screen:" + tostr(d_out.cw)+"x"+tostr(d_out.ch) + ", transcoded:" + tostr(d_out.tw)+"x"+tostr(d_out.th) + ", result:" + tostr(obj.width)+"x"+tostr(obj.height))
+
 end sub
