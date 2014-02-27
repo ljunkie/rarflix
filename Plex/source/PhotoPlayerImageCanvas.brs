@@ -15,6 +15,11 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     obj.OnUrlEvent = photoSlideShowOnUrlEvent
     obj.Refresh = PhotoPlayerRefresh
 
+    ' I have read this is expensive - so do it once
+    obj.font_registry = CreateObject("roFontRegistry")
+    obj.font = obj.font_registry.GetDefaultFont()
+    obj.overlayLineHeight = int((obj.font.GetOneLineHeight()/2)+.5)
+
     obj.maxIdle = 120    ' number of seconds to send a remote key to keep the slideshow non idle
     obj.lastImageEpoch = 0 ' we haven't displayed an image yet (set to integer)
 
@@ -86,7 +91,7 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
             Color:"#A0FFFFFF", 
             Font:"Small", 
             HAlign:"HCenter", 
-            VAlign:"VCenter",  
+            VAlign:"VCenter",
             Direction:"LeftToRight"
         }, 
         TargetRect: { 
@@ -382,24 +387,23 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
             'print "---------- show overlay"
             item = m.item ' use the item we are actually viewing ( not the curIndex as that could have failed )
 
-            overlayPaddingTop = 15 ' works for both SD/HD
+            overlayPaddingTextTop = 10 ' works for both SD/HD
             AudioOverlay = {}
             if GetGlobal("IsHD") = true then
-                overlayY = int(m.canvasrect.h*.85)
+                photoOverlay_Y   = int(m.canvasrect.h-100) ' canvas-"height" you want
                 overlayPaddingLR = 250
-                failureHeight = int(m.canvasrect.h*.10)
-                AudioOverlay.ih = 75
-                AudioOverlay.iw = 75
-                AudioOverlay.h = 100
+                failureHeight    = 75
+                AudioOverlay.ih  = 75
+                AudioOverlay.iw  = 75
+                AudioOverlay.h   = 115
             else 
-                overlayY = int(m.canvasrect.h*.80)
+                photoOverlay_Y   = int(m.canvasrect.h-95) ' canvas-"height" you want
                 overlayPaddingLR = 150
-                failureHeight = int(m.canvasrect.h*.15)
-                AudioOverlay.ih = 50
-                AudioOverlay.iw = 50
-                AudioOverlay.h = 75
+                failureHeight    = 75
+                AudioOverlay.ih  = 70
+                AudioOverlay.iw  = 70
+                AudioOverlay.h   = 95
             end if
-            AudioOverlay.y = int(AudioOverlay.h-AudioOverlay.ih)
             AudioOverlay.x = overlayPaddingLR
 
             ' count of the image being display
@@ -418,22 +422,22 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
                 display = [
                     { 
                         color: overlayBG, 
-                        TargetRect: { x:0, y:overlayY, w:m.canvasrect.w, h:0 }
+                        TargetRect: { x:0, y:photoOverlay_Y, w:m.canvasrect.w, h:0 }
                     },
                     {
                         Text: overlayTopLeft, 
-                        TextAttrs: {Color:overlayText, Font:"Small", HAlign:"Left", VAlign:"Top",  Direction:"LeftToRight"}, 
-                        TargetRect: {x:overlayPaddingLR,y:overlayY+overlayPaddingTop,w:m.canvasrect.w,h:0} 
+                        TextAttrs: {Color:overlayText, Font:"Small", HAlign:"Left", VAlign:"Top", Direction:"LeftToRight"}, 
+                        TargetRect: {x:overlayPaddingLR,y:photoOverlay_Y+overlayPaddingTextTop,w:m.canvasrect.w,h:0} 
                     }, 
                     {
                         Text: overlayTopRight, 
-                        TextAttrs: {Color:overlayText, Font:"Small", HAlign:"Right", VAlign:"Top",  Direction:"LeftToRight"}, 
-                        TargetRect: {x:int(overlayPaddingLR*-1),y:overlayY+overlayPaddingTop,w:m.canvasrect.w,h:0} 
+                        TextAttrs: {Color:overlayText, Font:"Small", HAlign:"Right", VAlign:"Top", Direction:"LeftToRight"}, 
+                        TargetRect: {x:int(overlayPaddingLR*-1),y:photoOverlay_Y+overlayPaddingTextTop,w:m.canvasrect.w,h:0} 
                     }, 
                     {
                         Text: overlayCenter, 
-                        TextAttrs: {Color:overlayText, Font:"Small", HAlign:"HCenter", VAlign:"VCenter",  Direction:"LeftToRight"}, 
-                        TargetRect: {x:0,y:overlayY,w:m.canvasrect.w,h:0} 
+                        TextAttrs: {Color:overlayText, Font:"Small", HAlign:"HCenter", VAlign:"Bottom", Direction:"LeftToRight"}, 
+                        TargetRect: {x:0,y:photoOverlay_Y,w:m.canvasrect.w,h:int(m.overlayLineHeight*3)} 
                     }
                 ]
             
@@ -446,8 +450,8 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
                     end if
                     display.Push( {
                         Text: overlayHeader, 
-                        TextAttrs:{Color:overlayText, Font:"Small", HAlign:"HCenter", VAlign:"Top",  Direction:"LeftToRight"}, 
-                        TargetRect:{x:0,y:overlayY+overlayPaddingTop,w:m.canvasrect.w,h:0} 
+                        TextAttrs: {Color:overlayText, Font:"Small", HAlign:"HCenter", VAlign:"Top", Direction:"LeftToRight"}, 
+                        TargetRect: {x:0,y:photoOverlay_Y+overlayPaddingTextTop,w:m.canvasrect.w,h:0} 
                     } )
                 end if
             end if
@@ -465,12 +469,12 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
                 overlayFail = failCountText + " : " + tostr(m.ImageFailureReason)
                 display.Push({ 
                     color: OverlayErrorBG, 
-                    TargetRect:{x:0,y:0,w:m.canvasrect.w,h:failureHeight}
+                    TargetRect: {x:0,y:0,w:m.canvasrect.w,h:failureHeight}
                 })
                 display.Push({
                     Text: overlayFail, 
-                    TextAttrs:{Color:overlayErrorText, Font:"Small", HAlign:"HCenter", VAlign:"VCenter",  Direction:"LeftToRight"}, 
-                    TargetRect:{x:0,y:overlayPaddingTop,w:m.canvasrect.w,h:failureHeight} 
+                    TextAttrs: {Color:overlayErrorText, Font:"Small", HAlign:"HCenter", VAlign:"VCenter", Direction:"LeftToRight"},
+                    TargetRect: {x:0,y:overlayPaddingTextTop,w:m.canvasrect.w,h:failureHeight} 
                 })
 
             ' error overlay takes priority over music if enabled and has errors
@@ -487,16 +491,48 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
                     timeInfo = GetDurationString(player.playbacktimer.GetElapsedSeconds(),0,1,1)
                     if item.length <> invalid then timeInfo = timeInfo + " of " + GetDurationString(item.length,0,1,1)
 
-                    display.Push({color: OverlayBG, TargetRect:{x:0,y:0,w:m.canvasrect.w,h:AudioOverlay.h} })
+                    lHeight = m.overlayLineHeight
 
-                    display.Push({Text: FirstLine,TextAttrs:{Color:overlayText, Font:"Small", HAlign:"Left", VAlign:"Top",  Direction:"LeftToRight"}, TargetRect:{x:int(audioOverlay.x+audioOverlay.h),y:audioOverlay.y,w:m.canvasrect.w,h:audioOverlay.h} })
-                    display.Push({Text: SecondLine,TextAttrs:{Color:overlayText, Font:"Small", HAlign:"Left", VAlign:"Top",  Direction:"LeftToRight"}, TargetRect:{x:int(audioOverlay.x+audioOverlay.h),y:int(audioOverlay.y*2),w:m.canvasrect.w,h:audioOverlay.h} })
-                    display.Push({Text: ThirdLine,TextAttrs:{Color:overlayText, Font:"Small", HAlign:"Left", VAlign:"Top",  Direction:"LeftToRight"}, TargetRect:{x:int(audioOverlay.x+audioOverlay.h),y:int(audioOverlay.y*3),w:m.canvasrect.w,h:audioOverlay.h} })
+                    ' Audio overlay background
+                    display.Push({color: OverlayBG, TargetRect: {x:0,y:0,w:m.canvasrect.w,h:AudioOverlay.h} })
 
-                    display.Push({Text: trackCount,TextAttrs: {Color:overlayText, Font:"Small", HAlign:"Right", VAlign:"Top",  Direction:"LeftToRight"},TargetRect: {x:int(overlayPaddingLR*-1),y:audioOverlay.y,w:m.canvasrect.w,h:audioOverlay.h} })
-                    display.Push({Text: timeInfo,TextAttrs: {Color:overlayText, Font:"Small", HAlign:"Right", VAlign:"Top",  Direction:"LeftToRight"},TargetRect: {x:int(overlayPaddingLR*-1),y:(audioOverlay.y*3),w:m.canvasrect.w,h:audioOverlay.h} })
+                    ' Audio Text Left
+                    xLeft = int(audioOverlay.x+audioOverlay.iw+10)
+                    display.Push({
+                        Text: FirstLine,
+                        TextAttrs: {Color:overlayText, Font:"Small", HAlign:"Left", VAlign:"Top", Direction:"LeftToRight"}, 
+                        TargetRect: {x:xLeft,y:int(lHeight+overlayPaddingTextTop),w:m.canvasrect.w,h:audioOverlay.h} 
+                    })
+                    display.Push({
+                        Text: SecondLine,
+                        TextAttrs: {Color:overlayText, Font:"Small", HAlign:"Left", VAlign:"Top", Direction:"LeftToRight"}, 
+                        TargetRect: {x:xLeft,y:int((lHeight*2)+overlayPaddingTextTop),w:m.canvasrect.w,h:audioOverlay.h} 
+                    })
+                    display.Push({
+                        Text: ThirdLine,
+                        TextAttrs: {Color:overlayText, Font:"Small", HAlign:"Left", VAlign:"Top", Direction:"LeftToRight"}, 
+                        TargetRect: {x:xLeft,y:int((lHeight*3)+overlayPaddingTextTop),w:m.canvasrect.w,h:audioOverlay.h} 
+                    })
+
+                    ' Audio Text Right
+                    xRight = int(overlayPaddingLR*-1)
+                    display.Push({
+                        Text: trackCount,
+                        TextAttrs: {Color:overlayText, Font:"Small", HAlign:"Right", VAlign:"Top", Direction:"LeftToRight"},
+                        TargetRect: {x:xRight,y:int(lHeight+overlayPaddingTextTop),w:m.canvasrect.w,h:audioOverlay.h} 
+                    })
+                    display.Push({
+                        Text: timeInfo,
+                        TextAttrs: {Color:overlayText, Font:"Small", HAlign:"Right", VAlign:"Top", Direction:"LeftToRight"},
+                        TargetRect: {x:xRight,y:int((lHeight*3)+overlayPaddingTextTop),w:m.canvasrect.w,h:audioOverlay.h} 
+                    })
+
+                    ' Audio Image - Left of ALL Test
                     ' top of text is a little hight than the top of the image (-5)
-                    display.Push({url: item.hdposterurl, targetrect:{x:audioOverlay.x,y:audioOverlay.y-5,w:AudioOverlay.iw,h:AudioOverlay.ih} })
+                    display.Push({
+                        url: item.hdposterurl, 
+                        targetrect: {x:audioOverlay.x,y:int(lHeight+(overlayPaddingTextTop-5)),w:AudioOverlay.iw,h:AudioOverlay.ih} 
+                        })
                 end if
             end if
 
