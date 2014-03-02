@@ -80,9 +80,11 @@ End Function
 
 function createPlexContainerForUrlSizeOnly(server, sourceUrl, detailKey) 
     Debug("createPlexContainerForUrlSizeOnly:: determine size of xml results -- X-Plex-Container-Size=0 ; " + tostr(sourceUrl) + ", " + tostr(detailKey))
-
-
+     
     httpRequest = server.CreateRequest(sourceurl, detailKey)
+    ' THIS IS VERY IMPORTANT containter and start size of 0
+    httpRequest.AddHeader("X-Plex-Container-Start", "0")
+    httpRequest.AddHeader("X-Plex-Container-Size", "0")
 
     fullSourceUrl = httpRequest.GetUrl()
     if detailKey = "all" then 
@@ -93,7 +95,6 @@ function createPlexContainerForUrlSizeOnly(server, sourceUrl, detailKey)
         end if
     end if
 
-    remyplex = CreateObject("roRegex", "my.plexapp.com|plex.tv", "i")        
     Debug("Fetching content from server at query URL: " + tostr(httpRequest.GetUrl()))
     ' used to be 60 seconds, but upped to 90 -- I still think this is too high. If the server isn't responding with to a request of 0 items, something must be wrong. 
     response = GetToStringWithTimeout(httpRequest, 90)
