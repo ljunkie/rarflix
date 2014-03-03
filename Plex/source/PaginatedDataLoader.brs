@@ -420,10 +420,10 @@ Sub loaderRefreshData()
                             Debug("----- skipping full reload (verify pending item) - row: " + tostr(row) + " key:" + tostr(status.key) + " name:" + tostr(m.names[row]) + ", loadStatus=" + tostr(status.loadStatus))
                              
                             ' Query the focused items source url/container key and reload it
-                            ' if the item is not longer the same after we query for it, it was removed (watched): remove and update row
+                            ' if the item is not longer the same after we query for it, it was removed (watched) or 
+                            ' new items have been added: remove and update row
                             for index = 0 to status.content.count() - 1 
                                 if status.content[index] <> invalid and status.content[index].key = wkey then 
-                                    
                                     ' ONLY reload the item if somone disabled FULL reload in prefs
                                     if RegRead("rf_grid_dynamic", "preferences", "full") <> "full" then 
                                         Debug("---- (PARTIAL reload) Refreshing item " + tostr(wkey) + " in row " + tostr(row))
@@ -432,27 +432,42 @@ Sub loaderRefreshData()
                                     else 
                                         ' some keys already include the X-Plex-Container-Start=/X-Plex-Container-Size parameters
                                         ' remove said paremeters so we can query for Start=Index and Size=1 ( for the specific item )
-                                        re=CreateObject("roRegex", "[&\?]X-Plex-Container-Start=\d+|[&\?]X-Plex-Container-Size=\d+", "i")
-                                        newKey = status.key
-                                        newKey = re.ReplaceAll(newkey, "")
+                                        newKey = rfStripAPILimits(status.key)
                                         joinKey = "?"
                                         if Instr(1, newKey, "?") > 0 then joinKey = "&"
+
                                         startOffset = index
+
                                         ' startOffset will be (selectedRow*itemsInRow)+focusedIndex in a full grid screen
-                                        if m.listener.isfullgrid = true then 
-                                            startOffset = (m.listener.selectedrow*status.content.count())+m.listener.focusedindex
+                                        if isFullGrid = true then 
+                                            selRow = m.listener.selectedrow
+                                            rowSize = m.listener.gridRowSize
+                                            if m.hasHeaderRow = true and selRow > 0 then selRow = selRow-1
+                                            startOffset = (selRow*rowSize)+m.listener.focusedindex
                                         end if
                                         newkey = newKey + joinKey + "X-Plex-Container-Start="+tostr(startOffset)+"&X-Plex-Container-Size=1"
                                         container = createPlexContainerForUrl(m.listener.loader.server, m.listener.loader.sourceurl, newKey)
                                         context = container.getmetadata()
 
-                                        ' Remove the item from the row if the origina/new keys are different ( removed, usually marked as watched )
-                                        ' change: we cannot assume the item is just watched and remove it. It's possible new content was added (offsets change)=We will have to reload
+                                        ' Remove the item from the row if the original/new keys are different ( removed, usually marked as watched )
+                                        ' change: we cannot assume the item is just watched and remove it. It's possible new content was added and 
+                                        ' offsets have changed, so we will have to reload. Also invalidate all row if fullGrid
                                         if context[0] = invalid or status.content[index].key <> context[0].key
                                             Debug("---- FULL reload forced - item removed(watched/new additions) " + tostr(wkey) + " in row " + tostr(row))
                                             status.content.Delete(index) ' delete right away - for a quick update, then reload
                                             if status.content.Count() > 0 then m.listener.Screen.SetContentList(row, status.content)
                                             m.StartRequest(row, 0, m.pagesize)
+                                            ' if the items have changed in a full row, then we need to invalidate the the all rows above and beneath
+                                            if isFullGrid = true then 
+                                                for invalid_row = 0 to m.contentArray.Count() - 1
+                                                    if invalid_row <> row then 
+                                                        rowReset = m.contentArray[invalid_row]
+                                                        Debug("----- Invalidate Row: " + tostr(invalid_row) + " key:" + tostr(rowReset.key) + " name:" + tostr(m.names[invalid_row]) + ", loadStatus=" + tostr(rowReset.loadStatus))
+                                                        rowReset.loadStatus = 0
+                                                        rowReset.countloaded = 0
+                                                    end if
+                                                end for
+                                            end if
                                             ' Update the item in the row if the original/new key are the same ( same item )
                                         else
                                             Debug("---- refreshing item " + tostr(wkey) + " in row " + tostr(row))

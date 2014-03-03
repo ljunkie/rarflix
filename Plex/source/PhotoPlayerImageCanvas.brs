@@ -1404,7 +1404,7 @@ sub GetPhotoContextFromFullGrid(obj,curindex = invalid, lazy=true)
        Debug("All context is already loaded! total: " + tostr(obj.context.count()))
        ' if we are still in the full grid, we will have to calculate the index again 
        '  rows are only 5 items -- curIndex is always 0-5
-       if obj.isFullGrid = true then obj.CurIndex = getFullGridCurIndex(obj,CurIndex,1)
+       if obj.isFullGrid = true then obj.CurIndex = getFullGridCurIndex(CurIndex)
        return
     end if
 
@@ -1532,7 +1532,7 @@ sub PhotoMetadataLazy(obj, dummyItem, lazy = true)
     end if
 
     obj.context = results:results = invalid
-    obj.CurIndex = getFullGridCurIndex(obj,dummyItem.CurIndex,1) ' when we load the full context, we need to fix the curindex
+    obj.CurIndex = getFullGridCurIndex(dummyItem.CurIndex) ' when we load the full context, we need to fix the curindex
     obj.FullContext = true
 
     ' cleanup

@@ -126,13 +126,13 @@ Sub videoPlayerShow()
         '  more info: the next item is not always the next episode depending on the context we are in ( On Deck, Recently Added, etc)
         '  this will check if the next item has the same parent/grandparent key. If false, we will find the nextItem based on the 
         '  grandparent key ( grandparent key used so we can find the next seasons show if needed )
+        
         if RegRead("advanceToNextItem", "preferences", "enabled") = "enabled" then 
-            if m.item <> invalid and tostr(m.item.type) = "episode" and m.parentScreen <> invalid then 
-                ' ljunkie (2014-02-19) context doesn't matter anymore -- we need to query the grandparentKey because this might be the last episode of a season
-                ' try to find the next episode -- will use the first episode of the next season too, does NOT loop
-                metadata = getNextEpisode(m.item) 
+            if m.parentScreen.nextEpisodes <> invalid then 
+                Debug("next Episode context is already loaded")
+            else if m.item <> invalid and tostr(m.item.type) = "episode" then 
                 ' videospringboard will use this on activation - priorscreen.NextEpisode
-                if metadata <> invalid then m.NextEpisode = metadata 
+                m.NextEpisodes = getNextEpisodes(m.item) 
             end if
         end if
         ' end advanceToNextItem

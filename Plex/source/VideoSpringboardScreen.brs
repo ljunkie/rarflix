@@ -630,7 +630,8 @@ Sub videoActivate(priorScreen)
     end if
 
     if m.refreshOnActivate then
-        advancedToNext = (RegRead("advanceToNextItem", "preferences", "enabled") = "enabled" and priorScreen.NextEpisode <> invalid)
+        ' only consider advancedToNext value if we have the next Episode info
+        advancedToNext = RegRead("advanceToNextItem", "preferences", "enabled") = "enabled" and (m.NextEpisodes <> invalid or priorScreen.NextEpisodes <> invalid)
 
         ' shuffleplay/continuousContextPlay overrides advanceToNext ( these DO NOT try and use the next available episode )
         if m.ShufflePlay or m.continuousContextPlay then advancedToNext = false
@@ -643,29 +644,31 @@ Sub videoActivate(priorScreen)
             Debug("Playing video with Direct Play options set to: " + directPlayOptions.label)
             m.ViewController.CreateVideoPlayer(m.metadata, 0, directPlayOptions.value)
         else if advancedToNext AND (priorScreen.isPlayed = true) then
-            ' advancedToNextItem will change the video on the springboard (preplay) to the next up
-            '  - if m.ContinuousPlay is set, it will start playing the episode
-           
-            m.Refresh(true) ' refresh this item (watched status/overlay)
+            m.skipFullContext = true ' never load full context ( deprecated due to fullcontext load true )
+            m.fullcontext = true     ' fullcontext is loaded
+            m.Refresh(true)
 
-            ' check if next episode in context is already set - or set it
-            if m.context[m.curindex+1] <> invalid and m.context[m.curindex+1].key = priorScreen.NextEpisode.key then 
-                Debug("[AutoEpisodeAdvance] next item in context is already the nextEpisode: " + tostr(priorScreen.NextEpisode.title))
-                m.GotoNextItem()
-            else
-                ' ljunkie - instead of replacing the watched item with the next episode, we will 
-                ' insert the nextEpisode and use GoToNextItem()
-                newContext = []
-                for each newItem in m.context
-                    newContext.push(newItem)
-                    if newItem.key = m.item.key then 
-                        newContext.push(priorScreen.NextEpisode)
-                        Debug("[AutoEpisodeAdvance] nextEpisode is specified - add to the existing context: " + tostr(priorScreen.NextEpisode.title))
-                    end if
-                end for
-                m.context = newContext
-                m.GotoNextItem()
+            ' advanceToNext ( tv episode only ) -- this will replace any springboard context with the shows context
+            if m.nextEpisodes = invalid then 
+                Debug("[AutoEpisodeAdvance] nextEpisodes is specified - using the shows context now: " + tostr(priorScreen.NextEpisodes.item.title))
+                ' setting for videoPlayer to know nextEpisodes has already been determined
+                m.nextEpisodes = priorScreen.NextEpisodes
+
+                ' refresh the current item before resetting the new context
+                refreshedItem = m.context[m.curindex]
+
+                ' reset the context with the shows (all seasons episodes context)
+                m.context = priorScreen.NextEpisodes.context
+                m.CurIndex = priorScreen.NextEpisodes.curindex
+
+                ' replace the refreshed item in the new context            
+                m.context[m.CurIndex] = refreshedItem
+            else 
+                Debug("[AutoEpisodeAdvance] nextEpisodes context is already known")
             end if
+
+            ' standard - go to next item
+            m.GotoNextItem()
 
             ' start play if m.ContinuousPlay
             if m.ContinuousPlay then 

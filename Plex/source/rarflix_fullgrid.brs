@@ -12,6 +12,7 @@ Function createFULLGridScreen(item, viewController, style = "flat-movie", SetDis
     obj.grid_style = style
     obj.displaymode_grid = SetDisplayMode 
     obj.isFullGrid = true
+    obj.defaultFullGrid = (item.defaultFullGrid = true)
 
     ' depending on the row we have, we might alrady have filters in place. Lets remove the bad ones (X-Plex-Container-Start and X-Plex-Container-Size)
     re=CreateObject("roRegex", "[&\?]X-Plex-Container-Start=\d+|[&\?]X-Plex-Container-Size=\d+|now_playing", "i")
@@ -40,20 +41,20 @@ Function createFULLGridScreen(item, viewController, style = "flat-movie", SetDis
     container = createPlexContainerForUrlSizeOnly(item.server, item.sourceUrl ,detailKey)    
 
     ' grid posters per row ( this should cover all of them as of 2013-03-04)
-    grid_size = 5 ' default HD/SD=5
+    grid_row_size = 5 ' default HD/SD=5
     if style = "flat-square" then 
         ' HD=7, SD=6
-        grid_size = 7
-        if NOT GetGlobal("IsHD") = true then grid_size = 6
+        grid_row_size = 7
+        if NOT GetGlobal("IsHD") = true then grid_row_size = 6
     else if style = "flat-landscape" or style = "flat-16x9" or style = "mixed-aspect-ratio" then 
         ' HD=5, SD=4
-        grid_size = 5
-        if NOT GetGlobal("IsHD") = true then grid_size = 4
+        grid_row_size = 5
+        if NOT GetGlobal("IsHD") = true then grid_row_size = 4
     else if style = "two-row-flat-landscape-custom" or style = "four-column-flat-landscape" then 
         ' HD/SD = 4
-        grid_size = 4
+        grid_row_size = 4
     end if
-
+    obj.gridRowSize = grid_row_size
     ' apply the choosen filters if set for this section/server
     if item.key = "all" then 
         obj.isFilterable = true
@@ -65,7 +66,7 @@ Function createFULLGridScreen(item, viewController, style = "flat-movie", SetDis
         end if
     end if
 
-    obj.Loader = createFULLgridPaginatedLoader(container, grid_size, grid_size, item)
+    obj.Loader = createFULLgridPaginatedLoader(container, grid_row_size, grid_row_size, item)
     obj.Loader.isFilterable = (obj.isFilterable = true)
     obj.Loader.Listener = obj
     ' Don't play theme music on top of grid screens on the older Roku models.
@@ -165,7 +166,7 @@ Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, ite
         ' Put Filters before any others
         filterItem = createSectionFilterItem(loader.server,loader.sourceurl,item.type)
         if filterItem <> invalid then headerRow.Unshift(filterItem)
-
+        loader.hasHeaderRow = true
     end if
 
     ' should we keep adding the sub sections? I think not - btw this code was only to test
@@ -292,7 +293,7 @@ sub GetContextFromFullGrid(this,curindex = invalid)
         ' stop realoding the full context ( but we still might need to reset the CurIndex )
         if this.FullContext = true then 
            ' if we are still in the full grid, we will have to caculate the index again ( rows are only 5 items -- curIndex is always 0-5 )
-           if this.isFullGrid = true then this.CurIndex = getFullGridCurIndex(this,CurIndex,1) ' when we load the full context, we need to fix the curindex
+           if this.isFullGrid = true then this.CurIndex = getFullGridCurIndex(CurIndex) ' when we load the full context, we need to fix the curindex
            return
         end if
 
@@ -337,35 +338,36 @@ sub GetContextFromFullGrid(this,curindex = invalid)
         obj.getmetadata()
         obj.context = obj.metadata
         this.context = obj.context
-        this.CurIndex = getFullGridCurIndex(this,CurIndex,1) ' when we load the full context, we need to fix the curindex
+        this.CurIndex = getFullGridCurIndex(CurIndex) ' when we load the full context, we need to fix the curindex
         this.FullContext = true
         if dialog <> invalid then dialog.Close()
 end sub
 
-function getFullGridCurIndex(vc,index,default = 2) as object
-    'print " ------------------ full grid index = " + tostr(index)
-
+' this function backtracks through the screen stack to find the first
+' full grid and return the curIndex based on the selected row/row item count
+' I.E. the hacky full grid, a selected item is 0-5 in every row, so row 4
+' curIndex might be 4 when in reality it's (row*item_in_row)+curindex 
+function getFullGridCurIndex(index) as object
     screen = invalid
     screens = GetViewController().screens
 
     ' find the full grid screen - backtrack
     if type(screens) = "roArray" and screens.count() > 1 then 
-        for sindex = screens.count()-1 to 1 step -1
-            'print "checking if screen #" + tostr(sindex) + "is the fullGrid"
-            if type(screens[sindex].screen) = "roGridScreen" and screens[sindex].isfullgrid <> invalid and screens[sindex].isfullgrid then
-                'print "screen #" + tostr(sindex) + "is the fullGrid"
-                screen = screens[sindex]
+        for index = screens.count()-1 to 1 step -1
+            'print "checking if screen #" + tostr(index) + "is the fullGrid"
+            if type(screens[index].screen) = "roGridScreen" and screens[index].isfullgrid = true then
+                'print "screen #" + tostr(index) + "is the fullGrid"
+                screen = screens[index]
                 exit for 
             end if
-        next
+        end for
     end if
 
     if screen <> invalid and type(screen.screen) = "roGridScreen" then
-        srow = screen.selectedrow
-        sitem = screen.focusedindex+1
-        rsize = screen.contentarray[0].count()
-        Debug("selected row:" + tostr(srow) + " focusedindex:" + tostr(sitem) + " rowsize:" + tostr(rsize))
-        index = (srow*rsize)+sitem-1 ' index is zero based (minus 1)
+        selRow = int(screen.selectedrow)        
+        if screen.loader.hasHeaderRow = true then selRow = selRow-1
+        Debug("selected row:" + tostr(selRow) + " focusedindex:" + tostr(screen.focusedindex) + " rowsize:" + tostr(screen.gridRowSize))
+        index = (selRow*screen.gridRowSize)+screen.focusedindex
     end if
     Debug(" ------------------  new grid index = " + tostr(index))
     return index

@@ -203,36 +203,44 @@ function getBaseSectionKey(sourceUrl = invalid)
     return sectionKey
 end function
 
-function getNextEpisode(item,details=false) 
+function getNextEpisodes(item,details=false) 
+    ' get all shows episodes as an object from an existing show item
+    ' obj.context   : all context
+    ' obj.item      : current item
+    ' obj.curIndex  : current item index
+    ' obj.nextIndex : next item index
+    ' results: always return invalid unless item has been found
     if item = invalid or item.server = invalid then return invalid
 
     Debug("getNextEpisode:: for: " + tostr(item.title))
     episodesKey = item.parentkey + "/children"
     'TODO(ljunkie) we should never use parentKey. It's a fallback now, but using parent key only yields
     ' a specific seasons episodes. 
-    if item.grandparentkey <> invalid then episodesKey = item.grandparentkey+ "/allLeaves"
+    if item.grandparentkey <> invalid then episodesKey = item.grandparentkey + "/allLeaves"
     if episodesKey = invalid then return invalid
 
-    metadata = invalid
+    obj = {}
     container = createPlexContainerForUrl(item.server, "", episodesKey)
-    ' DO NOT use getMetadata() to iterate through the context. This can be slow and we don't need all the 
-    ' metadata, just the next item after we match the current
     if container <> invalid and container.xml <> invalid and container.xml.Video <> invalid then 
-        for index = 0 to container.xml.Video.count()-1 
-            if container.xml.Video[index]@ratingKey = item.ratingKey then 
-                ' Current Item found - check if the next item is valid
+        obj.context = container.GetMetaData()
+        for index = 0 to obj.context.count()-1
+            if obj.context[index].ratingKey = item.ratingKey then 
+                obj.curindex = index                    
                 nextIndex = index+1
-                if container.xml.Video[nextIndex] <> invalid then 
-                    metadata = newVideoMetadata(container, container.xml.Video[nextIndex], details)
-                    Debug("getNextEpisode:: found: " + tostr(metadata.title))
+                if obj.context[nextIndex] <> invalid then 
+                    obj.item = obj.context[nextIndex]
+                    obj.Nextindex = nextIndex                    
+                    Debug("getNextEpisode:: found: " + tostr(obj.item.title))
+                    return obj
                 end if
+                Debug("getNextEpisode:: this is the last episode available")
+                return invalid
            end if
         end for
     end if 
 
-    if metadata = invalid then Debug("getNextEpisode:: not found")
-
-    return metadata
+    Debug("getNextEpisode:: not found")
+    return invalid
 end function
 
 function defaultTypes(key=invalid,typeKey=invalid)
