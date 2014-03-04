@@ -3,7 +3,7 @@
 '*
 
 Function itemIsRefreshable(item) As Boolean
-    return item <> invalid AND item.refresh <> invalid
+    return item <> invalid and type(item) = "roAssociativeArray" AND item.refresh <> invalid
 End Function
 
 Function createBaseSpringboardScreen(context, index, viewController, includePredicate=itemIsRefreshable) As Object

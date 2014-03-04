@@ -2283,6 +2283,7 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
 
     obj.AddItem({title: "Sorting",ShortDescriptionLine2: "Sorting of Content"}, "section_sort", obj.GetEnumValue("section_sort"))
     obj.AddItem({title: "Reorder Rows"}, "section_row_order")
+    obj.AddItem({title: "Full Grid", ShortDescriptionLine2: "Choose Sections to use the Full Grid"}, "rf_default_full_grid")
     obj.AddItem({title: "TV Series"}, "use_grid_for_series", obj.GetEnumValue("use_grid_for_series"))
     obj.AddItem({title: "TV Episode Size"}, "rf_episode_episodic_style", obj.GetEnumValue("rf_episode_episodic_style"))
 ' deprecated as of v3.1.2
@@ -2314,6 +2315,10 @@ Function prefsSectionDisplayHandleMessage(msg) As Boolean
             else if command = "rf_grid_description" then
                 screen = createGridDescriptionPrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["Grid Description Option"])
+                screen.Show()
+            else if command = "rf_default_full_grid" then
+                screen = createDefaultFullGridViewPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["Full Grid Sections"])
                 screen.Show()
             else if command = "section_row_order" then
                 m.HandleReorderPreference(command, msg.GetIndex())
@@ -2377,6 +2382,61 @@ Function createGridDescriptionPrefsScreen(viewController) As Object
     obj.AddItem({title: "Photo" }, "rf_grid_description_photo", obj.GetEnumValue("rf_grid_description_photo"))
     obj.AddItem({title: "Music" }, "rf_grid_description_artist", obj.GetEnumValue("rf_grid_description_artist"))
     obj.AddItem({title: "Other" }, "rf_grid_description_other", obj.GetEnumValue("rf_grid_description_other"))
+    obj.AddItem({title: "Close" }, "close")
+
+    return obj
+End Function
+
+Function createDefaultFullGridViewPrefsScreen(viewController) As Object
+    obj = createBasePrefsScreen(viewController)
+
+    obj.HandleMessage = prefsGridDescriptionHandleMessage
+
+    ' Grid Descriptions Pop Out
+    values = [
+        { title: "Enabled", EnumValue: "enabled"  },
+        { title: "Disabled", EnumValue: "disabled"  },
+
+    ]
+    obj.Prefs["rf_full_grid_movie"] = {
+        values: values,
+        heading: "Full Grid: Movie Section",
+        default: "disabled"
+    }
+    obj.Prefs["rf_full_grid_homevideo"] = {
+        values: values,
+        heading: "Full Grid: Home Video Section",
+        default: "disabled"
+    }
+    obj.Prefs["rf_full_grid_show"] = {
+        values: values,
+        heading: "Full Grid: TV Show Section",
+        default: "disabled"
+    }
+    obj.Prefs["rf_full_grid_photo"] = {
+        values: values,
+        heading: "Full Grid: Photo Section",
+        default: "disabled"
+    }
+    obj.Prefs["rf_full_grid_artist"] = {
+        values: values,
+        heading: "Full Grid: Music Section",
+        default: "disabled"
+    }
+    obj.Prefs["rf_full_grid_other"] = {
+        values: values,
+        heading: "Full Grid: All other sections",
+        default: "disabled"
+    }
+
+    obj.Screen.SetHeader("Default to Full Grid for these Sections")
+
+    obj.AddItem({title: "Movie" }, "rf_full_grid_movie", obj.GetEnumValue("rf_full_grid_movie"))
+    obj.AddItem({title: "TV"    }, "rf_full_grid_show",  obj.GetEnumValue("rf_full_grid_show"))
+    obj.AddItem({title: "Photo" }, "rf_full_grid_photo", obj.GetEnumValue("rf_full_grid_photo"))
+    obj.AddItem({title: "Music" }, "rf_full_grid_artist", obj.GetEnumValue("rf_full_grid_artist"))
+    obj.AddItem({title: "Home Video" }, "rf_full_grid_homevideo", obj.GetEnumValue("rf_full_grid_homevideo"))
+    obj.AddItem({title: "Other" }, "rf_full_grid_other", obj.GetEnumValue("rf_full_grid_other"))
     obj.AddItem({title: "Close" }, "close")
 
     return obj

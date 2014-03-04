@@ -421,6 +421,7 @@ End Sub
 'try to convert an object to a string. return invalid if can't
 '******************************************************
 Function AnyToString(any As Dynamic) As dynamic
+    if type(any) = "<uninitialized>" return "invalid"   'ljunkie -- this is what happens with uninitialized variables (maybe newer firmware?)
     if any = invalid return "invalid"
     if type(any) = "" return "empty"   'this can happen with uninitialized variables
     if isstr(any) return any

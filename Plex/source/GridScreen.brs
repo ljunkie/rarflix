@@ -3,6 +3,10 @@
 '*
 
 Function createGridScreen(viewController, style=RegRead("rf_grid_style", "preferences", "flat-movie"), upBehavior="exit", SetDisplayMode = "scale-to-fit", hideHeaderText = false) As Object
+    ' use a facade for instant feedback
+    facade = CreateObject("roGridScreen")
+    facade.Show()
+
     Debug("######## Creating Grid Screen " + tostr(style) + ":" + tostr(SetDisplayMode) + "  ########")
 
     if tostr(style) = "flat-portrait" and GetGlobal("IsHD") <> true then style = "flat-movie"
@@ -51,6 +55,8 @@ Function createGridScreen(viewController, style=RegRead("rf_grid_style", "prefer
     grid.SetUpBehaviorAtTopRow(upBehavior)
 
     ' Standard properties for all our Screen types
+    screen.facade = facade
+
     screen.Screen = grid
     screen.DestroyAndRecreate = gridDestroyAndRecreate
     screen.Show = showGridScreen
@@ -80,6 +86,9 @@ Function createGridScreenForItem(item, viewController, style, SetDisplayMode = "
     obj = createGridScreen(viewController, style, RegRead("rf_up_behavior", "preferences", "exit"), SetDisplayMode)
 
     obj.Item = item
+
+    ' ljunkie - required for filters/sorts - yes we have the item above, but this is for backwards compatibility with the fullgrid
+    obj.OriginalItem = item
 
     container = createPlexContainerForUrl(item.server, item.sourceUrl, item.key)
     container.SeparateSearchItems = true
@@ -118,7 +127,7 @@ Function showGridScreen() As Integer
         dialog.Show(true) ' blocking
 
         m.popOnActivate = true
-
+        if m.facade <> invalid then m.facade.Close()
         return -1
     end if
 
@@ -162,6 +171,7 @@ Function showGridScreen() As Integer
 
     m.Screen.Show()
     if facade <> invalid then facade.Close()
+    if m.facade <> invalid then m.facade.Close()
 
     ' Only two rows and five items per row are visible on the screen, so
     ' don't load much more than we need to before initially showing the
@@ -239,7 +249,12 @@ Function gridHandleMessage(msg) As Boolean
                 if item.ContentType = "series" then
                     breadcrumbs = [item.Title]
                 else if item.ContentType = "section" then
-                    breadcrumbs = [item.server.name, item.Title]
+                    ' include the filter/sorting in the breadcrumbs
+                    filterSortObj = getFilterSortParams(item.server,item.sourceurl)
+                    breadcrumbs = getFilterBreadcrumbs(filterSortObj,item)
+                    if breadcrumbs = invalid or breadcrumbs.count() = 0 then 
+                        breadcrumbs = [item.server.name, item.Title]
+                    end if
                 else
                     breadcrumbs = [m.Loader.GetNames()[msg.GetIndex()], item.Title]
                 end if
@@ -280,6 +295,12 @@ Function gridHandleMessage(msg) As Boolean
             ' ljunkie - save any focused item for the screen saver
             if item <> invalid and item.SDPosterURL <> invalid and item.HDPosterURL <> invalid then
                 SaveImagesForScreenSaver(item, ImageSizes(item.ViewGroup, item.Type))
+            end if
+
+            ' include what is filtered in popout (only if content being viewed is filterable)
+            if item <> invalid and tostr(item.key) = "_section_filters_" and  m.loader.isfilterable = true then 
+                item.description = getFilterSortDescription(item.server,item.sourceurl)
+                m.Screen.SetContentListSubset(m.selectedRow, m.contentArray[m.selectedRow], m.focusedIndex, 1)
             end if
 
             if m.ignoreNextFocus then
@@ -373,7 +394,8 @@ Function gridHandleMessage(msg) As Boolean
                 end if
             end if
         else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then ' ljunkie - use * for more options on focused item
-                Debug("----- * button pressed")
+                Debug("----- * button pressed on grid")
+
                 context = m.contentArray[m.selectedRow]
                 item = context[m.focusedIndex]
                 
@@ -382,14 +404,12 @@ Function gridHandleMessage(msg) As Boolean
 
                 isMovieTV = (itype = "movie"  or itype = "show" or itype = "episode" or itype = "season" or itype = "series")
                 sn = m.screenname
-                if tostr(itype) <> "invalid" and isMovieTV then 
-                    ' need to full screen here
+                if tostr(itype) <> "invalid" and isMovieTV and tostr(item.viewgroup) <> "section" then 
                     obj = GetViewController().screens.peek()
                     obj.metadata = item
                     obj.Item = item
                     rfVideoMoreButtonFromGrid(obj)
                 else if item <> invalid and tostr(item.contenttype) = "photo" then 
-                    ' need to full screen here
                     obj = GetViewController().screens.peek()
                     obj.Item = item
                     photoShowContextMenu(obj,true,true)
@@ -514,8 +534,17 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
         ' the initial rows are empty, we need to keep loading until we find a
         ' row with data.
         if row < m.contentArray.Count() - 1 then
-            'Debug("----- ... Loading more content: from row " + tostr(row+1) + " with 0 more ")
-            m.Loader.LoadMoreContent(row + 1, 0)
+            if m.isFullGrid = true then 
+                Debug("----- ... stop Loading more content: from row " + tostr(row+1) + " with 0 more ")
+                for index = row to m.contentArray.Count()-1 
+                    if m.FullGridTimer <> invalid then m.FullGridTimer.active = false
+                    Debug("----- ... set row invisable due to zero content" + tostr(index))
+                    m.Screen.SetListVisible(index, false)
+                end for
+            else 
+                Debug("----- ... Loading more content: from row " + tostr(row+1) + " with 0 more ")
+                m.Loader.LoadMoreContent(row + 1, 0)
+            end if
         end if
 
         return

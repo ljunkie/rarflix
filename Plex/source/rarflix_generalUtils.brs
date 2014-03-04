@@ -111,32 +111,12 @@ function convertToFilter(server,url)
         return newurl
     end if
 
+    ' 1. get the base library section key
+    sectionKey = getBaseSectionKey(url)
+    if sectionKey = invalid then return invalid
 
-    ' determine the valid filters we can use -- not all older calls have an exact filtered call
-
-    ' 1. get the determine the section key we are in ( used later )
-    sectionKey = invalid
-    r = CreateObject("roRegex", "(/library/sections/\d+)", "")
-    wanted = r.Match(url)
-    if wanted[0] <> invalid then sectionKey = wanted[1]
-    if sectionKey = invalid then return url
-
-    ' 2. obtain the valid filter keys from the cache (or create the cache)
-    filterCacheKey = "filters_"+tostr(server.machineid)+tostr(sectionKey)
-    validFilters = GetGlobal(filterCacheKey)
-
-    ' 3. known valid filter cache doesn't exist yet -- create it
-    if validFilters = invalid then 
-        Debug("caching Valid filters for this section")
-        ' set cache to empty ( not invalid -- so we don't keep retrying )
-        GetGlobalAA().AddReplace(filterCacheKey, {})        
-        obj = createPlexContainerForUrl(server, "", sectionKey + "/filters")
-        if obj <> invalid then 
-            ' using an assoc array ( we might want more key/values later )
-            GetGlobalAA().AddReplace(filterCacheKey, obj.getmetadata())        
-            validFilters = GetGlobal(filterCacheKey)
-        end if
-    end if
+    ' 2-3. obtain the valid filter keys from the cache (or create the cache)
+    validFilters = getValidFilters(server,url)
 
     ' 4. we have checked the cache or made an api call -- return orig url if still invalid
     if validFilters = invalid or validFilters.count() = 0 then
@@ -254,3 +234,108 @@ function getNextEpisode(item,details=false)
 
     return metadata
 end function
+
+function defaultTypes(key=invalid,typeKey=invalid)
+    '    key : movie|show|artist
+    ' tmpKey : numericID of key
+    ' 
+    ' if key <> movie|show|artist this will return invalid
+    ' exception: if key = specific key (episode|album|etc) and typeKey is set
+    '  this will utilize the allTypes array for results
+    types = {}
+
+    ' shot object
+    types.show = {}
+    types.show.title = "show"
+    types.show.key = 2
+    types.show.values = [
+        {title: "show" , key: 2},
+        {title: "episode" , key: 4 }
+    ]
+
+    ' artist object
+    types.artist = {}
+    types.artist.title = "artist"
+    types.artist.key = 8
+    types.artist.values = [
+        {title: "artist" , key: 8},
+        {title: "album" , key: 9 }
+    ]
+    '{title: "track" , key: 10 }
+
+    ' all valid types ( more to come if needed )
+    allTypes = [
+        {title: "show" , key: 2, main: "show"},
+        {title: "episode" , key: 4, main: "show"},
+        {title: "artist" , key: 8, main: "artist"},
+        {title: "album" , key: 9, main: "artist"},
+    ]
+
+    ' track is not available by filters yet
+    ' TODO(ljunkie) this causes a bad crash when allowed. Should be able to handle this better
+    '{title: "track" , key: 10, main: "artist"},
+
+    if key <> invalid then 
+        ' reset the default if typeKey specified
+        if typeKey <> invalid and types[key] <> invalid then 
+            for each item in types[key].values
+                if item.key = typeKey then 
+                    types[key].key = item.key
+                    types[key].title = item.title
+                    return types[key]
+                    exit for
+                end if
+            end for 
+        end if
+
+        ' reset the default if typeKey specified and key more specific 
+        if typeKey <> invalid then 
+            for each item in alltypes
+                if item.key = typeKey then 
+                    types[item.main].key = item.key
+                    types[item.main].title = item.title
+                    return types[item.main]
+                    exit for
+                end if
+            end for 
+        end if
+
+        ' return defaults for key - invalid result if not set is expected
+        return types[key]
+    end if
+
+    return invalid
+end function
+
+' used to get/set the cachekeys used for globalAA records
+'  if typeKey is sepcifided, it will set the server/section type
+function getFilterSortCacheKeys(server=invalid,sourceUrl=invalid,typeKey=invalid)
+    if server = invalid or sourceUrl = invalid then return invalid
+    ' get base section from url
+    sectionKey = getBaseSectionKey(sourceUrl)
+    if sectionKey = invalid then return invalid
+
+    obj = {}
+
+    obj.sectionKey = sectionKey    
+    obj.typeValCacheKey = "section_typekey_"+tostr(server.machineid)+tostr(sectionKey)
+
+    ' set the cuttent type if sent
+    if typeKey <> invalid then 
+        GetGlobalAA().AddReplace(obj.typeValCacheKey, typeKey)
+    end if
+
+    ' value keys ( single values: type & sort)
+    obj.typeKey = GetGlobal(obj.typeValCacheKey)
+
+    ' Global Cache keys for values ( after verifyting typeKey )
+    obj.filterValuesCacheKey = "section_filters_"+tostr(server.machineid)+tostr(sectionKey)+"_"+tostr(obj.typeKey)
+    obj.sortValCacheKey = "section_sort_"+tostr(server.machineid)+tostr(sectionKey)+"_"+tostr(obj.typeKey)
+
+    ' available filter and sorts for section (with typeKey if set)
+    obj.filterCacheKey = "filters_"+tostr(server.machineid)+tostr(sectionKey)+"_"+tostr(obj.typeKey)
+    obj.sortCacheKey = "sorts_"+tostr(server.machineid)+tostr(sectionKey)+"_"+tostr(obj.typeKey)
+
+    return obj
+end function
+

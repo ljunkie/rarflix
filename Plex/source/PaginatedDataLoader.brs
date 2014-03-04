@@ -150,6 +150,15 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
         if loader.sourceurl <> invalid and item <> invalid and item.contenttype <> invalid and item.contenttype = "section" then 
             Debug("---- Adding sub sections row for contenttype:" + tostr(item.contenttype))
             ReorderItemsByKeyPriority(subsecItems, RegRead("section_row_order", "preferences", ""))
+
+            ' add the filter item to the row ( first ). This item, when when viewed & closed will close 
+            ' the gridScreen and recreate a full grid with the chosen filter/sorts
+            filterItem = createSectionFilterItem(loader.server,loader.sourceurl,item.type)
+            if filterItem <> invalid then 
+                filterItem.forceFilterOnClose = true
+                subsecItems.Unshift(filterItem)
+            end if
+
             header_row = CreateObject("roAssociativeArray")
             header_row.content = subsecItems
             header_row.loadStatus = 0 ' 0:Not loaded, 1:Partially loaded, 2:Fully loaded
@@ -274,6 +283,13 @@ Sub loaderRefreshData()
     if type(m.listener.contentarray) = "roArray" and m.listener.contentarray.count() >= sel_row then
         if type(m.listener.contentarray[sel_row]) = "roArray" and m.listener.contentarray[sel_row].count() >= sel_item then
             item = m.listener.contentarray[sel_row][sel_item]
+
+            ' include what is filtered in popout
+            if item <> invalid and tostr(item.viewgroup) = "section_filters" then 
+                item.description = getFilterSortDescription(item.server,item.sourceurl)
+                m.listener.Screen.SetContentListSubset(m.listener.selectedRow, m.listener.contentArray[m.listener.selectedRow], m.listener.focusedIndex, 1)
+            end if
+
             contentType = tostr(item.contenttype)
             isFullGrid = (m.listener.isfullgrid = true)
 
@@ -295,7 +311,7 @@ Sub loaderRefreshData()
             end if
 
 
-            if item <> invalid and type(item.refresh) = "roFunction" then 
+            if (item <> invalid and type(item.refresh) = "roFunction") or (m.sortingForceReload <> invalid) then 
                 wkey = m.listener.contentarray[sel_row][sel_item].key
                 Debug("---- Refreshing metadata for item " + tostr(wkey) + " contentType: " + contentType)
                 if RegRead("rf_grid_dynamic", "preferences", "full") <> "full" then item.Refresh() ' refresh for pref of partial reload

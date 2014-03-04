@@ -9,6 +9,7 @@ Function newDirectoryMetadata(container, item) As Object
             obj.key = item@key
             obj.title = item@title
             obj.default = item@default
+            obj.server = container.server
             return obj
         end if
     end if
@@ -22,6 +23,7 @@ Function newDirectoryMetadata(container, item) As Object
         obj.type = item@type
         obj.key = item@key
         obj.title = item@title
+        obj.server = container.server
         return obj
     end if
 
@@ -61,6 +63,8 @@ Function newDirectoryMetadata(container, item) As Object
     if item@machineIdentifier <> invalid AND item@path <> invalid
         directory.key = item@path
     end if
+
+    directory.secondary = item@secondary
 
     return directory
 End Function

@@ -571,6 +571,13 @@ Function audioPlayerMenuHandleButton(command, data) As Boolean
         dialog = createGridSortingDialog(m,m.RealParentScreen)
         if dialog <> invalid then dialog.Show(true)
         return false
+    else if command = "gotoFilters" then
+        ' audio dialog is special. Get the original item from the grid screen
+        ' TODO(ljunkie) dedupe this block elsewhere
+        parentScreen = m.RealParentScreen
+        item = m.RealParentScreen.originalItem
+        createFilterSortScreenFromItem(item, parentScreen)
+        closeDialog = true
     end if
 
     ' For now, close the dialog after any button press instead of trying to

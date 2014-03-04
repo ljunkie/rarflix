@@ -406,26 +406,84 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         if screen = invalid then return invalid
         screenName = "Audio Springboard"
     else if contentType = "section" then
-        ' Now done in gridscreen.brs -- when someone focus the row instead
-        'RegWrite("lastMachineID", item.server.machineID, "userinfo")
-        'RegWrite("lastSectionKey", item.key, "userinfo")
-
+        ' ljunkie - this has been modified quite a bit. Sections have always been a "grid". Users now have an option to use a Full Grid by default
         screenName = "Section: " + tostr(item.type)
+
+        ' check if section has the full grid enabled
+        if item.callbackFullGrid = true then 
+            ' - special case "item.callbackFullGrid" used when one views the filter items from a nonfull grid
+            useFullGrid = true
+            item.callbackFullGrid = invalid
+        else if item.ishomevideos = true then 
+            useFullGrid = (RegRead("rf_full_grid_homevideo", "preferences", "disabled") = "enabled")
+        else     
+            useFullGrid = (RegRead("rf_full_grid_"+tostr(item.type), "preferences", "disabled") = "enabled")
+        end if
+        Debug("Full Grid Enabled:"+tostr(useFullGrid) + " : " + tostr(item.type) + ": " + tostr(item.contenttype))
+
+        focusrow = invalid
         if tostr(item.type) = "artist" then 
-            Debug("---- override photo-fit/flat-square for section with content of " + tostr(item.type))
-            screen = createGridScreenForItem(item, m, "flat-landscape", "photo-fit")
-            if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 5x3 )
+            grid_style = "flat-landscape"
+            displaymode_grid = "photo-fit"
+            focusrow = 2
+            Debug("---- override " + tostr(displaymode_grid) + "/" + tostr(grid_style) + " for section with content of " + tostr(item.type))
         else if tostr(item.type) = "photo" then 
             ' Photo Section has it's own settings for DisplayMode and GridStyle
-            displayMode = RegRead("photoicon_displaymode", "preferences", "photo-fit")
-            Debug("---- override " + tostr(displayMode) + "/" + tostr(grid_style_photos) + " for section with content of " + tostr(item.type))
-            screen = createGridScreenForItem(item, m, grid_style_photos ,displayMode)
-            if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 7x3 )
+            displaymode_grid = RegRead("photoicon_displaymode", "preferences", "photo-fit")
+            grid_style = grid_style_photos
+            focusrow = 2
+            Debug("---- override " + tostr(displaymode_grid) + "/" + tostr(grid_style) + " for section with content of " + tostr(item.type))
         else 
             if item.isHomeVideos = true then grid_style = "flat-16x9"
+        end if
+
+        ' focus on the second row if flat16x9 
+        ' TODO(ljunkie) add other modes in here to make this logic more sound
+        if grid_style = "flat-16x9" then focusrow = 2
+
+        item.defaultFullGrid = useFullGrid
+        if NOT item.defaultFullGrid then 
+            ' standard Grid screen - multiple rows
+
+            ' reset to original keys -- this will only happen if somone has changed FullGrid prefs during 
+            ' the section. We could just reload the HomeScreenRows when toggled - but this doesn't seem bad
+            if item.OrigKeys <> invalid then 
+                item.key = item.OrigKeys.key
+                item.sourceurl = item.OrigKeys.sourceUrl
+                item.origkeys= invalid
+            end if
+            
+            print item
             screen = createGridScreenForItem(item, m, grid_style, displaymode_grid)
-            if grid_style = "flat-16x9" or grid_style = "flat-16x9" then 
-                screen.loader.focusrow = 2 ' hide header row ( 7x3 )
+            if focusrow <> invalid and screen.loader.focusrow <> invalid then screen.loader.focusrow = focusrow
+        else 
+            ' full grid screen - hoping mGo will become available at some point
+            Debug("---- using FULL GRID by default for this section type")
+           
+            ' show the user a notice about using a full grid (only once)
+            noticeRead = (RegRead("default_full_grid_notice", "notices", "0") <> "0")
+            if NOT noticeRead then 
+                RegWrite("default_full_grid_notice", "1", "notices")
+                dlg = createBaseDialog()
+                dlg.Title = "Full Grid Information"
+                dlg.Text = "You are entering All " + item.title + ". In this section, you can click up to see a hidden row to filter the items or choose a quick filter. The info key (*) on the remote may also be used to change the sorting or items."
+                dlg.Show(true)
+            end if
+
+            ' shallowCopy the item for the origina key and sourceurl
+            if item.origkeys = invalid then item.origkeys = ShallowCopy(item,1)
+
+            ' reset the section to use the /all endpoint 
+            ' - make sure we have the base section key ( strip any junk/subsections )
+            sectionKey = getBaseSectionKey(item.sourceurl + "/" + item.key)
+            item.sourceurl = item.server.serverurl + sectionKey
+            item.key = "all"
+
+            screen = createFULLGridScreen(item, m, grid_style, displaymode_grid)
+            if focusrow <> invalid and screen.loader.focusrow <> invalid then 
+                screen.loader.focusrow = focusrow
+            else 
+                screen.loader.focusrow = 1
             end if
         end if
     else if contentType = "playlists" then
@@ -462,6 +520,10 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         dialog = createPopupMenu(item)
         dialog.Show()
         return invalid
+    else if item.key = "_section_filters_" then
+        screen = createFilterSortListScreen(item,m.screens.peek(),item.typeKey)
+        breadcrumbs =  ["Filters: " + item.title]
+        screenName = "Grid Filters"
     else if viewGroup = "secondary" then
         ' these are subsections of a main section ( secondary )
         Debug("---- Creating secondary " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
@@ -584,6 +646,8 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
 
     if show then screen.Show()
 
+    ' facades and wait dialogs
+    if item <> invalid and item.facade <> invalid then item.facade.close()
     if screen.hasWaitdialog <> invalid then screen.hasWaitdialog.close()
 
     ' set the inital focus row if we have set it ( normally due to the sub section row being added - look at the createpaginateddataloader )
@@ -1349,7 +1413,7 @@ Sub vcAddBreadcrumbs(screen, breadcrumbs)
         if count >= 2 then
             breadcrumbs = [m.breadcrumbs[count-2], m.breadcrumbs[count-1]]
         else
-            breadcrumbs = m.breadcrumbs[0]
+            breadcrumbs = [m.breadcrumbs[0]]
         end if
 
         m.breadcrumbs.Append(breadcrumbs)
@@ -1614,7 +1678,12 @@ Sub InitWebServer(vc)
 End Sub
 
 Sub createScreenForItemCallback()
-    GetViewController().CreateScreenForItem(m.Item, invalid, [firstOf(m.Heading, "")])
+    if m.breadcrumbs = invalid then 
+        breadcrumbs = [firstOf(m.Heading, "")]
+    else 
+        breadcrumbs = m.breadcrumbs
+    end if
+    GetViewController().CreateScreenForItem(m.Item, invalid, breadcrumbs)
 End Sub
 
 

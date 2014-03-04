@@ -6,15 +6,7 @@
 
 Function gridsortDialogHandleButton(command, data) As Boolean
     obj = m.ParentScreen
-
     closeDialog = false
-
-
-    print "-------------item-----------------"
-    print m.item.key
-
-    print "-------------command-----------------"
-    print command
 
     if command = "close" then
         closeDialog = true
@@ -106,27 +98,27 @@ function getSortingOption(server = invalid,sourceUrl = invalid)
 
     if server = invalid or sourceUrl = invalid then return invalid
 
-    ' 1. get the base library section key
-    sectionKey = getBaseSectionKey(sourceUrl)
-    if sectionKey = invalid then return invalid
+    cacheKeys = getFilterSortCacheKeys(server,sourceurl)
+    if cachekeys = invalid then return invalid
+    sectionKey = cacheKeys.sectionKey
 
-    ' 2. obtain the valid filter keys from the cache (or create the cache)
-    sortCacheKey = "sorts_"+tostr(server.machineid)+tostr(sectionKey)
-    validSorts = GetGlobal(sortCacheKey)
+    validSorts = GetGlobal(cachekeys.sortCacheKey)
 
     if validSorts = invalid then 
         Debug("caching Valid Sorts for this section")
         ' set cache to empty ( not invalid -- so we don't keep retrying )
-        GetGlobalAA().AddReplace(sortCacheKey, {})        
-        obj = createPlexContainerForUrl(server, "", sectionKey + "/sorts")
+        GetGlobalAA().AddReplace(cachekeys.sortCacheKey, {})        
+        typeKey = "?type="+tostr(cacheKeys.typeKey)
+        if cacheKeys.typeKey = invalid then typeKey = ""
+        obj = createPlexContainerForUrl(server, "", sectionKey + "/sorts" + typeKey)
         if obj <> invalid then 
             ' using an assoc array ( we might want more key/values later )
-            GetGlobalAA().AddReplace(sortCacheKey, obj.getmetadata())        
-            validSorts = GetGlobal(sortCacheKey)
+            GetGlobalAA().AddReplace(cachekeys.sortCacheKey, obj.getmetadata())        
+            validSorts = GetGlobal(cachekeys.sortCacheKey)
         end if
     end if
 
-    if validSorts = invalid then return invalid
+    if validSorts = invalid or validSorts.count() = 0 then return invalid
 
     ' 3. try to determine the current sort if already in the url
     sortKey = invalid
@@ -197,8 +189,11 @@ function getSortingOption(server = invalid,sourceUrl = invalid)
     defaultSort = RegRead("section_sort", "preferences","titleSort:asc")
 
     ' lookup the current order: sort order is saved per section for the session of the channel
-    if sortKey = invalid then sortKey = GetGlobalAA().lookup("sort"+sectionKey)
-    if sortkey = invalid then sortKey = defaultSort
+    if sortKey = invalid then sortKey = GetGlobalAA().lookup(cachekeys.sortValCacheKey)
+    if sortkey = invalid or sortKey = "" then sortKey = defaultSort
+
+    Debug("current sort key for: " + tostr(cachekeys.sortValCacheKey) + " val:" + tostr(GetGlobalAA().lookup(cachekeys.sortValCacheKey)))
+    Debug("current sort key used: " + tostr(sortKey))
 
     ' current selection index of options
     for index = 0 to options.count()-1
@@ -236,26 +231,29 @@ sub gridSortSection(grid,sortKey = invalid)
     end if
 
     ' sort order is saved per section for the session of the channel
-    sectionKey = getBaseSectionKey(grid.loader.sourceurl)
-    GetGlobalAA().AddReplace("sort"+sectionKey,sortKey)
+    cacheKeys = getFilterSortCacheKeys(grid.loader.server,grid.loader.sourceurl)
+    if cachekeys = invalid then return
+    GetGlobalAA().AddReplace(cachekeys.sortValCacheKey,sortKey)
 
     sourceurl = grid.loader.sourceurl
     if sourceurl <> invalid then 
         re = CreateObject("roRegex", "(sort=[^\&\?]+)", "i")
+
         if re.IsMatch(sourceurl) then 
-            if instr(1, sortKey, "titleSort:asc") > 0 then 
-                re = CreateObject("roRegex", "([\?\&]sort=[^\&\?]+)", "i")
-                sourceurl = re.ReplaceAll(sourceurl, "")
-            else 
+            'if instr(1, sortKey, "titleSort:asc") > 0 then 
+            '    re = CreateObject("roRegex", "([\?\&]sort=[^\&\?]+)", "i")
+            '    sourceurl = re.ReplaceAll(sourceurl, "")
+            'else 
                 sourceurl = re.ReplaceAll(sourceurl, "sort="+sortKey)
-            end if
+            'end if
         else 
-            if instr(1, sortKey, "titleSort:asc") = 0 then 
+            'if instr(1, sortKey, "titleSort:asc") = 0 then 
                 f = "?"
                 if instr(1, sourceurl, "?") > 0 then f = "&"    
                 sourceurl = sourceurl + f + "sort="+sortKey
-            end if
+            'end if
         end if
+
         grid.loader.sourceurl = sourceurl
         grid.loader.sortingForceReload = true
         if grid.loader.listener <> invalid and grid.loader.listener.loader <> invalid then 
@@ -269,18 +267,18 @@ sub gridSortSection(grid,sortKey = invalid)
             if contentArray[index].key <> invalid then 
                 re = CreateObject("roRegex", "(sort=[^\&\?]+)", "i")
                 if re.IsMatch(contentArray[index].key) then
-                    if instr(1, sortKey, "titleSort:asc") > 0 then 
-                        re = CreateObject("roRegex", "([\?\&]sort=[^\&\?]+)", "i")
-                        contentArray[index].key = re.ReplaceAll(contentArray[index].key, "")
-                    else 
+                    'if instr(1, sortKey, "titleSort:asc") > 0 then 
+                    '    re = CreateObject("roRegex", "([\?\&]sort=[^\&\?]+)", "i")
+                    '    contentArray[index].key = re.ReplaceAll(contentArray[index].key, "")
+                    'else 
                         contentArray[index].key = re.ReplaceAll(contentArray[index].key, "sort="+sortKey)
-                    end if
+                    'end if
                 else 
-                    if instr(1, sortKey, "titleSort:asc") = 0 then 
+                    'if instr(1, sortKey, "titleSort:asc") = 0 then 
                         f = "?"
                         if instr(1, contentArray[index].key, "?") > 0 then f = "&"    
                         contentArray[index].key = contentArray[index].key + f + "sort="+sortKey
-                    end if
+                    'end if
                 end if
              end if
         end for
@@ -292,16 +290,38 @@ end sub
 ' not be added to the dialog unless valid
 sub dialogSetSortingButton(dialog,obj) 
     if obj.isfullgrid = true and type(obj.screen) = "roGridScreen" then 
-        re = CreateObject("roRegex", "/all|/firstCharacter", "i")
-        if obj.loader <> invalid and obj.loader.sourceurl <> invalid and re.IsMatch(obj.loader.sourceurl) then
+        'reFILT = CreateObject("roRegex", "/all", "i")
+        reSORT = CreateObject("roRegex", "/all|/firstCharacter", "i")
+
+        if obj.loader <> invalid and obj.loader.sourceurl <> invalid then 
+            ' include the sorting options all the time
+            sortText = ""
             sort = getSortingOption(obj.loader.server,obj.loader.sourceurl)
             if sort <> invalid and sort.item <> invalid and sort.item.title <> invalid then 
-                dialog.SetButton("SectionSorting", "Sorting: " + sort.item.title)
+                sortText = sort.item.title
+            end if
+
+            ' ONLY allow filtering if the obj.loader is filterable
+            if obj.loader.isFilterable = true then
+                FilterSortText = "Filters: "
+                if getFilterSortParams(obj.loader.server,obj.loader.sourceurl).hasFilters = true then 
+                    FilterSortText = FilterSortText + "Enabled" 
+                else 
+                    FilterSortText = FilterSortText + "None" 
+                end if
+
+                if sortText <> "" then 
+                    FilterSortText = FilterSortText + ", Sort: "+sortText
+                end if
+                dialog.SetButton("gotoFilters", FilterSortText)
+            else if reSORT.IsMatch(obj.loader.sourceurl) and sortText <> "" then 
+                ' fallback - show the sorting button if url endpoint allows sorting
+                dialog.SetButton("SectionSorting", "Sort: " + sortText)
             end if
         else 
             ' TODO(ljunkie) - think about removing this -- waste of screen space
             ' however one my be wondering why the sorting option isn't showing up.
-            dialog.SetButton("SectionSortingDisabled", "Sorting: not available")
+            'dialog.SetButton("SectionSortingDisabled", "Sorting: not available")
         end if
     end if
 end sub

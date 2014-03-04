@@ -499,6 +499,11 @@ Function videoDialogHandleButton(command, data) As Boolean
         context.OnAfterClose = CloseScreenUntilHomeVisible
         context.OnAfterClose()
         closeDialog = true
+    else if command = "gotoFilters" then
+        parentScreen = m.parentscreen
+        item = parentscreen.originalItem
+        createFilterSortScreenFromItem(item, parentScreen)
+        closeDialog = true
     else if command = "SectionSorting" then
         dialog = createGridSortingDialog(m,obj)
         if dialog <> invalid then dialog.Show(true)

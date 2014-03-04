@@ -203,6 +203,11 @@ Function photoContextMenuHandleButton(command, data) As Boolean
         dialog = createGridSortingDialog(m,obj)
         if dialog <> invalid then dialog.Show(true)
         handled = false
+    else if command = "gotoFilters" then
+        parentScreen = m.parentscreen
+        item = parentscreen.OriginalItem
+        createFilterSortScreenFromItem(item, parentScreen)
+        handled = true
     end if
 
     ' close the dialog 
@@ -1232,12 +1237,6 @@ sub photoShowContextMenu(screen = invalid,force_show = false, forceExif = true)
     ' this also works for the existing Photo Player
     player = AudioPlayer()
 
-    ' show audio dialog if item is directory and audio is playing/paused
-    if tostr(obj.nodename) = "Directory" then
-        if player.IsPlaying or player.IsPaused or player.ContextScreenID <> invalid then player.ShowContextMenu()
-        return
-    end if
-   
     ' do not display if audio is playing - sorry, audio dialog overrides this, maybe work more logic in later
     ' I.E. show button for this dialog from audioplayer dialog
     if NOT force_show and player.IsPlaying or player.IsPaused or player.ContextScreenID <> invalid then 
@@ -1245,15 +1244,17 @@ sub photoShowContextMenu(screen = invalid,force_show = false, forceExif = true)
         return
     end if
 
-    getExifData(obj,false,forceExif)
+    dialog = createBaseDialog()
+    dialog.Title = "Image: " + obj.title
+    dialog.text = ""
 
-    ' TODO(ljunkie) it's ugly! -- convert this to an image canvas 
-    ' I was hoping to convert this to an image canvas, but the roGridScreen
-    ' doesn't work with an ImageCanvas as an overlay... verified by Roku
+    getExifData(obj,false,forceExif)
+    ' media info is optional. Dialog will still be shown since there are other actions/buttons
     if obj.MediaInfo <> invalid then 
-        dialog = createBaseDialog()
-        dialog.Title = "Image: " + obj.title
-        dialog.text = ""
+        ' TODO(ljunkie) it's ugly! -- convert this to an image canvas 
+        ' I was hoping to convert this to an image canvas, but the roGridScreen
+        ' doesn't work with an ImageCanvas as an overlay... verified by Roku
+
         ' NOTHING lines up in a dialog.. lovely        
         if obj.mediainfo.make <> invalid then dialog.text = dialog.text                  + "    camera: " + tostr(obj.mediainfo.make) + chr(10)
         if obj.mediainfo.model <> invalid then dialog.text = dialog.text                 + "      model: " + tostr(obj.mediainfo.model) + chr(10)
@@ -1266,23 +1267,23 @@ sub photoShowContextMenu(screen = invalid,force_show = false, forceExif = true)
         if obj.mediainfo.container <> invalid then dialog.text = dialog.text             + "          type: " + tostr(obj.mediainfo.container) + chr(10)
         if obj.mediainfo.originallyAvailableAt <> invalid then dialog.text = dialog.text + "          date: "  + tostr(obj.mediainfo.originallyAvailableAt) + chr(10)
         
-        if GetViewController().IsSlideShowPlaying() then
-            if m.IsShuffled then
-                dialog.SetButton("shuffle", "Shuffle: On")
-            else
-                dialog.SetButton("shuffle", "Shuffle: Off")
-            end if
-        end if
-
-        dialogSetSortingButton(dialog,screen) 
-
-        dialog.SetButton("close", "Close")
-        dialog.HandleButton = photoContextMenuHandleButton
-        dialog.EnableOverlay = true
-        dialog.ParentScreen = screen
-        dialog.Show()
     end if
 
+    if GetViewController().IsSlideShowPlaying() then
+        if m.IsShuffled then
+            dialog.SetButton("shuffle", "Shuffle: On")
+        else
+            dialog.SetButton("shuffle", "Shuffle: Off")
+        end if
+    end if
+
+    dialogSetSortingButton(dialog,screen) 
+
+    dialog.SetButton("close", "Close")
+    dialog.HandleButton = photoContextMenuHandleButton
+    dialog.EnableOverlay = true
+    dialog.ParentScreen = screen
+    dialog.Show()
 End sub
 
 sub ICreloadSlideContext(forced=false)

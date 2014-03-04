@@ -1054,7 +1054,7 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     ' end hack
 
     ' display View All Seasons if we have grandparentKey -- entered from a episode
-    if obj.metadata.grandparentKey <> invalid then 
+    if obj.metadata.grandparentKey <> invalid then
         if obj.metadata.type = "season" and type(obj.screen) = "roPosterScreen"  then
             ' this is a ALL seasons view on a posterscreen -- can we add mark as watched/unwatched to make them all??
         else 
@@ -1254,7 +1254,7 @@ sub rfDialogGridScreen(obj as Object)
         print obj.item
         rfDefRemoteOptionButton(obj) 
     ' for now the only option is grid view so we will verify we are in a roGridScreen. It we add more buttons, the type check below is for fullGridScreen
-    else if obj.isfullgrid = invalid and obj.disablefullgrid = invalid and type(obj.screen) = "roGridScreen" then 
+    else if type(obj.screen) = "roGridScreen" then 
         dialog = createBaseDialog()
         dialog.Text = ""
         dialog.Title = "Options"
@@ -1265,8 +1265,11 @@ sub rfDialogGridScreen(obj as Object)
         dialog.SetButton("GoToHomeScreen", "Home Screen")
 
         dialogSetSortingButton(dialog,obj) 
-        dialog.sepAfter.Push("fullGridScreen")
-        dialog.SetButton("fullGridScreen", "Grid View: " + fromName) 'and type(obj.screen) = "roGridScreen" 
+
+        if obj.isfullgrid = invalid and obj.disablefullgrid = invalid then
+            dialog.sepAfter.Push("fullGridScreen")
+            dialog.SetButton("fullGridScreen", "Grid View: " + fromName) 'and type(obj.screen) = "roGridScreen" 
+        end if
         if player.ContextScreenID <> invalid then dialog.setButton("gotoMusicNowPlaying","go to now playing [music]")
         dialog.SetButton("close", "Back")
         dialog.HandleButton = videoDialogHandleButton
