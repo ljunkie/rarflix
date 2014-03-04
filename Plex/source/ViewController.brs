@@ -466,7 +466,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
                 RegWrite("default_full_grid_notice", "1", "notices")
                 dlg = createBaseDialog()
                 dlg.Title = "Full Grid Information"
-                dlg.Text = "You are entering All " + item.title + ". In this section, you can click up to see a hidden row to filter the items or choose a quick filter. The info key (*) on the remote may also be used to change the sorting or items."
+                dlg.Text = "You are entering All " + item.title + ". In this section, you can click up to see a hidden row to filter and sort the items or choose a quick filter. The info key (*) on the remote may also be used to change the filters and sorting of items."
                 dlg.Show(true)
             end if
 
