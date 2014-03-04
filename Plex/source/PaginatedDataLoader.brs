@@ -162,7 +162,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
             header_row = CreateObject("roAssociativeArray")
             header_row.content = subsecItems
             header_row.loadStatus = 0 ' 0:Not loaded, 1:Partially loaded, 2:Fully loaded
-            header_row.key = "_subsec_"
+            header_row.key = "_invalid_headerrow_"
             header_row.name = firstof(item.title,"Sub Sections")
             header_row.pendingRequests = 0
             header_row.countLoaded = 0
@@ -180,7 +180,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
     for index = 0 to loader.contentArray.Count() - 1
         status = loader.contentArray[index]
         loader.names[index] = status.name
-        if status.key = "_search_"  or status.key = "_subsec_" then
+        if status.key = "_search_"  or status.key = "_invalid_headerrow_" then
             status.key = invalid
         end if
     next

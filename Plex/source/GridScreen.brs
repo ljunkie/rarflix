@@ -163,7 +163,9 @@ Function showGridScreen() As Integer
         end for
     end if
 
+    m.isDescriptionVisible = true
     if RegRead("rf_grid_description_"+isType, "preferences", "enabled") <> "enabled" then
+        m.isDescriptionVisible = false
         m.screen.SetDescriptionVisible(false)
     end if
     Debug("isType: " + tostr(isType))
@@ -229,6 +231,8 @@ Function gridHandleMessage(msg) As Boolean
             if context <> invalid then item = context[index]
 
             if item <> invalid then
+                ' ignore spacers
+                if item <> invalid and tostr(item.key) = "_invalid_spacer_" then return true
 
                 ' user entered a section - remeber the last section to focus when launching the channel again
                 vc = GetViewController()
@@ -276,6 +280,16 @@ Function gridHandleMessage(msg) As Boolean
 
             if m.contentArray <> invalid and type(m.contentArray[m.selectedRow]) = "roArray" then 
                 item = m.contentArray[m.selectedRow][m.focusedIndex]
+            end if
+
+            ' if the full grid spacer is enabled, check if we need to hid or show the description 
+            if RegRead("rf_fullgrid_spacer", "preferences", "disabled") = "enabled" then 
+                if item <> invalid and tostr(item.key) = "_invalid_spacer_" then 
+                    m.screen.SetDescriptionVisible(false)
+                    return true
+                else if m.isDescriptionVisible = true then 
+                    m.screen.SetDescriptionVisible(true)
+                end if
             end if
 
             vc = GetViewController()
@@ -398,6 +412,9 @@ Function gridHandleMessage(msg) As Boolean
 
                 context = m.contentArray[m.selectedRow]
                 item = context[m.focusedIndex]
+
+                ' ignore spacers
+                if item <> invalid and tostr(item.key) = "_invalid_spacer_" then return true
                 
                 itype = item.contenttype
                 if itype = invalid then itype = item.type
@@ -424,6 +441,12 @@ Function gridHandleMessage(msg) As Boolean
                     Debug("--- Not showing prefs on ctype:" + tostr(item.contenttype) + " itype:" + tostr(item.type) )
                 end if 
         else if msg.isRemoteKeyPressed() then
+            context = m.contentArray[m.selectedRow]
+            item = context[m.focusedIndex]
+
+            ' ignore spacers
+            if item <> invalid and item.key = "_invalid_spacer_" then return true
+
             if msg.GetIndex() = 13 then
                 sec_metadata = getSectionType() ' sometimes we don't know the item is photo ( appClips )
                 'if tostr(sec_metadata.type) = "photo" and m.item <> invalid and m.item.contenttype <> "section" then
@@ -481,6 +504,19 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
                 end if
             end for
             data = newData
+        end if
+    end if
+
+    ' Add a spacer item between the 1st and last item - exclude the full gred header row
+    if RegRead("rf_fullgrid_spacer", "preferences", "disabled") = "enabled" then 
+        if m.gridrowsize <> invalid and data.Count() = m.gridrowsize and m.isfullgrid = true and (NOT(m.loader.hasHeaderRow = true) or row > 0) then 
+            imageDir = GetGlobalAA().Lookup("rf_theme_dir")
+            spacer = {}
+            spacer.title = ""
+            spacer.key = "_invalid_spacer_"
+            spacer.SDPosterURL = imageDir + "grid-spacer.png"
+            spacer.HDPosterURL = imageDir + "grid-spacer.png"
+            data[m.gridrowsize] = spacer
         end if
     end if
 

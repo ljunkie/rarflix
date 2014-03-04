@@ -2224,6 +2224,17 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
         default: "disabled"
     }
 
+    values = [
+        { title: "Enabled", EnumValue: "enabled"  },
+        { title: "Disabled", EnumValue: "disabled"  },
+
+    ]
+    obj.Prefs["rf_fullgrid_spacer"] = {
+        values: values
+        heading: "Insert a blank poster between the first and last item in a row",
+        default: "disabled"
+    }
+
     ' Display Mode for Grid or Poster views
     ' { title: "Zoom", EnumValue: "zoom-to-fill", ShortDescriptionLine2: "zoom image to fill boundary" }, again, no one wants this
     display_modes = [
@@ -2292,7 +2303,8 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
     obj.AddItem({title: "Grid Style/Size", ShortDescriptionLine2: "Size of Grid"}, "rf_grid_style", obj.GetEnumValue("rf_grid_style"))
     obj.AddItem({title: "Grid Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_grid_displaymode", obj.GetEnumValue("rf_grid_displaymode"))
     obj.AddItem({title: "Grid Pop Out", ShortDescriptionLine2: "Description on bottom right"}, "rf_grid_description")
-    obj.AddItem({title: "Full Grid - hide text", ShortDescriptionLine2: "Hide text on top of each row"}, "rf_fullgrid_hidetext", obj.GetEnumValue("rf_fullgrid_hidetext"))
+    obj.AddItem({title: "Full Grid Hide Header", ShortDescriptionLine2: "Hide text on top of each row"}, "rf_fullgrid_hidetext", obj.GetEnumValue("rf_fullgrid_hidetext"))
+    obj.AddItem({title: "Full Grid Spacer", ShortDescriptionLine2: "Hide text on top of each row"}, "rf_fullgrid_spacer", obj.GetEnumValue("rf_fullgrid_spacer"))
     'we can add this.. but it doesn't do much yet.. let's not totally confuse people.. yet.
     'obj.AddItem({title: "Poster Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_poster_displaymode", obj.GetEnumValue("rf_poster_displaymode"))
     obj.AddItem({title: "Close"}, "close")
@@ -2310,7 +2322,7 @@ Function prefsSectionDisplayHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "use_grid_for_series" or command = "rf_poster_grid" or command = "rf_grid_style" or command = "rf_grid_displaymode" or command = "rf_poster_displaymode" or command = "rf_fullgrid_hidetext" or command = "rf_episode_episodic_style" or command = "section_sort" then 
+            if command = "use_grid_for_series" or command = "rf_poster_grid" or command = "rf_grid_style" or command = "rf_grid_displaymode" or command = "rf_poster_displaymode" or command = "rf_fullgrid_hidetext" or command = "rf_episode_episodic_style" or command = "section_sort" or command = "rf_fullgrid_spacer" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "rf_grid_description" then
                 screen = createGridDescriptionPrefsScreen(m.ViewController)
