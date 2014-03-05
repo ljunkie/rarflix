@@ -259,6 +259,19 @@ Function gridHandleMessage(msg) As Boolean
                     if breadcrumbs = invalid or breadcrumbs.count() = 0 then 
                         breadcrumbs = [item.server.name, item.Title]
                     end if
+                else if tostr(item.key) = "all" then 
+                    ' default
+                    breadcrumbs = [m.Loader.GetNames()[msg.GetIndex()], item.Title]
+                    filterSortObj = getFilterSortParams(item.server,item.sourceurl)
+                    if filterSortObj <> invalid then 
+                        if filterSortObj.hasSort = true and filterSortObj.hasFilters = true then 
+                            breadcrumbs = getFilterBreadcrumbs(filterSortObj,item)
+                        else if filterSortObj.hasSort and filterSortObj.sortitem <> invalid and filterSortObj.sortitem.title <> invalid then 
+                            breadcrumbs[1] = filterSortObj.sortitem.title
+                        else if filterSortObj.hasFilters then 
+                            breadcrumbs[1] = "Filters Enabled"
+                        end if
+                    end if
                 else
                     breadcrumbs = [m.Loader.GetNames()[msg.GetIndex()], item.Title]
                 end if
@@ -600,11 +613,6 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
     if finished then
         if m.Screen <> invalid then m.Screen.SetContentList(row, data)
         m.lastUpdatedSize[row] = data.Count()
-        ' ljunkie - focus row when we are finished loading if we have specified a show before show()
-        if  m.focusrow <> invalid and row = m.focusrow then 
-            m.screen.SetFocusedListItem(m.focusrow,0) ' we will also focus the first item, this might need to be changed
-            m.focusrow = invalid
-        end if
     else if startItem < lastUpdatedSize then
         if m.Screen <> invalid then m.Screen.SetContentListSubset(row, data, startItem, count)
         m.lastUpdatedSize[row] = data.Count()
@@ -618,7 +626,7 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
     ' this might need to change if we every decide to focus on a sub row
     ' - if someone uses a spacer item, we shall not focus on the first item. It's UGLY always showing the spacer
     if RegRead("rf_fullgrid_spacer", "preferences", "disabled") <> "enabled" then 
-        if row = 0 and m.firstfocusitem = invalid and m.isfullgrid <> invalid and m.isfullgrid then
+        if row = 0 and m.firstfocusitem = invalid and m.isfullgrid = true then
             m.firstfocusitem = true
             m.screen.SetFocusedListItem(0,0)
         end if
