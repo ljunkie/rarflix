@@ -47,7 +47,7 @@ Function createFilterSortListScreen(item, gridScreen, typeKey=invalid) As Object
     if obj.filterValues = invalid then obj.filterValues = {}
 
     ' Add buttons to the screen. If you need to add any other buttons, make sure to update
-    ' the fuck prefsFilterSortActivate() with any new button logic - ordering of buttons
+    ' the prefsFilterSortActivate() with any new button logic - ordering of buttons
     ' will break logic
 
     sec_metadata = getSectionType()
@@ -547,6 +547,7 @@ function getFilterSortParams(server,sourceUrl)
     obj.filterParamsString = ""
     obj.filterKeysString = ""
     obj.hasFilters = false
+    obj.hasSort = false
     obj.filterParams = []
     obj.filterKeys = []
     obj.cacheKeys = getFilterSortCachekeys(server,sourceurl)
@@ -555,7 +556,10 @@ function getFilterSortParams(server,sourceUrl)
 
     ' attach the sorting object
     obj.sorts = getSortingOption(server,sourceUrl)
-    if obj.sorts <> invalid and obj.sorts.item <> invalid then obj.sortItem = obj.sorts.item
+    if obj.sorts <> invalid and obj.sorts.item <> invalid then 
+        obj.sortItem = obj.sorts.item
+        if RegRead("section_sort", "preferences","titleSort:asc") <> obj.sortItem.key then obj.hasSort = true
+    end if
 
     ' obtain any filter in place - state saved per session per section
     obj.filterValues = GetGlobal(obj.cachekeys.filterValuesCacheKey)

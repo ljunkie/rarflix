@@ -533,6 +533,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             DisplayMode = displaymode_grid
 
             focusrow = 0
+   
             if tostr(sec_metadata.type) = "artist" then 
                 grid_style="flat-landscape" ' TODO - create toggle for music grid style
             else if tostr(sec_metadata.type) = "photo" then 
@@ -545,7 +546,9 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             end if
 
             screen = createFULLGridScreen(item, m, grid_style, DisplayMode)
-    	    screen.loader.focusrow = focusrow ' lets fill the screen ( 5x3 )
+            if screen.loader.focusrow = invalid then  
+           	    screen.loader.focusrow = focusrow ' lets fill the screen ( 5x3 )
+            end if
         else 
             posterStyle = "arced-portrait"
             if tostr(sec_metadata.type) = "photo" then posterStyle = "arced-landscape"
@@ -655,8 +658,15 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         ' take into account that people might hide rows (focusrow is 0 index). If the focusrow is > 1
         ' on 3 row screens, we will want to focus on the second row (1) if we have less than 4 rows 
         style = GetGlobalAA().Lookup("GlobalGridStyle") ' this is set by Grid Creation
-        is3Row = screen.loader.focusrow > 1 and style <> invalid and (style = "flat-landscape" or style = "flat-square" or style = "flat-16x9" or style = "four-column-flat-landscape")
-        if is3Row and screen.loader.names <> invalid and screen.loader.names.count() < 4 then screen.loader.focusrow = 1
+        is3Row = screen.loader.focusrow > 0 and style <> invalid and (style = "flat-landscape" or style = "flat-square" or style = "flat-16x9" or style = "four-column-flat-landscape")
+        if is3Row and screen.loader.names <> invalid then
+            if screen.loader.names.count() < 4 then 
+                screen.loader.focusrow = 1
+            else if screen.loader.focusrow <> invalid and screen.loader.focusrow = 1 then 
+                screen.loader.focusrow = 2
+            end if
+        end if
+        Debug("focus row:" + tostr(screen.loader.focusrow))
         screen.screen.SetFocusedListItem(screen.loader.focusrow,0)
     end if
 

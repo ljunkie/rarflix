@@ -151,18 +151,21 @@ Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, ite
     ' include the header row on the full grid ONLY if we have set this section to default to Full Grid - 
     ' otherwise users already see a header row on the previous grid screen
     headerRow = []
-    if item <> invalid and item.defaultFullGrid = true and item.key = "all" and loader.server <> invalid and loader.sourceurl <> invalid then 
-        sectionKey = getBaseSectionKey(loader.sourceurl)
-        container = createPlexContainerForUrl(loader.server, invalid, sectionKey)
-        rawItems = container.GetMetadata() ' grab subsections for FULL grid. We might want to hide some (same index as container.GetKeys())
+    if item <> invalid and item.key = "all" and loader.server <> invalid and loader.sourceurl <> invalid then 
+        ' default full grid gets the standard filter/keys from the API
+        if item.defaultFullGrid = true  then 
+            sectionKey = getBaseSectionKey(loader.sourceurl)
+            container = createPlexContainerForUrl(loader.server, invalid, sectionKey)
+            rawItems = container.GetMetadata() ' grab subsections for FULL grid. We might want to hide some (same index as container.GetKeys())
 
-        for index = 0 to rawItems.Count() - 1
-            'if rawItems[index].secondary = invalid and tostr(rawItems[index].key) <> "all"then
-            if tostr(rawItems[index].key) <> "all"then
-                headerRow.Push(rawItems[index])
-            end if
-        end for
-        ReorderItemsByKeyPriority(headerRow, RegRead("section_row_order", "preferences", ""))
+            for index = 0 to rawItems.Count() - 1
+                'if rawItems[index].secondary = invalid and tostr(rawItems[index].key) <> "all"then
+                if tostr(rawItems[index].key) <> "all"then
+                    headerRow.Push(rawItems[index])
+                end if
+            end for
+            ReorderItemsByKeyPriority(headerRow, RegRead("section_row_order", "preferences", ""))
+        end if
 
         ' Put Filters before any others
         filterItem = createSectionFilterItem(loader.server,loader.sourceurl,item.type)
