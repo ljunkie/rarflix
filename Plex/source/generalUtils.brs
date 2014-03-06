@@ -467,6 +467,55 @@ Sub ReorderItemsByKeyPriority(items, keys)
     ' Accept keys either as comma delimited list or already separated into an array.
     if isstr(keys) then keys = keys.Tokenize(",")
 
+    if keys = invalid then keys = []
+
+    '**********************************************
+    ' initial Ordering [options]  -- probably more complicated than it needs to be, but it's a bit tricky
+    ' - this will work for empty keys and existing keys with new items
+    ' I.E. passed - items = [{ initialOrder: 5, title: "Filters", key: "_section_filters_" }, etc..]
+    newItems = []:newKeys = []
+    if keys.count() = 0 or items.count() > keys.count() then 
+        for each item in items
+            if item.initialorder <> invalid and NOT(inArray(keys,item.key)) then 
+                 print "items key not in keys and has initialOrder: " + tostr(item.key)
+                 newItems.Push(item)
+                 newKeys.Push(item.key)
+            end if
+        end for
+    end if
+
+    ' fill in the intial keys if empty and only if we are setting an initial order
+    if keys.count() = 0 and newItems.count() > 0 then 
+        for each item in items
+            ' exclude the keys will will be adding with initialOrder
+            if NOT(inArray(newKeys,item.key)) then 
+                keys.Push(item.key) 
+            end if
+        end for
+    end if
+
+    ' now reorder keys based on initial ordering        
+    if newItems.count() > 0 then 
+        setKeys = []
+        incr = 0
+        for index = 0 to keys.count()-1
+            orderIndex = index+added
+            for newIndex = 0 to newItems.count()-1
+                if newItems[newIndex] <> invalid then 
+                    while newItems[newIndex].initialOrder = orderIndex
+                        setKeys.Push(newItems[newIndex].key)
+                        incr = incr+1
+                        orderIndex = orderIndex+1
+                    end while
+                end if
+            end for
+            setKeys.Push(keys[index])
+        end for
+        if setKeys.count() > 0 then keys = setKeys
+    end if
+    'end initial Ordering [options]
+    '**********************************************
+
     for j = keys.Count() - 1 to 0 step -1
         key = keys[j]
         for i = 0 to items.Count() - 1
