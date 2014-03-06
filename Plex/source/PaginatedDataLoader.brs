@@ -55,19 +55,19 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
     size_limit = RegRead("rf_rowfilter_limit", "preferences","200") 'gobal size limit Toggle for filter rows
 
     if type(item) = "roAssociativeArray" and item.contenttype = "section" and item.type = "artist" then 
-        newItems.push({key: "firstCharacter", title: "First Letter", key_copy: "all"})
-        newItems.push({key: "recentlyViewed", title: "Recently Viewed", key_copy: "all"})
+        newItems.push({key: "firstCharacter", title: tr("First Letter"), key_copy: "all"})
+        newItems.push({key: "recentlyViewed", title: tr("Recently Viewed"), key_copy: "all"})
     end if
 
     if type(item) = "roAssociativeArray" and item.contenttype = "section" and item.type = "show" then 
-        newItems.push({key: "recentlyAdded?stack=1", title: "Recently Added Seasons", key_copy: "all"})
-        newItems.push({key: "all?timelineState=1&type=4&unwatched=1&sort=originallyAvailableAt:desc", title: "Unwatched Recently Aired", key_copy: "all"})
-        newItems.push({key: "all?timelineState=1&type=4&unwatched=1&sort=addedAt:desc", title: "Unwatched Recently Added", key_copy: "all", size: size_limit})
+        newItems.push({key: "recentlyAdded?stack=1", title: tr("Recently Added Seasons"), key_copy: "all"})
+        newItems.push({key: "all?timelineState=1&type=4&unwatched=1&sort=originallyAvailableAt:desc", title: tr("Unwatched Recently Aired"), key_copy: "all"})
+        newItems.push({key: "all?timelineState=1&type=4&unwatched=1&sort=addedAt:desc", title: tr("Unwatched Recently Added"), key_copy: "all", size: size_limit})
     end if
 
     if type(item) = "roAssociativeArray" and item.contenttype = "section" and item.type = "movie" then 
-        newItems.push({key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc", title: "Unwatched Recently Released", key_copy: "all", size: size_limit})
-        newItems.push({key: "all?type=1&unwatched=1&sort=addedAt:desc", title: "Unwatched Recently Added", key_copy: "all", size: size_limit})
+        newItems.push({key: "all?type=1&unwatched=1&sort=originallyAvailableAt:desc", title: tr("Unwatched Recently Released"), key_copy: "all", size: size_limit})
+        newItems.push({key: "all?type=1&unwatched=1&sort=addedAt:desc", title: tr("Unwatched Recently Added"), key_copy: "all", size: size_limit})
     end if
 
     subsec_extras = []

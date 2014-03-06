@@ -52,8 +52,8 @@ Function showPosterScreen() As Integer
 
     if container.IsError then
         dialog = createBaseDialog()
-        dialog.Title = "Content Unavailable"
-        dialog.Text = "An error occurred while trying to load this content, make sure the server is running."
+        dialog.Title = tr("Content Unavailable")
+        dialog.Text = tr("An error occurred while trying to load this content, make sure the server is running.")
         dialog.Facade = m.Facade
         dialog.closePrevious = true ' or check to see if there is a facade?
         dialog.Show(true) ' blocking

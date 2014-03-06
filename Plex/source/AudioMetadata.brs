@@ -54,9 +54,9 @@ Function newAlbumMetadata(container, item, detailed=true) As Object
         date.ToLocalTime()
         album.AddDate = date.AsDateString("short-month-short-weekday")
         if album.ReleaseDate <> invalid then 
-            album.ReleaseDate = "Released: " + album.ReleaseDate + chr(10) + "    Added: " + album.AddDate
+            album.ReleaseDate = tr("Released: ") + album.ReleaseDate + chr(10) + tr("    Added: ") + album.AddDate
         else 
-            album.ReleaseDate = "Added: " + album.AddDate
+            album.ReleaseDate = tr("Added: ") + album.AddDate
         end if
     end if
 
@@ -86,13 +86,13 @@ Function newTrackMetadata(container, item, detailed=true) As Object
     ' /status/sessions doesn't containt container.xml@mixedParents, but it is
     if container.xml@mixedParents = "1" or InStr(0, container.sourceurl, "/status/sessions" ) > 0 then
         track.Artist = firstOf(item@grandparentTitle, item@artist)
-        track.Album = firstOf(item@parentTitle, item@album, "Unknown Album")
+        track.Album = firstOf(item@parentTitle, item@album, tr("Unknown Album"))
         track.ReleaseDate = item@parentYear
         track.AlbumYear = item@parentYear
         track.ShortDescriptionLine2 = track.Album
     else
         track.Artist = firstOf(container.xml@grandparentTitle, item@artist)
-        track.Album = firstOf(container.xml@parentTitle, item@album, "Unknown Album")
+        track.Album = firstOf(container.xml@parentTitle, item@album, tr("Unknown Album"))
         track.ReleaseDate = container.xml@parentYear
         track.AlbumYear = container.xml@parentYear
     end if
@@ -178,13 +178,13 @@ Function newTrackMetadata(container, item, detailed=true) As Object
 
         track.description = "" ' reset video Description -- blank but not invalid
         if track.viewoffset <> invalid then 
-             track.description = "Progress: " + GetDurationString(int(track.viewoffset.toint()/1000),0,1,1)
+             track.description = tr("Progress: ") + GetDurationString(int(track.viewoffset.toint()/1000),0,1,1)
              track.description = track.description + " [" + percentComplete(track.viewOffset,track.length) + "%]"
         else if item.Player@state <> invalid then
              track.description = item.Player@state
         end if
 
-        track.description = track.description + " on " + firstof(item.Player@title, item.Player@platform)
+        track.description = track.description + tr(" on ") + firstof(item.Player@title, item.Player@platform)
         if track.server.name <> invalid then track.description = track.description + " [" + track.server.name + "]" ' show the server 
         track.nowPlaying_progress = track.description ' container for HUD notify
 

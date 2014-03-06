@@ -86,7 +86,7 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
     ' TODO(ljunkie) only show this if first image and continuing images fail. 
     ' As of now, it will flash before the first image downloads
     display = {
-        Text: "loading image....", 
+        Text: tr("loading image...."), 
         TextAttrs: {
             Color:"#A0FFFFFF", 
             Font:"Small", 
