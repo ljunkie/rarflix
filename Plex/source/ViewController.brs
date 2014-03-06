@@ -445,6 +445,9 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         if NOT item.defaultFullGrid then 
             ' standard Grid screen - multiple rows
 
+            ' instead of adding duplicate logic to the gridHandleMessage, just reset the breadcrumbs to normal here
+            breadcrumbs = [item.server.name, item.Title]
+
             ' reset to original keys -- this will only happen if somone has changed FullGrid prefs during 
             ' the section. We could just reload the HomeScreenRows when toggled - but this doesn't seem bad
             if item.OrigKeys <> invalid then 
