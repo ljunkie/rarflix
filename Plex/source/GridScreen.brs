@@ -616,9 +616,12 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
     ' ljunkie - the fact we lazy load rows, we cannot just set the focus item after we show a screen
     ' this will allow us to set the initial focus item on the first row of a full grid
     ' this might need to change if we every decide to focus on a sub row
-    if row = 0 and m.firstfocusitem = invalid and m.isfullgrid <> invalid and m.isfullgrid then
-        m.firstfocusitem = true
-        m.screen.SetFocusedListItem(0,0)
+    ' - if someone uses a spacer item, we shall not focus on the first item. It's UGLY always showing the spacer
+    if RegRead("rf_fullgrid_spacer", "preferences", "disabled") <> "enabled" then 
+        if row = 0 and m.firstfocusitem = invalid and m.isfullgrid <> invalid and m.isfullgrid then
+            m.firstfocusitem = true
+            m.screen.SetFocusedListItem(0,0)
+        end if
     end if
 
     ' Continue loading this row
