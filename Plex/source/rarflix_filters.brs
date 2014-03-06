@@ -296,11 +296,21 @@ Function prefsFilterSortHandleMessage(msg) As Boolean
                 gridItem = gridScreen.originalitem
                 breadcrumbs = getFilterBreadcrumbs(filterSortObj,gridItem)
 
-                ' recreate the full grid if filters changed or we are forceing a filter change
+                ' recreate the full grid if filters changed or we are forcing a filter change
                 '  forcefilterOnClose: due to recreating list screen with a typeKey set ( changing types )
                 if (m.initialFilterParamsString <> filterSortObj.filterParamsString) or m.forcefilterOnClose = true then 
                     Debug("filter options or type changed -- refreshing the grid (new)")
-                    m.ViewController.PopScreen(m)
+                    ' 1) if the type or filters change, we must destroy and recreate a new grid
+                    '    actions: pop list screen, set call back to create full grid, close grid screen
+                    '
+                    ' 2) caveat: if the user has not enabled the full grid by default, we must first create 
+                    '            the "filterable" full grid because they can access the filter item from the
+                    '            header row and we don't want to replace the initial normal grid!
+                    '     actions: a. create call back to create full grid, close list screen
+                    '              b. if isFullGrid -> complete the default actions (1: close list,callback, close grid)
+                    replaceGrid = (gridScreen.isFullGrid = true)
+                    ' close list screen
+                    if replaceGrid then m.ViewController.PopScreen(m)
 
                     ' create a call back item for the viewController to receate it (the full grid screen)
                     callback = CreateObject("roAssociativeArray")
@@ -312,7 +322,16 @@ Function prefsFilterSortHandleMessage(msg) As Boolean
 
                     ' assign the callback item to the viewcontroller and close the grid
                     GetViewController().afterCloseCallback = callback
-                    gridScreen.screen.Close()
+
+                    ' same logic applies from the notes above
+                    if replaceGrid then 
+                        ' close grid screen
+                        gridScreen.screen.Close()
+                    else 
+                        ' close list screen
+                        m.ViewController.PopScreen(m) 
+                    end if
+
                     return true
                 else 
                     Debug("filter options and type did not change (sorting may have and will reload if needed)")
