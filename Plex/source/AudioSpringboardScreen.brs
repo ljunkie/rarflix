@@ -60,8 +60,8 @@ Function createAudioSpringboardScreen(context, index, viewController) As Dynamic
 
     if NOT obj.IsPlayable then
         dialog = createBaseDialog()
-        dialog.Title = "Unsupported Format"
-        dialog.Text = "None of the audio tracks in this list are in a supported format. Use MP3s for best results."
+        dialog.Title = tr("Unsupported Format")
+        dialog.Text = tr("None of the audio tracks in this list are in a supported format. Use MP3s for best results.")
         dialog.Show()
         return invalid
     end if
@@ -357,11 +357,11 @@ Function audioDialogHandleButton(command, data) As Boolean
         if obj.IsShuffled then
             obj.Unshuffle()
             obj.IsShuffled = false
-            m.SetButton(command, "Shuffle: Off")
+            m.SetButton(command, tr("Shuffle: Off"))
         else
             obj.Shuffle()
             obj.IsShuffled = true
-            m.SetButton(command, "Shuffle: On")
+            m.SetButton(command, tr("Shuffle: On"))
         end if
         m.Refresh()
 
@@ -376,10 +376,10 @@ Function audioDialogHandleButton(command, data) As Boolean
         return true
     else if command = "loop" then
         if player.Repeat = 2 then
-            m.SetButton(command, "Loop: Off")
+            m.SetButton(command, tr("Loop: Off"))
             player.SetRepeat(0)
         else
-            m.SetButton(command, "Loop: On")
+            m.SetButton(command, tr("Loop: On"))
             player.SetRepeat(2)
         end if
         m.Refresh()
@@ -407,24 +407,24 @@ sub rfCreateAudioSBdialog(m)
     dialog.Text = ""
     dialog.Item = m.metadata
     if m.IsShuffled then
-        dialog.SetButton("shuffle", "Shuffle: On")
+        dialog.SetButton("shuffle", tr("Shuffle: On"))
     else
-        dialog.SetButton("shuffle", "Shuffle: Off")
+        dialog.SetButton("shuffle", tr("Shuffle: Off"))
     end if
 
     if player.Repeat = 2 then
-        dialog.SetButton("loop", "Loop: On")
+        dialog.SetButton("loop", tr("Loop: On"))
     else
-        dialog.SetButton("loop", "Loop: Off")
+        dialog.SetButton("loop", tr("Loop: Off"))
     end if
 
-    if player.ContextScreenID <> m.ScreenID then dialog.SetButton("show", "Go to Now Playing")
+    if player.ContextScreenID <> m.ScreenID then dialog.SetButton("show", tr("Go to Now Playing"))
 
     dialog.SetButton("rate", "_rate_")
     if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
-        dialog.SetButton("delete", "Delete permanently")
+        dialog.SetButton("delete", tr("Delete permanently"))
     end if
-    dialog.SetButton("close", "Back")
+    dialog.SetButton("close", tr("Back"))
     dialog.HandleButton = audioDialogHandleButton
     dialog.ParentScreen = m
     dialog.Show()

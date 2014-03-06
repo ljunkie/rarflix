@@ -120,9 +120,9 @@ Function showGridScreen() As Integer
         facade = CreateObject("roGridScreen")
         facade.Show() ' ljunkie - aha, we need facade screen for zero row grids
         dialog.Facade = facade
-        dialog.Title = "Content Unavailable"
+        dialog.Title = tr("Content Unavailable")
         dialog.DisableBackButton = true
-        dialog.Text = "An error occurred while trying to load this content, we received zero results."
+        dialog.Text = tr("An error occurred while trying to load this content, we received zero results.")
         dialog.closePrevious = true ' or check to see if there is a facade?
         dialog.Show(true) ' blocking
 
@@ -567,8 +567,8 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
 
                 if m.Refreshing <> true then
                     dialog = createBaseDialog()
-                    dialog.Title = "Section Empty"
-                    dialog.Text = "This section doesn't contain any items."
+                    dialog.Title = tr("Section Empty")
+                    dialog.Text = tr("This section doesn't contain any items.")
                     dialog.Show()
                     m.closeOnActivate = true
                 else

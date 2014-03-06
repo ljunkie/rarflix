@@ -38,15 +38,15 @@ Function createHomeScreenDataLoader(listener)
     loader.FirstServer = true
 
     rows = [
-        { title: "Channels", key: "channels" },
-        { title: "Library Sections", key: "sections" },
-        { title: "On Deck", key: "on_deck" },
-        { title: "Now Playing", key: "now_playing" },
-        { title: "Recently Added", key: "recently_added" },
-        { title: "Queue", key: "queue" },
-        { title: "Recommendations", key: "recommendations" },
-        { title: "Shared Library Sections", key: "shared_sections" },
-        { title: "Miscellaneous", key: "misc" }
+        { title: tr("Channels"), key: "channels" },
+        { title: tr("Library Sections"), key: "sections" },
+        { title: tr("On Deck"), key: "on_deck" },
+        { title: tr("Now Playing"), key: "now_playing" },
+        { title: tr("Recently Added"), key: "recently_added" },
+        { title: tr("Queue"), key: "queue" },
+        { title: tr("Recommendations"), key: "recommendations" },
+        { title: tr("Shared Library Sections"), key: "shared_sections" },
+        { title: tr("Miscellaneous"), key: "misc" }
     ]
     ReorderItemsByKeyPriority(rows, RegRead("home_row_order", "preferences", ""))
 
@@ -87,8 +87,8 @@ Function createHomeScreenDataLoader(listener)
     switchUser.sourceUrl = ""
     switchUser.ContentType = invalid
     switchUser.Key = "switchuser"
-    switchUser.Title = "Switch User Profile"
-    switchUser.ShortDescriptionLine1 = "fast user switching"
+    switchUser.Title = tr("Switch User Profile")
+    switchUser.ShortDescriptionLine1 = tr("fast user switching")
     switchUser.hidden = true
     switchUser.color = RegRead("userprofile_icon_color", "preferences", "orange", 0)
     curTheme = RegRead("rf_theme", "preferences", "black", 0)
@@ -115,8 +115,8 @@ Function createHomeScreenDataLoader(listener)
     prefs.sourceUrl = ""
     prefs.ContentType = "prefs"
     prefs.Key = "globalprefs"
-    prefs.Title = "Preferences"
-    prefs.ShortDescriptionLine1 = "Preferences"
+    prefs.Title = tr("Preferences")
+    prefs.ShortDescriptionLine1 = tr("Preferences")
     prefs.SDPosterURL = imageDir + "gear.png"
     prefs.HDPosterURL = imageDir + "gear.png"
     loader.contentArray[loader.RowIndexes["misc"]].content.Push(prefs)
@@ -127,8 +127,8 @@ Function createHomeScreenDataLoader(listener)
     nowPlaying.sourceUrl = ""
     nowPlaying.ContentType = "audio"
     nowPlaying.Key = "nowplaying"
-    nowPlaying.Title = "Now Playing"
-    nowPlaying.ShortDescriptionLine1 = "Now Playing"
+    nowPlaying.Title = tr("Now Playing")
+    nowPlaying.ShortDescriptionLine1 = tr("Now Playing")
     nowPlaying.SDPosterURL = imageDir + "section-music.png"
     nowPlaying.HDPosterURL = imageDir + "section-music.png"
     nowPlaying.CurIndex = invalid
@@ -273,11 +273,11 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
                     channels.connectionUrl = connectionUrl
             
                     allChannels = CreateObject("roAssociativeArray")
-                    allChannels.Title = "More Channels"
+                    allChannels.Title = tr("More Channels")
                     if AreMultipleValidatedServers() then
-                        allChannels.ShortDescriptionLine2 = "All channels on " + server.name
+                        allChannels.ShortDescriptionLine2 = tr("All channels on ") + server.name
                     else
-                        allChannels.ShortDescriptionLine2 = "All channels"
+                        allChannels.ShortDescriptionLine2 = tr("All channels")
                     end if
                     allChannels.Description = allChannels.ShortDescriptionLine2
                     allChannels.server = server
@@ -612,23 +612,23 @@ Sub homeOnUrlEvent(msg, requestContext)
             else if item.Type = "channel" then
                 channelType = Mid(item.key, 2, 5)
                 if channelType = "music" then
-                    item.ShortDescriptionLine2 = "Music channel" + serverStr
+                    item.ShortDescriptionLine2 = tr("Music channel") + serverStr
                 else if channelType = "photo" then
-                    item.ShortDescriptionLine2 = "Photo channel" + serverStr
+                    item.ShortDescriptionLine2 = tr("Photo channel") + serverStr
                 else if channelType = "video" then
-                    item.ShortDescriptionLine2 = "Video channel" + serverStr
+                    item.ShortDescriptionLine2 = tr("Video channel") + serverStr
                 else
                     Debug("Skipping unsupported channel type: " + tostr(channelType))
                     add = false
                 end if
             else if item.Type = "movie" then
-                item.ShortDescriptionLine2 = "Movie section" + serverStr
+                item.ShortDescriptionLine2 = tr("Movie section") + serverStr
             else if item.Type = "show" then
-                item.ShortDescriptionLine2 = "TV section" + serverStr
+                item.ShortDescriptionLine2 = tr("TV section") + serverStr
             else if item.Type = "artist" then
-                item.ShortDescriptionLine2 = "Music section" + serverStr
+                item.ShortDescriptionLine2 = tr("Music section") + serverStr
             else if item.Type = "photo" then
-                item.ShortDescriptionLine2 = "Photo section" + serverStr
+                item.ShortDescriptionLine2 = tr("Photo section") + serverStr
             else
                 Debug("Skipping unsupported section type: " + tostr(item.Type))
                 add = false
@@ -831,14 +831,14 @@ Sub homeOnUrlEvent(msg, requestContext)
                     channelDir.server = server
                     channelDir.sourceUrl = ""
                     channelDir.key = "/system/appstore"
-                    channelDir.Title = "Channel Directory"
+                    channelDir.Title = tr("Channel Directory")
                     'if AreMultipleValidatedServers() then
                     '    channelDir.ShortDescriptionLine2 = "Browse channels to install on " + server.name
                     'else
                     '    channelDir.ShortDescriptionLine2 = "Browse channels to install on " + server.name 
                     'end if
                     ' ljunkie - this is never reloaded, so we might as well show the sever.name
-                    channelDir.Description = "Browse channels to install on " + server.name
+                    channelDir.Description = tr("Browse channels to install on ") + server.name
                     'channelDir.Description = channelDir.ShortDescriptionLine2
                     channelDir.SDPosterURL = imageDir + "more.png"
                     channelDir.HDPosterURL = imageDir + "more.png"
@@ -860,8 +860,8 @@ Sub homeOnUrlEvent(msg, requestContext)
                     univSearch.sourceUrl = ""
                     univSearch.ContentType = "search"
                     univSearch.Key = "globalsearch"
-                    univSearch.Title = "Search"
-                    univSearch.Description = "Search for items across all your sections and channels"
+                    univSearch.Title = tr("Search")
+                    univSearch.Description = tr("Search for items across all your sections and channels")
                     univSearch.ShortDescriptionLine2 = univSearch.Description
                     univSearch.SDPosterURL = imageDir + "search.png"
                     univSearch.HDPosterURL = imageDir + "search.png"

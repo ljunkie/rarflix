@@ -28,7 +28,7 @@ Sub settingsShow()
         setting.title = setting.label
         m.AddItem(setting, "setting", setting.GetValueString())
     next
-    m.AddItem({title: "Close"}, "close")
+    m.AddItem({title: tr("Close")}, "close")
 
     m.Screen.Show()
 End Sub
@@ -219,12 +219,12 @@ Function createPreferencesScreen(viewController) As Object
         { title: "720 kbps, 320p", EnumValue: "4" },
         { title: "1.5 Mbps, 480p", EnumValue: "5" },
         { title: "2.0 Mbps, 720p", EnumValue: "6" },
-        { title: "3.0 Mbps, 720p", EnumValue: "7", ShortDescriptionLine2: "Default" },
+        { title: "3.0 Mbps, 720p", EnumValue: "7", ShortDescriptionLine2: tr("Default") },
         { title: "4.0 Mbps, 720p", EnumValue: "8" },
-        { title: "8.0 Mbps, 1080p", EnumValue: "9", ShortDescriptionLine2: "Pushing the limits, requires fast connection." }
-        { title: "10.0 Mbps, 1080p", EnumValue: "10", ShortDescriptionLine2: "May be unstable, not recommended." }
-        { title: "12.0 Mbps, 1080p", EnumValue: "11", ShortDescriptionLine2: "May be unstable, not recommended." }
-        { title: "20.0 Mbps, 1080p", EnumValue: "12", ShortDescriptionLine2: "May be unstable, not recommended." }
+        { title: "8.0 Mbps, 1080p", EnumValue: "9", ShortDescriptionLine2: tr("Pushing the limits, requires fast connection.") }
+        { title: "10.0 Mbps, 1080p", EnumValue: "10", ShortDescriptionLine2: tr("May be unstable, not recommended.") }
+        { title: "12.0 Mbps, 1080p", EnumValue: "11", ShortDescriptionLine2: tr("May be unstable, not recommended.") }
+        { title: "20.0 Mbps, 1080p", EnumValue: "12", ShortDescriptionLine2: tr("May be unstable, not recommended.") }
     ]
     bw_text = chr(32) + " * Current bandwidth is unavailable. Please check back in a minute. "
     if GetGlobalAA().Lookup("bandwidth") <> invalid then
@@ -249,27 +249,27 @@ Function createPreferencesScreen(viewController) As Object
 
     ' Direct play options
     directplay = [
-        { title: "Automatic (recommended)", EnumValue: "0" },
-        { title: "Direct Play", EnumValue: "1", ShortDescriptionLine2: "Always Direct Play, no matter what." },
-        { title: "Direct Play w/ Fallback", EnumValue: "2", ShortDescriptionLine2: "Always try Direct Play, then transcode." },
-        { title: "Direct Stream/Transcode", EnumValue: "3", ShortDescriptionLine2: "Always Direct Stream or transcode." },
-        { title: "Always Transcode", EnumValue: "4", ShortDescriptionLine2: "Never Direct Play or Direct Stream." }
+        { title: tr("Automatic (recommended)"), EnumValue: "0" },
+        { title: tr("Direct Play"), EnumValue: "1", ShortDescriptionLine2: tr("Always Direct Play, no matter what.") },
+        { title: tr("Direct Play w/ Fallback"), EnumValue: "2", ShortDescriptionLine2: tr("Always try Direct Play, then transcode.") },
+        { title: tr("Direct Stream/Transcode"), EnumValue: "3", ShortDescriptionLine2: tr("Always Direct Stream or transcode.") },
+        { title: tr("Always Transcode"), EnumValue: "4", ShortDescriptionLine2: tr("Never Direct Play or Direct Stream.") }
     ]
     obj.Prefs["directplay"] = {
         values: directplay,
-        heading: "Direct Play preferences",
+        heading: tr("Direct Play preferences"),
         default: "0"
     }
 
     ' Screensaver options
     screensaver = [
-        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Use the system screensaver" },
-        { title: "Animated", EnumValue: "animated" },
-        { title: "Random", EnumValue: "random" }
+        { title: tr("Disabled"), EnumValue: "disabled", ShortDescriptionLine2: tr("Use the system screensaver") },
+        { title: tr("Animated"), EnumValue: "animated" },
+        { title: tr("Random"), EnumValue: "random" }
     ]
     obj.Prefs["screensaver"] = {
         values: screensaver,
-        heading: "Screensaver",
+        heading: tr("Screensaver"),
         default: "random"
     }
 
@@ -287,27 +287,27 @@ Sub showPreferencesScreen()
     m.Screen.SetHeader("Set Plex Channel Preferences")
 
     ' re-ordered - RR
-    m.AddItem({title: "About RARflix"}, "ShowReleaseNotes")
-    m.AddItem({title: "RARflix Preferences", ShortDescriptionLine2: "the goods"}, "rarflix_prefs")
+    m.AddItem({title: tr("About RARflix")}, tr("ShowReleaseNotes"))
+    m.AddItem({title: tr("RARflix Preferences"), ShortDescriptionLine2: tr("the goods")}, "rarflix_prefs")
     m.AddItem({title: getCurrentMyPlexLabel()}, "myplex")
-    m.AddItem({title: "User Profiles", ShortDescriptionLine2: "Fast user switching"}, "userprofiles")
-    m.AddItem({title: "Security PIN", ShortDescriptionLine2: "Require a PIN to access (multi-user supported)"}, "securitypin")
-    m.AddItem({title: "Plex Media Servers"}, "servers")
-    m.AddItem({title: "Quality"}, "quality", m.GetEnumValue("quality"))
-    m.AddItem({title: "Remote Quality"}, "quality_remote", m.GetEnumValue("quality_remote"))
-    m.AddItem({title: "Direct Play"}, "directplay", m.GetEnumValue("directplay"))
-    m.AddItem({title: "Audio Preferences"}, "audio_prefs")
-    m.AddItem({title: "Home Screen"}, "homescreen")
-    m.AddItem({title: "Section Display"}, "sections")
-    m.AddItem({title: "Remote Control/Name"}, "remotecontrol")
-    m.AddItem({title: "Subtitles"}, "subtitles")
-    m.AddItem({title: "Slideshow & Photos"}, "slideshow")
-    m.AddItem({title: "Screensaver"}, "screensaver", m.GetEnumValue("screensaver"))
-    m.AddItem({title: "Logging"}, "debug")
-    m.AddItem({title: "Advanced Preferences"}, "advanced")
-    m.AddItem({title: "Channel Status: " + AppManager().State}, "status")
+    m.AddItem({title: tr("User Profiles"), ShortDescriptionLine2: tr("Fast user switching")}, "userprofiles")
+    m.AddItem({title: tr("Security PIN"), ShortDescriptionLine2: tr("Require a PIN to access (multi-user supported)")}, "securitypin")
+    m.AddItem({title: tr("Plex Media Servers")}, "servers")
+    m.AddItem({title: tr("Quality")}, "quality", m.GetEnumValue("quality"))
+    m.AddItem({title: tr("Remote Quality")}, "quality_remote", m.GetEnumValue("quality_remote"))
+    m.AddItem({title: tr("Direct Play")}, "directplay", m.GetEnumValue("directplay"))
+    m.AddItem({title: tr("Audio Preferences")}, "audio_prefs")
+    m.AddItem({title: tr("Home Screen")}, "homescreen")
+    m.AddItem({title: tr("Section Display")}, "sections")
+    m.AddItem({title: tr("Remote Control/Name")}, "remotecontrol")
+    m.AddItem({title: tr("Subtitles")}, "subtitles")
+    m.AddItem({title: tr("Slideshow & Photos")}, "slideshow")
+    m.AddItem({title: tr("Screensaver")}, "screensaver", m.GetEnumValue("screensaver"))
+    m.AddItem({title: tr("Logging")}, "debug")
+    m.AddItem({title: tr("Advanced Preferences")}, "advanced")
+    m.AddItem({title: tr("Channel Status: ") + AppManager().State}, "status")
 
-    m.AddItem({title: "Close Preferences"}, "close")
+    m.AddItem({title: tr("Close Preferences")}, "close")
 
     m.serversBefore = {}
     for each server in PlexMediaServers()
@@ -382,79 +382,79 @@ Function prefsMainHandleMessage(msg) As Boolean
                 m.statusIndex = msg.GetIndex()
 
                 dialog = createBaseDialog()
-                dialog.Title = "Channel Status"
+                dialog.Title = tr("Channel Status")
 
                 manager = AppManager()
                 if manager.State = "PlexPass" then
-                    dialog.Text = "Plex is fully unlocked since you're a PlexPass member."
+                    dialog.Text = tr("Plex is fully unlocked since you're a PlexPass member.")
                 else if manager.State = "Exempt" then
-                    dialog.Text = "Plex is fully unlocked."
+                    dialog.Text = tr("Plex is fully unlocked.")
                 else if manager.State = "Purchased" then
-                    dialog.Text = "Plex has been purchased and is fully unlocked."
+                    dialog.Text = ("Plex has been purchased and is fully unlocked.")
                 else if manager.State = "Trial" then
-                    dialog.Text = "Plex is currently in a trial period. To fully unlock the channel, you can purchase it or connect a PlexPass account."
-                    dialog.SetButton("purchase", "Purchase the channel")
+                    dialog.Text = tr("Plex is currently in a trial period. To fully unlock the channel, you can purchase it or connect a PlexPass account.")
+                    dialog.SetButton("purchase", tr("Purchase the channel"))
                 else if manager.State = "Limited" then
-                    dialog.Text = "Your Plex trial has expired and playback is currently disabled. To fully unlock the channel, you can purchase it or connect a PlexPass account."
-                    dialog.SetButton("purchase", "Purchase the channel")
+                    dialog.Text = tr("Your Plex trial has expired and playback is currently disabled. To fully unlock the channel, you can purchase it or connect a PlexPass account.")
+                    dialog.SetButton("purchase", tr("Purchase the channel"))
                 end if
-                rarflixText = "You are using the " + GetGlobal("appName") + " v" + GetGlobal("appVersionStr") + " (Private) channel."
+                rarflixText = tr("You are using the ") + GetGlobal("appName") + " v" + GetGlobal("appVersionStr") + tr(" (Private) channel.")
                 if dialog.Text <> invalid then 
                     dialog.Text = dialog.Text + chr(10) + rarflixText
                 else 
                     dialog.Text = rarflixText
                 end if
 
-                dialog.SetButton("close", "Close")
+                dialog.SetButton("close", tr("Close"))
                 dialog.HandleButton = channelStatusHandleButton
                 dialog.Show()
             else if command = "quality" OR command = "quality_remote" OR command = "level" OR command = "fivepointone" OR command = "directplay" OR command = "screensaver" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "slideshow" then
                 screen = createSlideshowPrefsScreen(m.ViewController)
-                m.ViewController.InitializeOtherScreen(screen, ["Slideshow & Photo Preferences"])
+                m.ViewController.InitializeOtherScreen(screen, [tr("Slideshow & Photo Preferences")])
                 screen.Show()
             else if command = "securitypin" then
                 screen = createSecurityPinPrefsScreen(m.ViewController)
-                m.ViewController.InitializeOtherScreen(screen, ["Security PIN"])
+                m.ViewController.InitializeOtherScreen(screen, [tr("Security PIN")])
                 screen.Show()            
             else if command = "userprofiles" then
                 screen = createUserProfilesPrefsScreen(m.ViewController)
-                m.ViewController.InitializeOtherScreen(screen, ["User Profiles"])
+                m.ViewController.InitializeOtherScreen(screen, [tr("User Profiles")])
                 screen.Show()            
             else if command = "subtitles" then
                 screen = createSubtitlePrefsScreen(m.ViewController)
-                m.ViewController.InitializeOtherScreen(screen, ["Subtitle Preferences"])
+                m.ViewController.InitializeOtherScreen(screen, [tr("Subtitle Preferences")])
                 screen.Show()
             else if command = "sections" then
                 screen = createSectionDisplayPrefsScreen(m.ViewController)
-                m.ViewController.InitializeOtherScreen(screen, ["Section Display Preferences"])
+                m.ViewController.InitializeOtherScreen(screen, [tr("Section Display Preferences")])
                 screen.Show()
             else if command = "remotecontrol" then
                 screen = createRemoteControlPrefsScreen(m.ViewController)
-                m.ViewController.InitializeOtherScreen(screen, ["Remote Control Preferences"])
+                m.ViewController.InitializeOtherScreen(screen, [tr("Remote Control Preferences")])
                 screen.Show()
             else if command = "homescreen" then
                 screen = createHomeScreenPrefsScreen(m.ViewController)
-                m.ViewController.InitializeOtherScreen(screen, ["Home Screen"])
+                m.ViewController.InitializeOtherScreen(screen, [tr("Home Screen")])
                 screen.Show()
             else if command = "advanced" then
                 screen = createAdvancedPrefsScreen(m.ViewController)
-                m.ViewController.InitializeOtherScreen(screen, ["Advanced Preferences"])
+                m.ViewController.InitializeOtherScreen(screen, [tr("Advanced Preferences")])
                 screen.Show()
             else if command = "debug" then
                 screen = createDebugLoggingScreen(m.ViewController)
-                m.ViewController.InitializeOtherScreen(screen, ["Logging"])
+                m.ViewController.InitializeOtherScreen(screen, [tr("Logging")])
                 screen.Show()
             else if command = "audio_prefs" then
                 screen = createAudioPrefsScreen(m.ViewController)
-                m.ViewController.InitializeOtherScreen(screen, ["Audio Preferences"])
+                m.ViewController.InitializeOtherScreen(screen, [tr("Audio Preferences")])
                 screen.Show()
             else if command = "ShowReleaseNotes" then
                 m.ViewController.ShowReleaseNotes("about")
             else if command = "rarflix_prefs" then
                 screen = createRARflixPrefsScreen(m.ViewController)
-                m.ViewController.InitializeOtherScreen(screen, ["RARflix Preferences"])
+                m.ViewController.InitializeOtherScreen(screen, [tr("RARflix Preferences")])
                 screen.Show()
             else if command = "close" then
                 m.Screen.Close()
@@ -474,7 +474,7 @@ Sub prefsMainActivate(priorScreen)
         m.SetTitle(m.myPlexIndex, getCurrentMyPlexLabel())
     else if m.checkStatusOnActivate then
         m.checkStatusOnActivate = false
-        m.SetTitle(m.statusIndex, "Channel Status: " + AppManager().State)
+        m.SetTitle(m.statusIndex, tr("Channel Status: ") + AppManager().State)
     end if
 End Sub
 
@@ -494,122 +494,122 @@ Function createSlideshowPrefsScreen(viewController) As Object
 
     ' Photo duration
     values = [
-        { title: "Slow (10 sec)", EnumValue: "10" },
-        { title: "Normal (6 sec)", EnumValue: "6" },
-        { title: "Fast (3 sec)", EnumValue: "3" }
+        { title: tr("Slow (10 sec)"), EnumValue: "10" },
+        { title: tr("Normal (6 sec)"), EnumValue: "6" },
+        { title: tr("Fast (3 sec)"), EnumValue: "3" }
     ]
     obj.Prefs["slideshow_period"] = {
         values: values,
-        heading: "Slideshow speed",
+        heading: tr("Slideshow speed"),
         default: "6"
     }
 
     ' Overlay duration
     values = [
-        { title: "Slow (10 sec)", EnumValue: "10000" },
-        { title: "Normal (2.5 sec)", EnumValue: "2500" },
-        { title: "Fast (1.5 sec)", EnumValue: "1500" }
+        { title: tr("Slow (10 sec)"), EnumValue: "10000" },
+        { title: tr("Normal (2.5 sec)"), EnumValue: "2500" },
+        { title: tr("Fast (1.5 sec)"), EnumValue: "1500" }
     ]
     obj.Prefs["slideshow_overlay"] = {
         values: values,
-        heading: "Text overlay duration",
+        heading: tr("Text overlay duration"),
         default: "2500"
     }
 
     ' Overlay Shared Values
     values = [
-        { title: "Manual", EnumValue: "manual", ShortDescriptionLine2: "Only show Overlay with remote buttons",  }
-        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Automatically show Overlay on change",  }
-        { title: "Disabled", EnumValue: "disabled",ShortDescriptionLine2: "Never show the overlay",}
+        { title: tr("Manual"), EnumValue: "manual", ShortDescriptionLine2: tr("Only show Overlay with remote buttons"),  }
+        { title: tr("Enabled"), EnumValue: "enabled", ShortDescriptionLine2: tr("Automatically show Overlay on change"),  }
+        { title: tr("Disabled"), EnumValue: "disabled",ShortDescriptionLine2: tr("Never show the overlay"),}
     ]
 
     ' Photo Info Overlay
     obj.Prefs["slideshow_photo_overlay"] = {
         values: values,
-        heading: "Display Photo Info on the Overlay",
+        heading: tr("Display Photo Info on the Overlay"),
         default: "enabled"
     }
 
     ' Audio Info Overlay
     obj.Prefs["slideshow_audio_overlay"] = {
         values: values,
-        heading: "Display Audio Info on the Overlay",
+        heading: tr("Display Audio Info on the Overlay"),
         default: "enabled"
     }
 
     ' Error/Debug Info Overlay
     obj.Prefs["slideshow_error_overlay"] = {
         values: values,
-        heading: "Enable Debug Overlay",
+        heading: tr("Enable Debug Overlay"),
         default: "disabled"
     }
 
     ' overscan/underscan correction
     values = [
-        { title: "TV", EnumValue: "5" }
-        { title: "Monitor", EnumValue: "0" },
+        { title: tr("TV"), EnumValue: "5" }
+        { title: tr("Monitor"), EnumValue: "0" },
     ]
     obj.Prefs["slideshow_underscan"] = {
         values: values,
-        heading: "Display Type Correction",
+        heading: tr("Display Type Correction"),
         default: "5"
     }
 
 
     ' reload slideshow after every full run
     values = [
-        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Do not check for new Photos", },
-        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Check for new Photos" },
+        { title: tr("Disabled"), EnumValue: "disabled", ShortDescriptionLine2: tr("Do not check for new Photos"), },
+        { title: tr("Enabled"), EnumValue: "enabled", ShortDescriptionLine2: tr("Check for new Photos") },
     ]
     obj.Prefs["slideshow_reload"] = {
         values: values,
-        heading: "Reload Slideshow after Completion (check for new photos)",
+        heading: tr("Reload Slideshow after Completion (check for new photos)"),
         default: "disabled"
     }
 
     display_modes = [
-        { title: "Fit", EnumValue: "scale-to-fit", ShortDescriptionLine2: "scale to fit [no crop]"  },
-        { title: "Smart", EnumValue: "photo-fit", ShortDescriptionLine2: "smart scale+zoom to fit" },
-        { title: "Fill", EnumValue: "scale-to-fill", ShortDescriptionLine2: "stretch to fill" },
-        { title: "Zoom", EnumValue: "zoom-to-fill", ShortDescriptionLine2: "zoom to fill" },
+        { title: tr("Fit"), EnumValue: "scale-to-fit", ShortDescriptionLine2: tr("scale to fit [no crop]")  },
+        { title: tr("Smart"), EnumValue: "photo-fit", ShortDescriptionLine2: tr("smart scale+zoom to fit") },
+        { title: tr("Fill"), EnumValue: "scale-to-fill", ShortDescriptionLine2: tr("stretch to fill") },
+        { title: tr("Zoom"), EnumValue: "zoom-to-fill", ShortDescriptionLine2: tr("zoom to fill") },
     ]
     obj.Prefs["photoicon_displaymode"] = {
         values: display_modes,
-        heading: "How should photos icons be displayed",
+        heading: tr("How should photos icons be displayed"),
         default: "photo-fit"
     }
     ' unadulterated -- we don't want cropping/zooming/etc by default
     obj.Prefs["slideshow_displaymode"] = {
         values: display_modes,
-        heading: "How should images be displayed",
+        heading: tr("How should images be displayed"),
         default: "scale-to-fit"
     }
 
     ' Prefer Grid or Poster view for most?
     rf_photos_grid_style = [
-        { title: "Portrait", EnumValue: "flat-movie", ShortDescriptionLine2: "Grid 5x2"  },
-        { title: "Landscape 16x9", EnumValue: "flat-16x9", ShortDescriptionLine2: "Grid 5x3"  },
-        { title: "Landscape", EnumValue: "flat-landscape", ShortDescriptionLine2: "Grid 5x3"  },
+        { title: tr("Portrait"), EnumValue: "flat-movie", ShortDescriptionLine2: tr("Grid 5x2")  },
+        { title: tr("Landscape 16x9"), EnumValue: "flat-16x9", ShortDescriptionLine2: tr("Grid 5x3")  },
+        { title: tr("Landscape"), EnumValue: "flat-landscape", ShortDescriptionLine2: tr("Grid 5x3")  },
     ]
     obj.Prefs["rf_photos_grid_style"] = {
         values: rf_photos_grid_style,
-        heading: "Size of the Grid",
+        heading: tr("Size of the Grid"),
         default: "flat-movie"
     }
 
-    obj.Screen.SetHeader("Slideshow display preferences")
+    obj.Screen.SetHeader(tr("Slideshow display preferences"))
 
-    obj.AddItem({title: "Speed"}, "slideshow_period", obj.GetEnumValue("slideshow_period"))
-    obj.AddItem({title: "Overlay Speed"}, "slideshow_overlay", obj.GetEnumValue("slideshow_overlay"))
-    obj.AddItem({title: "Photo Overlay", ShortDescriptionLine2: "Photo Info overlay on the photo"}, "slideshow_photo_overlay", obj.GetEnumValue("slideshow_photo_overlay"))
-    obj.AddItem({title: "Audio Overlay", ShortDescriptionLine2: "Audio Info overlay on the photo"}, "slideshow_audio_overlay", obj.GetEnumValue("slideshow_audio_overlay"))
-    obj.AddItem({title: "Display Mode",ShortDescriptionLine2: "How should photos 'fit' the screen"}, "slideshow_displaymode", obj.GetEnumValue("slideshow_displaymode"))
-    obj.AddItem({title: "Display Type",ShortDescriptionLine2: "Connected Display Type"}, "slideshow_underscan", obj.GetEnumValue("slideshow_underscan"))
-    obj.AddItem({title: "Reload",ShortDescriptionLine2: "check for new images after every completion"}, "slideshow_reload", obj.GetEnumValue("slideshow_reload"))
-    obj.AddItem({title: "Grid Style/Size",ShortDescriptionLine2: "Grid Display Mode"}, "rf_photos_grid_style", obj.GetEnumValue("rf_photos_grid_style"))
-    obj.AddItem({title: "Icons Display Mode",ShortDescriptionLine2: "How should thumbnails 'fit' the screen"}, "photoicon_displaymode", obj.GetEnumValue("photoicon_displaymode"))
-    obj.AddItem({title: "Debug Info", ShortDescriptionLine2: "Show Debug info if there are errors"}, "slideshow_error_overlay", obj.GetEnumValue("slideshow_error_overlay"))
-    obj.AddItem({title: "Close"}, "close")
+    obj.AddItem({title: tr("Speed")}, "slideshow_period", obj.GetEnumValue("slideshow_period"))
+    obj.AddItem({title: tr("Overlay Speed")}, "slideshow_overlay", obj.GetEnumValue("slideshow_overlay"))
+    obj.AddItem({title: tr("Photo Overlay"), ShortDescriptionLine2: tr("Photo Info overlay on the photo")}, "slideshow_photo_overlay", obj.GetEnumValue("slideshow_photo_overlay"))
+    obj.AddItem({title: tr("Audio Overlay"), ShortDescriptionLine2: tr("Audio Info overlay on the photo")}, "slideshow_audio_overlay", obj.GetEnumValue("slideshow_audio_overlay"))
+    obj.AddItem({title: tr("Display Mode"),ShortDescriptionLine2: tr("How should photos 'fit' the screen")}, "slideshow_displaymode", obj.GetEnumValue("slideshow_displaymode"))
+    obj.AddItem({title: tr("Display Type"),ShortDescriptionLine2: tr("Connected Display Type")}, "slideshow_underscan", obj.GetEnumValue("slideshow_underscan"))
+    obj.AddItem({title: tr("Reload"),ShortDescriptionLine2: tr("check for new images after every completion")}, "slideshow_reload", obj.GetEnumValue("slideshow_reload"))
+    obj.AddItem({title: tr("Grid Style/Size"),ShortDescriptionLine2: tr("Grid Display Mode")}, "rf_photos_grid_style", obj.GetEnumValue("rf_photos_grid_style"))
+    obj.AddItem({title: tr("Icons Display Mode"),ShortDescriptionLine2: tr("How should thumbnails 'fit' the screen")}, "photoicon_displaymode", obj.GetEnumValue("photoicon_displaymode"))
+    obj.AddItem({title: tr("Debug Info"), ShortDescriptionLine2: tr("Show Debug info if there are errors")}, "slideshow_error_overlay", obj.GetEnumValue("slideshow_error_overlay"))
+    obj.AddItem({title: tr("Close")}, "close")
 
     return obj
 End Function
@@ -641,7 +641,7 @@ Function createSecurityPinPrefsScreen(viewController) As Object
     'Debug("createSecurityPinPrefsScreen")
     obj = createBasePrefsScreen(viewController)
     prefsSecurityPinRefresh(obj)
-    obj.Screen.SetHeader("Security PIN preferences")
+    obj.Screen.SetHeader(tr("Security PIN preferences"))
     obj.HandleMessage = prefsSecurityPinHandleMessage
     obj.EnteredPin = false  'true when user has already entered PIN so we don't ask for it again
     obj.BaseActivate = obj.Activate
@@ -652,53 +652,53 @@ End Function
 sub prefsSecurityPinRefresh(screen)
     ' Subtitle size (burned in only)
     lockTimes = [
-        { title: "Never", EnumValue: "0" },
+        { title: tr("Never"), EnumValue: "0" },
 '        { title: "fast", EnumValue: "5" },
-        { title: "5 Minutes", EnumValue: "300" },
-        { title: "10 Minutes", EnumValue: "600" },
-        { title: "15 Minutes", EnumValue: "900" },
-        { title: "20 Minutes", EnumValue: "1200" },
-        { title: "30 Minutes", EnumValue: "1800" },
-        { title: "45 Minutes", EnumValue: "2700" },
-        { title: "1 Hour", EnumValue: "3600" },
-        { title: "2 Hours", EnumValue: "7200" },
-        { title: "3 Hours", EnumValue: "10800" },
-        { title: "4 Hours", EnumValue: "14400" },
-        { title: "6 Hours", EnumValue: "36000" },
-        { title: "12 Hours", EnumValue: "43200" }
+        { title: tr("5 Minutes"), EnumValue: "300" },
+        { title: tr("10 Minutes"), EnumValue: "600" },
+        { title: tr("15 Minutes"), EnumValue: "900" },
+        { title: tr("20 Minutes"), EnumValue: "1200" },
+        { title: tr("30 Minutes"), EnumValue: "1800" },
+        { title: tr("45 Minutes"), EnumValue: "2700" },
+        { title: tr("1 Hour"), EnumValue: "3600" },
+        { title: tr("2 Hours"), EnumValue: "7200" },
+        { title: tr("3 Hours"), EnumValue: "10800" },
+        { title: tr("4 Hours"), EnumValue: "14400" },
+        { title: tr("6 Hours"), EnumValue: "36000" },
+        { title: tr("12 Hours"), EnumValue: "43200" }
     ]
     screen.Prefs["locktime"] = {
         values: lockTimes,
-        heading: "Lock screen after inactivity",
+        heading: tr("Lock screen after inactivity"),
         default: "10800"
     }
 
     values = [
-        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Lock screen if inactive"+chr(10)+"while music is playing" },
-        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Do not lock screen if inactive" + chr(10) +"while music is playing" },
+        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: tr("Lock screen if inactive")+chr(10)+tr("while music is playing") },
+        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: tr("Do not lock screen if inactive") + chr(10) +tr("while music is playing") },
     ]
     screen.Prefs["locktime_music"] = {
         values: values,
-        heading: "Lock screen while music is playing",
+        heading: tr("Lock screen while music is playing"),
         default: "enabled"
     }
 
     screen.contentArray.Clear() 
     screen.Screen.ClearContent()
     if RegRead("securityPincode","preferences",invalid) = invalid  then
-        screen.AddItem({title: "Set Security PIN"}, "set")
+        screen.AddItem({title: tr("Set Security PIN")}, "set")
         screen.EnteredPin = true    'don't ask for PIN from now on
     else
         if screen.EnteredPin = true then
-            screen.AddItem({title: "Change Security PIN"}, "set")
-            screen.AddItem({title: "Clear Security PIN"}, "clear")
-            screen.AddItem({title: "Inactivity Lock Time"}, "locktime", screen.GetEnumValue("locktime"))
-            screen.AddItem({title: "Inactivity Lock [music]",  ShortDescriptionLine2: "Lock Screen if inactive"+chr(10)+"while music is playing"}, "locktime_music", screen.GetEnumValue("locktime_music"))
+            screen.AddItem({title: tr("Change Security PIN")}, "set")
+            screen.AddItem({title: tr("Clear Security PIN")}, "clear")
+            screen.AddItem({title: tr("Inactivity Lock Time")}, "locktime", screen.GetEnumValue("locktime"))
+            screen.AddItem({title: tr("Inactivity Lock [music]"),  ShortDescriptionLine2: "Lock Screen if inactive"+chr(10)+"while music is playing"}, "locktime_music", screen.GetEnumValue("locktime_music"))
         else
-            screen.AddItem({title: "Enter current PIN to make changes"}, "unlock")
+            screen.AddItem({title: tr("Enter current PIN to make changes")}, "unlock")
         end if
     end if
-    screen.AddItem({title: "Close"}, "close")
+    screen.AddItem({title: tr("Close")}, "close")
 end sub 
 
 
@@ -795,30 +795,30 @@ Function createUserProfilesPrefsScreen(viewController) As Object
     end if
 
     values = [
-        { title: "Orange (Plex)", EnumValue: "orange", SDPosterUrl: arrowUpPO, HDPosterUrl: arrowUpPO, },
-        { title: "Purple (Roku)", EnumValue: "purple", SDPosterUrl: arrowUp, HDPosterUrl: arrowUp, },
+        { title: tr("Orange (Plex)"), EnumValue: "orange", SDPosterUrl: arrowUpPO, HDPosterUrl: arrowUpPO, },
+        { title: tr("Purple (Roku)"), EnumValue: "purple", SDPosterUrl: arrowUp, HDPosterUrl: arrowUp, },
     ]
     obj.Prefs["userprofile_icon_color"] = {
         values: values,
-        heading: "Icon Color for the User Sections Screen",
+        heading: tr("Icon Color for the User Sections Screen"),
         default: "orange"
     }
     poster = arrowUpPO
     if RegRead("userprofile_icon_color", "preferences", "orange", 0) <> "orange" then poster = arrowUp
-    obj.AddItem({title: "User Selection Icon Color", ShortDescriptionLine2: "Global Setting", SDPosterUrl: poster, HDPosterUrl: poster  }, "userprofile_icon_color", obj.GetEnumValue("userprofile_icon_color",0)) ' this is a global option
+    obj.AddItem({title: tr("User Selection Icon Color"), ShortDescriptionLine2: tr("Global Setting"), SDPosterUrl: poster, HDPosterUrl: poster  }, "userprofile_icon_color", obj.GetEnumValue("userprofile_icon_color",0)) ' this is a global option
 
     'These must be the first 8 entries for easy parsing for the createUserEditPrefsScreen()
     fn = firstof(RegRead("friendlyName", "preferences", invalid, 0),"")
     if fn <> "" then fn = " [" + fn + "]"
-    obj.AddItem({title: "Default User Profile " + fn}, "userActive0")
+    obj.AddItem({title: tr("Default User Profile ") + fn}, "userActive0")
     for ucount = 1 to 7
         enaText = "Disabled"
         if RegRead("userActive", "preferences", "0", ucount) = "1" then enaText = "Enabled"
         fn = firstof(RegRead("friendlyName", "preferences", invalid, ucount),"")
         if fn <> "" then enaText = enaText + " [" + fn + "]"
-        obj.AddItem({title: "User Profile " + tostr(ucount)}, "userActive" + tostr(ucount), enaText)
+        obj.AddItem({title: tr("User Profile ") + tostr(ucount)}, "userActive" + tostr(ucount), enaText)
     end for
-    obj.AddItem({title: "Close"}, "close")
+    obj.AddItem({title: tr("Close")}, "close")
     return obj
 End Function
 
@@ -871,29 +871,29 @@ Function createUserEditPrefsScreen(viewController, currentUser as integer) As Ob
 
     ' Enabled
     options = [
-        { title: "Enabled", EnumValue: "1" },
-        { title: "Disabled", EnumValue: "0" }
+        { title: tr("Enabled"), EnumValue: "1" },
+        { title: tr("Disabled"), EnumValue: "0" }
     ]
     obj.Prefs["userActive"] = {
         values: options,
-        heading: "Show this User Profile on selection screen",
+        heading: tr("Show this User Profile on selection screen"),
         default: "0"
     }
     obj.Prefs["friendlyName"] = {
-        heading: "Name to show on the User Profile selection screen",
+        heading: tr("Name to show on the User Profile selection screen"),
         default: ""
     }
-    obj.AddItem({title: "User Profile Name "}, "friendlyName", obj.GetPrefValue("friendlyName"))
+    obj.AddItem({title: tr("User Profile Name ")}, "friendlyName", obj.GetPrefValue("friendlyName"))
     if currentUser = 0 then
-        obj.Screen.SetHeader("Default User profile preferences")
+        obj.Screen.SetHeader(tr("Default User profile preferences"))
     else
-        obj.Screen.SetHeader("User " + numtostr(currentUser) + " profile preferences")
-        obj.AddItem({title: "Show User on selection screen "}, "userActive", obj.GetEnumValue("userActive"))
+        obj.Screen.SetHeader(tr("User ") + numtostr(currentUser) + tr(" profile preferences"))
+        obj.AddItem({title: tr("Show User on selection screen ")}, "userActive", obj.GetEnumValue("userActive"))
     end if
     if currentUser <> GetGlobalAA().userNum then   'can't erase preferences for the current user
-        obj.AddItem({title: "Erase all preferences for this user"}, "erase")
+        obj.AddItem({title: tr("Erase all preferences for this user")}, "erase")
     end if
-    obj.AddItem({title: "Close"}, "close")
+    obj.AddItem({title: tr("Close")}, "close")
     return obj
 End Function
 
@@ -916,10 +916,10 @@ Function prefsUserEditHandleMessage(msg) As Boolean
             else if command = "erase" then
                 'm.HandleEnumPreference(command, msg.GetIndex())
                 dialog = createBaseDialog()    
-                dialog.Title = "Confirm Erase"
-                dialog.Text = "Are you sure you want to erase all the preferences for this user profile?  This will forever delete all the configuration for this user profile.  Other profiles will not changed."
-                dialog.SetButton("erase", "Erase All Preferences")
-                dialog.SetButton("close", "Cancel")
+                dialog.Title = tr("Confirm Erase")
+                dialog.Text = tr("Are you sure you want to erase all the preferences for this user profile?  This will forever delete all the configuration for this user profile.  Other profiles will not changed.")
+                dialog.SetButton("erase", tr("Erase All Preferences"))
+                dialog.SetButton("close", tr("Cancel"))
                 dialog.HandleButton = prefsUserEditHandleDialogButton    
                 dialog.ParentScreen = m
                 dialog.Show()   
@@ -953,48 +953,48 @@ Function createSubtitlePrefsScreen(viewController) As Object
 
     ' Enable soft subtitles
     softsubtitles = [
-        { title: "Soft", EnumValue: "1", ShortDescriptionLine2: "Use soft subtitles whenever possible." },
-        { title: "Burned In", EnumValue: "0", ShortDescriptionLine2: "Always burn in selected subtitles." }
+        { title: tr("Soft"), EnumValue: "1", ShortDescriptionLine2: tr("Use soft subtitles whenever possible.") },
+        { title: tr("Burned In"), EnumValue: "0", ShortDescriptionLine2: tr("Always burn in selected subtitles.") }
     ]
     obj.Prefs["softsubtitles"] = {
         values: softsubtitles,
-        heading: "Allow Roku to show soft subtitles itself, or burn them in to videos?",
+        heading: tr("Allow Roku to show soft subtitles itself, or burn them in to videos?"),
         default: "1"
     }
 
     ' Subtitle size (burned in only)
     sizes = [
-        { title: "Tiny", EnumValue: "75" },
-        { title: "Small", EnumValue: "90" },
-        { title: "Normal", EnumValue: "125" },
-        { title: "Large", EnumValue: "175" },
-        { title: "Huge", EnumValue: "250" }
+        { title: tr("Tiny"), EnumValue: "75" },
+        { title: tr("Small"), EnumValue: "90" },
+        { title: tr("Normal"), EnumValue: "125" },
+        { title: tr("Large"), EnumValue: "175" },
+        { title: tr("Huge"), EnumValue: "250" }
     ]
     obj.Prefs["subtitle_size"] = {
         values: sizes,
-        heading: "Burned-in subtitle size",
+        heading: tr("Burned-in subtitle size"),
         default: "125"
     }
 
     ' Subtitle color (soft only)
     colors = [
-        { title: "Default", EnumValue: "" },
-        { title: "Yellow", EnumValue: "#FFFF00" },
-        { title: "White", EnumValue: "#FFFFFF" },
-        { title: "Black", EnumValue: "#000000" }
+        { title: tr("Default"), EnumValue: "" },
+        { title: tr("Yellow"), EnumValue: "#FFFF00" },
+        { title: tr("White"), EnumValue: "#FFFFFF" },
+        { title: tr("Black"), EnumValue: "#000000" }
     ]
     obj.Prefs["subtitle_color"] = {
         values: colors,
-        heading: "Soft subtitle color",
+        heading: tr("Soft subtitle color"),
         default: ""
     }
 
-    obj.Screen.SetHeader("Subtitle Preferences")
+    obj.Screen.SetHeader(tr("Subtitle Preferences"))
 
-    obj.AddItem({title: "Subtitles"}, "softsubtitles", obj.GetEnumValue("softsubtitles"))
-    obj.AddItem({title: "Subtitle Size"}, "subtitle_size", obj.GetEnumValue("subtitle_size"))
-    obj.AddItem({title: "Subtitle Color"}, "subtitle_color", obj.GetEnumValue("subtitle_color"))
-    obj.AddItem({title: "Close"}, "close")
+    obj.AddItem({title: tr("Subtitles")}, "softsubtitles", obj.GetEnumValue("softsubtitles"))
+    obj.AddItem({title: tr("Subtitle Size")}, "subtitle_size", obj.GetEnumValue("subtitle_size"))
+    obj.AddItem({title: tr("Subtitle Color")}, "subtitle_color", obj.GetEnumValue("subtitle_color"))
+    obj.AddItem({title: tr("Close")}, "close")
 
     return obj
 End Function
@@ -1033,69 +1033,69 @@ Function createAdvancedPrefsScreen(viewController) As Object
 
     ' Exit Confirmation
     values = [
-        { title: "Enabled", EnumValue: "enabled",  },
-        { title: "Disabled", EnumValue: "disabled" }
+        { title: tr("Enabled"), EnumValue: "enabled",  },
+        { title: tr("Disabled"), EnumValue: "disabled" }
     ]
     obj.Prefs["exit_confirmation"] = {
         values: values,
-        heading: "Prompt for confirmation when exiting RARflix",
+        heading: tr("Prompt for confirmation when exiting RARflix"),
         default: "enabled"
     }
 
     ' Advance to Next
     values = [
-        { title: "Enabled", EnumValue: "enabled",  },
-        { title: "Disabled", EnumValue: "disabled" }
+        { title: tr("Enabled"), EnumValue: "enabled",  },
+        { title: tr("Disabled"), EnumValue: "disabled" }
     ]
     obj.Prefs["advanceToNextItem"] = {
         values: values,
-        heading: "Display the next available TV episode after watching",
+        heading: tr("Display the next available TV episode after watching"),
         default: "enabled"
     }
 
     ' Transcoder version. We'll default to the "universal" transcoder, but
     ' there's also a server version check.
     transcoder_version = [
-        { title: "Legacy", EnumValue: "classic", ShortDescriptionLine2: "Use the older, legacy transcoder." },
-        { title: "Universal", EnumValue: "universal" }
+        { title: tr("Legacy"), EnumValue: "classic", ShortDescriptionLine2: tr("Use the older, legacy transcoder.") },
+        { title: tr("Universal"), EnumValue: "universal" }
     ]
     obj.Prefs["transcoder_version"] = {
         values: transcoder_version,
-        heading: "Transcoder version",
+        heading: tr("Transcoder version"),
         default: "universal"
     }
 
     ' Continuous play
     continuous_play = [
-        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Experimental" },
-        { title: "Disabled", EnumValue: "0" }
+        { title: tr("Enabled"), EnumValue: "1", ShortDescriptionLine2: tr("Experimental") },
+        { title: tr("Disabled"), EnumValue: "0" }
     ]
     obj.Prefs["continuous_play"] = {
         values: continuous_play,
-        heading: "Automatically start playing the next video",
+        heading: tr("Automatically start playing the next video"),
         default: "0"
     }
 
     ' legacy remote with no back button
     legacy_remote = [
-        { title: "No", enumvalue: "0", ShortDescriptionLine2: "Remote includes a Back Button" },
-        { title: "Yes", EnumValue: "1", ShortDescriptionLine2: "Remote has no Back Button" },
+        { title: tr("No"), enumvalue: "0", ShortDescriptionLine2: tr("Remote includes a Back Button") },
+        { title: tr("Yes"), EnumValue: "1", ShortDescriptionLine2: tr("Remote has no Back Button") },
     ]
     obj.Prefs["legacy_remote"] = {
         values: legacy_remote,
-        heading: "Are you using a remote without a physical Back Button?",
+        heading: tr("Are you using a remote without a physical Back Button?"),
         default: "0"
     }
 
 
     ' Continuous+shuffle play
     shuffle_play = [
-        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Very Experimental" },
-        { title: "Disabled", EnumValue: "0" }
+        { title: tr("Enabled"), EnumValue: "1", ShortDescriptionLine2: tr("Very Experimental") },
+        { title: tr("Disabled"), EnumValue: "0" }
     ]
     obj.Prefs["shuffle_play"] = {
         values: shuffle_play,
-        heading: "Continuous Play + Shuffle",
+        heading: tr("Continuous Play + Shuffle"),
         default: "0"
     }
 
@@ -1103,59 +1103,59 @@ Function createAdvancedPrefsScreen(viewController) As Object
     levels = [
         { title: "Level 4.0 (Supported)", EnumValue: "40" },
         { title: "Level 4.1 (Supported)", EnumValue: "41" },
-        { title: "Level 4.2", EnumValue: "42", ShortDescriptionLine2: "This level may not be supported well." },
-        { title: "Level 5.0", EnumValue: "50", ShortDescriptionLine2: "This level may not be supported well." },
-        { title: "Level 5.1", EnumValue: "51", ShortDescriptionLine2: "This level may not be supported well." }
+        { title: "Level 4.2", EnumValue: "42", ShortDescriptionLine2: tr("This level may not be supported well.") },
+        { title: "Level 5.0", EnumValue: "50", ShortDescriptionLine2: tr("This level may not be supported well.") },
+        { title: "Level 5.1", EnumValue: "51", ShortDescriptionLine2: tr("This level may not be supported well.") }
     ]
     obj.Prefs["level"] = {
         values: levels,
-        heading: "Use specific H264 level. Up to 4.1 is officially supported.",
+        heading: tr("Use specific H264 level. Up to 4.1 is officially supported."),
         default: "41"
     }
 
     ' HLS seconds per segment
     lengths = [
-        { title: "Automatic", EnumValue: "auto", ShortDescriptionLine2: "Chooses based on quality." },
-        { title: "4 seconds", EnumValue: "4" },
-        { title: "10 seconds", EnumValue: "10" }
+        { title: tr("Automatic"), EnumValue: "auto", ShortDescriptionLine2: tr("Chooses based on quality.") },
+        { title: tr("4 seconds"), EnumValue: "4" },
+        { title: tr("10 seconds"), EnumValue: "10" }
     ]
     obj.Prefs["segment_length"] = {
         values: lengths,
-        heading: "Seconds per HLS segment. Longer segments may load faster.",
+        heading: tr("Seconds per HLS segment. Longer segments may load faster."),
         default: "10"
     }
 
     ' Analytics (opt-out)
     values = [
-        { title: "Enabled", EnumValue: "1" },
-        { title: "Disabled", EnumValue: "0" }
+        { title: tr("Enabled"), EnumValue: "1" },
+        { title: tr("Disabled"), EnumValue: "0" }
     ]
     obj.Prefs["analytics"] = {
         values: values,
-        heading: "Send anonymous usage data to help improve Plex",
+        heading: tr("Send anonymous usage data to help improve Plex"),
         default: "1"
     }
 
     versionArr = GetGlobalAA().Lookup("rokuVersionArr")
     major = versionArr[0]
 
-    obj.Screen.SetHeader("Advanced preferences don't usually need to be changed")
+    obj.Screen.SetHeader(tr("Advanced preferences don't usually need to be changed"))
 
-    obj.AddItem({title: "Confirm Exit", shortDescriptionLine2: "prompt before exiting RARflix"}, "exit_confirmation", obj.GetEnumValue("exit_confirmation"))
-    obj.AddItem({title: "Auto Episode Advance", shortDescriptionLine2: "show episode next up after watching"}, "advanceToNextItem", obj.GetEnumValue("advanceToNextItem"))
-    obj.AddItem({title: "Transcoder"}, "transcoder_version", obj.GetEnumValue("transcoder_version"))
-    obj.AddItem({title: "Continuous Play"}, "continuous_play", obj.GetEnumValue("continuous_play"))
-    obj.AddItem({title: "Shuffle Play"}, "shuffle_play", obj.GetEnumValue("shuffle_play"))
-    obj.AddItem({title: "Legacy Remote"}, "legacy_remote", obj.GetEnumValue("legacy_remote"))
+    obj.AddItem({title: tr("Confirm Exit"), shortDescriptionLine2: tr("prompt before exiting RARflix")}, "exit_confirmation", obj.GetEnumValue("exit_confirmation"))
+    obj.AddItem({title: tr("Auto Episode Advance"), shortDescriptionLine2: tr("show episode next up after watching")}, "advanceToNextItem", obj.GetEnumValue("advanceToNextItem"))
+    obj.AddItem({title: tr("Transcoder")}, "transcoder_version", obj.GetEnumValue("transcoder_version"))
+    obj.AddItem({title: tr("Continuous Play")}, "continuous_play", obj.GetEnumValue("continuous_play"))
+    obj.AddItem({title: tr("Shuffle Play")}, "shuffle_play", obj.GetEnumValue("shuffle_play"))
+    obj.AddItem({title: tr("Legacy Remote")}, "legacy_remote", obj.GetEnumValue("legacy_remote"))
     obj.AddItem({title: "H.264"}, "level", obj.GetEnumValue("level"))
 
     if GetGlobal("legacy1080p") then
-        obj.AddItem({title: "1080p Settings"}, "1080p")
+        obj.AddItem({title: tr("1080p Settings")}, "1080p")
     end if
 
-    obj.AddItem({title: "HLS Segment Length"}, "segment_length", obj.GetEnumValue("segment_length"))
-    obj.AddItem({title: "Analytics"}, "analytics", obj.GetEnumValue("analytics"))
-    obj.AddItem({title: "Close"}, "close")
+    obj.AddItem({title: tr("HLS Segment Length")}, "segment_length", obj.GetEnumValue("segment_length"))
+    obj.AddItem({title: tr("Analytics")}, "analytics", obj.GetEnumValue("analytics"))
+    obj.AddItem({title: tr("Close")}, "close")
 
     return obj
 End Function
@@ -1194,32 +1194,32 @@ Function create1080PreferencesScreen(viewController) As Object
 
     ' Legacy 1080p enabled
     options = [
-        { title: "Enabled", EnumValue: "enabled" },
-        { title: "Disabled", EnumValue: "disabled" }
+        { title: tr("Enabled"), EnumValue: "enabled" },
+        { title: tr("Disabled"), EnumValue: "disabled" }
     ]
     obj.Prefs["legacy1080p"] = {
         values: options,
-        heading: "1080p support (Roku 1 only)",
+        heading: tr("1080p support (Roku 1 only)"),
         default: "disabled"
     }
 
     ' Framerate override
     options = [
-        { title: "auto", EnumValue: "auto" },
+        { title: tr("auto"), EnumValue: "auto" },
         { title: "24", EnumValue: "24" },
         { title: "30", EnumValue: "30" }
     ]
     obj.Prefs["legacy1080pframerate"] = {
         values: options,
-        heading: "Select a frame rate to use with 1080p content.",
+        heading: tr("Select a frame rate to use with 1080p content."),
         default: "auto"
     }
 
-    obj.Screen.SetHeader("1080p settings (Roku 1 only)")
+    obj.Screen.SetHeader(tr("1080p settings (Roku 1 only)"))
 
-    obj.AddItem({title: "1080p Support"}, "legacy1080p", obj.GetEnumValue("legacy1080p"))
-    obj.AddItem({title: "Frame Rate Override"}, "legacy1080pframerate", obj.GetEnumValue("legacy1080pframerate"))
-    obj.AddItem({title: "Close"}, "close")
+    obj.AddItem({title: tr("1080p Support")}, "legacy1080p", obj.GetEnumValue("legacy1080p"))
+    obj.AddItem({title: tr("Frame Rate Override")}, "legacy1080pframerate", obj.GetEnumValue("legacy1080pframerate"))
+    obj.AddItem({title: tr("Close")}, "close")
 
     return obj
 End Function
@@ -1254,47 +1254,47 @@ Function createAudioPrefsScreen(viewController) As Object
 
     ' Loop album playback
     loopalbums = [
-        { title: "Always", EnumValue: "always" },
-        { title: "Never", EnumValue: "never" },
-        { title: "Sometimes", EnumValue: "sometimes", ShortDescriptionLine2: "Loop playback when there are multiple songs." }
+        { title: tr("Always"), EnumValue: "always" },
+        { title: tr("Never"), EnumValue: "never" },
+        { title: tr("Sometimes"), EnumValue: "sometimes", ShortDescriptionLine2: tr("Loop playback when there are multiple songs.") }
     ]
     obj.Prefs["loopalbums"] = {
         values: loopalbums,
-        heading: "Loop when playing music",
+        heading: tr("Loop when playing music"),
         default: "sometimes"
     }
 
     ' Theme music
     theme_music = [
-        { title: "Loop", EnumValue: "loop" },
-        { title: "Play Once", EnumValue: "once" },
-        { title: "Disabled", EnumValue: "disabled" }
+        { title: tr("Loop"), EnumValue: "loop" },
+        { title: tr("Play Once"), EnumValue: "once" },
+        { title: tr("Disabled"), EnumValue: "disabled" }
     ]
     obj.Prefs["theme_music"] = {
         values: theme_music,
-        heading: "Play theme music in the background while browsing",
+        heading: tr("Play theme music in the background while browsing"),
         default: "disabled"
     }
 
     ' 5.1 Support - AC-3
     fiveone = [
-        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Try to copy 5.1 audio streams when transcoding." },
-        { title: "Disabled", EnumValue: "2", ShortDescriptionLine2: "Always use 2-channel audio when transcoding." }
+        { title: tr("Enabled"), EnumValue: "1", ShortDescriptionLine2: tr("Try to copy 5.1 audio streams when transcoding.") },
+        { title: tr("Disabled"), EnumValue: "2", ShortDescriptionLine2: tr("Always use 2-channel audio when transcoding.") }
     ]
     obj.Prefs["fivepointone"] = {
         values: fiveone,
-        heading: "5.1 AC-3 support",
+        heading: tr("5.1 AC-3 support"),
         default: "1"
     }
 
     ' 5.1 Support - DTS
     fiveoneDCA = [
-        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Try to Direct Play DTS in MKVs." },
-        { title: "Disabled", EnumValue: "2", ShortDescriptionLine2: "Never Direct Play DTS." }
+        { title: tr("Enabled"), EnumValue: "1", ShortDescriptionLine2: tr("Try to Direct Play DTS in MKVs.") },
+        { title: tr("Disabled"), EnumValue: "2", ShortDescriptionLine2: tr("Never Direct Play DTS.") }
     ]
     obj.Prefs["fivepointoneDCA"] = {
         values: fiveoneDCA,
-        heading: "5.1 DTS support",
+        heading: tr("5.1 DTS support"),
         default: "1"
     }
 
@@ -1302,30 +1302,30 @@ Function createAudioPrefsScreen(viewController) As Object
     ' default, but if we set a default boost then audio will never be remuxed.
     ' These values are based on iOS.
     values = [
-        { title: "None", EnumValue: "100" },
-        { title: "Small", EnumValue: "175" },
-        { title: "Large", EnumValue: "225" },
-        { title: "Huge", EnumValue: "300" }
+        { title: tr("None"), EnumValue: "100" },
+        { title: tr("Small"), EnumValue: "175" },
+        { title: tr("Large"), EnumValue: "225" },
+        { title: tr("Huge"), EnumValue: "300" }
     ]
     obj.Prefs["audio_boost"] = {
         values: values,
-        heading: "Audio boost for transcoded video",
+        heading: tr("Audio boost for transcoded video"),
         default: "100"
     }
 
-    obj.Screen.SetHeader("Audio Preferences")
+    obj.Screen.SetHeader(tr("Audio Preferences"))
 
-    obj.AddItem({title: "Loop Playback"}, "loopalbums", obj.GetEnumValue("loopalbums"))
-    obj.AddItem({title: "Theme Music"}, "theme_music", obj.GetEnumValue("theme_music"))
+    obj.AddItem({title: tr("Loop Playback")}, "loopalbums", obj.GetEnumValue("loopalbums"))
+    obj.AddItem({title: tr("Theme Music")}, "theme_music", obj.GetEnumValue("theme_music"))
 
     if SupportsSurroundSound(true) then
-        obj.AddItem({title: "5.1 AC-3 Support"}, "fivepointone", obj.GetEnumValue("fivepointone"))
-        obj.AddItem({title: "5.1 DTS Support"}, "fivepointoneDCA", obj.GetEnumValue("fivepointoneDCA"))
+        obj.AddItem({title: tr("5.1 AC-3 Support")}, "fivepointone", obj.GetEnumValue("fivepointone"))
+        obj.AddItem({title: tr("5.1 DTS Support")}, "fivepointoneDCA", obj.GetEnumValue("fivepointoneDCA"))
     end if
 
-    obj.AddItem({title: "Audio Boost"}, "audio_boost", obj.GetEnumValue("audio_boost"))
+    obj.AddItem({title: tr("Audio Boost")}, "audio_boost", obj.GetEnumValue("audio_boost"))
 
-    obj.AddItem({title: "Close"}, "close")
+    obj.AddItem({title: tr("Close")}, "close")
 
     return obj
 End Function
@@ -1361,7 +1361,7 @@ Function createDebugLoggingScreen(viewController) As Object
     obj.RefreshItems = debugRefreshItems
     obj.Logger = GetGlobalAA()["logger"]
 
-    obj.Screen.SetHeader("Logging")
+    obj.Screen.SetHeader(tr("Logging"))
     obj.RefreshItems()
 
     return obj
@@ -1372,7 +1372,7 @@ Sub debugRefreshItems()
     m.Screen.ClearContent()
 
     if m.Logger.Enabled then
-        m.AddItem({title: "Disable Logging"}, "disable")
+        m.AddItem({title: tr("Disable Logging")}, "disable")
 
         if MyPlexManager().IsSignedIn then
             if m.Logger.RemoteLoggingTimer <> invalid then
@@ -1382,18 +1382,18 @@ Sub debugRefreshItems()
                 else
                     extraLabel = ""
                 end if
-                m.AddItem({title: "Remote Logging Enabled" + extraLabel}, "null")
+                m.AddItem({title: tr("Remote Logging Enabled") + extraLabel}, "null")
             else
-                m.AddItem({title: "Enable Remote Logging"}, "remote")
+                m.AddItem({title: tr("Enable Remote Logging")}, "remote")
             end if
         end if
 
-        m.AddItem({title: "Download Logs"}, "download")
+        m.AddItem({title: tr("Download Logs")}, "download")
     else
-        m.AddItem({title: "Enable Logging"}, "enable")
+        m.AddItem({title: tr("Enable Logging")}, "enable")
     end if
 
-    m.AddItem({title: "Close"}, "close")
+    m.AddItem({title: tr("Close")}, "close")
 End Sub
 
 Function prefsDebugHandleMessage(msg) As Boolean
@@ -1442,21 +1442,21 @@ Function createManageServersScreen(viewController) As Object
 
     ' Automatic discovery
     options = [
-        { title: "Enabled", EnumValue: "1" },
-        { title: "Disabled", EnumValue: "0" }
+        { title: tr("Enabled"), EnumValue: "1" },
+        { title: tr("Disabled"), EnumValue: "0" }
     ]
     obj.Prefs["autodiscover"] = {
         values: options,
-        heading: "Automatically discover Plex Media Servers at startup.",
+        heading: tr("Automatically discover Plex Media Servers at startup."),
         default: "1"
     }
 
-    obj.Screen.SetHeader("Manage Plex Media Servers")
+    obj.Screen.SetHeader(tr("Manage Plex Media Servers"))
 
-    obj.AddItem({title: "Add Server Manually"}, "manual")
-    obj.AddItem({title: "Discover Servers"}, "discover")
-    obj.AddItem({title: "Discover at Startup"}, "autodiscover", obj.GetEnumValue("autodiscover"))
-    obj.AddItem({title: "Remove All Servers"}, "removeall")
+    obj.AddItem({title: tr("Add Server Manually")}, "manual")
+    obj.AddItem({title: tr("Discover Servers")}, "discover")
+    obj.AddItem({title: tr("Discover at Startup")}, "autodiscover", obj.GetEnumValue("autodiscover"))
+    obj.AddItem({title: tr("Remove All Servers")}, "removeall")
 
     obj.listOffset = obj.contentArray.Count()
     obj.RefreshServerList(obj.listOffset)
@@ -1533,10 +1533,10 @@ Sub manageRefreshServerList(listOffset,obj=invalid)
 
     servers = ParseRegistryServerList()
     for each server in servers
-        obj.AddItem({title: "Edit " + server.Name + " (" + server.Url + ")"}, "edit")
+        obj.AddItem({title: tr("Edit ") + server.Name + " (" + server.Url + ")"}, "edit")
     next
 
-    obj.AddItem({title: "Close"}, "close")
+    obj.AddItem({title: tr("Close")}, "close")
 End Sub
 
 '*** Edit Server screen ***
@@ -1560,16 +1560,16 @@ Function createEditServerScreen(viewController, server, parentScreen, listOffset
     obj.ParentScreen = parentScreen
     obj.listOffset = listOffset
 
-    obj.AddItem({title: "Edit address",ShortDescriptionLine2: "The address at which this server is located"}, "url", obj.server.Url )
-    obj.AddItem({title: "Edit WOL MAC address",ShortDescriptionLine1:"Wake-on-LAN MAC address",ShortDescriptionLine2: "Activates remote server wake up"}, "mac", GetServerData(obj.server.MachineID,"Mac") )
+    obj.AddItem({title: tr("Edit address"),ShortDescriptionLine2: tr("The address at which this server is located")}, "url", obj.server.Url )
+    obj.AddItem({title: tr("Edit WOL MAC address"),ShortDescriptionLine1:tr("Wake-on-LAN MAC address"),ShortDescriptionLine2: tr("Activates remote server wake up")}, "mac", GetServerData(obj.server.MachineID,"Mac") )
     WOLPass = GetServerData(obj.server.MachineID,"WOLPass")
     if WOLPass = invalid or Len(WOLPass) <> 12 then
-        obj.AddItem({title: "Edit WOL SecureOn Password",ShortDescriptionLine1: "12-Digit hexadecimal password ",ShortDescriptionLine2: "for a Wake-on-LAN request"}, "WOLPass" )
+        obj.AddItem({title: tr("Edit WOL SecureOn Password"),ShortDescriptionLine1: tr("12-Digit hexadecimal password "),ShortDescriptionLine2: tr("for a Wake-on-LAN request")}, "WOLPass" )
     else
-        obj.AddItem({title: "Edit WOL SecureOn Password",ShortDescriptionLine1: "12-Digit hexadecimal password ",ShortDescriptionLine2: "for a Wake-on-LAN request"}, "WOLPass", "************" )
+        obj.AddItem({title: tr("Edit WOL SecureOn Password"),ShortDescriptionLine1: tr("12-Digit hexadecimal password "),ShortDescriptionLine2: tr("for a Wake-on-LAN request")}, "WOLPass", "************" )
     end if
-    obj.AddItem({title: "Remove " + server.Name }, "remove" )
-    obj.AddItem({title: "Close"}, "close")
+    obj.AddItem({title: tr("Remove ") + server.Name }, "remove" )
+    obj.AddItem({title: tr("Close")}, "close")
       
     return obj
 End Function
@@ -1612,10 +1612,10 @@ Function prefsEditServerHandleMessage(msg) As Boolean
                 screen.Show()
             else if command = "remove" then
                 dialog = createBaseDialog()    
-                dialog.Title = "Confirm Remove"
-                dialog.Text = "Are you sure you want to remove this server?"
-                dialog.SetButton("remove", "Remove Server")
-                dialog.SetButton("close", "Cancel")
+                dialog.Title = tr("Confirm Remove")
+                dialog.Text = tr("Are you sure you want to remove this server?")
+                dialog.SetButton("remove", tr("Remove Server"))
+                dialog.SetButton("close", tr("Cancel"))
                 dialog.HandleButton = prefsRemoveServerHandleDialogButton    
                 dialog.ParentScreen = m
                 dialog.index = msg.GetIndex()
@@ -1653,16 +1653,16 @@ Function createVideoOptionsScreen(item, viewController, continuousPlay, shuffleP
 
     ' Transcoding vs. direct play
     options = [
-        { title: "Automatic", EnumValue: "0" },
-        { title: "Direct Play", EnumValue: "1" },
-        { title: "Direct Play w/ Fallback", EnumValue: "2" },
-        { title: "Direct Stream/Transcode", EnumValue: "3" },
-        { title: "Transcode", EnumValue: "4" }
+        { title: tr("Automatic"), EnumValue: "0" },
+        { title: tr("Direct Play"), EnumValue: "1" },
+        { title: tr("Direct Play w/ Fallback"), EnumValue: "2" },
+        { title: tr("Direct Stream/Transcode"), EnumValue: "3" },
+        { title: tr("Transcode"), EnumValue: "4" }
     ]
     obj.Prefs["playback"] = {
         values: options,
-        label: "Transcoding",
-        heading: "Should this video be transcoded or use Direct Play?",
+        label: tr("Transcoding"),
+        heading: tr("Should this video be transcoded or use Direct Play?"),
         default: RegRead("directplay", "preferences", "0")
     }
 
@@ -1680,8 +1680,8 @@ Function createVideoOptionsScreen(item, viewController, continuousPlay, shuffleP
     ]
     obj.Prefs["quality"] = {
         values: qualities,
-        label: "Quality",
-        heading: "Higher settings require more bandwidth and may buffer",
+        label: tr("Quality"),
+        heading: tr("Higher settings require more bandwidth and may buffer"),
         default: tostr(GetQualityForItem(item))
     }
 
@@ -1690,7 +1690,7 @@ Function createVideoOptionsScreen(item, viewController, continuousPlay, shuffleP
     defaultAudio = ""
     defaultSubtitle = ""
 
-    subtitleStreams.Push({ title: "No Subtitles", EnumValue: "" })
+    subtitleStreams.Push({ title: tr("No Subtitles"), EnumValue: "" })
 
     if (item.server.owned OR item.server.SupportsMultiuser) AND item.preferredMediaItem <> invalid AND item.preferredMediaItem.preferredPart <> invalid AND item.preferredMediaItem.preferredPart.Id <> invalid then
         for each stream in item.preferredMediaItem.preferredPart.streams
@@ -1741,8 +1741,8 @@ Function createVideoOptionsScreen(item, viewController, continuousPlay, shuffleP
     if audioStreams.Count() > 0 then
         obj.Prefs["audio"] = {
             values: audioStreams,
-            label: "Audio Stream",
-            heading: "Select an audio stream",
+            label: tr("Audio Stream"),
+            heading: tr("Select an audio stream"),
             default: defaultAudio
         }
     end if
@@ -1752,8 +1752,8 @@ Function createVideoOptionsScreen(item, viewController, continuousPlay, shuffleP
     if subtitleStreams.Count() > 1 then
         obj.Prefs["subtitles"] = {
             values: subtitleStreams,
-            label: "Subtitle Stream",
-            heading: "Select a subtitle stream",
+            label: tr("Subtitle Stream"),
+            heading: tr("Select a subtitle stream"),
             default: defaultSubtitle
         }
     end if
@@ -1770,19 +1770,19 @@ Function createVideoOptionsScreen(item, viewController, continuousPlay, shuffleP
     end if
 
     advancedToNext = (RegRead("advanceToNextItem", "preferences", "enabled") = "enabled")
-    playBack_types = [{ title: "Default",    EnumValue: "default", ShortDescriptionLine2: "Single Video Playback" }]
+    playBack_types = [{ title: tr("Default"),    EnumValue: "default", ShortDescriptionLine2: tr("Single Video Playback") }]
     if advancedToNext then 
-        playBack_types.Push({ title: "Continuous", EnumValue: "continuous_play", ShortDescriptionLine2: "Automatically play the next video" + chr(10) + "* Next available Episode if applicable" })
-        playBack_types.Push({ title: "Continuous [this context]", EnumValue: "continuous_context_play", ShortDescriptionLine2: "Automatically play the next video" + chr(10) + " * Use the existing context "})
+        playBack_types.Push({ title: tr("Continuous"), EnumValue: "continuous_play", ShortDescriptionLine2: tr("Automatically play the next video") + chr(10) + tr("* Next available Episode if applicable") })
+        playBack_types.Push({ title: tr("Continuous [this context]"), EnumValue: "continuous_context_play", ShortDescriptionLine2: tr("Automatically play the next video") + chr(10) + tr(" * Use the existing context ")})
     else 
         ' if one hasn't enable advancedToNext - then we don't need two Continuous options ( continuous will function the original way ) + it has a different desctiption
-        playBack_types.Push({ title: "Continuous", EnumValue: "continuous_play", ShortDescriptionLine2: "Automatically play the next video" + chr(10) + " * Use the existing context " })
+        playBack_types.Push({ title: tr("Continuous"), EnumValue: "continuous_play", ShortDescriptionLine2: tr("Automatically play the next video") + chr(10) + tr(" * Use the existing context ") })
     end if
-    playBack_types.Push({ title: "Shuffle", EnumValue: "shuffle_play", ShortDescriptionLine2: "Shuffle+Automatically play the next video" + chr(10) + " * Use the existing context " })
+    playBack_types.Push({ title: tr("Shuffle"), EnumValue: "shuffle_play", ShortDescriptionLine2: tr("Shuffle+Automatically play the next video") + chr(10) + tr(" * Use the existing context ") })
     obj.Prefs["playBack_type"] = {
         values: playBack_types,
-        label: "Playback",
-        heading: "Playback: default, play continuous, play shuffle or play this context continuous",
+        label: tr("Playback"),
+        heading: tr("Playback: default, play continuous, play shuffle or play this context continuous"),
         default: defaultplayBack
     }
 
@@ -1816,13 +1816,13 @@ Function createVideoOptionsScreen(item, viewController, continuousPlay, shuffleP
     if mediaOptions.Count() > 1 then
         obj.Prefs["media"] = {
             values: mediaOptions,
-            label: "Media",
-            heading: "Select a source",
+            label: tr("Media"),
+            heading: tr("Select a source"),
             default: defaultMedia
         }
     end if
 
-    obj.Screen.SetHeader("Video playback options")
+    obj.Screen.SetHeader(tr("Video playback options"))
 
     possiblePrefs = ["playback", "playBack_type", "quality", "audio", "subtitles", "media"]
     for each key in possiblePrefs
@@ -1843,7 +1843,7 @@ Function createVideoOptionsScreen(item, viewController, continuousPlay, shuffleP
         end if
     next
 
-    obj.AddItem({title: "Close"}, "close")
+    obj.AddItem({title: tr("Close")}, "close")
 
     return obj
 End Function
@@ -1921,25 +1921,25 @@ Function createRemoteControlPrefsScreen(viewController) As Object
 
     ' Enabled
     options = [
-        { title: "Enabled", EnumValue: "1" },
-        { title: "Disabled", EnumValue: "0" }
+        { title: tr("Enabled"), EnumValue: "1" },
+        { title: tr("Disabled"), EnumValue: "0" }
     ]
     obj.Prefs["remotecontrol"] = {
         values: options,
-        heading: "Allow other clients to control this Roku.",
+        heading: tr("Allow other clients to control this Roku."),
         default: "1"
     }
 
     obj.Prefs["player_name"] = {
-        heading: "A name that will identify this Roku on your remote controls",
+        heading: tr("A name that will identify this Roku on your remote controls"),
         default: GetGlobalAA().Lookup("rokuModel")
     }
 
-    obj.Screen.SetHeader("Remote control preferences")
+    obj.Screen.SetHeader(tr("Remote control preferences"))
 
-    obj.AddItem({title: "Remote Control"}, "remotecontrol", obj.GetEnumValue("remotecontrol"))
-    obj.AddItem({title: "Name"}, "player_name", obj.GetPrefValue("player_name"))
-    obj.AddItem({title: "Close"}, "close")
+    obj.AddItem({title: tr("Remote Control")}, "remotecontrol", obj.GetEnumValue("remotecontrol"))
+    obj.AddItem({title: tr("Name")}, "player_name", obj.GetPrefValue("player_name"))
+    obj.AddItem({title: tr("Close")}, "close")
 
     return obj
 End Function
@@ -1978,64 +1978,64 @@ Function createHomeScreenPrefsScreen(viewController) As Object
 
     ' Default view for queue and recommendations
     values = [
-        { title: "All", EnumValue: "all" },
-        { title: "Unwatched", EnumValue: "unwatched" },
-        { title: "Watched", EnumValue: "watched" },
-        { title: "Hidden", EnumValue: "hidden" }
+        { title: tr("All"), EnumValue: "all" },
+        { title: tr("Unwatched"), EnumValue: "unwatched" },
+        { title: tr("Watched"), EnumValue: "watched" },
+        { title: tr("Hidden"), EnumValue: "hidden" }
     ]
     obj.Prefs["playlist_view_queue"] = {
         values: values,
-        heading: "Default view for Queue on the home screen",
+        heading: tr("Default view for Queue on the home screen"),
         default: "unwatched"
     }
     obj.Prefs["playlist_view_recommendations"] = {
         values: values,
-        heading: "Default view for Recommendations on the home screen",
+        heading: tr("Default view for Recommendations on the home screen"),
         default: "unwatched"
     }
 
     ' Visibility for on deck and recently added
     valuesShared = [
-        { title: "Enabled", EnumValue: "" },
-        { title: "Enabled (exclude shared libraries)", EnumValue: "owned" },
-        { title: "Hidden", EnumValue: "hidden" }
+        { title: tr("Enabled"), EnumValue: "" },
+        { title: tr("Enabled (exclude shared libraries)"), EnumValue: "owned" },
+        { title: tr("Hidden"), EnumValue: "hidden" }
     ]
     values = [
-        { title: "Enabled", EnumValue: "" },
-        { title: "Hidden", EnumValue: "hidden" }
+        { title: tr("Enabled"), EnumValue: "" },
+        { title: tr("Hidden"), EnumValue: "hidden" }
     ]
     obj.Prefs["row_visibility_ondeck"] = {
         values: valuesShared,
-        heading: "Show On Deck items on the home screen",
+        heading: tr("Show On Deck items on the home screen"),
         default: ""
     }
     obj.Prefs["row_visibility_recentlyadded"] = {
         values: valuesShared,
-        heading: "Show recently added items on the home screen",
+        heading: tr("Show recently added items on the home screen"),
         default: ""
     }
     obj.Prefs["row_visibility_channels"] = {
         values: values,
-        heading: "Show channels on the home screen",
+        heading: tr("Show channels on the home screen"),
         default: ""
     }
     obj.Prefs["row_visibility_now_playing"] = {
         values: values,
-        heading: "Show Now Playing on the home screen",
+        heading: tr("Show Now Playing on the home screen"),
         default: ""
     }
 
     ' Home screen rows that can be reordered
     values = [
-        { title: "Channels", key: "channels" },
-        { title: "Library Sections", key: "sections" },
-        { title: "On Deck", key: "on_deck" },
-        { title: "Now Playing", key: "now_playing" },
-        { title: "Recently Added", key: "recently_added" },
-        { title: "Queue", key: "queue" },
-        { title: "Recommendations", key: "recommendations" },
-        { title: "Shared Library Sections", key: "shared_sections" },
-        { title: "Miscellaneous", key: "misc" }
+        { title: tr("Channels"), key: "channels" },
+        { title: tr("Library Sections"), key: "sections" },
+        { title: tr("On Deck"), key: "on_deck" },
+        { title: tr("Now Playing"), key: "now_playing" },
+        { title: tr("Recently Added"), key: "recently_added" },
+        { title: tr("Queue"), key: "queue" },
+        { title: tr("Recommendations"), key: "recommendations" },
+        { title: tr("Shared Library Sections"), key: "shared_sections" },
+        { title: tr("Miscellaneous"), key: "misc" }
     ]
     obj.Prefs["home_row_order"] = {
         values: values,
@@ -2044,52 +2044,52 @@ Function createHomeScreenPrefsScreen(viewController) As Object
 
     '{ title: "Zoom", EnumValue: "zoom-to-fill", ShortDescriptionLine2: "zoom image to fill boundary" }, NO ONE wants this
     display_modes = [
-        { title: "Photo [default]", EnumValue: "photo-fit", ShortDescriptionLine2: "Default" },
-        { title: "Fit", EnumValue: "scale-to-fit", ShortDescriptionLine2: "scaled to fit"  },
-        { title: "Fill", EnumValue: "scale-to-fill", ShortDescriptionLine2: "stretch image to fill boundary" },
+        { title: tr("Photo [default]"), EnumValue: "photo-fit", ShortDescriptionLine2: tr("Default") },
+        { title: tr("Fit"), EnumValue: "scale-to-fit", ShortDescriptionLine2: tr("scaled to fit")  },
+        { title: tr("Fill"), EnumValue: "scale-to-fill", ShortDescriptionLine2: tr("stretch image to fill boundary") },
     ]
     obj.Prefs["rf_home_displaymode"] = {
         values: display_modes,
-        heading: "How should images be displayed on the home screen (channel restart required)",
+        heading: tr("How should images be displayed on the home screen (channel restart required)"),
         default: "photo-fit"
     }
 
     ' Home Screen clock
     rf_hs_clock_prefs = [
-        { title: "12 Hour", EnumValue: "enabled", ShortDescriptionLine2: "Show clock on Home Screen" },
-        { title: "24 Hour", EnumValue: "24hour", ShortDescriptionLine2: "Show clock on Home Screen" },
-        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Show clock on Home Screen" },
+        { title: tr("12 Hour"), EnumValue: "enabled", ShortDescriptionLine2: "Show clock on Home Screen" },
+        { title: tr("24 Hour"), EnumValue: "24hour", ShortDescriptionLine2: "Show clock on Home Screen" },
+        { title: tr("Disabled"), EnumValue: "disabled", ShortDescriptionLine2: "Show clock on Home Screen" },
     ]
     obj.Prefs["rf_hs_clock"] = {
         values: rf_hs_clock_prefs,
-        heading: "Time",
+        heading: tr("Time"),
         default: "enabled"
     }
 
     ' Home Screen clock
     rf_hs_date_prefs = [
-        { title: "Long Date", EnumValue: "enabled", ShortDescriptionLine2: "Date on Home Screen" },
-        { title: "Short Date", EnumValue: "short-date", ShortDescriptionLine2: "Date on Home Screen" },
-        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Date on Home Screen" },
+        { title: tr("Long Date"), EnumValue: "enabled", ShortDescriptionLine2: tr("Date on Home Screen") },
+        { title: tr("Short Date"), EnumValue: "short-date", ShortDescriptionLine2: tr("Date on Home Screen") },
+        { title: tr("Disabled"), EnumValue: "disabled", ShortDescriptionLine2: tr("Date on Home Screen") },
     ]
     obj.Prefs["rf_hs_date"] = {
         values: rf_hs_date_prefs,
-        heading: "Date",
+        heading: tr("Date"),
         default: "enabled"
     }
 
-    obj.Screen.SetHeader("Change the appearance of the home screen")
-    obj.AddItem({title: "Reorder Home Rows", ShortDescriptionLine2: "A restart of the Channel is required"}, "home_row_order")
-    obj.AddItem({title: "Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_home_displaymode", obj.GetEnumValue("rf_home_displaymode"))
-    obj.AddItem({title: "Queue"}, "playlist_view_queue", obj.GetEnumValue("playlist_view_queue"))
-    obj.AddItem({title: "Recommendations"}, "playlist_view_recommendations", obj.GetEnumValue("playlist_view_recommendations"))
-    obj.AddItem({title: "On Deck"}, "row_visibility_ondeck", obj.GetEnumValue("row_visibility_ondeck"))
-    obj.AddItem({title: "Recently Added"}, "row_visibility_recentlyadded", obj.GetEnumValue("row_visibility_recentlyadded"))
-    obj.AddItem({title: "Now Playing", ShortDescriptionLine2: "rarflix pref"}, "row_visibility_now_playing", obj.GetEnumValue("row_visibility_now_playing"))
-    obj.AddItem({title: "Channels"}, "row_visibility_channels", obj.GetEnumValue("row_visibility_channels"))
-    obj.AddItem({title: "Clock"}, "rf_hs_clock", obj.GetEnumValue("rf_hs_clock"))
-    obj.AddItem({title: "Date"}, "rf_hs_date", obj.GetEnumValue("rf_hs_date"))
-    obj.AddItem({title: "Close"}, "close")
+    obj.Screen.SetHeader(tr("Change the appearance of the home screen"))
+    obj.AddItem({title: tr("Reorder Home Rows"), ShortDescriptionLine2: tr("A restart of the Channel is required")}, "home_row_order")
+    obj.AddItem({title: tr("Display Mode"), ShortDescriptionLine2: tr("Stretch or Fit images to fill the focus box")}, "rf_home_displaymode", obj.GetEnumValue("rf_home_displaymode"))
+    obj.AddItem({title: tr("Queue")}, "playlist_view_queue", obj.GetEnumValue("playlist_view_queue"))
+    obj.AddItem({title: tr("Recommendations")}, "playlist_view_recommendations", obj.GetEnumValue("playlist_view_recommendations"))
+    obj.AddItem({title: tr("On Deck")}, "row_visibility_ondeck", obj.GetEnumValue("row_visibility_ondeck"))
+    obj.AddItem({title: tr("Recently Added")}, "row_visibility_recentlyadded", obj.GetEnumValue("row_visibility_recentlyadded"))
+    obj.AddItem({title: tr("Now Playing"), ShortDescriptionLine2: "rarflix pref"}, "row_visibility_now_playing", obj.GetEnumValue("row_visibility_now_playing"))
+    obj.AddItem({title: tr("Channels")}, "row_visibility_channels", obj.GetEnumValue("row_visibility_channels"))
+    obj.AddItem({title: tr("Clock")}, "rf_hs_clock", obj.GetEnumValue("rf_hs_clock"))
+    obj.AddItem({title: tr("Date")}, "rf_hs_date", obj.GetEnumValue("rf_hs_date"))
+    obj.AddItem({title: tr("Close")}, "close")
 
     return obj
 End Function
@@ -2126,23 +2126,23 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
 
     ' Grids or posters for TV series?
     values = [
-        { title: "Grid", EnumValue: "1" },
-        { title: "Poster", EnumValue: "" }
+        { title: tr("Grid"), EnumValue: "1" },
+        { title: tr("Poster"), EnumValue: "" }
     ]
     obj.Prefs["use_grid_for_series"] = {
         values: values,
-        heading: "Which screen type should be used for TV series?",
+        heading: tr("Which screen type should be used for TV series?"),
         default: ""
     }
 
     ' Episodic Poster Screen for TV Series: 4x3 or 16x9
     values = [
-        { title: "16x9 Widescreen", EnumValue: "flat-episodic-16x9" },
-        { title: "4x3 Standard", EnumValue: "flat-episodic" }
+        { title: tr("16x9 Widescreen"), EnumValue: "flat-episodic-16x9" },
+        { title: tr("4x3 Standard"), EnumValue: "flat-episodic" }
     ]
     obj.Prefs["rf_episode_episodic_style"] = {
         values: values,
-        heading: "Size of episode images",
+        heading: tr("Size of episode images"),
         default: "flat-episodic-16x9"
     }
 
@@ -2162,76 +2162,76 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
     ' Prefer Grid or Poster view for most?
 
     values = [
-        { title: "Title", EnumValue: "titleSort:asc",  ShortDescriptionLine2: "Sort by Title",  },
-        { title: "Date Added", EnumValue: "addedAt:desc",  ShortDescriptionLine2: "sort by Date Added" },
-        { title: "Date Released/Taken", EnumValue: "originallyAvailableAt:desc",  ShortDescriptionLine2: "sort by Date Released/Taken" },
+        { title: tr("Title"), EnumValue: "titleSort:asc",  ShortDescriptionLine2: tr("Sort by Title"),  },
+        { title: tr("Date Added"), EnumValue: "addedAt:desc",  ShortDescriptionLine2: tr("Sort by Date Added") },
+        { title: tr("Date Released/Taken"), EnumValue: "originallyAvailableAt:desc",  ShortDescriptionLine2: tr("Sort by Date Released/Taken") },
     ]
     obj.Prefs["section_sort"] = {
         values: values,
-        heading: "Sort Items (when not specifically sorted)",
+        heading: tr("Sort Items (when not specifically sorted)"),
         default: "titleSort:asc"
     }
 
     rf_poster_grid = [
-        { title: "Grid", EnumValue: "grid", ShortDescriptionLine2: "Prefer FULL grid when viewing items"  },
-        { title: "Poster", EnumValue: "poster", ShortDescriptionLine2: "Prefer Poster (one row) when viewing items"  },
+        { title: tr("Grid"), EnumValue: "grid", ShortDescriptionLine2: tr("Prefer FULL grid when viewing items")  },
+        { title: tr("Poster"), EnumValue: "poster", ShortDescriptionLine2: tr("Prefer Poster (one row) when viewing items")  },
 
 
     ]
     obj.Prefs["rf_poster_grid"] = {
         values: rf_poster_grid,
-        heading: "Which screen type should be used for Movies & Other content?",
+        heading: tr("Which screen type should be used for Movies & Other content?"),
         default: "grid"
     }
 
     ' Prefer Grid or Poster view for most?
     rf_grid_style = [
-        { title: "Portrait", EnumValue: "flat-movie", ShortDescriptionLine2: "Grid 5x2 - Short Portrait"  },
-        { title: "Square", EnumValue: "flat-square", ShortDescriptionLine2: "Grid 7x3 - Square" },
+        { title: tr("Portrait"), EnumValue: "flat-movie", ShortDescriptionLine2: tr("Grid 5x2 - Short Portrait")  },
+        { title: tr("Square"), EnumValue: "flat-square", ShortDescriptionLine2: tr("Grid 7x3 - Square") },
     ]
 
     ' We don't want to show the Portrait options for SD.. it's even short than flat-movie - odd
     if GetGlobal("IsHD") = true then 
-        rf_grid_style.Unshift({ title: "Portrait (tall)", EnumValue: "flat-portrait", ShortDescriptionLine2: "Grid 5x2 - Tall Portrait"  })
+        rf_grid_style.Unshift({ title: tr("Portrait (tall)"), EnumValue: "flat-portrait", ShortDescriptionLine2: tr("Grid 5x2 - Tall Portrait")  })
     end if
 
     obj.Prefs["rf_grid_style"] = {
         values: rf_grid_style,
-        heading: "Style and Size of the Grid",
+        heading: tr("Style and Size of the Grid"),
         default: "flat-movie"
     }
     ' Grid Descriptions Pop Out
     rf_grid_description = [
-        { title: "Enabled", EnumValue: "enabled"  },
-        { title: "Disabled", EnumValue: "disabled"  },
+        { title: tr("Enabled"), EnumValue: "enabled"  },
+        { title: tr("Disabled"), EnumValue: "disabled"  },
 
     ]
     obj.Prefs["rf_grid_description"] = {
         values: rf_grid_description,
-        heading: "Grid Pop Out Description",
+        heading: tr("Grid Pop Out Description"),
         default: "enabled"
     }
 
     ' Hide the header text for Rows on the GridScreen ( full grid )
     values = [
-        { title: "Enabled", EnumValue: "enabled"  },
-        { title: "Disabled", EnumValue: "disabled"  },
+        { title: tr("Enabled"), EnumValue: "enabled"  },
+        { title: tr("Disabled"), EnumValue: "disabled"  },
 
     ]
     obj.Prefs["rf_fullgrid_hidetext"] = {
         values: values
-        heading: "Hide text above each row in the Full Grid",
+        heading: tr("Hide text above each row in the Full Grid"),
         default: "disabled"
     }
 
     values = [
-        { title: "Enabled", EnumValue: "enabled"  },
-        { title: "Disabled", EnumValue: "disabled"  },
+        { title: tr("Enabled"), EnumValue: "enabled"  },
+        { title: tr("Disabled"), EnumValue: "disabled"  },
 
     ]
     obj.Prefs["rf_fullgrid_spacer"] = {
         values: values
-        heading: "Insert a blank poster between the first and last item in a row",
+        heading: tr("Insert a blank poster between the first and last item in a row"),
         default: "disabled"
     }
 

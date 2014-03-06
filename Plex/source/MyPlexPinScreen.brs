@@ -9,15 +9,15 @@ Function createMyPlexPinScreen(viewController As Object) As Object
     screen = CreateObject("roCodeRegistrationScreen")
     screen.SetMessagePort(obj.Port)
 
-    screen.SetTitle("Connect myPlex account")
-    screen.AddParagraph("To access your shared sections and queue, link your Roku player to your myPlex account.")
+    screen.SetTitle(tr("Connect myPlex account"))
+    screen.AddParagraph(tr("To access your shared sections and queue, link your Roku player to your myPlex account."))
     screen.AddParagraph(" ")
-    screen.AddFocalText("From your computer,", "spacing-dense")
-    screen.AddFocalText("go to plex.tv/pin", "spacing-dense")
-    screen.AddFocalText("and enter this code:", "spacing-dense")
-    screen.SetRegistrationCode("retrieving code...")
+    screen.AddFocalText(tr("From your computer,"), "spacing-dense")
+    screen.AddFocalText(tr("go to plex.tv/pin"), "spacing-dense")
+    screen.AddFocalText(tr("and enter this code:"), "spacing-dense")
+    screen.SetRegistrationCode(tr("retrieving code..."))
     screen.AddParagraph(" ")
-    screen.AddParagraph("This screen will automatically update once your Roku player has been linked to your myPlex account.")
+    screen.AddParagraph(tr("This screen will automatically update once your Roku player has been linked to your myPlex account."))
 
     screen.AddButton(0, "get a new code")
     screen.AddButton(1, "back")
@@ -83,8 +83,8 @@ Sub pinOnUrlEvent(msg, requestContext)
         if msg.GetResponseCode() <> 201 then
             Debug("Request for new PIN failed: " + tostr(msg.GetResponseCode()) + " - " + tostr(msg.GetFailureReason()))
             dialog = createBaseDialog()
-            dialog.Title = "Server unavailable"
-            dialog.Text = "The myPlex server couldn't be reached, please try again later."
+            dialog.Title = tr("Server unavailable")
+            dialog.Text = tr("The myPlex server couldn't be reached, please try again later.")
             dialog.Show()
         else
             m.pollUrl = msg.GetResponseHeaders().Location
