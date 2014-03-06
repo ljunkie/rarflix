@@ -164,12 +164,18 @@ Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, ite
                     headerRow.Push(rawItems[index])
                 end if
             end for
-            ReorderItemsByKeyPriority(headerRow, RegRead("section_row_order", "preferences", ""))
         end if
 
-        ' Put Filters before any others
+        ' add the filter item to the header row - it will be re-ordered based on prefs
         filterItem = createSectionFilterItem(loader.server,loader.sourceurl,item.type)
-        if filterItem <> invalid then headerRow.Unshift(filterItem)
+        if filterItem <> invalid then 
+            ' filter item is always available on the full grid - otherwise it can be hidden
+            if item.defaultFullGrid = true or RegRead("rf_hide_" + filterItem.key, "preferences", "show") = "show" then 
+                headerRow.Unshift(filterItem)
+            end if
+        end if
+
+        ReorderItemsByKeyPriority(headerRow, RegRead("section_row_order", "preferences", ""))
         loader.hasHeaderRow = true
     end if
 

@@ -145,19 +145,22 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
     ReorderItemsByKeyPriority(loader.contentArray, RegRead("section_row_order", "preferences", ""))
 
     ' LJUNKIE - Special Header Row - will show the sub sections for a section ( used for the full grid view )
-    ' TOD: toggle this? I don't think it's needed now as this row (0) is "hidden" - we focus to row (1)
     if item <> invalid then 
         if loader.sourceurl <> invalid and item <> invalid and item.contenttype <> invalid and item.contenttype = "section" then 
             Debug("---- Adding sub sections row for contenttype:" + tostr(item.contenttype))
-            ReorderItemsByKeyPriority(subsecItems, RegRead("section_row_order", "preferences", ""))
 
-            ' add the filter item to the row ( first ). This item, when when viewed & closed will close 
-            ' the gridScreen and recreate a full grid with the chosen filter/sorts
+            ' add the filter item to the row - it will be re-ordered based on prefs
             filterItem = createSectionFilterItem(loader.server,loader.sourceurl,item.type)
             if filterItem <> invalid then 
-                filterItem.forceFilterOnClose = true
-                subsecItems.Unshift(filterItem)
+                ' allow a user to hide this item
+                if RegRead("rf_hide_" + filterItem.key, "preferences", "show") = "show"  then 
+                    filterItem.forceFilterOnClose = true
+                    subsecItems.Unshift(filterItem)
+                end if
             end if
+
+            ' filter item can now be re-ordered
+            ReorderItemsByKeyPriority(subsecItems, RegRead("section_row_order", "preferences", ""))
 
             header_row = CreateObject("roAssociativeArray")
             header_row.content = subsecItems

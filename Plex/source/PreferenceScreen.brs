@@ -2255,6 +2255,7 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
 
     ' Grid rows that can be reordered
     values = [
+        { initialOrder: 0, title: "Filters", key: "_section_filters_" },
         { title: "All Items", key: "all" },
         { title: "On Deck", key: "onDeck" },
         { title: "Recently Added", key: "recentlyAdded" },
