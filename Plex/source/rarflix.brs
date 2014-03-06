@@ -661,6 +661,7 @@ Function createHideRowsPrefsScreen(viewController) As Object
 
     'a little cleaner: if Plex adds/changes rows it will be in PreferenceScreen.brs:createSectionDisplayPrefsScreen()
     PlexRows = [
+        { title: "Filters", key: "_section_filters_" },
         { title: "All Items", key: "all" },
         { title: "On Deck", key: "onDeck" },
         { title: "Recently Added", key: "recentlyAdded" },
