@@ -3,9 +3,9 @@
 ' needle: string or array
 ' *  needle array? then see if any needles exist in haystack
 function inArray(haystack as dynamic,needles = dynamic) as boolean
-    if type(haystack) = "roArray" and haystack.count() > 0 then
+    if (type(haystack) = "roArray" or type(haystack) = "roList") and haystack.count() > 0 then
 
-        if type(needles) = "roString" then
+        if type(needles) = "roString" or type(needles) = "string" then
             new = []
             new.Push(needles)
             needles = new
@@ -19,7 +19,8 @@ function inArray(haystack as dynamic,needles = dynamic) as boolean
             next
         end if
     end if
- return false
+
+    return false
 end function
 
 Function URLEncode(str As String) As String
