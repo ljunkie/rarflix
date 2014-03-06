@@ -499,7 +499,7 @@ Sub ReorderItemsByKeyPriority(items, keys)
         setKeys = []
         incr = 0
         for index = 0 to keys.count()-1
-            orderIndex = index+added
+            orderIndex = index+incr
             for newIndex = 0 to newItems.count()-1
                 if newItems[newIndex] <> invalid then 
                     while newItems[newIndex].initialOrder = orderIndex
