@@ -253,7 +253,7 @@ Function RRmktime( epoch As Integer, localize = 1 as Integer) As String
     else 
         ' 24 hour format
         if hours < 10 then hour = "0" + hours.ToStr()
-        result = hour.ToStr() + ":" + minute
+        result = hour + ":" + minute
     end if
 
     return result
