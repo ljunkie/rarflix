@@ -229,8 +229,8 @@ Function RRmktime( epoch As Integer, localize = 1 as Integer) As String
   
 
     ' this works for 12/24 hour formats
-    minute = minutes.ToStr()
-    if minutes < 10 then minute = "0" + minutes.ToStr()
+    minute = tostr(minutes)
+    if minutes < 10 then minute = "0" + tostr(minutes)
 
     hour = hours
     if toStr(timePref) <> "24hour" then 
@@ -249,11 +249,11 @@ Function RRmktime( epoch As Integer, localize = 1 as Integer) As String
             AMPM = "pm"
         end if
 
-        result = hour.ToStr() + ":" + minute + AMPM
+        result = tostr(hour) + ":" + minute + AMPM
     else 
         ' 24 hour format
-        if hours < 10 then hour = "0" + hours.ToStr()
-        result = hour.ToStr() + ":" + minute
+        if hours < 10 then hour = "0" + tostr(hours)
+        result = tostr(hour) + ":" + minute
     end if
 
     return result
