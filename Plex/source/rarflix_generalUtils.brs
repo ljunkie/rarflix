@@ -214,10 +214,14 @@ function getNextEpisodes(item,details=false)
     if item = invalid or item.server = invalid then return invalid
 
     Debug("getNextEpisode:: for: " + tostr(item.title))
-    episodesKey = item.parentkey + "/children"
-    'TODO(ljunkie) we should never use parentKey. It's a fallback now, but using parent key only yields
-    ' a specific seasons episodes. 
-    if item.grandparentkey <> invalid then episodesKey = item.grandparentkey + "/allLeaves"
+    ' always use the grandParentKey(show) if available -- fallback to parentkey(season)
+    episodesKey = invalid   
+    if item.grandparentkey <> invalid then 
+        episodesKey = item.grandparentkey + "/allLeaves"
+    else if item.parentkey <> invalid then 
+        episodesKey = item.parentkey + "/children"
+    end if
+
     if episodesKey = invalid then return invalid
 
     obj = {}
