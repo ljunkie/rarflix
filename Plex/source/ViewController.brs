@@ -193,7 +193,7 @@ Function vcCreateLockScreen()
     if currentScreen.Activate <> invalid then currentScreen.OldActivate = currentScreen.Activate          
     currentScreen.Activate = lockScreenActivate     'new Activate routine
     m.IsLocked = true   'global when we're locked
-    pinScreen.txtBottom = "RARflix is locked due to inactivity.  Enter PIN Code using direction arrows on your remote control.  Press OK to retry PIN or Back to pick another User."   
+    pinScreen.txtBottom = tr("RARflix is locked due to inactivity.  Enter PIN Code using direction arrows on your remote control.  Press OK to retry PIN or Back to pick another User.")   
     ' create a facade screen below the lock screen -- this will hide closing of screens if one doesn't enter the correct pin ( back button )
     pinScreen.facade = CreateObject("roGridScreen")
     pinScreen.facade.Show()
@@ -1090,7 +1090,7 @@ Sub vcShowReleaseNotes(options = invalid)
         breadcrumbs =  ["",where + " v"+GetGlobal("appVersionStr")]
     else 
         screen = createTextScreen(header + " - www.rarflix.com", invalid , paragraphs, m, true)
-        screen.screen.AddButton(1, "Press OK or Back to Continue")
+        screen.screen.AddButton(1, tr("Press OK or Back to Continue"))
         breadcrumbs =  [where,"v"+GetGlobal("appVersionStr")]
     end if
 

@@ -2481,9 +2481,9 @@ End Function
 Function getCurrentMyPlexLabel() As String
     myplex = MyPlexManager()
     if myplex.IsSignedIn then
-        return "Disconnect myPlex account (" + myplex.EmailAddress + ")"
+        return tr("Disconnect myPlex account (") + myplex.EmailAddress + ")"
     else
-        return "Connect myPlex account"
+        return tr("Connect myPlex account")
     end if
 End Function
 

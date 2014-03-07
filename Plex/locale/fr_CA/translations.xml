@@ -2,8 +2,14 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
     <file datatype="x-brs" original="source/ViewController.brs" source-language="en-US" target-language="fr-CA">
         <body>
-            <!--Insert Translations rows here similar to: <trans-unit id="0"><source>Select the style for the analog clock</source><target>Wählen Sie den Analog Clock Style</target></trans-unit>-->
-        </body>
+			<trans-unit id="0">
+                <source>RARflix is locked due to inactivity.  Enter PIN Code using direction arrows on your remote control.  Press OK to retry PIN or Back to pick another User.</source>
+                <target>RARflix est vérouiller pour cause d'inactivité.  Entrez le code PIN en utilisant les flèches de la télécommande.  Appuyez sur OK pour valider le code PIN ou sur RETOUR pour choisir un autre utilisateur.</target>
+            </trans-unit>
+			<trans-unit id="1">
+                <source>Press OK or Back to Continue</source>
+                <target>Appuyez sur OK ou RETOUR pour Continuer</target>
+            </trans-unit>        </body>
     </file>
     <file datatype="x-brs" original="source/UserSelectionScreen.brs" source-language="en-US" target-language="fr-CA">
         <body>
@@ -14,39 +20,39 @@
         <body>
 			<trans-unit id="0">
                 <source>Connect myPlex account</source>
-                <target>Connect myPlex account</target>
+                <target>Connexion au compte myPlex</target>
             </trans-unit>
 			<trans-unit id="1">
                 <source>To access your shared sections and queue, link your Roku player to your myPlex account.</source>
-                <target>To access your shared sections and queue, link your Roku player to your myPlex account.</target>
+                <target>Pour accéder aux librairies partagées et à la file d'attente, lier votre Roku à votre compte myPlex.</target>
             </trans-unit>
 			<trans-unit id="2">
                 <source>From your computer,</source>
-                <target>From your computer,</target>
+                <target>Sur votre ordinateur,</target>
             </trans-unit>
 			<trans-unit id="3">
                 <source>go to plex.tv/pin</source>
-                <target>go to plex.tv/pin</target>
+                <target>aller à plex.tv/pin</target>
             </trans-unit>
 			<trans-unit id="4">
                 <source>and enter this code:</source>
-                <target>and enter this code:</target>
+                <target>et rentrer ce code :</target>
             </trans-unit>
 			<trans-unit id="5">
                 <source>retrieving code...</source>
-                <target>retrieving code...</target>
+                <target>réception du code...</target>
             </trans-unit>
 			<trans-unit id="6">
                 <source>This screen will automatically update once your Roku player has been linked to your myPlex account.</source>
-                <target>This screen will automatically update once your Roku player has been linked to your myPlex account.</target>
+                <target>Cet écran sera automatiquement mis à jour quand le Roku sera lié à votre compte myPlex.</target>
             </trans-unit>
 			<trans-unit id="7">
                 <source>Server unavailable</source>
-                <target>Server unavailable</target>
+                <target>Serveur indisponible</target>
             </trans-unit>
 			<trans-unit id="8">
                 <source>The myPlex server couldn't be reached, please try again later.</source>
-                <target>The myPlex server couldn't be reached, please try again later.</target>
+                <target>Le serveur myPlex n'est pas joignable, merci de rééssayer ultérieurement.</target>
             </trans-unit>
         </body>
     </file>
@@ -88,27 +94,27 @@
         <body>
 			<trans-unit id="0">
                 <source>Released: </source>
-                <target>Released: </target>
+                <target>Date de sortie : </target>
             </trans-unit>
 			<trans-unit id="1">
                 <source>    Added: </source>
-                <target>    Added: </target>
+                <target>    Ajouté : </target>
             </trans-unit>
 			<trans-unit id="2">
                 <source>Added: </source>
-                <target>Added: </target>
+                <target>Ajouté : </target>
             </trans-unit>
 			<trans-unit id="3">
                 <source>Unknown Album</source>
-                <target>Unknown Album</target>
+                <target>Album inconnu</target>
             </trans-unit>
 			<trans-unit id="4">
                 <source>Progress: </source>
-                <target>Progress: </target>
+                <target>Progression : </target>
             </trans-unit>
 			<trans-unit id="5">
                 <source> on </source>
-                <target> on </target>
+                <target> sur </target>
             </trans-unit>
 		</body>
     </file>
@@ -136,39 +142,39 @@
         <body>
 			<trans-unit id="0">
                 <source>Unsupported Format</source>
-                <target>Unsupported Format</target>
+                <target>Format non supporté</target>
             </trans-unit>
 			<trans-unit id="1">
                 <source>None of the audio tracks in this list are in a supported format. Use MP3s for best results.</source>
-                <target>None of the audio tracks in this list are in a supported format. Use MP3s for best results.</target>
+                <target>Aucune des pistes audio dans cette liste ne sont dans un format supporté. Utilisez le format MP3 pour de meilleurs résultats.</target>
             </trans-unit>
 			<trans-unit id="2">
                 <source>Shuffle: Off</source>
-                <target>Shuffle: Off</target>
+                <target>Aléatoire : Désactivé</target>
             </trans-unit>
 			<trans-unit id="3">
                 <source>Shuffle: On</source>
-                <target>Shuffle: On</target>
+                <target>Aléatoire : Activé</target>
             </trans-unit>
 			<trans-unit id="4">
                 <source>Loop: Off</source>
-                <target>Loop: Off</target>
+                <target>En boucle : Désactivé</target>
             </trans-unit>
 			<trans-unit id="5">
                 <source>Loop: On</source>
-                <target>Loop: On</target>
+                <target>En boucle : Activé</target>
             </trans-unit>
 			<trans-unit id="6">
                 <source>Go to Now Playing</source>
-                <target>Go to Now Playing</target>
+                <target>Aller à En cours de lecture</target>
             </trans-unit>
 			<trans-unit id="7">
                 <source>Delete permanently</source>
-                <target>Delete permanently</target>
+                <target>Supprimer définitivement</target>
             </trans-unit>
 			<trans-unit id="8">
                 <source>Back</source>
-                <target>Back</target>
+                <target>Retour</target>
             </trans-unit>
 		</body>
     </file>
@@ -181,27 +187,27 @@
         <body>
 			<trans-unit id="0">
                 <source>First Letter</source>
-                <target>First Letter</target>
+                <target>Première Lettre</target>
             </trans-unit>
 			<trans-unit id="1">
                 <source>Recently Viewed</source>
-                <target>Recently Viewed</target>
+                <target>Vus récemment</target>
             </trans-unit>
 			<trans-unit id="2">
                 <source>Recently Added Seasons</source>
-                <target>Recently Added Seasons</target>
+                <target>Saisons ajoutées récemment</target>
             </trans-unit>
 			<trans-unit id="3">
                 <source>Unwatched Recently Aired</source>
-                <target>Unwatched Recently Aired</target>
+                <target>Diffusés récemment - Non vus</target>
             </trans-unit>
 			<trans-unit id="4">
                 <source>Unwatched Recently Added</source>
-                <target>Unwatched Recently Added</target>
+                <target>Ajoutés récemment - Non vus</target>
             </trans-unit>
 			<trans-unit id="5">
                 <source>Unwatched Recently Released</source>
-                <target>Unwatched Recently Released</target>
+                <target>Sortis récemment - Non vus</target>
             </trans-unit>
 		</body>
     </file>
@@ -214,7 +220,7 @@
         <body>
             <trans-unit id="0">
 				<source>Channels</source>
-				<target>Channels</target>
+				<target>Chaines</target>
 			</trans-unit>
 			<trans-unit id="1">
 				<source>Library Sections</source>
@@ -222,11 +228,11 @@
 			</trans-unit>
 			<trans-unit id="2">
 				<source>On Deck</source>
-				<target>Lecture interrompue</target>
+				<target>En cours </target>
 			</trans-unit>
 			<trans-unit id="3">
 				<source>Now Playing</source>
-				<target>Now Playing</target>
+				<target>En cours de lecture</target>
 			</trans-unit>
 			<trans-unit id="4">
 				<source>Recently Added</source>
@@ -250,47 +256,47 @@
 			</trans-unit>
 			<trans-unit id="9">
 				<source>Switch User Profile</source>
-				<target>Switch User Profile</target>
+				<target>Changer d'utilisateur</target>
 			</trans-unit>
 			<trans-unit id="10">
 				<source>fast user switching</source>
-				<target>fast user switching</target>
+				<target>Changement d'utilisateur rapide</target>
 			</trans-unit>
 			<trans-unit id="11">
 				<source>Preferences</source>
-				<target>Preferences</target>
+				<target>Préférences</target>
 			</trans-unit>
 			<trans-unit id="12">
 				<source>More Channels</source>
-				<target>More Channels</target>
+				<target>Plus de chaines</target>
 			</trans-unit>
 			<trans-unit id="13">
 				<source>All channels on </source>
-				<target>All channels on </target>
+				<target>Toutes les chaines sur </target>
 			</trans-unit>
 			<trans-unit id="14">
 				<source>All channels</source>
-				<target>All channels</target>
+				<target>Toutes les chaines</target>
 			</trans-unit>
 			<trans-unit id="15">
 				<source>Music channel</source>
-				<target>Music channel</target>
+				<target>Chaine Musicales</target>
 			</trans-unit>
 			<trans-unit id="16">
 				<source>Photo channel</source>
-				<target>Photo channel</target>
+				<target>Chaines Photos</target>
 			</trans-unit>
 			<trans-unit id="17">
 				<source>Video channel</source>
-				<target>Video channel</target>
+				<target>Chaines Vidéos</target>
 			</trans-unit>
 			<trans-unit id="18">
 				<source>Movie section</source>
-				<target>Section Films</target>
+				<target>Section de Films</target>
 			</trans-unit>
 			<trans-unit id="19">
 				<source>TV section</source>
-				<target>Section Séries</target>
+				<target>Section de Séries</target>
 			</trans-unit>
 			<trans-unit id="20">
 				<source>Music section</source>
@@ -302,23 +308,19 @@
 			</trans-unit>
 			<trans-unit id="22">
 				<source>Channel Directory</source>
-				<target>Channel Directory</target>
+				<target>Répertoire des chaines</target>
 			</trans-unit>
 			<trans-unit id="23">
 				<source>Browse channels to install on </source>
-				<target>Browse channels to install on </target>
+				<target>Parcourir les chaines à installer sur </target>
 			</trans-unit>
 			<trans-unit id="24">
 				<source>Search</source>
-				<target>Search</target>
+				<target>Rechercher</target>
 			</trans-unit>
 			<trans-unit id="25">
 				<source>Search for items across all your sections and channels</source>
-				<target>Search for items across all your sections and channels</target>
-			</trans-unit>
-			<trans-unit id="">
-				<source></source>
-				<target></target>
+				<target>Rechercher dans toutes les sections et toutes les chaines </target>
 			</trans-unit>
         </body>
     </file>
@@ -331,51 +333,51 @@
         <body>
             <trans-unit id="0">
                 <source>Content Unavailable</source>
-                <target>Content Unavailable</target>
+                <target>Contenu indisponible</target>
             </trans-unit>
 			<trans-unit id="1">
                 <source>We're unable to play this audio format.</source>
-                <target>We're unable to play this audio format.</target>
+                <target>Format audio incompatible.</target>
             </trans-unit>
 			<trans-unit id="2">
                 <source>Now Playing</source>
-                <target>Now Playing</target>
+                <target>en cours de lecture</target>
             </trans-unit>
 			<trans-unit id="3">
                 <source>  Artist: </source>
-                <target>  Artist: </target>
+                <target>  Artiste : </target>
             </trans-unit>
 			<trans-unit id="4">
                 <source>Album: </source>
-                <target>Album: </target>
+                <target>Album : </target>
             </trans-unit>
 			<trans-unit id="5">
                 <source>Now Paused</source>
-                <target>Now Paused</target>
+                <target>En pause</target>
             </trans-unit>
 			<trans-unit id="6">
                 <source>Now Stopped</source>
-                <target>Now Stopped</target>
+                <target>Lecture arrêtée</target>
             </trans-unit>
 			<trans-unit id="7">
                 <source> Photo: </source>
-                <target> Photo: </target>
+                <target> Photo : </target>
             </trans-unit>
 			<trans-unit id="8">
                 <source>Resume All</source>
-                <target>Resume All</target>
+                <target>Tout reprendre</target>
             </trans-unit>
 			<trans-unit id="9">
                 <source>Pause All</source>
-                <target>Pause All</target>
+                <target>Tout mettre en pause</target>
             </trans-unit>
 			<trans-unit id="10">
                 <source>Photo Shuffle: On</source>
-                <target>Photo Shuffle: On</target>
+                <target>Photo aléatoire : Activé</target>
             </trans-unit>
 			<trans-unit id="11">
                 <source>Photo Shuffle: Off</source>
-                <target>Photo Shuffle: Off</target>
+                <target>Photo Aléatoire : Désactivé</target>
             </trans-unit>
 			<trans-unit id="12">
                 <source>Pause</source>
@@ -383,11 +385,11 @@
             </trans-unit>
 			<trans-unit id="13">
                 <source>Resume</source>
-                <target>Resume</target>
+                <target>Reprendre</target>
             </trans-unit>
 			<trans-unit id="14">
                 <source>Play</source>
-                <target>Play</target>
+                <target>Lire</target>
             </trans-unit>
 			<trans-unit id="15">
                 <source>Stop</source>
@@ -395,23 +397,23 @@
             </trans-unit>
 			<trans-unit id="16">
                 <source>Next Track</source>
-                <target>Next Track</target>
+                <target>Prochaine piste</target>
             </trans-unit>
 			<trans-unit id="17">
                 <source>Previous Track</source>
-                <target>Previous Track</target>
+                <target>Piste précédente</target>
             </trans-unit>
 			<trans-unit id="18">
                 <source>Go to Now Playing</source>
-                <target>Go to Now Playing</target>
+                <target>Allez à Lecture en cours</target>
             </trans-unit>
 			<trans-unit id="19">
                 <source>Close</source>
-                <target>Close</target>
+                <target>Fermer</target>
             </trans-unit>
 			<trans-unit id="20">
                 <source> Theme</source>
-                <target> Theme</target>
+                <target> Thème</target>
             </trans-unit>
         </body>
     </file>
@@ -419,79 +421,79 @@
         <body>
 			<trans-unit id="0">
                 <source>Close</source>
-                <target>Close</target>
+                <target>Fermer</target>
             </trans-unit>
 			<trans-unit id="1">
                 <source>Default</source>
-                <target>Default</target>
+                <target>Par défaut</target>
             </trans-unit>
 			<trans-unit id="2">
                 <source>Pushing the limits, requires fast connection.</source>
-                <target>Pushing the limits, requires fast connection.</target>
+                <target>Attention, connexion internet rapide exigée.</target>
             </trans-unit>
 			<trans-unit id="3">
                 <source>May be unstable, not recommended.</source>
-                <target>May be unstable, not recommended.</target>
+                <target>Potentiellement instable, pas recommandé.</target>
             </trans-unit>
 			<trans-unit id="4">
                 <source>Automatic (recommended)"</source>
-                <target>Automatic (recommended)"</target>
+                <target>Automatique (recommandé)"</target>
             </trans-unit>
 			<trans-unit id="5">
                 <source>Direct Play</source>
-                <target>Direct Play</target>
+                <target>Lecture Directe</target>
             </trans-unit>
 			<trans-unit id="6">
                 <source>Always Direct Play, no matter what.</source>
-                <target>Always Direct Play, no matter what.</target>
+                <target>Toujours utilisé la Lecture Directe, sans conditions.</target>
             </trans-unit>
 			<trans-unit id="7">
                 <source>Direct Play w/ Fallback</source>
-                <target>Direct Play w/ Fallback</target>
+                <target>Lecture Directe avec solution de repli</target>
             </trans-unit>
 			<trans-unit id="8">
                 <source>Always try Direct Play, then transcode.</source>
-                <target>Always try Direct Play, then transcode.</target>
+                <target>Toujours essayer la Lecture Directe, puis transcodage.</target>
             </trans-unit>
 			<trans-unit id="9">
                 <source>Direct Stream/Transcode</source>
-                <target>Direct Stream/Transcode</target>
+                <target>Direct Stream/Transcodage</target>
             </trans-unit>
 			<trans-unit id="10">
                 <source>Always Direct Stream or transcode.</source>
-                <target>Always Direct Stream or transcode.</target>
+                <target>Toujours Direct Stream ou transcodage.</target>
             </trans-unit>
 			<trans-unit id="11">
                 <source>Always Transcode</source>
-                <target>Always Transcode</target>
+                <target>Toujours transcoder</target>
             </trans-unit>
 			<trans-unit id="12">
                 <source>Never Direct Play or Direct Stream.</source>
-                <target>Never Direct Play or Direct Stream.</target>
+                <target>Jamais de Lecture Directe ou Direct Stream.</target>
             </trans-unit>
 			<trans-unit id="13">
                 <source>Direct Play preferences</source>
-                <target>Direct Play preferences</target>
+                <target>Préférences - Lecture Direct</target>
             </trans-unit>
 			<trans-unit id="14">
                 <source>Disabled</source>
-                <target>Disabled</target>
+                <target>Désactivé</target>
             </trans-unit>
 			<trans-unit id="15">
                 <source>Use the system screensaver</source>
-                <target>Use the system screensaver</target>
+                <target>Utiliser l'écran de veille du système</target>
             </trans-unit>
 			<trans-unit id="16">
                 <source>Animated</source>
-                <target>Animated</target>
+                <target>Animé</target>
             </trans-unit>
 			<trans-unit id="17">
                 <source>Random</source>
-                <target>Random</target>
+                <target>Aléatoire</target>
             </trans-unit>
 			<trans-unit id="18">
                 <source>Screensaver</source>
-                <target>Screensaver</target>
+                <target>Ecran de veille</target>
             </trans-unit>
 			<trans-unit id="19">
                 <source>About RARflix</source>
@@ -503,71 +505,71 @@
             </trans-unit>
 			<trans-unit id="21">
                 <source>RARflix Preferences</source>
-                <target>RARflix Preferences</target>
+                <target>Préférences de RARflix</target>
             </trans-unit>
 			<trans-unit id="22">
                 <source>the goods</source>
-                <target>the goods</target>
+                <target>Fonctionnalités RARflix</target>
             </trans-unit>
 			<trans-unit id="23">
                 <source>User Profiles</source>
-                <target>User Profiles</target>
+                <target>Profils des utilisateurs</target>
             </trans-unit>
 			<trans-unit id="24">
                 <source>Fast user switching</source>
-                <target>Fast user switching</target>
+                <target>Changement d'utilisateur rapide</target>
             </trans-unit>
 			<trans-unit id="25">
                 <source>Security PIN</source>
-                <target>Security PIN</target>
+                <target>Code PIN</target>
             </trans-unit>
 			<trans-unit id="26">
                 <source>Require a PIN to access (multi-user supported)</source>
-                <target>Require a PIN to access (multi-user supported)</target>
+                <target>Nécessite un code PIN (plusieurs utilisateurs possibles)</target>
             </trans-unit>
 			<trans-unit id="27">
                 <source>Plex Media Servers</source>
-                <target>Plex Media Servers</target>
+                <target>Plex Media Serveurs</target>
             </trans-unit>
 			<trans-unit id="28">
                 <source>Quality</source>
-                <target>Quality</target>
+                <target>Qualité</target>
             </trans-unit>
 			<trans-unit id="29">
                 <source>Remote Quality</source>
-                <target>Remote Quality</target>
+                <target>Qualité à distance</target>
             </trans-unit>
 			<trans-unit id="30">
                 <source>Direct Play</source>
-                <target>Direct Play</target>
+                <target>Lecture Directe</target>
             </trans-unit>
 			<trans-unit id="31">
                 <source>Audio Preferences</source>
-                <target>Audio Preferences</target>
+                <target>Préférences - Audio</target>
             </trans-unit>
 			<trans-unit id="32">
                 <source>Home Screen</source>
-                <target>Home Screen</target>
+                <target>Ecran d'accueil</target>
             </trans-unit>
 			<trans-unit id="33">
                 <source>Section Display</source>
-                <target>Section Display</target>
+                <target>Affichage des sections</target>
             </trans-unit>
 			<trans-unit id="34">
                 <source>Remote Control/Name</source>
-                <target>Remote Control/Name</target>
+                <target>Prise en main à distance/Nom</target>
             </trans-unit>
 			<trans-unit id="35">
                 <source>Subtitles</source>
-                <target>Subtitles</target>
+                <target>Sous-titres</target>
             </trans-unit>
 			<trans-unit id="36">
                 <source>Slideshow &amp; Photos</source>
-                <target>Slideshow &amp; Photos</target>
+                <target>Diaporama &amp; Photos</target>
             </trans-unit>
 			<trans-unit id="37">
                 <source>Screensaver</source>
-                <target>Screensaver</target>
+                <target>Ecran de veille</target>
             </trans-unit>
 			<trans-unit id="38">
                 <source>Logging</source>
@@ -575,83 +577,83 @@
             </trans-unit>
 			<trans-unit id="39">
                 <source>Advanced Preferences</source>
-                <target>Advanced Preferences</target>
+                <target>Préférences Avancées</target>
             </trans-unit>
 			<trans-unit id="40">
                 <source>Channel Status: </source>
-                <target>Channel Status: </target>
+                <target>Statut de la chaine : </target>
             </trans-unit>
 			<trans-unit id="41">
                 <source>Close Preferences</source>
-                <target>Close Preferences</target>
+                <target>Fermer les Préférences</target>
             </trans-unit>
 			<trans-unit id="42">
                 <source>Channel Status</source>
-                <target>Channel Status</target>
+                <target>Statut de la chaine</target>
             </trans-unit>
 			<trans-unit id="43">
                 <source>Plex is fully unlocked since you're a PlexPass member.</source>
-                <target>Plex is fully unlocked since you're a PlexPass member.</target>
+                <target>Plex est entièrement débloqué puisque vous êtes un membre PlexPass.</target>
             </trans-unit>
 			<trans-unit id="44">
                 <source>Plex is fully unlocked.</source>
-                <target>Plex is fully unlocked.</target>
+                <target>Plex est entièrement débloqué.</target>
             </trans-unit>
 			<trans-unit id="45">
                 <source>Plex has been purchased and is fully unlocked.</source>
-                <target>Plex has been purchased and is fully unlocked.</target>
+                <target>Plex à été acheté et est entièrement débloqué.</target>
             </trans-unit>
 			<trans-unit id="46">
                 <source>Plex is currently in a trial period. To fully unlock the channel, you can purchase it or connect a PlexPass account.</source>
-                <target>Plex is currently in a trial period. To fully unlock the channel, you can purchase it or connect a PlexPass account.</target>
+                <target>Plex est actuellement en période d'essai. Pour débloquer la chaine, vous pouvez l'acheter ou vous connectez à un compte PlexPass.</target>
             </trans-unit>
 			<trans-unit id="47">
                 <source>Purchase the channel</source>
-                <target>Purchase the channel</target>
+                <target>Acheter la chaine</target>
             </trans-unit>
 			<trans-unit id="48">
                 <source>Your Plex trial has expired and playback is currently disabled. To fully unlock the channel, you can purchase it or connect a PlexPass account.</source>
-                <target>Your Plex trial has expired and playback is currently disabled. To fully unlock the channel, you can purchase it or connect a PlexPass account.</target>
+                <target>Votre essai de Plex a expiré. Pour débloquer la chaine, vous pouvez l'acheter ou vous connectez à un compte PlexPass.</target>
             </trans-unit>
 			<trans-unit id="49">
                 <source>You are using the </source>
-                <target>You are using the </target>
+                <target>Vous utilisez la chaine </target>
             </trans-unit>
 			<trans-unit id="50">
                 <source> (Private) channel.</source>
-                <target> (Private) channel.</target>
+                <target> (Private).</target>
             </trans-unit>
 			<trans-unit id="51">
                 <source>Slideshow &amp; Photo Preferences</source>
-                <target>Slideshow &amp; Photo Preferences</target>
+                <target>Diaporama &amp; Préférences Photo</target>
             </trans-unit>
 			<trans-unit id="52">
                 <source>Security PIN</source>
-                <target>Security PIN</target>
+                <target>Code PIN</target>
             </trans-unit>
 			<trans-unit id="53">
                 <source>User Profiles</source>
-                <target>User Profiles</target>
+                <target>Profils des utilisateurs</target>
             </trans-unit>
 			<trans-unit id="54">
                 <source>Subtitle Preferences</source>
-                <target>Subtitle Preferences</target>
+                <target>Préférences - Sous-titres</target>
             </trans-unit>
 			<trans-unit id="55">
                 <source>Section Display Preferences</source>
-                <target>Section Display Preferences</target>
+                <target>Préférences - Affichage des sections</target>
             </trans-unit>
 			<trans-unit id="56">
                 <source>Remote Control Preferences</source>
-                <target>Remote Control Preferences</target>
+                <target>Préférences - Télécommande</target>
             </trans-unit>
 			<trans-unit id="57">
                 <source>Home Screen</source>
-                <target>Home Screen</target>
+                <target>Ecran d'accueil</target>
             </trans-unit>
 			<trans-unit id="58">
                 <source>Advanced Preferences</source>
-                <target>Advanced Preferences</target>
+                <target>Préférences avancées</target>
             </trans-unit>
 			<trans-unit id="59">
                 <source>Logging</source>
@@ -659,15 +661,15 @@
             </trans-unit>
 			<trans-unit id="60">
                 <source>Audio Preferences</source>
-                <target>Audio Preferences</target>
+                <target>Préférences - Audio</target>
             </trans-unit>
 			<trans-unit id="61">
                 <source>Channel Status: </source>
-                <target>Channel Status: </target>
+                <target>Statut de la chaine : </target>
             </trans-unit>
 			<trans-unit id="62">
                 <source>Slow (10 sec)</source>
-                <target>Slow (10 sec)</target>
+                <target>Lent (10 sec)</target>
             </trans-unit>
 			<trans-unit id="63">
                 <source>Normal (6 sec)</source>
@@ -675,27 +677,23 @@
             </trans-unit>
 			<trans-unit id="64">
                 <source>Fast (3 sec)</source>
-                <target>Fast (3 sec)</target>
+                <target>Rapide (3 sec)</target>
             </trans-unit>
 			<trans-unit id="65">
                 <source>Slideshow speed</source>
-                <target>Slideshow speed</target>
-            </trans-unit>
-			<trans-unit id="66">
-                <source>Slow (10 sec)</source>
-                <target>Slow (10 sec)</target>
+                <target>Vitesse du diaporama</target>
             </trans-unit>
 			<trans-unit id="67">
                 <source>Normal (2.5 sec)</source>
-                <target>Normal (2.5 sec)</target>
+                <target>Normal (2,5 sec)</target>
             </trans-unit>
 			<trans-unit id="68">
                 <source>Fast (1.5 sec)</source>
-                <target>Fast (1.5 sec)</target>
+                <target>Rapide (1,5 sec)</target>
             </trans-unit>
 			<trans-unit id="69">
                 <source>Text overlay duration</source>
-                <target>Text overlay duration</target>
+                <target>Durée de superposition du texte</target>
             </trans-unit>
 			<trans-unit id="70">
                 <source>Manual</source>
@@ -711,27 +709,27 @@
             </trans-unit>
 			<trans-unit id="73">
                 <source>Only show Overlay with remote buttons</source>
-                <target>Only show Overlay with remote buttons</target>
+                <target>Afficher le calque seulement avec les boutons de télécommande</target>
             </trans-unit>
 			<trans-unit id="74">
                 <source>Automatically show Overlay on change</source>
-                <target>Automatically show Overlay on change</target>
+                <target>Afficher le calque seulement lors des changements</target>
             </trans-unit>
 			<trans-unit id="75">
                 <source>Never show the overlay</source>
-                <target>Never show the overlay</target>
+                <target>Ne jamais afficher le calque</target>
             </trans-unit>
 			<trans-unit id="76">
                 <source>Display Photo Info on the Overlay</source>
-                <target>Display Photo Info on the Overlay</target>
+                <target>Afficher les infos Photo sur le calque</target>
             </trans-unit>
 			<trans-unit id="77">
                 <source>Display Audio Info on the Overlay</source>
-                <target>Display Audio Info on the Overlay</target>
+                <target>Afficher les infos Audio sur le calque</target>
             </trans-unit>
 			<trans-unit id="78">
                 <source>Enable Debug Overlay</source>
-                <target>Enable Debug Overlay</target>
+                <target>Afficher le claque de debuggage</target>
             </trans-unit>
 			<trans-unit id="79">
                 <source>TV</source>
@@ -739,35 +737,35 @@
             </trans-unit>
 			<trans-unit id="80">
                 <source>Monitor</source>
-                <target>Monitor</target>
+                <target>Moniteur</target>
             </trans-unit>
 			<trans-unit id="81">
                 <source>Display Type Correction</source>
-                <target>Display Type Correction</target>
+                <target>Afficher la correction de type</target>
             </trans-unit>
 			<trans-unit id="82">
                 <source>Do not check for new Photos</source>
-                <target>Do not check for new Photos</target>
+                <target>Ne pas vérifier les nouvelles photos</target>
             </trans-unit>
 			<trans-unit id="82">
                 <source>Check for new Photos</source>
-                <target>Check for new Photos</target>
+                <target>Vérifier les nouvelles photos</target>
             </trans-unit>
 			<trans-unit id="83">
                 <source>Reload Slideshow after Completion (check for new photos)</source>
-                <target>Reload Slideshow after Completion (check for new photos)</target>
+                <target>Recharger le diaporama après complétion (vérification des nouvelles photos)</target>
             </trans-unit>
 			<trans-unit id="84">
                 <source>Fit</source>
-                <target>Fit</target>
+                <target>Adapter</target>
             </trans-unit>
 			<trans-unit id="85">
                 <source>Smart</source>
-                <target>Smart</target>
+                <target>Intelligent</target>
             </trans-unit>
 			<trans-unit id="86">
                 <source>Fill</source>
-                <target>Fill</target>
+                <target>Remplir</target>
             </trans-unit>
 			<trans-unit id="87">
                 <source>Zoom</source>
@@ -775,7 +773,7 @@
             </trans-unit>
 			<trans-unit id="88">
                 <source>scale to fit [no crop]</source>
-                <target>scale to fit [no crop]</target>
+                <target>Ajuster la taille [pas de rognage]</target>
             </trans-unit>
 			<trans-unit id="89">
                 <source>smart scale+zoom to fit</source>
@@ -795,11 +793,11 @@
             </trans-unit>
 			<trans-unit id="93">
                 <source>How should photos icons be displayed</source>
-                <target>How should photos icons be displayed</target>
+                <target>Comment les icones de photo doivent être affichées</target>
             </trans-unit>
 			<trans-unit id="94">
                 <source>How should images be displayed</source>
-                <target>How should images be displayed</target>
+                <target>Comment les images doivent être affichées</target>
             </trans-unit>
 			<trans-unit id="95">
                 <source>Portrait</source>
@@ -807,107 +805,103 @@
             </trans-unit>
 			<trans-unit id="96">
                 <source>Landscape 16x9</source>
-                <target>Landscape 16x9</target>
+                <target>Paysage 16x9</target>
             </trans-unit>
 			<trans-unit id="97">
                 <source>Landscape</source>
-                <target>Landscape</target>
+                <target>Paysage</target>
             </trans-unit>
 			<trans-unit id="98">
                 <source>Grid 5x2</source>
-                <target>Grid 5x2</target>
+                <target>Grille 5x2</target>
             </trans-unit>
 			<trans-unit id="99">
                 <source>Grid 5x3</source>
-                <target>Grid 5x3</target>
+                <target>Grille 5x3</target>
             </trans-unit>
 			<trans-unit id="100">
                 <source>Size of the Grid</source>
-                <target>Size of the Grid</target>
+                <target>Taille de la grille</target>
             </trans-unit>
 			<trans-unit id="101">
                 <source>Slideshow display preferences</source>
-                <target>Slideshow display preferences</target>
+                <target>Préférences - Affichage du diaporama</target>
             </trans-unit>
 			<trans-unit id="101">
                 <source>Speed</source>
-                <target>Speed</target>
+                <target>Vitesse</target>
             </trans-unit>
 			<trans-unit id="102">
                 <source>Overlay Speed</source>
-                <target>Overlay Speed</target>
+                <target>Vitesse du calque</target>
             </trans-unit>
 			<trans-unit id="103">
                 <source>Photo Overlay</source>
-                <target>Photo Overlay</target>
+                <target>Calque photo</target>
             </trans-unit>
 			<trans-unit id="104">
                 <source>Photo Info overlay on the photo</source>
-                <target>Photo Info overlay on the photo</target>
+                <target>Calque d'info photo sur la photo</target>
             </trans-unit>
 			<trans-unit id="105">
                 <source>Audio Overlay</source>
-                <target>Audio Overlay</target>
+                <target>Calque Audio</target>
             </trans-unit>
 			<trans-unit id="106">
                 <source>Audio Info overlay on the photo</source>
-                <target>Audio Info overlay on the photo</target>
+                <target>Calque d'info audio sur la photo</target>
             </trans-unit>
 			<trans-unit id="107">
                 <source>Display Mode</source>
-                <target>Display Mode</target>
+                <target>Mode d'affichage</target>
             </trans-unit>
 			<trans-unit id="108">
                 <source>How should photos 'fit' the screen</source>
-                <target>How should photos 'fit' the screen</target>
+                <target>Comment les photos 's'adapte' à l'écran</target>
             </trans-unit>
 			<trans-unit id="109">
                 <source>Display Type</source>
-                <target>Display Type</target>
+                <target>Type d'affichage</target>
             </trans-unit>
 			<trans-unit id="110">
                 <source>Connected Display Type</source>
-                <target>Connected Display Type</target>
+                <target>Type du dispositif d'affichage</target>
             </trans-unit>
 			<trans-unit id="111">
                 <source>Reload</source>
-                <target>Reload</target>
+                <target>Recharger</target>
             </trans-unit>
 			<trans-unit id="112">
                 <source>check for new images after every completion</source>
-                <target>check for new images after every completion</target>
+                <target>vérifier les nouvelles images après chaque complétion</target>
             </trans-unit>
 			<trans-unit id="113">
                 <source>Grid Style/Size</source>
-                <target>Grid Style/Size</target>
+                <target>Style/Taille de la grille</target>
             </trans-unit>
 			<trans-unit id="114">
                 <source>Grid Display Mode</source>
-                <target>Grid Display Mode</target>
+                <target>Mode d'affichage de la grille</target>
             </trans-unit>
 			<trans-unit id="115">
                 <source>Icons Display Mode</source>
-                <target>Icons Display Mode</target>
+                <target>Mode d'affichage des icones</target>
             </trans-unit>
 			<trans-unit id="116">
                 <source>How should thumbnails 'fit' the screen</source>
-                <target>How should thumbnails 'fit' the screen</target>
+                <target>Comment les vignettes s'adaptent à l'écran</target>
             </trans-unit>
 			<trans-unit id="117">
                 <source>Debug Info</source>
-                <target>Debug Info</target>
+                <target>Info de débuggage</target>
             </trans-unit>
 			<trans-unit id="118">
                 <source>Show Debug info if there are errors</source>
-                <target>Show Debug info if there are errors</target>
+                <target>Afficher les informations de débuggage si il y a des erreurs</target>
             </trans-unit>
 			<trans-unit id="119">
                 <source>Security PIN preferences</source>
-                <target>Security PIN preferences</target>
-            </trans-unit>
-			<trans-unit id="120">
-                <source>Never</source>
-                <target>Never</target>
+                <target>Préférences - Sécurité PIN</target>
             </trans-unit>
 			<trans-unit id="121">
                 <source>5 Minutes</source>
@@ -935,71 +929,71 @@
             </trans-unit>
 			<trans-unit id="127">
                 <source>1 Hour</source>
-                <target>1 Hour</target>
+                <target>1 Heure</target>
             </trans-unit>
 			<trans-unit id="128">
                 <source>2 Hours</source>
-                <target>2 Hours</target>
+                <target>2 Heures</target>
             </trans-unit>
 			<trans-unit id="129">
                 <source>3 Hours</source>
-                <target>3 Hours</target>
+                <target>3 Heures</target>
             </trans-unit>
 			<trans-unit id="130">
                 <source>4 Hours</source>
-                <target>4 Hours</target>
+                <target>4 Heures</target>
             </trans-unit>
 			<trans-unit id="131">
                 <source>6 Hours</source>
-                <target>6 Hours</target>
+                <target>6 Heures</target>
             </trans-unit>
 			<trans-unit id="132">
                 <source>12 Hours</source>
-                <target>12 Hours</target>
+                <target>12 Heures</target>
             </trans-unit>
 			<trans-unit id="133">
                 <source>Lock screen after inactivity</source>
-                <target>Lock screen after inactivity</target>
+                <target>Vérouiller l'écran après une période d'inactivité</target>
             </trans-unit>
 			<trans-unit id="134">
                 <source>Lock screen if inactive</source>
-                <target>Lock screen if inactive</target>
+                <target>Vérouiller l'écran en cas d'inactivité</target>
             </trans-unit>
 			<trans-unit id="135">
                 <source>while music is playing</source>
-                <target>while music is playing</target>
+                <target>pendant la lecture de la musique </target>
             </trans-unit>
 			<trans-unit id="136">
                 <source>Do not lock screen if inactive</source>
-                <target>Do not lock screen if inactive</target>
+                <target>Ne pas vérouiller l'écran en cas d'inactivité</target>
             </trans-unit>
 			<trans-unit id="137">
                 <source>Lock screen while music is playing</source>
-                <target>Lock screen while music is playing</target>
+                <target>Vérouiller l'écran pendant la lecture de la musique</target>
             </trans-unit>
 			<trans-unit id="138">
                 <source>Set Security PIN</source>
-                <target>Set Security PIN</target>
+                <target>Créer le code PIN</target>
             </trans-unit>
 			<trans-unit id="139">
                 <source>Change Security PIN</source>
-                <target>Change Security PIN</target>
+                <target>Changer le code PIN</target>
             </trans-unit>
 			<trans-unit id="140">
                 <source>Clear Security PIN</source>
-                <target>Clear Security PIN</target>
+                <target>Mettre à blanc le code PIN</target>
             </trans-unit>
 			<trans-unit id="141">
                 <source>Inactivity Lock Time</source>
-                <target>Inactivity Lock Time</target>
+                <target>Délai de vérouillage pour cause d'inactivité</target>
             </trans-unit>
 			<trans-unit id="142">
                 <source>Inactivity Lock [music]</source>
-                <target>Inactivity Lock [music]</target>
+                <target>Vérouillage - Inactivité [music]</target>
             </trans-unit>
 			<trans-unit id="143">
                 <source>Enter current PIN to make changes</source>
-                <target>Enter current PIN to make changes</target>
+                <target>Saisir le code PIN pour faire des changements</target>
             </trans-unit>
 			<trans-unit id="144">
                 <source>Orange (Plex)</source>
@@ -1007,103 +1001,103 @@
             </trans-unit>
 			<trans-unit id="145">
                 <source>Purple (Roku)</source>
-                <target>Purple (Roku)</target>
+                <target>Violet (Roku)</target>
             </trans-unit>
 			<trans-unit id="146">
                 <source>Icon Color for the User Sections Screen</source>
-                <target>Icon Color for the User Sections Screen</target>
+                <target>Couleur de l'icone - Ecran de sélection des utilisateurs</target>
             </trans-unit>
 			<trans-unit id="147">
                 <source>User Selection Icon Color</source>
-                <target>User Selection Icon Color</target>
+                <target>Couleur de l'icone utilisateur</target>
             </trans-unit>
 			<trans-unit id="148">
                 <source>Global Setting</source>
-                <target>Global Setting</target>
+                <target>Paramètres généraux</target>
             </trans-unit>
 			<trans-unit id="149">
                 <source>Default User Profile </source>
-                <target>Default User Profile </target>
+                <target>Profil d'utilisateur par défaut </target>
             </trans-unit>
 			<trans-unit id="150">
                 <source>User Profile </source>
-                <target>User Profile </target>
+                <target>Profil d'uilisateur </target>
             </trans-unit>
 			<trans-unit id="151">
                 <source>Show this User Profile on selection screen</source>
-                <target>Show this User Profile on selection screen</target>
+                <target>Afficher ce profil d'utilisateur sur l'écran de sélection</target>
             </trans-unit>
 			<trans-unit id="152">
                 <source>Name to show on the User Profile selection screen</source>
-                <target>Name to show on the User Profile selection screen</target>
+                <target>Nom à afficher sur l'écran de sélection du profil d'utilisateur</target>
             </trans-unit>
 			<trans-unit id="153">
                 <source>User Profile Name </source>
-                <target>User Profile Name </target>
+                <target>Nom du profil d'utilisateur </target>
             </trans-unit>
 			<trans-unit id="154">
                 <source>Default User profile preferences</source>
-                <target>Default User profile preferences</target>
+                <target>Préférences - Profil d'utilisateur par défaut</target>
             </trans-unit>
 			<trans-unit id="155">
                 <source>User </source>
-                <target>User </target>
+                <target>Utilisateur </target>
             </trans-unit>
 			<trans-unit id="156">
                 <source> profile preferences</source>
-                <target> profile preferences</target>
+                <target> Préférences - Profil</target>
             </trans-unit>
 			<trans-unit id="157">
                 <source>Show User on selection screen </source>
-                <target>Show User on selection screen </target>
+                <target>Afficher l'utilisateur sur l'écran de sélection </target>
             </trans-unit>
 			<trans-unit id="158">
                 <source>Erase all preferences for this user</source>
-                <target>Erase all preferences for this user</target>
+                <target>Effacer toutes les préférences pour cette utilisateur</target>
             </trans-unit>
 			<trans-unit id="159">
                 <source>Confirm Erase</source>
-                <target>Confirm Erase</target>
+                <target>Confirmer la suppression</target>
             </trans-unit>
 			<trans-unit id="160">
                 <source>Are you sure you want to erase all the preferences for this user profile?  This will forever delete all the configuration for this user profile.  Other profiles will not changed.</source>
-                <target>Are you sure you want to erase all the preferences for this user profile?  This will forever delete all the configuration for this user profile.  Other profiles will not changed.</target>
+                <target>Etes vous sur de vouloir effacer toutes les préférences de cet utilsateur ? Les données de l'utilisateur seront définiitivement perdues.  Les autres profils restent intacts.</target>
             </trans-unit>
 			<trans-unit id="161">
                 <source>Erase All Preferences</source>
-                <target>Erase All Preferences</target>
+                <target>Effacer toutes les préférences</target>
             </trans-unit>
 			<trans-unit id="162">
                 <source>Cancel</source>
-                <target>Cancel</target>
+                <target>Annulé</target>
             </trans-unit>
 			<trans-unit id="163">
                 <source>Soft</source>
-                <target>Soft</target>
+                <target>Superposés</target>
             </trans-unit>
 			<trans-unit id="164">
                 <source>Burned In</source>
-                <target>Burned In</target>
+                <target>Intégrés</target>
             </trans-unit>
 			<trans-unit id="165">
                 <source>Use soft subtitles whenever possible.</source>
-                <target>Use soft subtitles whenever possible.</target>
+                <target>Superposer les sous-titres quand c'est possible.</target>
             </trans-unit>
 			<trans-unit id="166">
                 <source>Always burn in selected subtitles.</source>
-                <target>Always burn in selected subtitles.</target>
+                <target>Toujours intégrer les sous-titres.</target>
             </trans-unit>
 			<trans-unit id="167">
                 <source>Allow Roku to show soft subtitles itself, or burn them in to videos?</source>
-                <target>Allow Roku to show soft subtitles itself, or burn them in to videos?</target>
+                <target>Autoriser Roku à afficher et gérer les sous-titres superposés, ou les intégrés à la vidéo ?</target>
             </trans-unit>
 			<trans-unit id="168">
                 <source>Tiny</source>
-                <target>Tiny</target>
+                <target>Très petit</target>
             </trans-unit>
 			<trans-unit id="169">
                 <source>Small</source>
-                <target>Small</target>
+                <target>Petit</target>
             </trans-unit>
 			<trans-unit id="170">
                 <source>Normal</source>
@@ -1111,151 +1105,155 @@
             </trans-unit>
 			<trans-unit id="171">
                 <source>Large</source>
-                <target>Large</target>
+                <target>Grand</target>
             </trans-unit>
 			<trans-unit id="172">
                 <source>Huge</source>
-                <target>Huge</target>
+                <target>Très grand</target>
             </trans-unit>
 			<trans-unit id="173">
                 <source>Burned-in subtitle size</source>
-                <target>Burned-in subtitle size</target>
+                <target>Taille des sous-titres intégrés</target>
             </trans-unit>
 			<trans-unit id="174">
                 <source>Default</source>
-                <target>Default</target>
+                <target>Par défaut</target>
             </trans-unit>
 			<trans-unit id="175">
                 <source>Yellow</source>
-                <target>Yellow</target>
+                <target>Jaune</target>
             </trans-unit>
 			<trans-unit id="176">
                 <source>Black</source>
-                <target>Black</target>
+                <target>Noir</target>
+            </trans-unit>
+			<trans-unit id="424">
+                <source>White</source>
+                <target>Blanc</target>
             </trans-unit>
 			<trans-unit id="177">
                 <source>Soft subtitle color</source>
-                <target>Soft subtitle color</target>
+                <target>Couleur des sous-titres superposés</target>
             </trans-unit>
 			<trans-unit id="178">
                 <source>Subtitle Preferences</source>
-                <target>Subtitle Preferences</target>
+                <target>Préférences - Sous-titres</target>
             </trans-unit>
 			<trans-unit id="179">
                 <source>Subtitles</source>
-                <target>Subtitles</target>
+                <target>Sous-titres</target>
             </trans-unit>
 			<trans-unit id="180">
                 <source>Subtitle Size</source>
-                <target>Subtitle Size</target>
+                <target>Taille des sous-titres</target>
             </trans-unit>
 			<trans-unit id="181">
                 <source>Subtitle Color</source>
-                <target>Subtitle Color</target>
+                <target>Couleur des sous-titres</target>
             </trans-unit>
 			<trans-unit id="182">
                 <source>Prompt for confirmation when exiting RARflix</source>
-                <target>Prompt for confirmation when exiting RARflix</target>
+                <target>Demander confirmation avant de quitter RARflix</target>
             </trans-unit>
 			<trans-unit id="183">
                 <source>Display the next available TV episode after watching</source>
-                <target>Display the next available TV episode after watching</target>
+                <target>Afficher le prochain épisode disponible après la lecture</target>
             </trans-unit>
 			<trans-unit id="184">
                 <source>Legacy</source>
-                <target>Legacy</target>
+                <target>Ancien</target>
             </trans-unit>
 			<trans-unit id="185">
                 <source>Use the older, legacy transcoder.</source>
-                <target>Use the older, legacy transcoder.</target>
+                <target>Utiliser l'ancien transcodeur.</target>
             </trans-unit>
 			<trans-unit id="186">
                 <source>Universal</source>
-                <target>Universal</target>
+                <target>Universel</target>
             </trans-unit>
 			<trans-unit id="187">
                 <source>Transcoder version</source>
-                <target>Transcoder version</target>
+                <target>Version du transcodeur</target>
             </trans-unit>
 			<trans-unit id="188">
                 <source>Experimental</source>
-                <target>Experimental</target>
+                <target>Expérimental</target>
             </trans-unit>
 			<trans-unit id="189">
                 <source>Automatically start playing the next video</source>
-                <target>Automatically start playing the next video</target>
+                <target>Lire la prochaine video automatiquement</target>
             </trans-unit>
 			<trans-unit id="190">
                 <source>No</source>
-                <target>No</target>
+                <target>Non</target>
             </trans-unit>
 			<trans-unit id="191">
                 <source>Yes</source>
-                <target>Yes</target>
+                <target>Oui</target>
             </trans-unit>
 			<trans-unit id="192">
                 <source>Remote includes a Back Button</source>
-                <target>Remote has no Back Button</target>
+                <target>La télécommande n'a pas de bouton Retour</target>
             </trans-unit>
 			<trans-unit id="193">
                 <source>Are you using a remote without a physical Back Button?</source>
-                <target>Are you using a remote without a physical Back Button?</target>
+                <target>Utilisez vous une télécommande sans bouton Retour physique ?</target>
             </trans-unit>
 			<trans-unit id="194">
                 <source>Very Experimental</source>
-                <target>Very Experimental</target>
+                <target>Très Expérimental</target>
             </trans-unit>
 			<trans-unit id="195">
                 <source>Continuous Play + Shuffle</source>
-                <target>Continuous Play + Shuffle</target>
+                <target>Lecture en continu + Aléatoire</target>
             </trans-unit>
 			<trans-unit id="196">
                 <source>This level may not be supported well.</source>
-                <target>This level may not be supported well.</target>
+                <target>Ce niveau pourrait être mal supporté.</target>
             </trans-unit>
 			<trans-unit id="197">
                 <source>Use specific H264 level. Up to 4.1 is officially supported.</source>
-                <target>Use specific H264 level. Up to 4.1 is officially supported.</target>
+                <target>Utiliser un niveau H264 spécifique. Officiellement supporté jusqu'au 4.1.</target>
             </trans-unit>
 			<trans-unit id="198">
                 <source>Automatic</source>
-                <target>Automatic</target>
+                <target>Automatique</target>
             </trans-unit>
 			<trans-unit id="199">
                 <source>4 seconds</source>
-                <target>4 seconds</target>
+                <target>4 secondes</target>
             </trans-unit>
 			<trans-unit id="200">
                 <source>10 seconds</source>
-                <target>10 seconds</target>
+                <target>10 secondes</target>
             </trans-unit>
 			<trans-unit id="201">
                 <source>Chooses based on quality.</source>
-                <target>Chooses based on quality.</target>
+                <target>Choisir en se basant sur la qualité.</target>
             </trans-unit>
 			<trans-unit id="202">
                 <source>Seconds per HLS segment. Longer segments may load faster.</source>
-                <target>Seconds per HLS segment. Longer segments may load faster.</target>
+                <target>Secondes par segment HLS. Des segments plus longs peuvent être chargés plus rapidement.</target>
             </trans-unit>
 			<trans-unit id="203">
                 <source>Send anonymous usage data to help improve Plex</source>
-                <target>Send anonymous usage data to help improve Plex</target>
+                <target>Envoyer anonynement des données pour aider à l'amélioration de Plex. </target>
             </trans-unit>
 			<trans-unit id="204">
                 <source>Advanced preferences don't usually need to be changed</source>
-                <target>Advanced preferences don't usually need to be changed</target>
+                <target>Les préférences avancées n'ont généralement pas besoin d'être changées</target>
             </trans-unit>
 			<trans-unit id="205">
                 <source>Confirm Exit</source>
-                <target>Confirm Exit</target>
+                <target>Confirmer la sortie</target>
             </trans-unit>
 			<trans-unit id="206">
                 <source>prompt before exiting RARflix</source>
-                <target>prompt before exiting RARflix</target>
+                <target>Demander avant de quitter RARflix</target>
             </trans-unit>
 			<trans-unit id="207">
                 <source>Auto Episode Advance</source>
-                <target>Auto Episode Advance</target>
+                <target>Avancer automatiquement au prochain épisode</target>
             </trans-unit>
 			<trans-unit id="208">
                 <source>show episode next up after watching</source>
@@ -1263,27 +1261,27 @@
             </trans-unit>
 			<trans-unit id="209">
                 <source>Transcoder</source>
-                <target>Transcoder</target>
+                <target>Transcodeur</target>
             </trans-unit>
 			<trans-unit id="210">
                 <source>Continuous Play</source>
-                <target>Continuous Play</target>
+                <target>Lecture en continu</target>
             </trans-unit>
 			<trans-unit id="211">
                 <source>Shuffle Play</source>
-                <target>Shuffle Play</target>
+                <target>Lecture aléatoire</target>
             </trans-unit>
 			<trans-unit id="212">
                 <source>Legacy Remote</source>
-                <target>Legacy Remote</target>
+                <target>Ancienne télécommande</target>
             </trans-unit>
 			<trans-unit id="213">
                 <source>1080p Settings</source>
-                <target>1080p Settings</target>
+                <target>Paramètres 1080p</target>
             </trans-unit>
 			<trans-unit id="214">
                 <source>HLS Segment Length</source>
-                <target>HLS Segment Length</target>
+                <target>Longueur du segment HLS</target>
             </trans-unit>
 			<trans-unit id="215">
                 <source>Analytics</source>
@@ -1291,7 +1289,7 @@
             </trans-unit>
 			<trans-unit id="216">
                 <source>1080p support (Roku 1 only)</source>
-                <target>1080p support (Roku 1 only)</target>
+                <target>Support du 1080p (Roku 1 seulement)</target>
             </trans-unit>
 			<trans-unit id="217">
                 <source>auto</source>
@@ -1299,95 +1297,95 @@
             </trans-unit>
 			<trans-unit id="218">
                 <source>Select a frame rate to use with 1080p content.</source>
-                <target>Select a frame rate to use with 1080p content.</target>
+                <target>Selectionner un taux de rafraichissement à utiliser avec le contenu 1080p.</target>
             </trans-unit>
 			<trans-unit id="219">
                 <source>1080p settings (Roku 1 only)</source>
-                <target>1080p settings (Roku 1 only)</target>
+                <target>Paramètres 1080p (Roku 1 seulement)</target>
             </trans-unit>
 			<trans-unit id="220">
                 <source>1080p Support</source>
-                <target>1080p Support</target>
+                <target>Support du 1080p</target>
             </trans-unit>
 			<trans-unit id="221">
                 <source>Frame Rate Override</source>
-                <target>Frame Rate Override</target>
+                <target>Outrepasser le taux de rafraichissement</target>
             </trans-unit>
 			<trans-unit id="222">
                 <source>Always</source>
-                <target>Always</target>
+                <target>Toujours</target>
             </trans-unit>
 			<trans-unit id="223">
                 <source>Never</source>
-                <target>Never</target>
+                <target>Jamais</target>
             </trans-unit>
 			<trans-unit id="224">
                 <source>Sometimes</source>
-                <target>Sometimes</target>
+                <target>Parfois</target>
             </trans-unit>
 			<trans-unit id="225">
                 <source>Loop playback when there are multiple songs.</source>
-                <target>Loop playback when there are multiple songs.</target>
+                <target>Lire en boucle lorsqu'il y a plusieurs pistes.</target>
             </trans-unit>
 			<trans-unit id="226">
                 <source>Loop when playing music</source>
-                <target>Loop when playing music</target>
+                <target>Lire en boucle lors de la lecture de musique</target>
             </trans-unit>
 			<trans-unit id="227">
                 <source>Loop</source>
-                <target>Loop</target>
+                <target>En boucle</target>
             </trans-unit>
 			<trans-unit id="228">
                 <source>Play Once</source>
-                <target>Play Once</target>
+                <target>Lire une fois</target>
             </trans-unit>
 			<trans-unit id="229">
                 <source>Play theme music in the background while browsing</source>
-                <target>Play theme music in the background while browsing</target>
+                <target>Jouer les thèmes musicaux pendant la navigation</target>
             </trans-unit>
 			<trans-unit id="230">
                 <source>Try to copy 5.1 audio streams when transcoding.</source>
-                <target>Try to copy 5.1 audio streams when transcoding.</target>
+                <target>Essayer de copier les pistes audio 5.1 pendant le transcodage.</target>
             </trans-unit>
 			<trans-unit id="231">
                 <source>Always use 2-channel audio when transcoding.</source>
-                <target>Always use 2-channel audio when transcoding.</target>
+                <target>Toujours utiliser les pistes audio stéréo  pendant le transcodage.</target>
             </trans-unit>
 			<trans-unit id="232">
                 <source>5.1 AC-3 support</source>
-                <target>5.1 AC-3 support</target>
+                <target>Support du AC-3 5.1</target>
             </trans-unit>
 			<trans-unit id="233">
                 <source>Try to Direct Play DTS in MKVs.</source>
-                <target>Try to Direct Play DTS in MKVs.</target>
+                <target>Essayer de lire les pistes DTS intégrées aux MKVs directement.</target>
             </trans-unit>
 			<trans-unit id="234">
                 <source>Never Direct Play DTS.</source>
-                <target>Never Direct Play DTS.</target>
+                <target>Ne jamais jouer les pistes DTS directement.</target>
             </trans-unit>
 			<trans-unit id="235">
                 <source>5.1 DTS support</source>
-                <target>5.1 DTS support</target>
+                <target>Support du DTS 5.1</target>
             </trans-unit>
 			<trans-unit id="236">
                 <source>Audio boost for transcoded video</source>
-                <target>Audio boost for transcoded video</target>
+                <target>Booster l'audio lors d'un transcodage video</target>
             </trans-unit>
 			<trans-unit id="237">
                 <source>Audio Preferences</source>
-                <target>Audio Preferences</target>
+                <target>Préférences - Audio</target>
             </trans-unit>
 			<trans-unit id="238">
                 <source>Loop Playback</source>
-                <target>Loop Playback</target>
+                <target>Lecture en boucleS</target>
             </trans-unit>
 			<trans-unit id="239">
                 <source>Theme Music</source>
-                <target>Theme Music</target>
+                <target>Thèmes musicaux</target>
             </trans-unit>
 			<trans-unit id="240">
                 <source>Audio Boost</source>
-                <target>Audio Boost</target>
+                <target>Booster l'Audio</target>
             </trans-unit>
 			<trans-unit id="241">
                 <source>Logging</source>
@@ -1395,251 +1393,251 @@
             </trans-unit>
 			<trans-unit id="242">
                 <source>Disable Logging</source>
-                <target>Disable Logging</target>
+                <target>Désactiver le logging</target>
             </trans-unit>
 			<trans-unit id="243">
                 <source>Remote Logging Enabled</source>
-                <target>Remote Logging Enabled</target>
+                <target>Logging à distance activé</target>
             </trans-unit>
 			<trans-unit id="244">
                 <source>Enable Remote Logging</source>
-                <target>Enable Remote Logging</target>
+                <target>Activer le logging à distance</target>
             </trans-unit>
 			<trans-unit id="245">
                 <source>Download Logs</source>
-                <target>Download Logs</target>
+                <target>Télécharger les Logs</target>
             </trans-unit>
 			<trans-unit id="246">
                 <source>Enable Logging</source>
-                <target>Enable Logging</target>
+                <target>Activer le Logging</target>
             </trans-unit>
 			<trans-unit id="247">
                 <source>Automatically discover Plex Media Servers at startup.</source>
-                <target>Automatically discover Plex Media Servers at startup.</target>
+                <target>Rechercher automatiquement les Plex Media Serveurs au démarrage.</target>
             </trans-unit>
 			<trans-unit id="248">
                 <source>Manage Plex Media Servers</source>
-                <target>Manage Plex Media Servers</target>
+                <target>Gérer les Plex Media Serveurs</target>
             </trans-unit>
 			<trans-unit id="249">
                 <source>Add Server Manually</source>
-                <target>Add Server Manually</target>
+                <target>Ajouter un serveur manuellement</target>
             </trans-unit>
 			<trans-unit id="250">
                 <source>Discover Servers</source>
-                <target>Discover Servers</target>
+                <target>Découvrir les serveurs</target>
             </trans-unit>
 			<trans-unit id="251">
                 <source>Discover at Startup</source>
-                <target>Discover at Startup</target>
+                <target>Découvrir au démarrage</target>
             </trans-unit>
 			<trans-unit id="252">
                 <source>Remove All Servers</source>
-                <target>Remove All Servers</target>
+                <target>Retirer tous les serveurs</target>
             </trans-unit>
 			<trans-unit id="253">
                 <source>Edit </source>
-                <target>Edit </target>
+                <target>Editer </target>
             </trans-unit>
 			<trans-unit id="254">
                 <source>Edit address</source>
-                <target>Edit address</target>
+                <target>Editer l'adresse</target>
             </trans-unit>
 			<trans-unit id="255">
                 <source>The address at which this server is located</source>
-                <target>The address at which this server is located</target>
+                <target>L'adresse à laquelle le serveur est situé</target>
             </trans-unit>
 			<trans-unit id="256">
                 <source>Edit WOL MAC address</source>
-                <target>Edit WOL MAC address</target>
+                <target>Editer l'adresse MAC WOL</target>
             </trans-unit>
 			<trans-unit id="257">
                 <source>Wake-on-LAN MAC address</source>
-                <target>Wake-on-LAN MAC address</target>
+                <target>Adresse MAC Wake-on-LAN</target>
             </trans-unit>
 			<trans-unit id="258">
                 <source>Activates remote server wake up</source>
-                <target>Activates remote server wake up</target>
+                <target>Activer le réveil de serveur à distance</target>
             </trans-unit>
 			<trans-unit id="259">
                 <source>Edit WOL SecureOn Password</source>
-                <target>Edit WOL SecureOn Password</target>
+                <target>Editer le mot de passe WOL SecureOn</target>
             </trans-unit>
 			<trans-unit id="260">
                 <source>12-Digit hexadecimal password </source>
-                <target>12-Digit hexadecimal password </target>
+                <target>mot de passe hexadécimal à 12 chiffres </target>
             </trans-unit>
 			<trans-unit id="261">
                 <source>for a Wake-on-LAN request</source>
-                <target>for a Wake-on-LAN request</target>
+                <target>pour une requête Wake-on-LAN</target>
             </trans-unit>
 			<trans-unit id="262">
                 <source>Remove </source>
-                <target>Remove </target>
+                <target>Retirer </target>
             </trans-unit>
 			<trans-unit id="263">
                 <source>Confirm Remove</source>
-                <target>Confirm Remove</target>
+                <target>Confirmer le retrait</target>
             </trans-unit>
 			<trans-unit id="264">
                 <source>Are you sure you want to remove this server?</source>
-                <target>Are you sure you want to remove this server?</target>
+                <target>Etes-vous sur de vouloir retirer ce serveur ?</target>
             </trans-unit>
 			<trans-unit id="265">
                 <source>Remove Server</source>
-                <target>Remove Server</target>
+                <target>Retirer le Serveur</target>
             </trans-unit>
 			<trans-unit id="266">
                 <source>Should this video be transcoded or use Direct Play?</source>
-                <target>Should this video be transcoded or use Direct Play?</target>
+                <target>Cette vidéo doit-elle être transcodée ou lue directement ?</target>
             </trans-unit>
 			<trans-unit id="267">
                 <source>Higher settings require more bandwidth and may buffer</source>
-                <target>Higher settings require more bandwidth and may buffer</target>
+                <target>Des paramètres plus élevés demandent plus de bande passante et peuvent saccader.</target>
             </trans-unit>
 			<trans-unit id="268">
                 <source>Quality</source>
-                <target>Quality</target>
+                <target>Qualité</target>
             </trans-unit>
 			<trans-unit id="269">
                 <source>Transcoding</source>
-                <target>Transcoding</target>
+                <target>Transcodage</target>
             </trans-unit>
 			<trans-unit id="270">
                 <source>No Subtitles</source>
-                <target>No Subtitles</target>
+                <target>Pas de Sous-titres</target>
             </trans-unit>
 			<trans-unit id="271">
                 <source>Audio Stream</source>
-                <target>Audio Stream</target>
+                <target>Piste Audio</target>
             </trans-unit>
 			<trans-unit id="272">
                 <source>Select an audio stream</source>
-                <target>Select an audio stream</target>
+                <target>Selectionner une piste audio</target>
             </trans-unit>
 			<trans-unit id="273">
                 <source>Subtitle Stream</source>
-                <target>Subtitle Stream</target>
+                <target>Piste de Sous-titres</target>
             </trans-unit>
 			<trans-unit id="274">
                 <source>Select a subtitle stream</source>
-                <target>Select a subtitle stream</target>
+                <target>Selectionner une piste de Sous-titres</target>
             </trans-unit>
 			<trans-unit id="275">
                 <source>Single Video Playback</source>
-                <target>Single Video Playback</target>
+                <target>Lecture vidéo unique</target>
             </trans-unit>
 			<trans-unit id="276">
                 <source>Continuous</source>
-                <target>Continuous</target>
+                <target>En continu</target>
             </trans-unit>
 			<trans-unit id="277">
                 <source>Automatically play the next video</source>
-                <target>Automatically play the next video</target>
+                <target>Lire automatiquement la prochaine vidéo</target>
             </trans-unit>
 			<trans-unit id="278">
                 <source>* Next available Episode if applicable</source>
-                <target>* Next available Episode if applicable</target>
+                <target>* Prochain épisode disponible si c'est applicable</target>
             </trans-unit>
 			<trans-unit id="279">
                 <source>Continuous [this context]</source>
-                <target>Continuous [this context]</target>
+                <target>En continu [ce contexte]</target>
             </trans-unit>
 			<trans-unit id="280">
                 <source> * Use the existing context </source>
-                <target> * Use the existing context </target>
+                <target> * Utiliser le contexte existant </target>
             </trans-unit>
 			<trans-unit id="281">
                 <source>Shuffle</source>
-                <target>Shuffle</target>
+                <target>Aléatoire</target>
             </trans-unit>
 			<trans-unit id="282">
                 <source>Shuffle+Automatically play the next video</source>
-                <target>Shuffle+Automatically play the next video</target>
+                <target>Aléatoire+Jouer automatiquement la prochaine vidéo</target>
             </trans-unit>
 			<trans-unit id="283">
                 <source>Playback</source>
-                <target>Playback</target>
+                <target>Lecture</target>
             </trans-unit>
 			<trans-unit id="284">
                 <source>Playback: default, play continuous, play shuffle or play this context continuous</source>
-                <target>Playback: default, play continuous, play shuffle or play this context continuous</target>
+                <target>Lecture : par défaut, lecture en continu, lecture aléatoire ou lecture (this context continuous)</target>
             </trans-unit>
 			<trans-unit id="285">
                 <source>Media</source>
-                <target>Media</target>
+                <target>Média</target>
             </trans-unit>
 			<trans-unit id="286">
                 <source>Select a source</source>
-                <target>Select a source</target>
+                <target>Sélectionner une source</target>
             </trans-unit>
 			<trans-unit id="287">
                 <source>Video playback options</source>
-                <target>Video playback options</target>
+                <target>Options - Lecture vidéo</target>
             </trans-unit>
 			<trans-unit id="288">
                 <source>Allow other clients to control this Roku.</source>
-                <target>Allow other clients to control this Roku.</target>
+                <target>Autoriser des clients externes à controler ce Roku.</target>
             </trans-unit>
 			<trans-unit id="289">
                 <source>A name that will identify this Roku on your remote controls</source>
-                <target>A name that will identify this Roku on your remote controls</target>
+                <target>Un nom qui identifiera ce Roku sur les télécommandes</target>
             </trans-unit>
 			<trans-unit id="290">
                 <source>Remote control preferences</source>
-                <target>Remote control preferences</target>
+                <target>Préférences - Controle à distance</target>
             </trans-unit>
 			<trans-unit id="291">
                 <source>Remote Control</source>
-                <target>Remote Control</target>
+                <target>Controle à distance</target>
             </trans-unit>
 			<trans-unit id="292">
                 <source>Name</source>
-                <target>Name</target>
+                <target>Nom</target>
             </trans-unit>
 			<trans-unit id="293">
                 <source>All</source>
-                <target>All</target>
+                <target>Tout</target>
             </trans-unit>
 			<trans-unit id="294">
                 <source>Unwatched</source>
-                <target>Unwatched</target>
+                <target>Non vus</target>
             </trans-unit>
 			<trans-unit id="295">
                 <source>Watched</source>
-                <target>Watched</target>
+                <target>Vus</target>
             </trans-unit>
 			<trans-unit id="296">
                 <source>Hidden</source>
-                <target>Hidden</target>
+                <target>Cachés</target>
             </trans-unit>
 			<trans-unit id="297">
                 <source>Default view for Queue on the home screen</source>
-                <target>Default view for Queue on the home screen</target>
+                <target>Vue par défaut de la file d'attente sur l'écran d'accueil</target>
             </trans-unit>
 			<trans-unit id="298">
                 <source>Default view for Recommendations on the home screen</source>
-                <target>Default view for Recommendations on the home screen</target>
+                <target>Vue par défaut des recommendations sur l'écran d'accueil</target>
             </trans-unit>
 			<trans-unit id="299">
                 <source>Enabled (exclude shared libraries)</source>
-                <target>Enabled (exclude shared libraries)</target>
+                <target>Activé (exclusion des bibliothèques partagées)</target>
             </trans-unit>
 			<trans-unit id="300">
                 <source>Show On Deck items on the home screen</source>
-                <target>Show On Deck items on the home screen</target>
+                <target>Afficher les fichiers En cours sur l'écran d'accueil</target>
             </trans-unit>
 			<trans-unit id="301">
                 <source>Show recently added items on the home screen</source>
-                <target>Show recently added items on the home screen</target>
+                <target>Afficher les fichiers récemment ajoutés sur l'écran d'accueil</target>
             </trans-unit>
 			<trans-unit id="302">
                 <source>Show channels on the home screen</source>
-                <target>Show channels on the home screen</target>
+                <target>Afficher les chaines sur l'écran d'accueil</target>
             </trans-unit>
 			<trans-unit id="303">
                 <source>Show Now Playing on the home screen</source>
-                <target>Show Now Playing on the home screen</target>
+                <target>Afficher les Lectures en cours sur l'écran d'accueil</target>
             </trans-unit>
 			<trans-unit id="304">
                 <source>Channels</source>
@@ -1651,11 +1649,11 @@
             </trans-unit>
 			<trans-unit id="306">
                 <source>On Deck</source>
-                <target>Lecture à reprendre en cours </target>
+                <target>En cours </target>
             </trans-unit>
 			<trans-unit id="307">
                 <source>Now Playing</source>
-                <target>Now Playing</target>
+                <target>lectures en cours</target>
             </trans-unit>
 			<trans-unit id="308">
                 <source>Recently Added</source>
@@ -1670,8 +1668,8 @@
                 <target>Recommendations</target>
             </trans-unit>
 			<trans-unit id="311">
-                <source>Bibliothèques partagées</source>
-                <target>Shared Library Sections</target>
+                <source>Shared Library Sections</source>
+                <target>Bibliothèques partagées</target>
             </trans-unit>
 			<trans-unit id="312">
                 <source>Miscellaneous</source>
@@ -1679,11 +1677,11 @@
             </trans-unit>
 			<trans-unit id="313">
                 <source>Photo [default]</source>
-                <target>Photo [default]</target>
+                <target>Photo [par défaut]</target>
             </trans-unit>
 			<trans-unit id="314">
                 <source>Fit</source>
-                <target>Fit</target>
+                <target>Adapter</target>
             </trans-unit>
 			<trans-unit id="315">
                 <source>Fill</source>
@@ -1731,15 +1729,15 @@
             </trans-unit>
 			<trans-unit id="326">
                 <source>Change the appearance of the home screen</source>
-                <target>Change the appearance of the home screen</target>
+                <target>Changer l'apparence de l'écran d'accueil</target>
             </trans-unit>
 			<trans-unit id="327">
                 <source>Reorder Home Rows</source>
-                <target>Reorder Home Rows</target>
+                <target>Changer l'ordre des lignes de l'accueil</target>
             </trans-unit>
 			<trans-unit id="328">
                 <source>A restart of the Channel is required</source>
-                <target>A restart of the Channel is required</target>
+                <target>Un redémarrage de la chaine est requis</target>
             </trans-unit>
 			<trans-unit id="329">
                 <source>Stretch or Fit images to fill the focus box</source>
@@ -1751,7 +1749,7 @@
             </trans-unit>
 			<trans-unit id="331">
                 <source>Grid</source>
-                <target>Grid</target>
+                <target>Grille</target>
             </trans-unit>
 			<trans-unit id="332">
                 <source>Poster</source>
@@ -1759,7 +1757,7 @@
             </trans-unit>
 			<trans-unit id="333">
                 <source>Which screen type should be used for TV series?</source>
-                <target>Which screen type should be used for TV series?</target>
+                <target>Quel type d'écran doit être utilisé pour les Séries?</target>
             </trans-unit>
 			<trans-unit id="334">
                 <source>16x9 Widescreen</source>
@@ -1767,7 +1765,7 @@
             </trans-unit>
 			<trans-unit id="335">
                 <source>Size of episode images</source>
-                <target>Size of episode images</target>
+                <target>Taille des vignettes d'épisode</target>
             </trans-unit>
 			<trans-unit id="336">
                 <source>Title</source>
@@ -1775,7 +1773,7 @@
             </trans-unit>
 			<trans-unit id="337">
                 <source>Sort by Title</source>
-                <target>Ranger par Titre</target>
+                <target>Classer par Titre</target>
             </trans-unit>
 			<trans-unit id="338">
                 <source>Date Added</source>
@@ -1783,7 +1781,7 @@
             </trans-unit>
 			<trans-unit id="339">
                 <source>Sort by Date Added</source>
-                <target>Ranger par Date d'ajout</target>
+                <target>Classer par Date d'ajout</target>
             </trans-unit>
 			<trans-unit id="340">
                 <source>Date Released/Taken</source>
@@ -1795,19 +1793,19 @@
             </trans-unit>
 			<trans-unit id="342">
                 <source>Sort Items (when not specifically sorted)</source>
-                <target>Sort Items (when not specifically sorted)</target>
+                <target>Classer les fichiers (quand il ne sont pas déjà classés)</target>
             </trans-unit>
 			<trans-unit id="343">
                 <source>Prefer FULL grid when viewing items</source>
-                <target>Prefer FULL grid when viewing items</target>
+                <target>Préférer la grille COMPLETE lors de la visualisation des fichiers</target>
             </trans-unit>
 			<trans-unit id="343">
                 <source>Prefer Poster (one row) when viewing items</source>
-                <target>Prefer Poster (one row) when viewing items</target>
+                <target>Préférer les Poster (une ligne) lors de la visualisation des fichiers</target>
             </trans-unit>
 			<trans-unit id="345">
                 <source>Which screen type should be used for Movies &amp; Other content?</source>
-                <target>Which screen type should be used for Movies &amp; Other content?</target>
+                <target>Quel type d'écran doit être utilisé pour les films &amp; les autres contenus ?</target>
             </trans-unit>
 			<trans-unit id="346">
                 <source>Portrait</source>
@@ -1819,11 +1817,11 @@
             </trans-unit>
 			<trans-unit id="348">
                 <source>Grid 5x2 - Short Portrait</source>
-                <target>Grid 5x2 - Short Portrait</target>
+                <target>Grille 5x2 - Petit portrait</target>
             </trans-unit>
 			<trans-unit id="349">
                 <source>Grid 7x3 - Square</source>
-                <target>Grid 7x3 - Square</target>
+                <target>Grille 7x3 - Carré</target>
             </trans-unit>
 			<trans-unit id="350">
                 <source>Portrait (tall)</source>
@@ -1831,23 +1829,23 @@
             </trans-unit>
 			<trans-unit id="351">
                 <source>Grid 5x2 - Tall Portrait</source>
-                <target>Grid 5x2 - Tall Portrait</target>
+                <target>Grille 5x2 - Grand portrait</target>
             </trans-unit>
 			<trans-unit id="352">
                 <source>Style and Size of the Grid</source>
-                <target>Style and Size of the Grid</target>
+                <target>Style et taille de la grille</target>
             </trans-unit>
 			<trans-unit id="353">
                 <source>Grid Pop Out Description</source>
-                <target>Grid Pop Out Description</target>
+                <target>Grille et Dexcription pop out</target>
             </trans-unit>
 			<trans-unit id="354">
                 <source>Hide text above each row in the Full Grid</source>
-                <target>Hide text above each row in the Full Grid</target>
+                <target>Cacher le texte en dessous des lignes dans la grille complète</target>
             </trans-unit>
 			<trans-unit id="355">
                 <source>Insert a blank poster between the first and last item in a row</source>
-                <target>Insert a blank poster between the first and last item in a row</target>
+                <target>Insérer un poster vide entre le premier et le dernier fichier de la ligne</target>
             </trans-unit>
 			<trans-unit id="356">
                 <source>all the above to fit boundary</source>
@@ -1863,7 +1861,7 @@
             </trans-unit>
 			<trans-unit id="359">
                 <source>How should images be displayed on screen</source>
-                <target>How should images be displayed on screen</target>
+                <target>Comment les images doivent être affichées à l'écran</target>
             </trans-unit>
 			<trans-unit id="360">
                 <source>Filters</source>
@@ -1875,15 +1873,15 @@
             </trans-unit>
 			<trans-unit id="362">
                 <source>Recently Released/Aired</source>
-                <target>Recently Released/Aired</target>
+                <target>Sortis/Diffusés récemment</target>
             </trans-unit>
 			<trans-unit id="363">
                 <source>Recently Viewed</source>
-                <target>Recently Viewed</target>
+                <target>Vus récemment</target>
             </trans-unit>
 			<trans-unit id="364">
                 <source>Recently Viewed Shows</source>
-                <target>Recently Viewed Shows</target>
+                <target>Séries vues récemment</target>
             </trans-unit>
 			<trans-unit id="365">
                 <source>By Album</source>
@@ -1899,11 +1897,11 @@
             </trans-unit>
 			<trans-unit id="368">
                 <source>By Year</source>
-                <target>Par Year</target>
+                <target>Par Année</target>
             </trans-unit>
 			<trans-unit id="369">
                 <source>By Decade</source>
-                <target>Par Décénie</target>
+                <target>Par Décénnie</target>
             </trans-unit>
 			<trans-unit id="370">
                 <source>By Director</source>
@@ -1919,7 +1917,7 @@
             </trans-unit>
 			<trans-unit id="373">
                 <source>By Content Rating</source>
-                <target>By Content Rating</target>
+                <target>Par Classification</target>
             </trans-unit>
 			<trans-unit id="374">
                 <source>By Rating</source>
@@ -1927,7 +1925,7 @@
             </trans-unit>
 			<trans-unit id="375">
                 <source>By Resolution</source>
-                <target>Par Resolution</target>
+                <target>Par Résolution</target>
             </trans-unit>
 			<trans-unit id="376">
                 <source>By First Letter</source>
@@ -1943,71 +1941,71 @@
             </trans-unit>
 			<trans-unit id="379">
                 <source>[movie] Recently Added (uw)</source>
-                <target>[movie] Ajouté récemment (uw)</target>
+                <target>[movie] Ajoutés récemment (uw)</target>
             </trans-unit>
 			<trans-unit id="380">
                 <source>[movie] Recently Released (uw)</source>
-                <target>[movie] Sorti récemment (uw)</target>
+                <target>[movie] Sortis récemment (uw)</target>
             </trans-unit>
 			<trans-unit id="381">
                 <source>[tv] Recently Added Season</source>
-                <target>[tv] Recently Added Season</target>
+                <target>[tv] Saisons sorties récemment</target>
             </trans-unit>
 			<trans-unit id="382">
                 <source>[tv] Recently Aired Episode (uw)</source>
-                <target>[tv] Recently Aired Episode (uw)</target>
+                <target>[tv] Episodes diffusés récemment (uw)</target>
             </trans-unit>
 			<trans-unit id="383">
                 <source>[tv] Recently Added Episode (uw)</source>
-                <target>[tv] Recently Added Episode (uw)</target>
+                <target>[tv] Episodes ajoutés récemment (uw)</target>
             </trans-unit>
 			<trans-unit id="384">
                 <source>Change the appearance of your sections</source>
-                <target>Change the appearance of your sections</target>
+                <target>Changer l'apparence de vos sections</target>
             </trans-unit>
 			<trans-unit id="385">
                 <source>Sorting</source>
-                <target>Sorting</target>
+                <target>Classement</target>
             </trans-unit>
 			<trans-unit id="386">
                 <source>Reorder Rows</source>
-                <target>Reorder Rows</target>
+                <target>Réorganiser les lignes</target>
             </trans-unit>
 			<trans-unit id="387">
                 <source>Full Grid</source>
-                <target>Full Grid</target>
+                <target>Grille complète</target>
             </trans-unit>
 			<trans-unit id="388">
                 <source>TV Series</source>
-                <target>TV Series</target>
+                <target>Séries TV</target>
             </trans-unit>
 			<trans-unit id="389">
                 <source>TV Episode Size</source>
-                <target>TV Episode Size</target>
+                <target>Taille des épisodes</target>
             </trans-unit>
 			<trans-unit id="390">
                 <source>Sorting of Content</source>
-                <target>Sorting of Content</target>
+                <target>Classement du contenu</target>
             </trans-unit>
 			<trans-unit id="391">
                 <source>Choose Sections to use the Full Grid</source>
-                <target>Choose Sections to use the Full Grid</target>
+                <target>Choisir les sections à utiliser pour la grille complère</target>
             </trans-unit>
 			<trans-unit id="392">
                 <source>Movie &amp; Others</source>
-                <target>Movie &amp; Others</target>
+                <target>Film &amp; Autres</target>
             </trans-unit>
 			<trans-unit id="393">
                 <source>Grid Style/Size</source>
-                <target>Grid Style/Size</target>
+                <target>Style/Taille de la grille</target>
             </trans-unit>
 			<trans-unit id="394">
                 <source>Grid Display Mode</source>
-                <target>Grid Display Mode</target>
+                <target>Mode d'affichage de la grille</target>
             </trans-unit>
 			<trans-unit id="395">
                 <source>Grid Pop Out</source>
-                <target>Grid Pop Out</target>
+                <target>Grille Pop Out</target>
             </trans-unit>
 			<trans-unit id="396">
                 <source>Full Grid Hide Header</source>
@@ -2023,7 +2021,7 @@
             </trans-unit>
 			<trans-unit id="399">
                 <source>Size of Grid</source>
-                <target>Size of Grid</target>
+                <target>Taille de la grille</target>
             </trans-unit>
 			<trans-unit id="400">
                 <source>Stretch or Fit images to fill the focus box</source>
@@ -2031,47 +2029,47 @@
             </trans-unit>
 			<trans-unit id="401">
                 <source>Description on bottom right</source>
-                <target>Description on bottom right</target>
+                <target>Description en haut à droite</target>
             </trans-unit>
 			<trans-unit id="402">
                 <source>Hide text on top of each row</source>
-                <target>Hide text on top of each row</target>
+                <target>Cacher le text au dessus de chaque ligne</target>
             </trans-unit>
 			<trans-unit id="403">
                 <source>Grid Pop Out: Movie Section</source>
-                <target>Grid Pop Out: Movie Section</target>
+                <target>Grille Pop Out : Section Films</target>
             </trans-unit>
 			<trans-unit id="404">
                 <source>Grid Pop Out: TV Show Section</source>
-                <target>Grid Pop Out: TV Show Section</target>
+                <target>Grille Pop Out : Section Séries</target>
             </trans-unit>
 			<trans-unit id="405">
                 <source>Grid Pop Out: Photo Section</source>
-                <target>Grid Pop Out: Photo Section</target>
+                <target>Grille Pop Out : Section Photo</target>
             </trans-unit>
 			<trans-unit id="406">
                 <source>Grid Pop Out: Music Section</source>
-                <target>Grid Pop Out: Music Section</target>
+                <target>Grille Pop Out : Section Musique</target>
             </trans-unit>
 			<trans-unit id="407">
                 <source>Grid Pop Out: All other sections</source>
-                <target>Grid Pop Out: All other sections</target>
+                <target>Grille Pop Out : Toutes les autres sections</target>
             </trans-unit>
 			<trans-unit id="408">
                 <source>Grid Pop Out: Home Screen</source>
-                <target>Grid Pop Out: Home Screen</target>
+                <target>Grille Pop Out : Ecran d'accueil</target>
             </trans-unit>
 			<trans-unit id="409">
                 <source>Home</source>
-                <target>Home</target>
+                <target>Accueil</target>
             </trans-unit>
 			<trans-unit id="410">
                 <source>Movie</source>
-                <target>Movie</target>
+                <target>Film</target>
             </trans-unit>
 			<trans-unit id="411">
                 <source>TV</source>
-                <target>TV</target>
+                <target>Série</target>
             </trans-unit>
 			<trans-unit id="412">
                 <source>Photo</source>
@@ -2079,43 +2077,51 @@
             </trans-unit>
 			<trans-unit id="413">
                 <source>Music</source>
-                <target>Music</target>
+                <target>Musique</target>
             </trans-unit>
 			<trans-unit id="414">
                 <source>Other</source>
-                <target>Other</target>
+                <target>Autre</target>
             </trans-unit>
 			<trans-unit id="415">
                 <source>Full Grid: Movie Section</source>
-                <target>Full Grid: Movie Section</target>
+                <target>Grille complète : Section Films</target>
             </trans-unit>
 			<trans-unit id="416">
                 <source>Full Grid: Home Video Section</source>
-                <target>Full Grid: Home Video Section</target>
+                <target>Grille complète : Section Videos personnelles</target>
             </trans-unit>
 			<trans-unit id="417">
                 <source>Full Grid: TV Show Section</source>
-                <target>Full Grid: TV Show Section</target>
+                <target>Grille complète : Section Séries</target>
             </trans-unit>
 			<trans-unit id="418">
                 <source>Full Grid: Photo Section</source>
-                <target>Full Grid: Photo Section</target>
+                <target>rille complète : Section  Photos</target>
             </trans-unit>
 			<trans-unit id="419">
                 <source>Full Grid: Music Section</source>
-                <target>Full Grid: Music Section</target>
+                <target>rille complète : Section Musique</target>
             </trans-unit>
 			<trans-unit id="420">
                 <source>Full Grid: All other sections</source>
-                <target>Full Grid: All other sections</target>
+                <target>rille complète : Toutes les autres sections </target>
             </trans-unit>
 			<trans-unit id="421">
                 <source>Default to Full Grid for these Sections</source>
-                <target>Default to Full Grid for these Sections</target>
+                <target>Grille complète par défaut pour toutes ces sections</target>
             </trans-unit>
 			<trans-unit id="422">
                 <source>4x3 Standard</source>
                 <target>4x3 Standard</target>
+            </trans-unit>
+			<trans-unit id="423">
+                <source>Disconnect myPlex account (</source>
+                <target>Déconnecter le compte myPlex (</target>
+            </trans-unit>
+			<trans-unit id="424">
+                <source>Connect myPlex account</source>
+                <target>Connecter le compte myPlex</target>
             </trans-unit>
 		</body>
     </file>
@@ -2128,7 +2134,7 @@
         <body>
 			<trans-unit id="0">
                 <source>loading image....</source>
-                <target>loading image....</target>
+                <target>chargement de l'image....</target>
             </trans-unit>
         </body>
     </file>
@@ -2136,11 +2142,11 @@
         <body>
 			<trans-unit id="0">
                 <source>Content Unavailable</source>
-                <target>Content Unavailable</target>
+                <target>Contenu indisponible</target>
             </trans-unit>
 			<trans-unit id="1">
                 <source>An error occurred while trying to load this content, make sure the server is running.</source>
-                <target>An error occurred while trying to load this content, make sure the server is running.</target>
+                <target>Une erreur a eu lieu pendant le chargement de ce contenu, vérifiez que le serveur fonctionne.</target>
             </trans-unit>
 		</body>
     </file>
@@ -2148,19 +2154,19 @@
         <body>
 			<trans-unit id="0">
                 <source>Content Unavailable</source>
-                <target>Content Unavailable</target>
+                <target>Contenu indisponible</target>
             </trans-unit>
 			<trans-unit id="1">
                 <source>An error occurred while trying to load this content, we received zero results.</source>
-                <target>An error occurred while trying to load this content, we received zero results.</target>
+                <target>Une erreur a eu lieu pendant le chargement de ce contenu, pas de résultat reçu.</target>
             </trans-unit>
 			<trans-unit id="2">
                 <source>Section Empty</source>
-                <target>Section Empty</target>
+                <target>Section vide</target>
             </trans-unit>
 			<trans-unit id="3">
                 <source>This section doesn't contain any items.</source>
-                <target>This section doesn't contain any items.</target>
+                <target>Cette section ne contient aucun fichier.</target>
             </trans-unit>
         </body>
     </file>
@@ -2208,11 +2214,11 @@
         <body>
 			<trans-unit id="0">
                 <source>Unsupported Content</source>
-                <target>Unsupported Content</target>
+                <target>Contenu non supporté</target>
             </trans-unit>
 			<trans-unit id="1">
                 <source>Your Roku needs a bit of help to play this. This video is in a format that your Roku doesn't understand. To play it, you need to connect to your Plex Media Server, which can convert it in real time to a more friendly format. To learn more and install Plex Media Server, visit http://plexapp.com/getplex/"</source>
-                <target>Your Roku needs a bit of help to play this. This video is in a format that your Roku doesn't understand. To play it, you need to connect to your Plex Media Server, which can convert it in real time to a more friendly format. To learn more and install Plex Media Server, visit http://plexapp.com/getplex/"</target>
+                <target>Votre Roku a besoin d'aide pour lire ce fichier. Le format de la vidéo n'est pas reconnu par le Roku. Pour le lire, vous devez vous connecter au Plex Media Serveur, qui pourra le convertir dans un format accepté. Pour plus d'information et pour installer Plex Media Serveur, visitez http://plexapp.com/getplex/"</target>
             </trans-unit>
         </body>
     </file>

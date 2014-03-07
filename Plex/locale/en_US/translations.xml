@@ -2,8 +2,15 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
     <file datatype="x-brs" original="source/ViewController.brs" source-language="en-US" target-language="en-US">
         <body>
-            <!--Insert Translations rows here similar to: <trans-unit id="0"><source>Select the style for the analog clock</source><target>Wählen Sie den Analog Clock Style</target></trans-unit>-->
-        </body>
+			<trans-unit id="0">
+                <source>RARflix is locked due to inactivity.  Enter PIN Code using direction arrows on your remote control.  Press OK to retry PIN or Back to pick another User.</source>
+                <target>RARflix is locked due to inactivity.  Enter PIN Code using direction arrows on your remote control.  Press OK to retry PIN or Back to pick another User.</target>
+            </trans-unit>
+			<trans-unit id="1">
+                <source>Press OK or Back to Continue</source>
+                <target>Press OK or Back to Continue</target>
+            </trans-unit>
+		</body>
     </file>
     <file datatype="x-brs" original="source/UserSelectionScreen.brs" source-language="en-US" target-language="en-US">
         <body>
@@ -2116,6 +2123,14 @@
 			<trans-unit id="422">
                 <source>4x3 Standard</source>
                 <target>4x3 Standard</target>
+            </trans-unit>
+			<trans-unit id="423">
+                <source>Disconnect myPlex account (</source>
+                <target>Disconnect myPlex account (</target>
+            </trans-unit>
+			<trans-unit id="424">
+                <source>Connect myPlex account</source>
+                <target>Connect myPlex account</target>
             </trans-unit>
 		</body>
     </file>
