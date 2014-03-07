@@ -542,7 +542,7 @@ Sub homeOnUrlEvent(msg, requestContext)
     if msg.GetResponseCode() <> 200 then
         Debug("Got a " + tostr(msg.GetResponseCode()) + " response from " + url + " - " + tostr(msg.GetFailureReason()))
 
-        if status <> invalid AND status.loadStatus < 2 AND status.pendingRequests = 0 then
+        if status <> invalid AND status.pendingRequests = 0 then
             status.loadStatus = 2
             if status.refreshContent <> invalid then
                 status.content = status.refreshContent
@@ -1056,7 +1056,10 @@ Sub homeRefreshData()
     ' this will allow us to refresh all content from all servers ( not just owned )
     '  for now, this might only be useful to RARflix since OnDeck/RecentlyAdded are enabled for shared users
     for each server in GetValidPlexMediaServers()
-        m.CreateServerRequests(server, true, true)
+        'TODO(ljunkie) - we should probably have some way to check servers availability in the background 
+        ' only creating requests for ONLINE servers will speed up reloads, but may not allow a down server
+        ' to come back into the mix?
+        if server.online = true then m.CreateServerRequests(server, true, true)
     next
 
     ' Clear any screensaver images, use the default.
