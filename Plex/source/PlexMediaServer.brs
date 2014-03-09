@@ -504,7 +504,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
         end if
     end if
 
-    printAA(video)
+    'printAA(video)
     return video
 End Function
 
@@ -983,7 +983,7 @@ Sub pmsAddDirectPlayInfo(video, item, mediaKey)
         video.SubtitleUrl = FullUrl(m.serverUrl, "", part.subtitles.key) + "?encoding=utf-8"
     end if
 
-    PrintAA(video)
+    'PrintAA(video)
 End Sub
 
 Sub pmsOnUrlEvent(msg, requestContext)
