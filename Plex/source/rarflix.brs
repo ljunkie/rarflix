@@ -287,6 +287,7 @@ sub RRHomeScreenBreadcrumbs(force=false)
     if force or (vc.Home <> invalid AND vc.IsActiveScreen(vc.Home)) then
 
         myscreen = GetViewController().screens.peek()
+        if myscreen = invalid or myscreen.screen = invalid then return
         timePref = RegRead("rf_hs_clock", "preferences", "enabled")
         datePref = RegRead("rf_hs_date", "preferences", "enabled")
         time_date = (timePref <> "disabled" or datePref <> "disabled")
@@ -809,7 +810,10 @@ Function ShowPleaseWait(title As dynamic, text As dynamic) As Object
     dialog.SetMessagePort(port)
     dialog.SetTitle(title)
     dialog.ShowBusyAnimation()
-    dialog.EnableOverlay(true) ' required for image canvas
+    ' roOneLineDialog does not have an overlay option
+    if type(dialog) = "roMessageDialog" then 
+        dialog.EnableOverlay(true) ' required for image canvas
+    end if
     dialog.Show()
     return dialog
 End Function
