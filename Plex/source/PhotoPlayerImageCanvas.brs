@@ -401,13 +401,15 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
                 AudioOverlay.ih  = 75
                 AudioOverlay.iw  = 75
                 AudioOverlay.h   = 115
+                photoOverlay_line_b = 3
             else 
-                photoOverlay_Y   = int(m.canvasrect.h-95) ' canvas-"height" you want
-                overlayPaddingLR = 150
+                photoOverlay_Y   = int(m.canvasrect.h-80) ' canvas-"height" you want
+                overlayPaddingLR = 50
                 failureHeight    = 75
                 AudioOverlay.ih  = 70
                 AudioOverlay.iw  = 70
-                AudioOverlay.h   = 95
+                AudioOverlay.h   = 110
+                photoOverlay_line_b = 2
             end if
             AudioOverlay.x = overlayPaddingLR
 
@@ -442,7 +444,7 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
                     {
                         Text: overlayCenter, 
                         TextAttrs: {Color:overlayText, Font:"Small", HAlign:"HCenter", VAlign:"Bottom", Direction:"LeftToRight"}, 
-                        TargetRect: {x:0,y:photoOverlay_Y,w:m.canvasrect.w,h:int(m.overlayLineHeight*3)} 
+                        TargetRect: {x:0,y:photoOverlay_Y,w:m.canvasrect.w,h:int(m.overlayLineHeight*photoOverlay_line_b)} 
                     }
                 ]
             
