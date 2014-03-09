@@ -152,6 +152,7 @@ Function createICphotoPlayerScreen(context, contextIndex, viewController, shuffl
         time = obj.slideshow_overlay
         if time = 0 then time = 2500
         obj.TimerOverlay = createTimer()
+        obj.TimerOverlay.normalTime = time
         obj.TimerOverlay.Name = "overlay"
         obj.TimerOverlay.SetDuration(time, true)
         obj.TimerOverlay.Active = false
@@ -356,6 +357,7 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
                 m.OverlayOn = (m.OverlayOn = false) ' reverse logic
             else if tostr(option) = "forceToggle" then 
                 ' Use Default Actions - used to bypass logic
+                m.TimerOverlay.manualTime = 10*1000
             else 
                 m.OverlayOn = false
             end if
@@ -550,6 +552,11 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
             m.screen.setlayer(2,display)
             m.OverlayOn = true
 
+            ' reset the overlay time if set manually. This will reset on the next slide.
+            if m.TimerOverlay.manualTime <> invalid then 
+                m.TimerOverlay.SetDuration(m.TimerOverlay.manualTime, true)
+            end if
+
             ' activate and mark the slideshow & overlay timers
             m.Timer.Mark()
             m.TimerOverlay.Active = true
@@ -643,6 +650,12 @@ sub ICshowSlideImage()
         m.FirstSlide = true
     else 
         m.FirstSlide = false
+    end if
+
+    ' reset the manual Overlay Timer back to normal
+    if m.TimerOverlay.manualTime <> invalid then 
+        m.TimerOverlay.SetDuration(m.TimerOverlay.normalTime, true)
+        m.TimerOverlay.manualTime = invalid
     end if
 
     if NOT m.overlayEnabled then 
