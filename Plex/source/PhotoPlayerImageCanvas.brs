@@ -396,7 +396,7 @@ sub ICphotoPlayerOverlayToggle(option=invalid,headerText=invalid,overlayText=inv
             AudioOverlay = {}
             if GetGlobal("IsHD") = true then
                 photoOverlay_Y   = int(m.canvasrect.h-100) ' canvas-"height" you want
-                overlayPaddingLR = 250
+                overlayPaddingLR = 150
                 failureHeight    = 75
                 AudioOverlay.ih  = 75
                 AudioOverlay.iw  = 75
