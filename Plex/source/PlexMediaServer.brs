@@ -535,7 +535,7 @@ End Function
 '* relative to the server URL
 Function FullUrl(serverUrl, sourceUrl, key) As String
     finalUrl = ""
-    if left(key, 4) = "http" OR left(key, 4) = "rtmp" then
+    if left(key, 4) = "http" OR left(key, 4) = "rtmp" or left(key, 3) = "mms" or left(key, 4) = "rtsp" then
         return key
     else if left(key, 4) = "plex" then
         url_start = Instr(1, key, "url=") + 4
