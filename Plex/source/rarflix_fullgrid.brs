@@ -175,8 +175,6 @@ Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, ite
             end if
         end if
 
-        ReorderItemsByKeyPriority(headerRow, RegRead("section_row_order", "preferences", ""))
-        loader.hasHeaderRow = true
     end if
 
     ' should we keep adding the sub sections? I think not - btw this code was only to test
@@ -242,6 +240,9 @@ Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, ite
 
     ' add the special header row
     if headerRow <> invalid and headerRow.count() > 0 then 
+        ReorderItemsByKeyPriority(headerRow, RegRead("section_row_order", "preferences", ""))
+        loader.hasHeaderRow = true
+
         header_row = CreateObject("roAssociativeArray")
         header_row.content = headerRow
         header_row.loadStatus = 0 ' 0:Not loaded, 1:Partially loaded, 2:Fully loaded
