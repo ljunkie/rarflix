@@ -182,52 +182,50 @@ Sub videoGetMediaDetails(content)
     ' .. also useful when someone enters an episode from All Seasons in the gridview for TV shows
     ' * should probably be done in sbRefresh - (well maybe not anymore)
 
-    if RegRead("rf_bcdynamic", "preferences", "enabled") = "enabled" then 
-        ' todo - figure out what screen we are in.. kinda done the lame way
-        ra = CreateObject("roRegex", "/recentlyAdded", "")
-        od = CreateObject("roRegex", "/onDeck", "")
-        rv = CreateObject("roRegex", "/recentlyViewed", "")
-        rair = CreateObject("roRegex", "/newest", "")
-        rallLeaves = CreateObject("roRegex", "/allLeaves", "")
-        rnp = CreateObject("roRegex", "/status/sessions", "")
+    ' todo - figure out what screen we are in.. kinda done the lame way
+    ra = CreateObject("roRegex", "/recentlyAdded", "")
+    od = CreateObject("roRegex", "/onDeck", "")
+    rv = CreateObject("roRegex", "/recentlyViewed", "")
+    rair = CreateObject("roRegex", "/newest", "")
+    rallLeaves = CreateObject("roRegex", "/allLeaves", "")
+    rnp = CreateObject("roRegex", "/status/sessions", "")
 
-        where = "invalid"
-        if ra.Match(m.metadata.sourceurl)[0] <> invalid then
-           where = "Recently Added"
-        else if od.Match(m.metadata.sourceurl)[0] <> invalid then
-           where = "On Deck"
-        else if rv.Match(m.metadata.sourceurl)[0] <> invalid then
-           where = "Recently Viewed"
-        else if rair.Match(m.metadata.sourceurl)[0] <> invalid then
-	   where = "Recently Aired"
-        else if rallLeaves.Match(m.metadata.sourceurl)[0] <> invalid then
-	   where = "All Episodes"
-        else if rnp.Match(m.metadata.sourceurl)[0] <> invalid then
-	   where = "Now Playing"
-        end if
+    where = "invalid"
+    if ra.Match(m.metadata.sourceurl)[0] <> invalid then
+        where = "Recently Added"
+    else if od.Match(m.metadata.sourceurl)[0] <> invalid then
+        where = "On Deck"
+    else if rv.Match(m.metadata.sourceurl)[0] <> invalid then
+        where = "Recently Viewed"
+    else if rair.Match(m.metadata.sourceurl)[0] <> invalid then
+        where = "Recently Aired"
+    else if rallLeaves.Match(m.metadata.sourceurl)[0] <> invalid then
+        where = "All Episodes"
+    else if rnp.Match(m.metadata.sourceurl)[0] <> invalid then
+        where = "Now Playing"
+    end if
 
-        if where = "Now Playing" then  ' set the now Playing bread crumbs to the - where/user and set the title
-           m.Screen.SetBreadcrumbEnabled(true)
-           m.Screen.SetBreadcrumbText(where, UcaseFirst(m.metadata.nowplaying_user,true))
-           rf_updateNowPlayingSB(m)
-           Debug("Dynamically set Episode breadcrumbs; " + where + ": " + UcaseFirst(m.metadata.nowplaying_user,true))
-        else if m.metadata.ContentType = "episode" and tostr(m.metadata.ShowTitle) <> "invalid" and where <> "invalid" then 
-           m.Screen.SetBreadcrumbEnabled(true)
-           m.Screen.SetBreadcrumbText(where, truncateString(m.metadata.ShowTitle,26))
-           Debug("Dynamically set Episode breadcrumbs; " + where + ": " + truncateString(m.metadata.ShowTitle,26))
-        else if m.metadata.ContentType = "movie" and where <> "invalid" and od.Match(m.metadata.sourceurl)[0] <> invalid then 
-           ' this has been added for the global on deck view. Normally we already have this breadcrumb displayed, 
-           ' but due to global on deck (possibly recently added) , we need to account for switching between differnt contentTypes
-           m.Screen.SetBreadcrumbEnabled(true)
-           m.Screen.SetBreadcrumbText("Movies", where) 
-           Debug("Dynamically set MOVIES breadcrumbs; Movies: " + where)
-        else if tostr(m.metadata.ContentType) = "invalid" then
-           m.Screen.SetBreadcrumbEnabled(true)
-           'ljunkie BUGFIX TODO ( this is bug existing in official plex ) 
-           '  left/right buttons when viewing global recently added dies when switching from movie to other contentType
-	   ' Note: left and right have been denied now in BaseSpringboardScreen.brs - sbRefresh 
-           m.Screen.SetBreadcrumbText("invalid", "bug in official channel too")
-        end if
+    if where = "Now Playing" then  ' set the now Playing bread crumbs to the - where/user and set the title
+        m.Screen.SetBreadcrumbEnabled(true)
+        m.Screen.SetBreadcrumbText(where, UcaseFirst(m.metadata.nowplaying_user,true))
+        rf_updateNowPlayingSB(m)
+        Debug("Dynamically set Episode breadcrumbs; " + where + ": " + UcaseFirst(m.metadata.nowplaying_user,true))
+    else if m.metadata.ContentType = "episode" and tostr(m.metadata.ShowTitle) <> "invalid" and where <> "invalid" then 
+        m.Screen.SetBreadcrumbEnabled(true)
+        m.Screen.SetBreadcrumbText(where, truncateString(m.metadata.ShowTitle,26))
+        Debug("Dynamically set Episode breadcrumbs; " + where + ": " + truncateString(m.metadata.ShowTitle,26))
+    else if m.metadata.ContentType = "movie" and where <> "invalid" and od.Match(m.metadata.sourceurl)[0] <> invalid then 
+        ' this has been added for the global on deck view. Normally we already have this breadcrumb displayed, 
+        ' but due to global on deck (possibly recently added) , we need to account for switching between differnt contentTypes
+        m.Screen.SetBreadcrumbEnabled(true)
+        m.Screen.SetBreadcrumbText("Movies", where) 
+        Debug("Dynamically set MOVIES breadcrumbs; Movies: " + where)
+    else if tostr(m.metadata.ContentType) = "invalid" then
+        m.Screen.SetBreadcrumbEnabled(true)
+        'ljunkie BUGFIX TODO ( this is bug existing in official plex ) 
+        '  left/right buttons when viewing global recently added dies when switching from movie to other contentType
+        ' Note: left and right have been denied now in BaseSpringboardScreen.brs - sbRefresh 
+        m.Screen.SetBreadcrumbText("invalid", "bug in official channel too")
     end if
 
     if m.metadata.ContentType = "movie" AND RegRead("rf_rottentomatoes", "preferences", "enabled") = "enabled" then 

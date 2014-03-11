@@ -51,7 +51,6 @@ Sub Main(args)
     RegDelete("quality_override", "preferences")
 
     ' ljunkie - remove prefs on start - testing
-    'RegDelete("rf_bcdynamic", "preferences")
     'RegDelete("rf_rottentomatoes", "preferences")
     'RegDelete("rf_trailers", "preferences")
     'RegDelete("rf_tvwatch", "preferences")
