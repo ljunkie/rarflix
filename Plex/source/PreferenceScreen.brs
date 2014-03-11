@@ -287,10 +287,8 @@ Sub showPreferencesScreen()
     m.Screen.SetHeader("Set Plex Channel Preferences")
 
     ' re-ordered - RR
-    m.AddItem({title: "About RARflix"}, "ShowReleaseNotes")
     m.AddItem({title: getCurrentMyPlexLabel()}, "myplex")
-    m.AddItem({title: "User Profiles", ShortDescriptionLine2: "Fast user switching"}, "userprofiles")
-    m.AddItem({title: "Security PIN", ShortDescriptionLine2: "Require a PIN to access (multi-user supported)"}, "securitypin")
+    m.AddItem({title: "User Profiles & PINS", ShortDescriptionLine2: "Fast user switching"}, "userprofiles")
     m.AddItem({title: "Plex Media Servers"}, "servers")
     m.AddItem({title: "Quality"}, "quality", m.GetEnumValue("quality"))
     m.AddItem({title: "Remote Quality"}, "quality_remote", m.GetEnumValue("quality_remote"))
@@ -305,7 +303,7 @@ Sub showPreferencesScreen()
     m.AddItem({title: "Logging"}, "debug")
     m.AddItem({title: "Advanced Preferences"}, "advanced")
     m.AddItem({title: "Channel Status: " + AppManager().State}, "status")
-
+    m.AddItem({title: "About RARflix"}, "ShowReleaseNotes")
     m.AddItem({title: "Close Preferences"}, "close")
 
     m.serversBefore = {}
@@ -413,10 +411,6 @@ Function prefsMainHandleMessage(msg) As Boolean
                 screen = createSlideshowPrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["Slideshow & Photo Preferences"])
                 screen.Show()
-            else if command = "securitypin" then
-                screen = createSecurityPinPrefsScreen(m.ViewController)
-                m.ViewController.InitializeOtherScreen(screen, ["Security PIN"])
-                screen.Show()            
             else if command = "userprofiles" then
                 screen = createUserProfilesPrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["User Profiles"])
@@ -800,19 +794,30 @@ Function createUserProfilesPrefsScreen(viewController) As Object
     }
     poster = arrowUpPO
     if RegRead("userprofile_icon_color", "preferences", "orange", 0) <> "orange" then poster = arrowUp
-    obj.AddItem({title: "User Selection Icon Color", ShortDescriptionLine2: "Global Setting", SDPosterUrl: poster, HDPosterUrl: poster  }, "userprofile_icon_color", obj.GetEnumValue("userprofile_icon_color",0)) ' this is a global option
 
     'These must be the first 8 entries for easy parsing for the createUserEditPrefsScreen()
     fn = firstof(RegRead("friendlyName", "preferences", invalid, 0),"")
-    if fn <> "" then fn = " [" + fn + "]"
-    obj.AddItem({title: "Default User Profile " + fn}, "userActive0")
-    for ucount = 1 to 7
-        enaText = "Disabled"
-        if RegRead("userActive", "preferences", "0", ucount) = "1" then enaText = "Enabled"
-        fn = firstof(RegRead("friendlyName", "preferences", invalid, ucount),"")
-        if fn <> "" then enaText = enaText + " [" + fn + "]"
-        obj.AddItem({title: "User Profile " + tostr(ucount)}, "userActive" + tostr(ucount), enaText)
-    end for
+    if fn <> "" then 
+        fn = " [" + fn + "]"
+        pinName = fn
+    else if GetGlobalAA().userNum > 0 then 
+        pinName = "Profile " + tostr(GetGlobalAA().userNum)
+    else 
+        pinName = "Default User"
+    end if
+
+    obj.AddItem({title: "Security PIN " + pinName, ShortDescriptionLine2: "Set a PIN code for the profile"+chr(10)+"you are currently using"}, "securitypin")
+    if GetGlobalAA().userNum = 0 then 
+        obj.AddItem({title: "Default User Profile " + fn}, "userActive0")
+        for ucount = 1 to 7
+            enaText = "Disabled"
+            if RegRead("userActive", "preferences", "0", ucount) = "1" then enaText = "Enabled"
+            fn = firstof(RegRead("friendlyName", "preferences", invalid, ucount),"")
+            if fn <> "" then enaText = enaText + " [" + fn + "]"
+            obj.AddItem({title: "User Profile " + tostr(ucount)}, "userActive" + tostr(ucount), enaText)
+        end for
+        obj.AddItem({title: "User Selection Icon Color", ShortDescriptionLine2: "Global Setting", SDPosterUrl: poster, HDPosterUrl: poster  }, "userprofile_icon_color", obj.GetEnumValue("userprofile_icon_color",0))
+    end if
     obj.AddItem({title: "Close"}, "close")
     return obj
 End Function
@@ -832,6 +837,10 @@ Function prefsUserProfilesHandleMessage(msg) As Boolean
             re = CreateObject("roRegex", "userActive\d", "i") ' modified so we can add other buttons on previous screen
             if command = "close" then
                 m.Screen.Close()
+            else if command = "securitypin" then
+                screen = createSecurityPinPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["Security PIN"])
+                screen.Show()            
             else if command = "userprofile_icon_color" then 
                 m.currentUser = 0 ' set to write this as a global setting
                 m.HandleEnumPreference(command, msg.GetIndex())
