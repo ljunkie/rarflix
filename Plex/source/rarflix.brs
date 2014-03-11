@@ -95,11 +95,6 @@ Sub InitRARflix()
     forceVer = "3"
     if RegRead("rf_force_reg", "preferences","0") <> forceVer then
         RegWrite("rf_force_reg", forceVer, "preferences")
-        Debug("---- first run - forcing grid mode/styule")
-        if GetGlobal("IsHD") = true then RegWrite("rf_grid_style", "flat-portrait", "preferences")
-        RegWrite("rf_poster_displaymode", "scale-to-fit", "preferences")
-        RegWrite("rf_grid_displaymode", "photo-fit", "preferences")
-        'RegWrite("rf_episode_episodic_thumbnail", "enabled", "preferences") - default as of v3.1.2
     end if
 
     ' set remote pref to legacy is device is legacy ( only on the first run -- users can override this )
