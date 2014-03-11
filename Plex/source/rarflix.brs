@@ -53,45 +53,11 @@ Sub InitRARflix()
         Debug("    flushed changes to registry")
     end if
 
-    '     this might be useful if we ever need to remove specific keys -- needs work since it was used for what I am doing above (above is better to flush all)
-    '     flush = []
-    '     for each sec_key in purge_sections 
-    '         sec = CreateObject("roRegistrySection", sec_key)
-    '         keys = sec.GetKeyList()
-    '         delete  = invalid
-    '         for each k in keys
-    '             delete = sec_key
-    '             Debug("    deleting " + tostr(k) + " from " + tostr(sec_key))
-    '             sec.Delete(k)
-    '         next
-    '         if delete <> invalid then flush.Push(delete)
-    '     next 
-    '
-    '     ' we only want to flush once per registry section     
-    '     if flush.Count() > 0 then
-    '         for each sec_key in flush
-    '             sec = CreateObject("roRegistrySection", sec_key)
-    '             sec.Flush()
-    '             Debug("Flush called for " + tostr(sec_key))
-    '         next
-    '     end if
-
     Debug("---- end purge ----")
-
-    ' Temporarily disable theme music due to bug - user can change it back if they really want it
-    ' 2013-12-01 -- this has played it's role now... theme_music defaults to "disabled"
-    'if RegRead("rf_temp_thememusic", "preferences","first") = "first" then
-    '    prev_setting = RegRead("theme_music", "preferences","disabled")
-    '    Debug("first run - disabling theme music due to bug")
-    '    RegWrite("theme_music", "disabled", "preferences")
-    '    RegWrite("rf_temp_thememusic", prev_setting, "preferences")
-    'end if
 
     ' reset the grid style to flat-portrait/photo-fit - only once
     ' we can imcrement this to change settings on newer versions
-    ' 2013-12-01
-    ' 2013-12-04 (3) - forcing images instead of numbers for episodic view
-    '                  this will also force Poster/Photo-fit for grid still ( but that's ok )
+    ' 2014-03-11 (4) 
     forceVer = "3"
     if RegRead("rf_force_reg", "preferences","0") <> forceVer then
         RegWrite("rf_force_reg", forceVer, "preferences")
