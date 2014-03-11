@@ -288,20 +288,22 @@ Sub showPreferencesScreen()
 
     ' re-ordered - RR
     m.AddItem({title: getCurrentMyPlexLabel()}, "myplex")
-    m.AddItem({title: "User Profiles & PINS", ShortDescriptionLine2: "Fast user switching"}, "userprofiles")
     m.AddItem({title: "Plex Media Servers"}, "servers")
     m.AddItem({title: "Quality"}, "quality", m.GetEnumValue("quality"))
     m.AddItem({title: "Remote Quality"}, "quality_remote", m.GetEnumValue("quality_remote"))
     m.AddItem({title: "Direct Play"}, "directplay", m.GetEnumValue("directplay"))
-    m.AddItem({title: "Audio Preferences"}, "audio_prefs")
     m.AddItem({title: "Home Screen"}, "homescreen")
     m.AddItem({title: "Section Display"}, "sections")
-    m.AddItem({title: "Remote Control/Name"}, "remotecontrol")
     m.AddItem({title: "Subtitles"}, "subtitles")
     m.AddItem({title: "Slideshow & Photos"}, "slideshow")
+    m.AddItem({title: "User Profiles & PINS", ShortDescriptionLine2: "Fast user switching"}, "userprofiles")
+
+    m.AddItem({title: "Audio Preferences"}, "audio_prefs")
+    m.AddItem({title: "Remote Control/Name"}, "remotecontrol")
+    m.AddItem({title: "Advanced Preferences"}, "advanced")
+
     m.AddItem({title: "Screensaver"}, "screensaver", m.GetEnumValue("screensaver"))
     m.AddItem({title: "Logging"}, "debug")
-    m.AddItem({title: "Advanced Preferences"}, "advanced")
     m.AddItem({title: "Channel Status: " + AppManager().State}, "status")
     m.AddItem({title: "About RARflix"}, "ShowReleaseNotes")
     m.AddItem({title: "Close Preferences"}, "close")
@@ -1158,6 +1160,7 @@ Function createAdvancedPrefsScreen(viewController) As Object
 
     obj.Screen.SetHeader("Advanced preferences don't usually need to be changed")
 
+    obj.AddItem({title: "RARflix Advanced", ShortDescriptionLine2: "More Advanced..."}, "rarflix_prefs")
     obj.AddItem({title: "Theme"}, "rf_theme", obj.GetEnumValue("rf_theme"))
     obj.AddItem({title: "Confirm Exit", shortDescriptionLine2: "prompt before exiting RARflix"}, "exit_confirmation", obj.GetEnumValue("exit_confirmation"))
     obj.AddItem({title: "Auto Episode Advance", shortDescriptionLine2: "show episode next up after watching"}, "advanceToNextItem", obj.GetEnumValue("advanceToNextItem"))
@@ -1173,7 +1176,6 @@ Function createAdvancedPrefsScreen(viewController) As Object
 
     obj.AddItem({title: "HLS Segment Length"}, "segment_length", obj.GetEnumValue("segment_length"))
     obj.AddItem({title: "Analytics"}, "analytics", obj.GetEnumValue("analytics"))
-    obj.AddItem({title: "RARflix Preferences", ShortDescriptionLine2: "Really Advanced"}, "rarflix_prefs")
 
     obj.AddItem({title: "Close"}, "close")
 
@@ -2104,15 +2106,15 @@ Function createHomeScreenPrefsScreen(viewController) As Object
 
     obj.Screen.SetHeader("Change the appearance of the home screen")
     obj.AddItem({title: "Reorder Home Rows", ShortDescriptionLine2: "A restart of the Channel is required"}, "home_row_order")
-    obj.AddItem({title: "Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_home_displaymode", obj.GetEnumValue("rf_home_displaymode"))
     obj.AddItem({title: "Queue"}, "playlist_view_queue", obj.GetEnumValue("playlist_view_queue"))
     obj.AddItem({title: "Recommendations"}, "playlist_view_recommendations", obj.GetEnumValue("playlist_view_recommendations"))
     obj.AddItem({title: "On Deck"}, "row_visibility_ondeck", obj.GetEnumValue("row_visibility_ondeck"))
     obj.AddItem({title: "Recently Added"}, "row_visibility_recentlyadded", obj.GetEnumValue("row_visibility_recentlyadded"))
-    obj.AddItem({title: "Now Playing", ShortDescriptionLine2: "rarflix pref"}, "row_visibility_now_playing", obj.GetEnumValue("row_visibility_now_playing"))
+    obj.AddItem({title: "Now Playing"}, "row_visibility_now_playing", obj.GetEnumValue("row_visibility_now_playing"))
     obj.AddItem({title: "Channels"}, "row_visibility_channels", obj.GetEnumValue("row_visibility_channels"))
     obj.AddItem({title: "Clock"}, "rf_hs_clock", obj.GetEnumValue("rf_hs_clock"))
     obj.AddItem({title: "Date"}, "rf_hs_date", obj.GetEnumValue("rf_hs_date"))
+    obj.AddItem({title: "Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_home_displaymode", obj.GetEnumValue("rf_home_displaymode"))
     obj.AddItem({title: "Close"}, "close")
 
     return obj
