@@ -58,9 +58,19 @@ Sub InitRARflix()
     ' reset the grid style to flat-portrait/photo-fit - only once
     ' we can imcrement this to change settings on newer versions
     ' 2014-03-11 (4) 
-    forceVer = "3"
+    '     * up button behavior
+    '        - Legacy: exit screen
+    '        - NON Legacy: stop (do nothing)
+    forceVer = "4"
     if RegRead("rf_force_reg", "preferences","0") <> forceVer then
         RegWrite("rf_force_reg", forceVer, "preferences")
+
+        if GetGlobal("rokuLegacy") = true then 
+            RegWrite("rf_up_behavior", "exit", "preferences")
+        else 
+            RegWrite("rf_up_behavior", "stop", "preferences")
+        end if
+
     end if
 
     ' set remote pref to legacy is device is legacy ( only on the first run -- users can override this )
@@ -101,7 +111,6 @@ Sub InitRARflix()
     RegRead("rf_hs_date", "preferences", "enabled")
     RegRead("rf_focus_unwatched", "preferences", "enabled")
     RegRead("rf_user_rating_only", "preferences", "user_prefer") ' this will show the original star rating as the users if it exists. seems safe to set at first
-    RegRead("rf_up_behavior", "preferences", "exit") ' default is exit screen ( except for home )
     RegRead("rf_notify", "preferences", "enabled") ' enabled:all, video:video only, nonvideo:non video, disabled:disabled (when to notify)
     RegRead("rf_notify_np_type", "preferences", "all") ' now playing notify types
     RegRead("securityPincode", "preferences", invalid)  'PIN code required for startup
@@ -128,7 +137,6 @@ Sub InitRARflix()
     Debug("rf_rowfilter_limit: " + tostr(RegRead("rf_rowfilter_limit", "preferences")))
     Debug("rf_focus_unwatched: " + tostr(RegRead("rf_focus_unwatched", "preferences")))
     Debug("rf_user_rating_only: " + tostr(RegRead("rf_user_rating_only", "preferences")))
-    Debug("rf_up_behavior: " + tostr(RegRead("rf_up_behavior", "preferences")))
     Debug("rf_notify: " + tostr(RegRead("rf_notify", "preferences")))
     Debug("rf_notify_np_type: " + tostr(RegRead("rf_notify_np_type", "preferences")))
     Debug("rf_temp_thememusic: " + tostr(RegRead("rf_temp_thememusic", "preferences")))
@@ -558,7 +566,7 @@ Function createRARflixPrefsScreen(viewController) As Object
     obj.AddItem({title: "TV Episode Poster (Grid)", ShortDescriptionLine2: "Season or Show's Poster on Grid"}, "rf_episode_poster", obj.GetEnumValue("rf_episode_poster"))
     obj.AddItem({title: "Focus on Unwatched", ShortDescriptionLine2: "Default to the first unwatched " + chr(10) + "item (poster screen only)"}, "rf_focus_unwatched", obj.GetEnumValue("rf_focus_unwatched"))
     obj.AddItem({title: "Star Ratings Override", ShortDescriptionLine2: "Only show or Prefer"+chr(10)+"Star Ratings that you have set"}, "rf_user_rating_only", obj.GetEnumValue("rf_user_rating_only"))
-    obj.AddItem({title: "Up Button (row screens)", ShortDescriptionLine2: "What to do when the UP button is " + chr(10) + "pressed on a screen with rows"}, "rf_up_behavior", obj.GetEnumValue("rf_up_behavior"))
+    obj.AddItem({title: "Up Button (grid screens)", ShortDescriptionLine2: "What to do when the UP button is " + chr(10) + "pressed on a screen with rows"}, "rf_up_behavior", obj.GetEnumValue("rf_up_behavior"))
     obj.AddItem({title: "Music Artists", ShortDescriptionLine2: "Artist to display for a track"}, "rf_music_artist", obj.GetEnumValue("rf_music_artist"))
 
     'if isRFtest() then 
