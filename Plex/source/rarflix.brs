@@ -323,7 +323,6 @@ Function createRARflixPrefsScreen(viewController) As Object
         default: "enabled"
     }
 
-
     ' RT/Trailers - search title
     rt_prefs = [
         { title: "Title", EnumValue: "title", ShortDescriptionLine2: "Search by Movie Title" },
@@ -357,23 +356,6 @@ Function createRARflixPrefsScreen(viewController) As Object
         values: grid_dynamic,
         heading: "Grid Updates / Reloading of Rows",
         default: "full"
-    }
-
-    ' TV Seasons Poster ( prefer season over show )
-    values = [
-        { title: "Season", EnumValue: "season", },
-        { title: "Show", EnumValue: "show" },
-
-    ]
-    obj.Prefs["rf_season_poster"] = {
-        values: values,
-        heading: "Poster to display when viewing a TV Show Season on the Grid",
-        default: "season"
-    }
-    obj.Prefs["rf_episode_poster"] = {
-        values: values,
-        heading: "Poster to display when viewing a TV Show Episode on the Grid",
-        default: "season"
     }
 
     ' focus to the unwatched item in a postescreen -  maybe others later
@@ -411,18 +393,6 @@ Function createRARflixPrefsScreen(viewController) As Object
         values: user_ratings,
         heading: "Only show or Prefer your Star Ratings"
         default: "disabled"
-    }
-
-    ' user ratings only
-    up_behavior = [
-        { title: "Previous Screen", EnumValue: "exit", ShortDescriptionLine2: "Go to the Previous Screen (go back)",}
-        { title: "Do Nothing", EnumValue: "stop", ShortDescriptionLine2: "Stay on Screen (do nothing)",}
-
-    ]
-    obj.Prefs["rf_up_behavior"] = {
-        values: up_behavior,
-        heading: "Up Key action when Top Row is Selected",
-        default: "exit"
     }
 
     ' text overlay color (customer posters)
@@ -496,11 +466,8 @@ Function createRARflixPrefsScreen(viewController) As Object
     if RegRead("rf_rottentomatoes", "preferences","enabled") = "enabled" or RegRead("rf_trailers", "preferences") <> "disabled" then
         obj.AddItem({title: "Trailers/Tomatoes Search by", ShortDescriptionLine2: "You probably don't want to change this"}, "rf_searchtitle", obj.GetEnumValue("rf_searchtitle"))
     end if
-    obj.AddItem({title: "TV Season Poster (Grid)", ShortDescriptionLine2: "Season or Show's Poster on Grid"}, "rf_season_poster", obj.GetEnumValue("rf_season_poster"))
-    obj.AddItem({title: "TV Episode Poster (Grid)", ShortDescriptionLine2: "Season or Show's Poster on Grid"}, "rf_episode_poster", obj.GetEnumValue("rf_episode_poster"))
     obj.AddItem({title: "Focus on Unwatched", ShortDescriptionLine2: "Default to the first unwatched " + chr(10) + "item (poster screen only)"}, "rf_focus_unwatched", obj.GetEnumValue("rf_focus_unwatched"))
     obj.AddItem({title: "Star Ratings Override", ShortDescriptionLine2: "Only show or Prefer"+chr(10)+"Star Ratings that you have set"}, "rf_user_rating_only", obj.GetEnumValue("rf_user_rating_only"))
-    obj.AddItem({title: "Up Button (grid screens)", ShortDescriptionLine2: "What to do when the UP button is " + chr(10) + "pressed on a screen with rows"}, "rf_up_behavior", obj.GetEnumValue("rf_up_behavior"))
     obj.AddItem({title: "Music Artists", ShortDescriptionLine2: "Artist to display for a track"}, "rf_music_artist", obj.GetEnumValue("rf_music_artist"))
 
     'if isRFtest() then 
