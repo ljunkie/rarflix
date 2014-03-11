@@ -481,22 +481,6 @@ Function createRARflixPrefsScreen(viewController) As Object
         default: "all"
     }
 
-
-    filter_limit = [
-        { title: "100", EnumValue: "100" },
-        { title: "200", EnumValue: "200" },
-        { title: "300", EnumValue: "300", ShortDescriptionLine2: "May cause Plex to be Sluggish"},
-        { title: "400", EnumValue: "400", ShortDescriptionLine2: "May cause Plex to be Sluggish"},
-        { title: "500", EnumValue: "500", ShortDescriptionLine2: "May cause Plex to be Sluggish"},
-        { title: "600", EnumValue: "600", ShortDescriptionLine2: "May cause Plex to be Sluggish"},
-        { title: "700", EnumValue: "700", ShortDescriptionLine2: "May cause Plex to be Sluggish"},
-        { title: "800", EnumValue: "800", ShortDescriptionLine2: "May cause Plex to be Sluggish"},
-        { title: "900", EnumValue: "900", ShortDescriptionLine2: "May cause Plex to be Sluggish"},
-        { title: "1000", EnumValue: "1000", ShortDescriptionLine2: "May cause Plex to be Sluggish"},
-        { title: "1500", EnumValue: "1500", ShortDescriptionLine2: "May cause Plex to be Sluggish"},
-        { title: "All", EnumValue: "9999", ShortDescriptionLine2: "May cause Plex to be Sluggish.. really?"},
-    ]
-
     obj.Screen.SetHeader("RARflix Preferences")
     obj.AddItem({title: "Custom Icons", ShortDescriptionLine2: "Replace generic icons with Text"}, "rf_custom_thumbs", obj.GetEnumValue("rf_custom_thumbs"))
     if RegRead("rf_custom_thumbs", "preferences","enabled") = "enabled" then
