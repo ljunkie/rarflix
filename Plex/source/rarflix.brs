@@ -98,7 +98,6 @@ Sub InitRARflix()
     end if
 
     ' set remote pref to legacy is device is legacy ( only on the first run -- users can override this )
-    RegDelete("legacy_remote", "preferences")
     if RegRead("legacy_remote", "preferences") = invalid then 
         if GetGlobal("rokuLegacy") = true then 
             RegWrite("legacy_remote", "1", "preferences")
