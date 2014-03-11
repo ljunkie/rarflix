@@ -364,9 +364,12 @@ Function prefsMainHandleMessage(msg) As Boolean
                 screen.Show()
             else if command = "myplex" then
                 if MyPlexManager().IsSignedIn then
-                    MyPlexManager().Disconnect()
-                    m.Changes["myplex"] = "disconnected"
-                    m.SetTitle(msg.GetIndex(), getCurrentMyPlexLabel())
+                    ' ljunkie - add a confirmation
+                    if createDialogConfirm() = true then 
+                        MyPlexManager().Disconnect()
+                        m.Changes["myplex"] = "disconnected"
+                        m.SetTitle(msg.GetIndex(), getCurrentMyPlexLabel())
+                     end if
                 else
                     m.checkMyPlexOnActivate = true
                     m.myPlexIndex = msg.GetIndex()

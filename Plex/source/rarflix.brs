@@ -1737,3 +1737,35 @@ function supportsTextScreen() as boolean
     if (major > 4) or (major = 4 and minor > 2) then textScreen = true
     return textScreen
 end function
+
+function createDialogConfirm() 
+    port = CreateObject("roMessagePort")
+    dialog = CreateObject("roMessageDialog")
+    dialog.SetMessagePort(port) 
+    dialog.SetTitle("Are you sure?")
+
+    dialog.AddButton(1, "Yes")
+    dialog.AddButton(2, "No")
+    dialog.EnableBackButton(false)
+    dialog.Show()
+
+    confirm = false
+
+    ' TODO(ljunkie) make this non-blocking
+    while True
+        dlgMsg = wait(0, dialog.GetMessagePort())
+        if type(dlgMsg) = "roMessageDialogEvent"
+            if dlgMsg.isButtonPressed()
+                if dlgMsg.GetIndex() = 1
+                    confirm = true
+                end if
+                exit while
+            else if dlgMsg.isScreenClosed()
+                exit while
+            end if
+        end if
+    end while 
+    dialog.Close()
+
+    return confirm
+end function
