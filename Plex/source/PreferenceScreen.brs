@@ -288,7 +288,6 @@ Sub showPreferencesScreen()
 
     ' re-ordered - RR
     m.AddItem({title: "About RARflix"}, "ShowReleaseNotes")
-    m.AddItem({title: "RARflix Preferences", ShortDescriptionLine2: "the goods"}, "rarflix_prefs")
     m.AddItem({title: getCurrentMyPlexLabel()}, "myplex")
     m.AddItem({title: "User Profiles", ShortDescriptionLine2: "Fast user switching"}, "userprofiles")
     m.AddItem({title: "Security PIN", ShortDescriptionLine2: "Require a PIN to access (multi-user supported)"}, "securitypin")
@@ -452,10 +451,6 @@ Function prefsMainHandleMessage(msg) As Boolean
                 screen.Show()
             else if command = "ShowReleaseNotes" then
                 m.ViewController.ShowReleaseNotes("about")
-            else if command = "rarflix_prefs" then
-                screen = createRARflixPrefsScreen(m.ViewController)
-                m.ViewController.InitializeOtherScreen(screen, ["RARflix Preferences"])
-                screen.Show()
             else if command = "close" then
                 m.Screen.Close()
             end if
@@ -1155,6 +1150,8 @@ Function createAdvancedPrefsScreen(viewController) As Object
 
     obj.AddItem({title: "HLS Segment Length"}, "segment_length", obj.GetEnumValue("segment_length"))
     obj.AddItem({title: "Analytics"}, "analytics", obj.GetEnumValue("analytics"))
+    obj.AddItem({title: "RARflix Preferences", ShortDescriptionLine2: "Really Advanced"}, "rarflix_prefs")
+
     obj.AddItem({title: "Close"}, "close")
 
     return obj
@@ -1173,6 +1170,10 @@ Function prefsAdvancedHandleMessage(msg) As Boolean
             if command = "1080p" then
                 screen = create1080PreferencesScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["1080p Settings"])
+                screen.Show()
+            else if command = "rarflix_prefs" then
+                screen = createRARflixPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["RARflix Preferences"])
                 screen.Show()
             else if command = "close" then
                 m.Screen.Close()

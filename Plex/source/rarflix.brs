@@ -513,7 +513,6 @@ Function createRARflixPrefsScreen(viewController) As Object
     if RegRead("rf_custom_thumbs", "preferences","enabled") = "enabled" then
         obj.AddItem({title: "Custom Icons Text", ShortDescriptionLine2: "Color of text to use"}, "rf_img_overlay", obj.GetEnumValue("rf_img_overlay"))
     end if
-    obj.AddItem({title: "Section Display", ShortDescriptionLine2: "a plex original, for easy access"}, "sections")
 
     obj.AddItem({title: "Movie Trailers", ShortDescriptionLine2: "Got Trailers?"}, "rf_trailers", obj.GetEnumValue("rf_trailers"))
     obj.AddItem({title: "Play first Trailer", ShortDescriptionLine2: "Automatically play first trailer"}, "rf_trailerplayfirst", obj.GetEnumValue("rf_trailerplayfirst"))
@@ -554,11 +553,7 @@ Function prefsRARFflixHandleMessage(msg) As Boolean
             m.ViewController.Home.Refresh(m.Changes) ' include the Changes for homescreen refresh ( might be useful to add this to the main ALL *HandleMessages functions )
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "sections" then
-                screen = createSectionDisplayPrefsScreen(m.ViewController)
-                m.ViewController.InitializeOtherScreen(screen, ["Section Display Preferences"])
-                screen.Show()
-            else if command = "ShowReleaseNotes" then
+            if command = "ShowReleaseNotes" then
                 m.ViewController.ShowReleaseNotes("about")
             else if command = "close" then
                 m.Screen.Close()
