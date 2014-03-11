@@ -139,7 +139,7 @@ Sub InitRARflix()
     RegRead("rf_season_poster", "preferences","season") ' seasons poster instead of show ( show was Plex Official Channel default )
     RegRead("rf_episode_poster", "preferences","season") ' seasons poster instead of show ( show was Plex Official Channel default )
     RegRead("rf_searchtitle", "preferences","title")
-    RegRead("rf_rowfilter_limit", "preferences","200") ' no toggle yet
+    RegRead("rf_rowfilter_limit", "preferences","100") ' default 100 -- removed toggle
     RegRead("rf_hs_clock", "preferences", "enabled")
     RegRead("rf_hs_date", "preferences", "enabled")
     RegRead("rf_focus_unwatched", "preferences", "enabled")
@@ -576,12 +576,6 @@ Function createRARflixPrefsScreen(viewController) As Object
         { title: "1500", EnumValue: "1500", ShortDescriptionLine2: "May cause Plex to be Sluggish"},
         { title: "All", EnumValue: "9999", ShortDescriptionLine2: "May cause Plex to be Sluggish.. really?"},
     ]
-    obj.Prefs["rf_rowfilter_limit"] = {
-        values: filter_limit,
-        heading: "Item limit for Unwatched Recently Added & Released [movies]",
-        default: "200"
-    }
-
 
     obj.Screen.SetHeader("RARflix Preferences")
     obj.AddItem({title: "Theme"}, "rf_theme", obj.GetEnumValue("rf_theme"))
@@ -606,7 +600,6 @@ Function createRARflixPrefsScreen(viewController) As Object
     obj.AddItem({title: "TV Season Poster (Grid)", ShortDescriptionLine2: "Season or Show's Poster on Grid"}, "rf_season_poster", obj.GetEnumValue("rf_season_poster"))
     obj.AddItem({title: "TV Episode Poster (Grid)", ShortDescriptionLine2: "Season or Show's Poster on Grid"}, "rf_episode_poster", obj.GetEnumValue("rf_episode_poster"))
     obj.AddItem({title: "Focus on Unwatched", ShortDescriptionLine2: "Default to the first unwatched " + chr(10) + "item (poster screen only)"}, "rf_focus_unwatched", obj.GetEnumValue("rf_focus_unwatched"))
-    obj.AddItem({title: "Unwatched Added/Released", ShortDescriptionLine2: "Item limit for unwatched Recently Added &" + chr(10) +"Recently Released rows [movies]"}, "rf_rowfilter_limit", obj.GetEnumValue("rf_rowfilter_limit"))
     obj.AddItem({title: "Star Ratings Override", ShortDescriptionLine2: "Only show or Prefer"+chr(10)+"Star Ratings that you have set"}, "rf_user_rating_only", obj.GetEnumValue("rf_user_rating_only"))
     obj.AddItem({title: "Up Button (row screens)", ShortDescriptionLine2: "What to do when the UP button is " + chr(10) + "pressed on a screen with rows"}, "rf_up_behavior", obj.GetEnumValue("rf_up_behavior"))
     obj.AddItem({title: "Music Artists", ShortDescriptionLine2: "Artist to display for a track"}, "rf_music_artist", obj.GetEnumValue("rf_music_artist"))

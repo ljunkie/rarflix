@@ -52,7 +52,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
     ' 2014-02-16 - music section: firstCharacter
     '              newItems roAssocArray now holds the extra rows - should be easier to add more later or modify all at once
     newItems = []
-    size_limit = RegRead("rf_rowfilter_limit", "preferences","200") 'gobal size limit Toggle for filter rows
+    size_limit = RegRead("rf_rowfilter_limit", "preferences","100") 'gobal size limit Toggle for filter rows
 
     if type(item) = "roAssociativeArray" and item.contenttype = "section" and item.type = "artist" then 
         newItems.push({key: "firstCharacter", title: "First Letter", key_copy: "all"})
