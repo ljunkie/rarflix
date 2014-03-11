@@ -200,8 +200,7 @@ Sub setVideoBasics(video, container, item)
             episode = "Episode ??"
         end if
 
-        'ljunkie - exclude episode number to display images on a poster screen
-        if RegRead("rf_episode_episodic_thumbnail", "preferences","enabled") = "enabled" then video.EpisodeNumber = invalid
+        video.EpisodeNumber = invalid ' remove episode number. This force the posterscreens to show a thumbnail instead of a blank image with a number
 
         parentIndex = firstOf(item@parentIndex, container.xml@parentIndex)
         if parentIndex <> invalid then

@@ -72,9 +72,6 @@ Sub InitRARflix()
         end if
     end if
 
-    ' v3.1.2 - forces everyone to use images for the episodic view ( TV shows only )
-    if RegRead("rf_episode_episodic_thumbnail", "preferences","enabled") <> "enabled" then RegWrite("rf_episode_episodic_thumbnail", "enabled", "preferences")
-
     ' cleaning up some options -- these *should* not need a toggle anymore
     '   I.E. we changed ways the Official channel works, but don't need to toggle to go back to the Official way
     '
