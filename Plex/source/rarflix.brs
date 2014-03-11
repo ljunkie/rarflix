@@ -104,7 +104,7 @@ Sub InitRARflix()
     RegRead("rf_hs_date", "preferences", "enabled")
     RegRead("rf_focus_unwatched", "preferences", "enabled")
     RegRead("rf_user_rating_only", "preferences", "user_prefer") ' this will show the original star rating as the users if it exists. seems safe to set at first
-    RegRead("rf_notify", "preferences", "enabled") ' enabled:all, video:video only, nonvideo:non video, disabled:disabled (when to notify)
+    RegRead("rf_notify", "preferences", "disabled") ' enabled:all, video:video only, nonvideo:non video, disabled:disabled (when to notify)
     RegRead("rf_notify_np_type", "preferences", "all") ' now playing notify types
     RegRead("securityPincode", "preferences", invalid)  'PIN code required for startup
 
