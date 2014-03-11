@@ -1038,6 +1038,16 @@ Function createAdvancedPrefsScreen(viewController) As Object
 
     obj.HandleMessage = prefsAdvancedHandleMessage
 
+    rf_theme = [
+        { title: "Original", EnumValue: "original", },
+        { title: "Black", EnumValue: "black", },
+    ]
+    obj.Prefs["rf_theme"] = {
+        values: rf_theme,
+        heading: "Theme for Channel (restart required)",
+        default: "black"
+    }
+
     ' Exit Confirmation
     values = [
         { title: "Enabled", EnumValue: "enabled",  },
@@ -1148,6 +1158,7 @@ Function createAdvancedPrefsScreen(viewController) As Object
 
     obj.Screen.SetHeader("Advanced preferences don't usually need to be changed")
 
+    obj.AddItem({title: "Theme"}, "rf_theme", obj.GetEnumValue("rf_theme"))
     obj.AddItem({title: "Confirm Exit", shortDescriptionLine2: "prompt before exiting RARflix"}, "exit_confirmation", obj.GetEnumValue("exit_confirmation"))
     obj.AddItem({title: "Auto Episode Advance", shortDescriptionLine2: "show episode next up after watching"}, "advanceToNextItem", obj.GetEnumValue("advanceToNextItem"))
     obj.AddItem({title: "Transcoder"}, "transcoder_version", obj.GetEnumValue("transcoder_version"))

@@ -290,16 +290,6 @@ Function createRARflixPrefsScreen(viewController) As Object
     obj = createBasePrefsScreen(viewController)
     obj.HandleMessage = prefsRARFflixHandleMessage
 
-    rf_theme = [
-        { title: "Original", EnumValue: "original", },
-        { title: "Black", EnumValue: "black", },
-    ]
-    obj.Prefs["rf_theme"] = {
-        values: rf_theme,
-        heading: "Theme for Channel (restart required)",
-        default: "black"
-    }
-
     ' Rotten Tomatoes
     rt_prefs = [
         { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Display Ratings from RottenTomatoes" },
@@ -508,7 +498,6 @@ Function createRARflixPrefsScreen(viewController) As Object
     ]
 
     obj.Screen.SetHeader("RARflix Preferences")
-    obj.AddItem({title: "Theme"}, "rf_theme", obj.GetEnumValue("rf_theme"))
     obj.AddItem({title: "Custom Icons", ShortDescriptionLine2: "Replace generic icons with Text"}, "rf_custom_thumbs", obj.GetEnumValue("rf_custom_thumbs"))
     if RegRead("rf_custom_thumbs", "preferences","enabled") = "enabled" then
         obj.AddItem({title: "Custom Icons Text", ShortDescriptionLine2: "Color of text to use"}, "rf_img_overlay", obj.GetEnumValue("rf_img_overlay"))
