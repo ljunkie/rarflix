@@ -294,6 +294,7 @@ Sub showPreferencesScreen()
     m.AddItem({title: "Direct Play"}, "directplay", m.GetEnumValue("directplay"))
     m.AddItem({title: "Home Screen"}, "homescreen")
     m.AddItem({title: "Section Display"}, "sections")
+    m.AddItem({title: "Grid Options"}, "gridOptions")
     m.AddItem({title: "Subtitles"}, "subtitles")
     m.AddItem({title: "Slideshow & Photos"}, "slideshow")
     m.AddItem({title: "User Profiles & PINS", ShortDescriptionLine2: "Fast user switching"}, "userprofiles")
@@ -427,6 +428,10 @@ Function prefsMainHandleMessage(msg) As Boolean
             else if command = "sections" then
                 screen = createSectionDisplayPrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["Section Display Preferences"])
+                screen.Show()
+            else if command = "gridOptions" then
+                screen = createGridOptionsPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["Grid Options"])
                 screen.Show()
             else if command = "remotecontrol" then
                 screen = createRemoteControlPrefsScreen(m.ViewController)
@@ -1155,8 +1160,21 @@ Function createAdvancedPrefsScreen(viewController) As Object
         default: "1"
     }
 
+    ' remote up key behavior
+    up_behavior = [
+        { title: "Previous Screen", EnumValue: "exit", ShortDescriptionLine2: "Go to the Previous Screen (go back)",}
+        { title: "Do Nothing", EnumValue: "stop", ShortDescriptionLine2: "Stay on Screen (do nothing)",}
+
+    ]
+    obj.Prefs["rf_up_behavior"] = {
+        values: up_behavior,
+        heading: "Up Key action when Top Row is Selected",
+        default: "exit"
+    }
+
     versionArr = GetGlobalAA().Lookup("rokuVersionArr")
     major = versionArr[0]
+
 
     obj.Screen.SetHeader("Advanced preferences don't usually need to be changed")
 
@@ -1164,6 +1182,7 @@ Function createAdvancedPrefsScreen(viewController) As Object
     obj.AddItem({title: "Theme"}, "rf_theme", obj.GetEnumValue("rf_theme"))
     obj.AddItem({title: "Confirm Exit", shortDescriptionLine2: "prompt before exiting RARflix"}, "exit_confirmation", obj.GetEnumValue("exit_confirmation"))
     obj.AddItem({title: "Auto Episode Advance", shortDescriptionLine2: "show episode next up after watching"}, "advanceToNextItem", obj.GetEnumValue("advanceToNextItem"))
+    obj.AddItem({title: "Up Button", ShortDescriptionLine2: "What to do when the UP button is " + chr(10) + "pressed on a screen with rows"}, "rf_up_behavior", obj.GetEnumValue("rf_up_behavior"))
     obj.AddItem({title: "Transcoder"}, "transcoder_version", obj.GetEnumValue("transcoder_version"))
     obj.AddItem({title: "Continuous Play"}, "continuous_play", obj.GetEnumValue("continuous_play"))
     obj.AddItem({title: "Shuffle Play"}, "shuffle_play", obj.GetEnumValue("shuffle_play"))
@@ -2150,7 +2169,7 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
 
     obj.HandleMessage = prefsSectionDisplayHandleMessage
 
-    ' Grids or posters for TV series?
+    ' Grid or Posters for TV series
     values = [
         { title: "Grid", EnumValue: "1" },
         { title: "Poster", EnumValue: "" }
@@ -2159,6 +2178,17 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
         values: values,
         heading: "Which screen type should be used for TV series?",
         default: ""
+    }
+
+    ' Grid or Poster for Movies & Others
+    rf_poster_grid = [
+        { title: "Grid", EnumValue: "grid", ShortDescriptionLine2: "Prefer FULL grid when viewing items"  },
+        { title: "Poster", EnumValue: "poster", ShortDescriptionLine2: "Prefer Poster (one row) when viewing items"  },
+    ]
+    obj.Prefs["rf_poster_grid"] = {
+        values: rf_poster_grid,
+        heading: "Which screen type should be used for Movies & Other content?",
+        default: "grid"
     }
 
     ' Episodic Poster Screen for TV Series: 4x3 or 16x9
@@ -2172,6 +2202,7 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
         default: "flat-episodic-16x9"
     }
 
+    ' sorting
     values = [
         { title: "Title", EnumValue: "titleSort:asc",  ShortDescriptionLine2: "Sort by Title",  },
         { title: "Date Added", EnumValue: "addedAt:desc",  ShortDescriptionLine2: "sort by Date Added" },
@@ -2183,88 +2214,7 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
         default: "titleSort:asc"
     }
 
-    rf_poster_grid = [
-        { title: "Grid", EnumValue: "grid", ShortDescriptionLine2: "Prefer FULL grid when viewing items"  },
-        { title: "Poster", EnumValue: "poster", ShortDescriptionLine2: "Prefer Poster (one row) when viewing items"  },
-
-
-    ]
-    obj.Prefs["rf_poster_grid"] = {
-        values: rf_poster_grid,
-        heading: "Which screen type should be used for Movies & Other content?",
-        default: "grid"
-    }
-
-    ' Prefer Grid or Poster view for most?
-    rf_grid_style = [
-        { title: "Portrait", EnumValue: "flat-movie", ShortDescriptionLine2: "Grid 5x2 - Short Portrait"  },
-        { title: "Square", EnumValue: "flat-square", ShortDescriptionLine2: "Grid 7x3 - Square" },
-    ]
-
-    ' We don't want to show the Portrait options for SD.. it's even short than flat-movie - odd
-    if GetGlobal("IsHD") = true then 
-        rf_grid_style.Unshift({ title: "Portrait (tall)", EnumValue: "flat-portrait", ShortDescriptionLine2: "Grid 5x2 - Tall Portrait"  })
-    end if
-
-    obj.Prefs["rf_grid_style"] = {
-        values: rf_grid_style,
-        heading: "Style and Size of the Grid",
-        default: "flat-movie"
-    }
-    ' Grid Descriptions Pop Out
-    rf_grid_description = [
-        { title: "Enabled", EnumValue: "enabled"  },
-        { title: "Disabled", EnumValue: "disabled"  },
-
-    ]
-    obj.Prefs["rf_grid_description"] = {
-        values: rf_grid_description,
-        heading: "Grid Pop Out Description",
-        default: "enabled"
-    }
-
-    ' Hide the header text for Rows on the GridScreen ( full grid )
-    values = [
-        { title: "Enabled", EnumValue: "enabled"  },
-        { title: "Disabled", EnumValue: "disabled"  },
-
-    ]
-    obj.Prefs["rf_fullgrid_hidetext"] = {
-        values: values
-        heading: "Hide text above each row in the Full Grid",
-        default: "disabled"
-    }
-
-    values = [
-        { title: "Enabled", EnumValue: "enabled"  },
-        { title: "Disabled", EnumValue: "disabled"  },
-
-    ]
-    obj.Prefs["rf_fullgrid_spacer"] = {
-        values: values
-        heading: "Insert a blank poster between the first and last item in a row",
-        default: "disabled"
-    }
-
-    ' Display Mode for Grid or Poster views
-    ' { title: "Zoom", EnumValue: "zoom-to-fill", ShortDescriptionLine2: "zoom image to fill boundary" }, again, no one wants this
-    display_modes = [
-        { title: "Fit [default]", EnumValue: "scale-to-fit", ShortDescriptionLine2: "Default"  },
-        { title: "Photo", EnumValue: "photo-fit", ShortDescriptionLine2: "all the above to fit boundary" + chr(10) + " no stretching " },
-        { title: "Fill", EnumValue: "scale-to-fill", ShortDescriptionLine2: "stretch image to fill boundary" },
-    ]
-    obj.Prefs["rf_grid_displaymode"] = {
-        values: display_modes,
-        heading: "How should images be displayed on screen",
-        default: "scale-to-fit"
-    }
-    obj.Prefs["rf_poster_displaymode"] = {
-        values: display_modes,
-        heading: "How should images be displayed on screen",
-        default: "scale-to-fit"
-    }
-
-    ' Grid rows that can be reordered
+    ' Reorder sections rows
     values = [
         { initialOrder: 0, title: "Filters", key: "_section_filters_" },
         { title: "All Items", key: "all" },
@@ -2302,22 +2252,115 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
         default: ""
     }
 
+    ' TV Seasons Poster ( prefer season over show )
+    values = [
+        { title: "Season", EnumValue: "season", },
+        { title: "Show", EnumValue: "show" },
+
+    ]
+    obj.Prefs["rf_season_poster"] = {
+        values: values,
+        heading: "Poster to display when viewing a TV Show Season on the Grid",
+        default: "season"
+    }
+    obj.Prefs["rf_episode_poster"] = {
+        values: values,
+        heading: "Poster to display when viewing a TV Show Episode on the Grid",
+        default: "season"
+    }
+
     obj.Screen.SetHeader("Change the appearance of your sections")
 
-    obj.AddItem({title: "Sorting",ShortDescriptionLine2: "Sorting of Content"}, "section_sort", obj.GetEnumValue("section_sort"))
     obj.AddItem({title: "Reorder Rows"}, "section_row_order")
     obj.AddItem({title: "Hide Rows"}, "section_hide_rows")
-    obj.AddItem({title: "Full Grid", ShortDescriptionLine2: "Choose Sections to use the Full Grid"}, "rf_default_full_grid")
-    obj.AddItem({title: "TV Series"}, "use_grid_for_series", obj.GetEnumValue("use_grid_for_series"))
-    obj.AddItem({title: "TV Episode Size"}, "rf_episode_episodic_style", obj.GetEnumValue("rf_episode_episodic_style"))
     obj.AddItem({title: "Movie & Others", ShortDescriptionLine2: "Posters or Grid"}, "rf_poster_grid", obj.GetEnumValue("rf_poster_grid"))
-    obj.AddItem({title: "Grid Style/Size", ShortDescriptionLine2: "Size of Grid"}, "rf_grid_style", obj.GetEnumValue("rf_grid_style"))
-    obj.AddItem({title: "Grid Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_grid_displaymode", obj.GetEnumValue("rf_grid_displaymode"))
-    obj.AddItem({title: "Grid Pop Out", ShortDescriptionLine2: "Description on bottom right"}, "rf_grid_description")
-    obj.AddItem({title: "Full Grid Hide Header", ShortDescriptionLine2: "Hide text on top of each row"}, "rf_fullgrid_hidetext", obj.GetEnumValue("rf_fullgrid_hidetext"))
-    obj.AddItem({title: "Full Grid Spacer", ShortDescriptionLine2: "Hide text on top of each row"}, "rf_fullgrid_spacer", obj.GetEnumValue("rf_fullgrid_spacer"))
-    'we can add this.. but it doesn't do much yet.. let's not totally confuse people.. yet.
-    'obj.AddItem({title: "Poster Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_poster_displaymode", obj.GetEnumValue("rf_poster_displaymode"))
+    obj.AddItem({title: "TV Series", ShortDescriptionLine2: "Posters or Grid"}, "use_grid_for_series", obj.GetEnumValue("use_grid_for_series"))
+    obj.AddItem({title: "TV Episode Size", ShortDescriptionLine2: "Episode Thumbnail"}, "rf_episode_episodic_style", obj.GetEnumValue("rf_episode_episodic_style"))
+    obj.AddItem({title: "TV Season Poster", ShortDescriptionLine2: "Display Season or Show's Poster"}, "rf_season_poster", obj.GetEnumValue("rf_season_poster"))
+    obj.AddItem({title: "TV Episode Poster", ShortDescriptionLine2: "Display Season or Show's Poster"}, "rf_episode_poster", obj.GetEnumValue("rf_episode_poster"))
+
+    obj.AddItem({title: "Sorting",ShortDescriptionLine2: "Sorting of Content"}, "section_sort", obj.GetEnumValue("section_sort"))
+    obj.AddItem({title: "Close"}, "close")
+
+    return obj
+End Function
+
+
+Function createGridOptionsPrefsScreen(viewController) As Object
+    obj = createBasePrefsScreen(viewController)
+
+    obj.HandleMessage = prefsSectionDisplayHandleMessage
+
+    rf_grid_style = [
+        { title: "Portrait", EnumValue: "flat-movie", ShortDescriptionLine2: "Grid 5x2 - Short Portrait"  },
+        { title: "Square", EnumValue: "flat-square", ShortDescriptionLine2: "Grid 7x3 - Square" },
+    ]
+    ' We don't want to show the Portrait options for SD.. it's even short than flat-movie - odd
+    if GetGlobal("IsHD") = true then 
+        rf_grid_style.Unshift({ title: "Portrait (tall)", EnumValue: "flat-portrait", ShortDescriptionLine2: "Grid 5x2 - Tall Portrait"  })
+    end if
+    obj.Prefs["rf_grid_style"] = {
+        values: rf_grid_style,
+        heading: "Style and Size of the Grid",
+        default: "flat-movie"
+    }
+
+    ' Grid Descriptions Pop Out
+    rf_grid_description = [
+        { title: "Enabled", EnumValue: "enabled"  },
+        { title: "Disabled", EnumValue: "disabled"  },
+
+    ]
+    obj.Prefs["rf_grid_description"] = {
+        values: rf_grid_description,
+        heading: "Grid Pop Out Description",
+        default: "enabled"
+    }
+
+    ' Full Grid - Hide the header text
+    values = [
+        { title: "Enabled", EnumValue: "enabled"  },
+        { title: "Disabled", EnumValue: "disabled"  },
+
+    ]
+    obj.Prefs["rf_fullgrid_hidetext"] = {
+        values: values
+        heading: "Hide text above each row in the Full Grid",
+        default: "disabled"
+    }
+
+    ' Full Grid Spacer
+    values = [
+        { title: "Enabled", EnumValue: "enabled"  },
+        { title: "Disabled", EnumValue: "disabled"  },
+
+    ]
+    obj.Prefs["rf_fullgrid_spacer"] = {
+        values: values
+        heading: "Insert a blank poster between the first and last item in a row",
+        default: "disabled"
+    }
+
+    ' Display Mode for Grid or Poster views
+    ' { title: "Zoom", EnumValue: "zoom-to-fill", ShortDescriptionLine2: "zoom image to fill boundary" }, again, no one wants this
+    display_modes = [
+        { title: "Fit [default]", EnumValue: "scale-to-fit", ShortDescriptionLine2: "Default"  },
+        { title: "Photo", EnumValue: "photo-fit", ShortDescriptionLine2: "all the above to fit boundary" + chr(10) + " no stretching " },
+        { title: "Fill", EnumValue: "scale-to-fill", ShortDescriptionLine2: "stretch image to fill boundary" },
+    ]
+    obj.Prefs["rf_grid_displaymode"] = {
+        values: display_modes,
+        heading: "How should images be displayed on screen",
+        default: "scale-to-fit"
+    }
+
+    obj.Screen.SetHeader("Grid Options")
+    obj.AddItem({title: "Full Grid", ShortDescriptionLine2: "Choose Sections to use the Full Grid"}, "rf_default_full_grid")
+    obj.AddItem({title: "Style/Size", ShortDescriptionLine2: "Size of Grid"}, "rf_grid_style", obj.GetEnumValue("rf_grid_style"))
+    obj.AddItem({title: "Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_grid_displaymode", obj.GetEnumValue("rf_grid_displaymode"))
+    obj.AddItem({title: "Pop Out", ShortDescriptionLine2: "Description on bottom right"}, "rf_grid_description")
+    obj.AddItem({title: "Hide Header (Full Grid)", ShortDescriptionLine2: "Hide text on top of each row"}, "rf_fullgrid_hidetext", obj.GetEnumValue("rf_fullgrid_hidetext"))
+    obj.AddItem({title: "Spacer (Full Grid)", ShortDescriptionLine2: "Hide text on top of each row"}, "rf_fullgrid_spacer", obj.GetEnumValue("rf_fullgrid_spacer"))
     obj.AddItem({title: "Close"}, "close")
 
     return obj
@@ -2333,7 +2376,7 @@ Function prefsSectionDisplayHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "use_grid_for_series" or command = "rf_poster_grid" or command = "rf_grid_style" or command = "rf_grid_displaymode" or command = "rf_poster_displaymode" or command = "rf_fullgrid_hidetext" or command = "rf_episode_episodic_style" or command = "section_sort" or command = "rf_fullgrid_spacer" then
+            if command = "use_grid_for_series" or command = "rf_poster_grid" or command = "rf_grid_style" or command = "rf_grid_displaymode" or command = "rf_fullgrid_hidetext" or command = "rf_episode_episodic_style" or command = "section_sort" or command = "rf_fullgrid_spacer" or command = "rf_season_poster" or command = "rf_episode_poster" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "rf_grid_description" then
                 screen = createGridDescriptionPrefsScreen(m.ViewController)
