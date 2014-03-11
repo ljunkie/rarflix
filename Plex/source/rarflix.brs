@@ -96,7 +96,6 @@ Sub InitRARflix()
     RegRead("rf_rottentomatoes", "preferences","enabled")
     RegRead("rf_rottentomatoes_score", "preferences","audience")
     RegRead("rf_trailers", "preferences","enabled")
-    RegRead("rf_tvwatch", "preferences","enabled")
     RegRead("rf_season_poster", "preferences","season") ' seasons poster instead of show ( show was Plex Official Channel default )
     RegRead("rf_episode_poster", "preferences","season") ' seasons poster instead of show ( show was Plex Official Channel default )
     RegRead("rf_searchtitle", "preferences","title")
@@ -123,7 +122,6 @@ Sub InitRARflix()
     Debug("rf_rottentomatoes: " + tostr(RegRead("rf_rottentomatoes", "preferences")))
     Debug("rf_rottentomatoes_score: " + tostr(RegRead("rf_rottentomatoes_score", "preferences")))
     Debug("rf_trailers: " + tostr(RegRead("rf_trailers", "preferences")))
-    Debug("rf_tvwatch: " + tostr(RegRead("rf_tvwatch", "preferences")))
     Debug("rf_season_poster: " + tostr(RegRead("rf_season_poster", "preferences")))
     Debug("rf_episode_poster: " + tostr(RegRead("rf_episode_poster", "preferences")))
     Debug("rf_searchtitle: " + tostr(RegRead("rf_searchtitle", "preferences")))
@@ -388,18 +386,6 @@ Function createRARflixPrefsScreen(viewController) As Object
         default: "season"
     }
 
-    ' TV Watched status next to ShowTITLE
-    tv_watch_prefs = [
-        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Dexter (watched)" + chr(10) + "Dexter (1 of 12 watched)" },
-        { title: "Disabled", EnumValue: "disabled" },
-
-    ]
-    obj.Prefs["rf_tvwatch"] = {
-        values: tv_watch_prefs,
-        heading: "Append the watched status to TV Show Titles",
-        default: "enabled"
-    }
-
     ' focus to the unwatched item in a postescreen -  maybe others later
     focus_unwatched = [
         { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "",}
@@ -538,7 +524,6 @@ Function createRARflixPrefsScreen(viewController) As Object
     if RegRead("rf_rottentomatoes", "preferences","enabled") = "enabled" or RegRead("rf_trailers", "preferences") <> "disabled" then
         obj.AddItem({title: "Trailers/Tomatoes Search by", ShortDescriptionLine2: "You probably don't want to change this"}, "rf_searchtitle", obj.GetEnumValue("rf_searchtitle"))
     end if
-    obj.AddItem({title: "TV Show (Watched Status)", ShortDescriptionLine2: "feels good enabled"}, "rf_tvwatch", obj.GetEnumValue("rf_tvwatch"))
     obj.AddItem({title: "TV Season Poster (Grid)", ShortDescriptionLine2: "Season or Show's Poster on Grid"}, "rf_season_poster", obj.GetEnumValue("rf_season_poster"))
     obj.AddItem({title: "TV Episode Poster (Grid)", ShortDescriptionLine2: "Season or Show's Poster on Grid"}, "rf_episode_poster", obj.GetEnumValue("rf_episode_poster"))
     obj.AddItem({title: "Focus on Unwatched", ShortDescriptionLine2: "Default to the first unwatched " + chr(10) + "item (poster screen only)"}, "rf_focus_unwatched", obj.GetEnumValue("rf_focus_unwatched"))

@@ -139,7 +139,8 @@ Sub setMetaBasics(meta, container, item)
 
     meta.sourceTitle = item@sourceTitle
 
-    if (tostr(meta.viewgroup) <> "album" and tostr(meta.type) <> "album") and  RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" then 
+    ' ljunkie - set watched status ( exclude music albums )
+    if (tostr(meta.viewgroup) <> "album" and tostr(meta.type) <> "album") then 
         if item@leafCount <> invalid then meta.leafCount = item@leafCount
         if item@viewedLeafCount <> invalid then meta.viewedLeafCount = item@viewedLeafCount
 

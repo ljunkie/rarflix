@@ -53,7 +53,6 @@ Sub Main(args)
     ' ljunkie - remove prefs on start - testing
     'RegDelete("rf_rottentomatoes", "preferences")
     'RegDelete("rf_trailers", "preferences")
-    'RegDelete("rf_tvwatch", "preferences")
 
 
     ' Convert the old theme music preference to the new one
