@@ -589,7 +589,6 @@ Function createRARflixPrefsScreen(viewController) As Object
     if RegRead("rf_custom_thumbs", "preferences","enabled") = "enabled" then
         obj.AddItem({title: "Custom Icons Text", ShortDescriptionLine2: "Color of text to use"}, "rf_img_overlay", obj.GetEnumValue("rf_img_overlay"))
     end if
-    obj.AddItem({title: "Hide Rows",ShortDescriptionLine2: "Sorry for the confusion..."}, "hide_rows_prefs")
     obj.AddItem({title: "Section Display", ShortDescriptionLine2: "a plex original, for easy access"}, "sections")
 
     obj.AddItem({title: "Movie Trailers", ShortDescriptionLine2: "Got Trailers?"}, "rf_trailers", obj.GetEnumValue("rf_trailers"))
@@ -635,11 +634,7 @@ Function prefsRARFflixHandleMessage(msg) As Boolean
             m.ViewController.Home.Refresh(m.Changes) ' include the Changes for homescreen refresh ( might be useful to add this to the main ALL *HandleMessages functions )
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "hide_rows_prefs" then
-                screen = createHideRowsPrefsScreen(m.ViewController)
-                m.ViewController.InitializeOtherScreen(screen, ["Hide Rows Preferences"])
-                screen.Show()
-            else if command = "sections" then
+            if command = "sections" then
                 screen = createSectionDisplayPrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["Section Display Preferences"])
                 screen.Show()

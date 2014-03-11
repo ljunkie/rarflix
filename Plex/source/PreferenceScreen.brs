@@ -2295,6 +2295,7 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
 
     obj.AddItem({title: "Sorting",ShortDescriptionLine2: "Sorting of Content"}, "section_sort", obj.GetEnumValue("section_sort"))
     obj.AddItem({title: "Reorder Rows"}, "section_row_order")
+    obj.AddItem({title: "Hide Rows"}, "section_hide_rows")
     obj.AddItem({title: "Full Grid", ShortDescriptionLine2: "Choose Sections to use the Full Grid"}, "rf_default_full_grid")
     obj.AddItem({title: "TV Series"}, "use_grid_for_series", obj.GetEnumValue("use_grid_for_series"))
     obj.AddItem({title: "TV Episode Size"}, "rf_episode_episodic_style", obj.GetEnumValue("rf_episode_episodic_style"))
@@ -2335,6 +2336,10 @@ Function prefsSectionDisplayHandleMessage(msg) As Boolean
                 screen.Show()
             else if command = "section_row_order" then
                 m.HandleReorderPreference(command, msg.GetIndex())
+            else if command = "section_hide_rows" then
+                screen = createHideRowsPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["Hide Rows"])
+                screen.Show()
             else if command = "close" then
                 m.Screen.Close()
             end if
