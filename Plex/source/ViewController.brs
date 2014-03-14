@@ -29,7 +29,14 @@ Function createViewController() As Object
     controller.CreatePhotoPlayer = vcCreatePhotoPlayer
     controller.CreateICphotoPlayer = vcCreateICphotoPlayer
     controller.CreateVideoPlayer = vcCreateVideoPlayer
-    controller.CreatePlayerForItem = vcCreatePlayerForItem
+
+    ' ljunkie - wrapper for creating a player. Sometimes it takes a few seconds from 
+    ' an initial button click before the screen updates due to various checks. This 
+    ' wrapper will create a facade screen immediately and will be closed once the 
+    ' "real" function (vcCreatePlayerForItem) is finished
+    controller.CreatePlayerForItem = vcCreatePlayerForItemFacade
+    controller.CreatePlayerForItemFacade = vcCreatePlayerForItem
+
     controller.IsVideoPlaying = vcIsVideoPlaying
     controller.IsSlideShowPlaying = vcIsSlideShowPlaying
 
@@ -928,6 +935,14 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
 
     return screen
 End Function
+
+' wrapper for vcCreatePlayerForItem() [m.vcCreatePlayerForItem]
+Function vcCreatePlayerForItemFacade(context, contextIndex, seekValue=invalid, sourceReloadUrl = invalid)
+        facade = CreateObject("roGridScreen")
+        facade.Show()
+        m.CreatePlayerForItemFacade(context, contextIndex, seekValue, sourceReloadUrl)
+        facade.close()
+end function
 
 Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid, sourceReloadUrl = invalid)
     item = context[contextIndex]
