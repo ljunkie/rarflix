@@ -2354,9 +2354,26 @@ Function createGridOptionsPrefsScreen(viewController) As Object
         default: "scale-to-fit"
     }
 
+    ' Home Videos grid style
+    homevideo_grid_style = [
+        { title: "Portrait", EnumValue: "flat-movie", ShortDescriptionLine2: "Grid 5x2"  },
+        { title: "Landscape 16x9", EnumValue: "flat-16x9", ShortDescriptionLine2: "Grid 5x3"  },
+        { title: "Landscape", EnumValue: "flat-landscape", ShortDescriptionLine2: "Grid 5x3"  },
+    ]
+    ' We don't want to show the Portrait options for SD.. it's even short than flat-movie - odd
+    if GetGlobal("IsHD") = true then 
+        homevideo_grid_style.Unshift({ title: "Portrait (tall)", EnumValue: "flat-portrait", ShortDescriptionLine2: "Grid 5x2 - Tall Portrait"  })
+    end if
+    obj.Prefs["homevideo_grid_style"] = {
+        values: homevideo_grid_style,
+        heading: "Size of the Grid for Home Videos",
+        default: "flat-16x9"
+    }
+
     obj.Screen.SetHeader("Grid Options")
     obj.AddItem({title: "Full Grid", ShortDescriptionLine2: "Choose Sections to use the Full Grid"}, "rf_default_full_grid")
-    obj.AddItem({title: "Style/Size", ShortDescriptionLine2: "Size of Grid"}, "rf_grid_style", obj.GetEnumValue("rf_grid_style"))
+    obj.AddItem({title: "Style", ShortDescriptionLine2: "Size of Grid" + chr(10) + "Movies & TV Shows"}, "rf_grid_style", obj.GetEnumValue("rf_grid_style"))
+    obj.AddItem({title: "Style (Home Videos)", ShortDescriptionLine2: "Size of Grid" + chr(10) + "Home Videos"}, "homevideo_grid_style", obj.GetEnumValue("homevideo_grid_style"))
     obj.AddItem({title: "Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_grid_displaymode", obj.GetEnumValue("rf_grid_displaymode"))
     obj.AddItem({title: "Pop Out", ShortDescriptionLine2: "Description on bottom right"}, "rf_grid_description")
     obj.AddItem({title: "Hide Header (Full Grid)", ShortDescriptionLine2: "Hide text on top of each row"}, "rf_fullgrid_hidetext", obj.GetEnumValue("rf_fullgrid_hidetext"))
@@ -2376,7 +2393,7 @@ Function prefsSectionDisplayHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "use_grid_for_series" or command = "rf_poster_grid" or command = "rf_grid_style" or command = "rf_grid_displaymode" or command = "rf_fullgrid_hidetext" or command = "rf_episode_episodic_style" or command = "section_sort" or command = "rf_fullgrid_spacer" or command = "rf_season_poster" or command = "rf_episode_poster" then
+            if command = "use_grid_for_series" or command = "rf_poster_grid" or command = "rf_grid_style" or command = "rf_grid_displaymode" or command = "rf_fullgrid_hidetext" or command = "rf_episode_episodic_style" or command = "section_sort" or command = "rf_fullgrid_spacer" or command = "rf_season_poster" or command = "rf_episode_poster" or command = "homevideo_grid_style" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "rf_grid_description" then
                 screen = createGridDescriptionPrefsScreen(m.ViewController)

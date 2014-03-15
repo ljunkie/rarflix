@@ -441,7 +441,9 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             focusrow = 2
             Debug("---- override " + tostr(displaymode_grid) + "/" + tostr(grid_style) + " for section with content of " + tostr(item.type))
         else 
-            if item.isHomeVideos = true then grid_style = "flat-16x9"
+            if item.isHomeVideos = true then
+                grid_style = RegRead("homevideo_grid_style", "preferences", "flat-16x9")
+            end if
         end if
 
         ' focus on the second row if flat16x9 
@@ -552,7 +554,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
                 Debug("---- override " + tostr(displayMode) + "/" + tostr(grid_style_photos) + "for section with content of " + tostr(item.type))
                 focusrow = 1 ' lets fill the screen ( 5x3 )
             else if sec_metadata.isHomeVideos = true then 
-                grid_style = "flat-16x9"
+                grid_style = RegRead("homevideo_grid_style", "preferences", "flat-16x9")
             end if
 
             screen = createFULLGridScreen(item, m, grid_style, DisplayMode)
