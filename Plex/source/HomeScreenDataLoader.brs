@@ -636,21 +636,6 @@ Sub homeOnUrlEvent(msg, requestContext)
 
             if add then
                 item.Description = item.ShortDescriptionLine2
-
-                ' Normally thumbnail requests will have an X-Plex-Token header
-                ' added as necessary by the screen, but we can't do that on the
-                ' home screen because we're showing content from multiple
-                ' servers.
-
-                ' ljunkie - above is true, however reloading the said URL will fail because
-                ' it the refresh of metadata will not include this access token. To fix, I 
-                ' have appended the access token to the image as part of TranscodedImage ( if it exists )
-
-                'if item.SDPosterURL <> invalid AND Left(item.SDPosterURL, 4) = "http" AND item.server <> invalid AND item.server.AccessToken <> invalid then
-                '    item.SDPosterURL = item.SDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
-                '    item.HDPosterURL = item.HDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
-                'end if
-
                 content.Push(item)
                 countLoaded = countLoaded + 1
             end if
@@ -732,20 +717,6 @@ Sub homeOnUrlEvent(msg, requestContext)
         end if
 
         for each item in items
-            ' Normally thumbnail requests will have an X-Plex-Token header
-            ' added as necessary by the screen, but we can't do that on the
-            ' home screen because we're showing content from multiple
-            ' servers.
-
-            ' ljunkie - above is true, however reloading the said URL will fail because
-            ' it the refresh of metadata will not include this access token. To fix, I 
-            ' have appended the access token to the image as part of TranscodedImage ( if it exists )
-
-            'if item.SDPosterURL <> invalid AND Left(item.SDPosterURL, 4) = "http" AND item.server <> invalid AND item.server.AccessToken <> invalid then
-            '    item.SDPosterURL = item.SDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
-            '    item.HDPosterURL = item.HDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
-            'end if
-
             content.Push(item)
             countLoaded = countLoaded + 1
         next
