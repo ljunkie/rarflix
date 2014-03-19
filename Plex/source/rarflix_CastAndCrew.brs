@@ -51,6 +51,7 @@ Function RFCastAndCrewHandleMessage(msg) As Boolean
         'print "showPosterScreen | msg = "; msg.GetMessage() " | index = "; msg.GetIndex()
         if msg.isListItemSelected() then
             cast = obj.item.metadata.castcrewlist[msg.GetIndex()]
+            cast.server = obj.item.metadata.server
             ' create the gridScreen for the cast member ( uses a modified search loader )
             if cast.id <> invalid and cast.name <> invalid then 
                 displaymode_grid = RegRead("rf_grid_displaymode", "preferences", "photo-fit")

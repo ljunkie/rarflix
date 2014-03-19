@@ -95,15 +95,18 @@ Function searchLoadMoreContent(focusedRow, extraRows=0) As Boolean
             m.Listener.OnDataLoaded(i, content, 0, content.Count(), true)
         next
 
-        ' for each server in GetOwnedPlexMediaServers()
-        for each server in GetValidPlexMediaServers()
-            if m.cast = invalid then 
+                'TODO(ljunkie) we cannot search other libraries unless we get the ID of the existing cast member for other servers
+        if m.cast <> invalid and m.cast.server <> invalid then 
+           Debug("Cast & Crew search [single server]: " + tostr(m.cast.server.name))
+           m.StartRequest(m.cast.server, "/library/people/" + m.cast.id + "/media", "Root")
+           'm.StartRequest(server, "/search", "Root") ' excluded -- we do not want appClips ( channel plugins here ) too many bad results
+        else 
+            ' for each server in GetOwnedPlexMediaServers()
+            for each server in GetValidPlexMediaServers()
+
                 m.StartRequest(server, "/search", "Root")
-            else 
-                m.StartRequest(server, "/library/people/" + m.cast.id + "/media", "Root")
-                'm.StartRequest(server, "/search", "Root") ' excluded -- we do not want appClips ( channel plugins here ) too many bad results
-            end if
-        next
+            next
+        end if
 
         m.StartedRequests = true
     end if
