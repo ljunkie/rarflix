@@ -323,7 +323,13 @@ Sub timelineDataToXmlAttributes(elem)
             parts = server.serverUrl.tokenize(":")
             elem.AddAttribute("protocol", parts.RemoveHead())
             elem.AddAttribute("address", Mid(parts.RemoveHead(), 3))
-            elem.AddAttribute("port", parts.RemoveHead())
+            if parts.GetHead() <> invalid then 
+                elem.AddAttribute("port", parts.RemoveHead())
+            else if elem@protocol = "https" then 
+                elem.AddAttribute("port", "443")
+            else 
+                elem.AddAttribute("port", "80")
+            end if
         end if
     end if
 
