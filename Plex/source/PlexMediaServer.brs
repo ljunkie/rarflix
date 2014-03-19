@@ -15,11 +15,7 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID, useMyPlexToken=true) As 
     pms.synced = false
     pms.online = false
     pms.local = false
-    if useMyPlexToken then
-        pms.AccessToken = MyPlexManager().AuthToken
-    else
-        pms.AccessToken = invalid
-    end if
+    pms.AccessToken = invalid
     pms.StopVideo = stopTranscode
     pms.StartTranscode = StartTranscodingSession
     pms.PingTranscode = pingTranscode
@@ -44,6 +40,8 @@ Function newPlexMediaServer(pmsUrl, pmsName, machineID, useMyPlexToken=true) As 
     pms.IsRequestToServer = pmsIsRequestToServer
     pms.AddDirectPlayInfo = pmsAddDirectPlayInfo
     pms.Log = pmsLog
+    pms.SendWOL = pmsSendWOL
+    pms.putOnDeck = pmsPutOnDeck
 
     ' RARflix Tools
     '  - maybe more to come, but I'd prefer these part of the PMS
@@ -94,6 +92,19 @@ Function issuePostCommand(commandPath)
     request = m.CreateRequest("", commandUrl)
     request.PostFromString("")
 End Function
+
+Sub pmsPutOnDeck(item)
+    if item = invalid then return
+    ' use the existing view offset ( this should already be onDeck, but possible onDeck weeks expired)
+    minTime = 61*1000
+    if item.viewOffset <> invalid AND val(item.viewOffset) > minTime then
+        time = item.viewOffset
+    else 
+        time = minTime
+    end if
+
+    m.Timeline(item, "stopped", time)
+end sub
 
 Sub pmsTimeline(item, state, time)
     itemsEqual = (item <> invalid AND m.lastTimelineItem <> invalid AND item.ratingKey = m.lastTimelineItem.ratingKey)
@@ -168,6 +179,10 @@ End Function
 
 Function pmsCreateRequest(sourceUrl, key, appendToken=true, connectionUrl=invalid) As Object
     url = FullUrl(firstOf(connectionUrl, m.serverUrl), sourceUrl, key)
+
+    ' ljunkie - attempt to convert older API library call to a new filtered call that support paging
+    url = convertToFilter(m,url)
+
     req = CreateURLTransferObject(url)
     AddAccountHeaders(req, m.AccessToken)
     req.AddHeader("X-Plex-Client-Capabilities", Capabilities())
@@ -196,6 +211,8 @@ Function xmlContent(sourceUrl, key) As Object
 
         xmlResult.xml = xml
         xmlResult.sourceUrl = httpRequest.GetUrl()
+
+        Debug("Finished - Fetching content from server at query URL: " + tostr(httpRequest.GetUrl()))
     endif
     return xmlResult
 End Function
@@ -487,7 +504,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
         end if
     end if
 
-    printAA(video)
+    'printAA(video)
     return video
 End Function
 
@@ -518,7 +535,7 @@ End Function
 '* relative to the server URL
 Function FullUrl(serverUrl, sourceUrl, key) As String
     finalUrl = ""
-    if left(key, 4) = "http" OR left(key, 4) = "rtmp" then
+    if left(key, 4) = "http" OR left(key, 4) = "rtmp" or left(key, 3) = "mms" or left(key, 4) = "rtsp" then
         return key
     else if left(key, 4) = "plex" then
         url_start = Instr(1, key, "url=") + 4
@@ -530,13 +547,13 @@ Function FullUrl(serverUrl, sourceUrl, key) As String
          finalUrl = sourceUrl + Right(key, len(key) - 6)
     else
         keyTokens = CreateObject("roArray", 2, true)
-        if key <> Invalid then
+        if key <> Invalid and key <> "" then
             keyTokens = strTokenize(key, "?")
         else
             keyTokens.Push("")
         endif
         sourceUrlTokens = CreateObject("roArray", 2, true)
-        if sourceUrl <> Invalid then
+        if sourceUrl <> Invalid and sourceUrl <> "" then
             sourceUrlTokens = strTokenize(sourceUrl, "?")
         else
             sourceUrlTokens.Push("")
@@ -573,12 +590,13 @@ Function FullUrl(serverUrl, sourceUrl, key) As String
     '   definitely not a fault of the PMS (include non|encoded ://)
     '   2013-12-13: need to be careful here -- channel content has ...?url=//etc.. which is also valid
     ' NOTE: if these seems to cause other issues ( someone expecting double quotes, we may have to be more specific )
-    remDS  = CreateObject("roRegex", "([^:|%3A|=]/)/+","")
+    remDS  = CreateObject("roRegex", "([^:|A|=]/)/+","")
     if remDS.IsMatch(finalUrl) then
         Debug("---- removing double slashes from URL: " + tostr(finalUrl))
         finalUrl = remDS.replaceall(finalUrl,"\1")
         Debug("----  removed double slashes from URL: " + tostr(finalUrl))
     end if
+
     return finalUrl
 End Function
 
@@ -590,7 +608,6 @@ Function TranscodedImage(queryUrl, imagePath, width, height, forceBackgroundColo
     imageUrl = m.ConvertURLToLoopback(imageUrl)
     encodedUrl = HttpEncode(imageUrl)
     image = m.serverUrl + "/photo/:/transcode?url="+encodedUrl+"&width="+width+"&height="+height
-    ' use the X-Plex-Token here :: headers are not useable in all scenarios
     if m.AccessToken <> invalid then image = image + "&X-Plex-Token=" + m.AccessToken
     if forceBackgroundColor <> invalid then
         image = image + "&format=jpeg&background=" + forceBackgroundColor
@@ -834,6 +851,13 @@ Function ConvertURLToLoopback(url) As String
 
     if m.IsRequestToServer(url) then
         url = "http://127.0.0.1:32400" + Right(url, len(url) - len(m.serverUrl))
+        if m.AccessToken <> invalid then
+            if instr(1, url, "?") > 0 then
+                url = url + "&X-Plex-Token=" + m.AccessToken
+            else
+                url = url + "?X-Plex-Token=" + m.AccessToken
+            end if
+        end if
     end if
 
     return url
@@ -965,9 +989,96 @@ Sub pmsAddDirectPlayInfo(video, item, mediaKey)
         video.SubtitleUrl = FullUrl(m.serverUrl, "", part.subtitles.key) + "?encoding=utf-8"
     end if
 
-    PrintAA(video)
+    'PrintAA(video)
 End Sub
 
 Sub pmsOnUrlEvent(msg, requestContext)
     ' Don't care about the response for any of our requests.
+End Sub
+
+Sub pmsSendWOL(screen=invalid)
+    if m.machineID <> invalid then
+        numReqToSend = 5
+
+        mac = GetServerData(m.machineID, "Mac")
+
+        if mac = invalid then return
+
+        ' Broadcasting to 255.255.255.255 only works on some Rokus, but we
+        ' can't reliably determine the broadcast address for our current
+        ' interface. Try assuming a /24 network - we may need a toggle to 
+        ' override the broadcast address
+
+        ip = invalid
+        subnetRegex = CreateObject("roRegex", "((\d+)\.(\d+)\.(\d+)\.)(\d+)", "")
+        addr = GetFirstIPAddress()
+        if addr <> invalid then
+            match = subnetRegex.Match(addr)
+            if match.Count() > 0 then
+                ip = match[1] + "255"
+                Debug("Using broadcast address " + ip)
+            end if
+        end if
+
+        if ip = invalid then return
+
+        ' only send the broadcast 5 (numReqToSend) times per requested mac address
+        WOLcounterKey = "WOLCounter" + tostr(mac)
+        if GetGlobalAA().lookup(WOLcounterKey) = invalid then GetGlobalAA().AddReplace(WOLcounterKey, 0)
+        GetGlobalAA()[WOLcounterKey] = GetGlobalAA().[WOLcounterKey]  + 1
+
+        ' return if we have already send enough requests
+        if GetGlobalAA()[WOLcounterKey] > numReqToSend then 
+            Debug(tostr(GetGlobalAA()[WOLcounterKey]) + " WOL requests have already been sent")
+            GetGlobalAA().AddReplace(WOLcounterKey, 0)
+            return
+        end if
+
+        ' Get our secure on pass
+        pass = GetServerData(m.machineID, "WOLPass")
+        if pass = invalid or Len(pass) <> 12 then pass = "ffffffffffff"
+               
+        header = "ffffffffffff"
+        For k=1 To 16
+            header = header + mac
+        End For
+        
+        'Append our SecureOn password
+        header = header + pass
+        Debug ("pmsSendWOL:: header " + tostr(header))
+        
+        port = CreateObject("roMessagePort")
+        addr = CreateObject("roSocketAddress")
+        udp = CreateObject("roDatagramSocket")
+        packet = CreateObject("roByteArray")
+        udp.setMessagePort(port)
+        udp.setBroadcast(true)
+      
+        addr.setHostname(ip)
+        addr.setPort(9)
+        udp.setSendToAddress(addr)
+        
+        packet.fromhexstring(header)
+        udp.notifyReadable(true)
+        sent = udp.send(packet,0,108)
+        Debug ("pmsSendWOL:: Sent Magic Packet of " + tostr(sent) + " bytes to " + ip )
+        udp.close()
+        
+        ' no more need for sleeping 'Sleep(100) -- timer will take care re-requesting the data
+        if GetGlobalAA()[WOLcounterKey] <= numReqToSend then m.sendWOL(screen)
+
+        ' add timer to create requests again (only if we made this request from the Home Screen)
+        if screen <> invalid and screen.screenname = "Home" then 
+            if screen.WOLtimer = invalid then 
+                Debug("Created WOLtimer to refresh home screen data")
+                screen.WOLtimer = createTimer()
+                screen.WOLtimer.Name = "WOLsent"
+                screen.WOLtimer.SetDuration(3*1000, false) ' 3 second time ( we will try 3 times )
+                GetViewController().AddTimer(screen.WOLtimer, screen) 
+            end if
+            ' mark the request - we send multiple, so reset timer
+            screen.WOLtimer.mark()
+        end if
+
+    end if
 End Sub

@@ -25,6 +25,7 @@ Function createHomeScreenDataLoader(listener)
     loader.CreateRow = homeCreateRow
     loader.CreateServerRequests = homeCreateServerRequests
     loader.CreateMyPlexRequests = homeCreateMyPlexRequests
+    loader.CreateFallbackServerRequests = homeCreateFallbackServerRequests
     loader.CreatePlaylistRequests = homeCreatePlaylistRequests
     loader.CreateAllPlaylistRequests = homeCreateAllPlaylistRequests
     loader.RemoveFromRowIf = homeRemoveFromRowIf
@@ -70,8 +71,16 @@ Function createHomeScreenDataLoader(listener)
     configuredServers = PlexMediaServers()
     Debug("Setting up home screen content, server count: " + tostr(configuredServers.Count()))
     for each server in configuredServers
-        loader.CreateServerRequests(server, false, false)
+        ' skip any server that has an accessToken for now ( these are learned through myPlex )
+        ' we will fall back to them if we don't learn them through myPlex ( loader.CreateFallbackServerRequests() )
+        if server.accesstoken = invalid then loader.CreateServerRequests(server, false, false)
     next
+
+    ' if we failed to sign in -- myPlex is down? let's see if we have any known servers we should fall back on
+    if NOT MyPlexManager().IsSignedIn then 
+        Debug("myPlex is not signed in ( or it's down ) -- trying fall back servers")
+        loader.CreateFallbackServerRequests()
+    end if
 
     ' Create a static item for prefs and put it in the Misc row.
     switchUser = CreateObject("roAssociativeArray")
@@ -150,11 +159,34 @@ Function homeCreateRow(name) As Integer
     return index
 End Function
 
+sub homeCreateFallbackServerRequests()
+    configuredServers = PlexMediaServers()
+
+    for each server in configuredServers
+        ' we are keying off a server having an access token ( myPlex is currenlty the only way this could happen )
+        if server.accesstoken <> invalid then
+            existing = GetPlexMediaServer(server.machineID)
+            if existing <> invalid then 
+                Debug("Ignoring (fallback) duplicate shared server: " + server.machineid)
+            else 
+	        Debug("---- trying fall back PMS ( last known server we learned from myPlex )")
+                server.owned = false ' for now we will assume the server is not owned ( just to be safe -- it's wrong.. but at least we fallback ) 
+                m.CreateServerRequests(server, true, false)
+            end if
+        end if
+    end for
+
+end sub
+
+
 Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refreshRequest As Boolean, connectionUrl=invalid, rowkey=invalid)
    imageDir =GetGlobalAA().Lookup("rf_theme_dir")
 
    if not refreshRequest then
         PutPlexMediaServer(server)
+
+        'Send a WOL Packet
+        server.sendWOL(m.listener)
 
         ' Request server details (ensure we have a machine ID, check transcoding
         ' support, etc.)
@@ -227,7 +259,7 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
 
         ' ljunkie - my.plexapp.com is now a valid server ( cloud sync ) 
         ' some things are not allowed - for one is the /status/sessions ( now playing )
-        re = CreateObject("roRegex", "my.plexapp.com", "i")        
+        re = CreateObject("roRegex", "my.plexapp.com|plex.tv", "i")        
         if NOT re.IsMatch(server.serverurl) then 
 
             ' Request recently used channels
@@ -272,6 +304,11 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
                     nowPlaying.key = "/status/sessions"
                     nowPlaying.connectionUrl = connectionUrl
                     nowPlaying.requestType = "media"
+
+                    ' skip request if still pending. Might want to add this to others, 
+                    ' but this is the only one for now that has a timer ( auto reloads )
+                    if hasPendingRequest(nowPlaying) then return
+
                     m.AddOrStartRequest(nowPlaying, m.RowIndexes[row], startRequests)
                 else
                     m.Listener.OnDataLoaded(m.RowIndexes[row], [], 0, 0, true)
@@ -505,7 +542,7 @@ Sub homeOnUrlEvent(msg, requestContext)
     if msg.GetResponseCode() <> 200 then
         Debug("Got a " + tostr(msg.GetResponseCode()) + " response from " + url + " - " + tostr(msg.GetFailureReason()))
 
-        if status <> invalid AND status.loadStatus < 2 AND status.pendingRequests = 0 then
+        if status <> invalid AND status.pendingRequests = 0 then
             status.loadStatus = 2
             if status.refreshContent <> invalid then
                 status.content = status.refreshContent
@@ -599,21 +636,6 @@ Sub homeOnUrlEvent(msg, requestContext)
 
             if add then
                 item.Description = item.ShortDescriptionLine2
-
-                ' Normally thumbnail requests will have an X-Plex-Token header
-                ' added as necessary by the screen, but we can't do that on the
-                ' home screen because we're showing content from multiple
-                ' servers.
-
-                ' ljunkie - above is true, however reloading the said URL will fail because
-                ' it the refresh of metadata will not include this access token. To fix, I 
-                ' have appended the access token to the image as part of TranscodedImage ( if it exists )
-
-                'if item.SDPosterURL <> invalid AND Left(item.SDPosterURL, 4) = "http" AND item.server <> invalid AND item.server.AccessToken <> invalid then
-                '    item.SDPosterURL = item.SDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
-                '    item.HDPosterURL = item.HDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
-                'end if
-
                 content.Push(item)
                 countLoaded = countLoaded + 1
             end if
@@ -695,20 +717,6 @@ Sub homeOnUrlEvent(msg, requestContext)
         end if
 
         for each item in items
-            ' Normally thumbnail requests will have an X-Plex-Token header
-            ' added as necessary by the screen, but we can't do that on the
-            ' home screen because we're showing content from multiple
-            ' servers.
-
-            ' ljunkie - above is true, however reloading the said URL will fail because
-            ' it the refresh of metadata will not include this access token. To fix, I 
-            ' have appended the access token to the image as part of TranscodedImage ( if it exists )
-
-            'if item.SDPosterURL <> invalid AND Left(item.SDPosterURL, 4) = "http" AND item.server <> invalid AND item.server.AccessToken <> invalid then
-            '    item.SDPosterURL = item.SDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
-            '    item.HDPosterURL = item.HDPosterURL + "&X-Plex-Token=" + item.server.AccessToken
-            'end if
-
             content.Push(item)
             countLoaded = countLoaded + 1
         next
@@ -776,9 +784,6 @@ Sub homeOnUrlEvent(msg, requestContext)
             server.IsAvailable = true
             server.IsSecondary = (xml@serverClass = "secondary")
             server.SupportsMultiuser = (xml@multiuser = "1")
-            if server.AccessToken = invalid AND ServerVersionCompare(xml@version, [0, 9, 7, 15]) then
-                server.AccessToken = MyPlexManager().AuthToken
-            end if
 
             PutPlexMediaServer(server)
 
@@ -845,6 +850,8 @@ Sub homeOnUrlEvent(msg, requestContext)
             addr = firstOf(serverElem@scheme, "http") + "://" + serverElem@host + ":" + serverElem@port
             if existing <> invalid AND (existing.IsAvailable OR existing.ServerUrl = addr) then
                 Debug("Ignoring duplicate shared server: " + tostr(serverElem@machineIdentifier))
+                existing.AccessToken = firstOf(serverElem@accessToken, MyPlexManager().AuthToken)
+                RegWrite(existing.machineID, existing.AccessToken, "server_tokens")
             else
                 if existing = invalid then
                     newServer = newPlexMediaServer(addr, serverElem@name, serverElem@machineIdentifier)
@@ -855,6 +862,7 @@ Sub homeOnUrlEvent(msg, requestContext)
 
                 newServer.AccessToken = firstOf(serverElem@accessToken, MyPlexManager().AuthToken)
                 newServer.synced = (serverElem@synced = "1")
+                RegWrite(newServer.machineID, newServer.AccessToken, "server_tokens")
 
                 if serverElem@owned = "1" then
                     newServer.name = firstOf(serverElem@name, newServer.name)
@@ -878,6 +886,12 @@ Sub homeOnUrlEvent(msg, requestContext)
                 Debug("Added myPlex server: " + tostr(newServer.name))
             end if
         next
+
+        ' now that we checked myPlex -- let's see if we have any saved servers learned through myPlex ( fall back to if down/invalid )
+        ' This is another failsafe as we shouldn't be able to get this far if myPlex is down. This scenerio might happen
+        ' if the servers returned from myPlex do not list any we may have learned previously -- again shouldn't happen
+        m.CreateFallbackServerRequests()
+
     end if
 End Sub
 
@@ -978,10 +992,31 @@ Sub homeRefreshData()
     m.CreateAllPlaylistRequests(true)
 
     ' Refresh the sections and channels for all of our owned servers
-    m.contentArray[m.RowIndexes["sections"]].refreshContent = []
-    m.contentArray[m.RowIndexes["sections"]].loadedServers.Clear()
-    m.contentArray[m.RowIndexes["channels"]].refreshContent = []
-    m.contentArray[m.RowIndexes["channels"]].loadedServers.Clear()
+
+    ServersOwned = []
+    ServersShared = []
+    for each server in GetValidPlexMediaServers()
+        if server.owned and server.online then ServersOwned.Push(server.machineid)
+        if NOT server.owned and server.online then ServersShared.Push(server.machineid)
+    end for
+
+    if ServersOwned.Count() > 1 then
+        Debug("skipping reload (ignoring response) of sections & channels due to multiple servers")
+    else 
+        m.contentArray[m.RowIndexes["sections"]].refreshContent = []
+        m.contentArray[m.RowIndexes["sections"]].loadedServers.Clear()
+        m.contentArray[m.RowIndexes["channels"]].refreshContent = []
+        m.contentArray[m.RowIndexes["channels"]].loadedServers.Clear()
+    end if
+
+    if ServersShared.Count() > 1 then
+        Debug("skipping reload (ignoring response) of shared sections due to multiple servers")        
+    else 
+        m.contentArray[m.RowIndexes["shared_sections"]].refreshContent = []
+        m.contentArray[m.RowIndexes["shared_sections"]].loadedServers.Clear()
+    end if
+
+    ' these could be out of order due to multiple PMS's -- however we must refresh these (no great fix for this yet)
     m.contentArray[m.RowIndexes["on_deck"]].refreshContent = []
     m.contentArray[m.RowIndexes["on_deck"]].loadedServers.Clear()
     m.contentArray[m.RowIndexes["now_playing"]].refreshContent = []
@@ -992,7 +1027,10 @@ Sub homeRefreshData()
     ' this will allow us to refresh all content from all servers ( not just owned )
     '  for now, this might only be useful to RARflix since OnDeck/RecentlyAdded are enabled for shared users
     for each server in GetValidPlexMediaServers()
-        m.CreateServerRequests(server, true, true)
+        'TODO(ljunkie) - we should probably have some way to check servers availability in the background 
+        ' only creating requests for ONLINE servers will speed up reloads, but may not allow a down server
+        ' to come back into the mix?
+        if server.online = true then m.CreateServerRequests(server, true, true)
     next
 
     ' Clear any screensaver images, use the default.

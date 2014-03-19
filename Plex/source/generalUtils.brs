@@ -28,7 +28,7 @@
 '******************************************************
 
 function RegGetUniqueSections()
-    obj = { myplex:"",preferences:"",servers:"",userinfo:""} 'list of prefs that are customized for each user.
+    obj = { myplex:"",preferences:"",servers:"",userinfo:"",server_tokens:"", servers:""} 'list of prefs that are customized for each user.
     return obj  
 end function
 
@@ -124,6 +124,12 @@ Sub RegWrite(key, val, section=invalid, userNumber=invalid)
     else
         section = RegGetSectionName(section)
     endif
+
+    if val = invalid then
+        RegDelete(key, section)
+        return
+    end if
+
     'print "RegWrite:"+tostr(section)+":"+tostr(key)+":"+tostr(val)+" user("+tostr(userNumber)+")"
     sec = CreateObject("roRegistrySection", section)
     sec.Write(key, val)
@@ -415,6 +421,7 @@ End Sub
 'try to convert an object to a string. return invalid if can't
 '******************************************************
 Function AnyToString(any As Dynamic) As dynamic
+    if type(any) = "<uninitialized>" return "invalid"   'ljunkie -- this is what happens with uninitialized variables (maybe newer firmware?)
     if any = invalid return "invalid"
     if type(any) = "" return "empty"   'this can happen with uninitialized variables
     if isstr(any) return any
@@ -459,6 +466,55 @@ End Function
 Sub ReorderItemsByKeyPriority(items, keys)
     ' Accept keys either as comma delimited list or already separated into an array.
     if isstr(keys) then keys = keys.Tokenize(",")
+
+    if keys = invalid then keys = []
+
+    '**********************************************
+    ' initial Ordering [options]  -- probably more complicated than it needs to be, but it's a bit tricky
+    ' - this will work for empty keys and existing keys with new items
+    ' I.E. passed - items = [{ initialOrder: 5, title: "Filters", key: "_section_filters_" }, etc..]
+    newItems = []:newKeys = []
+    if keys.count() = 0 or items.count() > keys.count() then 
+        for each item in items
+            if item.initialorder <> invalid and NOT(inArray(keys,item.key)) then 
+                 print "items key not in keys and has initialOrder: " + tostr(item.key)
+                 newItems.Push(item)
+                 newKeys.Push(item.key)
+            end if
+        end for
+    end if
+
+    ' fill in the intial keys if empty and only if we are setting an initial order
+    if keys.count() = 0 and newItems.count() > 0 then 
+        for each item in items
+            ' exclude the keys will will be adding with initialOrder
+            if NOT(inArray(newKeys,item.key)) then 
+                keys.Push(item.key) 
+            end if
+        end for
+    end if
+
+    ' now reorder keys based on initial ordering        
+    if newItems.count() > 0 then 
+        setKeys = []
+        incr = 0
+        for index = 0 to keys.count()-1
+            orderIndex = index+incr
+            for newIndex = 0 to newItems.count()-1
+                if newItems[newIndex] <> invalid then 
+                    while newItems[newIndex].initialOrder = orderIndex
+                        setKeys.Push(newItems[newIndex].key)
+                        incr = incr+1
+                        orderIndex = orderIndex+1
+                    end while
+                end if
+            end for
+            setKeys.Push(keys[index])
+        end for
+        if setKeys.count() > 0 then keys = setKeys
+    end if
+    'end initial Ordering [options]
+    '**********************************************
 
     for j = keys.Count() - 1 to 0 step -1
         key = keys[j]
@@ -577,12 +633,17 @@ Function IIf(Condition, Result1, Result2) As Dynamic
 end Function
 
 Sub SwapArray(arr, i, j, setOrigIndex=false)
-    if i <> j then
-        if setOrigIndex then
-            if arr[i].OrigIndex = invalid then arr[i].OrigIndex = i
-            if arr[j].OrigIndex = invalid then arr[j].OrigIndex = j
-        end if
+    ' ljunkie -- sometimes the orignal and random number can be the same
+    ' we should still set the OrigIndex to be able to unShuffleArray later
+    ' note: moved out of the "i <> j" if statement
 
+    if setOrigIndex then
+        if arr[i].OrigIndex = invalid then arr[i].OrigIndex = i
+        if arr[j].OrigIndex = invalid then arr[j].OrigIndex = j
+    end if
+
+    ' if Orignal and Random are different, swap items place in array
+    if i <> j then
         temp = arr[i]
         arr[i] = arr[j]
         arr[j] = temp
@@ -605,11 +666,19 @@ End Function
 Function UnshuffleArray(arr, focusedIndex)
     item = arr[focusedIndex]
 
+    sanity=0:buffer=500000 ' ljunkie -- keeping from an infinite loop ( buffer is large, but we should be able to handle it )
     i = 0
     while i < arr.Count()
         if arr[i].OrigIndex = invalid then return 0
         SwapArray(arr, i, arr[i].OrigIndex)
         if i = arr[i].OrigIndex then i = i + 1
+        ' the above line can be really bad if the origIndex is set on ALL the items, yet is the same (shouldn't happen.. but you know...)
+        ' infinite loop killer
+        sanity = sanity + 1
+        if sanity > arr.Count()+buffer then 
+           Debug("!! exiting UnshuffleArray -- something is really wrong! " + " processed " + tostr(sanity) + " of a total " + tostr(arr.count()) + "total items!")
+           return firstOf(item.OrigIndex, 0)
+        end if
     end while
 
     return firstOf(item.OrigIndex, 0)

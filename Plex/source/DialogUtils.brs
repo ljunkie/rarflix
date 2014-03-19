@@ -10,6 +10,7 @@ Function createBaseDialog() As Object
     obj.HandleMessage = dialogHandleMessage
     obj.Refresh = dialogRefresh
     obj.SetButton = dialogSetButton
+    obj.StickyButton = dialogStickyButton
 
     ' Properties that can be set by the caller/subclass
     obj.Facade = invalid
@@ -55,6 +56,8 @@ Sub dialogRefresh()
         Debug("Creating new dialog")
         overlay = false
     end if
+
+    if m.EnableOverlay = true then overlay = true
 
     m.Screen = CreateObject("roMessageDialog")
     m.Screen.SetMessagePort(m.Port)
@@ -144,6 +147,8 @@ Function dialogHandleMessage(msg) As Boolean
             closeScreens = true
             m.ViewController.PopScreen(m)
             ' if we show a dialog in the slideshow screen - we pause, so resume if closed
+            ' - ljunkie -- yea, yea, this should have been done in an Active() routine. 
+            ' TODO: remove this once we deprecate teh roSlideShow screen
             screen = m.ViewController.screens.peek()
             if type(screen.screen) = "roSlideShow" and screen.isPaused and screen.ForceResume then 
                 screen.screen.Resume()
@@ -155,6 +160,8 @@ Function dialogHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
             screen = m.ViewController.screens.peek()
             ' if we show a dialog in the slideshow screen - we pause, so resume if closed
+            ' - ljunkie -- yea, yea, this should have been done in an Active() routine. 
+            ' TODO: remove this once we deprecate teh roSlideShow screen
             if type(screen.screen) = "roSlideShow" and screen.isPaused and screen.ForceResume then 
                 screen.screen.Resume()
                 screen.isPaused = false
@@ -222,6 +229,7 @@ Function createPopupMenu(item) As Object
         next
     end if
 
+    container = invalid
     return dlg
 End Function
 
@@ -250,4 +258,13 @@ Function dialogSetFocusButton(index) As Boolean
     obj = m.ParentScreen
     obj.FocusedButton = index
 end function
+
+' set the focused button from the command id (command)
+sub dialogStickyButton(command)
+   for index = 0 to m.buttons.count()-1 
+        if m.buttons[index][command] <> invalid then 
+            m.focusedbutton = index
+        end if
+    end for
+end sub
 

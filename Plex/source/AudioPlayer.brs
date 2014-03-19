@@ -21,6 +21,8 @@ Function AudioPlayer()
         obj.HandleMessage = audioPlayerHandleMessage
         obj.Cleanup = audioPlayerCleanup
 
+        obj.StopKeepState = audioPlayerStopKeepState
+
         obj.Play = audioPlayerPlay
         obj.Pause = audioPlayerPause
         obj.Resume = audioPlayerResume
@@ -119,7 +121,16 @@ Function audioPlayerHandleMessage(msg) As Boolean
             m.IgnoreTimelines = false
             m.IsPlaying = true
             m.IsPaused = false
-            m.playbackOffset = 0
+            ' ljunkie -- set AudioPlayer().ResumeOffset = intMS 
+            '  before calling AudioPlayer().Play() to start at an offset
+            if m.ResumeOffset <> invalid then 
+                m.playbackOffset = int(m.ResumeOffset/1000)
+                m.player.Seek(m.ResumeOffset)
+                m.ResumeOffset = invalid
+            else 
+                m.playbackOffset = 0
+            end if
+
             m.playbackTimer.Mark()
             GetViewController().DestroyGlitchyScreens()
 
@@ -142,6 +153,8 @@ Function audioPlayerHandleMessage(msg) As Boolean
                 m.IsPlaying = true
                 m.IsPaused = false
                 UpdateButtons = true
+                ' refresh the slideshow overlay on music changes ( if applicable)
+                if GetViewController().IsSlideShowPlaying() and PhotoPlayer() <> invalid and PhotoPlayer().overlay_audio then PhotoPlayer().OverlayToggle("forceShow")
             end if
         else if msg.isFullResult() then
             Debug("Playback of entire audio list finished")
@@ -392,7 +405,16 @@ Sub audioPlayerShowContextMenu()
             dialog.Text = dialog.Text + chr(10) + " Photo: " + tostr(m.slideshow.items[m.slideshow.CurIndex].title)
             if m.slideshow.isPaused = invalid then m.slideshow.isPaused = false
         end if 
-    end if 
+    else if type(screen.screen) = "roImageCanvas" and tostr(screen.imagecanvasname) = "slideshow" then 
+        dialog.EnableOverlay = true
+        m.slideshow = screen
+        if type(m.slideshow.CurIndex) = "roInteger" and type(m.slideshow.context) = "roArray" then  ' ljunkie - show the photo title a slide show is in progress
+            dialog.Text = dialog.Text + chr(10) + " Photo: " + tostr(m.slideshow.context[m.slideshow.CurIndex].title)
+            if m.slideshow.isPaused = invalid then m.slideshow.isPaused = false
+        end if 
+    else 
+        m.slideshow = invalid
+    end if
 
     if m.focusedbutton = invalid then m.focusedbutton = 0 
     focusbutton = m.focusedbutton
@@ -401,8 +423,10 @@ Sub audioPlayerShowContextMenu()
     ' slide shows get more buttons
     if m.slideshow <> invalid
         append = " Audio"
-        variable = 0 ' variable buttongs.. we might have to +1 our focusedButton - logic will break if we add more buttons, so keep note of that
-        if m.slideshow.isPaused or m.isPaused then
+        ' variable buttons.. we might have to +1 our focusedButton 
+        ' - logic will break if we add more buttons, so keep note of that
+        variable = 0 
+        if (m.slideshow.isPaused and NOT m.slideshow.forceresume = true) or m.isPaused then
             dialog.SetButton("resumeAll", "Resume All")
             variable = variable +1
         end if
@@ -410,7 +434,16 @@ Sub audioPlayerShowContextMenu()
             dialog.SetButton("pauseAll", "Pause All")
             variable = variable +1
         end if
-        if variable = 2 then focusbutton = focusbutton + 1
+
+        ' shuffle for slideshow needs to be unique ( music will have a shuffle button too )
+        if m.slideshow.isShuffled then 
+            dialog.SetButton("shufflePhoto", "Photo Shuffle: On")
+            variable = variable +1
+        else 
+            dialog.SetButton("shufflePhoto", "Photo Shuffle: Off")
+            variable = variable +1
+        end if
+
     end if
 
     if m.IsPlaying then
@@ -432,6 +465,10 @@ Sub audioPlayerShowContextMenu()
     end if
 
     dialog.SetButton("show", "Go to Now Playing")
+
+    screen = GetViewController().screens.peek()
+    dialogSetSortingButton(dialog,screen) 
+
     dialog.SetButton("close", "Close")
 
     ' ljunkie - focus to last set button ( logic needs clean up now that set set the dialog.FocusedButton after)
@@ -454,6 +491,8 @@ Sub audioPlayerShowContextMenu()
     dialog.HandleButton = audioPlayerMenuHandleButton
     dialog.SetFocusButton = dialogSetFocusButton
     dialog.ParentScreen = m
+    ' ljunkie - sometimes we need to use the actually parent screen and not the audioPlayer singleton
+    dialog.RealParentScreen = GetViewController().screens.peek()
     dialog.Show()
 End Sub
 
@@ -470,9 +509,14 @@ Function audioPlayerMenuHandleButton(command, data) As Boolean
     else if command = "pauseAll" then
         obj.focusedbutton = 0 
         ' we only get here if we know we are playing a slideshow too
-        obj.slideshow.screen.Pause()
-        obj.slideshow.isPaused = true
-        obj.slideshow.forceResume = false
+        if type(obj.slideshow.screen) = "roImageCanvas" then 
+            obj.slideshow.Pause()
+            obj.slideshow.forceResume = false
+        else 
+            obj.slideshow.screen.Pause()
+            obj.slideshow.isPaused = true
+            obj.slideshow.forceResume = false
+        end if
         obj.Pause()
     else if command = "resume" then
         obj.focusedbutton = 0 
@@ -480,9 +524,14 @@ Function audioPlayerMenuHandleButton(command, data) As Boolean
     else if command = "resumeAll" then
         obj.focusedbutton = 0
         ' we only get here if we know we are playing a slideshow too
-        obj.slideshow.screen.Resume()
-        obj.slideshow.isPaused = false
-        obj.slideshow.forceResume = false
+        if type(obj.slideshow.screen) = "roImageCanvas" then 
+            obj.slideshow.Resume()
+        else 
+            obj.slideshow.screen.Resume()
+            obj.slideshow.isPaused = false
+            obj.slideshow.forceResume = false
+        end if
+
         if obj.ispaused then 
             obj.Resume()
         else if NOT obj.isplaying then 
@@ -503,6 +552,32 @@ Function audioPlayerMenuHandleButton(command, data) As Boolean
     else if command = "close" then
         obj.focusedbutton = 0 
         return true
+    else if command = "shufflePhoto" then
+        if obj.slideshow.IsShuffled then 
+            obj.slideshow.SetShuffle(0)
+            m.SetButton(command, "Photo Shuffle: Off")
+        else 
+            obj.slideshow.SetShuffle(1)
+            m.SetButton(command, "Photo Shuffle: On")
+        end if
+
+        ' refresh buttons and slideshow overlay
+        m.Refresh()
+        obj.slideshow.Refresh()
+
+        ' keep dialog open
+        return false
+    else if command = "SectionSorting" then
+        dialog = createGridSortingDialog(m,m.RealParentScreen)
+        if dialog <> invalid then dialog.Show(true)
+        return false
+    else if command = "gotoFilters" then
+        ' audio dialog is special. Get the original item from the grid screen
+        ' TODO(ljunkie) dedupe this block elsewhere
+        parentScreen = m.RealParentScreen
+        item = m.RealParentScreen.originalItem
+        createFilterSortScreenFromItem(item, parentScreen)
+        closeDialog = true
     end if
 
     ' For now, close the dialog after any button press instead of trying to
@@ -590,4 +665,22 @@ Sub audioPlayerSetShuffle(shuffleVal)
     m.player.SetNext(newIndex)
 
     NowPlayingManager().timelines["music"].attrs["shuffle"] = tostr(shuffleVal)
+End Sub
+
+' used when someone plays a Video on top of an Audio/Slideshow
+' this way we can resume audio when the video is closed 
+' ( PhotoPlayerImageCanvas.brs has the same routine )
+Sub audioPlayerStopKeepState()
+    if m.Context <> invalid then
+        if m.IsPlaying and m.PlayIndex <> invalid then 
+            m.ResumeOffset = int(1000*m.GetPlaybackProgress())
+            m.ForceResume = true
+            m.player.SetNext(m.PlayIndex)
+        end if
+        m.player.Stop()
+        m.IsPlaying = false
+        m.IsPaused = false
+        NowPlayingManager().location = "navigation"
+        NowPlayingManager().UpdatePlaybackState("music", invalid, "stopped", 0)
+    end if
 End Sub

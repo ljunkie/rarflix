@@ -149,51 +149,47 @@ Sub containerParseXml()
               if remusic.isMatch(tostr(metadata.HDPosterURL)) then rfHasThumb = invalid
             end if
                   
+            PrintDebug = false
             if rfHasThumb = invalid or re.isMatch(rfHasThumb) then 
                 thumb_text = firstof(metadata.umtitle, metadata.title)
                 if thumb_text <> invalid AND metadata.server <> invalid then
-                    Debug( "-------------------------------------------")
-                    Debug("---- using custom thumb from rarflix cloudfrount service with title:" + firstof(metadata.umtitle, metadata.title))
-                    Debug("---- viewGroup:" + tostr(metadata.ViewGroup) + " nodeType:" + tostr(nodeType))
-                    Debug("---- Original:" + tostr(metadata.HDPosterURL))
-                    rfCDNthumb(metadata,thumb_text,nodetype)
-                    Debug( "-------------------------------------------")
-                else 
+                    if PrintDebug then 
+                        Debug( "-------------------------------------------")
+                        Debug("---- using custom thumb from rarflix cloudfrount service with title:" + firstof(metadata.umtitle, metadata.title))
+                        Debug("---- viewGroup:" + tostr(metadata.ViewGroup) + " nodeType:" + tostr(nodeType))
+                        Debug("---- Original:" + tostr(metadata.HDPosterURL))
+                    end if
+                    rfCDNthumb(metadata,thumb_text,nodetype,PrintDebug)
+                else if PrintDebug then  
                     Debug( "-------------------------------------------")
                     Debug("---- NOT using custom thumb due to the below? we have skipped it due to the data below")
                     Debug("---- viewGroup:" + tostr(metadata.ViewGroup) + " nodeType:" + tostr(nodeType))
                     Debug("---- Original:" + tostr(metadata.HDPosterURL))
                     Debug( "-------------------------------------------")
                 end if
-            ' for debugging
-            'else 
-            '    isLocal = CreateObject("roRegex", "127.0.0.1", "") ' TODO: any other than actor_con? these are default template.. ignore them
-            '    if NOT isLocal.isMatch(rfHasThumb) then 
-            '        Debug( "-------------------------------------------")
-            '        Debug("---- NOT using custom thumb for valid image")
-            '        Debug("---- viewGroup:" + tostr(metadata.ViewGroup) + " nodeType:" + tostr(nodeType))
-            '        Debug("---- Original:" + tostr(metadata.HDPosterURL))
-            '        Debug( "-------------------------------------------")
-            '    end if
-            'end if
+            else if PrintDebug then 
+                isLocal = CreateObject("roRegex", "127.0.0.1", "") ' TODO: any other than actor_con? these are default template.. ignore them
+                if NOT isLocal.isMatch(rfHasThumb) then 
+                    Debug( "-------------------------------------------")
+                    Debug("---- NOT using custom thumb for valid image")
+                    Debug("---- viewGroup:" + tostr(metadata.ViewGroup) + " nodeType:" + tostr(nodeType))
+                    Debug("---- Original:" + tostr(metadata.HDPosterURL))
+                    Debug( "-------------------------------------------")
+                end if
             end if
         end if
         ' END custom poster/thumbs
 
-        ' ROKU is not working with SSL ( some cloud sync thumbs ) -- 
-        ' reset the thumb url from https://my.plexapp.com:443/sync/ to http://plex-cloudsync.s3.amazonaws.com/sync/
-        remyplex = CreateObject("roRegex", "my.plexapp.com", "i")        
-        if metadata.server <> invalid and metadata.server.serverurl <> invalid and remyplex.IsMatch(metadata.server.serverurl) then 
-            re = CreateObject("roRegex", "https://my.plexapp.com:443/sync/", "")
-            if metadata.hdposterurl <> invalid then metadata.hdposterurl = re.replace(metadata.hdposterurl,"http://plex-cloudsync.s3.amazonaws.com/sync/")
-            if metadata.sdposterurl <> invalid then metadata.sdposterurl = re.replace(metadata.sdposterurl,"http://plex-cloudsync.s3.amazonaws.com/sync/")
-            if metadata.sdgridthumb <> invalid then metadata.sdgridthumb = re.replace(metadata.sdgridthumb,"http://plex-cloudsync.s3.amazonaws.com/sync/")
-            if metadata.hdgridthumb <> invalid then metadata.hdgridthumb = re.replace(metadata.hdgridthumb,"http://plex-cloudsync.s3.amazonaws.com/sync/")
-            if metadata.hddetailthumb <> invalid then metadata.hddetailthumb = re.replace(metadata.hddetailthumb,"http://plex-cloudsync.s3.amazonaws.com/sync/")
-            if metadata.sddetailthumb <> invalid then metadata.sddetailthumb = re.replace(metadata.sddetailthumb,"http://plex-cloudsync.s3.amazonaws.com/sync/")
-        end if
-
         PosterIndicators(metadata)
+
+        ' ljunkie - check if HomeVideo. This will be used to limit or change options since HomeVideos don't work with certain features.
+        ' I.E. cast & crew, trailers. The thumbnail size will also be landscape instead of a poster
+        ' check specific item for librarySectionUUID or fall back to contents librarySectionUUID
+        if n@librarySectionUUID <> invalid then 
+            metadata.isHomeVideos = GetGlobalAA().lookup("lsHomeVideos_"+n@librarySectionUUID)
+        else if m.xml@librarySectionUUID <> invalid then 
+            metadata.isHomeVideos = GetGlobalAA().lookup("lsHomeVideos_"+m.xml@librarySectionUUID)
+        end if
 
         if metadata.search = true AND m.SeparateSearchItems then
             m.search.Push(metadata)
@@ -205,6 +201,10 @@ Sub containerParseXml()
             m.keys.Push(metadata.Key)
         end if
     next
+
+    ' ljunkie - from ROKU -- this can be a memmory issue. So after we parse the XML, we invalidate it.
+    m.xml = invalid ' cleanup XML -- it's parsed now
+    ' RunGarbageCollector()
 
     m.Parsed = true
 End Sub

@@ -13,7 +13,7 @@ Function createMyPlexPinScreen(viewController As Object) As Object
     screen.AddParagraph("To access your shared sections and queue, link your Roku player to your myPlex account.")
     screen.AddParagraph(" ")
     screen.AddFocalText("From your computer,", "spacing-dense")
-    screen.AddFocalText("go to my.plexapp.com/pin", "spacing-dense")
+    screen.AddFocalText("go to plex.tv/pin", "spacing-dense")
     screen.AddFocalText("and enter this code:", "spacing-dense")
     screen.SetRegistrationCode("retrieving code...")
     screen.AddParagraph(" ")

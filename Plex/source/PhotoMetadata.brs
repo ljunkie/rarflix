@@ -53,6 +53,7 @@ Function newPhotoMetadata(container, item, detailed=true) As Object
     end if
 
     ' Transcode if necessary
+    '  ljunkie -- also append the server token if required
     if photo.media.Count() > 0 then
         format = UCase(firstOf(photo.media[0].container, "JPEG"))
         transcode = false
@@ -73,7 +74,11 @@ Function newPhotoMetadata(container, item, detailed=true) As Object
         end if
 
         if transcode then
+            ' TranscodedImage adds the token when needed
             photo.Url = photo.server.TranscodedImage("", photo.Url, size.w.toStr(), size.h.toStr())
+        else if photo.server.AccessToken <> invalid 
+            ' add the token if not transcoded
+            photo.Url = photo.Url + "?X-Plex-Token=" + photo.server.AccessToken
         end if
     end if
 
@@ -119,43 +124,65 @@ Function ParsePhotoMedia(photoItem) As Object
     return mediaArray
 End Function
 
-function getExifData(metadata,compact = false) as dynamic
-    container = createPlexContainerForUrl(metadata.server, metadata.server.serverUrl, metadata.key)
-    if container <> invalid then
-        container.getmetadata()
-        ' only create dialog if metadata is available
-        if type(container.metadata) = "roArray" and container.metadata.count() > 0 and type(container.metadata[0].media) = "roArray" and container.metadata[0].media.count() > 0 then 
-            MediaInfo = container.metadata[0].media[0]
-            desc = ""
-            if compact then 
-                if mediainfo.make <> invalid then desc = mediainfo.make + ": "
-                if mediainfo.model <> invalid then desc = desc + mediainfo.model + "   "
-                if mediainfo.lens <> invalid then desc = desc + "lens:" + mediainfo.lens + "   "
-                if mediainfo.aperture <> invalid then desc = desc + "aperture:" + mediainfo.aperture + "   "
-                if mediainfo.exposure <> invalid then desc = desc + "exposure:" + mediainfo.exposure + "   "
-                if mediainfo.aspectratio <> invalid then desc = desc + "aspect:" + mediainfo.aspectratio + "   "
-                if mediainfo.iso <> invalid then desc = desc + "iso:" + mediainfo.iso + "   "
-                if mediainfo.width <> invalid and mediainfo.height <> invalid then desc = desc + "size:" + tostr(mediainfo.width) + " x " + tostr(mediainfo.height) + "   "
-                'if mediainfo.container <> invalid then desc = desc + "format:" + mediainfo.container + "   "
-                if mediainfo.originallyAvailableAt <> invalid then desc = desc + "date:" + tostr(mediainfo.originallyAvailableAt)
-            else 
-                if mediainfo.make <> invalid then desc = mediainfo.make + ": "
-                if mediainfo.model <> invalid then desc = desc + mediainfo.model + "    "
-                if mediainfo.lens <> invalid then desc = desc + "lens: " + mediainfo.lens
-                if len(desc) < 50 then desc = desc + string(20," ") + "." ' hack to not make the line strech.. wtf roku
-                desc = desc + chr(10)
-                if mediainfo.aperture <> invalid then desc = desc + "aperture: " + mediainfo.aperture + "    "
-                if mediainfo.exposure <> invalid then desc = desc + "exposure: " + mediainfo.exposure + "    "
-                if mediainfo.aspectratio <> invalid then desc = desc + "aspect: " + mediainfo.aspectratio + "    "
-                if mediainfo.iso <> invalid then desc = desc + "iso: " + mediainfo.iso
-                desc = desc + chr(10)
-                if mediainfo.width <> invalid and mediainfo.height <> invalid then desc = desc + "size: " + tostr(mediainfo.width) + " x " + tostr(mediainfo.height) + "    "
-                if mediainfo.container <> invalid then desc = desc + "format: " + mediainfo.container + "    "
-                if mediainfo.originallyAvailableAt <> invalid then desc = desc + "date: " + tostr(mediainfo.originallyAvailableAt)
-            end if
+function getExifData(metadata, compact = false, forceExif=false) as dynamic
+    ' sometimes this info is less than if we query the item directly -- but it speeds things up 10 fold
+    Debug("checking for current exif data")
+    if metadata.MediaInfo = invalid and NOT forceExif then 
+        if metadata.media <> invalid and metadata.media[0] <> invalid then metadata.MediaInfo = metadata.media[0] 
+    end if
 
-            if desc <> "" then return desc
+    ' get the exif directly from the item key 
+    '  1) if it's still invalid 
+    '  2) forcExif is set and we havent't directly queried for it yet (metadata.MediaInfo.Loaded)
+    if metadata.MediaInfo = invalid or (metadata.MediaInfo.loaded = invalid and forceExif) then 
+        Debug("starting request for exif data")
+        container = createPlexContainerForUrl(metadata.server, metadata.server.serverUrl, metadata.key)
+        if container <> invalid then
+            container.getmetadata()
+            if type(container.metadata) = "roArray" and container.metadata.count() > 0 and type(container.metadata[0].media) = "roArray" and container.metadata[0].media.count() > 0 then 
+                metadata.MediaInfo = container.metadata[0].media[0]
+                metadata.MediaInfo.Loaded = true
+            end if
         end if
     end if
+end function
+
+function getExifDesc(metadata, compact = false, forceExif=false)
+    getExifData(metadata, compact, forceExif)
+
+    if metadata.MediaInfo <> invalid then  
+        MediaInfo = metadata.MediaInfo
+        desc = ""
+        if compact then 
+            ' compact -- for the description popup
+            if mediainfo.make <> invalid then desc = mediainfo.make + ": "
+            if mediainfo.model <> invalid then desc = desc + mediainfo.model + "   "
+            if mediainfo.lens <> invalid then desc = desc + "lens:" + mediainfo.lens + "   "
+            if mediainfo.aperture <> invalid then desc = desc + "aperture:" + mediainfo.aperture + "   "
+            if mediainfo.exposure <> invalid then desc = desc + "exposure:" + mediainfo.exposure + "   "
+            if mediainfo.aspectratio <> invalid then desc = desc + "aspect:" + mediainfo.aspectratio + "   "
+            if mediainfo.iso <> invalid then desc = desc + "iso:" + mediainfo.iso + "   "
+            if mediainfo.width <> invalid and mediainfo.height <> invalid then desc = desc + "size:" + tostr(mediainfo.width) + " x " + tostr(mediainfo.height) + "   "
+            if mediainfo.originallyAvailableAt <> invalid then desc = desc + "date:" + tostr(mediainfo.originallyAvailableAt)
+        else 
+            ' non compact -- for the springboard
+            if mediainfo.make <> invalid then desc = mediainfo.make + ": "
+            if mediainfo.model <> invalid then desc = desc + mediainfo.model + "    "
+            if mediainfo.lens <> invalid then desc = desc + "lens: " + mediainfo.lens
+            if len(desc) < 50 then desc = desc + string(20," ") + "." ' hack to not make the line strech.. wtf roku
+            desc = desc + chr(10)
+            if mediainfo.aperture <> invalid then desc = desc + "aperture: " + mediainfo.aperture + "    "
+            if mediainfo.exposure <> invalid then desc = desc + "exposure: " + mediainfo.exposure + "    "
+            if mediainfo.aspectratio <> invalid then desc = desc + "aspect: " + mediainfo.aspectratio + "    "
+            if mediainfo.iso <> invalid then desc = desc + "iso: " + mediainfo.iso
+            desc = desc + chr(10)
+            if mediainfo.width <> invalid and mediainfo.height <> invalid then desc = desc + "size: " + tostr(mediainfo.width) + " x " + tostr(mediainfo.height) + "    "
+            if mediainfo.container <> invalid then desc = desc + "format: " + mediainfo.container + "    "
+            if mediainfo.originallyAvailableAt <> invalid then desc = desc + "date: " + tostr(mediainfo.originallyAvailableAt)
+        end if
+
+        if desc <> "" then return desc
+    end if
+
     return invalid
 end function

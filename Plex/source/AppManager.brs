@@ -5,10 +5,11 @@ Function AppManager()
         'obj.productCode = "PROD1" ' Sample product when sideloaded
         obj.productCode = "plexunlock"
 
-        ' The unlocked state of the app, one of: PlexPass, Purchased, Trial, or Limited
+        ' The unlocked state of the app, one of: PlexPass, Exempt, Purchased, Trial, or Limited
         obj.IsPlexPass = false
-        obj.IsPurchased = false
+        obj.IsPurchased = (RegRead("purchased", "misc", "0") = "1")
         obj.IsAvailableForPurchase = false
+        obj.IsExempt = false
 
         obj.firstPlaybackTimestamp = RegRead("first_playback_timestamp", "misc")
         if obj.firstPlaybackTimestamp <> invalid then
@@ -66,11 +67,13 @@ Function managerIsInitialized() As Boolean
 End Function
 
 Function managerIsPlaybackAllowed() As Boolean
+    ' RARflix is always playable!
+    return true
     ' If we've never noted a playback attempt before, write it to the registry
     ' now. It will serve as the start of the trial period.
 
     if m.firstPlaybackTimestamp = invalid then
-        RegWrite("first_playback_timestamp", "misc", tostr(Now().AsSeconds()))
+        RegWrite("first_playback_timestamp", tostr(Now().AsSeconds()), "misc")
     end if
 
     return m.State <> "Limited"
@@ -80,6 +83,8 @@ Sub managerResetState()
     m.State = "RARflix"
     if m.IsPlexPass then
         m.State = "PlexPass"
+    else if m.IsExempt then
+        m.State = "Exempt"
     else if m.IsPurchased then
         m.State = "Purchased"
     end if
@@ -93,41 +98,78 @@ Sub managerResetState()
 End Sub
 
 Sub managerFetchProducts()
-    m.AddInitializer("channelstore")
+    ' On the older firmware, the roChannelStore exists, it just doesn't seem to
+    ' work. So don't even bother, just say that the item isn't available for
+    ' purchase on the older firmware.
 
-    ' The docs suggest we can make two requests at the same time by using the
-    ' source identity, but it doesn't actually work. So we'd need to get the
-    ' catalog and the purchases serially. Fortunately, the docs also fail to
-    ' mention that the catalog returns the purchased date. So we can just fetch
-    ' the catalog and get all the info we need.
+    if CheckMinimumVersion(GetGlobal("rokuVersionArr", [0]), [5, 1]) then
+        m.AddInitializer("channelstore")
 
-    store = CreateObject("roChannelStore")
-    store.SetMessagePort(GetViewController().GlobalMessagePort)
-    store.GetCatalog()
-    m.PendingStore = store
+        ' The docs suggest we can make two requests at the same time by using the
+        ' source identity, but it doesn't actually work. So we have to get the
+        ' catalog and purchases serially. Start with the purchases, so that if
+        ' we get a response we can skip the catalog request.
+
+        store = CreateObject("roChannelStore")
+        store.SetMessagePort(GetViewController().GlobalMessagePort)
+        store.GetPurchases()
+        m.PendingStore = store
+        m.PendingRequestPurchased = true
+    else
+        ' Rather than force these users to have a PlexPass, we'll exempt them.
+        ' Among other things, this allows old users to continue to work, since
+        ' even though they've theoretically been grandfathered we don't know it.
+        m.IsExempt = true
+        Debug("Channel store isn't supported by firmware version")
+    end if
 End Sub
 
 Sub managerHandleChannelStoreEvent(msg)
+    m.PendingStore = invalid
+    atLeastOneProduct = false
+
     if msg.isRequestSucceeded() then
+        if m.PendingRequestPurchased then m.IsPurchased = false
         for each product in msg.GetResponse()
+            atLeastOneProduct = true
             if product.code = m.productCode then
                 m.IsAvailableForPurchase = true
-                if product.purchaseDate <> invalid then
-                    date = CreateObject("roDateTime")
-                    date.FromISO8601String(product.purchaseDate)
-                    if date.AsSeconds() > 0 then
-                        m.IsPurchased = true
-                    end if
+                if m.PendingRequestPurchased then
+                    m.IsPurchased = true
+                    RegWrite("purchased", "1", "misc")
                 end if
             end if
         next
+    end if
+
+    ' If the cataglog had at least one product, but not ours, then the user is
+    ' exempt. This essentially allows sideloaded channels to be exempt without
+    ' having to muck with anything.
+
+    if NOT m.PendingRequestPurchased AND NOT m.IsAvailableForPurchase AND atLeastOneProduct then
+        Debug("Channel is exempt from trial period")
+        m.IsExempt = true
+    end if
+
+    ' If this was a purchases request and we didn't find anything, then issue
+    ' a catalog request now.
+    if m.PendingRequestPurchased AND NOT m.IsPurchased then
+        Debug("Channel does not appear to be purchased, checking catalog")
+        store = CreateObject("roChannelStore")
+        store.SetMessagePort(GetViewController().GlobalMessagePort)
+        store.GetCatalog()
+        m.PendingStore = store
+        m.PendingRequestPurchased = false
+    else
         Debug("IAP is available: " + tostr(m.IsAvailableForPurchase))
         Debug("IAP is purchased: " + tostr(m.IsPurchased))
+        Debug("IAP is exempt: " + tostr(m.IsExempt))
         m.ResetState()
     end if
 
-    m.ClearInitializer("channelstore")
-    m.PendingStore = invalid
+    if m.PendingStore = invalid then
+        m.ClearInitializer("channelstore")
+    end if
 End Sub
 
 Sub managerStartPurchase()
@@ -139,6 +181,7 @@ Sub managerStartPurchase()
 
     if store.DoOrder() then
         Debug("Product purchased!")
+        RegWrite("purchased", "1", "misc")
         m.IsPurchased = true
         m.ResetState()
     else

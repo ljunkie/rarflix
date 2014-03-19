@@ -106,16 +106,6 @@ Function createPhotoPlayerScreen(context, contextIndex, viewController, shuffled
     return obj
 End Function
 
-Function PhotoPlayer()
-    ' If the active screen is a slideshow, return it. Otherwise, invalid.
-    screen = GetViewController().screens.Peek()
-    if type(screen.Screen) = "roSlideShow" then
-        return screen
-    else
-        return invalid
-    end if
-End Function
-
 Function photoPlayerHandleMessage(msg) As Boolean
     ' We don't actually need to do much of anything, the slideshow pretty much
     ' runs itself.
@@ -181,7 +171,7 @@ Function photoPlayerHandleMessage(msg) As Boolean
                 m.forceResume = NOT (m.isPaused)
                 m.screen.Pause()
                 m.isPaused = true
-                photoPlayerShowContextMenu(obj)
+                photoShowContextMenu(obj)
             else if msg.GetIndex() = 3 then
 
                 if GetGlobalAA().Lookup("slideshow_overlay") = false then
@@ -224,53 +214,6 @@ Function photoPlayerHandleMessage(msg) As Boolean
     return handled
 End Function
 
-
-Sub photoPlayerShowContextMenu(obj,force_show = false)
-    player = AudioPlayer()
-
-    ' show audio dialog if item is directory and audio is playing/paused
-    if tostr(obj.nodename) = "Directory" then
-        if player.IsPlaying or player.IsPaused or player.ContextScreenID <> invalid then player.ShowContextMenu()
-        return
-    end if
-   
-    ' do not display if audio is playing - sorry, audio dialog overrides this, maybe work more logic in later
-    ' I.E. show button for this dialog from audioplayer dialog
-    if NOT force_show and player.IsPlaying or player.IsPaused or player.ContextScreenID <> invalid then 
-        player.ShowContextMenu()
-        return
-    end if
-
-    container = createPlexContainerForUrl(obj.server, obj.server.serverUrl, obj.key)
-    if container <> invalid then
-        container.getmetadata()
-        ' only create dialog if metadata is available
-        if type(container.metadata) = "roArray" and type(container.metadata[0].media) = "roArray" then 
-            obj.MediaInfo = container.metadata[0].media[0]
-            dialog = createBaseDialog()
-            dialog.Title = "Image: " + obj.title
-            dialog.text = ""
-            ' NOTHING lines up in a dialog.. lovely        
-            if obj.mediainfo.make <> invalid then dialog.text = dialog.text                  + "    camera: " + tostr(obj.mediainfo.make) + chr(10)
-            if obj.mediainfo.model <> invalid then dialog.text = dialog.text                 + "      model: " + tostr(obj.mediainfo.model) + chr(10)
-            if obj.mediainfo.lens <> invalid then dialog.text = dialog.text                  + "          lens: " + tostr(obj.mediainfo.lens) + chr(10)
-            if obj.mediainfo.aperture <> invalid then dialog.text = dialog.text              + "  aperture: " + tostr(obj.mediainfo.aperture) + chr(10)
-            if obj.mediainfo.exposure <> invalid then dialog.text = dialog.text              + " exposure: " + tostr(obj.mediainfo.exposure) + chr(10)
-            if obj.mediainfo.iso <> invalid then dialog.text = dialog.text                   + "             iso: " + tostr(obj.mediainfo.iso) + chr(10)
-            if obj.mediainfo.width <> invalid and obj.mediainfo.height <> invalid then dialog.text = dialog.text + "           size: " + tostr(obj.mediainfo.width) + " x " + tostr(obj.mediainfo.height) + chr(10)
-            if obj.mediainfo.aspectratio <> invalid then dialog.text = dialog.text           + "      aspect: " + tostr(obj.mediainfo.aspectratio) + chr(10)
-            if obj.mediainfo.container <> invalid then dialog.text = dialog.text             + "          type: " + tostr(obj.mediainfo.container) + chr(10)
-            if obj.mediainfo.originallyAvailableAt <> invalid then dialog.text = dialog.text + "          date: "  + tostr(obj.mediainfo.originallyAvailableAt) + chr(10)
-        
-        
-            dialog.SetButton("close", "Close")
-        
-            dialog.ParentScreen = m
-            dialog.Show()
-        end if
-    end if
-
-End Sub
 
 sub photoPlayerOnTimerExpired(timer)
     if timer.Name = "overlay" then
@@ -365,3 +308,4 @@ Sub photoPlayerSetShuffle(shuffleVal)
 
     NowPlayingManager().timelines["photo"].attrs["shuffle"] = tostr(shuffleVal)
 End Sub
+

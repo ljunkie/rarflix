@@ -16,6 +16,7 @@ Function createTimer() As Object
     timer.SetDuration = timerSetDuration
     timer.IsExpired = timerIsExpired
     timer.RemainingMillis = timerRemainingMillis
+    timer.RemainingSeconds = timerRemainingSeconds
 
     timer.Active = true
     timer.Repeat = false
@@ -68,7 +69,19 @@ End Function
 Function timerRemainingMillis()
     if m.Active then
         remaining = m.DurationMillis - m.timer.TotalMilliseconds()
+        ' not exactly sure why we return 1 instead of 0 here -- viewController might expect this
         if remaining <= 0 then remaining = 1
+        return remaining
+    end if
+
+    return 0
+End Function
+
+' we could use timerRemainingMillis()/1000 -- this will return true zero unlike timerRemainingMillis()
+Function timerRemainingSeconds()
+    if m.Active then
+        remaining = int((m.DurationMillis - m.timer.TotalMilliseconds())/int(1000))
+        if remaining <= 0 then remaining = 0
         return remaining
     end if
 

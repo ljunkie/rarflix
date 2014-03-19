@@ -28,8 +28,8 @@ Function newArtistMetadata(container, item, detailed=true) As Object
         next
     end if
 
-    if artist.Title = invalid then
-        artist.Title = item@artist
+    if artist.Title = "" then
+        artist.Title = firstOf(item@artist, "")
         artist.ShortDescriptionLine1 = artist.Title
     end if
 
@@ -60,8 +60,8 @@ Function newAlbumMetadata(container, item, detailed=true) As Object
         end if
     end if
 
-    if album.Title = invalid then
-        album.Title = album.Album
+    if album.Title = "" then
+        album.Title = firstOf(album.Album, "")
         album.ShortDescriptionLine1 = album.Title
     end if
 
@@ -82,7 +82,9 @@ Function newTrackMetadata(container, item, detailed=true) As Object
     track.mediaContainerIdentifier = container.xml@identifier
     if track.Type = invalid then track.Type = "track"
 
-    if container.xml@mixedParents = "1" then
+    ' ljunkie added some new hooks for the audio now playing row ( not 100% yet )
+    ' /status/sessions doesn't containt container.xml@mixedParents, but it is
+    if container.xml@mixedParents = "1" or InStr(0, container.sourceurl, "/status/sessions" ) > 0 then
         track.Artist = firstOf(item@grandparentTitle, item@artist)
         track.Album = firstOf(item@parentTitle, item@album, "Unknown Album")
         track.ReleaseDate = item@parentYear
@@ -95,13 +97,14 @@ Function newTrackMetadata(container, item, detailed=true) As Object
         track.AlbumYear = container.xml@parentYear
     end if
 
+    ' ljunkie - let eu prefer to show the track artist (fall back to already set track.artist)
     displayArtist = RegRead("rf_music_artist", "preferences", "track")
     if displayArtist = "track" then     
-        track.Artist = firstOf(item@originalTitle, container.xml@title1)
+        track.Artist = firstOf(item@originalTitle, container.xml@title1, track.Artist)
     else if displayArtist = "various" then     
         r = CreateObject("roRegex", "various|invalid", "i") ' section too - those are not special
         if r.IsMatch(tostr(track.Artist)) then 
-            track.Artist = firstOf(item@originalTitle, container.xml@title1)
+            track.Artist = firstOf(item@originalTitle, container.xml@title1, track.Artist)
         end if
     end if
 
@@ -113,8 +116,8 @@ Function newTrackMetadata(container, item, detailed=true) As Object
     end if
     track.Length = track.Duration
 
-    if track.Title = invalid then
-        track.Title = item@track
+    if track.Title = "" then
+        track.Title = firstOf(item@track, "")
         track.ShortDescriptionLine1 = track.Title
     end if
 
@@ -163,6 +166,42 @@ Function newTrackMetadata(container, item, detailed=true) As Object
         track.StreamFormat = "invalid"
         track.Url = ""
     end if
+
+    track.CleanTitle = track.Title
+
+    ' the Shared User Now Playing rows ( rarflix ) -- some hoods for the required metadata
+    if item.user@title <> invalid then 
+        ' save any variables we change for later
+        track.nowPlaying_orig_title = track.title
+        track.nowPlaying_orig_description = track.Artist + " : " + track.Album
+        track.viewoffset = item@viewoffset      
+
+        track.description = "" ' reset video Description -- blank but not invalid
+        if track.viewoffset <> invalid then 
+             track.description = "Progress: " + GetDurationString(int(track.viewoffset.toint()/1000),0,1,1)
+             track.description = track.description + " [" + percentComplete(track.viewOffset,track.length) + "%]"
+        else if item.Player@state <> invalid then
+             track.description = item.Player@state
+        end if
+
+        track.description = track.description + " on " + firstof(item.Player@title, item.Player@platform)
+        if track.server.name <> invalid then track.description = track.description + " [" + track.server.name + "]" ' show the server 
+        track.nowPlaying_progress = track.description ' container for HUD notify
+
+        ' append the original description if NOT invalid
+        if track.nowPlaying_orig_description <> invalid then track.description = track.description + chr(10) + track.nowPlaying_orig_description
+
+        ' prepend the "user:" to the video title
+        track.title = UcaseFirst(item.user@title,true) + " " + UcaseFirst(item.Player@state) + ": "  + track.CleanTitle
+
+        ' set nowPlaying info for later
+        track.nowPlaying_maid = item.Player@machineIdentifier ' use to verify the stream we are syncing is the same
+        track.nowPlaying_user = item.user@title
+        track.nowPlaying_state = item.Player@state
+        track.nowPlaying_platform = item.Player@platform
+        track.nowPlaying_platform_title = item.Player@title
+    end if
+    ' end shared now playing metadata
 
     return track
 End Function

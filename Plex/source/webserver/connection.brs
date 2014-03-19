@@ -177,8 +177,12 @@ function connection_poll_receive_request(server as Object)
             err(m,"couldn't process request or reply, closing @"+m.client)
         end if
     else if m.request.buf.len() > m.MAX_REQUEST_LENGTH ' die if it's too long
-        m.default_reply(413, "Request Entity Too Large", "Your request was dropped because it was too long.")
-        m.setState(m.SEND_HEADER)
+        ' this doesn't exist (m.default_reply)
+        'm.default_reply(413, "Request Entity Too Large", "Your request was dropped because it was too long.")
+        'm.setState(m.SEND_HEADER)
+         m.setState(m.DONE)
+         m.close = true
+         err(m,"Request Entity Too Large! Your request was dropped because it was too long., closing @"+m.client)
     end if
 
     ' if we've moved on to the next state, try to send right away, instead of

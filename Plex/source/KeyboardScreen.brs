@@ -15,7 +15,12 @@ Function createKeyboardScreen(viewController As Object, item=invalid, heading=in
     if heading <> invalid then
         screen.SetDisplayText(heading)
     end if
-    screen.SetText(initialValue)
+
+    ' allow us to pass invalid as the initial
+    if initialValue <> invalid then
+        screen.SetText(initialValue)
+    end if
+
     screen.SetSecureText(secure)
 
     ' Standard properties for all our screen types

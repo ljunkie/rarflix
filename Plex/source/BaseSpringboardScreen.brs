@@ -3,7 +3,7 @@
 '*
 
 Function itemIsRefreshable(item) As Boolean
-    return item <> invalid AND item.refresh <> invalid
+    return item <> invalid and type(item) = "roAssociativeArray" AND item.refresh <> invalid
 End Function
 
 Function createBaseSpringboardScreen(context, index, viewController, includePredicate=itemIsRefreshable) As Object
@@ -203,8 +203,10 @@ End Function
 Function sbGotoNextItem() As Boolean
     if NOT m.AllowLeftRight then return false
 
-    ' this is a new hack for fullgrid screen.. 
-    if m.FullContext = invalid and fromFullGrid(m) then 
+    ' load all contents (once) if we are coming from a full grid ( allow skiping this - autoadvanceepisode as an example)
+    if m.skipFullContext = true then 
+        m.skipFullContext = invalid
+    else if fromFullGrid(true) and m.FullContext = invalid then 
         GetContextFromFullGrid(m)
     end if
 
@@ -233,7 +235,10 @@ End Function
 Function sbGotoPrevItem() As Boolean
     if NOT m.AllowLeftRight then return false
 
-    if m.FullContext = invalid and fromFullGrid(m) then 
+    ' load all contents (once) if we are coming from a full grid
+    if m.skipFullContext = true then 
+        m.skipFullContext = invalid
+    else if fromFullGrid(true) and m.FullContext = invalid then 
         GetContextFromFullGrid(m)
     end if
 

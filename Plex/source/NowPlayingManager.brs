@@ -182,6 +182,9 @@ Sub nowPlayingSendTimelineToAll()
 End Sub
 
 Sub nowPlayingUpdatePlaybackState(timelineType, item, state, time)
+    ' reset the general IDLE timer
+    GetViewController().resetGenIdleTimer()
+
     timeline = m.timelines[timelineType]
     timeline.state = state
     timeline.item = item
@@ -320,7 +323,13 @@ Sub timelineDataToXmlAttributes(elem)
             parts = server.serverUrl.tokenize(":")
             elem.AddAttribute("protocol", parts.RemoveHead())
             elem.AddAttribute("address", Mid(parts.RemoveHead(), 3))
-            elem.AddAttribute("port", parts.RemoveHead())
+            if parts.GetHead() <> invalid then 
+                elem.AddAttribute("port", parts.RemoveHead())
+            else if elem@protocol = "https" then 
+                elem.AddAttribute("port", "443")
+            else 
+                elem.AddAttribute("port", "80")
+            end if
         end if
     end if
 

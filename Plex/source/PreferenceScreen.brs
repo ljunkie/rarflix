@@ -287,26 +287,26 @@ Sub showPreferencesScreen()
     m.Screen.SetHeader("Set Plex Channel Preferences")
 
     ' re-ordered - RR
-    m.AddItem({title: "About RARflix"}, "ShowReleaseNotes")
-    m.AddItem({title: "RARflix Preferences", ShortDescriptionLine2: "the goods"}, "rarflix_prefs")
-    m.AddItem({title: getCurrentMyPlexLabel()}, "myplex")
-    m.AddItem({title: "User Profiles", ShortDescriptionLine2: "Fast user switching"}, "userprofiles")
-    m.AddItem({title: "Security PIN", ShortDescriptionLine2: "Require a PIN to access (multi-user supported)"}, "securitypin")
     m.AddItem({title: "Plex Media Servers"}, "servers")
+    m.AddItem({title: getCurrentMyPlexLabel()}, "myplex")
     m.AddItem({title: "Quality"}, "quality", m.GetEnumValue("quality"))
     m.AddItem({title: "Remote Quality"}, "quality_remote", m.GetEnumValue("quality_remote"))
     m.AddItem({title: "Direct Play"}, "directplay", m.GetEnumValue("directplay"))
-    m.AddItem({title: "Audio Preferences"}, "audio_prefs")
-    m.AddItem({title: "Home Screen"}, "homescreen")
-    m.AddItem({title: "Section Display"}, "sections")
-    m.AddItem({title: "Remote Control/Name"}, "remotecontrol")
+    m.AddItem({title: "Home Screen", ShortDescriptionLine2: "Display Options for the initial screen"}, "homescreen")
+    m.AddItem({title: "Section Display", ShortDescriptionLine2: "Library Section Options for" + chr(10) + "Movie, TV, Music & Photo"}, "sections")
+    m.AddItem({title: "Grid Options"}, "gridOptions")
     m.AddItem({title: "Subtitles"}, "subtitles")
-    m.AddItem({title: "Slideshow & Photos"}, "slideshow")
+    m.AddItem({title: "Slideshow & Photos", ShortDescriptionLine2: "Additional options for the Photo Section"}, "slideshow")
+    m.AddItem({title: "User Profiles & PINS", ShortDescriptionLine2: "Fast user switching (parental)"}, "userprofiles")
+
+    m.AddItem({title: "Audio Preferences"}, "audio_prefs")
+    m.AddItem({title: "Advanced Preferences"}, "advanced")
+
+    m.AddItem({title: "Remote Control/Name"}, "remotecontrol")
     m.AddItem({title: "Screensaver"}, "screensaver", m.GetEnumValue("screensaver"))
     m.AddItem({title: "Logging"}, "debug")
-    m.AddItem({title: "Advanced Preferences"}, "advanced")
     m.AddItem({title: "Channel Status: " + AppManager().State}, "status")
-
+    m.AddItem({title: "About RARflix"}, "ShowReleaseNotes")
     m.AddItem({title: "Close Preferences"}, "close")
 
     m.serversBefore = {}
@@ -367,9 +367,12 @@ Function prefsMainHandleMessage(msg) As Boolean
                 screen.Show()
             else if command = "myplex" then
                 if MyPlexManager().IsSignedIn then
-                    MyPlexManager().Disconnect()
-                    m.Changes["myplex"] = "disconnected"
-                    m.SetTitle(msg.GetIndex(), getCurrentMyPlexLabel())
+                    ' ljunkie - add a confirmation
+                    if createDialogConfirm() = true then 
+                        MyPlexManager().Disconnect()
+                        m.Changes["myplex"] = "disconnected"
+                        m.SetTitle(msg.GetIndex(), getCurrentMyPlexLabel())
+                     end if
                 else
                     m.checkMyPlexOnActivate = true
                     m.myPlexIndex = msg.GetIndex()
@@ -387,6 +390,8 @@ Function prefsMainHandleMessage(msg) As Boolean
                 manager = AppManager()
                 if manager.State = "PlexPass" then
                     dialog.Text = "Plex is fully unlocked since you're a PlexPass member."
+                else if manager.State = "Exempt" then
+                    dialog.Text = "Plex is fully unlocked."
                 else if manager.State = "Purchased" then
                     dialog.Text = "Plex has been purchased and is fully unlocked."
                 else if manager.State = "Trial" then
@@ -412,10 +417,6 @@ Function prefsMainHandleMessage(msg) As Boolean
                 screen = createSlideshowPrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["Slideshow & Photo Preferences"])
                 screen.Show()
-            else if command = "securitypin" then
-                screen = createSecurityPinPrefsScreen(m.ViewController)
-                m.ViewController.InitializeOtherScreen(screen, ["Security PIN"])
-                screen.Show()            
             else if command = "userprofiles" then
                 screen = createUserProfilesPrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["User Profiles"])
@@ -427,6 +428,10 @@ Function prefsMainHandleMessage(msg) As Boolean
             else if command = "sections" then
                 screen = createSectionDisplayPrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["Section Display Preferences"])
+                screen.Show()
+            else if command = "gridOptions" then
+                screen = createGridOptionsPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["Grid Options"])
                 screen.Show()
             else if command = "remotecontrol" then
                 screen = createRemoteControlPrefsScreen(m.ViewController)
@@ -450,10 +455,6 @@ Function prefsMainHandleMessage(msg) As Boolean
                 screen.Show()
             else if command = "ShowReleaseNotes" then
                 m.ViewController.ShowReleaseNotes("about")
-            else if command = "rarflix_prefs" then
-                screen = createRARflixPrefsScreen(m.ViewController)
-                m.ViewController.InitializeOtherScreen(screen, ["RARflix Preferences"])
-                screen.Show()
             else if command = "close" then
                 m.Screen.Close()
             end if
@@ -492,9 +493,9 @@ Function createSlideshowPrefsScreen(viewController) As Object
 
     ' Photo duration
     values = [
-        { title: "Slow", EnumValue: "10" },
-        { title: "Normal", EnumValue: "6" },
-        { title: "Fast", EnumValue: "3" }
+        { title: "Slow (10 sec)", EnumValue: "10" },
+        { title: "Normal (6 sec)", EnumValue: "6" },
+        { title: "Fast (3 sec)", EnumValue: "3" }
     ]
     obj.Prefs["slideshow_period"] = {
         values: values,
@@ -504,10 +505,9 @@ Function createSlideshowPrefsScreen(viewController) As Object
 
     ' Overlay duration
     values = [
-        { title: "None", EnumValue: "0" }
-        { title: "Slow", EnumValue: "10000" },
-        { title: "Normal", EnumValue: "2500" },
-        { title: "Fast", EnumValue: "1000" }
+        { title: "Slow (10 sec)", EnumValue: "10000" },
+        { title: "Normal (2.5 sec)", EnumValue: "2500" },
+        { title: "Fast (1.5 sec)", EnumValue: "1500" }
     ]
     obj.Prefs["slideshow_overlay"] = {
         values: values,
@@ -515,10 +515,50 @@ Function createSlideshowPrefsScreen(viewController) As Object
         default: "2500"
     }
 
+    ' Overlay Shared Values
+    values = [
+        { title: "Manual", EnumValue: "manual", ShortDescriptionLine2: "Only show Overlay with remote buttons",  }
+        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Automatically show Overlay on change",  }
+        { title: "Disabled", EnumValue: "disabled",ShortDescriptionLine2: "Never show the overlay",}
+    ]
+
+    ' Photo Info Overlay
+    obj.Prefs["slideshow_photo_overlay"] = {
+        values: values,
+        heading: "Display Photo Info on the Overlay",
+        default: "enabled"
+    }
+
+    ' Audio Info Overlay
+    obj.Prefs["slideshow_audio_overlay"] = {
+        values: values,
+        heading: "Display Audio Info on the Overlay",
+        default: "enabled"
+    }
+
+    ' Error/Debug Info Overlay
+    obj.Prefs["slideshow_error_overlay"] = {
+        values: values,
+        heading: "Enable Debug Overlay",
+        default: "disabled"
+    }
+
+    ' overscan/underscan correction
+    values = [
+        { title: "TV", EnumValue: "5" }
+        { title: "Monitor", EnumValue: "0" },
+    ]
+    obj.Prefs["slideshow_underscan"] = {
+        values: values,
+        heading: "Display Type Correction",
+        default: "5"
+    }
+
+
     ' reload slideshow after every full run
     values = [
-        { title: "Disabled", EnumValue: "disabled",  ShortDescriptionLine2: "Do not check for new Photos",  },
-        { title: "Enabled", EnumValue: "enabled",  ShortDescriptionLine2: "Check for new Photos" },
+        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Do not check for new Photos", },
+        { title: "Enabled", EnumValue: "enabled", ShortDescriptionLine2: "Check for new Photos" },
     ]
     obj.Prefs["slideshow_reload"] = {
         values: values,
@@ -527,8 +567,8 @@ Function createSlideshowPrefsScreen(viewController) As Object
     }
 
     display_modes = [
-        { title: "Photo", EnumValue: "photo-fit", ShortDescriptionLine2: "roku cropping method" },
-        { title: "Fit", EnumValue: "scale-to-fit", ShortDescriptionLine2: "scale to fit"  },
+        { title: "Fit", EnumValue: "scale-to-fit", ShortDescriptionLine2: "scale to fit [no crop]"  },
+        { title: "Smart", EnumValue: "photo-fit", ShortDescriptionLine2: "smart scale+zoom to fit" },
         { title: "Fill", EnumValue: "scale-to-fill", ShortDescriptionLine2: "stretch to fill" },
         { title: "Zoom", EnumValue: "zoom-to-fill", ShortDescriptionLine2: "zoom to fill" },
     ]
@@ -547,7 +587,7 @@ Function createSlideshowPrefsScreen(viewController) As Object
     ' Prefer Grid or Poster view for most?
     rf_photos_grid_style = [
         { title: "Portrait", EnumValue: "flat-movie", ShortDescriptionLine2: "Grid 5x2"  },
-        { title: "Landscape 16x9", EnumValue: "flat-16X9", ShortDescriptionLine2: "Grid 5x3"  },
+        { title: "Landscape 16x9", EnumValue: "flat-16x9", ShortDescriptionLine2: "Grid 5x3"  },
         { title: "Landscape", EnumValue: "flat-landscape", ShortDescriptionLine2: "Grid 5x3"  },
     ]
     obj.Prefs["rf_photos_grid_style"] = {
@@ -559,11 +599,15 @@ Function createSlideshowPrefsScreen(viewController) As Object
     obj.Screen.SetHeader("Slideshow display preferences")
 
     obj.AddItem({title: "Speed"}, "slideshow_period", obj.GetEnumValue("slideshow_period"))
-    obj.AddItem({title: "Text Overlay"}, "slideshow_overlay", obj.GetEnumValue("slideshow_overlay"))
+    obj.AddItem({title: "Overlay Speed"}, "slideshow_overlay", obj.GetEnumValue("slideshow_overlay"))
+    obj.AddItem({title: "Photo Overlay", ShortDescriptionLine2: "Photo Info overlay on the photo"}, "slideshow_photo_overlay", obj.GetEnumValue("slideshow_photo_overlay"))
+    obj.AddItem({title: "Audio Overlay", ShortDescriptionLine2: "Audio Info overlay on the photo"}, "slideshow_audio_overlay", obj.GetEnumValue("slideshow_audio_overlay"))
+    obj.AddItem({title: "Display Mode",ShortDescriptionLine2: "How should photos 'fit' the screen"}, "slideshow_displaymode", obj.GetEnumValue("slideshow_displaymode"))
+    obj.AddItem({title: "Display Type",ShortDescriptionLine2: "Connected Display Type"}, "slideshow_underscan", obj.GetEnumValue("slideshow_underscan"))
     obj.AddItem({title: "Reload",ShortDescriptionLine2: "check for new images after every completion"}, "slideshow_reload", obj.GetEnumValue("slideshow_reload"))
     obj.AddItem({title: "Grid Style/Size",ShortDescriptionLine2: "Grid Display Mode"}, "rf_photos_grid_style", obj.GetEnumValue("rf_photos_grid_style"))
-    obj.AddItem({title: "Photo Display Mode",ShortDescriptionLine2: "How should photos 'fit' the screen"}, "slideshow_displaymode", obj.GetEnumValue("slideshow_displaymode"))
     obj.AddItem({title: "Icons Display Mode",ShortDescriptionLine2: "How should thumbnails 'fit' the screen"}, "photoicon_displaymode", obj.GetEnumValue("photoicon_displaymode"))
+    obj.AddItem({title: "Debug Info", ShortDescriptionLine2: "Show Debug info if there are errors"}, "slideshow_error_overlay", obj.GetEnumValue("slideshow_error_overlay"))
     obj.AddItem({title: "Close"}, "close")
 
     return obj
@@ -579,7 +623,7 @@ Function prefsSlideshowHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "slideshow_period" OR command = "slideshow_overlay" or command = "slideshow_reload" or command = "slideshow_displaymode" or command = "photoicon_displaymode" or command = "rf_photos_grid_style" then
+            if command = "slideshow_period" OR command = "slideshow_overlay" or command = "slideshow_reload" or command = "slideshow_displaymode" or command = "slideshow_underscan" or command = "photoicon_displaymode" or command = "rf_photos_grid_style" or command = "slideshow_audio_overlay" or command = "slideshow_photo_overlay" or command = "slideshow_error_overlay" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "close" then
                 m.Screen.Close()
@@ -760,19 +804,30 @@ Function createUserProfilesPrefsScreen(viewController) As Object
     }
     poster = arrowUpPO
     if RegRead("userprofile_icon_color", "preferences", "orange", 0) <> "orange" then poster = arrowUp
-    obj.AddItem({title: "User Selection Icon Color", ShortDescriptionLine2: "Global Setting", SDPosterUrl: poster, HDPosterUrl: poster  }, "userprofile_icon_color", obj.GetEnumValue("userprofile_icon_color",0)) ' this is a global option
 
     'These must be the first 8 entries for easy parsing for the createUserEditPrefsScreen()
     fn = firstof(RegRead("friendlyName", "preferences", invalid, 0),"")
-    if fn <> "" then fn = " [" + fn + "]"
-    obj.AddItem({title: "Default User Profile " + fn}, "userActive0")
-    for ucount = 1 to 7
-        enaText = "Disabled"
-        if RegRead("userActive", "preferences", "0", ucount) = "1" then enaText = "Enabled"
-        fn = firstof(RegRead("friendlyName", "preferences", invalid, ucount),"")
-        if fn <> "" then enaText = enaText + " [" + fn + "]"
-        obj.AddItem({title: "User Profile " + tostr(ucount)}, "userActive" + tostr(ucount), enaText)
-    end for
+    if fn <> "" then 
+        fn = " [" + fn + "]"
+        pinName = fn
+    else if GetGlobalAA().userNum > 0 then 
+        pinName = "Profile " + tostr(GetGlobalAA().userNum)
+    else 
+        pinName = "Default User"
+    end if
+
+    obj.AddItem({title: "Security PIN " + pinName, ShortDescriptionLine2: "Set a PIN code for the profile"+chr(10)+"you are currently using"}, "securitypin")
+    if GetGlobalAA().userNum = 0 then 
+        obj.AddItem({title: "Default User Profile " + fn}, "userActive0")
+        for ucount = 1 to 7
+            enaText = "Disabled"
+            if RegRead("userActive", "preferences", "0", ucount) = "1" then enaText = "Enabled"
+            fn = firstof(RegRead("friendlyName", "preferences", invalid, ucount),"")
+            if fn <> "" then enaText = enaText + " [" + fn + "]"
+            obj.AddItem({title: "User Profile " + tostr(ucount)}, "userActive" + tostr(ucount), enaText)
+        end for
+        obj.AddItem({title: "User Selection Icon Color", ShortDescriptionLine2: "Global Setting", SDPosterUrl: poster, HDPosterUrl: poster  }, "userprofile_icon_color", obj.GetEnumValue("userprofile_icon_color",0))
+    end if
     obj.AddItem({title: "Close"}, "close")
     return obj
 End Function
@@ -792,6 +847,10 @@ Function prefsUserProfilesHandleMessage(msg) As Boolean
             re = CreateObject("roRegex", "userActive\d", "i") ' modified so we can add other buttons on previous screen
             if command = "close" then
                 m.Screen.Close()
+            else if command = "securitypin" then
+                screen = createSecurityPinPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["Security PIN"])
+                screen.Show()            
             else if command = "userprofile_icon_color" then 
                 m.currentUser = 0 ' set to write this as a global setting
                 m.HandleEnumPreference(command, msg.GetIndex())
@@ -986,6 +1045,38 @@ Function createAdvancedPrefsScreen(viewController) As Object
 
     obj.HandleMessage = prefsAdvancedHandleMessage
 
+    rf_theme = [
+        { title: "Original", EnumValue: "original", },
+        { title: "Black", EnumValue: "black", },
+    ]
+    obj.Prefs["rf_theme"] = {
+        values: rf_theme,
+        heading: "Theme for Channel (restart required)",
+        default: "black"
+    }
+
+    ' Exit Confirmation
+    values = [
+        { title: "Enabled", EnumValue: "enabled",  },
+        { title: "Disabled", EnumValue: "disabled" }
+    ]
+    obj.Prefs["exit_confirmation"] = {
+        values: values,
+        heading: "Prompt for confirmation when exiting RARflix",
+        default: "enabled"
+    }
+
+    ' Advance to Next
+    values = [
+        { title: "Enabled", EnumValue: "enabled",  },
+        { title: "Disabled", EnumValue: "disabled" }
+    ]
+    obj.Prefs["advanceToNextItem"] = {
+        values: values,
+        heading: "Display the next available TV episode after watching",
+        default: "enabled"
+    }
+
     ' Transcoder version. We'll default to the "universal" transcoder, but
     ' there's also a server version check.
     transcoder_version = [
@@ -1006,6 +1097,17 @@ Function createAdvancedPrefsScreen(viewController) As Object
     obj.Prefs["continuous_play"] = {
         values: continuous_play,
         heading: "Automatically start playing the next video",
+        default: "0"
+    }
+
+    ' legacy remote with no back button
+    legacy_remote = [
+        { title: "No", enumvalue: "0", ShortDescriptionLine2: "Remote includes a Back Button" },
+        { title: "Yes", EnumValue: "1", ShortDescriptionLine2: "Remote has no Back Button" },
+    ]
+    obj.Prefs["legacy_remote"] = {
+        values: legacy_remote,
+        heading: "Are you using a remote without a physical Back Button?",
         default: "0"
     }
 
@@ -1058,14 +1160,33 @@ Function createAdvancedPrefsScreen(viewController) As Object
         default: "1"
     }
 
+    ' remote up key behavior
+    up_behavior = [
+        { title: "Previous Screen", EnumValue: "exit", ShortDescriptionLine2: "Go to the Previous Screen (go back)",}
+        { title: "Do Nothing", EnumValue: "stop", ShortDescriptionLine2: "Stay on Screen (do nothing)",}
+
+    ]
+    obj.Prefs["rf_up_behavior"] = {
+        values: up_behavior,
+        heading: "Up Key action when Top Row is Selected",
+        default: "exit"
+    }
+
     versionArr = GetGlobalAA().Lookup("rokuVersionArr")
     major = versionArr[0]
 
+
     obj.Screen.SetHeader("Advanced preferences don't usually need to be changed")
 
+    obj.AddItem({title: "RARflix Advanced", ShortDescriptionLine2: "More Advanced..."}, "rarflix_prefs")
+    obj.AddItem({title: "Theme"}, "rf_theme", obj.GetEnumValue("rf_theme"))
+    obj.AddItem({title: "Confirm Exit", shortDescriptionLine2: "prompt before exiting RARflix"}, "exit_confirmation", obj.GetEnumValue("exit_confirmation"))
+    obj.AddItem({title: "Auto Episode Advance", shortDescriptionLine2: "show episode next up after watching"}, "advanceToNextItem", obj.GetEnumValue("advanceToNextItem"))
+    obj.AddItem({title: "Up Button", ShortDescriptionLine2: "What to do when the UP button is " + chr(10) + "pressed on a screen with rows"}, "rf_up_behavior", obj.GetEnumValue("rf_up_behavior"))
     obj.AddItem({title: "Transcoder"}, "transcoder_version", obj.GetEnumValue("transcoder_version"))
     obj.AddItem({title: "Continuous Play"}, "continuous_play", obj.GetEnumValue("continuous_play"))
     obj.AddItem({title: "Shuffle Play"}, "shuffle_play", obj.GetEnumValue("shuffle_play"))
+    obj.AddItem({title: "Legacy Remote"}, "legacy_remote", obj.GetEnumValue("legacy_remote"))
     obj.AddItem({title: "H.264"}, "level", obj.GetEnumValue("level"))
 
     if GetGlobal("legacy1080p") then
@@ -1074,6 +1195,7 @@ Function createAdvancedPrefsScreen(viewController) As Object
 
     obj.AddItem({title: "HLS Segment Length"}, "segment_length", obj.GetEnumValue("segment_length"))
     obj.AddItem({title: "Analytics"}, "analytics", obj.GetEnumValue("analytics"))
+
     obj.AddItem({title: "Close"}, "close")
 
     return obj
@@ -1092,6 +1214,10 @@ Function prefsAdvancedHandleMessage(msg) As Boolean
             if command = "1080p" then
                 screen = create1080PreferencesScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["1080p Settings"])
+                screen.Show()
+            else if command = "rarflix_prefs" then
+                screen = createRARflixPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["RARflix Preferences"])
                 screen.Show()
             else if command = "close" then
                 m.Screen.Close()
@@ -1377,10 +1503,10 @@ Function createManageServersScreen(viewController) As Object
     obj.AddItem({title: "Discover at Startup"}, "autodiscover", obj.GetEnumValue("autodiscover"))
     obj.AddItem({title: "Remove All Servers"}, "removeall")
 
-    obj.removeOffset = obj.contentArray.Count()
-    obj.RefreshServerList(obj.removeOffset)
+    obj.listOffset = obj.contentArray.Count()
+    obj.RefreshServerList(obj.listOffset)
 
-    obj.RefreshOnActivate = false
+    obj.RefreshOnActivate = true
 
     return obj
 End Function
@@ -1404,17 +1530,17 @@ Function prefsServersHandleMessage(msg) As Boolean
                 m.RefreshOnActivate = true
             else if command = "discover" then
                 DiscoverPlexMediaServers()
-                m.RefreshServerList(m.removeOffset)
+                m.RefreshServerList(m.listOffset)
             else if command = "autodiscover" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "removeall" then
                 RemoveAllServers()
                 ClearPlexMediaServers()
-                m.RefreshServerList(m.removeOffset)
-            else if command = "remove" then
-                RemoveServer(msg.GetIndex() - m.removeOffset)
-                m.contentArray.Delete(msg.GetIndex())
-                m.Screen.RemoveContent(msg.GetIndex())
+                m.RefreshServerList(m.listOffset)
+            else if command = "edit" then
+                screen = createEditServerScreen(m.ViewController,GetServerFromIndex(msg.GetIndex() - m.listOffset),m,m.listOffset)
+                m.ViewController.InitializeOtherScreen(screen, ["Edit Server"])
+                screen.Show()          
             else if command = "close" then
                 m.Screen.Close()
             end if
@@ -1426,7 +1552,7 @@ End Function
 
 Sub prefsServersOnUserInput(value, screen)
     if type(screen.Screen) = "roKeyboardScreen" then
-        m.RefreshServerList(m.removeOffset)
+        m.RefreshServerList(m.listOffset)
     else
         m.superOnUserInput(value, screen)
     end if
@@ -1434,28 +1560,134 @@ End Sub
 
 Sub prefsServersActivate(priorScreen)
     if m.RefreshOnActivate then
-        m.RefreshOnActivate = false
-        m.RefreshServerList(m.removeOffset)
+        ' ljunkie - why would we stop this action? If someone continues to
+        ' add/remove/update, we still want to refresh
+        ' -- removed -- m.RefreshOnActivate = false
+        m.RefreshServerList(m.listOffset)
     end if
 End Sub
 
-Sub manageRefreshServerList(removeOffset)
-    while m.contentArray.Count() > removeOffset
-        m.contentArray.Pop()
-        m.Screen.RemoveContent(removeOffset)
+Sub manageRefreshServerList(listOffset,obj=invalid)
+    if obj = invalid then
+        obj = m
+    end if
+    while obj.contentArray.Count() > listOffset
+        obj.contentArray.Pop()
+        obj.Screen.RemoveContent(listOffset)
     end while
 
     servers = ParseRegistryServerList()
     for each server in servers
-        m.AddItem({title: "Remove " + server.Name + " (" + server.Url + ")"}, "remove")
+        obj.AddItem({title: "Edit " + server.Name + " (" + server.Url + ")"}, "edit")
     next
 
-    m.AddItem({title: "Close"}, "close")
+    obj.AddItem({title: "Close"}, "close")
 End Sub
+
+'*** Edit Server screen ***
+sub refreshEditServerScreen(p)  'A copy of ljunkie's ingenius hack to update the screen after changing settings.  Wish i figured this out sooner!
+    server = GetPlexMediaServer(m.server.MachineID)
+    ' ljunkie - we may have removed the server -- verify it exists before we create the edit screen again
+    if server <> invalid 
+        screen = createEditServerScreen(m.ViewController,GetServerFromMachineID(m.server.MachineID),m.ParentScreen,m.listOffset) 'Get a new pointer for our new screen
+        m.ViewController.InitializeOtherScreen(screen, ["Edit Server"])
+        if m.FocusedListItem <> invalid then screen.screen.SetFocusedListItem(m.FocusedListItem)
+        screen.Show()            
+    end if
+    m.ViewController.popscreen(m)
+end sub
+  
+Function createEditServerScreen(viewController, server, parentScreen, listOffset) As Object
+    obj = createBasePrefsScreen(viewController)
+    obj.Activate = refreshEditServerScreen
+    obj.HandleMessage = prefsEditServerHandleMessage
+    obj.server = server
+    obj.ParentScreen = parentScreen
+    obj.listOffset = listOffset
+
+    obj.AddItem({title: "Edit address",ShortDescriptionLine2: "The address at which this server is located"}, "url", obj.server.Url )
+    obj.AddItem({title: "Edit WOL MAC address",ShortDescriptionLine1:"Wake-on-LAN MAC address",ShortDescriptionLine2: "Activates remote server wake up"}, "mac", GetServerData(obj.server.MachineID,"Mac") )
+    WOLPass = GetServerData(obj.server.MachineID,"WOLPass")
+    if WOLPass = invalid or Len(WOLPass) <> 12 then
+        obj.AddItem({title: "Edit WOL SecureOn Password",ShortDescriptionLine1: "12-Digit hexadecimal password ",ShortDescriptionLine2: "for a Wake-on-LAN request"}, "WOLPass" )
+    else
+        obj.AddItem({title: "Edit WOL SecureOn Password",ShortDescriptionLine1: "12-Digit hexadecimal password ",ShortDescriptionLine2: "for a Wake-on-LAN request"}, "WOLPass", "************" )
+    end if
+    obj.AddItem({title: "Remove " + server.Name }, "remove" )
+    obj.AddItem({title: "Close"}, "close")
+      
+    return obj
+End Function
+
+Function prefsEditServerHandleMessage(msg) As Boolean
+    handled = false
+
+    if type(msg) = "roListScreenEvent" then
+        handled = true
+        if msg.isScreenClosed() then
+            Debug("Edit server closed event")
+            GDMAdvertiser().Refresh()
+            manageRefreshServerList(m.listOffset,m.ParentScreen)
+            m.ViewController.PopScreen(m)
+        else if msg.isListItemSelected() then
+            command = m.GetSelectedCommand(msg.GetIndex())
+            m.FocusedListItem = msg.GetIndex()
+            if command = "url" then
+                screen = m.ViewController.CreateTextInputScreen("Enter Host Name or IP without http:// or :32400", ["Edit Server address"], false)
+                screen.Screen.SetMaxLength(80)
+                screen.ValidateText = AddUnnamedServer
+                screen.Show()
+            else if command = "WOLPass" then
+                m.currentIndex = msg.GetIndex()
+                initialText = GetServerData(m.server.MachineID,"WOLPass")
+                if initialText = invalid then initialText = ""
+                screen = m.ViewController.CreateTextInputScreen("12-digit hexadecimal password for WOL.  Leave blank if unsure.", ["Edit SecureOn Password"], false, initialText, true )
+                screen.Screen.SetMaxLength(12)
+                screen.MachineID = m.server.MachineID
+                screen.Listener = m
+                screen.Listener.OnUserInput = EditSecureOnPass
+                screen.Show()
+            else if command = "mac" then
+                m.currentIndex = msg.GetIndex()
+                screen = m.ViewController.CreateTextInputScreen("Enter MAC address. 12 Alphanumber characters [no colons]", ["Edit MAC address"], false, GetServerData(m.server.MachineID,"Mac"))
+                screen.Screen.SetMaxLength(12)
+                screen.MachineID = m.server.MachineID
+                screen.Listener = m
+                screen.Listener.OnUserInput = EditMacAddress
+                screen.Show()
+            else if command = "remove" then
+                dialog = createBaseDialog()    
+                dialog.Title = "Confirm Remove"
+                dialog.Text = "Are you sure you want to remove this server?"
+                dialog.SetButton("remove", "Remove Server")
+                dialog.SetButton("close", "Cancel")
+                dialog.HandleButton = prefsRemoveServerHandleDialogButton    
+                dialog.ParentScreen = m
+                dialog.index = msg.GetIndex()
+                dialog.Show()
+            else if command = "close" then
+                m.Screen.Close()
+            end if
+        end if
+    end if
+
+    return handled
+End Function
+
+'Handles the confirmation dialog button when removing a server
+Function prefsRemoveServerHandleDialogButton(command, data) As Boolean
+    obj = m.ParentScreen    ' We're evaluated in the context of the dialog, but we want to pull from the parent.
+    if command = "remove" then
+        RemoveServer(obj.server)
+        obj.contentArray.Delete(m.index)
+        obj.Screen.RemoveContent(m.index)
+    end if
+    return true 'returning true will close the dialog
+End Function
 
 '*** Video Playback Options ***
 
-Function createVideoOptionsScreen(item, viewController, continuousPlay, shufflePlay) As Object
+Function createVideoOptionsScreen(item, viewController, continuousPlay, shufflePlay, continuousContextPlay) As Object
     obj = createBasePrefsScreen(viewController)
 
     obj.Item = item
@@ -1571,38 +1803,32 @@ Function createVideoOptionsScreen(item, viewController, continuousPlay, shuffleP
         }
     end if
 
-    ' Continuous play
-    if continuousPlay = true then
-        defaultContinuous = "1"
-    else
-        defaultContinuous = "0"
+    ' TODO(ljunkie) better name for "this context" ( same as continuous play unless the item is an episode - it will say in the same context instead of finding the next episode )
+    ' plaback type all rolled into one option. They conflict with eachother, so it doesn't make sense to have them separate.
+    defaultPlayBack = "default"
+    if continuousContextPlay = true then
+        defaultplayBack = "continuous_context_play"
+    else if shufflePlay = true then
+        defaultplayBack = "shuffle_play"
+    else if continuousPlay = true then
+        defaultplayBack = "continuous_play"
     end if
-    continuous_play = [
-        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Experimental" },
-        { title: "Disabled", EnumValue: "0" }
-    ]
-    obj.Prefs["continuous_play"] = {
-        values: continuous_play,
-        label: "Continuous Play"
-        heading: "Automatically start playing the next video",
-        default: defaultContinuous
-    }
 
-    ' Continuous play
-    if shufflePlay = true then
-        defaultShuffle = "1"
-    else
-        defaultShuffle = "0"
+    advancedToNext = (RegRead("advanceToNextItem", "preferences", "enabled") = "enabled")
+    playBack_types = [{ title: "Default",    EnumValue: "default", ShortDescriptionLine2: "Single Video Playback" }]
+    if advancedToNext then 
+        playBack_types.Push({ title: "Continuous", EnumValue: "continuous_play", ShortDescriptionLine2: "Automatically play the next video" + chr(10) + "* Next available Episode if applicable" })
+        playBack_types.Push({ title: "Continuous [this context]", EnumValue: "continuous_context_play", ShortDescriptionLine2: "Automatically play the next video" + chr(10) + " * Use the existing context "})
+    else 
+        ' if one hasn't enable advancedToNext - then we don't need two Continuous options ( continuous will function the original way ) + it has a different desctiption
+        playBack_types.Push({ title: "Continuous", EnumValue: "continuous_play", ShortDescriptionLine2: "Automatically play the next video" + chr(10) + " * Use the existing context " })
     end if
-    Shuffle_play = [
-        { title: "Enabled", EnumValue: "1", ShortDescriptionLine2: "Very Experimental" },
-        { title: "Disabled", EnumValue: "0" }
-    ]
-    obj.Prefs["Shuffle_play"] = {
-        values: Shuffle_play,
-        label: "Shuffle Play"
-        heading: "Shuffle+Automatically start playing the next video",
-        default: defaultShuffle
+    playBack_types.Push({ title: "Shuffle", EnumValue: "shuffle_play", ShortDescriptionLine2: "Shuffle+Automatically play the next video" + chr(10) + " * Use the existing context " })
+    obj.Prefs["playBack_type"] = {
+        values: playBack_types,
+        label: "Playback",
+        heading: "Playback: default, play continuous, play shuffle or play this context continuous",
+        default: defaultplayBack
     }
 
     ' Media selection
@@ -1643,11 +1869,21 @@ Function createVideoOptionsScreen(item, viewController, continuousPlay, shuffleP
 
     obj.Screen.SetHeader("Video playback options")
 
-    possiblePrefs = ["playback", "quality", "audio", "subtitles", "media", "continuous_play","shuffle_play"]
+    possiblePrefs = ["playback", "playBack_type", "quality", "audio", "subtitles", "media"]
     for each key in possiblePrefs
         pref = obj.Prefs[key]
+        if pref <> invalid and pref.values <> invalid then 
+            for index = 0 to pref.values.count()-1
+               if pref.values[index].ShortDescriptionLine2 <> invalid and  pref.values[index].enumvalue = pref.default then 
+                   pref.ShortDescriptionLine2 = pref.values[index].ShortDescriptionLine2
+                   exit for
+               end if
+            end for
+        end if
+
+
         if pref <> invalid then
-            obj.AddItem({title: pref.label}, key)
+            obj.AddItem({title: pref.label, ShortDescriptionLine2: pref.ShortDescriptionLine2}, key)
             obj.AppendValue(invalid, obj.GetEnumValue(key))
         end if
     next
@@ -1674,9 +1910,27 @@ Function videoOptionsHandleMessage(msg) As Boolean
                 pref = m.Prefs[command]
                 m.currentIndex = msg.GetIndex()
                 m.currentEnumKey = command
-                screen = m.ViewController.CreateEnumInputScreen(pref.values, pref.default, pref.heading, [pref.label], false)
-                screen.Listener = m
-                screen.Show()
+
+                if command = "playBack_type" then 
+                    ' ljunkie - toggle playback types (iterate)
+                    for index = 0 to pref.values.count()
+                        if pref.values[index].enumvalue = pref.default then
+                            index = index+1
+                            exit for
+                        end if
+                    end for
+                    if index > pref.values.count()-1 then index = 0
+
+                    m.Changes.AddReplace(command, pref.values[index].enumvalue)
+                    m.Prefs[command].default = pref.values[index].enumvalue
+                    ' might want to make this an options for AppendValue?
+                    'm.contentarray[m.currentIndex].ShortDescriptionLine2 = pref.values[index].ShortDescriptionLine2
+                    m.AppendValue(m.currentIndex, pref.values[index].title, pref.values[index].ShortDescriptionLine2)
+                else 
+                    screen = m.ViewController.CreateEnumInputScreen(pref.values, pref.default, pref.heading, [pref.label], false)
+                    screen.Listener = m
+                    screen.Show()
+                end if
             end if
         end if
     end if
@@ -1845,15 +2099,41 @@ Function createHomeScreenPrefsScreen(viewController) As Object
         default: "photo-fit"
     }
 
+    ' Home Screen clock
+    rf_hs_clock_prefs = [
+        { title: "12 Hour", EnumValue: "enabled", ShortDescriptionLine2: "Show clock on Home Screen" },
+        { title: "24 Hour", EnumValue: "24hour", ShortDescriptionLine2: "Show clock on Home Screen" },
+        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Show clock on Home Screen" },
+    ]
+    obj.Prefs["rf_hs_clock"] = {
+        values: rf_hs_clock_prefs,
+        heading: "Time",
+        default: "enabled"
+    }
+
+    ' Home Screen clock
+    rf_hs_date_prefs = [
+        { title: "Long Date", EnumValue: "enabled", ShortDescriptionLine2: "Date on Home Screen" },
+        { title: "Short Date", EnumValue: "short-date", ShortDescriptionLine2: "Date on Home Screen" },
+        { title: "Disabled", EnumValue: "disabled", ShortDescriptionLine2: "Date on Home Screen" },
+    ]
+    obj.Prefs["rf_hs_date"] = {
+        values: rf_hs_date_prefs,
+        heading: "Date",
+        default: "enabled"
+    }
+
     obj.Screen.SetHeader("Change the appearance of the home screen")
     obj.AddItem({title: "Reorder Home Rows", ShortDescriptionLine2: "A restart of the Channel is required"}, "home_row_order")
-    obj.AddItem({title: "Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_home_displaymode", obj.GetEnumValue("rf_home_displaymode"))
     obj.AddItem({title: "Queue"}, "playlist_view_queue", obj.GetEnumValue("playlist_view_queue"))
     obj.AddItem({title: "Recommendations"}, "playlist_view_recommendations", obj.GetEnumValue("playlist_view_recommendations"))
     obj.AddItem({title: "On Deck"}, "row_visibility_ondeck", obj.GetEnumValue("row_visibility_ondeck"))
     obj.AddItem({title: "Recently Added"}, "row_visibility_recentlyadded", obj.GetEnumValue("row_visibility_recentlyadded"))
-    obj.AddItem({title: "Now Playing", ShortDescriptionLine2: "rarflix pref"}, "row_visibility_now_playing", obj.GetEnumValue("row_visibility_now_playing"))
+    obj.AddItem({title: "Now Playing"}, "row_visibility_now_playing", obj.GetEnumValue("row_visibility_now_playing"))
     obj.AddItem({title: "Channels"}, "row_visibility_channels", obj.GetEnumValue("row_visibility_channels"))
+    obj.AddItem({title: "Clock"}, "rf_hs_clock", obj.GetEnumValue("rf_hs_clock"))
+    obj.AddItem({title: "Date"}, "rf_hs_date", obj.GetEnumValue("rf_hs_date"))
+    obj.AddItem({title: "Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_home_displaymode", obj.GetEnumValue("rf_home_displaymode"))
     obj.AddItem({title: "Close"}, "close")
 
     return obj
@@ -1869,7 +2149,7 @@ Function prefsHomeHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "playlist_view_queue" OR command = "playlist_view_recommendations" OR command = "row_visibility_ondeck" OR command = "row_visibility_recentlyadded" OR command = "row_visibility_channels" or command = "row_visibility_now_playing" or command = "rf_home_displaymode" then
+            if command = "playlist_view_queue" OR command = "playlist_view_recommendations" OR command = "row_visibility_ondeck" OR command = "row_visibility_recentlyadded" OR command = "row_visibility_channels" or command = "row_visibility_now_playing" or command = "rf_home_displaymode" or command = "rf_hs_clock" or command = "rf_hs_date" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "home_row_order" then
                 m.HandleReorderPreference(command, msg.GetIndex())
@@ -1889,7 +2169,7 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
 
     obj.HandleMessage = prefsSectionDisplayHandleMessage
 
-    ' Grids or posters for TV series?
+    ' Grid or Posters for TV series
     values = [
         { title: "Grid", EnumValue: "1" },
         { title: "Poster", EnumValue: "" }
@@ -1898,6 +2178,17 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
         values: values,
         heading: "Which screen type should be used for TV series?",
         default: ""
+    }
+
+    ' Grid or Poster for Movies & Others
+    rf_poster_grid = [
+        { title: "Grid", EnumValue: "grid", ShortDescriptionLine2: "Prefer FULL grid when viewing items"  },
+        { title: "Poster", EnumValue: "poster", ShortDescriptionLine2: "Prefer Poster (one row) when viewing items"  },
+    ]
+    obj.Prefs["rf_poster_grid"] = {
+        values: rf_poster_grid,
+        heading: "Which screen type should be used for Movies & Other content?",
+        default: "grid"
     }
 
     ' Episodic Poster Screen for TV Series: 4x3 or 16x9
@@ -1911,90 +2202,21 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
         default: "flat-episodic-16x9"
     }
 
-    ' Episodic Poster Screen: show Numbers or Images
+    ' sorting
     values = [
-        { title: "Image", EnumValue: "enabled" },
-        { title: "Number", EnumValue: "disabled" }
+        { title: "Title", EnumValue: "titleSort:asc",  ShortDescriptionLine2: "Sort by Title",  },
+        { title: "Date Added", EnumValue: "addedAt:desc",  ShortDescriptionLine2: "sort by Date Added" },
+        { title: "Date Released/Taken", EnumValue: "originallyAvailableAt:desc",  ShortDescriptionLine2: "sort by Date Released/Taken" },
     ]
-    obj.Prefs["rf_episode_episodic_thumbnail"] = {
+    obj.Prefs["section_sort"] = {
         values: values,
-        heading: "Show episode preview image or episode number",
-        default: "disabled"
+        heading: "Sort Items (when not specifically sorted)",
+        default: "titleSort:asc"
     }
 
-    ' Prefer Grid or Poster view for most?
-    rf_poster_grid = [
-        { title: "Grid", EnumValue: "grid", ShortDescriptionLine2: "Prefer FULL grid when viewing items"  },
-        { title: "Poster", EnumValue: "poster", ShortDescriptionLine2: "Prefer Poster (one row) when viewing items"  },
-
-
-    ]
-    obj.Prefs["rf_poster_grid"] = {
-        values: rf_poster_grid,
-        heading: "Which screen type should be used for Movies & Other content?",
-        default: "grid"
-    }
-
-    ' Prefer Grid or Poster view for most?
-    rf_grid_style = [
-        { title: "Portrait", EnumValue: "flat-movie", ShortDescriptionLine2: "Grid 5x2 - Short Portrait"  },
-        { title: "Square", EnumValue: "flat-square", ShortDescriptionLine2: "Grid 7x3 - Square" },
-    ]
-
-    ' We don't want to show the Portrait options for SD.. it's even short than flat-movie - odd
-    if GetGlobal("IsHD") = true then 
-        rf_grid_style.Unshift({ title: "Portrait (tall)", EnumValue: "flat-portrait", ShortDescriptionLine2: "Grid 5x2 - Tall Portrait"  })
-    end if
-
-    obj.Prefs["rf_grid_style"] = {
-        values: rf_grid_style,
-        heading: "Style and Size of the Grid",
-        default: "flat-movie"
-    }
-    ' Grid Descriptions Pop Out
-    rf_grid_description = [
-        { title: "Enabled", EnumValue: "enabled"  },
-        { title: "Disabled", EnumValue: "disabled"  },
-
-    ]
-    obj.Prefs["rf_grid_description"] = {
-        values: rf_grid_description,
-        heading: "Grid Pop Out Description",
-        default: "enabled"
-    }
-
-    ' Hide the header text for Rows on the GridScreen ( full grid )
+    ' Reorder sections rows
     values = [
-        { title: "Enabled", EnumValue: "enabled"  },
-        { title: "Disabled", EnumValue: "disabled"  },
-
-    ]
-    obj.Prefs["rf_fullgrid_hidetext"] = {
-        values: values
-        heading: "Hide text above each row in the Full Grid",
-        default: "disabled"
-    }
-
-    ' Display Mode for Grid or Poster views
-    ' { title: "Zoom", EnumValue: "zoom-to-fill", ShortDescriptionLine2: "zoom image to fill boundary" }, again, no one wants this
-    display_modes = [
-        { title: "Fit [default]", EnumValue: "scale-to-fit", ShortDescriptionLine2: "Default"  },
-        { title: "Photo", EnumValue: "photo-fit", ShortDescriptionLine2: "all the above to fit boundary" + chr(10) + " no stretching " },
-        { title: "Fill", EnumValue: "scale-to-fill", ShortDescriptionLine2: "stretch image to fill boundary" },
-    ]
-    obj.Prefs["rf_grid_displaymode"] = {
-        values: display_modes,
-        heading: "How should images be displayed on screen",
-        default: "scale-to-fit"
-    }
-    obj.Prefs["rf_poster_displaymode"] = {
-        values: display_modes,
-        heading: "How should images be displayed on screen",
-        default: "scale-to-fit"
-    }
-
-    ' Grid rows that can be reordered
-    values = [
+        { initialOrder: 0, title: "Filters", key: "_section_filters_" },
         { title: "All Items", key: "all" },
         { title: "On Deck", key: "onDeck" },
         { title: "Recently Added", key: "recentlyAdded" },
@@ -2030,19 +2252,132 @@ Function createSectionDisplayPrefsScreen(viewController) As Object
         default: ""
     }
 
+    ' TV Seasons Poster ( prefer season over show )
+    values = [
+        { title: "Season", EnumValue: "season", },
+        { title: "Show", EnumValue: "show" },
+
+    ]
+    obj.Prefs["rf_season_poster"] = {
+        values: values,
+        heading: "Poster to display when viewing a TV Show Season on the Grid",
+        default: "season"
+    }
+    obj.Prefs["rf_episode_poster"] = {
+        values: values,
+        heading: "Poster to display when viewing a TV Show Episode on the Grid",
+        default: "season"
+    }
+
     obj.Screen.SetHeader("Change the appearance of your sections")
 
     obj.AddItem({title: "Reorder Rows"}, "section_row_order")
-    obj.AddItem({title: "TV Series"}, "use_grid_for_series", obj.GetEnumValue("use_grid_for_series"))
-    obj.AddItem({title: "TV Episode Size"}, "rf_episode_episodic_style", obj.GetEnumValue("rf_episode_episodic_style"))
-    obj.AddItem({title: "TV Episode Image"}, "rf_episode_episodic_thumbnail", obj.GetEnumValue("rf_episode_episodic_thumbnail"))
+    obj.AddItem({title: "Hide Rows"}, "section_hide_rows")
     obj.AddItem({title: "Movie & Others", ShortDescriptionLine2: "Posters or Grid"}, "rf_poster_grid", obj.GetEnumValue("rf_poster_grid"))
-    obj.AddItem({title: "Grid Style/Size", ShortDescriptionLine2: "Size of Grid"}, "rf_grid_style", obj.GetEnumValue("rf_grid_style"))
-    obj.AddItem({title: "Grid Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_grid_displaymode", obj.GetEnumValue("rf_grid_displaymode"))
-    obj.AddItem({title: "Grid Pop Out", ShortDescriptionLine2: "Description on bottom right"}, "rf_grid_description")
-    obj.AddItem({title: "Full Grid - hide text", ShortDescriptionLine2: "Hide text on top of each row"}, "rf_fullgrid_hidetext", obj.GetEnumValue("rf_fullgrid_hidetext"))
-    'we can add this.. but it doesn't do much yet.. let's not totally confuse people.. yet.
-    'obj.AddItem({title: "Poster Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_poster_displaymode", obj.GetEnumValue("rf_poster_displaymode"))
+    obj.AddItem({title: "TV Series", ShortDescriptionLine2: "Posters or Grid"}, "use_grid_for_series", obj.GetEnumValue("use_grid_for_series"))
+    obj.AddItem({title: "TV Episode Size", ShortDescriptionLine2: "Episode Thumbnail"}, "rf_episode_episodic_style", obj.GetEnumValue("rf_episode_episodic_style"))
+    obj.AddItem({title: "TV Season Poster", ShortDescriptionLine2: "Display Season or Show's Poster"}, "rf_season_poster", obj.GetEnumValue("rf_season_poster"))
+    obj.AddItem({title: "TV Episode Poster", ShortDescriptionLine2: "Display Season or Show's Poster"}, "rf_episode_poster", obj.GetEnumValue("rf_episode_poster"))
+
+    obj.AddItem({title: "Sorting",ShortDescriptionLine2: "Sorting of Content"}, "section_sort", obj.GetEnumValue("section_sort"))
+    obj.AddItem({title: "Close"}, "close")
+
+    return obj
+End Function
+
+
+Function createGridOptionsPrefsScreen(viewController) As Object
+    obj = createBasePrefsScreen(viewController)
+
+    obj.HandleMessage = prefsSectionDisplayHandleMessage
+
+    rf_grid_style = [
+        { title: "Portrait", EnumValue: "flat-movie", ShortDescriptionLine2: "Grid 5x2 - Short Portrait"  },
+        { title: "Square", EnumValue: "flat-square", ShortDescriptionLine2: "Grid 7x3 - Square" },
+    ]
+    ' We don't want to show the Portrait options for SD.. it's even short than flat-movie - odd
+    if GetGlobal("IsHD") = true then 
+        rf_grid_style.Unshift({ title: "Portrait (tall)", EnumValue: "flat-portrait", ShortDescriptionLine2: "Grid 5x2 - Tall Portrait"  })
+    end if
+    obj.Prefs["rf_grid_style"] = {
+        values: rf_grid_style,
+        heading: "Style and Size of the Grid",
+        default: "flat-movie"
+    }
+
+    ' Grid Descriptions Pop Out
+    rf_grid_description = [
+        { title: "Enabled", EnumValue: "enabled"  },
+        { title: "Disabled", EnumValue: "disabled"  },
+
+    ]
+    obj.Prefs["rf_grid_description"] = {
+        values: rf_grid_description,
+        heading: "Grid Pop Out Description",
+        default: "enabled"
+    }
+
+    ' Full Grid - Hide the header text
+    values = [
+        { title: "Enabled", EnumValue: "enabled"  },
+        { title: "Disabled", EnumValue: "disabled"  },
+
+    ]
+    obj.Prefs["rf_fullgrid_hidetext"] = {
+        values: values
+        heading: "Hide text above each row in the Full Grid",
+        default: "disabled"
+    }
+
+    ' Full Grid Spacer
+    values = [
+        { title: "Enabled", EnumValue: "enabled"  },
+        { title: "Disabled", EnumValue: "disabled"  },
+
+    ]
+    obj.Prefs["rf_fullgrid_spacer"] = {
+        values: values
+        heading: "Insert a blank poster between the first and last item in a row",
+        default: "disabled"
+    }
+
+    ' Display Mode for Grid or Poster views
+    ' { title: "Zoom", EnumValue: "zoom-to-fill", ShortDescriptionLine2: "zoom image to fill boundary" }, again, no one wants this
+    display_modes = [
+        { title: "Fit [default]", EnumValue: "scale-to-fit", ShortDescriptionLine2: "Default"  },
+        { title: "Photo", EnumValue: "photo-fit", ShortDescriptionLine2: "all the above to fit boundary" + chr(10) + " no stretching " },
+        { title: "Fill", EnumValue: "scale-to-fill", ShortDescriptionLine2: "stretch image to fill boundary" },
+    ]
+    obj.Prefs["rf_grid_displaymode"] = {
+        values: display_modes,
+        heading: "How should images be displayed on screen",
+        default: "scale-to-fit"
+    }
+
+    ' Home Videos grid style
+    homevideo_grid_style = [
+        { title: "Portrait", EnumValue: "flat-movie", ShortDescriptionLine2: "Grid 5x2"  },
+        { title: "Landscape 16x9", EnumValue: "flat-16x9", ShortDescriptionLine2: "Grid 5x3"  },
+        { title: "Landscape", EnumValue: "flat-landscape", ShortDescriptionLine2: "Grid 5x3"  },
+    ]
+    ' We don't want to show the Portrait options for SD.. it's even short than flat-movie - odd
+    if GetGlobal("IsHD") = true then 
+        homevideo_grid_style.Unshift({ title: "Portrait (tall)", EnumValue: "flat-portrait", ShortDescriptionLine2: "Grid 5x2 - Tall Portrait"  })
+    end if
+    obj.Prefs["homevideo_grid_style"] = {
+        values: homevideo_grid_style,
+        heading: "Size of the Grid for Home Videos",
+        default: "flat-16x9"
+    }
+
+    obj.Screen.SetHeader("Grid Options")
+    obj.AddItem({title: "Full Grid", ShortDescriptionLine2: "Choose Sections to use the Full Grid"}, "rf_default_full_grid")
+    obj.AddItem({title: "Style", ShortDescriptionLine2: "Size of Grid" + chr(10) + "Movies & TV Shows"}, "rf_grid_style", obj.GetEnumValue("rf_grid_style"))
+    obj.AddItem({title: "Style (Home Videos)", ShortDescriptionLine2: "Size of Grid" + chr(10) + "Home Videos"}, "homevideo_grid_style", obj.GetEnumValue("homevideo_grid_style"))
+    obj.AddItem({title: "Display Mode", ShortDescriptionLine2: "Stretch or Fit images to fill the focus box"}, "rf_grid_displaymode", obj.GetEnumValue("rf_grid_displaymode"))
+    obj.AddItem({title: "Pop Out", ShortDescriptionLine2: "Description on bottom right"}, "rf_grid_description")
+    obj.AddItem({title: "Hide Header (Full Grid)", ShortDescriptionLine2: "Hide text on top of each row"}, "rf_fullgrid_hidetext", obj.GetEnumValue("rf_fullgrid_hidetext"))
+    obj.AddItem({title: "Spacer (Full Grid)", ShortDescriptionLine2: "Hide text on top of each row"}, "rf_fullgrid_spacer", obj.GetEnumValue("rf_fullgrid_spacer"))
     obj.AddItem({title: "Close"}, "close")
 
     return obj
@@ -2058,14 +2393,22 @@ Function prefsSectionDisplayHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "use_grid_for_series" or command = "rf_poster_grid" or command = "rf_grid_style" or command = "rf_grid_displaymode" or command = "rf_poster_displaymode" or command = "rf_fullgrid_hidetext" or command = "rf_episode_episodic_style" or command = "rf_episode_episodic_thumbnail" then 
+            if command = "use_grid_for_series" or command = "rf_poster_grid" or command = "rf_grid_style" or command = "rf_grid_displaymode" or command = "rf_fullgrid_hidetext" or command = "rf_episode_episodic_style" or command = "section_sort" or command = "rf_fullgrid_spacer" or command = "rf_season_poster" or command = "rf_episode_poster" or command = "homevideo_grid_style" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "rf_grid_description" then
                 screen = createGridDescriptionPrefsScreen(m.ViewController)
                 m.ViewController.InitializeOtherScreen(screen, ["Grid Description Option"])
                 screen.Show()
+            else if command = "rf_default_full_grid" then
+                screen = createDefaultFullGridViewPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["Full Grid Sections"])
+                screen.Show()
             else if command = "section_row_order" then
                 m.HandleReorderPreference(command, msg.GetIndex())
+            else if command = "section_hide_rows" then
+                screen = createHideRowsPrefsScreen(m.ViewController)
+                m.ViewController.InitializeOtherScreen(screen, ["Hide Rows"])
+                screen.Show()
             else if command = "close" then
                 m.Screen.Close()
             end if
@@ -2126,6 +2469,61 @@ Function createGridDescriptionPrefsScreen(viewController) As Object
     obj.AddItem({title: "Photo" }, "rf_grid_description_photo", obj.GetEnumValue("rf_grid_description_photo"))
     obj.AddItem({title: "Music" }, "rf_grid_description_artist", obj.GetEnumValue("rf_grid_description_artist"))
     obj.AddItem({title: "Other" }, "rf_grid_description_other", obj.GetEnumValue("rf_grid_description_other"))
+    obj.AddItem({title: "Close" }, "close")
+
+    return obj
+End Function
+
+Function createDefaultFullGridViewPrefsScreen(viewController) As Object
+    obj = createBasePrefsScreen(viewController)
+
+    obj.HandleMessage = prefsGridDescriptionHandleMessage
+
+    ' Grid Descriptions Pop Out
+    values = [
+        { title: "Enabled", EnumValue: "enabled"  },
+        { title: "Disabled", EnumValue: "disabled"  },
+
+    ]
+    obj.Prefs["rf_full_grid_movie"] = {
+        values: values,
+        heading: "Full Grid: Movie Section",
+        default: "disabled"
+    }
+    obj.Prefs["rf_full_grid_homevideo"] = {
+        values: values,
+        heading: "Full Grid: Home Video Section",
+        default: "disabled"
+    }
+    obj.Prefs["rf_full_grid_show"] = {
+        values: values,
+        heading: "Full Grid: TV Show Section",
+        default: "disabled"
+    }
+    obj.Prefs["rf_full_grid_photo"] = {
+        values: values,
+        heading: "Full Grid: Photo Section",
+        default: "disabled"
+    }
+    obj.Prefs["rf_full_grid_artist"] = {
+        values: values,
+        heading: "Full Grid: Music Section",
+        default: "disabled"
+    }
+    obj.Prefs["rf_full_grid_other"] = {
+        values: values,
+        heading: "Full Grid: All other sections",
+        default: "disabled"
+    }
+
+    obj.Screen.SetHeader("Default to Full Grid for these Sections")
+
+    obj.AddItem({title: "Movie" }, "rf_full_grid_movie", obj.GetEnumValue("rf_full_grid_movie"))
+    obj.AddItem({title: "TV"    }, "rf_full_grid_show",  obj.GetEnumValue("rf_full_grid_show"))
+    obj.AddItem({title: "Photo" }, "rf_full_grid_photo", obj.GetEnumValue("rf_full_grid_photo"))
+    obj.AddItem({title: "Music" }, "rf_full_grid_artist", obj.GetEnumValue("rf_full_grid_artist"))
+    obj.AddItem({title: "Home Video" }, "rf_full_grid_homevideo", obj.GetEnumValue("rf_full_grid_homevideo"))
+    obj.AddItem({title: "Other" }, "rf_full_grid_other", obj.GetEnumValue("rf_full_grid_other"))
     obj.AddItem({title: "Close" }, "close")
 
     return obj

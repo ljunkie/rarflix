@@ -7,6 +7,7 @@ Function createVideoPlayerScreen(metadata, seekValue, directPlayOptions, viewCon
     initBaseScreen(obj, viewController)
 
     obj.Item = metadata
+    obj.parentScreen = viewController.screens.peek()
 
     obj.Show = videoPlayerShow
     obj.HandleMessage = videoPlayerHandleMessage
@@ -100,6 +101,42 @@ Sub videoPlayerShow()
         m.playbackTimer.Mark()
         m.Screen.Show()
         NowPlayingManager().location = "fullScreenVideo"
+
+        ' ljunkie - the video is playing now -- it's safe to run some background tasks 
+
+        ' For some reason the PMS fails to return a duration for videos (intermittent)
+        '  Example: TV Seasons Children 'library/metadata/252428/children', all videos had a 
+        '  durations, a few minutes later, the same endpoint was missing the duration yet again
+        '  a few minutes later (20) the all had a duration. Fix for now is to query the item by 
+        '  it's key becuase that always seems to include the duration
+        if (m.item.length = invalid or m.item.RawLength = invalid) and m.item.key <> invalid and m.item.server <> invalid then 
+            Debug("--- length (raw duration) is invalid -- required for timeline -- querying item directly")
+            lcon = createPlexContainerForUrl(m.item.server, "", m.item.key)
+            if lcon <> invalid and lcon.xml <> invalid and type(lcon.xml.Video) = "roXMLList" and lcon.xml.Video.Count() > 0 then 
+                length = lcon.xml.Video[0]@duration
+                if length <> invalid then
+                    m.item.length = int(val(length)/1000)
+                    m.item.RawLength = int(val(length))
+                    Debug("--- found length (raw duration) " + tostr(m.item.RawLength))
+                end if
+            end if
+        end if
+
+        ' if advanceToNextItem is enabled: determine what the next episode is and set it for the videoSpringBoard
+        '  more info: the next item is not always the next episode depending on the context we are in ( On Deck, Recently Added, etc)
+        '  this will check if the next item has the same parent/grandparent key. If false, we will find the nextItem based on the 
+        '  grandparent key ( grandparent key used so we can find the next seasons show if needed )
+        
+        if RegRead("advanceToNextItem", "preferences", "enabled") = "enabled" then 
+            if m.parentScreen.nextEpisodes <> invalid then 
+                Debug("next Episode context is already loaded")
+            else if m.item <> invalid and tostr(m.item.type) = "episode" then 
+                ' videospringboard will use this on activation - priorscreen.NextEpisode
+                m.NextEpisodes = getNextEpisodes(m.item) 
+            end if
+        end if
+        ' end advanceToNextItem
+
     else
         m.ViewController.PopScreen(m)
         NowPlayingManager().location = "navigation"
@@ -313,7 +350,13 @@ Function videoPlayerHandleMessage(msg) As Boolean
                 m.isPlayed = false
                 m.Show()
             else
+                ' we cannot set refreshOnActivate earlier due to dialog prompt to resume video
+                if m.preplayscreen <> invalid then m.preplayscreen.refreshOnActivate = true
+
                 m.ViewController.PopScreen(m)
+
+                ' close preplay facade screen (due to playing directly from the grid)
+                if m.preplayscreen <> invalid and m.preplayscreen.facade <> invalid then m.preplayscreen.facade.close()
             end if
         else if msg.isPlaybackPosition() then
             if m.bufferingTimer <> invalid then

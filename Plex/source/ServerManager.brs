@@ -60,6 +60,7 @@ Function PlexMediaServers() As Object
         server = newPlexMediaServer(serverInfo.Url, serverInfo.Name, serverInfo.MachineID)
         server.IsConfigured = true
         server.local = true
+        server.AccessToken = RegRead(server.machineID, "server_tokens")
         list.AddTail(server)
     next
 
@@ -70,20 +71,40 @@ Function RemoveAllServers()
     RegDelete("serverList", "servers")
 End Function
 
-Function RemoveServer(index)
-    Debug("Removing server with index: " + tostr(index))
+Function RemoveServer(serverToRemove)
+    Debug("Removing server with name: " + tostr(serverToRemove.name) + " machineId: " + tostr(serverToRemove.MachineID))
     servers = ParseRegistryServerList()
     RemoveAllServers()
-    counter = 0
     for each serverInfo in servers
-        if counter <> index then
+        if serverToRemove.machineID <> serverInfo.MachineID then
             AddServer(serverInfo.Name, serverInfo.Url, serverInfo.MachineID)
         else
             Debug("Not adding server back to list: " + serverInfo.Name)
             DeletePlexMediaServer(serverInfo.MachineID)
         end if
+    end for
+End Function
+
+Function GetServerFromIndex(index) As Object
+    servers = ParseRegistryServerList()
+    counter = 0
+    for each serverInfo in servers
+        if counter = index then
+            return serverInfo
+        end if
         counter = counter + 1
     end for
+    return invalid
+End Function
+
+Function GetServerFromMachineID(machineID) As Object
+    servers = ParseRegistryServerList()
+    for each serverInfo in servers
+        if serverInfo.MachineID = machineID then
+            return serverInfo
+        end if
+    end for
+    return invalid
 End Function
 
 ' * Adds a server to the list used by the application. Not validated at this
@@ -253,6 +274,94 @@ Function AddUnnamedServer(address) As Boolean
     return false
 End Function
 
+Function EditMacAddress(address,obj) As Boolean
+    machineID = obj.MachineID
+    Debug("Editing mac for " + machineID + " as: " + address)
+
+    ' Check they got it right
+    r = CreateObject("roRegex", "^([0-9A-Fa-f]{12})$", "i")
+    ' removed the need for colons ( it's annoying to enter them in and we strip them anyways )
+    'r = CreateObject("roRegex", "^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$", "i")
+    if r.IsMatch(address) = false then
+        Debug("mac address invalid: " + tostr(address) + " discarding/deleting the record")
+        DeleteServerData ( machineID, "Mac")
+        return false
+    end if
+      
+    ' ljunkie - deprecated colons
+    ' Get rid of colons, and make it lowercase
+    ' r = CreateObject("roRegex", ":", "")
+    ' address = r.ReplaceAll(address, "")
+    address = LCase(address)    
+    
+    Debug("Stripped address to: " + address)
+    
+    ' To mantain backwards compatibility, we store MAC address in a seperate 'serverData' JSON array in the registry.
+    ' Not sure why the devs didnt think to use JSON in the first place...
+    SetServerData ( machineID, "Mac", address )
+
+    return true
+End Function
+
+Function EditSecureOnPass(pass,obj) As Boolean
+    machineID = obj.MachineID
+    Debug("Editing WOL Pass for " + machineID + " as: " + pass)
+
+    ' Check they got it right
+    if pass <> "" then
+        r = CreateObject("roRegex", "^([A-Fa-f0-9]{12})$", "i")
+        if r.IsMatch(pass) = false then
+           return false
+        end if  
+    else
+        pass = invalid
+    end if
+       
+    SetServerData ( machineID, "WOLPass", pass )
+
+    return true   
+End Function
+
+
+Function InitServerData (machineID=invalid)
+    if GetGlobalAA().serverData = invalid then
+        Debug("Creating server data cache")
+        dataString = RegRead("serverList", "serverData")
+        GetGlobalAA().serverData = CreateObject("roAssociativeArray")
+        if dataString <> invalid then
+            Debug("Found string in the registry: " + dataString )
+            GetGlobalAA().serverData = ParseJson(dataString) 
+            Debug("Parsed as: " + tostr(GetGlobalAA().serverData) )
+            if GetGlobalAA().serverData = invalid then
+                GetGlobalAA().serverData = createObject("roAssociativeArray")
+            end if
+         end if
+    end if
+    if machineID <> invalid and GetGlobalAA().serverData[machineID] = invalid then
+        GetGlobalAA().serverData[machineID] = createObject("roAssociativeArray")
+    end if
+End Function
+
+Function GetServerData ( machineID, dataName ) As Dynamic  
+    InitServerData(machineID)
+    return GetGlobalAA().serverData[machineID][dataName]
+End Function
+
+Function SetServerData ( machineID, dataName, value ) As Boolean
+    InitServerData(machineID)
+    GetGlobalAA().serverData[machineID][dataName] = value
+    RegWrite("serverList", rdJSONBuilder(GetGlobalAA().serverData), "serverData")
+    return true
+End Function
+
+Function DeleteServerData ( machineID, dataName ) As Boolean
+    InitServerData(machineID)
+    data = GetGlobalAA().serverData[machineID]
+    data.delete(dataName)
+    RegWrite("serverList", rdJSONBuilder(GetGlobalAA().serverData), "serverData")
+    return true
+End Function
+
 Function DiscoverPlexMediaServers()
     retrieving = CreateObject("roOneLineDialog")
     retrieving.SetTitle("Finding Plex Media Servers ...")
@@ -370,6 +479,10 @@ Sub PutPlexMediaServer(server)
             server.RARflixTools = getRARflixTools(server)
         end if
 
+        ' Any auto discovered server is added elsewhere, but let's add myPlex found servers too ( yes it includes GDM servers here too )
+        ' What this fixes: If myPlex is down, "non-GDM" & "remotely shared" servers will still function -- depending if the PMS hasn't changed IP's
+        UpdateServerAddress(server)
+
         servers[server.machineID] = server
         if server.serverUrl <> invalid then SetServerForHost(server.serverUrl + "/", server)
     end if
@@ -453,6 +566,8 @@ Sub SetServerForHost(hostname, server)
         GetGlobalAA().AddReplace("servers_by_host", servers)
         servers["https://my.plexapp.com/"] = MyPlexManager()
         servers["https://my.plexapp.com:443/"] = MyPlexManager()
+        servers["https://plex.tv/"] = MyPlexManager()
+        servers["https://plex.tv:443/"] = MyPlexManager()
         servers["http://node.plexapp.com:32400/"] = invalid
     end if
 
@@ -466,6 +581,8 @@ Function GetServerForUrl(url)
         GetGlobalAA().AddReplace("servers_by_host", servers)
         servers["https://my.plexapp.com/"] = MyPlexManager()
         servers["https://my.plexapp.com:443/"] = MyPlexManager()
+        servers["https://plex.tv/"] = MyPlexManager()
+        servers["https://plex.tv:443/"] = MyPlexManager()
         servers["http://node.plexapp.com:32400/"] = invalid
     end if
 

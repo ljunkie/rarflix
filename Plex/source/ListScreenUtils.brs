@@ -37,7 +37,7 @@ Sub lsSetTitle(index, title)
     m.Screen.SetItem(index, item)
 End Sub
 
-Sub lsAppendValue(index, value)
+Sub lsAppendValue(index, value, description = invalid)
     if index = invalid then index = m.contentArray.Count() - 1
     item = m.contentArray[index]
 
@@ -45,6 +45,10 @@ Sub lsAppendValue(index, value)
         item.Title = item.OrigTitle + ": " + value
     else
         item.Title = item.OrigTitle
+    end if
+
+    if description <> invalid then 
+        item.ShortDescriptionLine2 = description
     end if
 
     m.Screen.SetItem(index, item)

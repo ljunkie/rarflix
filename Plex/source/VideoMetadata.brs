@@ -14,11 +14,29 @@ Function newVideoMetadata(container, item, detailed=false) As Object
             ' Ugh - the PMS doesn't seem to always give the ParentThumb even though it exists. So I guess we will have to query for it. 
             ' at least we only have to query the parentKey which is the specific season, so it should be "quick"
             ' If this causes slowdown, EU can always disable this fieature ( of course they may not know to )
+            '  -- seems more and more places are missing the parentThumb, so we will cache the parentThumb after the first search to speed things up
             if gridthumb = invalid and item@parentKey <> invalid then 
-                Debug("---- Finding Parent thumb for TV Show " + tostr(item@grandparentTitle) + ": " + tostr(item@title) + " -- key:" + tostr(item@parentKey))
-                seaCon = createPlexContainerForUrl(container.server, container.server.serverurl, item@parentKey)
-                if seaCon <> invalid then gridthumb = firstof( seaCon.xml.Directory[0]@Thumb, item@parentThumb)
-                if gridthumb <> item@parentThumb then Debug("---- Forced using Season Thumb " + tostr(gridThumb) + " had to search for it!")
+                if container.server.machineid <> invalid then 
+                    cacheKey = "CacheSeasonPoster"+container.server.machineid+item@parentKey
+                else 
+                    cacheKey = invalid
+                end if
+
+                if cacheKey <> invalid and GetGlobalAA().Lookup(cacheKey) <> invalid then 
+                    gridThumb = GetGlobalAA().Lookup(cacheKey)
+                else
+                    Debug("---- Finding Parent thumb for TV Show " + tostr(item@grandparentTitle) + ": " + tostr(item@title) + " -- key:" + tostr(item@parentKey))
+                    seaCon = createPlexContainerForUrl(container.server, container.server.serverurl, item@parentKey)
+                    if seaCon <> invalid and seaCon.xml <> invalid then itemXml = seaCon.xml.Directory[0]
+                    if itemXml <> invalid then 
+                        gridthumb = firstof( itemXml@Thumb, item@grandparentThumb)
+                    else 
+                        gridthumb = item@grandparentThumb
+                    end if
+                    GetGlobalAA().AddReplace(cacheKey, gridthumb)
+                end if
+                ' paranoid fallback
+                if gridThumb = invalid then gridThumb = item@grandparentThumb
             end if
         else 
             gridThumb = item@grandparentThumb  ' use show poster
@@ -61,19 +79,6 @@ Function newVideoMetadata(container, item, detailed=false) As Object
 
     length = item@duration
 
-    ' ljunkie - for some reason the PMS fails to return a duration sometimes ( flaky )
-    '  example found was for a TV Seasons Children 'library/metadata/252428/children'
-    '  while I was testing the PMS starte to all of a sudden return a valid duration
-    '  then a few minutes later (20) somes items didn't have a duration again... (we only care about library content)
-    if video.isLibraryContent and length = invalid and item@key <> invalid and container.server.serverurl <> invalid then 
-        Debug("--- length (duration) is invalid -- let's try the key directly")
-        newUrl = tostr(container.server.serverurl) + tostr(item@key)
-        if newUrl <> invalid and newUrl <> container.sourceurl then 
-            lcon = createPlexContainerForUrl(container.server, container.server.serverurl, item@key)
-            if lcon <> invalid and lcon.xml <> invalid and type(lcon.xml.Video) = "roXMLList" and lcon.xml.Video.Count() > 0 then length = lcon.xml.Video[0]@duration
-        end if
-    end if
-
     if length <> invalid then
         video.Length = int(val(length)/1000)
         video.RawLength = int(val(length))
@@ -111,7 +116,7 @@ Sub setVideoBasics(video, container, item)
     video.viewCount = item@viewCount
     video.Watched = video.viewCount <> invalid AND val(video.viewCount) > 0
 
-    video.ShortDescriptionLine1 = firstOf(item@title, item@name)
+    video.ShortDescriptionLine1 = firstOf(item@title, item@name, "")
 
 
     'grandparentKey -- for episode - RR
@@ -134,24 +139,32 @@ Sub setVideoBasics(video, container, item)
             end if
         end if
 
-        ' hack to try and set the grandparentkey when PMS API doesn't return one
+        ' ljunkie - hack - set the grandparentkey when PMS API doesn't return one
         if video.grandparentKey = invalid and container.xml@key <> invalid then 
             re = CreateObject("roRegex", "/children.*", "i")
             if re.IsMatch(container.sourceurl) then
-                newurl = re.ReplaceAll(container.sourceurl, "")
-                gcontainer = createPlexContainerForUrl(container.server, newurl, "")
-                if container <> invalid then
-                    video.grandparentKey = gcontainer.xml.Directory[0]@parentKey
-                    'obj.metadata.parentIndex = gcontainer.xml.Directory[0]@index
-                    'obj.metadata.ShowTitle = gcontainer.xml.Directory[0]@parentTitle
-                    'print  "---- override - set grandparentKey to parent" + video.grandparentKey
+                ' these calls can be expensive and are usually for the same item -- cache them for the session
+                if container.server.machineid <> invalid then 
+                    cacheKey = "cacheGrandParentKey"+container.server.machineid+video.parentkey
+                else 
+                    cacheKey = invalid
+                end if
+
+                if cacheKey <> invalid and GetGlobalAA().Lookup(cacheKey) <> invalid then 
+                    video.grandparentKey = GetGlobalAA().Lookup(cacheKey)
+                else
+                    newurl = re.ReplaceAll(container.sourceurl, "")
+                    gcontainer = createPlexContainerForUrl(container.server, newurl, "")
+                    if gcontainer <> invalid and gcontainer.xml <> invalid then
+                        video.grandparentKey = gcontainer.xml.Directory[0]@parentKey
+                        GetGlobalAA().AddReplace(cacheKey, video.grandparentKey)
+                     end if
                 end if            
             else if container.xml@parentkey <> invalid then 
                 video.grandparentKey = "/library/metadata/" + tostr(container.xml@parentkey)
             else 
                 video.grandparentKey = "/library/metadata/" + tostr(container.xml@key)
             end if
-            Debug("----- setting grandparent key to " + video.grandparentKey + " " + video.showTitle)
         end if
     end if
 
@@ -187,8 +200,7 @@ Sub setVideoBasics(video, container, item)
             episode = "Episode ??"
         end if
 
-        'ljunkie - exclude episode number to display images on a poster screen
-        if RegRead("rf_episode_episodic_thumbnail", "preferences","disabled") = "enabled" then video.EpisodeNumber = invalid
+        video.EpisodeNumber = invalid ' remove episode number. This force the posterscreens to show a thumbnail instead of a blank image with a number
 
         parentIndex = firstOf(item@parentIndex, container.xml@parentIndex)
         if parentIndex <> invalid then
@@ -212,7 +224,7 @@ Sub setVideoBasics(video, container, item)
             video.EpisodeStr = seasonStr + " " + episodeStr
             video.OrigReleaseDate = video.ReleaseDate
             'video.ReleaseDate = video.EpisodeStr ' why would i have done this.. bad
-            video.TitleSeason = firstOf(item@title, item@name) + " - " + video.EpisodeStr
+            video.TitleSeason = firstOf(item@title, item@name, "") + " - " + video.EpisodeStr
         end if
     else if video.ContentType = "clip" then
         video.ReleaseDate = firstOf(video.ReleaseDate, item@subtitle)

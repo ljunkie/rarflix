@@ -1,5 +1,5 @@
-# RARflix v3.1.0 (2014-01-08)
-Changes: https://github.com/ljunkie/rarflix/blob/master/notes/rarflix-change.log
+# RARflix v3.1.49 (2014-03-19) -- TEST release
+Changes: https://github.com/ljunkie/rarflix/blob/test/notes/rarflix-change.log
 
 ### Modified Plex for Roku
 
@@ -7,7 +7,7 @@ Changes: https://github.com/ljunkie/rarflix/blob/master/notes/rarflix-change.log
 [![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=CHRZ55VCAJSYG)
 
 
-Roku Install: https://owner.roku.com/add/rarflix
+Roku Install: https://owner.roku.com/add/rarflixtest
 
 Forums: http://forums.plexapp.com/index.php/topic/79897-rarflix-modified-roku-channel/page-1
 

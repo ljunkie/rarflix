@@ -27,9 +27,18 @@ Function createViewController() As Object
     controller.CreateContextMenu = vcCreateContextMenu
 
     controller.CreatePhotoPlayer = vcCreatePhotoPlayer
+    controller.CreateICphotoPlayer = vcCreateICphotoPlayer
     controller.CreateVideoPlayer = vcCreateVideoPlayer
-    controller.CreatePlayerForItem = vcCreatePlayerForItem
+
+    ' ljunkie - wrapper for creating a player. Sometimes it takes a few seconds from 
+    ' an initial button click before the screen updates due to various checks. This 
+    ' wrapper will create a facade screen immediately and will be closed once the 
+    ' "real" function (vcCreatePlayerForItem) is finished
+    controller.CreatePlayerForItem = vcCreatePlayerForItemFacade
+    controller.CreatePlayerForItemFacade = vcCreatePlayerForItem
+
     controller.IsVideoPlaying = vcIsVideoPlaying
+    controller.IsSlideShowPlaying = vcIsSlideShowPlaying
 
     controller.ShowFirstRun = vcShowFirstRun
     controller.ShowReleaseNotes = vcShowReleaseNotes
@@ -49,6 +58,7 @@ Function createViewController() As Object
     controller.CloseScreen = vcCloseScreen
 
     controller.Show = vcShow
+    controller.Control= vcControl
     controller.OnInitialized = vcOnInitialized
     controller.UpdateScreenProperties = vcUpdateScreenProperties
     controller.AddBreadcrumbs = vcAddBreadcrumbs
@@ -92,6 +102,7 @@ Function createViewController() As Object
     
     controller.CreateUserSelectionScreen = vcCreateUserSelectionScreen
     controller.ResetIdleTimer = vcResetIdleTimer
+    controller.ResetGenIdleTimer = vcResetGenIdleTimer
     controller.CreateLockScreen = vcCreateLockScreen
     controller.CreateIdleTimer = vcCreateIdleTimer
 
@@ -141,8 +152,9 @@ Function vcCreateHomeScreen()
     screen = createHomeScreen(m)
     screen.ScreenName = "Home"
     m.InitializeOtherScreen(screen, invalid)
+    RRHomeScreenBreadcrumbs(true)
+    screen.createNowPlayingRequest()
     screen.Show()
-    RRbreadcrumbDate(screen) 'ljunkie - homescreen data/time
     'start timer for detecting idle time when the home screen is created.
     m.CreateIdleTimer()
     return screen
@@ -238,7 +250,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     ' breadcrumbs for Full Grid.. when we have "1-4 of 565" as a row name --- that is ugly and this is ghetto 
     re = CreateObject("roRegex", "\d+\s*-\s*\d+\s+of\s+\d+", "")
     if type(breadcrumbs) = "roArray" and breadcrumbs.count() > 1 and (re.Ismatch(breadcrumbs[0]) or re.IsMatch(breadcrumbs[1])) then 
-        if type(m.screens) = "roArray" and m.screens.count() > 1 then  ' nested because I'm lame
+        if type(m.screens) = "roArray" and m.screens.count() > 1 and m.screens[1].loader <> invalid and m.screens[1].loader.contentarray <> invalid then  ' nested because I'm lame
             keynames = m.screens[1].loader.contentarray
             if item.contenttype = "appClip" then
                 breadcrumbs[0] = ""
@@ -262,7 +274,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
                         exit for
                     end if
                 end for
-                if fromFullGrid(m) then
+                if fromFullGrid() then
                      ' special for music - mayb more later
                      if tostr(key) = "albums" and item.album <> invalid then 
                          breadcrumbs[0] = UcaseFirst(item.artist)                     
@@ -295,15 +307,15 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
 
     ' madness still continues for other areas ( now TV )
     ' ljunkie - reset breadcrumb for TV show if tv watched status enabled and title <> umtitle (post and grid view supported)
-    if breadcrumbs <> invalid and RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" and (item.type = "show" or item.viewgroup = "season" or item.viewgroup = "show" or item.viewgroup = "episode") then
+    if breadcrumbs <> invalid and (item.type = "show" or item.viewgroup = "season" or item.viewgroup = "show" or item.viewgroup = "episode") then
         if item.umtitle <> invalid and ( type(breadcrumbs) = "roArray" and breadcrumbs[0] <> invalid and breadcrumbs[0] = item.title) or (breadcrumbs = invalid) then 
-	    Debug("tv watched status enabled: setting breadcrumb back to original title; change from " + breadcrumbs[0] + " -to- " + item.umtitle)
+	        Debug("tv watched status enabled: setting breadcrumb back to original title; change from " + breadcrumbs[0] + " -to- " + item.umtitle)
             breadcrumbs[0] = item.umtitle
         else if item.parentindex <> invalid and item.viewgroup = "episode" then 
-	    Debug("tv watched status enabled: setting breadcrumb back to original title (tv gridview?); change from " + breadcrumbs[0] + " -to- " + item.umtitle)
+    	    Debug("tv watched status enabled: setting breadcrumb back to original title (tv gridview?); change from " + breadcrumbs[0] + " -to- " + item.umtitle)
             breadcrumbs[0] = "Season " + tostr(item.parentindex)
             breadcrumbs[1] = ""
-	else 
+    	else 
             Debug("tv watched status enabled: DID not match criteria(1) -- NOT setting breadcrumb back to original title")
         end if
     end if
@@ -360,13 +372,13 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         end if
 
         if useGrid then
-            screen = createGridScreenForItem(item, m, "flat-16X9") ' we want 16x9 for series ( maybe flat-landscape when available )
+            screen = createGridScreenForItem(item, m, "flat-16x9") ' we want 16x9 for series ( maybe flat-landscape when available )
             screenName = "Series Grid"
             if screen.loader.focusrow <> invalid then screen.loader.focusrow = 1 ' override this so we can hide the sub sections ( flat-16x9 is 5x3 )
         else
             screen = createPosterScreen(item, m, "arced-portrait")
             screenName = "Series Poster"
-            if fromFullGrid(m) and (item.umtitle <> invalid or item.title <> invalid) then 
+            if fromFullGrid() and (item.umtitle <> invalid or item.title <> invalid) then 
                 breadcrumbs[0] = "All Seasons"
                 breadcrumbs[1] = firstof(item.umtitle,item.title)
             end if
@@ -396,31 +408,98 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         end if
         if screen = invalid then return invalid
     else if contentType = "audio" then
+        Debug("vcCreateScreenForItem:: createAudioSpringboardScreen")
         screen = createAudioSpringboardScreen(context, contextIndex, m)
         if screen = invalid then return invalid
         screenName = "Audio Springboard"
     else if contentType = "section" then
-        ' Now done in gridscreen.brs -- when someone focus the row instead
-        'RegWrite("lastMachineID", item.server.machineID, "userinfo")
-        'RegWrite("lastSectionKey", item.key, "userinfo")
-
+        ' ljunkie - this has been modified quite a bit. Sections have always been a "grid". Users now have an option to use a Full Grid by default
         screenName = "Section: " + tostr(item.type)
+
+        ' check if section has the full grid enabled
+        if item.callbackFullGrid = true then 
+            ' - special case "item.callbackFullGrid" used when one views the filter items from a nonfull grid
+            useFullGrid = true
+            item.callbackFullGrid = invalid
+        else if item.ishomevideos = true then 
+            useFullGrid = (RegRead("rf_full_grid_homevideo", "preferences", "disabled") = "enabled")
+        else     
+            useFullGrid = (RegRead("rf_full_grid_"+tostr(item.type), "preferences", "disabled") = "enabled")
+        end if
+        Debug("Full Grid Enabled:"+tostr(useFullGrid) + " : " + tostr(item.type) + ": " + tostr(item.contenttype))
+
+        focusrow = invalid
         if tostr(item.type) = "artist" then 
-            Debug("---- override photo-fit/flat-square for section with content of " + tostr(item.type))
-            'screen = createGridScreenForItem(item, m, "flat-square","photo-fit") ' might need to change back to defaults ( grid_style -- to fit the standard )
-            screen = createGridScreenForItem(item, m, "flat-landscape", "photo-fit")
-            if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 5x3 )
+            grid_style = "flat-landscape"
+            displaymode_grid = "photo-fit"
+            focusrow = 2
+            Debug("---- override " + tostr(displaymode_grid) + "/" + tostr(grid_style) + " for section with content of " + tostr(item.type))
         else if tostr(item.type) = "photo" then 
             ' Photo Section has it's own settings for DisplayMode and GridStyle
-            displayMode = RegRead("photoicon_displaymode", "preferences", "photo-fit")
-            Debug("---- override " + tostr(displayMode) + "/" + tostr(grid_style_photos) + " for section with content of " + tostr(item.type))
-            screen = createGridScreenForItem(item, m, grid_style_photos ,displayMode)
-            if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( 7x3 )
+            displaymode_grid = RegRead("photoicon_displaymode", "preferences", "photo-fit")
+            grid_style = grid_style_photos
+            focusrow = 2
+            Debug("---- override " + tostr(displaymode_grid) + "/" + tostr(grid_style) + " for section with content of " + tostr(item.type))
         else 
+            if item.isHomeVideos = true then
+                grid_style = RegRead("homevideo_grid_style", "preferences", "flat-16x9")
+            end if
+        end if
+
+        ' focus on the second row if flat16x9 
+        ' TODO(ljunkie) add other modes in here to make this logic more sound
+        if grid_style = "flat-16x9" then focusrow = 2
+
+        item.defaultFullGrid = useFullGrid
+        if NOT item.defaultFullGrid then 
+            ' standard Grid screen - multiple rows
+
+            ' instead of adding duplicate logic to the gridHandleMessage, just reset the breadcrumbs to normal here
+            breadcrumbs = [item.server.name, item.Title]
+
+            ' reset to original keys -- this will only happen if somone has changed FullGrid prefs during 
+            ' the section. We could just reload the HomeScreenRows when toggled - but this doesn't seem bad
+            if item.OrigKeys <> invalid then 
+                item.key = item.OrigKeys.key
+                item.sourceurl = item.OrigKeys.sourceUrl
+                item.origkeys= invalid
+            end if
+            
+            print item
             screen = createGridScreenForItem(item, m, grid_style, displaymode_grid)
+            if focusrow <> invalid and screen.loader.focusrow <> invalid then screen.loader.focusrow = focusrow
+        else 
+            ' full grid screen - hoping mGo will become available at some point
+            Debug("---- using FULL GRID by default for this section type")
+           
+            ' show the user a notice about using a full grid (only once)
+            noticeRead = (RegRead("default_full_grid_notice", "notices", "0") <> "0")
+            if NOT noticeRead then 
+                RegWrite("default_full_grid_notice", "1", "notices")
+                dlg = createBaseDialog()
+                dlg.Title = "Full Grid Information"
+                dlg.Text = "You are entering All " + item.title + ". In this section, you can click up to see a hidden row to filter and sort the items or choose a quick filter. The info key (*) on the remote may also be used to change the filters and sorting of items."
+                dlg.Show(true)
+            end if
+
+            ' shallowCopy the item for the origina key and sourceurl
+            if item.origkeys = invalid then item.origkeys = ShallowCopy(item,1)
+
+            ' reset the section to use the /all endpoint 
+            ' - make sure we have the base section key ( strip any junk/subsections )
+            sectionKey = getBaseSectionKey(item.sourceurl + "/" + item.key)
+            item.sourceurl = item.server.serverurl + sectionKey
+            item.key = "all"
+
+            screen = createFULLGridScreen(item, m, grid_style, displaymode_grid)
+            if focusrow <> invalid and screen.loader.focusrow <> invalid then 
+                screen.loader.focusrow = focusrow
+            else 
+                screen.loader.focusrow = 1
+            end if
         end if
     else if contentType = "playlists" then
-        screen = createGridScreenForItem(item, m, "flat-16X9") ' not really sure where this is ( maybe the myPlex queue )
+        screen = createGridScreenForItem(item, m, "flat-16x9") ' not really sure where this is ( maybe the myPlex queue )
         screenName = "Playlist Grid"
         if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( flat-16x9 is 5x3 )
     else if contentType = "photo" then
@@ -453,15 +532,20 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         dialog = createPopupMenu(item)
         dialog.Show()
         return invalid
+    else if item.key = "_section_filters_" then
+        screen = createFilterSortListScreen(item,m.screens.peek(),item.typeKey)
+        breadcrumbs =  ["Filters: " + item.title]
+        screenName = "Grid Filters"
     else if viewGroup = "secondary" then
         ' these are subsections of a main section ( secondary )
-        Debug("---- Creating secondary grid " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
-        ' ljunkie TODO review this code
+        Debug("---- Creating secondary " + poster_grid + " view for contentType=" + tostr(contentType) + ", viewGroup=" + tostr(viewGroup))
+
         sec_metadata = getSectionType()
         if poster_grid = "grid" then 
             DisplayMode = displaymode_grid
 
             focusrow = 0
+   
             if tostr(sec_metadata.type) = "artist" then 
                 grid_style="flat-landscape" ' TODO - create toggle for music grid style
             else if tostr(sec_metadata.type) = "photo" then 
@@ -469,9 +553,14 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
                 displayMode = RegRead("photoicon_displaymode", "preferences", "photo-fit") ' Use Display Mode for Photos
                 Debug("---- override " + tostr(displayMode) + "/" + tostr(grid_style_photos) + "for section with content of " + tostr(item.type))
                 focusrow = 1 ' lets fill the screen ( 5x3 )
+            else if sec_metadata.isHomeVideos = true then 
+                grid_style = RegRead("homevideo_grid_style", "preferences", "flat-16x9")
             end if
+
             screen = createFULLGridScreen(item, m, grid_style, DisplayMode)
-	    screen.loader.focusrow = focusrow ' lets fill the screen ( 5x3 )
+            if screen.loader.focusrow = invalid then  
+           	    screen.loader.focusrow = focusrow ' lets fill the screen ( 5x3 )
+            end if
         else 
             posterStyle = "arced-portrait"
             if tostr(sec_metadata.type) = "photo" then posterStyle = "arced-landscape"
@@ -498,8 +587,7 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
             return invalid
         end if
     else if item.key = "switchuser" then
-        screen = m.Screens.Peek()
-        if screen <> invalid then screen.screen.close()
+        GetViewController().ExitToUserSelection()
         return invalid
     else if item.key = "/channels/all" then
         ' Special case for all channels to force it into a special grid view
@@ -558,6 +646,9 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         end if
     end if
 
+    ' an invalid screen could happen if someone clicks on a "loading" item -- return invalid
+    if screen = invalid then return invalid
+
     if screenName = invalid then
         screenName = type(screen.Screen) + " " + firstOf(contentType, "unknown")
     end if
@@ -570,10 +661,24 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
 
     if show then screen.Show()
 
+    ' facades and wait dialogs
+    if item <> invalid and item.facade <> invalid then item.facade.close()
     if screen.hasWaitdialog <> invalid then screen.hasWaitdialog.close()
 
     ' set the inital focus row if we have set it ( normally due to the sub section row being added - look at the createpaginateddataloader )
     if screen.loader <> invalid and screen.loader.focusrow <> invalid then 
+        ' take into account that people might hide rows (focusrow is 0 index). If the focusrow is > 1
+        ' on 3 row screens, we will want to focus on the second row (1) if we have less than 4 rows 
+        style = GetGlobalAA().Lookup("GlobalGridStyle") ' this is set by Grid Creation
+        is3Row = screen.loader.focusrow > 0 and style <> invalid and (style = "flat-landscape" or style = "flat-square" or style = "flat-16x9" or style = "four-column-flat-landscape")
+        if is3Row and screen.loader.names <> invalid then
+            if screen.loader.names.count() < 4 then 
+                screen.loader.focusrow = 1
+            else if screen.loader.focusrow <> invalid and screen.loader.focusrow = 1 then 
+                screen.loader.focusrow = 2
+            end if
+        end if
+        Debug("focus row:" + tostr(screen.loader.focusrow))
         screen.screen.SetFocusedListItem(screen.loader.focusrow,0)
     end if
 
@@ -686,14 +791,77 @@ Function vcCreatePhotoPlayer(context, contextIndex=invalid, show=true, shuffled=
     return screen
 End Function
 
-Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=true)
+
+Function vcCreateICphotoPlayer(obj, contextIndex=invalid, show=true, shuffled=false, slideShow=false)
+    ' verify we have all the conext loaded -- possible we create this from a normal row
+    dialog = invalid
+    if slideShow and obj.context.count() > 100 then 
+        dialog=ShowPleaseWait("Starting Photo Player... Please wait...","")
+    end if
+    PhotoPlayerCheckLoaded(obj,contextIndex)        
+
+    sourceReloadURL = invalid
+    if type(obj) = "roArray" then 
+         context = obj
+    else 
+         context = obj.context
+         sourceReloadUrl = obj.sourceReloadURL
+    end if 
+
+    ' remote clients default to use the "play" button, so we can't always trust slidshow=true -- verify we have more than one item
+    if ( ( type(context) = "roArray" and context.count() = 1 ) or (type(context) <> "roArray") ) then slideShow=false
+
+    if NOT AppManager().IsPlaybackAllowed() then
+        m.ShowPlaybackNotAllowed()
+        return invalid
+    end if
+
+    screen = createICphotoPlayerScreen(context, contextIndex, m, shuffled, slideShow)
+    screen.ScreenName = "Photo Player Image Canvas"
+    screen.FullContext = obj.FullContext
+
+    if sourceReloadUrl <> invalid then screen.sourceReloadUrl = sourceReloadUrl
+    Debug("vcCreateICphotoPlayer:: source reload url = " + tostr(sourceReloadUrl))
+
+    m.AddBreadcrumbs(screen, invalid)
+    m.UpdateScreenProperties(screen)
+    m.PushScreen(screen)
+
+    ' activate the slideshow timer ( we might skip this is we press SHOW instead? )
+    if slideShow then 
+        Debug("activating slideshow timer")         
+        screen.Timer.Active = true
+        screen.Timer.Mark()
+        screen.isPaused = false
+    else 
+        screen.isSlideShow = false
+    end if
+
+    ' do not wait for the image to download ( user should see a response we are playing the slideshow )
+    if show then screen.Show()
+
+    if dialog <> invalid then dialog.close()
+
+    return screen
+End Function
+
+Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=true, preplayScreen = invalid)
     if NOT AppManager().IsPlaybackAllowed() then
         m.ShowPlaybackNotAllowed()
         return invalid
     end if
 
     ' Stop any background audio first
-    AudioPlayer().Stop()
+    ' ljunkie - we will now stop audio/photos -- but keep the state in the background
+    ' this will allow us to resume ( only possible through remote control )
+    if GetViewController().IsSlideShowPlaying() and PhotoPlayer() <> invalid then 
+        ' for now this only applies to slideshows
+        ' we could extend resume audio to other screens.. TODO(ljunkie) another day
+        PhotoPlayer().StopKeepState()
+        AudioPlayer().StopKeepState() ' always exists
+    else 
+        AudioPlayer().stop()
+    end if
 
     ' Make sure we have full details before trying to play.
     metadata.ParseDetails()
@@ -740,7 +908,13 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
                 end if
             end if
 
-            if dlg.Result = invalid or dlg.Result = "invalid" then return invalid
+            if dlg.Result = invalid or dlg.Result = "invalid" then 
+                if preplayscreen <> invalid then 
+                    preplayScreen.screen.close()
+                    if preplayscreen.facade <> invalid then preplayscreen.facade.close()
+                end if
+                return invalid
+            end if
             if dlg.Result = "resume" and metadata.viewOffset <> invalid then
                 seekValue = int(val(metadata.viewOffset))
             else
@@ -753,6 +927,7 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
 
     screen = createVideoPlayerScreen(metadata, seekValue, directPlayOptions, m)
     screen.ScreenName = "Video Player"
+    screen.preplayScreen = preplayScreen
 
     m.AddBreadcrumbs(screen, invalid)
     m.UpdateScreenProperties(screen)
@@ -763,7 +938,15 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
     return screen
 End Function
 
-Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
+' wrapper for vcCreatePlayerForItem() [m.vcCreatePlayerForItem]
+Function vcCreatePlayerForItemFacade(context, contextIndex, seekValue=invalid, sourceReloadUrl = invalid)
+        facade = CreateObject("roGridScreen")
+        facade.Show()
+        m.CreatePlayerForItemFacade(context, contextIndex, seekValue, sourceReloadUrl)
+        facade.close()
+end function
+
+Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid, sourceReloadUrl = invalid)
     item = context[contextIndex]
 
     ' ljunkie - check if we are viewing a directory. We can direct play certain items ( play all sort of thing )
@@ -772,37 +955,55 @@ Function vcCreatePlayerForItem(context, contextIndex, seekValue=invalid)
     'sec_metadata = getSectionType() -- todo later - we can play appClips if they are in the photosection, but other adverse effects happen
     if item.nodename <> invalid and item.nodename = "Directory" then
         if item.ContentType = "photo" then 
-            Debug("--- trying to play photos from a directory")
-            container = createPlexContainerForUrl(item.server, item.server.serverurl, item.key)
-            newContext = container.getmetadata()
-            ' verify the container has images - it still could be all directories. 
-            ' If directory, skip and create screen for item
-            for each item in newContext
-                if item.nodename = "Photo" then return m.CreatePhotoPlayer(newContext, 0)
-            end for
-        'else if tostr(sec_metadata.type) = "photo" and item.ContentType ="appClip" then 
-        '    print "--- trying to play photos (appClip) from a directory"
-        '    container = createPlexContainerForUrl(item.server, item.sourceurl, item.key)
-        '    context = container.getmetadata()
-        '    ' we can have sub dirs.. we only direct play if we have a photo ( only checking the first item )
-        '    if type(context) = "roArray" and context.count() > 0 and context[0].nodename = "Photo" then 
-        '        return m.CreatePhotoPlayer(context, 0)
-        '    end if
+            Debug("vcCreatePlayerForItem:: trying to play photo from a directory")
+
+            obj = {}:dummyItem = {}
+            dummyItem.server = item.server
+            dummyItem.sourceUrl = item.key
+            dummyItem.showWait = true
+            PhotoMetadataLazy(obj, dummyItem, true)
+            if obj.context <> invalid and obj.context.count() > 0 then 
+                for each item in obj.context
+                    if item.nodename = "Photo" then 
+                        Debug("vcCreatePlayerForItem:: CreateICPhotoPlayer with " + tostr(obj.context.count()) + " total items")
+                        return m.CreateICPhotoPlayer(obj, 0, true, false, true)
+                    end if
+                end for
+            end if
         else if item.ContentType = "album" then
-            Debug("--- trying to play an album from a directory")
+            Debug("vcCreatePlayerForItem:: trying to play album from a directory")
             container = createPlexContainerForUrl(item.server, item.server.serverurl, item.key)
             context = container.getmetadata()
             AudioPlayer().Stop()
             return m.CreateScreenForItem(context, 0, invalid)
          end if
     else if item.ContentType = "photo" then '  and (item.nodename = invalid or item.nodename <> "Directory") then 
-        return m.CreatePhotoPlayer(context, contextIndex)
+        Debug("vcCreatePlayerForItem:: creating photo player")
+        obj = {}
+        obj.context = context
+        obj.sourceReloadUrl = sourceReloadUrl
+        return m.CreateICphotoPlayer(obj, contextIndex, true, false, true)
     else if item.ContentType = "audio" then
+        Debug("vcCreatePlayerForItem:: creating audio player")
         AudioPlayer().Stop()
-        return m.CreateScreenForItem(context, contextIndex, invalid)
+        return m.CreateScreenForItem(context, contextIndex, invalid, true)
     else if item.ContentType = "movie" OR item.ContentType = "episode" OR item.ContentType = "clip" then
+        Debug("vcCreatePlayerForItem:: creating player for ContentType: " + tostr(item.ContentType))
+        ' create a preplay screen before we start to play - but only for the following (any of them):
+        ' 1) continuous play/shuffle play is enabled
+        ' 2) is episode and advanceToNextItem is enabled
+        preplay = invalid
+        continuousORshuffle = ( RegRead("continuous_play", "preferences") = "1" or RegRead("shuffle_play", "preferences") = "1" )
+        episodeAdvance = ( item.ContentType = "episode" and RegRead("advanceToNextItem", "preferences", "enabled") = "enabled" ) 
+        if episodeAdvance or continuousORshuffle then
+            preplay = m.CreateScreenForItem(context, contextIndex, invalid, false)
+            facade = CreateObject("roGridScreen")
+            facade.Show()
+            preplay.facade = facade
+        end if
+
         directplay = RegRead("directplay", "preferences", "0").toint()
-        return m.CreateVideoPlayer(item, seekValue, directplay)
+        return m.CreateVideoPlayer(item, seekValue, directplay, true, preplay)
     end if
 
     ' if we can't play - then create an screen item for the context
@@ -826,6 +1027,11 @@ Function vcIsVideoPlaying() As Boolean
     return type(m.screens.Peek().Screen) = "roVideoScreen"
 End Function
 
+Function vcIsSlideShowPlaying() As Boolean
+    ' to be clear -- this returns true if on is in a PhotoPlayer (single photo/multi photo/paused/stopped/etc -- naming sucks, sorry )
+    return (type(m.screens.Peek().Screen) = "roImageCanvas" and tostr(m.screens.Peek().imagecanvasname) = "slideshow")
+End Function
+
 Sub vcShowFirstRun()
     ' TODO(schuyler): Are these different?
     m.ShowHelpScreen()
@@ -842,11 +1048,7 @@ Sub vcShowReleaseNotes(options = invalid)
     paragraphs = []
     breadcrumbs = invalid
 
-    ' roTextScreen was introduced via firmware 4.3+
-    major = GetGlobalAA().Lookup("rokuVersionArr")[0]
-    minor = GetGlobalAA().Lookup("rokuVersionArr")[1]
-    textScreen = false
-    if (major > 4) or (major = 4 and minor > 2) then textScreen = true
+    textScreen = supportsTextScreen()
 
     spacer = chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)
 
@@ -865,9 +1067,44 @@ Sub vcShowReleaseNotes(options = invalid)
         us = "_______________"
         paragraphs.Push("                 Donations accepted at http://www.rarflix.com")
         paragraphs.Push("  ")
-        paragraphs.Push("   " + header + ". Here are the major changes since v3.0.0.")
+        paragraphs.Push(us+"v3.1.49-TEST (2014-03-19)"+us)
         paragraphs.Push("  ")
 
+        paragraphs.Push(" * RARflix will work when myPlex is down")
+        paragraphs.Push(" * Auto Episode Advance. Show next episode after viewing")
+        paragraphs.Push(" * Filter and Sort content")
+        paragraphs.Push(" * Full Grid as Default View per section [optional]")
+        paragraphs.Push(" * WOL (Wake on LAN) -- h/t @Talidan")
+        paragraphs.Push(" * Put On Deck via the (*) button")
+        paragraphs.Push(" * Clock/Date options : 12/24 hour clock + Date format/disable options")
+        paragraphs.Push(" * Non truncated Description via the (*) button")
+        paragraphs.Push(" * Include the ROLE of the cast member(s) if one exists ( Cast & Crew )")
+        paragraphs.Push(" * Global Search: will now search shared (non owned) servers")
+        paragraphs.Push(" * Complete rewrite of the Slide Show")
+        paragraphs.Push(" * Home Screen shortcut via the (*) button")
+        paragraphs.Push(" * Focus on last used section when starting. Was broke due to merger of official channel")
+        paragraphs.Push(" * Legacy remote option")
+        paragraphs.Push(" * Show preplay screen after direct play from grid")
+        paragraphs.Push(" * Exit confirmation")
+        paragraphs.Push(" * Music: new rows 'first letter' and 'recently viewed'")
+        paragraphs.Push(" * New Playback Options (simplified): Shuffle, Continuous Play, Continuous [context] Play ")
+        paragraphs.Push(" * Various Speed Improvements for the UI")
+        paragraphs.Push(" * Many other improvements and bug fixes")
+        paragraphs.Push("  ")
+
+        paragraphs.Push("  ")
+        paragraphs.Push(us+"v3.1.1 (2014-01-11)"+us)
+        paragraphs.Push("  ")
+        paragraphs.Push(" * focus on last used section when starting RARflix (regression)")
+        paragraphs.Push(" * include the ROLE of the cast member to the Cast & Crew screen")
+        paragraphs.Push(" * screen saver image updates (initial fix)")
+        paragraphs.Push("     - images seem to only be saved on a springBoard (preplay screens)")
+        paragraphs.Push("     - now we save whenever we focus on an image (gridscreen or postersreen)")
+        paragraphs.Push(" * add a Description button to the Dialog Pop up to show the non truncated description")
+        paragraphs.Push("  ")
+        paragraphs.Push("  ")
+        paragraphs.Push("    Here are the major changes since v3.0.0.")
+        paragraphs.Push("  ")
         paragraphs.Push("     * Plex Companion support (remote/navigation control)")
         paragraphs.Push("      ")
         paragraphs.Push("     * Dynamic Watched Status Overlay")
@@ -880,254 +1117,10 @@ Sub vcShowReleaseNotes(options = invalid)
         paragraphs.Push("     * bugfixes")
         paragraphs.Push("      ")
 
-        paragraphs.Push("Click down to see all changes since v3.0.0 or click BACK to start using " + GetGlobal("appName") + "!" )
-        paragraphs.Push("  ")
-        paragraphs.Push("  ")
-        paragraphs.Push("  ")
-        paragraphs.Push(us+"v3.0.18 (2014-01-08)"+us)
-        paragraphs.Push("  ")
-        paragraphs.Push(" * hide the Now Playing button when we just started the AudioPlayer")
-        paragraphs.Push(" * Now Playing Audio Screen refresh ( plex companion )")
-        paragraphs.Push(" * fixes display bug when audio loops")
-        paragraphs.Push(" * regression - caused a potential slow down accessing channels (teamcoco)")
-        paragraphs.Push("  ")
-
-        paragraphs.Push("  ")
-        paragraphs.Push(us+"v3.0.17 (2014-01-04)"+us)
-        paragraphs.Push("  ")
-        paragraphs.Push(" * ability to hide shared library content on home screen: On Deck & Recently Added")
-        paragraphs.Push(" * On Deck & Recently Added on the home screen never refreshed for shared users")
-        paragraphs.Push(" * ssplex (channels) crash when tv series set to grid")
-        paragraphs.Push(" * now playing audio :: always show track playing ( not the last viewed )")
-        paragraphs.Push(" * SD Screen channel icons were broken")
-        paragraphs.Push("  ")
-
-        paragraphs.Push("  ")
-        paragraphs.Push(us+"v3.0.16 (2014-01-03)"+us)
-        paragraphs.Push("  ")
-        paragraphs.Push(" * extend scrobble to TV Show/Seasons")
-        paragraphs.Push("   - mark/unmark Season as watched")
-        paragraphs.Push("   - mark/unmark Show as watched")
-        paragraphs.Push("   - refresh display correctly after scrobble")
-        paragraphs.Push(" * merge RARflixDev to RARflixTest ( DEV channel no longer updated )")
-        paragraphs.Push(" * watched indicator overlays extended to the RARflixTest (RARflixTools required)")
-        paragraphs.Push(" * episode/clip image format change from 4x3 to 16x9")
-        paragraphs.Push(" * full grid from Home Screen info button didn't work (regression in Test/Dev channel only)")
-        paragraphs.Push(" * fixed captcha issues with ICEfilms and other channels")
-        paragraphs.Push("  ")
-
-        paragraphs.Push(us+"v3.0.13 - v3.0.15 (2013-12-30)"+us)
-        paragraphs.Push("  ")
-        paragraphs.Push(" * multi-profile fast switching fix")
-        paragraphs.Push(" * User Selection did not change myPlex user  ")
-        paragraphs.Push(" * tv series posters missing indicator overlay ( e.g. TV Sections: All Shows )")
-        paragraphs.Push(" * speed up initial loading of channel (only check online servers for the tools)")
-        paragraphs.Push("  ")
-
-        paragraphs.Push("  ")
-        paragraphs.Push(us+"v3.0.8 - v3.0.12 (2013-12-28)"+us)
-        paragraphs.Push("  ")
-        if NOT isRFdev() then paragraphs.Push(" NOTE: RARflixTools not included in this version yet")
-        paragraphs.Push(" * RARflixTools (https://github.com/ljunkie/rarflixtools)")
-        paragraphs.Push("   - Initial release with Watched/Progress indicators ( poster overlay )")
-        paragraphs.Push("   - rebuild overlay and refresh on item scrobble (watched/unwatched)")
-        paragraphs.Push("   - RARflixTools check could case a crash")
-        paragraphs.Push(" * Remote Logging fixed")
-        paragraphs.Push("  ")
-
-        paragraphs.Push("  ")
-        paragraphs.Push(us+"v3.0.2 - v3.0.7 (2013-12-25)"+us)
-        paragraphs.Push("  ")
-        paragraphs.Push(" * shuffle play for video/audio crashed channel.")
-        paragraphs.Push(" * lock screen broke after the 2.8.2 PlexTest merge.")
-        paragraphs.Push(" * hide screens below lockscreen on exit (privacy)")
-        paragraphs.Push(" * photo channels (break.com) crashed -- they don't contain expected EXIF data")
-        paragraphs.Push(" * exclude additional channels when searching cast & crew")
-        paragraphs.Push(" * myPlex content could crash on resume (offset is flaky)")
-        paragraphs.Push(" * myPlex content crashed video player (timelines are valid/resume works)")
-        paragraphs.Push(" * merge of Plex/Roku v2.8.2 (all changes) ")
-        paragraphs.Push(" * other misc fixes")
-        paragraphs.Push("  ")
-
-        paragraphs.Push("  ")
-        paragraphs.Push(us+"v3.0.1 (2013-12-20)"+us)
-        paragraphs.Push("  ")
-        paragraphs.Push(" * Hiding custom rows could case a crash.")
-        paragraphs.Push("  ")
-
-        paragraphs.Push("  ")
-        paragraphs.Push(us+"v3.0.0 (2013-12-17)"+us)
-        paragraphs.Push("  ")
-        paragraphs.Push(" * RARflix Release -- RARflix/RARflixTest merged.")
-        paragraphs.Push("  ")
-
-        paragraphs.Push("  ")
-        paragraphs.Push(us+"v2.9.7 - v2.9.9 (2013-12-14)"+us)
-        paragraphs.Push("  ")
-        paragraphs.Push(" * crash: now playing + channel content")
-        paragraphs.Push(" * crash: channels when 'content is unavailable'")
-        paragraphs.Push(" * crash: properly handle when content 'year' is empty/invalid")
-        paragraphs.Push(" * crash: devour channel (others) & now playing when video description invalid/empty")
-        paragraphs.Push(" * fixed: custom icons font size ( text should fit better )")
-        paragraphs.Push("  ")
-
-        paragraphs.Push("  ")
-        paragraphs.Push(us+"v2.9.6 (2013-12-13)"+us)
-        paragraphs.Push("  ")
-        paragraphs.Push("  * Various channel content failed to play")
-        paragraphs.Push("  * Posters size wrong for sub channel sections")
-        paragraphs.Push("  * Crash: extra precautions for the now playing check")
-        paragraphs.Push("  ")
-
-        paragraphs.Push("  ")
-        paragraphs.Push(us+"v2.9.2 - v2.9.5 (2013-12-10)"+us)
-        paragraphs.Push("  ")
-        paragraphs.Push("  * Rotten Tomatoes caching updates")
-        paragraphs.Push("  * Some posterScreen items do not need to be refreshed (yet) -- channels")
-        paragraphs.Push("  * Do not prepend show title to episode title unless we are really 'mixed'")
-        paragraphs.Push("  * URL cleanup - could have affected channel content")
-        paragraphs.Push("  * URL cleanup - fixing various possible crashes")
-        paragraphs.Push("  * Crash: forcing direct play + subtitles")
-        paragraphs.Push("  * Crash: showing a single photo")
-        paragraphs.Push("  ")
-
-        paragraphs.Push("  ")
-        paragraphs.Push(us+"v2.9.1 (2013-12-07)"+us)
-        paragraphs.Push("  ")
-        paragraphs.Push("  * Pin Codes did not work for SD screens")
-        paragraphs.Push("  ")
-
-        paragraphs.Push(us+"v2.9.0 (2013-12-06)"+us)
-        paragraphs.Push(chr(10) + " Original Theme")
-        paragraphs.Push("  * User selection icon was not working correctly for the Original theme")
-        paragraphs.Push("  * Dialog text was hard to head on the Original theme")
-        paragraphs.Push("  * New Release Notes screen. You can see all the changes now.")
-        paragraphs.Push("  ")
-        
-        paragraphs.Push(us+"v2.8.9 (2013-12-05)"+us)
-        paragraphs.Push(chr(10) + " Rotten Tomatoes Performance")
-        paragraphs.Push("  * Do not re-query rotten tomatoes on every click right/left if already loaded. (cache)")
-        paragraphs.Push("  * Rotten Tomatoes Proxy server added & maintained by me, thanks to AWS+Squid.")
-        paragraphs.Push("  ")
-        
-        paragraphs.Push(us+"v2.8.8 (2013-12-04)"+us)
-        paragraphs.Push(chr(10) + " Slideshow Overlay")
-        paragraphs.Push("  * It was lonely (top left: photo date, top right: photo count [1 of 100], body: photo title).")
-        paragraphs.Push("  * Overlay toggle (down button) is now more responsive.")
-        paragraphs.Push(chr(10) + " Cast & Crew")
-        paragraphs.Push("  * Cast & Crew search screen didn't use the preferred Grid Style (Portrait).")
-        paragraphs.Push("  * Removed 'clips' from Cast & Crew search. The clip results were invalid.")
-        paragraphs.Push("  * Focus the first row on a Cast & Screen search after selecting a cast member.")
-        paragraphs.Push(chr(10) + " Misc Fixes")
-        paragraphs.Push("  * Larger BoB (grid description background) required for portrait grid mode.")
-        paragraphs.Push("  * TV episode will now images instead of blank image with number (unfocused content).")
-        paragraphs.Push("  * Crash when trying to play from a photo directory")
-        paragraphs.Push("  * Some images would break after being refresh (missing authtoken).")
-        paragraphs.Push("  * Current bandwidth under remote/local settings will not show invalid if empty.")
-        paragraphs.Push("  * Current bandwidth will show mbps when 1+ mbps.")
-        paragraphs.Push("  ")
-        
-        paragraphs.Push(us+"v2.8.7 (2013-12-03)"+us)
-        paragraphs.Push(chr(10) + " Fix Image Sizes (globally). Should improve load times.")
-        paragraphs.Push("  * Custom icons will now use the correct size for the screen style (grid/poster screens).")
-        paragraphs.Push("  * All over icons/images/thumbnails will use the correct size based on the Screen Style.")
-        paragraphs.Push("  * Changes above should will increase speed (roku will not have to internally resize images).")
-        paragraphs.Push(chr(10) + " Grid Reloading (slow grid screen issues).")
-        paragraphs.Push("  * Always full reload the onDeck row.")
-        paragraphs.Push("  * Only do a full reload once every 90 seconds.")
-        paragraphs.Push("  * Refresh focused item if modified (watched/unwatched/added/deleted).")
-        paragraphs.Push("  * Full Grid screens will always fully reload.")
-        paragraphs.Push(chr(10) + " Toggle added to change 'Grid Updates/Speed'.")
-        paragraphs.Push("  * Default is Full ( what people should use ).")
-        paragraphs.Push("  * Partial will only reload the focused item.")
-        paragraphs.Push("  * Partial will be less dynamic but very quick. NOT suggested.")
-        paragraphs.Push(chr(10) + " TV Episodes Screen")
-        paragraphs.Push("  * Use 16x9 for thumbs instead of 4x3. Can be toggled between 4x3 or 16x9.")
-        paragraphs.Push("  * Toggle to show Episode Image instead of a number for unfocused content.")
-        paragraphs.Push(chr(10) + " Music Section Style")
-        paragraphs.Push("  * change from flat-square (the tiny 7x3 row) to flat-landscape (5x3 row).")
-        paragraphs.Push("  * all subsections in music library section will use the 5x3 now. Before it was 'random'.")
-        paragraphs.Push(chr(10) + " TV Season Posters ( when using TV Seasons Posters vs the TV Show Poster ).")
-        paragraphs.Push("  * In some scenarios the Season poster was being instead of the episode thumb.")
-        paragraphs.Push("  * Sometimes the Season Poster isn't exposed via the PMS API. Query the API for it.")
-        paragraphs.Push(chr(10) + " Misc Fixes")
-        paragraphs.Push("  * HUD would show 'invalid' if Release Date was empty.")
-        paragraphs.Push("  ")
-        
-        paragraphs.Push(us+"v2.8.6 (2013-12-01)"+us)
-        paragraphs.Push(chr(10) + " Grid Changes - Display Modes and Styles")
-        paragraphs.Push("  * TV/Movie Posters should fit the Orange Focus Box (better).")
-        paragraphs.Push("  * Addition to Grid Style/Size Toggle: 'Portrait (tall)' fits the Posters better.")
-        paragraphs.Push("  * Toggle to 'hide' the Text above each row while in a Full Grid ( I.E. 1-5 of 250 ...  1-5 ). ")
-        paragraphs.Push("  * Photo section now defaults to landscape (Grid: 5x3) -- used to be 'landscape 16x9'.")
-        paragraphs.Push("  * Toggle to change photo sections from landscape to Portrait/Landscape/Landscape 16x9.")
-        paragraphs.Push("  * Fix: Grid Style/Size toggle didn't work on Movies/TV Show sections.")
-        paragraphs.Push(chr(10) + " Use Season Poster when viewing a season/episode.")
-        paragraphs.Push("  * Toggle added to set it back to 'TV Show'.")
-        paragraphs.Push("  * Official Channel only allowed 'TV Show'.")
-        paragraphs.Push(chr(10) + " Firmware 3.x bugfixes ( first gen roku ).")
-        paragraphs.Push("  * More button was hidden ( only have 5 buttons to work with instead of 6 ).")
-        paragraphs.Push("  * Crash on * remote key - firmware didn't allow for button separator in dialog.")
-        paragraphs.Push("  * Now playing dialog notification crash.")
-        paragraphs.Push("  ")
-        
-        paragraphs.Push(us+"v2.8.5 (2013-11-18)"+us)
-        paragraphs.Push(chr(10) + " Initial Release of the Lock Screen. h/t @wagnerscastle.")
-        paragraphs.Push("  * Must use a PIN code - idle time settings are in Security PIN prefs.")
-        paragraphs.Push("  * Any user navigation action is 'Non idle'.")
-        paragraphs.Push("  * Videos/Slideshow playing is 'Non idle'.")
-        paragraphs.Push("  * Music: you can toggle music events (track change) as Non idle.")
-        paragraphs.Push(chr(10) + " Movie Trailers")
-        paragraphs.Push("  * First trailer will now automatically play. You can change behavior in Prefs.")
-        paragraphs.Push("  * Only 10 trailers will be shown on the poster screen.")
-        paragraphs.Push("  * Code cleanup ( required for the lock screen addition )")
-        paragraphs.Push(chr(10) + " Grid Speed Improvements ( change from v2.8.4 )")
-        paragraphs.Push("  * Load up to 8 items in the first 10 rows when first entering a grid screen.")
-        paragraphs.Push("  * OnDeck and 'Unwatched' rows will fully reload when re-entering grid from a child screen.")
-        paragraphs.Push(chr(10) + " Misc Fixes")
-        paragraphs.Push("  * Enable/Disable grid pop out per section: home, movie, show, music, photo , other.")
-        paragraphs.Push("  * Transcode session info ( video: [copy|convert] audio: [copy|convert] ) missing from HUD.")
-        paragraphs.Push("  ")
-        
-        paragraphs.Push(us+"v2.8.4 (2013-11-12)"+us)
-        paragraphs.Push(chr(10) + " Fast User Switching")
-        paragraphs.Push("  * User Profile Switch icon added to the home screen when multiUser is enabled.")
-        paragraphs.Push("  * Toggle: user selection icon - purple (roku) / orange (plex).")
-        paragraphs.Push(chr(10) + " 3 New TV Rows/Grid options ( re-order rows to use them )")
-        paragraphs.Push("  * Recently Added Seasons")
-        paragraphs.Push("  * Unwatched Recently Released")
-        paragraphs.Push("  * Unwatched Recenlty Added")
-        paragraphs.Push(chr(10) + " Initial release of 'Shuffle Play' for Videos (experimental)")
-        paragraphs.Push("  * Works just like continuous play ( must be started from within video spring board ).")
-        paragraphs.Push("  * Toggle in Playback Options and Global Preferences (advanced).")
-        paragraphs.Push(chr(10) + " Video Changes")
-        paragraphs.Push("  * 'Play' button should now show 'Play Continuous' or 'Play Shuffle+Continuous' if selected.")
-        paragraphs.Push("  * HUD time/endtime/watched updated on start.")
-        paragraphs.Push("  * HUD time/endtime/watched updated when paused.")
-        paragraphs.Push(chr(10) + " Photos (slideshow) ")
-        paragraphs.Push("  * Toggle to change 'display mode' of photos in slideshow/single view ")
-        paragraphs.Push("        (how the image scales/crops/fits when displayed ) [ default is now scale-to-fit ])")
-        paragraphs.Push("  * Toggle to change 'display mode' of photos thumbnail image.")
-        paragraphs.Push("  * Toggle to 'reload' slideshow after completion. I.E. check for new photos after every run.")
-        paragraphs.Push("  * Slideshow didn't start at the right offset when selected from the photoSpringboard.")
-        paragraphs.Push(chr(10) + " Grid Speed improvements  (trade offs included)")
-        paragraphs.Push("  * Do not fully reload focused row and do not invalidate every out of focus row.")
-        paragraphs.Push("  * Load the next out of screen row ( first 8 items ).")
-        paragraphs.Push("  * Reload selected item ONLY ( in every row ).")
-        paragraphs.Push("  * OnDeck will always be fully reloaded.")
-        paragraphs.Push(chr(10) + " Music")
-        paragraphs.Push("  * Cleanup now playing buttons ( do not show when already in now playing ).")
-        paragraphs.Push("  * Remote (*) key after music was started/stopped did not bring up option for full grid.")
-        paragraphs.Push(chr(10) + " Others")
-        paragraphs.Push("  * Toggle: Initial release of Globally disabling the Grid Pop out description.")
-        paragraphs.Push(chr(10) + " Misc Fixes")
-        paragraphs.Push("  * More speed fixes for the grid.")
-        paragraphs.Push("  * Hide invalid rows when there are NO Servers configured and show Help Screen.")
-        paragraphs.Push("        ( when GDM disabled, myPlex disabled, no manual servers)")
-        paragraphs.Push("  * Misc bug fixes")
-        paragraphs.Push("  * Disable full grid for sub channel content. Channel content not supported by PMS.")
-        paragraphs.Push("  * HUD watched time not working on some channel content.")
-        paragraphs.Push("  * Screensaver fixed ( affected v2.8.3 ) - @wagnerscastle")
+        'paragraphs.Push("Click down to see all changes since v3.0.0 or click BACK to start using " + GetGlobal("appName") + "!" )
+        'paragraphs.Push("  ")
+        'paragraphs.Push("  ")
+        'paragraphs.Push("  ")
     end if
 
     if NOT textScreen then 
@@ -1387,97 +1380,7 @@ End Sub
 Sub vcShow()
     AppManager().ClearInitializer("viewcontroller")
 
-    timeout = 0
-    lastmin = -1 'container to update every minute
-    while ( m.screens.Count() > 0 OR NOT AppManager().IsInitialized() ) and GetGlobalAA().ProfileExit = invalid
-
-        m.WebServer.prewait()
-        msg = wait(timeout, m.GlobalMessagePort)
-
-        if msg <> invalid then
-            ' Printing debug information about every message may be overkill
-            ' regardless, but note that URL events don't play by the same rules,
-            ' and there's no ifEvent interface to check for. Sigh.
-            'if GetInterface(msg, "ifUrlEvent") = invalid AND GetInterface(msg, "ifSocketEvent") = invalid then
-                'Debug("Processing " + type(msg) + " (top of stack " + type(m.screens.Peek().Screen) + "): " + tostr(msg.GetType()) + ", " + tostr(msg.GetIndex()) + ", " + tostr(msg.GetMessage()))
-            'end if
-            'if type(msg) <> "roUrlEvent" AND type(msg) <> "roSocketEvent" then
-            '    Debug("Processing " + type(msg) + " (top of stack " + type(m.screens.Peek().Screen) + "): ")
-            'end if
-            for i = m.screens.Count() - 1 to 0 step -1
-                if m.screens[i].HandleMessage(msg) = true then
-                    m.ResetIdleTimer()
-                    exit for
-                end if                    
-            end for
-
-            ' Process URL events. Look up the request context and call a
-            ' function on the listener.
-            if type(msg) = "roUrlEvent" AND msg.GetInt() = 1 then
-                id = msg.GetSourceIdentity().tostr()
-                requestContext = m.PendingRequests[id]
-                if requestContext <> invalid then
-                    m.PendingRequests.Delete(id)
-                    if requestContext.Listener <> invalid then
-                        requestContext.Listener.OnUrlEvent(msg, requestContext)
-                    end if
-                    requestContext = invalid
-                end if
-            else if type(msg) = "roSocketEvent" then
-                listener = m.SocketListeners[msg.getSocketID().tostr()]
-                if listener <> invalid then
-                    listener.OnSocketEvent(msg)
-                    listener = invalid
-                else
-                    ' Assume it was for the web server (it won't hurt if it wasn't)
-                    m.WebServer.postwait()
-                end if
-            else if type(msg) = "roAudioPlayerEvent" then
-                if AudioPlayer().HandleMessage(msg) = true and RegRead("locktime_music", "preferences","enabled") <> "enabled" then
-                    m.ResetIdleTimer() ' reset timer if music lock is disabled. I.E. when song changes timer will be reset
-                end if
-            else if type(msg) = "roSystemLogEvent" then
-                msgInfo = msg.GetInfo()
-                if msgInfo.LogType = "bandwidth.minute" then
-                    GetGlobalAA().AddReplace("bandwidth", msgInfo.Bandwidth)
-                end if
-            else if type(msg) = "roChannelStoreEvent" then
-                AppManager().HandleChannelStoreEvent(msg)
-            else if msg.isRemoteKeyPressed() and msg.GetIndex() = 10 then
-                ' do not allow global option key while screen is locked
-                if m.IsLocked <> invalid or NOT m.IsLocked then m.CreateContextMenu()
-            end if
-        end if
-
-        ' Check for any expired timers
-        timeout = 0
-        for each timerID in m.Timers
-            timer = m.Timers[timerID]
-            if timer.IsExpired() then
-                timer.Listener.OnTimerExpired(timer)
-            end if
-
-            ' Make sure we set a timeout on the wait so we'll catch the next timer
-            remaining = timer.RemainingMillis()
-            if remaining > 0 AND (timeout = 0 OR remaining < timeout) then
-                timeout = remaining
-            end if
-        next
-        
-        'check for idle timeout
-        if m.timerIdleTime <> invalid then 'and (msg.isRemoteKeyPressed() or msg.isButtonInfo()) then 
-            ' if for some reason one wants to disable timer during music, we'll handle it - we can handle paused if needed later [AudioPlayer().ispaused]
-            if RegRead("locktime_music", "preferences","enabled") <> "enabled" and (AudioPlayer().isplaying) then 
-                m.ResetIdleTimer()                
-            else 
-	        ' print "IDLE TIME Check: "; int(m.timerIdleTime.RemainingMillis()/int(1000))
-                if m.timerIdleTime.IsExpired()=true then  'timer expired will only return true once
-                    m.createLockScreen()    
-                end if 
-            end if
-        end if
-                 
-    end while
+    m.Control()
 
     ' Clean up some references on the way out
     AnalyticsTracker().Cleanup()
@@ -1498,56 +1401,20 @@ Sub vcShow()
     Appmanager().Initializers = {}
     GetGlobalAA().Delete("ProfileExit")
 
-    ' ljunkie - extra cleanup for the user switching    
-    GetGlobalAA().Delete("myplex")
-    GetGlobalAA().Delete("globals")
-    GetGlobalAA().Delete("primaryserver")
-    GetGlobalAA().Delete("validated_servers")
-    GetGlobalAA().Delete("registrycache")
-    GetGlobalAA().Delete("first_focus_done")
 
      'Exit Confirmation TODO - for not we will show the user selection screen if enabled
     if m.RFisMultiUser then 
         Debug("Exit channel - show user selection")
         m = invalid
+        ' ljunkie - extra cleanup for the user switching    
+        GetGlobalAA().clear()
         'GetGlobalAA().AddReplace("restoreAudio", restoreAudio)
         Main(invalid)   'TODO: This needs to be changed as it's recursive and starts building up the stack.
         return
     else
         Debug("Finished global message loop")
-        end 'exit application? - why do it this way instead of letting main finish?
-'        controller = invalid
-'        port = CreateObject("roMessagePort")
-'        dialog = CreateObject("roMessageDialog")
-'        dialog.SetMessagePort(port)
-'    
-'        dialog.SetTitle("Exit RARflix?")
-'        dialog.SetText("")
-'        dialog.AddButton(0, "No")
-'        dialog.AddButton(1, "Yes")
-'        dialog.Show()
-'    
-'        while true
-'            dlgMsg = wait(0, dialog.GetMessagePort())
-'            if type(dlgMsg) = "roMessageDialogEvent"
-'                if dlgMsg.isScreenClosed()
-'                    end ' exit channel
-'                    return
-'                else if dlgMsg.isButtonPressed()
-'                    if dlgMsg.GetIndex() = 1 then end 
-'                    if dlgMsg.GetIndex() = 0 then 
-'                        m = invalid
-'                        dialog.close()
-'                        GetGlobalAA().AddReplace("restoreAudio", restoreAudio)
-'                        GetGlobalAA().AddReplace("restoreAudio", restoreAudio)
-'                        Main(invalid)
-'                    end if
-'                    return
-'                end if
-'            end if
-'        end while
     end if
-'
+
     return
 End Sub
 
@@ -1595,7 +1462,7 @@ Sub vcAddBreadcrumbs(screen, breadcrumbs)
         if count >= 2 then
             breadcrumbs = [m.breadcrumbs[count-2], m.breadcrumbs[count-1]]
         else
-            breadcrumbs = m.breadcrumbs[0]
+            breadcrumbs = [m.breadcrumbs[0]]
         end if
 
         m.breadcrumbs.Append(breadcrumbs)
@@ -1716,12 +1583,15 @@ Sub vcDestroyGlitchyScreens()
     next
 End Sub
 
-Function vcStartRequest(request, listener, context, body=invalid) As Boolean
+Function vcStartRequest(request, listener, context, body=invalid, toFile=invalid) As Boolean
+    ' ljunkie - added extra option to save request to a file
     request.SetPort(m.GlobalMessagePort)
     context.Listener = listener
     context.Request = request
 
-    if body = invalid then
+    if toFile <> invalid then
+        started = request.AsyncGetToFile(toFile)
+    else if body = invalid then
         started = request.AsyncGetToString()
     else
         started = request.AsyncPostFromString(body)
@@ -1779,13 +1649,32 @@ Sub vcAddSocketListener(socket, listener)
 End Sub
 
 Sub vcResetIdleTimer(fcnName="" as string)
-    if m.timerIdleTime <> invalid then 'and (msg.isRemoteKeyPressed() or msg.isButtonInfo()) then 
-        'print "IDLE TIME: Reset() :"; fcnName 
+    if m.timerIdleTime <> invalid then
         m.timerIdleTime.Mark()
-    else 
-        'print "IDLE TIME: invalid timerIdleTime :"; fcnName
-    endif
+    end if
+
+    ' piggy back idle reset ( general idle time )
+    m.resetGenIdleTimer()
 End Sub
+
+sub vcResetGenIdleTimer()
+    if m.genIdleTime <> invalid then
+        ' try to resend WOL packets if the roku idle
+        homescreen = GetViewController().home
+        if homescreen <> invalid and homescreen.WOLtimer <> invalid then 
+            if homescreen.WOLtimer <> invalid and m.genIdleTime.RemainingSeconds() = 0 then 
+                Debug("roku was idle -- need to set WOL packets and refresh")
+                homescreen.WOLtimer.Name = "WOLsent"
+                homescreen.WOLtimer.count = invalid
+                homescreen.WOLtimer.keepAlive = false
+                homescreen.WOLtimer.SetDuration(3*1000, false) ' 3 second time ( we will try 3 times )
+            end if
+        end if
+
+        ' default action
+        m.genIdleTime.Mark()
+    end if
+end sub
 
 Sub vcCreateIdleTimer()
     m.timerIdleTime = invalid
@@ -1797,6 +1686,12 @@ Sub vcCreateIdleTimer()
             m.ResetIdleTimer()
         end if 
     end if
+
+    ' could use useful for some thing ( curretly used for WOL keepalives )
+    ' 15 minutes is when we consider the channel idle
+    m.genIdleTime = createTimer()
+    m.genIdleTime.SetDuration(15*60*1000,true)
+    m.ResetGenIdleTimer()
 End Sub
 
 
@@ -1832,5 +1727,158 @@ Sub InitWebServer(vc)
 End Sub
 
 Sub createScreenForItemCallback()
-    GetViewController().CreateScreenForItem(m.Item, invalid, [firstOf(m.Heading, "")])
+    if m.breadcrumbs = invalid then 
+        breadcrumbs = [firstOf(m.Heading, "")]
+    else 
+        breadcrumbs = m.breadcrumbs
+    end if
+    GetViewController().CreateScreenForItem(m.Item, invalid, breadcrumbs)
 End Sub
+
+
+sub vcControl() 
+    timeout = 0
+
+    while ( m.screens.Count() > 0 OR NOT AppManager().IsInitialized() ) and GetGlobalAA().ProfileExit = invalid
+
+        m.WebServer.prewait()
+        msg = wait(timeout, m.GlobalMessagePort)
+
+        if msg <> invalid then
+            ' Printing debug information about every message may be overkill
+            ' regardless, but note that URL events don't play by the same rules,
+            ' and there's no ifEvent interface to check for. Sigh.
+            'if GetInterface(msg, "ifUrlEvent") = invalid AND GetInterface(msg, "ifSocketEvent") = invalid then
+                'Debug("Processing " + type(msg) + " (top of stack " + type(m.screens.Peek().Screen) + "): " + tostr(msg.GetType()) + ", " + tostr(msg.GetIndex()) + ", " + tostr(msg.GetMessage()))
+            'end if
+            'if type(msg) <> "roUrlEvent" AND type(msg) <> "roSocketEvent" then
+            '    Debug("Processing " + type(msg) + " (top of stack " + type(m.screens.Peek().Screen) + "): ")
+            'end if
+            for i = m.screens.Count() - 1 to 0 step -1
+                if m.screens[i].HandleMessage(msg) = true then
+                    m.ResetIdleTimer()
+                    exit for
+                end if                    
+            end for
+
+            ' Process URL events. Look up the request context and call a
+            ' function on the listener.
+            if type(msg) = "roUrlEvent" AND msg.GetInt() = 1 then
+                id = msg.GetSourceIdentity().tostr()
+                requestContext = m.PendingRequests[id]
+                if requestContext <> invalid then
+                    m.PendingRequests.Delete(id)
+                    if requestContext.Listener <> invalid then
+                        requestContext.Listener.OnUrlEvent(msg, requestContext)
+                    end if
+                    requestContext = invalid
+                end if
+            else if type(msg) = "roSocketEvent" then
+                listener = m.SocketListeners[msg.getSocketID().tostr()]
+                if listener <> invalid then
+                    listener.OnSocketEvent(msg)
+                    listener = invalid
+                else
+                    ' Assume it was for the web server (it won't hurt if it wasn't)
+                    m.WebServer.postwait()
+                end if
+            else if type(msg) = "roAudioPlayerEvent" then
+                if AudioPlayer().HandleMessage(msg) = true and RegRead("locktime_music", "preferences","enabled") <> "enabled" then
+                    m.ResetIdleTimer() ' reset timer if music lock is disabled. I.E. when song changes timer will be reset
+                end if
+            else if type(msg) = "roSystemLogEvent" then
+                msgInfo = msg.GetInfo()
+                if msgInfo.LogType = "bandwidth.minute" then
+                    GetGlobalAA().AddReplace("bandwidth", msgInfo.Bandwidth)
+                end if
+            else if type(msg) = "roChannelStoreEvent" then
+                AppManager().HandleChannelStoreEvent(msg)
+            else if msg.isRemoteKeyPressed() and msg.GetIndex() = 10 then
+                ' do not allow global option key while screen is locked
+                if m.IsLocked <> invalid or NOT m.IsLocked then m.CreateContextMenu()
+            end if
+        end if
+
+        ' Check for any expired timers
+        timeout = 0
+        for each timerID in m.Timers
+            timer = m.Timers[timerID]
+            if timer.IsExpired() then
+                timer.Listener.OnTimerExpired(timer)
+            end if
+
+            ' Make sure we set a timeout on the wait so we'll catch the next timer
+            remaining = timer.RemainingMillis()
+            if remaining > 0 AND (timeout = 0 OR remaining < timeout) then
+                timeout = remaining
+            end if
+        next
+        
+        'check for idle timeout
+        if m.timerIdleTime <> invalid then 'and (msg.isRemoteKeyPressed() or msg.isButtonInfo()) then 
+            ' if for some reason one wants to disable timer during music, we'll handle it - we can handle paused if needed later [AudioPlayer().ispaused]
+            if RegRead("locktime_music", "preferences","enabled") <> "enabled" and (AudioPlayer().isplaying) then 
+                m.ResetIdleTimer()                
+            else 
+	        ' print "IDLE TIME Check: "; int(m.timerIdleTime.RemainingMillis()/int(1000))
+                if m.timerIdleTime.IsExpired()=true then  'timer expired will only return true once
+                    m.createLockScreen()    
+                end if 
+            end if
+        end if
+                 
+    end while
+
+    ' Exit confirmation?
+    Debug("user has been requested to exit the channel")
+    if RegRead("exit_confirmation", "preferences","enabled") <> "enabled" then 
+        Debug("confirmation disabled")
+        return
+    end if
+    Debug("confirmation enabled - creating a confirmation dialog")
+
+    port = CreateObject("roMessagePort")
+    dialog = CreateObject("roMessageDialog")
+    dialog.SetMessagePort(port) 
+    dialog.SetTitle("Are you sure you want to exit RARflix?")
+
+    dialog.AddButton(1, "Yes")
+    dialog.AddButton(2, "No")
+    dialog.EnableBackButton(false)
+    dialog.Show()
+
+    closeChannel = false
+
+    ' for now this will be a blocking request. The control has been stopped, so the 
+    ' channel is not listening anymore more onHandle events. 
+    ' pretty basic while loop - button index 2 will cancel the close/exit
+    while True
+        dlgMsg = wait(0, dialog.GetMessagePort())
+        if type(dlgMsg) = "roMessageDialogEvent"
+            if dlgMsg.isButtonPressed()
+                if dlgMsg.GetIndex() = 1
+                    closeChannel = true
+                end if
+                exit while
+            else if dlgMsg.isScreenClosed()
+                exit while
+            end if
+        end if
+    end while 
+    dialog.Close()
+
+
+    ' user chose not to exit, we need to set the profileExit invalid, recreate the 
+    ' homescreen, refresh the homescreen and start control again
+    if NOT closeChannel then 
+       Debug("user canceled exiting the channel - re-creating the homescreen now")
+       GetGlobalAA().ProfileExit = invalid
+       m.Home = m.CreateHomeScreen()
+       m.Home.loader.refreshdata()
+       m.Control()
+    end if
+
+    Debug("user confirmed exiting the channel - re-creating the homescreen now")
+
+end sub
+

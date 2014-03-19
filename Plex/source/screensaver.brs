@@ -17,7 +17,7 @@ Sub RunScreenSaver()
         m.ss_timer = CreateObject("roTimespan")
         m.ss_last_url = invalid
     
-        canvas = CreateScreenSaverCanvas("#FF141414")
+        canvas = CreateScreenSaverCanvas("#FF000000")
         canvas.SetImageFunc(GetScreenSaverImage)
         canvas.SetUpdatePeriodInMS(6000)
         canvas.SetUnderscan(.05)
@@ -81,18 +81,53 @@ Sub SaveImagesForScreenSaver(item, sizes)
     ' adding it to roImageCanvas requests as a header is (oddly) tricky,
     ' so just add it to the URL.
 
-    if item <> invalid AND item.server <> invalid AND item.server.AccessToken <> invalid AND Left(item.HDPosterURL, 4) = "http" then
-        token = "&X-Plex-Token=" + item.server.AccessToken
-    else
-        token = ""
+    token = ""
+    if item <> invalid AND item.server <> invalid AND item.server.AccessToken <> invalid then
+        if item.HDPosterURL <> invalid and Left(item.HDPosterURL, 4) = "http" then token = "&X-Plex-Token=" + item.server.AccessToken
     end if
 
-    if item = invalid then
+    thumbUrlHD = invalid:thumbUrlSD = invalid
+
+    ' ljunkie - override the item size for the screen saver. We don't want too large or too small
+    if item <> invalid then 
+        regW = CreateObject("roRegex", "width=\d+", "i"):regH = CreateObject("roRegex", "height=\d+", "i")
+        hasToken = CreateObject("roRegex", "X-Plex-Token=\w+", "i")
+
+        thumbUrlHD = item.HDPosterURL:thumbUrlSD = item.SDPosterURL
+                
+        if thumbUrlHD <> invalid then 
+            thumbUrlHD = regW.Replace(thumbUrlHD, "width=300"):thumbUrlHD = regH.Replace(thumbUrlHD, "height=300")
+            ' RARflix normally includes the PlexToken on any posterUrl - so appending the token shouldn't be required
+            if NOT hasToken.IsMatch(thumbUrlHD) then thumbUrlHD = thumbUrlHD + token
+        end if
+
+        if thumbUrlSD <> invalid then 
+            thumbUrlSD = regH.Replace(thumbUrlSD, "height=300"):thumbUrlSD = regW.Replace(thumbUrlSD, "width=300")
+            ' RARflix normally includes the PlexToken on any posterUrl - so appending the token shouldn't be required
+            if NOT hasToken.IsMatch(thumbUrlSD) then thumbUrlSD = thumbUrlSD + token
+        end if
+
+    end if
+
+    isLocal = CreateObject("roRegex", "file://", "i") ' exclue local images 
+    isCustom = CreateObject("roRegex", "d1gah69i16tuow", "i")
+
+    if item = invalid or item.server = invalid or tostr(item.contenttype) = "section" then
+        Debug("item invalid[1] -- removing screen saver image")
         WriteFileHelper("tmp:/plex_screensaver", invalid, invalid, invalid)
-    else if GetGlobal("IsHD") then
-        WriteFileHelper("tmp:/plex_screensaver", item.HDPosterURL + token, sizes.hdWidth, sizes.hdHeight)
-    else
-        WriteFileHelper("tmp:/plex_screensaver", item.SDPosterURL + token, sizes.sdWidth, sizes.sdHeight)
+    else if thumbUrlHD <> invalid and isLocal.isMatch(thumbUrlHD) then
+        Debug("item is local image -- removing screen saver image")
+        WriteFileHelper("tmp:/plex_screensaver", invalid, invalid, invalid)
+    else if thumbUrlHD <> invalid and isCustom.isMatch(thumbUrlHD) then
+        Debug("item is custom icon -- removing screen saver image")
+        WriteFileHelper("tmp:/plex_screensaver", invalid, invalid, invalid)
+    else if GetGlobal("IsHD") and thumbUrlHD <> invalid then
+        WriteFileHelper("tmp:/plex_screensaver", thumbUrlHD, "300", "300")
+    else if thumbUrlSD <> invalid then 
+        WriteFileHelper("tmp:/plex_screensaver", thumbUrlSD, "300", "300")
+    else 
+        Debug("item invalid[2] -- removing screen saver image")
+        WriteFileHelper("tmp:/plex_screensaver", invalid, invalid, invalid)
     end if
 End Sub
 

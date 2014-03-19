@@ -30,13 +30,29 @@ Sub Main(args)
         RegDelete("directplay_restore", "preferences")
     end if
 
+    ' Due to grandfathering issues, extend the trial period.
+    registry = CreateObject("roRegistry")
+    sections = registry.GetSectionList()
+    resetTimestamp = false
+    for each sectionName in sections
+        if sectionName <> "misc" then
+            section = CreateObject("roRegistrySection", sectionName)
+            if section.Exists("first_playback_timestamp") then
+                resetTimestamp = true
+                success = registry.Delete(sectionName)
+            end if
+        end if
+    next
+    if resetTimestamp then
+        Debug("Extending trial period")
+        RegWrite("first_playback_timestamp", tostr(Now().AsSeconds()), "misc")
+    end if
+
     RegDelete("quality_override", "preferences")
 
     ' ljunkie - remove prefs on start - testing
-    'RegDelete("rf_bcdynamic", "preferences")
     'RegDelete("rf_rottentomatoes", "preferences")
     'RegDelete("rf_trailers", "preferences")
-    'RegDelete("rf_tvwatch", "preferences")
 
 
     ' Convert the old theme music preference to the new one
@@ -84,6 +100,13 @@ Sub initGlobals()
     minor = Mid(version, 5, 2).toInt()
     build = Mid(version, 8, 5).toInt()
     versionStr = major.toStr() + "." + minor.toStr() + " build " + build.toStr()
+
+    ' ljunkie - set legacy if device is on old firmware
+    if major > 3 then
+        GetGlobalAA().AddReplace("rokuLegacy", false)
+    else
+        GetGlobalAA().AddReplace("rokuLegacy", true)
+    end if
 
     GetGlobalAA().AddReplace("rokuVersionStr", versionStr)
     GetGlobalAA().AddReplace("rokuVersionArr", [major, minor, build])
@@ -196,7 +219,7 @@ function getImageCanvasTheme()
                 }}
     if GetGlobal("IsHD") = true then
         obj = {
-            background : [{Color:"#363636", CompositionMode:"Source"}]    'Set opaque background to keep from flashing    '#363636
+            background : [{Color:"#000000", CompositionMode:"Source"}]    'Set opaque background to keep from flashing    '#363636
             backgroundItems : [ {url:GetGlobalAA().Lookup("rf_theme_dir")+ "Background_HD.jpg"}]
             logoItems : [ {url:"pkg:/images/logo_final_HD.png", TargetRect:{ x:70,y:10 }} ]
             breadCrumbs : [ {  Text:"", TargetRect:{x:640,y:10,w:520,h:89}  '16 pixel border on bottom of breadcrumb
@@ -204,7 +227,7 @@ function getImageCanvasTheme()
         }
     else
         obj = {
-            background : [{Color:"#363636", CompositionMode:"Source"}]    'Set opaque background to keep from flashing    '#363636
+            background : [{Color:"#000000", CompositionMode:"Source"}]    'Set opaque background to keep from flashing    '#363636
             backgroundItems : [ {url:GetGlobalAA().Lookup("rf_theme_dir")+ "Background_SD.jpg"}]
             logoItems : [ {url:"pkg:/images/logo_final_SD.png", TargetRect:{ x:42,y:10 }} ]
             breadCrumbs : [ {  Text:"", TargetRect:{x:360,y:10,w:260,h:56}  '16 pixel border on bottom of breadcrumb

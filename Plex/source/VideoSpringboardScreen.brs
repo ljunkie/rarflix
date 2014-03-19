@@ -3,12 +3,6 @@ Function createVideoSpringboardScreen(context, index, viewController) As Object
 
     'obj.screen.UseStableFocus(true) ' ljunkie - set this globally instead BaseSpringboardScreen.brs:createBaseSpringboardScreen
 
-    ' Our item's content-type affects the poster dimensions here, so treat
-    ' clips as episodes.
-    if obj.Item.ContentType = "clip" then
-        obj.Item.ContentType = "episode"
-    end if
-
     obj.SetupButtons = videoSetupButtons
     obj.GetMediaDetails = videoGetMediaDetails
     obj.superHandleMessage = obj.HandleMessage
@@ -30,6 +24,7 @@ Function createVideoSpringboardScreen(context, index, viewController) As Object
 
     obj.ContinuousPlay = (RegRead("continuous_play", "preferences") = "1")
     obj.ShufflePlay = (RegRead("shuffle_play", "preferences") = "1")
+    obj.continuousContextPlay = (RegRead("continuous_context_play", "preferences") = "1") 'not a global option (yet)
 
     return obj
 End Function
@@ -39,6 +34,7 @@ Sub videoSetupButtons()
     versionArr = GetGlobal("rokuVersionArr", [0])
 
     isMovieShowEpisode = (m.metadata.ContentType = "movie" or m.metadata.ContentType = "show" or m.metadata.ContentType = "episode")
+    isHomeVideos = (m.metadata.isHomeVideos = true)
 
    'ljunkie - don't show stars if invalid
     if m.metadata.starrating = invalid then m.Screen.SetStaticRatingEnabled(false)
@@ -46,6 +42,8 @@ Sub videoSetupButtons()
     playLabel = m.PlayButtonStates[m.PlayButtonState].label
     if m.ShufflePlay then
         playLabel = "Shuffle+Continuous " + playLabel
+    else if m.continuousContextPlay then
+        playLabel = "Continuous [context] " + playLabel
     else if m.ContinuousPlay then
          playLabel = "Continuous " + playLabel
     end if
@@ -54,13 +52,13 @@ Sub videoSetupButtons()
     Debug("Can direct play = " + tostr(videoCanDirectPlay(m.media)))
 
     ' Trailers! (TODO) enable this for TV shows ( youtube is still useful? )
-    if m.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
+    if NOT isHomeVideos and m.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
          m.AddButton("Trailer", "getTrailers")
     end if
 
     ' hide cast and crew to show ratings instead ( firmware 3.x and less only allow for 5 buttons )
     if versionArr[0] >= 4 then 
-        if isMovieShowEpisode and m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then m.AddButton("Cast & Crew","RFCastAndCrewList")
+        if NOT isHomeVideos and isMovieShowEpisode and m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then m.AddButton("Cast & Crew","RFCastAndCrewList")
     end if
 
     supportedIdentifier = (m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" OR m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
@@ -106,7 +104,7 @@ Sub videoSetupButtons()
     end if
 
     ' Rotten Tomatoes ratings, if enabled
-    if m.metadata.ContentType = "movie" AND RegRead("rf_rottentomatoes", "preferences", "enabled") = "enabled" then 
+    if NOT isHomeVideos and m.metadata.ContentType = "movie" AND RegRead("rf_rottentomatoes", "preferences", "enabled") = "enabled" then 
         tomatoData = m.metadata.tomatoData
         rating_string = "Not Found"
         append_string = "on Rotten Tomatoes"
@@ -184,52 +182,50 @@ Sub videoGetMediaDetails(content)
     ' .. also useful when someone enters an episode from All Seasons in the gridview for TV shows
     ' * should probably be done in sbRefresh - (well maybe not anymore)
 
-    if RegRead("rf_bcdynamic", "preferences", "enabled") = "enabled" then 
-        ' todo - figure out what screen we are in.. kinda done the lame way
-        ra = CreateObject("roRegex", "/recentlyAdded", "")
-        od = CreateObject("roRegex", "/onDeck", "")
-        rv = CreateObject("roRegex", "/recentlyViewed", "")
-        rair = CreateObject("roRegex", "/newest", "")
-        rallLeaves = CreateObject("roRegex", "/allLeaves", "")
-        rnp = CreateObject("roRegex", "/status/sessions", "")
+    ' todo - figure out what screen we are in.. kinda done the lame way
+    ra = CreateObject("roRegex", "/recentlyAdded", "")
+    od = CreateObject("roRegex", "/onDeck", "")
+    rv = CreateObject("roRegex", "/recentlyViewed", "")
+    rair = CreateObject("roRegex", "/newest", "")
+    rallLeaves = CreateObject("roRegex", "/allLeaves", "")
+    rnp = CreateObject("roRegex", "/status/sessions", "")
 
-        where = "invalid"
-        if ra.Match(m.metadata.sourceurl)[0] <> invalid then
-           where = "Recently Added"
-        else if od.Match(m.metadata.sourceurl)[0] <> invalid then
-           where = "On Deck"
-        else if rv.Match(m.metadata.sourceurl)[0] <> invalid then
-           where = "Recently Viewed"
-        else if rair.Match(m.metadata.sourceurl)[0] <> invalid then
-	   where = "Recently Aired"
-        else if rallLeaves.Match(m.metadata.sourceurl)[0] <> invalid then
-	   where = "All Episodes"
-        else if rnp.Match(m.metadata.sourceurl)[0] <> invalid then
-	   where = "Now Playing"
-        end if
+    where = "invalid"
+    if ra.Match(m.metadata.sourceurl)[0] <> invalid then
+        where = "Recently Added"
+    else if od.Match(m.metadata.sourceurl)[0] <> invalid then
+        where = "On Deck"
+    else if rv.Match(m.metadata.sourceurl)[0] <> invalid then
+        where = "Recently Viewed"
+    else if rair.Match(m.metadata.sourceurl)[0] <> invalid then
+        where = "Recently Aired"
+    else if rallLeaves.Match(m.metadata.sourceurl)[0] <> invalid then
+        where = "All Episodes"
+    else if rnp.Match(m.metadata.sourceurl)[0] <> invalid then
+        where = "Now Playing"
+    end if
 
-        if where = "Now Playing" then  ' set the now Playing bread crumbs to the - where/user and set the title
-           m.Screen.SetBreadcrumbEnabled(true)
-           m.Screen.SetBreadcrumbText(where, UcaseFirst(m.metadata.nowplaying_user,true))
-           rf_updateNowPlayingSB(m)
-           Debug("Dynamically set Episode breadcrumbs; " + where + ": " + UcaseFirst(m.metadata.nowplaying_user,true))
-        else if m.metadata.ContentType = "episode" and tostr(m.metadata.ShowTitle) <> "invalid" and where <> "invalid" then 
-           m.Screen.SetBreadcrumbEnabled(true)
-           m.Screen.SetBreadcrumbText(where, truncateString(m.metadata.ShowTitle,26))
-           Debug("Dynamically set Episode breadcrumbs; " + where + ": " + truncateString(m.metadata.ShowTitle,26))
-        else if m.metadata.ContentType = "movie" and where <> "invalid" and od.Match(m.metadata.sourceurl)[0] <> invalid then 
-           ' this has been added for the global on deck view. Normally we already have this breadcrumb displayed, 
-           ' but due to global on deck (possibly recently added) , we need to account for switching between differnt contentTypes
-           m.Screen.SetBreadcrumbEnabled(true)
-           m.Screen.SetBreadcrumbText("Movies", where) 
-           Debug("Dynamically set MOVIES breadcrumbs; Movies: " + where)
-        else if tostr(m.metadata.ContentType) = "invalid" then
-           m.Screen.SetBreadcrumbEnabled(true)
-           'ljunkie BUGFIX TODO ( this is bug existing in official plex ) 
-           '  left/right buttons when viewing global recently added dies when switching from movie to other contentType
-	   ' Note: left and right have been denied now in BaseSpringboardScreen.brs - sbRefresh 
-           m.Screen.SetBreadcrumbText("invalid", "bug in official channel too")
-        end if
+    if where = "Now Playing" then  ' set the now Playing bread crumbs to the - where/user and set the title
+        m.Screen.SetBreadcrumbEnabled(true)
+        m.Screen.SetBreadcrumbText(where, UcaseFirst(m.metadata.nowplaying_user,true))
+        rf_updateNowPlayingSB(m)
+        Debug("Dynamically set Episode breadcrumbs; " + where + ": " + UcaseFirst(m.metadata.nowplaying_user,true))
+    else if m.metadata.ContentType = "episode" and tostr(m.metadata.ShowTitle) <> "invalid" and where <> "invalid" then 
+        m.Screen.SetBreadcrumbEnabled(true)
+        m.Screen.SetBreadcrumbText(where, truncateString(m.metadata.ShowTitle,26))
+        Debug("Dynamically set Episode breadcrumbs; " + where + ": " + truncateString(m.metadata.ShowTitle,26))
+    else if m.metadata.ContentType = "movie" and where <> "invalid" and od.Match(m.metadata.sourceurl)[0] <> invalid then 
+        ' this has been added for the global on deck view. Normally we already have this breadcrumb displayed, 
+        ' but due to global on deck (possibly recently added) , we need to account for switching between differnt contentTypes
+        m.Screen.SetBreadcrumbEnabled(true)
+        m.Screen.SetBreadcrumbText("Movies", where) 
+        Debug("Dynamically set MOVIES breadcrumbs; Movies: " + where)
+    else if tostr(m.metadata.ContentType) = "invalid" then
+        m.Screen.SetBreadcrumbEnabled(true)
+        'ljunkie BUGFIX TODO ( this is bug existing in official plex ) 
+        '  left/right buttons when viewing global recently added dies when switching from movie to other contentType
+        ' Note: left and right have been denied now in BaseSpringboardScreen.brs - sbRefresh 
+        m.Screen.SetBreadcrumbText("invalid", "bug in official channel too")
     end if
 
     if m.metadata.ContentType = "movie" AND RegRead("rf_rottentomatoes", "preferences", "enabled") = "enabled" then 
@@ -243,7 +239,7 @@ Sub videoGetMediaDetails(content)
     '  also useful for TV Episodes: they use screenshots - so thumbs are mixed 4x3 vs 16x9
     '   we can utilize the m.media.aspectratio to determine if it's 4x3 or 16x9
     posterStyle = "default" 
-    if tostr(m.metadata.contentType) = "episode" OR tostr(m.metadata.contentType) = "clip" then
+    if tostr(m.metadata.contentType) = "episode" OR tostr(m.metadata.contentType) = "clip" or m.metadata.isHomeVideos = true then
         posterStyle = "rounded-rect-16x9-generic"
         ' we cannot assume the thumbnail is 4x3 even is the content seems to be ( I have run into 16x9 thumbs with 4x3 content -- how is the possible? )
         ' ' only override back to default if we know it's 4x3
@@ -275,7 +271,7 @@ Function videoHandleMessage(msg) As Boolean
                 ' ljunkie - continuous/shuffle play - load the content required now
 
                 ' special: get all context if we came from a FullGrid and ContinuousPlay/ShufflePlay are enabled
-                if m.ContinuousPlay or m.shuffleplay and m.FullContext = invalid and fromFullGrid(m) then GetContextFromFullGrid(m)
+                if (m.ContinuousPlay or m.shuffleplay or m.continuousContextPlay) and m.FullContext = invalid and fromFullGrid(true) then GetContextFromFullGrid(m)
 
                 ' shuffle the context if shufflePlay enable - as of now the selected video will always play
                 if m.shuffleplay then 
@@ -289,6 +285,11 @@ Function videoHandleMessage(msg) As Boolean
 
                 ' Refresh play data after playing.
                 m.refreshOnActivate = true
+            else if buttonCommand = "putOnDeck" then
+                if m.item <> invalid and m.item.server <> invalid then 
+                    m.item.server.putOnDeck(m.item)
+                end if
+                m.Refresh(true)
             else if buttonCommand = "scrobble" then
                 m.Item.server.Scrobble(m.metadata.ratingKey, m.metadata.mediaContainerIdentifier)
                 ' Refresh play data after scrobbling
@@ -298,14 +299,14 @@ Function videoHandleMessage(msg) As Boolean
                 ' Refresh play data after unscrobbling
                 m.Refresh(true)
             else if buttonCommand = "delete" then
-	        key = m.metadata.id
-		if tostr(key) = "invalid"
+    	        key = m.metadata.id
+	        	if tostr(key) = "invalid"
                   key = m.metadata.key
                 end if
                 m.Item.server.Delete(key)
                 m.Screen.Close()
             else if buttonCommand = "options" then
-                screen = createVideoOptionsScreen(m.metadata, m.ViewController, m.ContinuousPlay, m.ShufflePlay)
+                screen = createVideoOptionsScreen(m.metadata, m.ViewController, m.ContinuousPlay, m.ShufflePlay, m.continuousContextPlay)
                 m.ViewController.InitializeOtherScreen(screen, ["Video Playback Options"])
                 screen.Show()
                 m.checkChangesOnActivate = true
@@ -351,7 +352,7 @@ Function videoHandleMessage(msg) As Boolean
                 dummyItem.year = year
                 dummyItem.searchTitle = tostr(m.metadata.RFSearchTitle)
                 m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
-                closeDialog = true
+                handled = true
             else if buttonCommand = "tomatoes" then
                 dialog = createBaseDialog()
                 dialog.Title = "Rotten Tomatoes Review"
@@ -381,6 +382,7 @@ Function videoHandleMessage(msg) As Boolean
                 screen = RFcreateCastAndCrewScreen(m)
                 if screen <> invalid then  screen.Show()
                 dialog.Close()
+                handled = true
             else if buttonCommand = "showFromEpisode" then
                 breadcrumbs = ["All Seasons",m.metadata.showtitle]
                 dummyItem = CreateObject("roAssociativeArray")
@@ -388,7 +390,7 @@ Function videoHandleMessage(msg) As Boolean
                 dummyItem.key = m.metadata.grandparentKey + "/children"
                 dummyItem.server = m.metadata.server
                 m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
-                closeDialog = true
+                handled = true
             else if buttonCommand = "seasonFromEpisode" then
                 breadcrumbs = [m.metadata.showtitle, "Season " + m.metadata.parentindex]
                 dummyItem = CreateObject("roAssociativeArray")
@@ -396,7 +398,7 @@ Function videoHandleMessage(msg) As Boolean
                 dummyItem.key = m.metadata.parentKey + "/children"
                 dummyItem.server = m.metadata.server
                 m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
-                closeDialog = true
+                handled = true
             else
                 handled = false
             end if
@@ -483,10 +485,55 @@ Function videoDialogHandleButton(command, data) As Boolean
     else if command = "RFCastAndCrewList" then
         'm.ViewController.PopScreen(m) ' close dialog before we show the Cast&Crew screen ' not needed and wrong
         ' for now lets not use the show with episode
+        facade = CreateObject("roGridScreen"):facade.show()
         dialog = ShowPleaseWait("Please wait","Gathering the Cast and Crew for '" + firstof(obj.metadata.showtitle,obj.metadata.cleantitle,obj.metadata.umtitle,obj.metadata.title) + "'")
         screen = RFcreateCastAndCrewScreen(obj)
         if screen <> invalid then  screen.Show()
-        dialog.Close()
+        dialog.Close():facade.close()
+        closeDialog = true
+    else if command = "GoToHomeScreen" then
+        ' Close all screens except for HomeScreen
+        '  thanks Schuyler -- logic already existed!
+        context = CreateObject("roAssociativeArray")
+        context.OnAfterClose = CloseScreenUntilHomeVisible
+        context.OnAfterClose()
+        closeDialog = true
+    else if command = "gotoFilters" then
+        parentScreen = m.parentscreen
+        item = parentscreen.originalItem
+        createFilterSortScreenFromItem(item, parentScreen)
+        closeDialog = true
+    else if command = "SectionSorting" then
+        dialog = createGridSortingDialog(m,obj)
+        if dialog <> invalid then dialog.Show(true)
+    else if command = "RFVideoDescription" then
+
+        ' A TextScreen seems a little too much for this.. a description (should) fit it a dialog all by iteself 
+        ' maybe show the text screen if the len(obj.metadata.UMdescription) > ??
+        paragraphs = []
+        paragraphs.Push(obj.metadata.UMdescription)
+        screen = createTextScreen("Description", invalid , paragraphs, m.ViewController, true)
+        screen.screen.AddButton(1, "Done")
+        breadcrumbs =  [obj.metadata.title,"Description"]
+        screen.screenName = "Video Description"
+        m.ViewController.InitializeOtherScreen(screen, breadcrumbs)
+        screen.Show()
+
+        'dialog = createBaseDialog()
+        'dialog.Title = obj.metadata.title
+        'dialog.Text = obj.metadata.UMdescription
+        'dialog.Item = m.metadata
+        'dialog.SetButton("close", "Close") ' back seems odd because we came from a dialog ( one might get confused )
+        'dialog.HandleButton = videoDialogHandleButton
+        'dialog.ParentScreen = m
+        'dialog.Show(true)
+
+        closeDialog = true
+    else if command = "putOnDeck" then
+        if obj.item <> invalid and obj.item.server <> invalid then 
+            obj.item.server.putOnDeck(m.item)
+        end if
+        obj.Refresh(true)
         closeDialog = true
     else if command = "scrobble" then
         obj.metadata.server.Scrobble(obj.metadata.ratingKey, obj.metadata.mediaContainerIdentifier)
@@ -497,7 +544,7 @@ Function videoDialogHandleButton(command, data) As Boolean
         obj.Refresh(true)
         closeDialog = true
     else if Command = "options" then
-        screen = createVideoOptionsScreen(obj.metadata, obj.ViewController, obj.ContinuousPlay, obj.ShufflePlay)
+        screen = createVideoOptionsScreen(obj.metadata, obj.ViewController, obj.ContinuousPlay, obj.ShufflePlay, obj.continuousContextPlay)
         obj.ViewController.InitializeOtherScreen(screen, ["Video Playback Options"])
         screen.Show()
         obj.checkChangesOnActivate = true
@@ -558,16 +605,11 @@ Sub videoActivate(priorScreen)
             m.Item.server.UpdateStreamSelection("subtitle", m.media.preferredPart.id, priorScreen.Changes["subtitles"])
         end if
 
-        if priorScreen.Changes.DoesExist("continuous_play") then
+        if priorScreen.Changes.DoesExist("playBack_type") then
+            m.ShufflePlay = (priorScreen.Changes["playBack_type"] = "shuffle_play")
+            m.ContinuousPlay = (priorScreen.Changes["playBack_type"] = "continuous_play")
+            m.continuousContextPlay = (priorScreen.Changes["playBack_type"] = "continuous_context_play")
             priorScreen.Changes["playback"] = tostr(m.PlayButtonState)
-            m.ContinuousPlay = (priorScreen.Changes["continuous_play"] = "1")
-            'priorScreen.Changes.Delete("continuous_play")
-        end if
-
-        if priorScreen.Changes.DoesExist("shuffle_play") then
-            priorScreen.Changes["playback"] = tostr(m.PlayButtonState)
-            m.ShufflePlay = (priorScreen.Changes["shuffle_play"] = "1")
-            'priorScreen.Changes.Delete("shuffle_play")
         end if
 
         if priorScreen.Changes.DoesExist("media") then
@@ -587,11 +629,52 @@ Sub videoActivate(priorScreen)
     end if
 
     if m.refreshOnActivate then
-        if (m.ContinuousPlay or m.ShufflePlay) AND (priorScreen.isPlayed = true OR priorScreen.playbackError = true) then
+        ' only consider advancedToNext value if we have the next Episode info
+        advancedToNext = RegRead("advanceToNextItem", "preferences", "enabled") = "enabled" and (m.NextEpisodes <> invalid or priorScreen.NextEpisodes <> invalid)
+
+        ' shuffleplay/continuousContextPlay overrides advanceToNext ( these DO NOT try and use the next available episode )
+        if m.ShufflePlay or m.continuousContextPlay then advancedToNext = false
+
+        ' ContinuousPlay/ShufflePlay - go to next and play ( excluding advancedToNext content )
+        if NOT advancedToNext and (m.ContinuousPlay or m.ShufflePlay or m.continuousContextPlay) AND (priorScreen.isPlayed = true OR priorScreen.playbackError = true) then
+            m.Refresh(true) ' refresh the watched item (watched status/overlay) before moving on
             m.GotoNextItem()
             directPlayOptions = m.PlayButtonStates[m.PlayButtonState]
             Debug("Playing video with Direct Play options set to: " + directPlayOptions.label)
             m.ViewController.CreateVideoPlayer(m.metadata, 0, directPlayOptions.value)
+        else if advancedToNext AND (priorScreen.isPlayed = true) then
+            m.skipFullContext = true ' never load full context ( deprecated due to fullcontext load true )
+            m.fullcontext = true     ' fullcontext is loaded
+            m.Refresh(true)
+
+            ' advanceToNext ( tv episode only ) -- this will replace any springboard context with the shows context
+            if m.nextEpisodes = invalid then 
+                Debug("[AutoEpisodeAdvance] nextEpisodes is specified - using the shows context now: " + tostr(priorScreen.NextEpisodes.item.title))
+                ' setting for videoPlayer to know nextEpisodes has already been determined
+                m.nextEpisodes = priorScreen.NextEpisodes
+
+                ' refresh the current item before resetting the new context
+                refreshedItem = m.context[m.curindex]
+
+                ' reset the context with the shows (all seasons episodes context)
+                m.context = priorScreen.NextEpisodes.context
+                m.CurIndex = priorScreen.NextEpisodes.curindex
+
+                ' replace the refreshed item in the new context            
+                m.context[m.CurIndex] = refreshedItem
+            else 
+                Debug("[AutoEpisodeAdvance] nextEpisodes context is already known")
+            end if
+
+            ' standard - go to next item
+            m.GotoNextItem()
+
+            ' start play if m.ContinuousPlay
+            if m.ContinuousPlay then 
+                directPlayOptions = m.PlayButtonStates[m.PlayButtonState]
+                Debug("[ContinuousPlay] Playing video with Direct Play options set to: " + directPlayOptions.label)
+                m.ViewController.CreateVideoPlayer(m.metadata, 0, directPlayOptions.value)
+            end if
         else
             m.Refresh(true)
         end if

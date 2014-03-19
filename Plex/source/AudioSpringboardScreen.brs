@@ -1,18 +1,49 @@
 
 
 Function createAudioSpringboardScreen(context, index, viewController) As Dynamic
-    obj = createBaseSpringboardScreen(context, index, viewController)
+    'ljunkie - added some extra logic to allow loading music in the background
+    ' 1) load/start the new context if the current screen is a audio springboard (instead of stacking new screen)
+    ' 2) load/start the new context in the background if a slideshow is playing
+    ' 3) not implemented - always load music in the background from remote?
+    '
+    ' * by using the "obj" we can reuse most logic below when replacing instead of creating a new screen
+    '   Examples: items not playable and how to start content
+    obj = GetViewController().screens.peek()
+    player = AudioPlayer()
+    replacePlayer = false
+    if (GetViewController().IsSlideShowPlaying()) or (player.contextscreenid <> invalid and obj <> invalid and player.contextscreenid = obj.screenid) then 
+        replacePlayer = true
 
-    obj.SetupButtons = audioSetupButtons
-    obj.GetMediaDetails = audioGetMediaDetails
-    obj.superHandleMessage = obj.HandleMessage
-    obj.HandleMessage = audioHandleMessage
-    obj.OnTimerExpired = audioOnTimerExpired
+        ' stop any audio first ( this should be done already )
+        if player.IsPlaying then player.stop()
 
-    obj.Screen.SetDescriptionStyle("audio")
-    obj.Screen.SetStaticRatingEnabled(false)
-    obj.Screen.AllowNavRewind(true)
-    obj.Screen.AllowNavFastForward(true)
+        ' slideshow is special -- load the audio in the background 
+        ' * setcontext previous as it could be the first load -- DO NOT start playing yet
+        if GetViewController().IsSlideShowPlaying() then 
+            Debug("slideshow is playing -- load the new audio context in the background")
+            obj = player
+            obj.SetContext(context, index, obj, false)
+        else 
+            Debug("audio player is in focus -- reset audio player with new context")
+        end if
+        obj.context = context
+        obj.curindex = index
+    else
+        obj = createBaseSpringboardScreen(context, index, viewController)
+    end if
+
+    if replacePlayer = false then 
+        obj.SetupButtons = audioSetupButtons
+        obj.GetMediaDetails = audioGetMediaDetails
+        obj.superHandleMessage = obj.HandleMessage
+        obj.HandleMessage = audioHandleMessage
+        obj.OnTimerExpired = audioOnTimerExpired
+
+        obj.Screen.SetDescriptionStyle("audio")
+        obj.Screen.SetStaticRatingEnabled(false)
+        obj.Screen.AllowNavRewind(true)
+        obj.Screen.AllowNavFastForward(true)
+    end if
 
     ' If there isn't a single playable item in the list then the Roku has
     ' been observed to die a horrible death.
@@ -35,13 +66,15 @@ Function createAudioSpringboardScreen(context, index, viewController) As Dynamic
         return invalid
     end if
 
-    obj.callbackTimer = createTimer()
-    obj.callbackTimer.Active = false
-    obj.callbackTimer.SetDuration(1000, true)
-    viewController.AddTimer(obj.callbackTimer, obj)
-
+    if replacePlayer = false then 
+        obj.callbackTimer = createTimer()
+        obj.callbackTimer.Active = false
+        obj.callbackTimer.SetDuration(1000, true)
+        viewController.AddTimer(obj.callbackTimer, obj)
+        player = AudioPlayer()
+    end if
+   
     ' Start playback when screen is opened if there's nothing playing
-    player = AudioPlayer()
     if NOT player.IsPlaying then
         obj.Playstate = 2
         player.SetContext(obj.Context, obj.CurIndex, obj, true)
@@ -58,7 +91,11 @@ Function createAudioSpringboardScreen(context, index, viewController) As Dynamic
         NowPlayingManager().location = "fullScreenMusic"
     end if
 
-    return obj
+    if replacePlayer = true then 
+        return invalid
+    else 
+        return obj
+    end if
 End Function
 
 Sub audioSetupButtons()
@@ -112,6 +149,8 @@ Sub audioSetupButtons()
     if AudioPlayer().ContextScreenID <> m.ScreenID then 
         m.AddButton("go to now playing", "showNowPlaying")
     end if
+
+    m.AddButton("More...", "more")
 End Sub
 
 Sub audioGetMediaDetails(content)
@@ -372,16 +411,16 @@ sub rfCreateAudioSBdialog(m)
     else
         dialog.SetButton("shuffle", "Shuffle: Off")
     end if
-    if player.ContextScreenID = m.ScreenID then
-        if player.Repeat = 2 then
-            dialog.SetButton("loop", "Loop: On")
-        else
-            dialog.SetButton("loop", "Loop: Off")
-        end if
+
+    if player.Repeat = 2 then
+        dialog.SetButton("loop", "Loop: On")
     else
-        dialog.SetButton("show", "Go to Now Playing")
+        dialog.SetButton("loop", "Loop: Off")
     end if
-     dialog.SetButton("rate", "_rate_")
+
+    if player.ContextScreenID <> m.ScreenID then dialog.SetButton("show", "Go to Now Playing")
+
+    dialog.SetButton("rate", "_rate_")
     if m.metadata.server.AllowsMediaDeletion AND m.metadata.mediaContainerIdentifier = "com.plexapp.plugins.library" then
         dialog.SetButton("delete", "Delete permanently")
     end if

@@ -122,11 +122,12 @@ End Sub
 
 
 Sub setMetaBasics(meta, container, item)
-    meta.Title = firstOf(item@title, item@name)
+    meta.Title = firstOf(item@title, item@name, "")
 
     ' There is a *massive* performance problem on grid views if the description
     ' isn't truncated.
     meta.Description = truncateString(item@summary, 250, invalid)
+    meta.UMDescription = item@summary ' un-modified summary
     meta.ShortDescriptionLine1 = meta.Title
     meta.ShortDescriptionLine2 = truncateString(item@summary, 250, invalid)
     meta.Type = item@type
@@ -138,7 +139,8 @@ Sub setMetaBasics(meta, container, item)
 
     meta.sourceTitle = item@sourceTitle
 
-    if (tostr(meta.viewgroup) <> "album" and tostr(meta.type) <> "album") and  RegRead("rf_tvwatch", "preferences", "enabled") = "enabled" then 
+    ' ljunkie - set watched status ( exclude music albums )
+    if (tostr(meta.viewgroup) <> "album" and tostr(meta.type) <> "album") then 
         if item@leafCount <> invalid then meta.leafCount = item@leafCount
         if item@viewedLeafCount <> invalid then meta.viewedLeafCount = item@viewedLeafCount
 
@@ -167,7 +169,10 @@ Sub setMetaBasics(meta, container, item)
 
     if container.xml@mixedParents = "1" then
         parentTitle = firstOf(item@parentTitle, container.xml@parentTitle, "")
-        if parentTitle <> "" then meta.Title = parentTitle + ": " + meta.Title
+        if parentTitle <> "" then 
+            meta.Title = parentTitle + ": " + meta.Title
+            meta.parentTitle = parentTitle
+        end if
     end if
 
     if item@userRating <> invalid then meta.UserRating =  int(val(item@userRating)*10)
