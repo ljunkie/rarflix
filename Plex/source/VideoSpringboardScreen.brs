@@ -485,10 +485,11 @@ Function videoDialogHandleButton(command, data) As Boolean
     else if command = "RFCastAndCrewList" then
         'm.ViewController.PopScreen(m) ' close dialog before we show the Cast&Crew screen ' not needed and wrong
         ' for now lets not use the show with episode
+        facade = CreateObject("roGridScreen"):facade.show()
         dialog = ShowPleaseWait("Please wait","Gathering the Cast and Crew for '" + firstof(obj.metadata.showtitle,obj.metadata.cleantitle,obj.metadata.umtitle,obj.metadata.title) + "'")
         screen = RFcreateCastAndCrewScreen(obj)
         if screen <> invalid then  screen.Show()
-        dialog.Close()
+        dialog.Close():facade.close()
         closeDialog = true
     else if command = "GoToHomeScreen" then
         ' Close all screens except for HomeScreen

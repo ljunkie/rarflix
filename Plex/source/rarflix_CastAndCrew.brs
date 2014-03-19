@@ -1,17 +1,12 @@
 '* Rob Reed: Cast and Crew functions
 '*
-'* uses the SearchDataLoader.brs to:
-'*   Loads data for cast id into rows separated by content type. If and 
-'*   result returns a reference to another search provider then another
-'*   is started for that provider.
-'*
+'* uses the SearchDataLoader.brs
 
 ' Function to create posterScreen for Actors/Writers/Directors/etc content ( movies, shows, series, seasons, etc)
 function RFcreateCastAndCrewScreen(item as object) as Dynamic
-    ' overwrite the castcrewlist array we might have set - many times it's imcomplete or empty (PMS is still implementing exposing Cast/Roles for content type)
-
-    ' check if content has a grandparentKey -- if so, we need to get the cast from that ( api for episode/season do not list Roles correctly )
-    if item.metadata.grandparentkey <> invalid then 
+    ' check if content has a grandparentKey -- if so, we need to get the cast
+    ' from that ( api for episode/season do not list Roles correctly )
+    if item.metadata.grandparentkey <> invalid then
         Debug(tostr(item.metadata.type) + " not supported " + item.metadata.key + " -- using the grandParentkey" + tostr(item.metadata.grandparentkey))
         item.metadata.castcrewlist = getCastAndCrew(item, item.metadata.grandparentkey)
     else
@@ -19,41 +14,39 @@ function RFcreateCastAndCrewScreen(item as object) as Dynamic
         item.metadata.castcrewlist = getCastAndCrew(item, invalid)
     end if
 
-    if type(item.metadata.castcrewlist) = "roArray" and item.metadata.castcrewlist.count() > 0 then 
-        obj = CreateObject("roAssociativeArray")
-        obj = createPosterScreen(item, m.viewcontroller, "arced-portrait")
-        obj.noRefresh = true
-        screenName = "Cast & Crew List"
-        obj.HandleMessage = RFCastAndCrewHandleMessage ' override default Handler
-    
-        obj.screen.SetContentList(getPostersForCastCrew(item))
-        obj.ScreenName = screenName
-    
-        breadcrumbs = ["The Cast & Crew", firstof(item.metadata.cleantitle, item.metadata.umtitle, item.metadata.title)]
-        m.viewcontroller.AddBreadcrumbs(obj, breadcrumbs)
-        m.viewcontroller.UpdateScreenProperties(obj)
-        m.viewcontroller.PushScreen(obj)
+    if type(item.metadata.castcrewlist) = "roArray" and item.metadata.castcrewlist.count() > 0 then
+        screen = createPosterScreen(item, m.viewcontroller, "arced-portrait")
+        screen.show = showCastAndCrewScreen
+        screen.noRefresh = true
+        screen.HandleMessage = RFCastAndCrewHandleMessage ' override default Handler
+        screen.ScreenName = "Cast & Crew List"
+        screen.screen.SetContentList(getPostersForCastCrew(item))
 
-    else 
+        breadcrumbs = ["The Cast & Crew", firstof(item.metadata.cleantitle, item.metadata.umtitle, item.metadata.title)]
+        m.viewcontroller.InitializeOtherScreen(screen, breadcrumbs)
+    else
         ' Give EU a message that we couldn't find any cast members for the content ( probably not scraped yet )
         ShowErrorDialog("Could not find any Cast or Crew memebers", firstof(item.metadata.cleantitle, item.metadata.umtitle, item.metadata.title))
         return invalid
     end if
-    return obj.screen
+
+    return screen
 end function
 
+sub showCastAndCrewScreen()
+    m.screen.show()
+end sub
+
 Function RFCastAndCrewHandleMessage(msg) As Boolean
-    obj = m.viewcontroller.screens.peek()
     handled = false
 
     if type(msg) = "roPosterScreenEvent" then
         handled = true
-        'print "showPosterScreen | msg = "; msg.GetMessage() " | index = "; msg.GetIndex()
         if msg.isListItemSelected() then
-            cast = obj.item.metadata.castcrewlist[msg.GetIndex()]
-            cast.server = obj.item.metadata.server
+            cast = m.item.metadata.castcrewlist[msg.GetIndex()]
+            cast.server = m.item.metadata.server
             ' create the gridScreen for the cast member ( uses a modified search loader )
-            if cast.id <> invalid and cast.name <> invalid then 
+            if cast.id <> invalid and cast.name <> invalid then
                 displaymode_grid = RegRead("rf_grid_displaymode", "preferences", "photo-fit")
                 grid_style = RegRead("rf_grid_style", "preferences","flat-portrait")
                 screen = createGridScreen(m.viewcontroller, grid_style, invalid, displaymode_grid)
@@ -63,18 +56,16 @@ Function RFCastAndCrewHandleMessage(msg) As Boolean
                 screen.ScreenName = "Cast and Crew"
                 screen.FocusRow = 0
                 screen.disableFullGrid = true
-                m.viewcontroller.AddBreadcrumbs(screen, breadcrumbs)
-                m.viewcontroller.UpdateScreenProperties(screen)
-                m.viewcontroller.PushScreen(screen)
+                m.viewcontroller.InitializeOtherScreen(screen, breadcrumbs)
                 screen.Show()
             else
-                Debug("Cast name and id are not set for " +  tostr(cast.name) + ":" + tostr(obj.item.metadata.key))
+                Debug("Cast name and id are not set for " +  tostr(cast.name) + ":" + tostr(m.item.metadata.key))
             end if
         else if ((msg.isRemoteKeyPressed() AND msg.GetIndex() = 10) OR msg.isButtonInfo()) then ' ljunkie - use * for more options on focused item
             rfBasicDialog(m)
         else if msg.isScreenClosed() then
             handled = true
-            m.ViewController.PopScreen(obj)
+            m.ViewController.PopScreen(m)
         end if
     end If
 
@@ -87,10 +78,10 @@ function getCastAndCrew(item as object, key = invalid) as object
 
     if key = invalid then key = item.metadata.key ' let us override the key, otherwise, use the item.metadata.key
 
-    container = createPlexContainerForUrl(item.metadata.server, item.metadata.server.serverUrl, key)        
+    container = createPlexContainerForUrl(item.metadata.server, item.metadata.server.serverUrl, key)
     ' we haven't Parsed anything yet.. the raw XML is available
-    if container <> invalid and container.xml <> invalid and container.xml.Video <> invalid then 
-        if container.xml.Video[0] <> invalid then 
+    if container <> invalid and container.xml <> invalid and container.xml.Video <> invalid then
+        if container.xml.Video[0] <> invalid then
             castxml = container.xml.Video[0]
         else if container.xml.Directory[0] <> invalid  then
             castxml = container.xml.Directory[0]
@@ -98,41 +89,36 @@ function getCastAndCrew(item as object, key = invalid) as object
     end if
     container = invalid
 
-    if type(castxml) = "roXMLElement" then 
+    if type(castxml) = "roXMLElement" then
         default_img = "/:/resources/actor-icon.png"
         sizes = ImageSizes("movie", "movie")
-    
+
         SDThumb = item.metadata.server.TranscodedImage(item.metadata.server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
         HDThumb = item.metadata.server.TranscodedImage(item.metadata.server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
-        ' token is now part of TranscodedImage
-        'if item.metadata.server.AccessToken <> invalid then
-        '    SDThumb = SDThumb + "&X-Plex-Token=" + item.metadata.server.AccessToken
-        '    HDThumb = HDThumb + "&X-Plex-Token=" + item.metadata.server.AccessToken
-        'end if
 
         for each Actor in castxml.Role
             CastCrewList.Push({ name: Actor@tag, id: Actor@id, role: Actor@role, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Actor" })
         next
-    
+
         for each Director in castxml.Director
             CastCrewList.Push({ name: Director@tag, id: Director@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Director" })
         next
-    
+
         for each Producer in castxml.Producer
             CastCrewList.Push({ name: Producer@tag, id: Producer@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Producer" })
         next
-    
+
         for each Writer in castxml.Writer
             CastCrewList.Push({ name: Writer@tag, id: Writer@id, imageHD: HDThumb, imageSD: SDThumb, itemtype: "Writer" })
         next
     end if
     return CastCrewList
-end function 
+end function
 
 Function getPostersForCastCrew(item As Object) As Object
     server = item.metadata.server ' we only need to query the specific server since this item exists on it
 
-    ' TODO find a better way to get all PEOPLES thumbs 
+    ' TODO find a better way to get all PEOPLES thumbs
     ' current issue - Producers/Writer ID's are not available yet unless we are in the context of a video
 
     list = []
@@ -142,55 +128,44 @@ Function getPostersForCastCrew(item As Object) As Object
         wkey = "/library/people/"+i.id+"/media"
         ' it would be nice if we could just get a full list of people from ther server, but not available - maybe later TODO
         container = createPlexContainerForUrl(server, server.serverurl, "/search/actor/?query=" + HttpEncode(i.name))
-       ' we haven't Parsed anything yet.. the raw XML is available
+        ' we haven't Parsed anything yet.. the raw XML is available
         xml = container.xml
         keys = container.GetKeys()
         names = container.GetNames()
         container = invalid
         for index = 0 to keys.Count() - 1
             found = false
-            if keys[index] = wkey then 
-                 found = true
-                 if xml.Directory[index]@thumb <> invalid then 
+            if keys[index] = wkey then
+                found = true
+                if xml.Directory[index]@thumb <> invalid then
                     default_img = xml.Directory[index]@thumb
                     i.imageSD = server.TranscodedImage(server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
                     i.imageHD = server.TranscodedImage(server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
-                    ' token is now part of TranscodedImage
-                    'if server.AccessToken <> invalid then 
-                    '    i.imageSD = i.imageSD + "&X-Plex-Token=" + server.AccessToken
-                    '    i.imageHD = i.imageHD + "&X-Plex-Token=" + server.AccessToken
-                    'end if
                 end if
                 exit for
             end if
 
             ' this is probably not needed -- but it might be useful for other characters than actors
             if NOT found then
-                if names[index] = i.name then 
-                     found = true
-                     if xml.Directory[index]@thumb <> invalid then 
+                if names[index] = i.name then
+                    found = true
+                    if xml.Directory[index]@thumb <> invalid then
                         default_img = xml.Directory[index]@thumb
                         i.imageSD = server.TranscodedImage(server.serverurl, default_img, sizes.sdWidth, sizes.sdHeight)
                         i.imageHD = server.TranscodedImage(server.serverurl, default_img, sizes.hdWidth, sizes.hdHeight)
-                        ' token is now part of TranscodedImage
-                        'if server.AccessToken <> invalid then 
-                        '    i.imageSD = i.imageSD + "&X-Plex-Token=" + server.AccessToken
-                        '    i.imageHD = i.imageHD + "&X-Plex-Token=" + server.AccessToken
-                        'end if
                     end if
                     exit for
                 end if
             end if
         end for
 
-
         ' Lets set the second line to the cast member type
         ' If the cast member has a Role attribute, then we will
         ' override the cast member type with the Role
         ' - sometimes the Role name is also the cast members name ( exclude those )
-	DescriptionLine2 = i.itemtype
+    	DescriptionLine2 = i.itemtype
         if i.role <> invalid and i.role <> "" and i.role <> i.name then DescriptionLine2 = i.role
-        
+
         values = {
             ShortDescriptionLine1:i.name,
             ShortDescriptionLine2: DescriptionLine2,
@@ -198,9 +173,10 @@ Function getPostersForCastCrew(item As Object) As Object
             HDPosterUrl:i.imageHD,
             itemtype: lcase(i.itemtype),
             }
-        list.Push(values)        
+        list.Push(values)
 
     next
+
     xml = invalid
     return list
 End Function
