@@ -99,11 +99,10 @@ Function searchLoadMoreContent(focusedRow, extraRows=0) As Boolean
         if m.cast <> invalid and m.cast.server <> invalid then 
            Debug("Cast & Crew search [single server]: " + tostr(m.cast.server.name))
            m.StartRequest(m.cast.server, "/library/people/" + m.cast.id + "/media", "Root")
-           'm.StartRequest(server, "/search", "Root") ' excluded -- we do not want appClips ( channel plugins here ) too many bad results
+           m.FocusOnFirstResponse = true
         else 
             ' for each server in GetOwnedPlexMediaServers()
             for each server in GetValidPlexMediaServers()
-
                 m.StartRequest(server, "/search", "Root")
             next
         end if
@@ -187,9 +186,13 @@ Sub searchOnUrlEvent(msg, requestContext)
 
     if m.PendingRequests = 0 then
         foundSomething = false
-        for each status in m.contentArray
-            if status.content.Count() > 0 then
+        for index = 0 to m.contentArray.count()-1
+            status = m.contentArray[index]
+            if status <> invalid and status.content <> invalid and status.content.Count() > 0 then
                 foundSomething = true
+                if m.FocusOnFirstResponse = true then 
+                    m.listener.screen.SetFocusedListItem(index,0)
+                end if
                 exit for
             end if
         next
