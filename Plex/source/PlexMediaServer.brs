@@ -547,13 +547,13 @@ Function FullUrl(serverUrl, sourceUrl, key) As String
          finalUrl = sourceUrl + Right(key, len(key) - 6)
     else
         keyTokens = CreateObject("roArray", 2, true)
-        if key <> Invalid then
+        if key <> Invalid and key <> "" then
             keyTokens = strTokenize(key, "?")
         else
             keyTokens.Push("")
         endif
         sourceUrlTokens = CreateObject("roArray", 2, true)
-        if sourceUrl <> Invalid then
+        if sourceUrl <> Invalid and sourceUrl <> "" then
             sourceUrlTokens = strTokenize(sourceUrl, "?")
         else
             sourceUrlTokens.Push("")
