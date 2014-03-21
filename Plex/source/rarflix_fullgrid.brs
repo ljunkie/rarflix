@@ -152,10 +152,12 @@ Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, ite
     ' otherwise users already see a header row on the previous grid screen
     headerRow = []
     if item <> invalid and item.key = "all" and loader.server <> invalid and loader.sourceurl <> invalid then 
+        sectionKey = getBaseSectionKey(loader.sourceurl)
+        container = createPlexContainerForUrl(loader.server, invalid, sectionKey)
+        container.SeparateSearchItems = true
+
         ' default full grid gets the standard filter/keys from the API
         if item.defaultFullGrid = true  then 
-            sectionKey = getBaseSectionKey(loader.sourceurl)
-            container = createPlexContainerForUrl(loader.server, invalid, sectionKey)
             rawItems = container.GetMetadata() ' grab subsections for FULL grid. We might want to hide some (same index as container.GetKeys())
 
             for index = 0 to rawItems.Count() - 1
@@ -175,6 +177,8 @@ Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, ite
             end if
         end if
 
+        ' Append the search items
+        headerRow.Append(container.getSearch())
     end if
 
     ' should we keep adding the sub sections? I think not - btw this code was only to test
