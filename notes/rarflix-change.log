@@ -1,3 +1,33 @@
+# 3.2.0 (2014-03-23) Final Release
+    Note: non-detailed changes from v3.1.0 to v3.2.0
+
+    * RARflix will work when myPlex is down - with the last known server(s)
+    * Filtering and Sorting
+    * full grid as Default View per section [optional]
+    * full grid inline sorting/filters using info (*) key
+    * WOL (Wake on LAN) -- h/t @Talidan.
+    * Put On Deck - use the info (*) key to see the option
+    * clock/date options : 12/24 hour clock  + Date format/disable options
+    * description button in the dialog pop up to show the non truncated description.
+    * Include the ROLE of the cast member(s) if one exists ( Cast & Crew )
+    * global search: will now search shared servers ( only searched local/owned servers previously )
+    * complete rewrite of the Slide Show - moved from roSlideShow to roImageCanvas (can handle an arbitrary amount of items now) [WIP]
+    * shortcut for the Home Screen from a dialog (remote * key)
+    * Various Speed Improvements for the UI
+    * focus on last used section when starting - broke due to merger of official channel
+    * legacy remote: add a close button to the Reorder Screens
+    * advance to next episode automatically ( preplay screen )
+    * show preplay screen after direct play from grid
+    * channel content: excluded from showing preplay screen after watching if played from grid
+    * exit confirmation
+    * music: new rows "first letter" and "recently viewed"
+    * WOL - wake on lan options + keepalive
+    * New Playback Option (simplified): Shuffle, Continuous Play,
+    * Continuous [context] Play 
+    * search methods added to the header row (any screen with headers)
+    * Cast & Crew focus on first row (proper fix)
+    * facade screens added for "quick" feedback
+
 #3.1.21-DEV (2014-02-14) Public Release
 
     NOTE: this includes all major changes from v3.1.0-final to v3.1.21-dev
