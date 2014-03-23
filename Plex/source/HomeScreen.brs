@@ -193,8 +193,9 @@ Sub homeScreenOnTimerExpired(timer)
             if GetViewController().IsSlideShowPlaying() then return
 
             if type(screen) = "roAssociativeArray" then
-                if type(screen.screen) = "roVideoScreen" and RegRead("rf_notify","preferences","enabled") <> "nonvideo" then ' Video Screen - VideoPlayer (playing a video)
-                    HUDnotify(screen,notify)
+                ' Video Screen - VideoPlayer (playing a video)
+                if type(screen.screen) = "roVideoScreen" then
+                    if RegRead("rf_notify","preferences","enabled") <> "nonvideo" then HUDnotify(screen,notify)
                 else if RegRead("rf_notify","preferences","enabled") <> "video" then ' Non Video Screen
                     ShowNotifyDialog(notify,0,true)
                 end if

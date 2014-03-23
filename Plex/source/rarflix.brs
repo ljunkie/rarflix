@@ -1043,6 +1043,7 @@ sub HUDnotify(screen,obj = invalid)
         next
         screen.Screen.SetContent(content)      ' set new content for notification 
         SendEcpCommand("Down")
+        sleep(500) ' TODO(ljunkie) revert back to a sync call. We need to make sure nothing else updates the HUD
         screen.Screen.SetContent(content_orig) ' reset HUD to our original content
     end if
 end sub
