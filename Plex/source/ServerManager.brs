@@ -69,6 +69,7 @@ End Function
 
 Function RemoveAllServers()
     RegDelete("serverList", "servers")
+    RegDeleteSection("server_tokens")
 End Function
 
 Function RemoveServer(serverToRemove)
@@ -504,6 +505,7 @@ Sub DeletePlexMediaServer(machineID)
     servers = GetGlobalAA().Lookup("validated_servers")
     if servers <> invalid AND machineID <> invalid then
         servers.Delete(machineID)
+        RegDelete(machineID, "server_tokens")
     end if
 End Sub
 

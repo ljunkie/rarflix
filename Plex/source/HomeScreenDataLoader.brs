@@ -163,14 +163,14 @@ sub homeCreateFallbackServerRequests()
     configuredServers = PlexMediaServers()
 
     for each server in configuredServers
-        ' we are keying off a server having an access token ( myPlex is currenlty the only way this could happen )
+        ' we are keying off a server having an access token ( myPlex is currently the only way this could happen )
         if server.accesstoken <> invalid then
             existing = GetPlexMediaServer(server.machineID)
             if existing <> invalid then 
                 Debug("Ignoring (fallback) duplicate shared server: " + server.machineid)
             else 
-	        Debug("---- trying fall back PMS ( last known server we learned from myPlex )")
-                server.owned = false ' for now we will assume the server is not owned ( just to be safe -- it's wrong.. but at least we fallback ) 
+                Debug("---- trying fall back PMS ( last known server we learned from myPlex -- assuming owned )")
+                'server.owned = false ' during fall back, we will assumed owned (should be safe enough)
                 m.CreateServerRequests(server, true, false)
             end if
         end if

@@ -145,6 +145,22 @@ Sub RegDelete(key, section=invalid)
     sec.Flush()
 End Sub
 
+sub regDeleteSection(section)
+    Debug("*********** Deleting any key associated with section: " + tostr(section))
+    flush = false
+    section = RegGetSectionName(section)
+    sec = CreateObject("roRegistrySection", section)
+    keyList = sec.GetKeyList()
+    for each key in keyList
+        flush = true
+        value = sec.Read(key)
+        Debug("Delete: " + tostr(key) + " : " + tostr(value))
+        sec.Delete(key)
+        m.RegistryCache.Delete(key + section)
+    end for
+    if flush = true then sec.Flush()
+end sub 
+
 'Outputs the entire registry for Plex
 'sub PrintRegistry()
 '    Debug("------- REGISTRY --------")
