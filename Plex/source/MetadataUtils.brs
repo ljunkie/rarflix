@@ -200,7 +200,7 @@ Function newSearchMetadata(container, item) As Object
         ' If the item isn't for a search service and doesn't start with "Search",
         ' we'll try using a keyboard screen. Anything else sounds like an honest
         ' to goodness search and will get a search screen.
-        if instr(1, metadata.key, "/serviceSearch") <= 0 AND metadata.prompt.Left(6) <> "Search" then
+        if instr(1, metadata.key, "/serviceSearch") <= 0 AND metadata.prompt <> invalid AND metadata.prompt.Left(6) <> "Search" then
             metadata.ContentType = "keyboard"
         end if
     end if
