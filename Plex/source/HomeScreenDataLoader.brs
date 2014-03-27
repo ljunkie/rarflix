@@ -617,8 +617,11 @@ Sub homeOnUrlEvent(msg, requestContext)
                     item.ShortDescriptionLine2 = "Photo channel" + serverStr
                 else if channelType = "video" then
                     item.ShortDescriptionLine2 = "Video channel" + serverStr
+                else if channelType = "appli" and RegRead("row_visibility_channels", "preferences", "") = "apps" then
+                    item.ShortDescriptionLine2 = "Application channel" + serverStr
                 else
                     Debug("Skipping unsupported channel type: " + tostr(channelType))
+                    print item
                     add = false
                 end if
             else if item.Type = "movie" then

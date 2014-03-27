@@ -2056,6 +2056,11 @@ Function createHomeScreenPrefsScreen(viewController) As Object
         { title: "Enabled (exclude shared libraries)", EnumValue: "owned" },
         { title: "Hidden", EnumValue: "hidden" }
     ]
+    valuesChannels = [
+        { title: "Enabled", EnumValue: "" },
+        { title: "Enabled (+Applications)", EnumValue: "apps" },
+        { title: "Hidden", EnumValue: "hidden" }
+    ]
     values = [
         { title: "Enabled", EnumValue: "" },
         { title: "Hidden", EnumValue: "hidden" }
@@ -2071,7 +2076,7 @@ Function createHomeScreenPrefsScreen(viewController) As Object
         default: ""
     }
     obj.Prefs["row_visibility_channels"] = {
-        values: values,
+        values: valuesChannels,
         heading: "Show channels on the home screen",
         default: ""
     }
