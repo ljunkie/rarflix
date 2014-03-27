@@ -17,6 +17,7 @@ Function createPhotoSpringboardScreen(context, index, viewController) As Object
     obj.SetupButtons = photoSetupButtons
     obj.MoreButton = photoSprintBoardMoreButton
     obj.GetMediaDetails = photoGetMediaDetails
+    obj.ShufflePlay = (RegRead("slideshow_shuffle_play", "preferences", "0") = "1")
 
     obj.superHandleMessage = obj.HandleMessage
     obj.HandleMessage = photoHandleMessage
@@ -133,7 +134,7 @@ Sub photoSetupButtons()
     m.Screen.SetStaticRatingEnabled(false)
     'end if
 
-    if m.IsShuffled then 
+    if m.IsShuffled or m.ShufflePlay then
         m.AddButton("Slideshow Shuffled", "slideshow")
     else 
         m.AddButton("Slideshow", "slideshow")
@@ -187,9 +188,30 @@ Function photoHandleMessage(msg) As Boolean
                 ' Playing Photos from springBoard in a FULL grid context
                 if buttonCommand = "slideshow" then GetPhotoContextFromFullGrid(m,m.item.origindex) 
                 ' for now we will skip loading the full context when we "SHOW" an image -- need to load though on the "next" request
-		if m.context.count() = 0 then
+                if m.context.count() = 0 then
                     ShowErrorDialog("Sorry! We were unable to load your photos.","Warning")
                 else 
+                    ' Global Shuffle
+                    if m.shuffleplay = true then
+                        ' show a shuffling dialog if item count > 1k
+                        dialog = invalid
+                        if m.context.count() > 1000 then
+                            text = "shuffling"
+                            if m.IsShuffled then text = "unshuffling"
+                            dialog=ShowPleaseWait(text + " items... please wait...","")
+                        end if
+
+                        m.Shuffle()
+                        m.IsShuffled = true
+
+                        ' shuffling can be quick on newer devices, so intead of a < 1 sec blip, let's show the shuffling items for at least a second
+                        if dialog <> invalid then
+                            sleep(1000)
+                            dialog.close()
+                        end if
+                        m.Refresh()
+                    end if
+
                     m.IsShuffled = (m.IsShuffled = 1)
                     Debug("photoHandleMessage:: springboard Start slideshow with " + tostr(m.context.count()) + " items")
                     Debug("starting at index: " + tostr(m.curindex))

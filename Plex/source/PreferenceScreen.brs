@@ -595,11 +595,22 @@ Function createSlideshowPrefsScreen(viewController) As Object
         heading: "Size of the Grid",
         default: "flat-movie"
     }
+    ' Shuffle play
+    shuffle_play = [
+        { title: "Enabled", EnumValue: "1", },
+        { title: "Disabled", EnumValue: "0" }
+    ]
+    obj.Prefs["slideshow_shuffle_play"] = {
+        values: shuffle_play,
+        heading: "Shuffle Slideshow",
+        default: "0"
+    }
 
     obj.Screen.SetHeader("Slideshow display preferences")
 
     obj.AddItem({title: "Speed"}, "slideshow_period", obj.GetEnumValue("slideshow_period"))
     obj.AddItem({title: "Overlay Speed"}, "slideshow_overlay", obj.GetEnumValue("slideshow_overlay"))
+    obj.AddItem({title: "Shuffle Play"}, "slideshow_shuffle_play", obj.GetEnumValue("slideshow_shuffle_play"))
     obj.AddItem({title: "Photo Overlay", ShortDescriptionLine2: "Photo Info overlay on the photo"}, "slideshow_photo_overlay", obj.GetEnumValue("slideshow_photo_overlay"))
     obj.AddItem({title: "Audio Overlay", ShortDescriptionLine2: "Audio Info overlay on the photo"}, "slideshow_audio_overlay", obj.GetEnumValue("slideshow_audio_overlay"))
     obj.AddItem({title: "Display Mode",ShortDescriptionLine2: "How should photos 'fit' the screen"}, "slideshow_displaymode", obj.GetEnumValue("slideshow_displaymode"))
@@ -623,7 +634,7 @@ Function prefsSlideshowHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "slideshow_period" OR command = "slideshow_overlay" or command = "slideshow_reload" or command = "slideshow_displaymode" or command = "slideshow_underscan" or command = "photoicon_displaymode" or command = "rf_photos_grid_style" or command = "slideshow_audio_overlay" or command = "slideshow_photo_overlay" or command = "slideshow_error_overlay" then
+            if command = "slideshow_period" OR command = "slideshow_overlay" or command = "slideshow_reload" or command = "slideshow_displaymode" or command = "slideshow_underscan" or command = "photoicon_displaymode" or command = "rf_photos_grid_style" or command = "slideshow_audio_overlay" or command = "slideshow_photo_overlay" or command = "slideshow_error_overlay" or command = "slideshow_shuffle_play" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "close" then
                 m.Screen.Close()

@@ -806,7 +806,7 @@ End Function
 Function vcCreateICphotoPlayer(obj, contextIndex=invalid, show=true, shuffled=false, slideShow=false)
     ' verify we have all the conext loaded -- possible we create this from a normal row
     dialog = invalid
-    if slideShow and obj.context.count() > 100 then 
+    if slideShow and obj.context.count() > 1000 then 
         dialog=ShowPleaseWait("Starting Photo Player... Please wait...","")
     end if
     PhotoPlayerCheckLoaded(obj,contextIndex)        
@@ -825,6 +825,18 @@ Function vcCreateICphotoPlayer(obj, contextIndex=invalid, show=true, shuffled=fa
     if NOT AppManager().IsPlaybackAllowed() then
         m.ShowPlaybackNotAllowed()
         return invalid
+    end if
+
+    ' Global Shuffle
+    if RegRead("slideshow_shuffle_play", "preferences", "0") = "1" then 
+        ' ljunkie - we need to iterate through the items and remove directories -- they don't play nice
+        ' note: if we remove directories (items) the contextIndex will be wrong - so fix it!
+        cleanContext = ICphotoPlayerCleanContext(context,contextIndex)
+        context = cleanContext.context
+        contextIndex = cleanContext.contextIndex
+        ShuffleArray(Context, contextIndex)
+        contextIndex = 0 'always start at zero for shuffled
+        shuffled = true
     end if
 
     screen = createICphotoPlayerScreen(context, contextIndex, m, shuffled, slideShow)
