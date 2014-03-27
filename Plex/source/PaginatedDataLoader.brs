@@ -172,7 +172,7 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
             header_row.name = firstof(item.title,"Sub Sections")
             header_row.pendingRequests = 0
             header_row.countLoaded = 0
-    
+            loader.hasHeaderRow = true
             loader.contentArray.Unshift(header_row)
             keys.Unshift(header_row.key)
             loader.names.Unshift(header_row.name)

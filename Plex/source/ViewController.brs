@@ -666,20 +666,31 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
     if screen.hasWaitdialog <> invalid then screen.hasWaitdialog.close()
 
     ' set the inital focus row if we have set it ( normally due to the sub section row being added - look at the createpaginateddataloader )
-    if screen.loader <> invalid and screen.loader.focusrow <> invalid then 
-        ' take into account that people might hide rows (focusrow is 0 index). If the focusrow is > 1
-        ' on 3 row screens, we will want to focus on the second row (1) if we have less than 4 rows 
-        style = GetGlobalAA().Lookup("GlobalGridStyle") ' this is set by Grid Creation
-        is3Row = screen.loader.focusrow > 0 and style <> invalid and (style = "flat-landscape" or style = "flat-square" or style = "flat-16x9" or style = "four-column-flat-landscape")
-        if is3Row and screen.loader.names <> invalid then
-            if screen.loader.names.count() < 4 then 
-                screen.loader.focusrow = 1
-            else if screen.loader.focusrow <> invalid and screen.loader.focusrow = 1 then 
-                screen.loader.focusrow = 2
-            end if
+    if screen.loader <> invalid then
+        ' always focus the first item in the header row. We might focus to another row later, but this will allow 
+        ' us to shift the first item to the center (3) since we are in a center focused grid. 
+        ' TODO(ljunkie) exclud this when we change(allow) to a mixed-aspect-ratio (left focus grid) 
+        if screen.loader.hasHeaderRow = true then
+            Debug("focus header row to first item: row" + tostr(screen.loader.focusrow))
+            screen.screen.SetFocusedListItem(0,0)
         end if
-        Debug("focus row:" + tostr(screen.loader.focusrow))
-        screen.screen.SetFocusedListItem(screen.loader.focusrow,0)
+
+        if screen.loader.focusrow <> invalid then
+            ' take into account that people might hide rows (focusrow is 0 index). If the focusrow is > 1
+            ' on 3 row screens, we will want to focus on the second row (1) if we have less than 4 rows
+            style = GetGlobalAA().Lookup("GlobalGridStyle") ' this is set by Grid Creation
+            is3Row = screen.loader.focusrow > 0 and style <> invalid and (style = "flat-landscape" or style = "flat-square" or style = "flat-16x9" or style = "four-column-flat-landscape")
+            if is3Row and screen.loader.names <> invalid then
+                if screen.loader.names.count() < 4 then
+                    screen.loader.focusrow = 1
+                else if screen.loader.focusrow <> invalid and screen.loader.focusrow = 1 then
+                    screen.loader.focusrow = 2
+                end if
+            end if
+            Debug("focus row:" + tostr(screen.loader.focusrow))
+            screen.screen.SetFocusedListItem(screen.loader.focusrow,0)
+        end if
+
     end if
 
     return screen
