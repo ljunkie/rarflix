@@ -318,6 +318,15 @@ Sub loaderRefreshData()
 
 
             if (item <> invalid and type(item.refresh) = "roFunction") or (m.sortingForceReload <> invalid) then 
+
+                isRandom = CreateObject("roRegex", "sort=random", "i") ' unwatched? this can still cause major slow downs for some large libraries
+                if isRandom.isMatch(m.sourceurl) then
+                    if m.sortingForceReload = invalid then
+                        Debug("---- Random sort -- SKIP all reloading!")
+                        return
+                    end if
+                end if
+
                 wkey = m.listener.contentarray[sel_row][sel_item].key
                 Debug("---- Refreshing metadata for item " + tostr(wkey) + " contentType: " + contentType)
                 if RegRead("rf_grid_dynamic", "preferences", "full") <> "full" then item.Refresh() ' refresh for pref of partial reload

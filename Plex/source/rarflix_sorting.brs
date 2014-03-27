@@ -112,8 +112,14 @@ function getSortingOption(server = invalid,sourceUrl = invalid)
         if cacheKeys.typeKey = invalid then typeKey = ""
         obj = createPlexContainerForUrl(server, "", sectionKey + "/sorts" + typeKey)
         if obj <> invalid then 
+            ' custom sorts (not supplied by the /sorts endpoint, but (semi) supported by the API)
+            customSorts = [{ key: "random", title: "Random (experimental)", default: invalid, server: server }]
+            sorts = obj.getmetadata()
+            for each customSort in customSorts
+                sorts.Push(customSort)
+            end for
             ' using an assoc array ( we might want more key/values later )
-            GetGlobalAA().AddReplace(cachekeys.sortCacheKey, obj.getmetadata())        
+            GetGlobalAA().AddReplace(cachekeys.sortCacheKey, sorts)
             validSorts = GetGlobal(cachekeys.sortCacheKey)
         end if
     end if
@@ -142,22 +148,33 @@ function getSortingOption(server = invalid,sourceUrl = invalid)
             selectedKey = invalid
             for each order in orders
                 if sortKey = item.key+":"+order.key then 
-                    buttons.Push({ title: item.title + " [" + order.title + "]", key: item.key+":"+order.key})        
+                    if item.key = "random" then
+                        buttons.Push({ title: item.title, key: item.key})
+                    else
+                        buttons.Push({ title: item.title + " [" + order.title + "]", key: item.key+":"+order.key})
+                    end if
                     selectedKey = true
                 end if
             end for
 
             ' default to desc as the first options for buttons
-            if selectedKey = invalid then 
-                Buttons.Push({ title: item.title + " [desc]", key: item.key+":desc"})        
+            if selectedKey = invalid then
+                if item.key = "random" then
+                    Buttons.Push({ title: item.title, key: item.key})
+                else
+                    Buttons.Push({ title: item.title + " [desc]", key: item.key+":desc"})
+                end if
             end if
 
         end if
 
         ' All Valid sort orders ( ordering of the array doesn't matter )
         for each order in orders
-            options.Push({ title: item.title + " [" + order.title + "]", key: item.key+":"+order.key})        
+            if item.key <> "random" then
+                options.Push({ title: item.title + " [" + order.title + "]", key: item.key+":"+order.key})
+            end if
         end for
+        options.Push({ title: item.title, key: item.key})
     end for
 
     ' default sort at the beginning
