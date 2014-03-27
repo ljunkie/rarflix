@@ -1423,8 +1423,6 @@ sub GetPhotoContextFromFullGrid(obj,curindex = invalid, lazy=true)
        return
     end if
 
-    dialog=ShowPleaseWait("Loading Items... Please wait...","")
-
     if obj.metadata <> invalid and obj.metadata.sourceurl <> invalid then 
         sourceUrl = obj.metadata.sourceurl
         server = obj.metadata.server
@@ -1442,7 +1440,7 @@ sub GetPhotoContextFromFullGrid(obj,curindex = invalid, lazy=true)
     dummyItem = {}
     dummyItem.server = server
     dummyItem.sourceUrl = sourceUrl
-    dummyItem.hasWaitDialog = dialog
+    dummyItem.showWait = true
     PhotoMetadataLazy(obj, dummyItem, lazy)
 
     ' this should be closed in the PhotoMetadataLazy section
@@ -1457,10 +1455,6 @@ sub PhotoMetadataLazy(obj, dummyItem, lazy = true)
     ' set some variables if invalid: we might be passing an empty object to fill ( we expect some results )
     if obj.context = invalid then obj.context = []
     if obj.CurIndex = invalid then obj.CurIndex = 0
-
-    if dummyItem.showWait = true and dummyItem.hasWaitDialog = invalid then 
-        dummyItem.hasWaitDialog=ShowPleaseWait("Loading Items... Please wait...","")
-    end if
 
     ' verify we have enough info to continue ( server and sourceurl )
     if dummyItem.server = invalid or dummyItem.sourceUrl = invalid then 
@@ -1487,6 +1481,11 @@ sub PhotoMetadataLazy(obj, dummyItem, lazy = true)
         end if
         if dummyItem.hasWaitDialog <> invalid then dummyItem.hasWaitDialog.close()
         return 
+    end if
+
+    ' show wait dialog if total images are more than the chunks requested
+    if dummyItem.showWait = true and  dummyItem.hasWaitDialog = invalid and container.totalsize.toInt() > chunks then 
+        dummyItem.hasWaitDialog=ShowPleaseWait("Loading Items... Please wait...","")
     end if
 
     ' OLD: container = createPlexContainerForUrl(dummyItem.server, invalid, dummyItem.sourceUrl)
