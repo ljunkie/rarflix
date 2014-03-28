@@ -621,15 +621,31 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
         m.lastUpdatedSize[row] = data.Count()
     end if
 
+    ' Always focus the first item in a header row (possibly redundant)
+    if row = 0 and m.loader.hasHeaderRow = true and m.headerRowFocused = invalid then
+        m.headerRowFocused = true
+        m.screen.SetFocusedListItem(0,0)
+    end if
+
     ' ljunkie - the fact we lazy load rows, we cannot just set the focus item after we show a screen
-    ' this will allow us to set the initial focus item on the first row of a full grid
-    ' this might need to change if we every decide to focus on a sub row
-    ' - if someone uses a spacer item, we shall not focus on the first item. It's UGLY always showing the spacer
-    if RegRead("rf_fullgrid_spacer", "preferences", "disabled") <> "enabled" then 
-        if row = 0 and m.firstfocusitem = invalid and m.isfullgrid = true then
-            m.firstfocusitem = true
-            m.screen.SetFocusedListItem(0,0)
+    ' this will allow us to set the initial focus item on the first row of a full grid, or selected
+    ' row if m.loader.focusrow is set
+    focusRow = invalid
+    if m.isfullgrid = true then
+        focusRow = 0
+        if m.loader.hasHeaderRow = true then focusRow = 1
+    end if
+    if m.loader.focusrow <> invalid then focusRow = m.loader.focusrow
+
+    if focusRow <> invalid and row = focusRow and m.dataRowFocused = invalid then
+        m.dataRowFocused = true
+        ' * if someone uses a spacer item, we need to focus on the 3rd item. It's UGLY always showing the spacer
+        if RegRead("rf_fullgrid_spacer", "preferences", "disabled") = "enabled" or focusRow > 1 then
+            focusItem = 3
+        else
+            focusItem = 0
         end if
+        m.screen.SetFocusedListItem(focusRow, focusItem)
     end if
 
     ' Continue loading this row
