@@ -1862,7 +1862,7 @@ Function createVideoOptionsScreen(item, viewController, continuousPlay, shuffleP
                 mediaName = mediaName + "/" + UCase(firstOf(media.videoCodec, "?"))
                 mediaName = mediaName + "/" + UCase(firstOf(media.audioCodec, "?"))
                 mediaName = mediaName + "/" + firstOf(media.videoResolution, "?")
-                mediaName = mediaName + "/" + tostr(media.bitrate) + "kbps"
+                if tostr(media.bitrate) <> "0" then mediaName = mediaName + "/" + tostr(media.bitrate) + "kbps"
                 media.AsString = mediaName
             end if
 
