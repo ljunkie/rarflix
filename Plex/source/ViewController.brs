@@ -889,8 +889,15 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
     ' Make sure we have full details before trying to play.
     metadata.ParseDetails()
 
-    ' user override to disable quality selection
-    if RegRead("promptVideoQuality", "preferences", "enabled") = "disabled" then skipSelection = true
+    if NOT(skipSelection) then
+        ' user override to disable quality selection
+        if RegRead("promptVideoQuality", "preferences", "enabled") = "disabled" then
+            skipSelection = true
+        ' library content only (who wants lower quality channel content?)
+        else if tostr(metadata.mediaContainerIdentifier) <> "com.plexapp.plugins.library" then ' OR metadata.mediaContainerIdentifier = "com.plexapp.plugins.myplex")
+            skipSelection = true
+        end if
+    end if
 
     if NOT(skipSelection) and NOT(metadata.isManuallySelectedMediaItem = true) and metadata.media <> invalid and metadata.media.count() > 1 then
         dlg = createBaseDialog()
