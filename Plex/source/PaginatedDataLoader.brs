@@ -160,7 +160,9 @@ Function createPaginatedLoader(container, initialLoadSize, pageSize, item = inva
             end if
 
             ' Append the search items
-            subsecItems.Append(container.getSearch())
+            if RegRead("rf_hide_search", "preferences", "show") = "show" then
+                subsecItems.Append(container.getSearch())
+            end if
 
             ' filter item can now be re-ordered
             ReorderItemsByKeyPriority(subsecItems, RegRead("section_row_order", "preferences", ""))

@@ -178,7 +178,9 @@ Function createFULLgridPaginatedLoader(container, initialLoadSize, pageSize, ite
         end if
 
         ' Append the search items
-        headerRow.Append(container.getSearch())
+        if RegRead("rf_hide_search", "preferences", "show") = "show" then
+            headerRow.Append(container.getSearch())
+        end if
     end if
 
     ' should we keep adding the sub sections? I think not - btw this code was only to test
