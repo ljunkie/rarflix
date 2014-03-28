@@ -64,6 +64,15 @@ Function newDirectoryMetadata(container, item) As Object
         directory.key = item@path
     end if
 
+    ' PLEX api fix - unwatchedLeaves is not returning key with ?unwatched=1
+    if instr(1,directory.key,"?unwatched=") = 0 then
+        if instr(1,container.sourceurl,"unwatchedLeaves=1") > 0 then
+            directory.key = directory.key + "?unwatched=1"
+        else if instr(1,container.sourceurl,"unwatchedLeaves=0") > 0 then
+            directory.key = directory.key + "?unwatched=0"
+        end if
+    end if
+
     directory.secondary = item@secondary
 
     return directory
