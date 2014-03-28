@@ -868,7 +868,7 @@ Function vcCreateICphotoPlayer(obj, contextIndex=invalid, show=true, shuffled=fa
     return screen
 End Function
 
-Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=true, preplayScreen = invalid)
+Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=true, preplayScreen = invalid, skipSelection=false)
     if NOT AppManager().IsPlaybackAllowed() then
         m.ShowPlaybackNotAllowed()
         return invalid
@@ -888,6 +888,43 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
 
     ' Make sure we have full details before trying to play.
     metadata.ParseDetails()
+
+    ' option to pick quality: Depending on opinions when released, we might make a toggle to disable this
+    if NOT(skipSelection) and NOT(metadata.isManuallySelectedMediaItem = true) and metadata.media <> invalid and metadata.media.count() > 1 then
+        dlg = createBaseDialog()
+        dlg.Title = "Select a Quality"
+
+        mediaIndex = 0
+        for each media in metadata.media
+            if media.AsString <> invalid then
+                mediaName = media.AsString
+            else
+                mediaName = videomediaString(media)
+                media.AsString = mediaName
+            end if
+
+            dlg.SetButton(tostr(mediaIndex), mediaName)
+            mediaIndex = mediaIndex+1
+        end for
+
+        dlg.Show(true)
+
+        if dlg.Result = invalid or dlg.Result = "invalid" then
+            if preplayscreen <> invalid then
+                preplayScreen.screen.close()
+                if preplayscreen.facade <> invalid then preplayscreen.facade.close()
+            end if
+            return invalid
+        end if
+
+        index = strtoi(dlg.Result)
+        media = metadata.media[index]
+        if media <> invalid then
+            metadata.preferredMediaItem = media
+            metadata.preferredMediaIndex = index
+            metadata.isManuallySelectedMediaItem = true
+        end if
+    end if
 
     ' Prompt about resuming if there's an offset and the caller didn't specify a seek value.
     if seekValue = invalid then

@@ -352,3 +352,31 @@ function getFilterSortCacheKeys(server=invalid,sourceUrl=invalid,typeKey=invalid
     return obj
 end function
 
+function videoMediaString(media)
+    if media.audioChannels <> invalid then
+        if media.audioChannels = "2" then
+            format = "Stereo"
+        else if media.audioChannels = "1" then
+            format = "Mono"
+        else if media.audioChannels = "6" then
+            format = "5.1"
+        else if media.audioChannels = "7" then
+            format = "6.1"
+        else if media.audioChannels = "8" then
+            format = "7.1"
+        end if
+    end if
+
+    mediaName = firstOf(media.videoResolution + "p", "")
+    mediaName = mediaName + " (" + firstOf(media.videoCodec, "")
+    mediaName = mediaName + " " + firstOf(format, "")
+    mediaName = mediaName + " " + firstOf(media.container, "")
+
+    ' media.audioCodec: I am leaving this out to remove confustion (I hope), Unless
+    ' we present the option to select audio stream as a serparate line item.
+    ' mediaName = mediaName + "/" + UCase(firstOf(media.audioCodec, "?"))
+
+    mediaName = mediaName + ") " + tostr(media.bitrate) + "kbps"
+
+    return mediaName
+end function

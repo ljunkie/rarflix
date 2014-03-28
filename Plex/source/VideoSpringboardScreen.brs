@@ -641,7 +641,7 @@ Sub videoActivate(priorScreen)
             m.GotoNextItem()
             directPlayOptions = m.PlayButtonStates[m.PlayButtonState]
             Debug("Playing video with Direct Play options set to: " + directPlayOptions.label)
-            m.ViewController.CreateVideoPlayer(m.metadata, 0, directPlayOptions.value)
+            m.ViewController.CreateVideoPlayer(m.metadata, 0, directPlayOptions.value, true, invalid, true)
         else if advancedToNext AND (priorScreen.isPlayed = true) then
             m.skipFullContext = true ' never load full context ( deprecated due to fullcontext load true )
             m.fullcontext = true     ' fullcontext is loaded
@@ -673,7 +673,7 @@ Sub videoActivate(priorScreen)
             if m.ContinuousPlay then 
                 directPlayOptions = m.PlayButtonStates[m.PlayButtonState]
                 Debug("[ContinuousPlay] Playing video with Direct Play options set to: " + directPlayOptions.label)
-                m.ViewController.CreateVideoPlayer(m.metadata, 0, directPlayOptions.value)
+                m.ViewController.CreateVideoPlayer(m.metadata, 0, directPlayOptions.value, true, invalid, true)
             end if
         else
             m.Refresh(true)
