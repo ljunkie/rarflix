@@ -641,7 +641,7 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
         m.dataRowFocused = true
         ' * if someone uses a spacer item, we need to focus on the 3rd item. It's UGLY always showing the spacer
         if RegRead("rf_fullgrid_spacer", "preferences", "disabled") = "enabled" or focusRow > 1 then
-            focusItem = 3
+            focusItem = 2
         else
             focusItem = 0
         end if
