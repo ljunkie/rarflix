@@ -504,7 +504,7 @@ Function pmsConstructVideoItem(item, seekValue, allowDirectPlay, forceDirectPlay
         end if
     end if
 
-    'printAA(video)
+    printAA(video)
     return video
 End Function
 
@@ -965,6 +965,16 @@ End Sub
 Sub pmsAddDirectPlayInfo(video, item, mediaKey)
     if item.preferredMediaItem <> invalid then
         mediaItem = item.preferredMediaItem
+        ' set the slected language to let the Roku pick the best stream
+        if mediaItem.preferredPart.streams <> invalid then
+            for each stream in mediaItem.preferredPart.streams
+                if stream.streamType = "2" and stream.selected <> invalid and stream.languagecode <> invalid then
+                    'TODO(ljunkie) - this doesn't seem to have any effect. Checking with ROKU
+                    Debug("AudioLanguageSelected: " + tostr(stream.languagecode))
+                    video.AudioLanguageSelected = stream.languagecode
+                end if
+            end for
+        end if
     else
         ' Allow users to try forcing Direct Play on old school content by
         ' assuming it's an MP4.
@@ -989,7 +999,7 @@ Sub pmsAddDirectPlayInfo(video, item, mediaKey)
         video.SubtitleUrl = FullUrl(m.serverUrl, "", part.subtitles.key) + "?encoding=utf-8"
     end if
 
-    'PrintAA(video)
+    PrintAA(video)
 End Sub
 
 Sub pmsOnUrlEvent(msg, requestContext)

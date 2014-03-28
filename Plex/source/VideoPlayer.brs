@@ -647,7 +647,13 @@ Function videoCanDirectPlay(mediaItem) As Boolean
                         stereoCodec = stream.codec
                         surroundStreamFirst = (surroundCodec <> invalid)
                     else if stream.selected <> invalid then
-                        secondaryStreamSelected = true
+                        if stream.languagecode <> invalid then
+                            'TODO(ljunkie) - this doesn't seem to have any effect. Checking with ROKU
+                            mediaItem.AudioLanguageSelected = stream.languagecode
+                            secondaryStreamSelected = true 'remove to test functionality
+                        else
+                            secondaryStreamSelected = true
+                        end if
                     end if
                 else if numChannels >= 6 then
                     ' The Roku is just passing through the surround sound, so
@@ -656,7 +662,13 @@ Function videoCanDirectPlay(mediaItem) As Boolean
                     if surroundCodec = invalid then
                         surroundCodec = stream.codec
                     else if stream.selected <> invalid then
-                        secondaryStreamSelected = true
+                        if stream.languagecode <> invalid then
+                            'TODO(ljunkie) - this doesn't seem to have any effect. Checking with ROKU
+                            mediaItem.AudioLanguageSelected = stream.languagecode
+                            secondaryStreamSelected = true 'remove to test functionality
+                        else
+                            secondaryStreamSelected = true
+                        end if
                     end if
                 else
                     Debug("Unexpected channels on audio stream: " + tostr(stream.channels))
