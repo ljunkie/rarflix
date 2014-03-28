@@ -889,7 +889,9 @@ Function vcCreateVideoPlayer(metadata, seekValue=0, directPlayOptions=0, show=tr
     ' Make sure we have full details before trying to play.
     metadata.ParseDetails()
 
-    ' option to pick quality: Depending on opinions when released, we might make a toggle to disable this
+    ' user override to disable quality selection
+    if RegRead("promptVideoQuality", "preferences", "enabled") = "disabled" then skipSelection = true
+
     if NOT(skipSelection) and NOT(metadata.isManuallySelectedMediaItem = true) and metadata.media <> invalid and metadata.media.count() > 1 then
         dlg = createBaseDialog()
         dlg.Title = "Select a Quality"

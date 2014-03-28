@@ -1077,6 +1077,12 @@ Function createAdvancedPrefsScreen(viewController) As Object
         default: "enabled"
     }
 
+    obj.Prefs["promptVideoQuality"] = {
+        values: values,
+        heading: "Prompt for Video Quality before play (if multiple exist).",
+        default: "enabled"
+    }
+
     ' Advance to Next
     values = [
         { title: "Enabled", EnumValue: "enabled",  },
@@ -1192,14 +1198,14 @@ Function createAdvancedPrefsScreen(viewController) As Object
     obj.AddItem({title: "RARflix Advanced", ShortDescriptionLine2: "More Advanced..."}, "rarflix_prefs")
     obj.AddItem({title: "Theme"}, "rf_theme", obj.GetEnumValue("rf_theme"))
     obj.AddItem({title: "Confirm Exit", shortDescriptionLine2: "prompt before exiting RARflix"}, "exit_confirmation", obj.GetEnumValue("exit_confirmation"))
+    obj.AddItem({title: "Quality Selection", shortDescriptionLine2: "Prompt before playing video" + chr(10) + "if multiple qualities exist"}, "promptVideoQuality", obj.GetEnumValue("promptVideoQuality"))
     obj.AddItem({title: "Auto Episode Advance", shortDescriptionLine2: "show episode next up after watching"}, "advanceToNextItem", obj.GetEnumValue("advanceToNextItem"))
     obj.AddItem({title: "Up Button", ShortDescriptionLine2: "What to do when the UP button is " + chr(10) + "pressed on a screen with rows"}, "rf_up_behavior", obj.GetEnumValue("rf_up_behavior"))
-    obj.AddItem({title: "Transcoder"}, "transcoder_version", obj.GetEnumValue("transcoder_version"))
     obj.AddItem({title: "Continuous Play"}, "continuous_play", obj.GetEnumValue("continuous_play"))
     obj.AddItem({title: "Shuffle Play"}, "shuffle_play", obj.GetEnumValue("shuffle_play"))
     obj.AddItem({title: "Legacy Remote"}, "legacy_remote", obj.GetEnumValue("legacy_remote"))
     obj.AddItem({title: "H.264"}, "level", obj.GetEnumValue("level"))
-
+    obj.AddItem({title: "Transcoder"}, "transcoder_version", obj.GetEnumValue("transcoder_version"))
     if GetGlobal("legacy1080p") then
         obj.AddItem({title: "1080p Settings"}, "1080p")
     end if
