@@ -693,7 +693,7 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
 
     dialogSetSortingButton(dialog,obj) 
 
-    if isMovieShowEpisode then 
+    if isMovieShowEpisode or tostr(obj.metadata.ContentType) = "clip" then
         dialog.SetButton("options", "Playback options")
     end if
 

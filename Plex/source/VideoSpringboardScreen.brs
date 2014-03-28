@@ -94,6 +94,7 @@ Sub videoSetupButtons()
         if isMovieShowEpisode then
             m.AddButton("Playback Options & More...", "more")
         else 
+            if tostr(m.metadata.ContentType) = "clip" then m.AddButton("Playback Options", "options")
             m.AddButton("More...", "more")
         end if
     end if
@@ -165,6 +166,7 @@ Sub videoSetupButtons()
         if isMovieShowEpisode then
             m.AddButton("Playback Options & More...", "more")
         else 
+            if tostr(m.metadata.ContentType) = "clip" then m.AddButton("Playback Options", "options")
             m.AddButton("More...", "more")
         end if
     end if
