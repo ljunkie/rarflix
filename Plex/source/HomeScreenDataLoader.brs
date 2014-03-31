@@ -38,7 +38,7 @@ Function createHomeScreenDataLoader(listener)
 
     rows = [
         { title: "Channels", key: "channels", aspect: "square" },
-        { title: "Library Sections", key: "sections", aspect: "landscape" },
+        { title: "Library Sections", key: "sections", aspect: "square" },
         { title: "On Deck", key: "on_deck", aspect: "portrait" },
         { title: "Now Playing", key: "now_playing", aspect: "portrait" },
         { title: "Recently Added", key: "recently_added", aspect: "portrait" },

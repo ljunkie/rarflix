@@ -45,6 +45,8 @@ Function createGridScreen(viewController, style=RegRead("rf_grid_style", "prefer
 
     ' Standard properties for all our Screen types
     screen.Screen = grid
+    screen.SetListVisible = gridSetVisibility
+    screen.RowVisibility = []
     screen.DestroyAndRecreate = gridDestroyAndRecreate
     screen.Show = showGridScreen
     screen.HandleMessage = gridHandleMessage
@@ -109,7 +111,6 @@ Function showGridScreen() As Integer
         dialog.Text = "An error occurred while trying to load this content, we received zero results."
         dialog.closePrevious = true ' or check to see if there is a facade?
         dialog.Show(true) ' blocking
-
         m.popOnActivate = true
 
         return -1
@@ -127,11 +128,12 @@ Function showGridScreen() As Integer
     ' If we already "loaded" an empty row, we need to set the list visibility now
     ' that we've setup the lists.
     for row = 0 to names.Count() - 1
+        m.RowVisibility[row] = true
         if m.contentArray[row] = invalid then m.contentArray[row] = []
         m.lastUpdatedSize[row] = m.contentArray[row].Count()
         m.Screen.SetContentList(row, m.contentArray[row])
         if m.lastUpdatedSize[row] = 0 AND m.Loader.GetLoadStatus(row) = 2 then
-            m.Screen.SetListVisible(row, false)
+            m.setListVisible(row, false)
         end if
     end for
 
@@ -227,7 +229,22 @@ Function gridHandleMessage(msg) As Boolean
         else if msg.isListItemFocused() then
             ' If the user is getting close to the limit of what we've
             ' preloaded, make sure we kick off another update.
-
+            vc = GetViewController()
+            if vc.Home <> invalid AND m.screenid = vc.Home.ScreenID then
+                isType = "home"
+            else 
+                sec_metadata = getSectionType()
+                secTypes = ["photo","artist","movie","show"]
+                isType = "other"
+                Debug("curType: " + tostr(sec_metadata.type))
+                for each st in secTypes
+                    if tostr(sec_metadata.type) = st then isType = st
+                end for
+                Debug("isType: " + tostr(isType))
+            end if
+            if RegRead("rf_grid_description_"+isType, "preferences", "enabled") = "enabled" then
+                m.screen.SetDescriptionVisible(true)
+            end if
             m.selectedRow = msg.GetIndex()
             m.focusedIndex = msg.GetData()
 
@@ -412,8 +429,8 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
 
     ' Don't bother showing empty rows
     if data.Count() = 0 then
-        if m.Screen <> invalid then
-            m.Screen.SetListVisible(row, false)
+        if m.Screen <> invalid AND m.Loader.GetLoadStatus(row) = 2 then
+            m.setListVisible(row, false)
             m.Screen.SetContentList(row, data)
         end if
 
@@ -464,7 +481,7 @@ Sub gridOnDataLoaded(row As Integer, data As Object, startItem As Integer, count
 
         return
     else if count > 0 AND m.Screen <> invalid then
-        m.Screen.SetListVisible(row, true)
+        m.setListVisible(row, true)
     end if
 
     m.hasData = true
@@ -608,7 +625,7 @@ Sub gridActivate(priorScreen)
         for row = 0 to names.Count() - 1
             m.Screen.SetContentList(row, m.contentArray[row])
             if m.contentArray[row].Count() = 0 AND m.Loader.GetLoadStatus(row) = 2 then
-                m.Screen.SetListVisible(row, false)
+                m.setListVisible(row, false)
             end if
         end for
         m.Screen.SetFocusedListItem(m.selectedRow, m.focusedIndex)
@@ -632,3 +649,12 @@ Sub gridOnTimerExpired(timer)
         m.Activate(invalid)
     end if
 End Sub
+
+sub gridSetVisibility(row, visible)
+    if m.RowVisibility[row] = visible then return
+
+    print "-------------- set row " + tostr(row) + "visible:" + tostr(visible)
+    m.RowVisibility[row] = visible
+    m.Screen.SetListVisible(row, visible)
+    sleep(500)
+end sub
