@@ -1,3 +1,7 @@
+#Enhancements to update to match latest Plex look by guydev
+
+__________________________________________________
+
 # RARflix v3.2.4 (2014-03-27) Final Release
 Changes: https://github.com/ljunkie/rarflix/blob/master/notes/rarflix-change.log
 
@@ -13,6 +17,7 @@ Forums: http://forums.plexapp.com/index.php/topic/79897-rarflix-modified-roku-ch
 
 ### Original Plex-Inc Readme Below ###
 
+___________________________________________________
 
 The official Plex client for the Roku. This client is maintained by a
 combination of Plex developers and community volunteers. We *love* contributors,
