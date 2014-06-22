@@ -1,4 +1,4 @@
-#Enhancements to update to match latest Plex look by guydev
+#Enhancements to update so as to match latest Plex look by guydev (2014-06-22)
 
 __________________________________________________
 
