@@ -258,7 +258,7 @@ Sub initTheme()
         GetGlobalAA().AddReplace("rfBGcolor", "000000")
     else 
         GetGlobalAA().AddReplace("rf_theme_dir", "file://pkg:/images/")
-        GetGlobalAA().AddReplace("rfBGcolor", "363636")
+        GetGlobalAA().AddReplace("rfBGcolor", "1F1F1F")
     end if
     imageDir = GetGlobalAA().Lookup("rf_theme_dir")
 
