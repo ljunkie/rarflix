@@ -1135,6 +1135,11 @@ Sub vcShowReleaseNotes(options = invalid)
         us = "_______________"
         paragraphs.Push("                 Donations accepted at http://www.rarflix.com")
         paragraphs.Push("  ")
+        paragraphs.Push(us+"v3.2.5 (2014-07-05)"+us)
+        paragraphs.Push("  ")
+        paragraphs.Push(" * Fix possible youtube crash.")
+        paragraphs.Push("  ")
+
         paragraphs.Push(us+"v3.2.4 (2014-03-28)"+us)
         paragraphs.Push("  ")
         paragraphs.Push(" * Quality Selection: toggle added - advanced prefs")
