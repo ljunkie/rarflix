@@ -353,6 +353,7 @@ function getFilterSortCacheKeys(server=invalid,sourceUrl=invalid,typeKey=invalid
 end function
 
 function videoMediaString(media)
+    format = invalid
     if media.audioChannels <> invalid then
         if media.audioChannels = "2" then
             format = "Stereo"
