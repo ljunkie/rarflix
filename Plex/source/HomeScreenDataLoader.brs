@@ -327,7 +327,7 @@ Sub homeCreateMyPlexRequests(startRequests As Boolean)
     if NOT myPlex.IsSignedIn then return
 
     ' Find any servers linked through myPlex
-    httpRequest = myPlex.CreateRequest("", "/pms/servers")
+    httpRequest = myPlex.CreateRequest("", "/pms/servers?includeLite=1")
     context = CreateObject("roAssociativeArray")
     context.requestType = "servers"
     GetViewController().StartRequest(httpRequest, m, context)
