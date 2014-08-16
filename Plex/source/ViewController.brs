@@ -1122,7 +1122,6 @@ Sub vcShowReleaseNotes(options = invalid)
     spacer = chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)+chr(32)
 
     if NOT textScreen then 
-            paragraphs.Push("Donate @ rarflix.com")
             paragraphs.Push(" * Filter and Sort Content")
             paragraphs.Push(" * Full Grid as Default [optional]")
             paragraphs.Push(" * Wake on Lan")
@@ -1133,8 +1132,13 @@ Sub vcShowReleaseNotes(options = invalid)
     else 
         ' We have a scrollable text screen now - we can include all the updates - yay
         us = "_______________"
-        paragraphs.Push("                 Donations accepted at http://www.rarflix.com")
         paragraphs.Push("  ")
+        paragraphs.Push(us+"v3.2.6 (2014-08-16)"+us)
+        paragraphs.Push("  ")
+        paragraphs.Push(" * Fix trailers (youtube)")
+        paragraphs.Push(" * Support for unpublished servers discovered through plex.tv")
+        paragraphs.Push("  ")
+
         paragraphs.Push(us+"v3.2.5 (2014-07-05)"+us)
         paragraphs.Push("  ")
         paragraphs.Push(" * Fix possible youtube crash.")
