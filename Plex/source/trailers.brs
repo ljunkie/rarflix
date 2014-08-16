@@ -29,7 +29,6 @@ Function CreateGenURLTransferObject(url As String) as Object
     obj.AddHeader("Content-Type", "application/x-www-form-urlencoded")
     obj.EnableEncodings(true)
     if instr(1, url, "https://") > 0 then
-        print "adding cert!"
         obj.SetCertificatesFile("common:/certs/ca-bundle.crt")
     end if
     return obj
