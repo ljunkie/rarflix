@@ -1,9 +1,39 @@
 '
 '
-' Movie Trailers - TMDB and YouTube 
+' Movie Trailers - TMDB and YouTube
 '  - removed more videos button from posterScreen ( will only show max 10 videos )
 '
 '
+
+' Generic HTTP transfer object (not plex related)
+Function NewGenHttp(url As String) as Object
+    Debug("Creating new generic http transfer object for " + url)
+    obj = CreateObject("roAssociativeArray")
+    obj.Http                        = CreateGenURLTransferObject(url)
+    obj.FirstParam                  = true
+    obj.AddParam                    = http_add_param
+    obj.AddRawQuery                 = http_add_raw_query
+    obj.PrepareUrlForQuery          = http_prepare_url_for_query
+    obj.GetToStringWithTimeout      = http_get_to_string_with_timeout
+
+    if Instr(1, url, "?") > 0 then obj.FirstParam = false
+
+    return obj
+End Function
+
+Function CreateGenURLTransferObject(url As String) as Object
+    Debug("Creating Generic URL transfer object for " + url)
+    obj = CreateObject("roUrlTransfer")
+    obj.SetPort(CreateObject("roMessagePort"))
+    obj.SetUrl(url)
+    obj.AddHeader("Content-Type", "application/x-www-form-urlencoded")
+    obj.EnableEncodings(true)
+    if instr(1, url, "https://") > 0 then
+        print "adding cert!"
+        obj.SetCertificatesFile("common:/certs/ca-bundle.crt")
+    end if
+    return obj
+End Function
 
 Function vcInitYouTube() As Object
     obj = CreateObject("roAssociativeArray")
@@ -20,7 +50,7 @@ Function vcInitYouTube() As Object
     'API Calls
     obj.ExecServerAPI = youtube_exec_api
     obj.ExecTmdbAPI = tmdb_exec_api
-    
+
     'Search
     obj.maxResults = 5
     obj.SearchTrailer = youtube_search_trailer ' changed to a forced search
@@ -44,15 +74,15 @@ Function youtube_exec_api(request As Dynamic) As Object
         if request.headers<>invalid then headers = request.headers
         if request.method<>invalid then method = request.method
     end if
-        
+
     if Instr(0, url_stub, "http://") OR Instr(0, url_stub, "https://") then
-        http = NewHttp(url_stub)
+        http = NewGenHttp(url_stub)
     else
-        http = NewHttp(m.yt_prefix + "/" + url_stub)
+        http = NewGenHttp(m.yt_prefix + "/" + url_stub)
     end if
 
     Debug("url: " + tostr(m.yt_prefix + "/" + url_stub))
-    if not headers.DoesExist("GData-Version") then headers.AddReplace("GData-Version", "2") 
+    if not headers.DoesExist("GData-Version") then headers.AddReplace("GData-Version", "2")
 
     http.method = method
     if postdata<>invalid then
@@ -88,11 +118,6 @@ Function handleYoutubeError(rsp) As Dynamic
 End Function
 
 Function parseVideoFormatsMap(videoInfo As String) As Object
-
-    ' print "-----------------------------------------------"
-    ' print videoInfo
-    ' print "-----------------------------------------------"
-
     r = CreateObject("roRegex", "(?:|&"+CHR(34)+")url_encoded_fmt_stream_map=([^(&|\$)]+)", "")
     videoFormatsMatches = r.Match(videoInfo)
 
@@ -123,7 +148,7 @@ Function parseVideoFormatsMap(videoInfo As String) As Object
             end if
         end for
 
-        if videoFormatsPair["url"]<>invalid then 
+        if videoFormatsPair["url"]<>invalid then
             r1=CreateObject("roRegex", "\\\/", ""):r2=CreateObject("roRegex", "\\u0026", "")
             url=URLDecode(URLDecode(videoFormatsPair["url"]))
             r1.ReplaceAll(url, "/"):r2.ReplaceAll(url, "&")
@@ -131,12 +156,12 @@ Function parseVideoFormatsMap(videoInfo As String) As Object
         if videoFormatsPair["itag"]<>invalid then
             itag = videoFormatsPair["itag"]
         end if
-        if videoFormatsPair["sig"]<>invalid then 
+        if videoFormatsPair["sig"]<>invalid then
             sig = videoFormatsPair["sig"]
             url = url + "&signature=" + sig
         end if
 
-        if Instr(0, LCase(url), "http") = 1 then 
+        if Instr(0, LCase(url), "http") = 1 then
             videoURL[itag] = url
         end if
     end for
@@ -158,8 +183,8 @@ Function parseVideoFormatsMap(videoInfo As String) As Object
 End Function
 
 Function video_get_qualities(videoID as String) As Object
-    http = NewHttp("http://www.youtube.com/get_video_info?video_id="+videoID)
-    Debug("SteamQualities: http://www.youtube.com/get_video_info?video_id="+videoID)
+    http = NewGenHttp("https://www.youtube.com/get_video_info?video_id="+videoID)
+    Debug("SteamQualities: https://www.youtube.com/get_video_info?video_id="+videoID)
     rsp = http.getToStringWithTimeout(10)
     if rsp<>invalid then
 
@@ -171,7 +196,7 @@ Function video_get_qualities(videoID as String) As Object
         else
             'try again with full youtube page
             dialog=ShowPleaseWait("Looking for compatible videos...", invalid)
-            http = NewHttp("http://www.youtube.com/watch?v="+videoID)
+            http = NewGenHttp("http://www.youtube.com/watch?v="+videoID)
             rsp = http.getToStringWithTimeout(30)
             if rsp<>invalid then
                 videoFormats = parseVideoFormatsMap(rsp)
@@ -191,12 +216,12 @@ Function video_get_qualities(videoID as String) As Object
     else
         ShowErrorDialog("HTTP Request for get_video_info failed!")
     end if
-    
+
     return invalid
 End Function
 
 Function video_check_embed(videoID as String) As string
-    http = NewHttp("http://www.youtube.com/get_video_info?video_id="+videoID)
+    http = NewGenHttp("http://www.youtube.com/get_video_info?video_id="+videoID)
     Debug("Checking Embed options: http://www.youtube.com/get_video_info?video_id="+videoID)
     rsp = http.getToStringWithTimeout(10)
     r = CreateObject("roRegex", "status=fail", "i")
@@ -205,17 +230,17 @@ Function video_check_embed(videoID as String) As string
         if r.IsMatch(rsp) then
             reason = r.Match(rsp)
             Debug("-------" + videoID +"------------- this YouTube Video is not playable:" + URLDecode(tostr(reason[0])))
-        else 
+        else
             r = CreateObject("roRegex", "Embedding\+disabled", "i")
             if r.IsMatch(rsp) then
                 Debug("-------" + videoID +"------------- this YouTube Video is not playable -- embedding disabled")
             end if
         end if
-    else 
+    else
         ' no failure - we can embed this
         return "playable"
     end if
-    
+
     ' invalid for any result of status=fail
     return "invalid"
 End Function
@@ -232,11 +257,11 @@ Function youtube_new_video_list(xmllist As Object, videolist = invalid as Object
                 video=m.newVideoFromXML(record, tostr(SearchString))
                 ' check if video already exists
                 for each vi in videolist
-                    if vi.getid() = video.getid() 
+                    if vi.getid() = video.getid()
                         exclude = true
                         exit for
                     end if
-                end for             
+                end for
                 if NOT exclude then videolist.Push(video)
             end if
         end if
@@ -258,7 +283,7 @@ Function youtube_new_video(xml As Object, searchString = invalid, provider = "Yo
     video.GetThumb=get_xml_thumb
     video.GetEditLink=get_xml_edit_link
     video.GetEditLink=get_xml_edit_link
-    video.GetLength=get_length 
+    video.GetLength=get_length
     video.Provider=provider
     video.ProviderLong=providerLong
     video.SearchString=tostr(searchString)
@@ -285,14 +310,14 @@ Function GetVideoMetaData(videos As Object)
 
         if tostr(meta.provider) <> "YouTube" then
             meta.ShortDescriptionLine2 = "Provided by: " + meta.providerLong
-        else 
+        else
             meta.ShortDescriptionLine2 = "Provided by: YouTube search for '" + tostr(video.SearchString) +"'"
         end if
         meta.ShortDescriptionLine2  = GetDurationString(video.GetLength()) + " - " + meta.ShortDescriptionLine2
 
         meta.SDPosterUrl=video.GetThumb()
         meta.HDPosterUrl=video.GetThumb()
-        meta.Length=video.GetLength() 
+        meta.Length=video.GetLength()
 
         ' cleanup Description
         output = meta.Description
@@ -310,7 +335,7 @@ Function GetVideoMetaData(videos As Object)
         meta.Streams=[]
         metadata.Push(meta)
     end for
-    
+
     return metadata
 End Function
 
@@ -394,19 +419,19 @@ Function tmdb_exec_api(request As Dynamic) As Object
         if request.headers<>invalid then headers = request.headers
         if request.method<>invalid then method = request.method
     end if
-        
+
     url_stub = url_stub + "&api_key=" + m.tmdb_apikey
     if Instr(0, url_stub, "http://") OR Instr(0, url_stub, "https://") then
         Debug("url: " + url_stub)
-        http = NewHttp(url_stub)
+        http = NewGenHttp(url_stub)
     else
         Debug("url: " + tostr(m.tmdb_prefix + "/" + url_stub))
-        http = NewHttp(m.tmdb_prefix + "/" + url_stub)
+        http = NewGenHttp(m.tmdb_prefix + "/" + url_stub)
 
     end if
 
 
-    if not headers.DoesExist("Accept") then headers.AddReplace("Accept", "application/json") 
+    if not headers.DoesExist("Accept") then headers.AddReplace("Accept", "application/json")
     http.method = method
     if postdata<>invalid then
         rsp=http.PostFromStringWithTimeout(postdata, 10, headers)
@@ -468,7 +493,7 @@ function youtube_search_trailer(keyword as string, year = invalid) as object
         s_tmdb = m.viewcontroller.youtube.ExecTmdbAPI("movie/"+tostr(s_tmdb.results[0].id)+"/trailers?page=1")["json"]
     end if
 
-    if type (s_tmdb) = "roAssociativeArray" and type(s_tmdb.youtube) = "roArray"  then 
+    if type (s_tmdb) = "roAssociativeArray" and type(s_tmdb.youtube) = "roArray"  then
         for each trailer in s_tmdb.youtube
             Debug("Found YouTube Trailer from TMDB")
             'PrintAA(trailer)
@@ -478,11 +503,11 @@ function youtube_search_trailer(keyword as string, year = invalid) as object
             ' verify it's playable first
             if video_check_embed(source) <> "invalid" then
                 xml=m.viewcontroller.youtube.ExecServerAPI("videos/" + source)["xml"]
-                if isxmlelement(xml) then 
+                if isxmlelement(xml) then
                     ' single video will be retured.. call newVideoFromXML
                     video=m.viewcontroller.youtube.newVideoFromXML(xml, searchString, "TMDb", "themoviedb.org")
                     Videos.Push(video)
-                else 
+                else
                     Debug("---------------------- Failed to get TMDB YouTube Trailer ")
                 end if
             end if
@@ -492,14 +517,14 @@ function youtube_search_trailer(keyword as string, year = invalid) as object
     ' join raw youtube videos - maybe make this a toggle? some may ONLY want TMDB
     trailerTypes = RegRead("rf_trailers", "preferences")
     includeYouTubeRaw = 0
- 
-    if trailerTypes = "enabled"  then 
+
+    if trailerTypes = "enabled"  then
         Debug("------------ Included raw youtube trailer search (trailers: enabled) ------------------ trailer:" + trailerTypes)
         includeYouTubeRaw = 1 ' include youtube trailers when 'enabled' is set -- grab everything
-    else if videos.Count() = 0 and trailerTypes = "enabled_tmdb_ytfb"  then 
+    else if videos.Count() = 0 and trailerTypes = "enabled_tmdb_ytfb"  then
         Debug("------------ Included raw youtube trailer search (trailers: enabled_tmdb_ytfb and 0 TMDB found) ------------------ trailer:" + trailerTypes)
         includeYouTubeRaw = 1 ' include youtube trailers when youtube fallback is enabled and we didn't find any trailers on tmdb
-    else 
+    else
         Debug("------------ skipping raw youtube trailer search (found trailers on TMDB) ------------------ trailer:" + trailerTypes)
     end if
 
@@ -508,12 +533,12 @@ function youtube_search_trailer(keyword as string, year = invalid) as object
         xml=m.viewcontroller.youtube.ExecServerAPI("videos?q="+searchString_trailer+"&prettyprint=true&max-results=20&alt=atom&paid-content=false&v=2")["xml"]
         if isxmlelement(xml) then
             videos = m.viewcontroller.youtube.newVideoListFromXML(xml.entry,Videos,origSearch_trailer)
-        else 
+        else
             xml = CreateObject("roXMLElement") ' just backwards compatibility
         end if
     end if
- 
-    return videos   
+
+    return videos
 End function
 
 
@@ -524,7 +549,7 @@ function DisplayYouTubeVideo(video As Object, waitDialog = invalid)
     return ret
 end function
 
-sub videoHDflag(video) 
+sub videoHDflag(video)
     streamQualities = video_get_qualities(video.id)
     if streamQualities <> invalid then
         video.Streams = streamQualities
@@ -552,10 +577,10 @@ Function  trailerSBhandleMessage(msg) as boolean
             if msg.GetIndex() = 0 then
                 DisplayYouTubeVideo(m.item)
             ' Play All
-            else if (msg.GetIndex() = 1) then 
+            else if (msg.GetIndex() = 1) then
                 for i = m.focusedIndex to m.contentarray.Count() - 1 Step +1 ' last video is button
                     selectedVideo = m.contentarray[i]
-                    if selectedVideo.id <> invalid then 
+                    if selectedVideo.id <> invalid then
                         ret = DisplayYouTubeVideo(selectedVideo)
                         if (ret > 0) then
                             Exit For
@@ -568,7 +593,7 @@ Function  trailerSBhandleMessage(msg) as boolean
                 if (m.contentarray.Count() > 1) then
                     m.focusedIndex = m.focusedIndex - 1
                     if m.focusedIndex < 0 then  m.focusedIndex = m.contentarray.Count() - 1
-                    videoHDflag(m.contentarray[m.focusedIndex]) 
+                    videoHDflag(m.contentarray[m.focusedIndex])
                     m.item = m.contentarray[m.focusedIndex]
                     m.BuildButtons()
                     m.screen.SetContent( m.item )
@@ -577,7 +602,7 @@ Function  trailerSBhandleMessage(msg) as boolean
                 if (m.contentarray.Count() > 1) then
                     m.focusedIndex = m.focusedIndex + 1
                     if m.focusedIndex > m.contentarray.Count() - 1 then m.focusedIndex = 0
-                    videoHDflag(m.contentarray[m.focusedIndex]) 
+                    videoHDflag(m.contentarray[m.focusedIndex])
                     m.item = m.contentarray[m.focusedIndex]
                     m.BuildButtons()
                     m.screen.SetContent( m.item )
@@ -586,7 +611,7 @@ Function  trailerSBhandleMessage(msg) as boolean
         end if
     end if
 
-    return handled 
+    return handled
 end function
 
 Function trailerHandleMessage(msg) As Boolean
@@ -622,4 +647,3 @@ Function trailerHandleMessage(msg) As Boolean
 
     return handled
 End Function
-
