@@ -468,11 +468,12 @@ End Function
 '******************************************************
 'Return the first valid argument
 '******************************************************
-Function firstOf(first, second, third=invalid, fourth=invalid)
+Function firstOf(first, second, third=invalid, fourth=invalid, fifth=invalid)
     if first <> invalid then return first
     if second <> invalid then return second
     if third <> invalid then return third
-    return fourth
+    if fourth <> invalid then return fourth
+    return fifth
 End Function
 
 '******************************************************

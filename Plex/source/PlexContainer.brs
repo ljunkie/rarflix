@@ -123,6 +123,8 @@ Sub containerParseXml()
             metadata = newPhotoMetadata(m, n, m.ParseDetails)
         else if n.GetName() = "Setting" then
             metadata = newSettingMetadata(m, n)
+        else if nodeType = "playlist" then
+            metadata = newPlaylistsMetadata(m, n)
         else
             metadata = newDirectoryMetadata(m, n)
         end if
@@ -133,7 +135,7 @@ Sub containerParseXml()
         ' if the PMS starts giving out generic thumbs, I'll have to repace with the crazy logic/regex
 
         if RegRead("rf_custom_thumbs", "preferences","enabled") = "enabled" then
-            rfHasThumb = firstof(n@thumb, n@grandparentThumb, n@parentThumb)
+            rfHasThumb = firstof(n@thumb, n@grandparentThumb, n@parentThumb, n@composite)
            ' any other resources we want to override below
             re = CreateObject("roRegex", "/:/resources/actor-icon|resources/Book1.png", "") 
             ' this has mixed results - really the channel provider should be adding custom thumbs for every directory instead of the base channel thumb

@@ -2097,6 +2097,7 @@ Function createHomeScreenPrefsScreen(viewController) As Object
         { title: "Channels", key: "channels" },
         { title: "Library Sections", key: "sections" },
         { title: "On Deck", key: "on_deck" },
+        { title: "Playlistsk", key: "playlists" },
         { title: "Now Playing", key: "now_playing" },
         { title: "Recently Added", key: "recently_added" },
         { title: "Queue", key: "queue" },

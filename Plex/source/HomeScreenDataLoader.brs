@@ -41,6 +41,7 @@ Function createHomeScreenDataLoader(listener)
         { title: "Channels", key: "channels" },
         { title: "Library Sections", key: "sections" },
         { title: "On Deck", key: "on_deck" },
+        { title: "Playlists", key: "playlists" },
         { title: "Now Playing", key: "now_playing" },
         { title: "Recently Added", key: "recently_added" },
         { title: "Queue", key: "queue" },
@@ -232,7 +233,24 @@ Sub homeCreateServerRequests(server As Object, startRequests As Boolean, refresh
             m.Listener.OnDataLoaded(m.RowIndexes[row], [], 0, 0, true)
         end if
     end if
-
+    
+    ' Request playlists
+    row = "playlists"
+    if rowkey = invalid or rowkey = row then
+        view = RegRead("row_visibility_playlists", "preferences", "")
+        if view <> "hidden" then
+            if view <> "owned" or (view = "owned" and server.owned) then 
+                playlists = CreateObject("roAssociativeArray")
+                playlists.server = server
+                playlists.key = "/playlists"
+                playlists.connectionUrl = connectionUrl
+                playlists.requestType = "row"
+                m.AddOrStartRequest(playlists, m.RowIndexes[row], startRequests)
+            end if
+        else
+            m.Listener.OnDataLoaded(m.RowIndexes[row], [], 0, 0, true)
+        end if
+    end if
 
     ' Request recently added
     ' even though the access is granted for shared users, the results seem to be ZERO - ljunkie (maybe they are adding this to the PMS?)
@@ -632,6 +650,8 @@ Sub homeOnUrlEvent(msg, requestContext)
                 item.ShortDescriptionLine2 = "Music section" + serverStr
             else if item.Type = "photo" then
                 item.ShortDescriptionLine2 = "Photo section" + serverStr
+            else if item.Type = "playlist" then
+                item.ShortDescriptionLine2 = "Playlists" + serverStr
             else
                 Debug("Skipping unsupported section type: " + tostr(item.Type))
                 add = false
@@ -1022,6 +1042,8 @@ Sub homeRefreshData()
     ' these could be out of order due to multiple PMS's -- however we must refresh these (no great fix for this yet)
     m.contentArray[m.RowIndexes["on_deck"]].refreshContent = []
     m.contentArray[m.RowIndexes["on_deck"]].loadedServers.Clear()
+    m.contentArray[m.RowIndexes["playlists"]].refreshContent = []
+    m.contentArray[m.RowIndexes["playlists"]].loadedServers.Clear()
     m.contentArray[m.RowIndexes["now_playing"]].refreshContent = []
     m.contentArray[m.RowIndexes["now_playing"]].loadedServers.Clear()
     m.contentArray[m.RowIndexes["recently_added"]].refreshContent = []
@@ -1050,6 +1072,7 @@ Sub homeOnMyPlexChange()
         m.RemoveFromRowIf(m.RowIndexes["channels"], IsMyPlexServer)
         m.RemoveFromRowIf(m.RowIndexes["now_playing"], IsMyPlexServer)
         m.RemoveFromRowIf(m.RowIndexes["on_deck"], IsMyPlexServer)
+        m.RemoveFromRowIf(m.RowIndexes["playlists"], IsMyPlexServer)
         m.RemoveFromRowIf(m.RowIndexes["recently_added"], IsMyPlexServer)
         m.RemoveFromRowIf(m.RowIndexes["misc"], IsMyPlexServer)
         m.RemoveFromRowIf(m.RowIndexes["queue"], AlwaysTrue)
@@ -1062,6 +1085,7 @@ Sub homeRemoveInvalidServers()
     m.RemoveFromRowIf(m.RowIndexes["sections"], IsInvalidServer)
     m.RemoveFromRowIf(m.RowIndexes["channels"], IsInvalidServer)
     m.RemoveFromRowIf(m.RowIndexes["on_deck"], IsInvalidServer)
+    m.RemoveFromRowIf(m.RowIndexes["playlists"], IsInvalidServer)
     m.RemoveFromRowIf(m.RowIndexes["now_playing"], IsInvalidServer)
     m.RemoveFromRowIf(m.RowIndexes["recently_added"], IsInvalidServer)
     m.RemoveFromRowIf(m.RowIndexes["misc"], IsInvalidServer)

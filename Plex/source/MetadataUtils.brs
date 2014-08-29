@@ -74,7 +74,7 @@ Function createBaseMetadata(container, item, thumb=invalid) As Object
 
     sizes = ImageSizes(container.ViewGroup, item@type)
     if thumb = invalid then
-        thumb = firstOf(item@thumb, item@parentThumb, item@grandparentThumb, container.xml@thumb)
+        thumb = firstOf(item@thumb, item@parentThumb, item@grandparentThumb, container.xml@thumb, item@composite)
     end if
 
     if thumb <> invalid AND thumb <> "" AND server <> invalid then
