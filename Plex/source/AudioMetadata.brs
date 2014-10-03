@@ -173,7 +173,7 @@ Function newTrackMetadata(container, item, detailed=true) As Object
     if item.user@title <> invalid then 
         ' save any variables we change for later
         track.nowPlaying_orig_title = track.title
-        track.nowPlaying_orig_description = track.Artist + " : " + track.Album
+        track.nowPlaying_orig_description = firstOf(track.Artist,"") + " : " + firstOf(track.Album,"")
         track.viewoffset = item@viewoffset      
 
         track.description = "" ' reset video Description -- blank but not invalid
