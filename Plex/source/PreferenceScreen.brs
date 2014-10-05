@@ -2076,6 +2076,11 @@ Function createHomeScreenPrefsScreen(viewController) As Object
         heading: "Show On Deck items on the home screen",
         default: ""
     }
+    obj.Prefs["row_visibility_playlists"] = {
+        values: valuesShared,
+        heading: "Show Playlist items on the home screen",
+        default: ""
+    }
     obj.Prefs["row_visibility_recentlyadded"] = {
         values: valuesShared,
         heading: "Show recently added items on the home screen",
@@ -2097,6 +2102,7 @@ Function createHomeScreenPrefsScreen(viewController) As Object
         { title: "Channels", key: "channels" },
         { title: "Library Sections", key: "sections" },
         { title: "On Deck", key: "on_deck" },
+        { title: "Playlists", key: "playlists" },
         { title: "Now Playing", key: "now_playing" },
         { title: "Recently Added", key: "recently_added" },
         { title: "Queue", key: "queue" },
@@ -2150,6 +2156,7 @@ Function createHomeScreenPrefsScreen(viewController) As Object
     obj.AddItem({title: "Queue"}, "playlist_view_queue", obj.GetEnumValue("playlist_view_queue"))
     obj.AddItem({title: "Recommendations"}, "playlist_view_recommendations", obj.GetEnumValue("playlist_view_recommendations"))
     obj.AddItem({title: "On Deck"}, "row_visibility_ondeck", obj.GetEnumValue("row_visibility_ondeck"))
+    obj.AddItem({title: "Playlists"}, "row_visibility_playlists", obj.GetEnumValue("row_visibility_playlists"))
     obj.AddItem({title: "Recently Added"}, "row_visibility_recentlyadded", obj.GetEnumValue("row_visibility_recentlyadded"))
     obj.AddItem({title: "Now Playing"}, "row_visibility_now_playing", obj.GetEnumValue("row_visibility_now_playing"))
     obj.AddItem({title: "Channels"}, "row_visibility_channels", obj.GetEnumValue("row_visibility_channels"))
@@ -2171,7 +2178,7 @@ Function prefsHomeHandleMessage(msg) As Boolean
             m.ViewController.PopScreen(m)
         else if msg.isListItemSelected() then
             command = m.GetSelectedCommand(msg.GetIndex())
-            if command = "playlist_view_queue" OR command = "playlist_view_recommendations" OR command = "row_visibility_ondeck" OR command = "row_visibility_recentlyadded" OR command = "row_visibility_channels" or command = "row_visibility_now_playing" or command = "rf_home_displaymode" or command = "rf_hs_clock" or command = "rf_hs_date" then
+            if command = "playlist_view_queue" OR command = "playlist_view_recommendations" OR command = "row_visibility_ondeck" OR command = "row_visibility_playlists" OR command = "row_visibility_recentlyadded" OR command = "row_visibility_channels" or command = "row_visibility_now_playing" or command = "rf_home_displaymode" or command = "rf_hs_clock" or command = "rf_hs_date" then
                 m.HandleEnumPreference(command, msg.GetIndex())
             else if command = "home_row_order" then
                 m.HandleReorderPreference(command, msg.GetIndex())

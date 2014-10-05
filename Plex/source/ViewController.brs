@@ -502,6 +502,11 @@ Function vcCreateScreenForItem(context, contextIndex, breadcrumbs, show=true) As
         screen = createGridScreenForItem(item, m, "flat-16x9") ' not really sure where this is ( maybe the myPlex queue )
         screenName = "Playlist Grid"
         if screen.loader.focusrow <> invalid then screen.loader.focusrow = 2 ' hide header row ( flat-16x9 is 5x3 )
+    else if contentType = "playlist" then
+        screen = createPosterScreen(item, m)
+        screen.SetListStyle("flat-episodic", "zoom-to-fill")
+        screenName = "Playlist Grid"
+    else if contentType = "photo" then
     else if contentType = "photo" then
         if right(item.key, 8) = "children" then
             if poster_grid = "grid" then 
