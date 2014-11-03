@@ -52,7 +52,7 @@ Sub videoSetupButtons()
     Debug("Can direct play = " + tostr(videoCanDirectPlay(m.media)))
 
     ' Trailers! (TODO) enable this for TV shows ( youtube is still useful? )
-    if NOT isHomeVideos and m.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
+    if NOT isHomeVideos and isMovieShowEpisode AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
          m.AddButton("Trailer", "getTrailers")
     end if
 
@@ -352,7 +352,11 @@ Function videoHandleMessage(msg) As Boolean
                 dummyItem.server = invalid
                 dummyItem.key = "movietrailer"
                 dummyItem.year = year
-                dummyItem.searchTitle = tostr(m.metadata.RFSearchTitle)
+                if m.metadata.grandparentKey <> invalid AND tostr(m.metadata.ShowTitle) <> "invalid" Then
+                    dummyItem.searchTitle = tostr(m.metadata.ShowTitle) + ": " + tostr(m.metadata.RFSearchTitle)
+                else
+                    dummyItem.searchTitle = tostr(m.metadata.RFSearchTitle)
+                end if
                 m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
                 handled = true
             else if buttonCommand = "tomatoes" then
@@ -481,7 +485,11 @@ Function videoDialogHandleButton(command, data) As Boolean
         dummyItem.server = invalid
         dummyItem.key = "movietrailer"
         dummyItem.year = year
-        dummyItem.searchTitle = tostr(obj.metadata.RFSearchTitle)
+        if obj.metadata.grandparentKey <> invalid AND tostr(obj.metadata.ShowTitle) <> "invalid" Then
+            dummyItem.searchTitle = tostr(obj.metadata.ShowTitle) + ": " + tostr(obj.metadata.RFSearchTitle)
+        else
+            dummyItem.searchTitle = tostr(obj.metadata.RFSearchTitle)
+        end if
         m.ViewController.CreateScreenForItem(dummyItem, invalid, breadcrumbs)
         closeDialog = true
     else if command = "RFCastAndCrewList" then
