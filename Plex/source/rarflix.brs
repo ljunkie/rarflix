@@ -756,7 +756,7 @@ sub rfVideoMoreButton(obj as Object) as Dynamic
     end if
 
     ' these are on the main details screen -- show them last ( maybe not at all )
-    if NOT isHomeVideos and obj.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
+    if NOT isHomeVideos and isMovieShowEpisode AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
         dialog.SetButton("getTrailers", "Trailer")
     end if
 
@@ -922,7 +922,7 @@ sub rfVideoMoreButtonFromGrid(obj as Object) as Dynamic
     end if
 
     ' Trailers link - RR (last now that we include it on the main screen .. well before delete - people my be used to delete being second to last)
-    if NOT isHomeVideos and obj.metadata.ContentType = "movie" AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
+    if NOT isHomeVideos and isMovieShowEpisode AND  RegRead("rf_trailers", "preferences", "disabled") <> "disabled" then 
         dialog.SetButton("getTrailers", "Trailer")
     end if
 
