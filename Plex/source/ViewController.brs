@@ -1133,6 +1133,11 @@ Sub vcShowReleaseNotes(options = invalid)
         ' We have a scrollable text screen now - we can include all the updates - yay
         us = "_______________"
         paragraphs.Push("  ")
+        paragraphs.Push(us+"v3.2.7 (2015-12-07)"+us)
+        paragraphs.Push("  ")
+        paragraphs.Push(" * @mikeh: Remote playback fixes")
+        paragraphs.Push("  ")
+
         paragraphs.Push(us+"v3.2.6 (2014-08-16)"+us)
         paragraphs.Push("  ")
         paragraphs.Push(" * Fix trailers (youtube)")

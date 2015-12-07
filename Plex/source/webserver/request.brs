@@ -109,10 +109,11 @@ function request_parse(conn as Object) as Boolean
 
             ' parse query string if present
             m.query = CreateObject("roAssociativeArray")
-            parts = m.uri.tokenize("?")
-            if parts.count() = 2
-                m.path = parts.GetHead()
-                args = parts.GetTail().tokenize("&")
+' @mikeh: URI parsing fix for remote playback control
+            querypos = m.uri.instr("?")
+            if (querypos > 0) then
+                m.path = m.uri.left(querypos)
+                args = m.uri.mid(querypos+1).tokenize("&")
                 for each arg in args
                     av = arg.tokenize("=")
                     if av.count()=2 then m.query[UrlUnescape(av.GetHead())] = UrlUnescape(av.GetTail())
