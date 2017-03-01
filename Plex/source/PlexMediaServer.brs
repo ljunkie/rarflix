@@ -535,6 +535,10 @@ End Function
 '* relative to the server URL
 Function FullUrl(serverUrl, sourceUrl, key) As String
     finalUrl = ""
+    if key = invalid then 
+        key = "" ' fix for session results on later plex servers >=1.4 which sometimes return no key
+    endif
+
     if left(key, 4) = "http" OR left(key, 4) = "rtmp" or left(key, 3) = "mms" or left(key, 4) = "rtsp" then
         return key
     else if left(key, 4) = "plex" then
