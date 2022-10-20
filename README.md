@@ -1,11 +1,11 @@
-# RARflix v3.2.4 (2014-03-27) Final Release
+# DEPRECATED
+
+*Roku has [officially sunsetted SDK1](https://blog.roku.com/developer/roku-os-11-5) channels and will no longer run on OS 11.5*
+
+### RARflix v3.2.4 (2014-03-27) Final Release
 Changes: https://github.com/ljunkie/rarflix/blob/master/notes/rarflix-change.log
 
 ### Modified Plex for Roku
-
-
-[![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=CHRZ55VCAJSYG)
-
 
 Roku Install: https://owner.roku.com/add/rarflix
 
